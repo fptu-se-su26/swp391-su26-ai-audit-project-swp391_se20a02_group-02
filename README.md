@@ -19,7 +19,7 @@
 |---:|---|---|---|---|---|
 | 1 |  DE190968|  Lê Văn Hậu|  LEHAu1| Leader |  |
 | 2 |DE190324  |Nguyễn Văn Dạng | Nguyendang2005 | Member |  |
-| 3 | DE190928 | Hồ Thành Trung |  | Member |  |
+| 3 | DE190928 | Hồ Thành Trung |  trungho20050-lang | Member |  |
 | 4 |  DE190371| Trần Phú Thịnh |  hellolang123| Member |  |
 | 5 |DE190264  | Nguyễn Bùi Quang Vinh | quangvinh7115 | Member |  |
 
