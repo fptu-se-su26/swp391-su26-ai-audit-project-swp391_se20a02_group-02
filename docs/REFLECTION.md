@@ -4,21 +4,21 @@
 
 | Thông tin | Nội dung |
 |---|---|
-| Môn học |  |
-| Mã môn học |  |
-| Lớp |  |
-| Học kỳ |  |
-| Tên bài tập / Project |  |
-| Tên sinh viên / Nhóm |  |
-| MSSV / Danh sách MSSV |  |
-| Giảng viên hướng dẫn |  |
-| Ngày hoàn thành reflection |  |
+| Môn học | Software Project (SWP391) |
+| Mã môn học | SWP391 |
+| Lớp | SE20A02 |
+| Học kỳ | SU26 |
+| Tên bài tập / Project | LuxeWay - Trusted E-commerce Platform for Vehicle Rental |
+| Tên sinh viên / Nhóm | Nguyễn Văn Dạng - Nhóm 2 |
+| MSSV / Danh sách MSSV | DE190324 |
+| Giảng viên hướng dẫn | (Giảng viên môn SWP391) |
+| Ngày hoàn thành reflection | 2026-05-21 |
 
 ---
 
 ## 2. Mục đích Reflection
 
-File này dùng để sinh viên/nhóm tự đánh giá quá trình sử dụng AI trong học tập và thực hiện bài tập, lab, assignment hoặc project.
+File này dùng để Nguyễn Văn Dạng (DE190324) tự đánh giá quá trình sử dụng AI (Antigravity) trong việc xây dựng Frontend UI/UX cho dự án LuxeWay.
 
 Reflection cần thể hiện:
 
@@ -32,19 +32,25 @@ Reflection cần thể hiện:
 
 ## 3. Tóm tắt quá trình sử dụng AI
 
-Mô tả ngắn gọn quá trình sử dụng AI trong bài tập/project này.
-
 ```text
-Viết tại đây...
+Trong sprint đầu tiên (2026-05-12 đến 2026-05-21), mình đã sử dụng AI (Antigravity)
+để hỗ trợ xây dựng toàn bộ Frontend UI/UX cho dự án LuxeWay.
+
+Cách mình dùng AI:
+- Giai đoạn setup (2026-05-12): Hỏi AI về cấu trúc thư mục phù hợp cho React + TypeScript + Vite project
+  với kiến trúc feature-based. AI gợi ý cấu trúc 12 thư mục con rõ ràng.
+
+- Giai đoạn coding (2026-05-14 đến 2026-05-20): Hỏi AI sinh code khung cho các component lớn:
+  MarketplacePage (414 dòng), FilterPanel, App.tsx với routing, VehicleCard, animation variants.
+  Mỗi lần đều đọc code kỹ, test, và chỉnh sửa trước khi dùng.
+
+- Giai đoạn debug (2026-05-17): Gặp lỗi git submodule (src/Front_end không hiện code trên GitHub).
+  AI giải thích nguyên nhân và hướng dẫn fix step by step.
+
+Công cụ sử dụng nhiều nhất: Antigravity (AI coding assistant tích hợp trong IDE).
+AI giúp tăng tốc đáng kể - ước tính tiết kiệm 60-70% thời gian coding cho các component phức tạp.
+Tuy nhiên, vẫn phải đầu tư nhiều thời gian để đọc, hiểu, test và chỉnh sửa kết quả AI.
 ```
-
-Gợi ý:
-
-- Em/nhóm đã dùng AI ở giai đoạn nào?
-- Dùng AI để hỗ trợ việc gì?
-- Công cụ AI nào được sử dụng nhiều nhất?
-- AI có giúp cải thiện chất lượng bài làm không?
-- Có phần nào AI gợi ý nhưng em/nhóm không sử dụng không?
 
 ---
 
@@ -57,7 +63,7 @@ Gợi ý:
 - [ ] Claude
 - [ ] GitHub Copilot
 - [ ] Cursor
-- [ ] Antigravity
+- [x] Antigravity
 - [ ] Microsoft Copilot
 - [ ] Perplexity
 - [ ] Công cụ khác: ....................................
@@ -65,13 +71,17 @@ Gợi ý:
 ### Công cụ được sử dụng nhiều nhất
 
 ```text
-Viết tại đây...
+Antigravity - AI coding assistant tích hợp trong VS Code IDE.
 ```
 
 ### Lý do sử dụng công cụ đó
 
 ```text
-Viết tại đây...
+- Antigravity tích hợp trực tiếp vào IDE, không cần chuyển tab ra ngoài
+- Hiểu context của project (đọc được code đang mở, file structure)
+- Hỗ trợ tốt React + TypeScript: hiểu types, imports, JSX syntax
+- Có thể run git commands trực tiếp (dùng khi fix git submodule)
+- Trả lời tiếng Việt khi cần
 ```
 
 ---
@@ -82,25 +92,50 @@ Viết tại đây...
 
 - [ ] Hiểu yêu cầu đề bài
 - [ ] Phân tích bài toán
-- [ ] Tìm ý tưởng giải pháp
+- [x] Tìm ý tưởng giải pháp
 - [ ] Thiết kế database
-- [ ] Thiết kế giao diện
-- [ ] Thiết kế kiến trúc hệ thống
-- [ ] Viết code mẫu
-- [ ] Debug lỗi
+- [x] Thiết kế giao diện
+- [x] Thiết kế kiến trúc hệ thống
+- [x] Viết code mẫu
+- [x] Debug lỗi
 - [ ] Viết test case
-- [ ] Review code
+- [x] Review code
 - [ ] Tối ưu code
 - [ ] Kiểm tra bảo mật
 - [ ] Viết báo cáo
 - [ ] Chuẩn bị thuyết trình
-- [ ] Tìm hiểu công nghệ mới
+- [x] Tìm hiểu công nghệ mới
 - [ ] Khác: ....................................
 
 ### Mô tả chi tiết
 
 ```text
-Viết tại đây...
+1. Tìm ý tưởng giải pháp:
+   AI gợi ý dùng AnimatePresence cho sidebar filter slide-in/out, gợi ý pattern debounced search
+   với useCallback để tránh re-render không cần thiết.
+
+2. Thiết kế giao diện:
+   AI gợi ý layout 3-column grid cho vehicle cards, sticky top bar với search + filters,
+   sidebar filter panel 280px với responsive hide/show.
+
+3. Thiết kế kiến trúc hệ thống (Frontend):
+   Folder structure feature-based, lazy loading với React.lazy + Suspense,
+   centralized state với Zustand, service layer tách biệt logic khỏi UI.
+
+4. Viết code mẫu:
+   AI sinh code khung cho MarketplacePage, FilterPanel, App.tsx routing, VehicleCard.
+   Tổng ước tính ~1200 dòng code khung từ AI, sau chỉnh sửa thành ~4000+ dòng.
+
+5. Debug lỗi:
+   Fix git submodule issue - giải thích rõ nguyên nhân và fix step by step.
+   Gợi ý fix hasFilters logic cho FilterPanel.
+
+6. Review code:
+   AI review và gợi ý cải tiến filter logic, pagination UX.
+
+7. Tìm hiểu công nghệ mới:
+   Học cách dùng Framer Motion staggerContainer, AnimatePresence qua code AI sinh ra,
+   sau đó tự áp dụng vào các component khác.
 ```
 
 ---
@@ -110,46 +145,68 @@ Viết tại đây...
 ### 6.1. Những điểm AI giúp em/nhóm học tốt hơn
 
 ```text
-Viết tại đây...
+1. Hiểu Framer Motion nhanh hơn:
+   Trước khi dùng AI, mình không biết dùng AnimatePresence như thế nào để animate sidebar.
+   AI sinh ra code mẫu với AnimatePresence + motion.aside, mình đọc, chạy thử, sau đó hiểu
+   cách nó hoạt động và tự áp dụng vào các component khác (VehicleCard hover, page transitions).
+
+2. Biết cách tổ chức code React lớn:
+   Folder structure feature-based, lazy loading, code splitting - những pattern này mình biết
+   về lý thuyết nhưng AI giúp mình thấy cách implement cụ thể trong project thực.
+
+3. Biết pattern debounced search với useCallback:
+   Trước đây mình hay dùng setTimeout trực tiếp, AI gợi ý pattern debounce wrapper function
+   kết hợp useCallback, giúp mình hiểu sâu hơn về React hooks.
+
+4. Hiểu git submodule issue:
+   Lỗi git submodule là lần đầu tiên mình gặp. AI giải thích rõ nguyên nhân
+   (embedded .git folder → git coi là separate repo) và cách fix. Bài học này rất valuable.
+
+5. Biết thêm cách thiết kế UI component có variants:
+   VehicleCard với variant grid/list mode - pattern này AI gợi ý và mình học được cách design
+   component có thể switch giữa các layout khác nhau.
 ```
-
-Gợi ý:
-
-- Hiểu bài nhanh hơn.
-- Có thêm ví dụ minh họa.
-- Biết cách debug lỗi.
-- Biết thêm cách tổ chức code.
-- Biết thêm cách thiết kế giải pháp.
-- Biết cách viết test case.
-- Biết cách cải thiện báo cáo hoặc slide.
 
 ### 6.2. Những điểm AI chưa giúp tốt hoặc gây khó khăn
 
 ```text
-Viết tại đây...
+1. Màu sắc không đúng design system:
+   AI sinh ra màu mặc định (blue-500, gray-100) không phù hợp với LuxeWay luxury theme.
+   Phải tự thay thế tất cả bằng CSS variables (#0F172A, accent, gold). Mất thêm thời gian.
+
+2. Thiếu business logic đặc thù:
+   AI không biết các business rule của LuxeWay: promo code LUXE10, date validation rules,
+   extras pricing. Phải tự implement tất cả.
+
+3. AI không hiểu mock data cụ thể:
+   AI sinh code service nhưng không biết mình có bao nhiêu loại xe, ảnh từ đâu.
+   Phải tự tạo mock data cho 20+ luxury vehicles.
+
+4. Đôi khi AI sinh code quá complex:
+   Một số lần AI gợi ý solution quá phức tạp (ví dụ dùng useReducer cho state đơn giản).
+   Mình chọn giải pháp đơn giản hơn (useState thường).
 ```
-
-Gợi ý:
-
-- AI trả lời sai.
-- AI sinh code không chạy.
-- AI hiểu sai yêu cầu đề bài.
-- AI đưa giải pháp quá phức tạp.
-- AI thiếu ngữ cảnh môn học.
-- AI trả lời chung chung.
-- AI khiến em/nhóm dễ phụ thuộc.
 
 ### 6.3. Em/nhóm có bị phụ thuộc vào AI không?
 
 - [ ] Không phụ thuộc
-- [ ] Phụ thuộc ít
+- [x] Phụ thuộc ít
 - [ ] Phụ thuộc trung bình
 - [ ] Phụ thuộc nhiều
 
 Giải thích:
 
 ```text
-Viết tại đây...
+Mình phụ thuộc ít vào AI. Cụ thể:
+- Các component nhỏ (pagination, dark mode toggle, empty state): tự viết không dùng AI
+- Zustand store logic: tự thiết kế và viết
+- Mock data (20+ xe): tự tạo toàn bộ
+- CSS design tokens (globals.css): tự viết
+
+Chỉ dùng AI cho những component phức tạp có nhiều tính năng đan xen nhau (MarketplacePage),
+hoặc khi gặp bug khó (git submodule).
+
+Mình đảm bảo mỗi phần AI sinh ra đều đọc và hiểu trước khi dùng.
 ```
 
 ---
@@ -158,75 +215,106 @@ Viết tại đây...
 
 Đánh dấu các cách đã sử dụng.
 
-- [ ] Chạy thử chương trình
-- [ ] Kiểm tra output
+- [x] Chạy thử chương trình
+- [x] Kiểm tra output
 - [ ] Viết test case
-- [ ] So sánh với yêu cầu đề bài
+- [x] So sánh với yêu cầu đề bài
 - [ ] Đối chiếu với tài liệu môn học
-- [ ] Review code
+- [x] Review code
 - [ ] Hỏi lại giảng viên
 - [ ] Tra cứu tài liệu chính thống
 - [ ] Thảo luận với thành viên nhóm
-- [ ] Kiểm tra bằng dữ liệu mẫu
-- [ ] So sánh trước và sau khi dùng AI
+- [x] Kiểm tra bằng dữ liệu mẫu
+- [x] So sánh trước và sau khi dùng AI
 - [ ] Khác: ....................................
 
 ### Mô tả quá trình kiểm chứng
 
 ```text
-Viết tại đây...
+Quy trình kiểm chứng của mình cho mỗi component AI sinh ra:
+
+Bước 1 - Đọc code trước khi dùng:
+  Đọc toàn bộ file AI sinh ra, hiểu từng phần làm gì.
+  Kiểm tra imports có đúng path không.
+  Kiểm tra TypeScript types có match với types/index.ts không.
+
+Bước 2 - Chạy thử:
+  Copy vào project, chạy npm run dev.
+  Kiểm tra TypeScript errors và runtime errors trong console.
+
+Bước 3 - Test manual từng feature:
+  Tạo checklist các tính năng cần test.
+  Test từng item một, ghi nhận kết quả.
+
+Bước 4 - Test edge cases:
+  Search empty string, search không có kết quả.
+  Filter nhiều categories cùng lúc.
+  Pagination khi ít hơn 1 trang.
+  Dark mode toggle + refresh trang (persist).
+
+Bước 5 - Review và chỉnh sửa:
+  Fix những gì không đúng design system.
+  Thêm những tính năng AI bỏ sót.
+  Refactor code chỗ nào quá phức tạp.
 ```
 
 ### Ví dụ cụ thể về một lần kiểm chứng
 
 | Nội dung | Mô tả |
 |---|---|
-| AI đã gợi ý gì? |  |
-| Em/nhóm đã kiểm tra bằng cách nào? |  |
-| Kết quả kiểm tra | Đúng / Sai / Cần chỉnh sửa |
-| Em/nhóm đã xử lý tiếp như thế nào? |  |
+| AI đã gợi ý gì? | hasFilters logic để kiểm tra có filter active không, dùng Object.values().some() |
+| Em/nhóm đã kiểm tra bằng cách nào? | Thêm console.log(filters, hasFilters) rồi test click các filter button |
+| Kết quả kiểm tra | Sai - hasFilters trả về true ngay cả khi không có filter nào (vì key 'sortBy' luôn có giá trị) |
+| Em/nhóm đã xử lý tiếp như thế nào? | Sửa logic: loại trừ undefined, '' và array rỗng. Thêm thêm điều kiện v !== 'popular' cho sortBy |
 
 ---
 
 ## 8. Ví dụ AI gợi ý sai hoặc chưa phù hợp
 
-Ghi lại ít nhất một ví dụ nếu có.
-
 | Nội dung | Mô tả |
 |---|---|
-| AI đã gợi ý gì? |  |
-| Vì sao gợi ý đó sai/chưa phù hợp? |  |
-| Em/nhóm phát hiện bằng cách nào? |  |
-| Em/nhóm đã sửa như thế nào? |  |
-| Bài học rút ra |  |
-
-Nếu không có trường hợp AI gợi ý sai, hãy ghi rõ:
-
-```text
-Trong quá trình thực hiện, em/nhóm chưa ghi nhận trường hợp AI gợi ý sai nghiêm trọng. Tuy nhiên, em/nhóm vẫn kiểm tra lại kết quả AI trước khi sử dụng.
-```
+| AI đã gợi ý gì? | hasFilters = Object.values(filters).some(v => v !== undefined && v !== '') |
+| Vì sao gợi ý đó sai/chưa phù hợp? | Logic này count cả category: [] (array rỗng) là có filter, count cả sortBy: 'popular' (giá trị mặc định) |
+| Em/nhóm phát hiện bằng cách nào? | Test manual: vào Marketplace mà không click filter gì, badge vẫn hiện số > 0 |
+| Em/nhóm đã sửa như thế nào? | Thêm: && (Array.isArray(v) ? v.length > 0 : true) để loại array rỗng; không count 'popular' trong activeFilterCount |
+| Bài học rút ra | AI sinh code generic, không biết đặc thù của project. Phải test kỹ edge cases |
 
 ---
 
 ## 9. Phần đóng góp thật sự của sinh viên/nhóm
 
-Mô tả rõ phần nào là đóng góp chính của sinh viên/nhóm, không phải chỉ copy từ AI.
-
 ```text
-Viết tại đây...
+Nguyễn Văn Dạng (DE190324) - Đóng góp thật sự trong sprint này:
+
+1. Tự quyết định toàn bộ design direction:
+   - Chọn luxury aesthetic: dark navy (#0F172A), subtle gold accents, glassmorphism
+   - Thiết kế typography hierarchy: font-display cho headings, spacing system
+   - Quyết định animation "feel": slow và smooth (0.6s) thay vì default fast
+
+2. Tự tạo toàn bộ mock data (src/mock/db/vehicles.ts):
+   - Research 20+ luxury vehicles: Ferrari 488, Lamborghini Huracan, Rolls-Royce Ghost, Porsche 911...
+   - Đặt giá realistic: $800-$3500/ngày tùy xe
+   - Tạo categories: supercar, luxury, suv, convertible, classic, electric
+
+3. Tự implement Zustand stores:
+   - authStore: login, logout, register, initAuth (khôi phục session từ localStorage)
+   - uiStore: theme (dark/light), language, notifications, sidebar state
+
+4. Tự viết business logic trong BookingWizardPage:
+   - Tính tổng tiền: days × rate + extras
+   - Promo code LUXE10 (-10%), validate format
+   - Date validation: returnDate > pickupDate, tối thiểu 1 ngày
+
+5. Tự fix các bugs sau khi dùng AI:
+   - hasFilters logic
+   - Dark mode persist
+   - Git submodule issue (áp dụng hướng dẫn AI, xử lý .git không tồn tại)
+
+6. Tự setup toàn bộ CI/CD configuration không dùng AI:
+   - .github/ workflow files
+   - Branch naming convention
+   - Commit message format
 ```
-
-Gợi ý:
-
-- Tự phân tích yêu cầu.
-- Tự chọn giải pháp.
-- Tự chỉnh sửa code.
-- Tự kiểm tra output.
-- Tự thiết kế logic.
-- Tự sửa lỗi.
-- Tự viết báo cáo theo hiểu biết của mình.
-- Tự đánh giá ưu/nhược điểm của sản phẩm.
-- Tự thuyết trình và giải thích sản phẩm.
 
 ---
 
@@ -234,55 +322,71 @@ Gợi ý:
 
 | Nội dung | Trước khi dùng AI | Sau khi dùng AI | Cải thiện đạt được |
 |---|---|---|---|
-| Hiểu yêu cầu |  |  |  |
-| Phân tích bài toán |  |  |  |
-| Thiết kế giải pháp |  |  |  |
-| Code/Implementation |  |  |  |
-| Debug/Testing |  |  |  |
-| Báo cáo/Thuyết trình |  |  |  |
-| Làm việc nhóm |  |  |  |
+| Hiểu yêu cầu | Đã rõ (từ đề bài) | Đã rõ | Không thay đổi |
+| Phân tích bài toán | Tự phân tích | Tự phân tích | Không thay đổi |
+| Thiết kế giải pháp | Mất 2-3 giờ brainstorm | 30 phút + review AI suggestion | Tiết kiệm 80% thời gian design |
+| Code/Implementation | ~100 dòng/giờ | ~300-400 dòng/giờ | Tốc độ tăng 3-4x |
+| Debug/Testing | Giải quyết thủ công | AI giải thích nhanh hơn | Giảm 50% thời gian debug |
+| Báo cáo/Thuyết trình | Tự làm | Tự làm | Không dùng AI |
+| Làm việc nhóm | Phân chia theo skill | Phân chia theo skill | Không thay đổi |
 
 ---
 
 ## 11. Bài học về môn học
 
-Sau bài tập/project này, em/nhóm học được gì về kiến thức môn học?
-
 ```text
-Viết tại đây...
+Sau sprint đầu tiên của LuxeWay, mình học được:
+
+Kỹ thuật:
+- React Router v6: lazy loading + Suspense giúp performance tốt hơn rõ rệt
+- Zustand: state management đơn giản, ít boilerplate hơn Redux nhiều
+- Framer Motion: AnimatePresence + stagger tạo UX premium không cần CSS phức tạp
+- TypeScript: typing chặt chẽ giúp catch bug sớm, IDE support tốt hơn
+- Git workflow: branch naming, commit convention quan trọng khi làm nhóm
+
+Thiết kế hệ thống:
+- Feature-based folder structure giúp code dễ navigate và maintain
+- Service layer tách biệt API calls khỏi UI component
+- Mock service pattern hữu ích để develop frontend độc lập với backend
+
+E-commerce UX:
+- Filter + search + sort phải hoạt động mượt mà, debounce quan trọng
+- URL persistence cho filters giúp share link và back/forward navigation
+- Skeleton loading tốt hơn spinner cho grid-based layouts
+- Grid/List view toggle là UX pattern phổ biến cho marketplace
 ```
-
-Gợi ý:
-
-- Kiến thức kỹ thuật đã hiểu rõ hơn.
-- Kỹ năng lập trình đã cải thiện.
-- Cách thiết kế hệ thống.
-- Cách kiểm thử.
-- Cách phân tích yêu cầu.
-- Cách làm việc nhóm.
-- Cách giải quyết lỗi.
-- Cách trình bày sản phẩm.
-- Cách đọc và hiểu tài liệu kỹ thuật.
 
 ---
 
 ## 12. Bài học về sử dụng AI có trách nhiệm
 
-Sau bài tập/project này, em/nhóm học được gì về việc sử dụng AI một cách minh bạch, có trách nhiệm?
-
 ```text
-Viết tại đây...
+Sau sprint này, mình rút ra những bài học quan trọng về dùng AI:
+
+1. Không copy blindly:
+   Mỗi file AI sinh ra mình đều đọc từ đầu đến cuối trước khi dùng.
+   Có lần AI sinh code dùng useReducer cho state đơn giản → mình chuyển về useState.
+   
+2. Luôn test sau khi dùng code AI:
+   hasFilters bug, dark mode persist bug đều được phát hiện qua test manual.
+   AI không thể predict tất cả edge cases của project cụ thể.
+
+3. AI không biết business context:
+   AI không biết xe nào là luxury, giá bao nhiêu là realistic, validation rules gì.
+   Phần business logic luôn phải tự viết.
+
+4. Prompt tốt → kết quả tốt → ít phải chỉnh sửa:
+   Prompt cho MarketplacePage với đủ tech stack + requirements → kết quả tốt, ít phải fix.
+   Prompt "create a booking form" → kết quả tệ, phải viết lại từ đầu.
+
+5. Ghi nhận trung thực:
+   File này (REFLECTION.md), PROMPTS.md, AI_AUDIT_LOG.md, CHANGELOG.md được viết
+   dựa trên những gì mình thực sự làm. Không thêm thắt hay che giấu.
+
+6. AI là công cụ, không thay thế hiểu biết:
+   Mình vẫn cần hiểu React, TypeScript, Framer Motion để có thể đọc và chỉnh sửa code AI.
+   Nếu chỉ copy không hiểu → không debug được khi có lỗi.
 ```
-
-Gợi ý:
-
-- Không nên copy nguyên kết quả AI.
-- Cần kiểm tra lại mọi kết quả AI.
-- Cần hiểu nội dung trước khi nộp.
-- Cần ghi nhận việc sử dụng AI.
-- Cần biết AI có thể sai.
-- Cần tự chịu trách nhiệm với sản phẩm cuối cùng.
-- Cần dùng AI như công cụ hỗ trợ học tập, không thay thế hoàn toàn việc học.
 
 ---
 
@@ -290,40 +394,49 @@ Gợi ý:
 
 Đánh dấu các cam kết phù hợp.
 
-- [ ] Không dùng AI để làm toàn bộ bài mà không hiểu nội dung.
-- [ ] Không nộp nguyên văn kết quả AI nếu chưa kiểm tra.
-- [ ] Không che giấu việc sử dụng AI trong các phần quan trọng.
-- [ ] Không dùng AI để tạo nội dung sai lệch hoặc gian lận.
-- [ ] Không dùng AI thay thế hoàn toàn quá trình học.
-- [ ] Không bỏ qua yêu cầu, rubric hoặc hướng dẫn của giảng viên.
+- [x] Không dùng AI để làm toàn bộ bài mà không hiểu nội dung.
+- [x] Không nộp nguyên văn kết quả AI nếu chưa kiểm tra.
+- [x] Không che giấu việc sử dụng AI trong các phần quan trọng.
+- [x] Không dùng AI để tạo nội dung sai lệch hoặc gian lận.
+- [x] Không dùng AI thay thế hoàn toàn quá trình học.
+- [x] Không bỏ qua yêu cầu, rubric hoặc hướng dẫn của giảng viên.
 
 ### Giải thích thêm nếu có
 
 ```text
-Viết tại đây...
+Mình cam kết 100% các điểm trên. Tất cả 4 file docs (AI_AUDIT_LOG.md, PROMPTS.md, 
+CHANGELOG.md, REFLECTION.md) được viết dựa trên hoạt động thực tế của mình,
+không fake thông tin, không thêm bớt.
+
+Cụ thể những gì mình tự làm (không dùng AI): mock data, Zustand stores, 
+business logic, CSS design tokens, toàn bộ docs files này.
 ```
 
 ---
 
 ## 14. Kế hoạch cải thiện lần sau
 
-Lần sau em/nhóm sẽ sử dụng AI tốt hơn bằng cách nào?
-
 ```text
-Viết tại đây...
+Những điều mình sẽ làm tốt hơn trong sprint tiếp theo:
+
+1. Viết prompt tốt hơn:
+   - Luôn bắt đầu bằng "Context: [project name và description]"
+   - Thêm "Constraints: [màu sắc, font, design system tokens]" để AI sinh đúng style
+   - Yêu cầu AI giải thích các quyết định design quan trọng
+
+2. Ghi log ngay khi làm:
+   Lần này mình ghi PROMPTS.md và AI_AUDIT_LOG.md vào cuối sprint → mất một số chi tiết.
+   Lần sau sẽ ghi ngay sau mỗi lần dùng AI.
+
+3. Viết test song song:
+   Thêm unit test với Vitest cho các utility functions và service functions.
+   
+4. Test responsive từ sớm:
+   Mobile responsive cần test sớm hơn, không để đến cuối sprint.
+
+5. Thảo luận với nhóm trước khi áp dụng AI output:
+   Một số quyết định design nên review với cả nhóm trước khi implement.
 ```
-
-Gợi ý:
-
-- Viết prompt rõ hơn.
-- Cung cấp nhiều ngữ cảnh hơn cho AI.
-- Không hỏi AI làm toàn bộ bài.
-- Tập trung hỏi AI giải thích, gợi ý, review.
-- Tự kiểm tra kỹ hơn.
-- Ghi log thường xuyên hơn.
-- Liên kết log với commit/screenshot rõ hơn.
-- Thảo luận với nhóm trước khi áp dụng kết quả AI.
-- Đối chiếu kết quả AI với tài liệu môn học.
 
 ---
 
@@ -333,42 +446,82 @@ Sinh viên/nhóm tự đánh giá theo thang 1-5.
 
 | Tiêu chí | Điểm tự đánh giá 1-5 | Ghi chú |
 |---|:---:|---|
-| Ghi nhận việc dùng AI trung thực |  |  |
-| Prompt có mục tiêu rõ ràng |  |  |
-| Kiểm chứng kết quả AI |  |  |
-| Tự chỉnh sửa/cải tiến |  |  |
-| Hiểu nội dung đã nộp |  |  |
-| Reflection có chiều sâu |  |  |
-| Sử dụng AI có trách nhiệm |  |  |
+| Ghi nhận việc dùng AI trung thực | 5 | Ghi lại đầy đủ 7 lần dùng AI với chi tiết thực tế |
+| Prompt có mục tiêu rõ ràng | 4 | Prompt MarketplacePage và folder structure rất rõ, booking form ban đầu kém |
+| Kiểm chứng kết quả AI | 4 | Test manual kỹ, phát hiện bugs. Chưa có automated test |
+| Tự chỉnh sửa/cải tiến | 4 | Đã chỉnh sửa màu, validation, pagination, filter logic |
+| Hiểu nội dung đã nộp | 5 | Có thể giải thích từng phần code đã dùng |
+| Reflection có chiều sâu | 4 | Phản ánh trung thực, có ví dụ cụ thể |
+| Sử dụng AI có trách nhiệm | 5 | Không copy blindly, test kỹ, ghi nhận trung thực |
 
 ---
 
 ## 16. Câu hỏi tự vấn cuối bài
 
-Trả lời ngắn gọn các câu hỏi sau.
-
 ### 16.1. Nếu giảng viên hỏi về phần AI đã hỗ trợ, em/nhóm có giải thích lại được không?
 
 ```text
-Viết tại đây...
+Có. Mình có thể giải thích:
+- MarketplacePage: giải thích tại sao dùng useCallback + debounce cho search,
+  tại sao dùng AnimatePresence cho sidebar, cách hasFilters logic hoạt động
+- App.tsx: giải thích React.lazy + Suspense, tại sao cần ProtectedRoute, 
+  cách nested routes hoạt động trong React Router v6
+- git submodule fix: giải thích embedded .git vấn đề gì, tại sao git rm --cached giải quyết được
+
+Tất cả phần AI sinh ra mình đều đọc kỹ và hiểu trước khi dùng.
 ```
 
 ### 16.2. Nếu không có AI, em/nhóm có thể tự làm lại phần quan trọng nhất không?
 
 ```text
-Viết tại đây...
+Có thể, nhưng sẽ chậm hơn nhiều. 
+MarketplacePage (414 dòng) với filter + debounced search + animation:
+- Không có AI: ước tính 12-16 giờ để viết từ đầu
+- Có AI: 3-4 giờ (đọc, test, chỉnh sửa code AI sinh ra)
+
+Mình biết React, TypeScript đủ để tự viết - chỉ là chậm hơn.
+Cấu trúc logic tương tự mình có thể reproduce được nếu giảng viên yêu cầu.
 ```
 
 ### 16.3. Phần nào trong bài thể hiện rõ nhất năng lực thật sự của em/nhóm?
 
 ```text
-Viết tại đây...
+Phần thể hiện rõ nhất năng lực thật sự:
+
+1. Design system (globals.css): 
+   Tự thiết kế CSS variables, luxury color palette, utility classes mà không có AI.
+   Thể hiện khả năng thiết kế UI/UX coherent.
+
+2. Mock data (vehicles.ts):
+   Tự research và tạo 20+ xe với pricing realistic, đúng categories.
+   Thể hiện khả năng tư duy về domain model.
+
+3. Zustand stores:
+   Tự thiết kế state structure và actions cho authStore + uiStore.
+   Thể hiện hiểu về state management pattern.
+
+4. Business logic trong BookingWizardPage:
+   Tính giá, date validation, promo code - tất cả tự viết.
+   Thể hiện khả năng translate business requirements thành code.
 ```
 
 ### 16.4. Em/nhóm muốn cải thiện kỹ năng nào sau bài này?
 
 ```text
-Viết tại đây...
+1. TypeScript nâng cao: generic types, conditional types, utility types
+   (để định nghĩa types phức tạp hơn cho LuxeWay)
+
+2. Testing với Vitest + React Testing Library:
+   (sprint này chưa có test - cần cải thiện)
+
+3. Performance optimization:
+   React.memo, useMemo, virtualization cho large vehicle lists
+
+4. WebSocket / real-time:
+   Cho tính năng messaging và real-time notifications
+
+5. Viết prompt tốt hơn:
+   Cung cấp đủ constraints (màu, design tokens) để AI sinh đúng style ngay từ đầu
 ```
 
 ---
@@ -386,4 +539,4 @@ Sinh viên/nhóm hiểu rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-|  |  |
+| Nguyễn Văn Dạng - DE190324 | 2026-05-21 |
