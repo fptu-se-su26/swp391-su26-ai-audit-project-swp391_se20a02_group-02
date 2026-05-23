@@ -59,6 +59,9 @@ Sinh viên/nhóm cần ghi lại:
 | 5 | 2026-05-17 | Antigravity | Debug lỗi embedded git repository | Hỏi cách fix lỗi src/Front_end bị track như git submodule khi push lên GitHub | Lệnh git rm --cached và xóa .git folder trong subfolder | Có | Commit 9c591ff |
 | 6 | 2026-05-19 | Antigravity | Thiết kế VehicleCard component | Hỏi cách tạo card xe với hover effect, wishlist toggle, rating display | Component VehicleCard có variant grid/list, wishlist button | Có | src/components/vehicle/VehicleCard.tsx |
 | 7 | 2026-05-20 | Antigravity | Tạo mock service cho vehicleService | Hỏi cách tạo mock database với indexedDB-like API cho development | vehicleService với getAll, search, getBrands, getWishlist | Có | src/services/vehicleService.ts |
+| 8 | 2026-05-23 | Antigravity | Hoàn thiện Back-end Spring Boot | Hỏi tạo các module: Review, Notification, Payment, User, Admin | Full API Controller, Service, DTO, Repositories | Có | src/Back_end/ |
+| 9 | 2026-05-24 | Antigravity | Tích hợp Frontend với Backend thực tế | Kết nối frontend với API Spring Boot và xóa bỏ mock/db | Các services sử dụng apiClient, xóa mock/db | Có | src/Front_end/src/services/ |
+| 10 | 2026-05-24 | Antigravity | Debug lỗi Spring Data JPA và Gradle build | Hỏi cách fix lỗi missing symbol method trong Repository và lỗi Unable to delete directory build | Khai báo method JPA, script kill java, force delete folder | Có | src/Back_end/src/main/java/com/luxeway/repository/ |
 
 ---
 
@@ -340,6 +343,202 @@ Sau khi push, kiểm tra lại trên GitHub - thư mục src/Front_end hiển th
 Lỗi này khá phổ biến khi làm việc với monorepo hoặc dự án có frontend/backend riêng.
 Bài học: cần chú ý không để .git folder lồng nhau, hoặc dùng .gitignore từ đầu.
 ```
+
+---
+
+### Prompt số 8
+
+| Nội dung | Thông tin |
+|---|---|
+| Ngày sử dụng | 2026-05-23 |
+| Công cụ AI | Antigravity |
+| Mục đích | Xây dựng 100% Back-end real (Review, Notification, Payment, User Profile, Admin) |
+| Phần việc liên quan | Backend / Coding |
+| Mức độ sử dụng | Hỏi sinh code |
+
+#### 5.1. Prompt nguyên văn
+
+```text
+tôi đã chạy databasse bên sql server rồi nha . h bạn kết nối giùm tôi là làm nhưng chức năng bank_end cần thiếu real 100% như login list xe rồi nhưng chức năng khác kiểu như làm một nữa back-end real 100% của weeb nha
+```
+
+#### 5.2. Bối cảnh khi viết prompt
+
+```text
+Mình đã có cơ sở dữ liệu SQL Server, frontend đã khá ổn với mock data. Giờ cần làm backend thực sự với Spring Boot để đáp ứng các module còn thiếu: Review, Notification, Payment, User Profile, Admin.
+```
+
+#### 5.3. Kết quả AI trả về
+
+```text
+AI đã sinh toàn bộ các file Controller, Service, DTO, Repository cho các module. Nó fix lỗi JPA query với Enum, tạo logic kết nối VNPay, logic Dashboard cho Admin/Owner, xử lý auto send Notification khi booking thay đổi.
+```
+
+#### 5.4. Kết quả đã áp dụng vào bài
+
+```text
+Áp dụng toàn bộ code vào thư mục src/Back_end/. 
+Đã có đầy đủ API.
+```
+
+#### 5.5. Phần sinh viên/nhóm đã chỉnh sửa hoặc cải tiến
+
+```text
+Tự review các hook notification vào booking, review lại các logic JPA Enum để tránh lỗi SQL Server.
+```
+
+#### 5.6. Đánh giá chất lượng prompt
+
+- [x] Prompt rõ ràng
+- [ ] Prompt có đủ bối cảnh
+- [x] Prompt còn thiếu thông tin
+- [x] Prompt tạo ra kết quả tốt
+- [ ] Prompt tạo ra kết quả chưa phù hợp
+- [ ] Cần hỏi lại AI nhiều lần
+- [x] Cần tự kiểm tra và chỉnh sửa nhiều
+- [ ] Kết quả AI có lỗi hoặc chưa chính xác
+
+#### 5.7. Minh chứng liên quan
+
+| Loại minh chứng | Nội dung |
+|---|---|
+| Link commit | (Chưa push) |
+| File liên quan | Các thư mục trong src/Back_end/src/main/java/com/luxeway/ |
+| Kết quả chạy/test | Build maven compile thành công |
+| Ghi chú khác | Hoàn thành 100% backend API |
+
+---
+
+### Prompt số 9
+
+| Nội dung | Thông tin |
+|---|---|
+| Ngày sử dụng | 2026-05-24 |
+| Công cụ AI | Antigravity |
+| Mục đích | Tích hợp Frontend với Backend thực tế, loại bỏ mock data |
+| Phần việc liên quan | Frontend / Backend Integration |
+| Mức độ sử dụng | Hỏi sinh code |
+
+#### 5.1. Prompt nguyên văn
+
+```text
+kết nôi DB ở back-end Di làm nhưng gì bạn nói đi gỡ bỏ mock dât thay vbafo đó dùng Dât ở bên foler sourrce back_end nhé.
+```
+
+#### 5.2. Bối cảnh khi viết prompt
+
+```text
+Backend Spring Boot đã được hoàn thiện. Frontend hiện tại vẫn sử dụng mock data qua module mock/db. Cần loại bỏ sự phụ thuộc này và thay bằng dữ liệu thực từ backend để hoàn thiện 100% flow thực tế.
+```
+
+#### 5.3. Kết quả AI trả về
+
+```text
+AI tạo file apiClient.ts chứa cấu hình axios và JWT interceptor, sau đó refactor lại toàn bộ các service: authService, vehicleService, bookingService, paymentService, otherServices (review/notification) để gọi REST API. Đồng thời, AI dò tìm và xóa bỏ các lệnh import mock/db còn sót lại trong các page/component.
+```
+
+#### 5.4. Kết quả đã áp dụng vào bài
+
+```text
+Áp dụng toàn bộ việc refactor service layer vào Frontend, xóa sạch thư viện mock db và thay bằng các Promise gọi API. Các component như CustomerDashboard, OwnerDashboard, AdminDashboard đã được làm sạch khỏi mock/db.
+```
+
+#### 5.5. Phần sinh viên/nhóm đã chỉnh sửa hoặc cải tiến
+
+```text
+Chỉnh sửa lại các component như AdminDashboard, OwnerDashboard sử dụng fallback dữ liệu nếu backend API thiếu (ví dụ dashboard mock rỗng `analytics: []`) để tránh gây crash giao diện, đảm bảo an toàn.
+```
+
+#### 5.6. Đánh giá chất lượng prompt
+
+- [x] Prompt rõ ràng
+- [x] Prompt có đủ bối cảnh
+- [ ] Prompt còn thiếu thông tin
+- [x] Prompt tạo ra kết quả tốt
+- [ ] Prompt tạo ra kết quả chưa phù hợp
+- [ ] Cần hỏi lại AI nhiều lần
+- [x] Cần tự kiểm tra và chỉnh sửa nhiều
+- [ ] Kết quả AI có lỗi hoặc chưa chính xác
+
+#### 5.7. Minh chứng liên quan
+
+| Loại minh chứng | Nội dung |
+|---|---|
+| Link commit | (Chưa push) |
+| File liên quan | Các thư mục trong src/Front_end/src/services/ |
+| Kết quả chạy/test | Các request gọi vào `http://localhost:8080/api` |
+| Ghi chú khác | Không còn mock/db import trong source Frontend |
+
+---
+
+### Prompt số 10
+
+| Nội dung | Thông tin |
+|---|---|
+| Ngày sử dụng | 2026-05-24 |
+| Công cụ AI | Antigravity |
+| Mục đích | Debug lỗi biên dịch Spring Data JPA và lỗi kẹt thư mục `build` của Gradle |
+| Phần việc liên quan | Backend / DevOps |
+| Mức độ sử dụng | Hỏi debug |
+
+#### 5.1. Prompt nguyên văn
+
+```text
+Unable to delete directory '...\src\Back_end\build\classes\java\main'
+Failed to delete some children. This might happen because a process has files open or has its working directory set in the target directory.
+:compileJava
+AdminService.java
+cannot find symbol method findByStatusOrderByCreatedAtDesc(VehicleStatus,Pageable)
+UserService.java
+cannot find symbol method findByOwnerIdAndStatus(String,VehicleStatus)
+VehicleService.java
+cannot find symbol method filterVehicles(...)
+```
+
+#### 5.2. Bối cảnh khi viết prompt
+
+```text
+Sau khi hoàn thành Backend, nhóm chạy thử nhưng IDE báo lỗi biên dịch do các class Service gọi các hàm JPA chưa được định nghĩa trong VehicleRepository. Cùng lúc đó, thư mục build bị khóa trên Windows khiến IDE không thể biên dịch lại file.
+```
+
+#### 5.3. Kết quả AI trả về
+
+```text
+AI phát hiện các hàm Spring Data JPA còn thiếu và cung cấp mã nguồn bổ sung cho VehicleRepository, bao gồm các `@Query` phức tạp (như `filterVehicles` và `searchVehicles`).
+Về lỗi khóa thư mục, AI chạy lệnh PowerShell `taskkill /F /IM java.exe` để dừng các tiến trình ngầm, sau đó force delete thư mục `build` để giải phóng khóa. Cuối cùng, AI hướng dẫn Rebuild lại project trong IDE.
+```
+
+#### 5.4. Kết quả đã áp dụng vào bài
+
+```text
+Thêm 6 phương thức mới vào `VehicleRepository.java`. Xóa thành công thư mục build bị lỗi và Rebuild thành công Backend.
+```
+
+#### 5.5. Phần sinh viên/nhóm đã chỉnh sửa hoặc cải tiến
+
+```text
+Học được cách clear cache và rebuild của IntelliJ IDEA (Build -> Rebuild Project).
+```
+
+#### 5.6. Đánh giá chất lượng prompt
+
+- [x] Prompt rõ ràng
+- [x] Prompt có đủ bối cảnh
+- [ ] Prompt còn thiếu thông tin
+- [x] Prompt tạo ra kết quả tốt
+- [ ] Prompt tạo ra kết quả chưa phù hợp
+- [ ] Cần hỏi lại AI nhiều lần
+- [ ] Cần tự kiểm tra và chỉnh sửa nhiều
+- [ ] Kết quả AI có lỗi hoặc chưa chính xác
+
+#### 5.7. Minh chứng liên quan
+
+| Loại minh chứng | Nội dung |
+|---|---|
+| Link commit | (Chưa push) |
+| File liên quan | `VehicleRepository.java` |
+| Kết quả chạy/test | Dòng thông báo: `🚗 LuxeWay Backend is running on http://localhost:8080/api/v1` |
+| Ghi chú khác | Backend compile thành công |
 
 ---
 

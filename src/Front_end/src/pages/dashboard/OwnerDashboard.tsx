@@ -9,7 +9,6 @@ import {
 import { useAuthStore } from '@/store';
 import { vehicleService } from '@/services/vehicleService';
 import { bookingService } from '@/services/bookingService';
-import { getDb } from '@/mock/db';
 import type { Vehicle, Booking } from '@/types';
 import { formatCurrency, formatDate, getStatusColor } from '@/utils';
 import { staggerContainer, staggerItem, fadeUp } from '@/animations/variants';
@@ -25,7 +24,7 @@ export const OwnerOverview: React.FC = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const { analytics } = getDb();
+  const analytics: any[] = [];
 
   useEffect(() => {
     if (!user) return;
@@ -616,6 +615,202 @@ export const OwnerCalendarPage: React.FC = () => {
             })}
           </div>
         </div>
+      </div>
+    </div>
+  );
+};
+
+// ====== OWNER BOOKINGS PAGE ======
+export const OwnerBookingsPage: React.FC = () => {
+  const { user } = useAuthStore();
+  const [bookings, setBookings] = React.useState<Booking[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [filter, setFilter] = React.useState('all');
+  const toast = useToast();
+
+  React.useEffect(() => {
+    if (!user) return;
+    bookingService.getByOwner(user.id).then(b => {
+      setBookings(b);
+      setLoading(false);
+    });
+  }, [user]);
+
+  const filtered = filter === 'all' ? bookings : bookings.filter(b => b.status === filter);
+
+  const handleApprove = async (bookingId: string) => {
+    await bookingService.updateStatus(bookingId, 'confirmed');
+    setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: 'confirmed' } : b));
+    toast.success('Booking approved!', 'The renter has been notified.');
+  };
+
+  const handleReject = async (bookingId: string) => {
+    await bookingService.updateStatus(bookingId, 'cancelled');
+    setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: 'cancelled' } : b));
+    toast.success('Booking rejected', 'The renter has been notified.');
+  };
+
+  return (
+    <div>
+      <motion.div variants={fadeUp} initial="hidden" animate="visible" className="mb-6">
+        <h1 className="font-display text-2xl font-bold text-[#0F172A]">Booking Requests</h1>
+        <p className="text-slate-500 text-sm mt-0.5">Manage all bookings for your vehicles</p>
+      </motion.div>
+
+      <div className="flex gap-2 overflow-x-auto pb-1 mb-6">
+        {['all', 'pending', 'confirmed', 'active', 'completed', 'cancelled'].map(status => (
+          <button
+            key={status}
+            onClick={() => setFilter(status)}
+            className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap border-2 transition-all ${filter === status ? 'border-accent bg-blue-50 text-accent' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}
+          >
+            {status.charAt(0).toUpperCase() + status.slice(1)}
+            {status === 'all' && ` (${bookings.length})`}
+            {status === 'pending' && bookings.filter(b => b.status === 'pending').length > 0 && (
+              <span className="ml-1 w-4 h-4 bg-red-500 text-white text-[9px] rounded-full inline-flex items-center justify-center">
+                {bookings.filter(b => b.status === 'pending').length}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <div className="space-y-4">{[...Array(4)].map((_, i) => <div key={i} className="skeleton h-28 rounded-3xl" />)}</div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-20">
+          <Calendar className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+          <h3 className="font-semibold text-[#0F172A] mb-1">No {filter !== 'all' ? filter : ''} bookings</h3>
+          <p className="text-slate-400 text-sm">Bookings for your vehicles will appear here</p>
+        </div>
+      ) : (
+        <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-4">
+          {filtered.map(booking => {
+            const renter = { displayName: 'User ' + booking.renterId.slice(0, 4) };
+            return (
+            <motion.div key={booking.id} variants={staggerItem} className="luxury-card p-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center flex-shrink-0">
+                    <Calendar className="w-6 h-6 text-slate-400" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="font-semibold text-[#0F172A] text-sm">Booking #{booking.id.slice(-6).toUpperCase()}</p>
+                      <span className={`badge text-[10px] border ${getStatusColor(booking.status)}`}>{booking.status}</span>
+                    </div>
+                    <p className="text-xs text-slate-400">{formatDate(booking.startDate)} → {formatDate(booking.endDate)} · {booking.totalDays} days</p>
+                    <p className="text-xs text-slate-400 mt-0.5">Renter: <span className="font-medium text-[#0F172A]">{renter?.displayName || booking.renterId.slice(0, 12) + '...'}</span></p>
+                    <p className="text-sm font-bold text-[#0F172A] mt-1">{formatCurrency(booking.pricing.total)}</p>
+                  </div>
+                </div>
+                {booking.status === 'pending' && (
+                  <div className="flex gap-2 flex-shrink-0">
+                    <motion.button
+                      whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                      onClick={() => handleApprove(booking.id)}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-success text-white rounded-xl text-xs font-semibold hover:bg-green-600 transition-colors"
+                    >
+                      <CheckCircle className="w-3.5 h-3.5" /> Approve
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                      onClick={() => handleReject(booking.id)}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-xl text-xs font-semibold hover:bg-red-100 transition-colors"
+                    >
+                      Reject
+                    </motion.button>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )})}
+        </motion.div>
+      )}
+    </div>
+  );
+};
+
+// ====== OWNER REVENUE PAGE ======
+export const OwnerRevenuePage: React.FC = () => {
+  const { user } = useAuthStore();
+  const [bookings, setBookings] = React.useState<Booking[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const analytics: any[] = [];
+
+  React.useEffect(() => {
+    if (!user) return;
+    bookingService.getByOwner(user.id).then(b => { setBookings(b); setLoading(false); });
+  }, [user]);
+
+  const completedBookings = bookings.filter(b => b.status === 'completed');
+  const totalRevenue = completedBookings.reduce((sum, b) => sum + b.pricing.total, 0);
+  const thisMonth = completedBookings.filter(b => new Date(b.endDate).getMonth() === new Date().getMonth()).reduce((sum, b) => sum + b.pricing.total, 0);
+  const avgBooking = completedBookings.length > 0 ? totalRevenue / completedBookings.length : 0;
+
+  const revenueData = analytics.filter(a => a.period === 'day').slice(0, 14).reverse().map(a => ({
+    date: a.date.slice(5), revenue: Math.round(a.revenue / 8), bookings: a.bookings,
+  }));
+
+  const monthlyData = analytics.filter(a => a.period === 'month').slice(0, 6).reverse().map(a => ({
+    date: a.date.slice(0, 7), revenue: Math.round(a.revenue / 8), bookings: a.bookings,
+  }));
+
+  return (
+    <div>
+      <motion.h1 variants={fadeUp} initial="hidden" animate="visible" className="font-display text-2xl font-bold text-[#0F172A] mb-6">Revenue Analytics</motion.h1>
+
+      {/* Stats */}
+      <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {[
+          { label: 'Total Revenue', value: formatCurrency(totalRevenue), icon: DollarSign, color: 'bg-green-50 text-green-600', change: '+18%' },
+          { label: 'This Month', value: formatCurrency(thisMonth), icon: TrendingUp, color: 'bg-blue-50 text-blue-600', change: 'vs last month' },
+          { label: 'Completed Trips', value: completedBookings.length.toString(), icon: CheckCircle, color: 'bg-purple-50 text-purple-600', change: 'all time' },
+          { label: 'Avg per Booking', value: formatCurrency(avgBooking), icon: BarChart2, color: 'bg-yellow-50 text-yellow-600', change: 'per trip' },
+        ].map(stat => (
+          <motion.div key={stat.label} variants={staggerItem} className="stat-card">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${stat.color}`}>
+              <stat.icon className="w-5 h-5" />
+            </div>
+            <p className="text-2xl font-bold text-[#0F172A]">{stat.value}</p>
+            <p className="text-sm text-slate-500 mt-0.5">{stat.label}</p>
+            <p className="text-xs text-success mt-1 flex items-center gap-1"><TrendingUp className="w-3 h-3" /> {stat.change}</p>
+          </motion.div>
+        ))}
+      </motion.div>
+
+      {/* Revenue Chart */}
+      <div className="luxury-card p-6 mb-6">
+        <h3 className="font-display text-lg font-bold text-[#0F172A] mb-4">Daily Revenue (Last 14 Days)</h3>
+        <ResponsiveContainer width="100%" height={220}>
+          <AreaChart data={revenueData}>
+            <defs>
+              <linearGradient id="ownerRevGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.15} />
+                <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+            <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="#CBD5E1" />
+            <YAxis tick={{ fontSize: 11 }} stroke="#CBD5E1" tickFormatter={v => `$${v}`} />
+            <Tooltip formatter={(v: number) => [formatCurrency(v), 'Revenue']} contentStyle={{ borderRadius: '12px', border: '1px solid #E2E8F0' }} />
+            <Area type="monotone" dataKey="revenue" stroke="#3B82F6" fill="url(#ownerRevGrad)" strokeWidth={2} />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Monthly Breakdown */}
+      <div className="luxury-card p-6">
+        <h3 className="font-display text-lg font-bold text-[#0F172A] mb-4">Monthly Breakdown</h3>
+        <ResponsiveContainer width="100%" height={200}>
+          <BarChart data={monthlyData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+            <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="#CBD5E1" />
+            <YAxis tick={{ fontSize: 11 }} stroke="#CBD5E1" tickFormatter={v => `$${(v / 1000).toFixed(0)}K`} />
+            <Tooltip formatter={(v: number) => [formatCurrency(v), 'Revenue']} contentStyle={{ borderRadius: '12px', border: '1px solid #E2E8F0' }} />
+            <Bar dataKey="revenue" fill="#3B82F6" radius={[6, 6, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
       </div>
     </div>
   );

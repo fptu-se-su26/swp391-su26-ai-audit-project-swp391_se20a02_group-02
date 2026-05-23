@@ -13,12 +13,14 @@ import { formatCurrency, debounce } from '@/utils';
 import { fadeUp, staggerContainer, staggerItem } from '@/animations/variants';
 
 const CATEGORIES: { value: VehicleCategory; label: string }[] = [
-  { value: 'supercar', label: 'Supercars' },
-  { value: 'suv', label: 'Luxury SUVs' },
-  { value: 'luxury', label: 'Ultra Luxury' },
-  { value: 'convertible', label: 'Convertibles' },
-  { value: 'classic', label: 'Classics' },
+  { value: 'motorbike', label: 'Motorbike' },
+  { value: 'economy', label: 'Economy' },
+  { value: 'family', label: 'Family' },
+  { value: 'suv', label: 'SUV' },
+  { value: 'city_car', label: 'City Car' },
+  { value: 'business', label: 'Business' },
   { value: 'electric', label: 'Electric' },
+  { value: 'tourism', label: 'Tourism' },
 ];
 
 const SORT_OPTIONS = [

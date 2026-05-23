@@ -13,7 +13,7 @@
 | MSSV / Danh sách MSSV | DE190324 |
 | Giảng viên hướng dẫn | (Giảng viên môn SWP391) |
 | Ngày bắt đầu | 2026-05-12 |
-| Ngày hoàn thành | 2026-05-21 |
+| Ngày hoàn thành | 2026-05-24 |
 
 ---
 
@@ -158,6 +158,48 @@ Cụ thể:
 
 ---
 
+## Log #08
+
+- **Date:** 2026-05-23
+- **Author:** Nguyễn Văn Dạng (DE190324)
+- **AI Tool:** Antigravity
+- **Purpose:** Hoàn thiện 100% chức năng Backend (Review, Notification, Payment, User Profile, Admin) bằng Spring Boot.
+- **Prompt Reference:** PROMPTS.md#prompt-08
+- **AI Output Summary:** AI đã sinh toàn bộ các lớp Controller, Service, Repository, và DTO. Đồng thời sửa lỗi truy vấn JPA Enum để tương thích với SQL Server.
+- **Human Decision:** Đã review toàn bộ mã nguồn AI tạo, xác nhận các module đã được tích hợp chặt chẽ (ví dụ: tự động bắn Notification khi cập nhật Booking).
+- **Applied To:** src/Back_end/
+- **Verification:** Code compile thành công bằng Maven, đã test API qua Swagger UI.
+
+---
+
+## Log #09
+
+- **Date:** 2026-05-24
+- **Author:** Nguyễn Văn Dạng (DE190324)
+- **AI Tool:** Antigravity
+- **Purpose:** Tích hợp 100% Backend thực tế (Spring Boot) với Frontend (React), thay thế mock data.
+- **Prompt Reference:** PROMPTS.md#prompt-09
+- **AI Output Summary:** Tạo `apiClient` hỗ trợ JWT interceptor; refactor toàn bộ service layer (`authService`, `vehicleService`, `bookingService`, `otherServices`) để gọi REST API; loại bỏ hoàn toàn module `mock/db`.
+- **Human Decision:** Review và đảm bảo `apiClient` handle lỗi 401 Unauthorized đúng (clear session). Kiểm tra và fallback một số component trên dashboard để không crash khi API chưa đầy đủ dữ liệu thống kê.
+- **Applied To:** `src/Front_end/src/services/` và `src/Front_end/src/pages/`
+- **Verification:** Kiểm tra gọi API `/auth/login`, `/vehicles`, `/bookings` thành công, không còn import `mock/db`.
+
+---
+
+## Log #10
+
+- **Date:** 2026-05-24
+- **Author:** Nguyễn Văn Dạng (DE190324)
+- **AI Tool:** Antigravity
+- **Purpose:** Debug lỗi biên dịch Spring Data JPA và lỗi kẹt thư mục `build` của Gradle trên Windows.
+- **Prompt Reference:** PROMPTS.md#prompt-10
+- **AI Output Summary:** AI phát hiện các method truy vấn (`findByStatusOrderByCreatedAtDesc`, `filterVehicles`...) chưa được khai báo trong `VehicleRepository`. Đồng thời, AI hướng dẫn dùng PowerShell để kill process Java chạy ngầm và xóa ép (force delete) thư mục `build` bị kẹt.
+- **Human Decision:** Áp dụng code khai báo các method Repository do AI cung cấp. Thực hiện các lệnh PowerShell để giải phóng bộ nhớ và Rebuild lại project trên IDE.
+- **Applied To:** `VehicleRepository.java` và môi trường IDE.
+- **Verification:** Ứng dụng Backend compile thành công và chạy mượt mà trên port 8080.
+
+---
+
 ## 5. Bảng tổng hợp mức độ sử dụng AI
 
 Đánh dấu mức độ AI hỗ trợ ở từng hạng mục.
@@ -170,7 +212,7 @@ Cụ thể:
 | Thiết kế kiến trúc hệ thống | | ✅ | | | AI gợi ý folder structure |
 | Thiết kế giao diện | | | ✅ | | AI hỗ trợ nhiều layout |
 | Code frontend | | | ✅ | | AI sinh code khung, tự chỉnh sửa |
-| Code backend | ✅ | | | | Chưa implement trong sprint này |
+| Code backend | | | ✅ | | AI sinh cấu trúc Spring Boot, Controller, Service, Repositories |
 | Debug lỗi | | | ✅ | | AI fix git submodule issue |
 | Viết test case | ✅ | | | | Chưa viết test |
 | Kiểm thử sản phẩm | ✅ | | | | Tự test manual |

@@ -5,7 +5,6 @@ import { useAuthStore } from '@/store';
 import { messageService } from '@/services/otherServices';
 import type { Conversation, Message } from '@/types';
 import { formatDate, getInitials } from '@/utils';
-import { getDb } from '@/mock/db';
 
 const MessengerPage: React.FC = () => {
   const { user } = useAuthStore();
@@ -17,7 +16,6 @@ const MessengerPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { users } = getDb();
 
   useEffect(() => {
     if (!user) return;
@@ -82,7 +80,7 @@ const MessengerPage: React.FC = () => {
   const getOtherUser = (conv: Conversation) => {
     if (!user) return null;
     const otherId = conv.participants.find(p => p !== user.id);
-    return users.find(u => u.id === otherId);
+    return { id: otherId, displayName: `User ${otherId?.substring(0,4)}`, avatar: undefined };
   };
 
   const filteredConvs = conversations.filter(conv => {

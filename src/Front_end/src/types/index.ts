@@ -2,8 +2,8 @@
 // LUXEWAY — COMPLETE TYPE DEFINITIONS
 // ============================================================
 
-export type UserRole = 'customer' | 'owner' | 'business' | 'admin';
-export type VehicleCategory = 'supercar' | 'suv' | 'luxury' | 'classic' | 'convertible' | 'electric' | 'van';
+export type UserRole = 'customer' | 'owner' | 'admin';
+export type VehicleCategory = 'economy' | 'family' | 'business' | 'electric' | 'motorbike' | 'suv' | 'city_car' | 'tourism';
 export type BookingStatus = 'pending' | 'confirmed' | 'active' | 'completed' | 'cancelled' | 'disputed';
 export type PaymentStatus = 'pending' | 'processing' | 'succeeded' | 'failed' | 'refunded';
 export type VehicleStatus = 'available' | 'rented' | 'maintenance' | 'pending_approval';
@@ -44,14 +44,14 @@ export interface User {
   documents: UserDocument[];
   stripeCustomerId: string;
   isActive: boolean;
-  businessId?: string;
+  accountType?: 'individual' | 'business';
+  companyName?: string;
 }
 
 // ====== VEHICLE ======
 export interface Vehicle {
   id: string;
   ownerId: string;
-  businessId?: string;
   name: string;
   brand: string;
   model: string;
@@ -264,48 +264,14 @@ export interface Review {
   updatedAt: string;
 }
 
-// ====== BUSINESS ======
-export interface Business {
-  id: string;
-  name: string;
-  legalName: string;
-  description: string;
-  logo: string;
-  coverImage: string;
-  email: string;
-  phone: string;
-  website?: string;
-  rating: number;
-  totalReviews: number;
-  totalVehicles: number;
-  totalEmployees: number;
-  verified: boolean;
-  branches: BusinessBranch[];
-  employees: string[];
-  ownerId: string;
-  createdAt: string;
-  revenue: number;
-  tier: 'basic' | 'premium' | 'enterprise';
-}
 
-// ====== BUSINESS BRANCH ======
-export interface BusinessBranch {
-  id: string;
-  name: string;
-  address: string;
-  city: string;
-  lat: number;
-  lng: number;
-  phone: string;
-  isMain: boolean;
-}
 
 // ====== ANALYTICS ======
 export interface AnalyticsData {
   id: string;
   vehicleId?: string;
   ownerId?: string;
-  businessId?: string;
+
   period: 'day' | 'week' | 'month' | 'year';
   date: string;
   revenue: number;
