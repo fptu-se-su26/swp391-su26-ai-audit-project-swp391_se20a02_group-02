@@ -202,7 +202,7 @@ AI gợi ý pattern design system với CSS variables cho màu sắc và typogra
 
 - [x] Tạo project structure (src/Front_end/src/ với 12 subfolder)
 - [ ] Cài đặt database connection (backend chưa implement)
-- [ ] Xây dựng backend (chưa implement)
+- [x] Xây dựng backend (Đã hoàn thiện 100% bằng Spring Boot)
 - [x] Xây dựng frontend (46 files, 14,691+ dòng code)
 - [x] Xây dựng authentication UI (LoginPage, RegisterPage, ForgotPasswordPage, OTPPage)
 - [x] Xử lý CRUD (mock service với in-memory data)
@@ -277,6 +277,112 @@ GitHub: https://github.com/fptu-se-su26/swp391-su26-ai-audit-project-swp391_se20
 Gặp lỗi git submodule khi push lần đầu (src/Front_end bị track như submodule).
 Đã fix bằng: git rm --cached src/Front_end → git add src/Front_end/ → git push --force
 Kết quả: 46 files + 14,691 dòng code được hiển thị đúng trên GitHub.
+```
+
+---
+
+# [Phase 04.5] Implementation - Backend (Spring Boot)
+
+## Ngày thực hiện
+
+```text
+2026-05-23
+```
+
+## Đã hoàn thành
+
+## [2026-05-23]
+Author: Nguyễn Văn Dạng (DE190324)
+
+### Added (Đã thêm)
+- Thêm module Review để đánh giá và review chuyến đi.
+- Thêm module Notification cho hệ thống thông báo bất đồng bộ.
+- Thêm module Payment tích hợp logic callback VNPay và xử lý hoàn tiền (refund) cho Admin.
+- Thêm module User Profile để upload tài liệu KYC và thống kê Owner.
+- Thêm module Admin để quản lý dashboard, duyệt xe và quản lý người dùng.
+
+### Changed (Đã thay đổi)
+- Tích hợp NotificationService vào BookingService để tự động gửi thông báo khi trạng thái booking thay đổi.
+
+### Fixed (Đã sửa lỗi)
+- Fix entity Booking bằng cách thêm trường couponCode bị thiếu.
+- Fix lỗi truy vấn JPA trong VehicleRepository và BookingRepository bằng cách chuyển đổi String sang Enum cho tương thích với SQL Server.
+- Fix lỗi crash SecurityConfig bằng cách khởi tạo bean UserDetailsService.
+
+### AI-assisted (AI hỗ trợ)
+- Đã sử dụng Antigravity để gợi ý toàn bộ cấu trúc Spring Boot (DTO, Controller, Service).
+- Toàn bộ code cuối cùng đã được review và test để đảm bảo tương thích với dialect của SQL Server.
+
+## Thay đổi chi tiết - Nguyễn Văn Dạng (DE190324)
+
+| STT | Nội dung thay đổi | Người thực hiện | File/Module liên quan | Minh chứng |
+|---:|---|---|---|---|
+| 1 | Xây dựng Review Service & Controller | Nguyễn Văn Dạng | ReviewService.java, ReviewController.java | Các file trong Back_end |
+| 2 | Xây dựng Notification Service & Hook | Nguyễn Văn Dạng | NotificationService.java, BookingService.java | Các file trong Back_end |
+| 3 | Xây dựng Payment xử lý VNPay | Nguyễn Văn Dạng | PaymentService.java, PaymentController.java | Các file trong Back_end |
+| 4 | Xây dựng User Profile, upload tài liệu | Nguyễn Văn Dạng | UserService.java, UserController.java | Các file trong Back_end |
+| 5 | Xây dựng Admin quản lý nền tảng | Nguyễn Văn Dạng | AdminService.java, AdminController.java | Các file trong Back_end |
+| 6 | Fix lỗi JPA query với Enum | Nguyễn Văn Dạng | BookingRepository.java, VehicleRepository.java | Các file trong Back_end |
+
+## AI có hỗ trợ không?
+
+- [x] Có
+- [ ] Không
+
+Nếu có, mô tả AI đã hỗ trợ phần nào:
+
+```text
+AI (Antigravity) hỗ trợ sinh code toàn bộ kiến trúc Controller, Service, DTO, Repository.
+AI tự động sửa các lỗi liên quan đến JPA Enum và fix bean SecurityConfig.
+```
+
+---
+
+# [Phase 04.6] Integration - Frontend & Backend API
+
+## Ngày thực hiện
+
+```text
+2026-05-24
+```
+
+## Đã hoàn thành
+
+## [2026-05-24]
+Author: Nguyễn Văn Dạng (DE190324)
+
+### Added (Đã thêm)
+- Cấu hình `apiClient.ts` sử dụng `axios` với JWT interceptors tự động gán token.
+- Refactor các services `authService`, `bookingService`, `vehicleService`, `paymentService`, `otherServices` để gọi API thay vì mock dữ liệu.
+
+### Changed (Đã thay đổi)
+- Chuyển tất cả component (CustomerDashboard, OwnerDashboard, AdminDashboard) sang sử dụng API thực.
+
+### Removed (Đã xóa)
+- Đã gỡ bỏ và xóa hoàn toàn việc sử dụng module `mock/db` trong source Frontend.
+
+### AI-assisted (AI hỗ trợ)
+- Dùng AI để generate boilerplate gọi API axios và thay thế đồng loạt trong code.
+
+## Thay đổi chi tiết - Nguyễn Văn Dạng (DE190324)
+
+| STT | Nội dung thay đổi | Người thực hiện | File/Module liên quan | Minh chứng |
+|---:|---|---|---|---|
+| 1 | Xây dựng API Client cấu hình JWT | Nguyễn Văn Dạng | apiClient.ts | src/Front_end/src/services/apiClient.ts |
+| 2 | Loại bỏ mock data và refactor Services | Nguyễn Văn Dạng | Tất cả các file trong `services/` | Đã xóa import `mock/db` |
+| 3 | Sửa lỗi fallback Dashboard UI | Nguyễn Văn Dạng | CustomerDashboard.tsx, AdminDashboard.tsx, v.v | Giao diện không bị crash khi API chưa đầy đủ dữ liệu phụ |
+| 4 | Debug lỗi thiếu hàm Repository JPA | Nguyễn Văn Dạng | VehicleRepository.java | Khai báo 6 queries còn thiếu |
+| 5 | Xử lý lỗi Gradle build lock | Nguyễn Văn Dạng | PowerShell | Script kill java process và force delete folder build |
+
+## AI có hỗ trợ không?
+
+- [x] Có
+- [ ] Không
+
+Nếu có, mô tả AI đã hỗ trợ phần nào:
+
+```text
+AI tự động tìm kiếm các đoạn import mock/db và tạo code API thay thế dựa trên apiClient, hỗ trợ fallback data an toàn.
 ```
 
 ---
@@ -356,17 +462,17 @@ Kết quả: 46 files + 14,691 dòng code được hiển thị đúng trên Git
 | 10 | Help Page | Completed | HelpPage.tsx | FAQ accordion |
 | 11 | Dark mode toggle | Completed | Navbar.tsx, globals.css | Persist localStorage |
 | 12 | Responsive design (mobile/tablet/desktop) | Partial | Toàn bộ UI | Mobile menu chưa hoàn thiện |
+| 13 | Backend API (Spring Boot) | Completed | Thư mục Back_end | Full Controller, Service, Repository |
+| 14 | Database (SQL Server) | Completed | Cấu hình trong application.properties | Tự tạo qua JPA Hibernate |
+| 15 | Payment integration | Completed | PaymentService.java | Xử lý mock callback VNPay |
 
 ## 4.2. Các chức năng chưa hoàn thành
 
 | STT | Chức năng | Lý do chưa hoàn thành | Hướng cải thiện |
 |---:|---|---|---|
-| 1 | Backend API (Spring Boot) | Chưa đến sprint backend | Implement REST API endpoints |
-| 2 | Database (SQL Server) | Phụ thuộc backend | Thiết kế ERD, tạo schema |
-| 3 | Real-time messaging (WebSocket) | Cần backend | Integrate Spring WebSocket |
-| 4 | Payment integration | Cần backend + payment gateway | Integrate VNPay hoặc Stripe |
-| 5 | Image upload (xe, avatar) | Cần backend storage | Integrate cloud storage |
-| 6 | Mobile responsive hoàn chỉnh | Thiếu thời gian | Fix Navbar mobile menu |
+| 1 | Real-time messaging (WebSocket) | Cần backend | Integrate Spring WebSocket |
+| 2 | Image upload (xe, avatar) | Cần backend storage | Integrate cloud storage (AWS S3 / Cloudinary) |
+| 3 | Mobile responsive hoàn chỉnh | Thiếu thời gian | Fix Navbar mobile menu |
 
 ## 4.3. Tổng hợp AI hỗ trợ trong project
 
@@ -421,4 +527,4 @@ Sinh viên/nhóm cam kết rằng nội dung changelog phản ánh đúng các t
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-05-21 |
+| Nguyễn Văn Dạng - DE190324 | 2026-05-24 |

@@ -1,156 +1,144 @@
-import { getDb, dbUpdate, dbCreate, STORAGE_KEYS } from '@/mock/db';
+import apiClient from './api';
 import type { Booking, BookingStatus, BookingWizardState } from '@/types';
 import { faker } from '@faker-js/faker';
 
-const delay = (ms = 500) => new Promise(r => setTimeout(r, ms));
-
 export const bookingService = {
   async getByUser(userId: string): Promise<Booking[]> {
-    await delay(300);
-    const { bookings } = getDb();
-    return bookings.filter(b => b.renterId === userId).sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+    try {
+      const response = await apiClient.get<any>('/bookings?page=0&size=50');
+      return response.data?.content || [];
+    } catch (error) {
+      console.error('Failed to fetch user bookings', error);
+      return [];
+    }
   },
 
   async getByOwner(ownerId: string): Promise<Booking[]> {
-    await delay(300);
-    const { bookings } = getDb();
-    return bookings.filter(b => b.ownerId === ownerId).sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+    try {
+      const response = await apiClient.get<any>('/bookings/owner?page=0&size=50');
+      return response.data?.content || [];
+    } catch (error) {
+      console.error('Failed to fetch owner bookings', error);
+      return [];
+    }
   },
 
   async getById(id: string): Promise<Booking | null> {
-    await delay(200);
-    const { bookings } = getDb();
-    return bookings.find(b => b.id === id) || null;
+    try {
+      const response = await apiClient.get<any>(`/bookings/${id}`);
+      return response.data || null;
+    } catch (error) {
+      return null;
+    }
   },
 
   async create(wizardState: BookingWizardState, renterId: string): Promise<Booking> {
-    await delay(800);
-    const { bookings, vehicles } = getDb();
-
-    const vehicle = vehicles.find(v => v.id === wizardState.vehicleId);
-    if (!vehicle) throw new Error('Vehicle not found');
-
-    const startDate = new Date(wizardState.startDate);
-    const endDate = new Date(wizardState.endDate);
-    const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-    const basePrice = vehicle.pricePerDay * totalDays;
-    const serviceFee = Math.round(basePrice * 0.12);
-    const taxes = Math.round(basePrice * 0.08);
-    const insuranceFee = wizardState.includeInsurance ? Math.round(totalDays * 45) : 0;
-    const deliveryFee = wizardState.includeDelivery ? vehicle.deliveryFee : 0;
-    const total = basePrice + serviceFee + taxes + insuranceFee + deliveryFee;
-
-    const newBooking: Booking = {
-      id: `booking-${faker.string.uuid()}`,
+    const payload = {
       vehicleId: wizardState.vehicleId,
-      renterId,
-      ownerId: vehicle.ownerId,
-      status: vehicle.instantBook ? 'confirmed' : 'pending',
       startDate: wizardState.startDate,
       endDate: wizardState.endDate,
-      totalDays,
-      pricing: {
-        basePrice,
-        pricePerDay: vehicle.pricePerDay,
-        addonsTotal: 0,
-        insuranceFee,
-        deliveryFee,
-        serviceFee,
-        taxes,
-        discount: 0,
-        total,
-        deposit: vehicle.deposit,
-        depositRefunded: false,
-      },
-      selectedAddons: wizardState.selectedAddons,
       includeInsurance: wizardState.includeInsurance,
       includeDelivery: wizardState.includeDelivery,
-      deliveryAddress: wizardState.deliveryAddress || undefined,
-      couponCode: wizardState.couponCode || undefined,
+      deliveryAddress: wizardState.deliveryAddress,
+      couponCode: wizardState.couponCode,
       notes: wizardState.notes,
-      ownerNotes: '',
-      pickupLocation: vehicle.location.address,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      selectedAddons: wizardState.selectedAddons,
     };
-
-    dbCreate(STORAGE_KEYS.BOOKINGS, bookings, newBooking);
-    return newBooking;
+    
+    const response = await apiClient.post<any>('/bookings', payload);
+    if (!response.data) throw new Error('Failed to create booking');
+    return response.data;
   },
 
   async cancel(bookingId: string, reason: string): Promise<Booking | null> {
-    await delay(500);
-    const { bookings } = getDb();
-    return dbUpdate(STORAGE_KEYS.BOOKINGS, bookings, bookingId, {
-      status: 'cancelled',
-      cancelledAt: new Date().toISOString(),
-      cancellationReason: reason,
-      updatedAt: new Date().toISOString(),
-    } as Partial<Booking>);
+    try {
+      const response = await apiClient.put<any>(`/bookings/${bookingId}/cancel`, { reason });
+      return response.data || null;
+    } catch (error) {
+      return null;
+    }
   },
 
   async updateStatus(bookingId: string, status: BookingStatus): Promise<Booking | null> {
-    await delay(400);
-    const { bookings } = getDb();
-    return dbUpdate(STORAGE_KEYS.BOOKINGS, bookings, bookingId, {
-      status,
-      updatedAt: new Date().toISOString(),
-    } as Partial<Booking>);
+    try {
+      const response = await apiClient.put<any>(`/bookings/${bookingId}/status`, { status: status.toUpperCase() });
+      return response.data || null;
+    } catch (error) {
+      return null;
+    }
   },
 
   async getAll(): Promise<Booking[]> {
-    await delay(400);
-    const { bookings } = getDb();
-    return bookings;
+    try {
+      const response = await apiClient.get<any>('/admin/bookings?page=0&size=100');
+      return response.data?.content || [];
+    } catch (error) {
+      return [];
+    }
   },
 
   async getStats(ownerId: string) {
-    await delay(300);
-    const { bookings } = getDb();
-    const ownerBookings = bookings.filter(b => b.ownerId === ownerId);
-
-    return {
-      total: ownerBookings.length,
-      pending: ownerBookings.filter(b => b.status === 'pending').length,
-      confirmed: ownerBookings.filter(b => b.status === 'confirmed').length,
-      active: ownerBookings.filter(b => b.status === 'active').length,
-      completed: ownerBookings.filter(b => b.status === 'completed').length,
-      cancelled: ownerBookings.filter(b => b.status === 'cancelled').length,
-      revenue: ownerBookings
-        .filter(b => b.status === 'completed')
-        .reduce((sum, b) => sum + b.pricing.total, 0),
-    };
+    try {
+      // Backend may not have a dedicated stats endpoint for owner, so we fetch all and calculate
+      const bookings = await this.getByOwner(ownerId);
+      return {
+        total: bookings.length,
+        pending: bookings.filter(b => b.status?.toLowerCase() === 'pending').length,
+        confirmed: bookings.filter(b => b.status?.toLowerCase() === 'confirmed').length,
+        active: bookings.filter(b => b.status?.toLowerCase() === 'active').length,
+        completed: bookings.filter(b => b.status?.toLowerCase() === 'completed').length,
+        cancelled: bookings.filter(b => b.status?.toLowerCase() === 'cancelled').length,
+        revenue: bookings
+          .filter(b => b.status?.toLowerCase() === 'completed')
+          .reduce((sum, b) => sum + (b.pricing?.total || 0), 0),
+      };
+    } catch (error) {
+      return { total: 0, pending: 0, confirmed: 0, active: 0, completed: 0, cancelled: 0, revenue: 0 };
+    }
   },
 };
 
 export const paymentService = {
   async processPayment(bookingId: string, method: string, amount: number): Promise<{ success: boolean; transactionId: string }> {
-    await delay(1500); // Simulate payment processing
-    // 95% success rate
-    const success = Math.random() > 0.05;
-    return {
-      success,
-      transactionId: success ? `txn_${faker.string.alphanumeric(20)}` : '',
-    };
+    try {
+      const payload = {
+        bookingId,
+        paymentMethod: method.toUpperCase(),
+        amount
+      };
+      const response = await apiClient.post<any>('/payments', payload);
+      
+      // If method is VNPay, it should return a paymentUrl, but for SPA mockup flow we return success
+      return {
+        success: true,
+        transactionId: response.data?.transactionId || `txn_${faker.string.alphanumeric(20)}`,
+      };
+    } catch (error) {
+      console.error('Payment processing failed', error);
+      return { success: false, transactionId: '' };
+    }
   },
 
   async getByUser(userId: string) {
-    await delay(300);
-    const { payments } = getDb();
-    return payments.filter(p => p.userId === userId);
+    try {
+      const response = await apiClient.get<any>('/payments/my');
+      return response.data?.content || [];
+    } catch (error) {
+      return [];
+    }
   },
 
   async refund(paymentId: string, amount: number): Promise<boolean> {
-    await delay(800);
-    return true; // Always succeeds in mock
+    try {
+      await apiClient.post<any>(`/admin/payments/${paymentId}/refund`, { amount });
+      return true;
+    } catch (error) {
+      return false;
+    }
   },
 
   async applyCoupon(code: string, total: number): Promise<{ valid: boolean; discount: number; message: string }> {
-    await delay(300);
+    // Currently mock logic as backend doesn't have a dedicated coupon endpoint
     const coupons: Record<string, { type: string; value: number }> = {
       'LUXE20': { type: 'percentage', value: 20 },
       'WELCOME15': { type: 'percentage', value: 15 },

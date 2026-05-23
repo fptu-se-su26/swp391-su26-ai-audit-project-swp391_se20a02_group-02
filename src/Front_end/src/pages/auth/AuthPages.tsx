@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Car, ArrowRight, CheckCircle, Shield, Loader2 } from 'lucide-react';
+import logoImage from '@/image/logo.png';
 import { useAuthStore } from '@/store';
 import { useToast } from '@/components/ui/Toast';
 import { isStrongPassword } from '@/utils';
@@ -58,11 +59,8 @@ export const LoginPage: React.FC = () => {
         />
         <div className="absolute inset-0 bg-gradient-to-br from-[#0F172A]/90 to-[#0F172A]/40" />
         <div className="absolute inset-0 flex flex-col justify-between p-12">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-accent rounded-xl flex items-center justify-center">
-              <Car className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-display text-2xl font-bold text-white">Luxe<span className="text-accent">Way</span></span>
+          <Link to="/" className="flex items-center gap-2 logo-wrapper">
+            <img src={logoImage} alt="LuxeWay" className="logo-effect h-12 md:h-14 w-auto object-contain brightness-0 invert" />
           </Link>
 
           <div>
@@ -95,11 +93,8 @@ export const LoginPage: React.FC = () => {
           className="w-full max-w-md"
         >
           {/* Mobile Logo */}
-          <Link to="/" className="flex items-center gap-2 mb-8 lg:hidden">
-            <div className="w-8 h-8 bg-[#0F172A] rounded-xl flex items-center justify-center">
-              <Car className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-display text-2xl font-bold text-[#0F172A]">Luxe<span className="text-accent">Way</span></span>
+          <Link to="/" className="flex items-center gap-2 mb-8 lg:hidden logo-wrapper">
+            <img src={logoImage} alt="LuxeWay" className="logo-effect h-10 w-auto object-contain" />
           </Link>
 
           <h1 className="font-display text-3xl font-bold text-[#0F172A] mb-2">Welcome back</h1>
@@ -321,9 +316,8 @@ export const RegisterPage: React.FC = () => {
         <img src="https://images.unsplash.com/photo-1592198084033-aade902d1aae?q=80&w=2070&auto=format&fit=crop" alt="Ferrari" className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-br from-[#0F172A]/90 to-[#0F172A]/30" />
         <div className="absolute inset-0 flex flex-col justify-between p-12">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-accent rounded-xl flex items-center justify-center"><Car className="w-4 h-4 text-white" /></div>
-            <span className="font-display text-2xl font-bold text-white">Luxe<span className="text-accent">Way</span></span>
+          <Link to="/" className="flex items-center gap-2 logo-wrapper">
+            <img src={logoImage} alt="LuxeWay" className="logo-effect h-12 md:h-14 w-auto object-contain brightness-0 invert" />
           </Link>
           <div>
             <h2 className="font-display text-5xl font-bold text-white mb-4">Join the<br />Elite Fleet.</h2>
@@ -335,9 +329,8 @@ export const RegisterPage: React.FC = () => {
       {/* Right Panel */}
       <div className="flex-1 flex items-center justify-center p-6 lg:p-12 bg-[#F8FAFC]">
         <motion.div variants={fadeUp} initial="hidden" animate="visible" className="w-full max-w-md">
-          <Link to="/" className="flex items-center gap-2 mb-8 lg:hidden">
-            <div className="w-8 h-8 bg-[#0F172A] rounded-xl flex items-center justify-center"><Car className="w-4 h-4 text-white" /></div>
-            <span className="font-display text-2xl font-bold text-[#0F172A]">Luxe<span className="text-accent">Way</span></span>
+          <Link to="/" className="flex items-center gap-2 mb-8 lg:hidden logo-wrapper">
+            <img src={logoImage} alt="LuxeWay" className="logo-effect h-10 w-auto object-contain" />
           </Link>
 
           {/* Progress */}
@@ -492,9 +485,8 @@ export const ForgotPasswordPage: React.FC = () => {
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-[#F8FAFC]">
       <motion.div variants={fadeUp} initial="hidden" animate="visible" className="w-full max-w-md">
-        <Link to="/" className="flex items-center gap-2 mb-10 justify-center">
-          <div className="w-8 h-8 bg-[#0F172A] rounded-xl flex items-center justify-center"><Car className="w-4 h-4 text-white" /></div>
-          <span className="font-display text-2xl font-bold text-[#0F172A]">Luxe<span className="text-accent">Way</span></span>
+        <Link to="/" className="flex items-center gap-2 mb-10 justify-center logo-wrapper">
+          <img src={logoImage} alt="LuxeWay" className="logo-effect h-12 w-auto object-contain" />
         </Link>
 
         <div className="luxury-card p-8">

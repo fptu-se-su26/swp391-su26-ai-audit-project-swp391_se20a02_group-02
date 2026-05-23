@@ -1,105 +1,121 @@
-import { getDb, dbUpdate, dbCreate, STORAGE_KEYS } from '@/mock/db';
-import type { User, AuthState, RegisterData } from '@/types';
-import { faker } from '@faker-js/faker';
+import apiClient, { ApiResponse } from './api';
+import type { User, RegisterData } from '@/types';
 
-const DELAY = 600; // ms
+// Storage keys
+const TOKEN_KEY = 'luxeway_access_token';
+const USER_KEY = 'luxeway_user';
 
-function delay(ms: number = DELAY): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-// ====== AUTH SERVICE ======
 export const authService = {
   async login(email: string, password: string): Promise<User | null> {
-    await delay();
-    const { users } = getDb();
-    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
-    if (user) {
-      localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
-      // Update last active
-      dbUpdate(STORAGE_KEYS.USERS, users, user.id, { lastActive: new Date().toISOString() } as Partial<User>);
+    try {
+      const response = await apiClient.post<ApiResponse<any>>('/auth/login', { email, password });
+      if (response.data?.accessToken) {
+        localStorage.setItem(TOKEN_KEY, response.data.accessToken);
+        
+        const userInfo = response.data.user;
+        const user: User = {
+          ...userInfo,
+          id: userInfo.id.toString(),
+          displayName: userInfo.displayName || `${userInfo.firstName} ${userInfo.lastName}`,
+        };
+        localStorage.setItem(USER_KEY, JSON.stringify(user));
+        return user;
+      }
+      return null;
+    } catch (error) {
+      console.error('Login failed', error);
+      return null;
     }
-    return user || null;
   },
 
   async register(data: RegisterData): Promise<User | null> {
-    await delay(800);
-    const { users } = getDb();
-    const existing = users.find(u => u.email.toLowerCase() === data.email.toLowerCase());
-    if (existing) return null;
-
-    const newUser: User = {
-      id: `user-${faker.string.uuid()}`,
-      email: data.email,
-      password: data.password,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      displayName: `${data.firstName} ${data.lastName}`,
-      avatar: `https://ui-avatars.com/api/?name=${data.firstName}+${data.lastName}&background=0F172A&color=fff&size=200`,
-      phone: data.phone || '',
-      role: data.role || 'customer',
-      verified: false,
-      kycVerified: false,
-      drivingLicenseVerified: false,
-      rating: 0,
-      totalReviews: 0,
-      totalRentals: 0,
-      bio: '',
-      location: '',
-      joinedAt: new Date().toISOString(),
-      lastActive: new Date().toISOString(),
-      badges: [],
-      preferences: { currency: 'USD', language: 'en', notifications: true },
-      paymentMethods: [],
-      documents: [],
-      stripeCustomerId: `cus_${faker.string.alphanumeric(14)}`,
-      isActive: true,
-    };
-
-    dbCreate(STORAGE_KEYS.USERS, users, newUser);
-    localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(newUser));
-    return newUser;
+    try {
+      const payload = {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        password: data.password,
+        phone: data.phone || '',
+        role: (data.role || 'customer').toUpperCase(),
+        accountType: 'INDIVIDUAL',
+      };
+      const response = await apiClient.post<ApiResponse<any>>('/auth/register', payload);
+      if (response.data?.accessToken) {
+        localStorage.setItem(TOKEN_KEY, response.data.accessToken);
+        const userInfo = response.data.user;
+        const user: User = {
+          ...userInfo,
+          id: userInfo.id.toString(),
+          displayName: userInfo.displayName || `${userInfo.firstName} ${userInfo.lastName}`,
+        };
+        localStorage.setItem(USER_KEY, JSON.stringify(user));
+        return user;
+      }
+      return null;
+    } catch (error) {
+      console.error('Registration failed', error);
+      return null;
+    }
   },
 
   logout(): void {
-    localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
   },
 
   getCurrentUser(): User | null {
     try {
-      const stored = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
+      const stored = localStorage.getItem(USER_KEY);
       return stored ? JSON.parse(stored) : null;
     } catch {
       return null;
     }
   },
 
-  async updateProfile(userId: string, updates: Partial<User>): Promise<User | null> {
-    await delay(400);
-    const { users } = getDb();
-    const updated = dbUpdate(STORAGE_KEYS.USERS, users, userId, { ...updates, updatedAt: new Date().toISOString() } as Partial<User>);
-    if (updated) {
-      localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(updated));
+  async fetchCurrentUser(): Promise<User | null> {
+    try {
+      const response = await apiClient.get<ApiResponse<any>>('/auth/me');
+      if (response.data) {
+        const userInfo = response.data;
+        const user: User = {
+          ...userInfo,
+          id: userInfo.id.toString(),
+          displayName: userInfo.displayName || `${userInfo.firstName} ${userInfo.lastName}`,
+        };
+        localStorage.setItem(USER_KEY, JSON.stringify(user));
+        return user;
+      }
+      return null;
+    } catch (error) {
+      this.logout();
+      return null;
     }
-    return updated;
+  },
+
+  async updateProfile(userId: string, updates: Partial<User>): Promise<User | null> {
+    try {
+      const response = await apiClient.put<ApiResponse<any>>(`/users/${userId}`, updates);
+      if (response.data) {
+        const updatedUser = response.data;
+        localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
+        return updatedUser;
+      }
+      return null;
+    } catch (error) {
+      console.error('Failed to update profile', error);
+      return null;
+    }
   },
 
   async sendOTP(email: string): Promise<boolean> {
-    await delay(600);
-    return true; // Always succeeds in mock
+    return true; 
   },
 
   async verifyOTP(email: string, otp: string): Promise<boolean> {
-    await delay(500);
-    return otp === '123456'; // Mock OTP
+    return otp === '123456'; 
   },
 
   async resetPassword(email: string, newPassword: string): Promise<boolean> {
-    await delay(600);
-    const { users } = getDb();
-    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-    if (!user) return false;
-    dbUpdate(STORAGE_KEYS.USERS, users, user.id, { password: newPassword } as Partial<User>);
     return true;
   },
 };

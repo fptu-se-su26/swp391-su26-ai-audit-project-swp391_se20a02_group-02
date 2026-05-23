@@ -12,7 +12,7 @@
 | Tên sinh viên / Nhóm | Nguyễn Văn Dạng - Nhóm 2 |
 | MSSV / Danh sách MSSV | DE190324 |
 | Giảng viên hướng dẫn | (Giảng viên môn SWP391) |
-| Ngày hoàn thành reflection | 2026-05-21 |
+| Ngày hoàn thành reflection | 2026-05-24 |
 
 ---
 
@@ -44,8 +44,34 @@ Cách mình dùng AI:
   MarketplacePage (414 dòng), FilterPanel, App.tsx với routing, VehicleCard, animation variants.
   Mỗi lần đều đọc code kỹ, test, và chỉnh sửa trước khi dùng.
 
+## Reflection - Triển khai Backend (2026-05-23)
+
+Trong giai đoạn này, nhóm đã sử dụng Antigravity để sinh toàn bộ logic cho các module backend Spring Boot còn thiếu (Review, Notification, Payment, User Profile, Admin).
+Tuy nhiên, một số câu truy vấn JPA do AI tạo ra ban đầu sử dụng String literal cho Enum, điều này gây ra lỗi dialect với SQL Server.
+
+Nhóm đã review code của AI và sửa lại các câu truy vấn JPA trong `VehicleRepository` và `BookingRepository` để sử dụng đường dẫn Enum đầy đủ (ví dụ: `com.luxeway.enums.BookingStatus.COMPLETED`).
+Quá trình này giúp nhóm hiểu được tầm quan trọng của việc kiểm tra các truy vấn database do AI sinh ra so với dialect SQL cụ thể đang được sử dụng.
+
+Bài học lớn nhất rút ra là: mặc dù AI cực kỳ xuất sắc trong việc tạo ra một lượng lớn code khung (Controllers, Services, DTOs), lập trình viên luôn phải kiểm tra kỹ ORM và các ràng buộc database để đảm bảo code có thể chạy tốt trên môi trường thực tế.
+
 - Giai đoạn debug (2026-05-17): Gặp lỗi git submodule (src/Front_end không hiện code trên GitHub).
   AI giải thích nguyên nhân và hướng dẫn fix step by step.
+
+- Giai đoạn Backend (2026-05-23): Sử dụng AI để sinh toàn bộ các module Backend thiếu sót bằng Spring Boot. 
+  Từ Review, Notification, Payment, đến User và Admin. AI giúp liên kết logic rất tốt (như bắn notification khi tạo booking).
+
+## Reflection - Tích hợp Frontend & Backend (2026-05-24)
+
+Mình đã sử dụng Antigravity để refactor toàn bộ service layer ở frontend. Ban đầu project bị phụ thuộc vào module `mock/db` do chính AI gợi ý ở giai đoạn đầu để làm Frontend độc lập.
+Khi Backend Spring Boot hoàn tất, mình đã yêu cầu AI tạo `apiClient.ts` sử dụng `axios` với interceptors tự động gán JWT.
+Sau đó, AI hỗ trợ loại bỏ hoàn toàn module mock và gọi API thực tế.
+Bài học lớn nhất là: việc thiết kế Service Layer tốt từ ban đầu (tách biệt UI và logic gọi data) đã giúp quá trình chuyển đổi từ Mock sang Real API cực kỳ dễ dàng, gần như không phải sửa đổi component UI (chỉ cần đảm bảo fallback an toàn khi API thiếu dữ liệu).
+
+## Reflection - Kỹ năng Debugging (2026-05-24)
+
+Quá trình chạy Backend gặp một số trở ngại lớn mà nhóm đã học được cách giải quyết cùng AI:
+1. **Lỗi thiếu Method JPA**: Khi Spring Boot báo lỗi `cannot find symbol method`, nhóm nhận ra dù AI đã sinh ra các Service dùng các method query (`findByStatusOrderByCreatedAtDesc`, v.v) nhưng lại quên không khai báo chúng trong interface `VehicleRepository`. Học được cách đọc lỗi biên dịch Java để tìm chính xác interface nào đang thiếu khai báo.
+2. **Lỗi khóa file của HĐH (Windows File Lock)**: Mặc dù đã thêm code vào Repository, lỗi cũ vẫn liên tục xuất hiện. Qua sự hỗ trợ của AI, nhóm hiểu rằng do ứng dụng Java cũ chưa tắt hẳn, nó đã "khóa" (lock) thư mục `build/classes`. Gradle không thể xóa file cũ để dịch file mới. Bài học: Sử dụng PowerShell kill process (`taskkill /F /IM java.exe`), force delete thư mục `build`, và dùng tính năng `Rebuild Project` của IntelliJ để giải quyết triệt để các lỗi out-of-sync của IDE.
 
 Công cụ sử dụng nhiều nhất: Antigravity (AI coding assistant tích hợp trong IDE).
 AI giúp tăng tốc đáng kể - ước tính tiết kiệm 60-70% thời gian coding cho các component phức tạp.
@@ -539,4 +565,4 @@ Sinh viên/nhóm hiểu rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-05-21 |
+| Nguyễn Văn Dạng - DE190324 | 2026-05-24 |

@@ -13,6 +13,7 @@ import { VehicleCardSkeleton } from '@/components/ui/Skeleton';
 import type { Vehicle } from '@/types';
 import { formatCurrency, formatNumber } from '@/utils';
 import { staggerContainer, staggerItem, fadeUp, heroTextVariants } from '@/animations/variants';
+import logoImage from '@/image/logo.png';
 
 // ====== HERO SECTION ======
 const HeroSection: React.FC = () => {
@@ -43,9 +44,9 @@ const HeroSection: React.FC = () => {
   };
 
   const HERO_IMAGES = [
-    'https://images.unsplash.com/photo-1544636331-e26879cd4d9b?q=80&w=2574&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1583121274602-3e2820c69888?q=80&w=2070&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1614200187524-dc4b892acf16?q=80&w=2574&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?q=80&w=2574&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=2070&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1593941707882-a5bba14938c7?q=80&w=2574&auto=format&fit=crop',
   ];
 
   const [heroImage, setHeroImage] = useState(0);
@@ -117,7 +118,7 @@ const HeroSection: React.FC = () => {
             className="inline-flex items-center gap-2 px-4 py-2 glass text-white/90 text-sm font-medium rounded-full mb-8"
           >
             <Sparkles className="w-4 h-4 text-gold animate-pulse" />
-            World's Premier Luxury Vehicle Marketplace
+            Vietnam's Premier Vehicle Rental Platform
             <Sparkles className="w-4 h-4 text-gold animate-pulse" />
           </motion.div>
 
@@ -127,9 +128,9 @@ const HeroSection: React.FC = () => {
             variants={heroTextVariants}
             className="font-display text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white leading-none tracking-tight mb-6"
           >
-            Drive the
+            Explore Vietnam
             <br />
-            <span className="text-gradient-gold">Unattainable.</span>
+            <span className="text-gradient-gold">Your Way.</span>
           </motion.h1>
 
           {/* Subtext */}
@@ -138,8 +139,7 @@ const HeroSection: React.FC = () => {
             variants={heroTextVariants}
             className="text-white/80 text-lg sm:text-xl max-w-2xl mx-auto mb-12 leading-relaxed"
           >
-            Access 10,000+ exclusive supercars, luxury SUVs, and rare masterpieces
-            with white-glove delivery to any location worldwide.
+            Rent the perfect car or motorbike for your journey. From economical scooters to spacious family SUVs, delivered to your door.
           </motion.p>
 
           {/* Search Card */}
@@ -155,14 +155,14 @@ const HeroSection: React.FC = () => {
                   <MapPin className="w-5 h-5 text-accent flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Location</p>
-                    <input
-                      type="text"
-                      value={location}
-                      onChange={e => setLocation(e.target.value)}
-                      placeholder="Dubai, Miami, Monaco..."
-                      className="w-full text-sm font-medium text-[#0F172A] placeholder:text-slate-400 outline-none bg-transparent"
-                      onKeyDown={e => e.key === 'Enter' && handleSearch()}
-                    />
+                      <input
+                        type="text"
+                        value={location}
+                        onChange={e => setLocation(e.target.value)}
+                        placeholder="Ho Chi Minh, Ha Noi, Da Nang..."
+                        className="w-full text-sm font-medium text-[#0F172A] placeholder:text-slate-400 outline-none bg-transparent"
+                        onKeyDown={e => e.key === 'Enter' && handleSearch()}
+                      />
                   </div>
                 </div>
               </div>
@@ -191,12 +191,14 @@ const HeroSection: React.FC = () => {
                         className="w-full text-sm font-medium text-[#0F172A] outline-none bg-transparent appearance-none cursor-pointer"
                       >
                         <option value="">All Vehicles</option>
-                        <option value="supercar">Supercars</option>
-                        <option value="suv">Luxury SUVs</option>
-                        <option value="luxury">Ultra Luxury</option>
-                        <option value="convertible">Convertibles</option>
-                        <option value="classic">Classics</option>
+                        <option value="motorbike">Motorbike</option>
+                        <option value="economy">Economy</option>
+                        <option value="family">Family</option>
+                        <option value="suv">SUV</option>
+                        <option value="city_car">City Car</option>
+                        <option value="business">Business</option>
                         <option value="electric">Electric</option>
+                        <option value="tourism">Tourism</option>
                       </select>
                     </div>
                   </div>
@@ -217,7 +219,7 @@ const HeroSection: React.FC = () => {
 
           {/* Quick Tags */}
           <motion.div custom={4} variants={heroTextVariants} className="flex flex-wrap justify-center gap-2 mt-6">
-            {['Ferrari', 'Lamborghini', 'Rolls-Royce', 'McLaren', 'Bugatti', 'Porsche'].map(brand => (
+            {['Honda', 'Yamaha', 'VinFast', 'Toyota', 'KIA', 'Mazda'].map(brand => (
               <button
                 key={brand}
                 onClick={() => navigate(`/marketplace?brand=${brand}`)}
@@ -258,8 +260,8 @@ const HeroSection: React.FC = () => {
 // ====== STATS SECTION ======
 const StatsSection: React.FC = () => {
   const stats = [
-    { value: 10000, suffix: '+', label: 'Luxury Vehicles', icon: Car },
-    { value: 50, suffix: '+', label: 'Countries', icon: Globe },
+    { value: 5000, suffix: '+', label: 'Quality Vehicles', icon: Car },
+    { value: 63, suffix: '', label: 'Provinces', icon: Globe },
     { value: 250000, suffix: '+', label: 'Happy Clients', icon: Users },
     { value: 4.98, suffix: '/5', label: 'Average Rating', icon: Star, decimal: true },
   ];
@@ -305,47 +307,47 @@ const StatsSection: React.FC = () => {
 const CategoriesSection: React.FC = () => {
   const categories = [
     {
-      title: 'Supercars',
-      subtitle: 'Unrivaled performance and engineering',
-      image: 'https://images.unsplash.com/photo-1583121274602-3e2820c69888?q=80&w=2070&auto=format&fit=crop',
-      href: '/marketplace?category=supercar',
-      count: '24 vehicles',
+      title: 'Economy',
+      subtitle: 'Reliable and affordable',
+      image: 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?q=80&w=2070&auto=format&fit=crop',
+      href: '/marketplace?category=economy',
+      count: '30 vehicles',
       span: 'md:col-span-8',
       height: 'h-[360px]',
     },
     {
-      title: 'Luxury SUVs',
-      subtitle: 'Commanding presence & comfort',
-      image: 'https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?q=80&w=1964&auto=format&fit=crop',
-      href: '/marketplace?category=suv',
-      count: '18 vehicles',
+      title: 'Family',
+      subtitle: 'Spacious comfort for everyone',
+      image: 'https://images.unsplash.com/photo-1559416523-140ddc3d238c?q=80&w=1964&auto=format&fit=crop',
+      href: '/marketplace?category=family',
+      count: '25 vehicles',
       span: 'md:col-span-4',
       height: 'h-[360px]',
     },
     {
-      title: 'Ultra Luxury',
-      subtitle: 'The pinnacle of automotive refinement',
-      image: 'https://images.unsplash.com/photo-1631269662035-7c05051e51b1?q=80&w=2070&auto=format&fit=crop',
-      href: '/marketplace?category=luxury',
+      title: 'Motorbikes',
+      subtitle: 'Perfect for city navigation',
+      image: 'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=2070&auto=format&fit=crop',
+      href: '/marketplace?category=motorbike',
+      count: '45 vehicles',
+      span: 'md:col-span-4',
+      height: 'h-[300px]',
+    },
+    {
+      title: 'Business',
+      subtitle: 'Professional and premium',
+      image: 'https://images.unsplash.com/photo-1549924231-f129b911e442?q=80&w=2070&auto=format&fit=crop',
+      href: '/marketplace?category=business',
       count: '15 vehicles',
       span: 'md:col-span-4',
       height: 'h-[300px]',
     },
     {
-      title: 'Convertibles',
-      subtitle: 'Open-air motoring at its finest',
-      image: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?q=80&w=2070&auto=format&fit=crop',
-      href: '/marketplace?category=convertible',
-      count: '12 vehicles',
-      span: 'md:col-span-4',
-      height: 'h-[300px]',
-    },
-    {
-      title: 'Classic & Vintage',
-      subtitle: 'Timeless masterpieces of a bygone era',
-      image: 'https://images.unsplash.com/photo-1566008885218-90abf9200ddb?q=80&w=2070&auto=format&fit=crop',
-      href: '/marketplace?category=classic',
-      count: '8 vehicles',
+      title: 'Electric',
+      subtitle: 'Eco-friendly and quiet',
+      image: 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7?q=80&w=2070&auto=format&fit=crop',
+      href: '/marketplace?category=electric',
+      count: '10 vehicles',
       span: 'md:col-span-4',
       height: 'h-[300px]',
     },
@@ -435,12 +437,12 @@ const FeaturedVehiclesSection: React.FC = () => {
           viewport={{ once: true }}
           className="text-center mb-12"
         >
-          <span className="text-label text-gold mb-2 block">Hand-Selected Collection</span>
+          <span className="text-label text-gold mb-2 block">Popular in Vietnam</span>
           <h2 className="font-display text-4xl md:text-5xl font-bold text-[#0F172A] mb-4">
-            Featured Masterpieces
+            Trending Vehicles
           </h2>
           <p className="text-slate-500 max-w-2xl mx-auto text-lg">
-            Curated from our global premium fleet, maintained to the absolute highest standards.
+            Curated from our top-rated partners, offering the best value and comfort.
           </p>
         </motion.div>
 
@@ -481,15 +483,14 @@ const FeaturedVehiclesSection: React.FC = () => {
   );
 };
 
-// ====== TOP CITIES SECTION ======
 const TopCitiesSection: React.FC = () => {
   const cities = [
-    { name: 'Dubai', country: 'UAE', image: 'https://images.unsplash.com/photo-1518684079-3c830dcef090?q=80&w=800&auto=format&fit=crop', vehicles: 240, gradient: 'from-amber-500 to-orange-600' },
-    { name: 'Miami', country: 'USA', image: 'https://images.unsplash.com/photo-1506966953602-c20cc11f75e3?q=80&w=800&auto=format&fit=crop', vehicles: 186, gradient: 'from-blue-500 to-cyan-600' },
-    { name: 'Monaco', country: 'Monaco', image: 'https://images.unsplash.com/photo-1530973428-5bf2db2e4d71?q=80&w=800&auto=format&fit=crop', vehicles: 94, gradient: 'from-red-500 to-rose-600' },
-    { name: 'Los Angeles', country: 'USA', image: 'https://images.unsplash.com/photo-1580655653885-65763b2597d0?q=80&w=800&auto=format&fit=crop', vehicles: 320, gradient: 'from-purple-500 to-violet-600' },
-    { name: 'London', country: 'UK', image: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?q=80&w=800&auto=format&fit=crop', vehicles: 158, gradient: 'from-slate-500 to-slate-700' },
-    { name: 'Paris', country: 'France', image: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?q=80&w=800&auto=format&fit=crop', vehicles: 127, gradient: 'from-pink-500 to-rose-600' },
+    { name: 'Ho Chi Minh', country: 'Vietnam', image: 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?q=80&w=800&auto=format&fit=crop', vehicles: 240, gradient: 'from-amber-500 to-orange-600' },
+    { name: 'Ha Noi', country: 'Vietnam', image: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?q=80&w=800&auto=format&fit=crop', vehicles: 186, gradient: 'from-blue-500 to-cyan-600' },
+    { name: 'Da Nang', country: 'Vietnam', image: 'https://images.unsplash.com/photo-1518684079-3c830dcef090?q=80&w=800&auto=format&fit=crop', vehicles: 94, gradient: 'from-red-500 to-rose-600' },
+    { name: 'Nha Trang', country: 'Vietnam', image: 'https://images.unsplash.com/photo-1506966953602-c20cc11f75e3?q=80&w=800&auto=format&fit=crop', vehicles: 120, gradient: 'from-purple-500 to-violet-600' },
+    { name: 'Da Lat', country: 'Vietnam', image: 'https://images.unsplash.com/photo-1580655653885-65763b2597d0?q=80&w=800&auto=format&fit=crop', vehicles: 158, gradient: 'from-slate-500 to-slate-700' },
+    { name: 'Hai Phong', country: 'Vietnam', image: 'https://images.unsplash.com/photo-1530973428-5bf2db2e4d71?q=80&w=800&auto=format&fit=crop', vehicles: 127, gradient: 'from-pink-500 to-rose-600' },
   ];
 
   return (
@@ -815,10 +816,9 @@ const Footer: React.FC = () => {
       { label: 'Insurance Info', href: '/help' },
     ],
     Legal: [
-      { label: 'Privacy Policy', href: '#' },
-      { label: 'Terms of Service', href: '#' },
-      { label: 'Cookie Policy', href: '#' },
-      { label: 'Sitemap', href: '#' },
+      { label: 'About LuxeWay', href: '/about' },
+      { label: 'Terms of Service', href: '/terms' },
+      { label: 'Privacy Policy', href: '/privacy' },
     ],
   };
 
@@ -828,13 +828,8 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-10 mb-12">
           {/* Brand */}
           <div className="lg:col-span-2">
-            <Link to="/" className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 bg-accent rounded-xl flex items-center justify-center">
-                <Car className="w-4 h-4 text-white" />
-              </div>
-              <span className="font-display text-2xl font-bold">
-                Luxe<span className="text-accent">Way</span>
-              </span>
+            <Link to="/" className="flex items-center gap-2 mb-4 logo-wrapper">
+              <img src={logoImage} alt="LuxeWay" className="logo-effect h-12 w-auto object-contain brightness-0 invert" />
             </Link>
             <p className="text-slate-400 text-sm leading-relaxed mb-6">
               Redefining luxury vehicle experiences globally. Precision, prestige, and performance — delivered to your door.
@@ -895,7 +890,116 @@ const Footer: React.FC = () => {
   );
 };
 
-// ====== MAIN LANDING PAGE ======
+// ====== HOW IT WORKS SECTION ======
+const HowItWorksSection: React.FC = () => {
+  const steps = [
+    {
+      number: '01',
+      icon: Search,
+      title: 'Search & Discover',
+      desc: 'Browse thousands of verified luxury vehicles by location, brand, or category. Use smart filters to find your perfect match.',
+      color: 'from-blue-500 to-blue-700',
+      bgLight: 'bg-blue-50',
+      iconColor: 'text-blue-600',
+    },
+    {
+      number: '02',
+      icon: Calendar,
+      title: 'Book Instantly',
+      desc: 'Select your dates, choose extras like premium insurance or door-to-door delivery, and confirm your booking in under 2 minutes.',
+      color: 'from-gold to-yellow-600',
+      bgLight: 'bg-yellow-50',
+      iconColor: 'text-yellow-600',
+    },
+    {
+      number: '03',
+      icon: Car,
+      title: 'Drive & Enjoy',
+      desc: 'Pick up your dream car or have it delivered to your door. Experience the thrill with full insurance coverage and 24/7 support.',
+      color: 'from-emerald-500 to-emerald-700',
+      bgLight: 'bg-emerald-50',
+      iconColor: 'text-emerald-600',
+    },
+  ];
+
+  return (
+    <section className="section bg-slate-50">
+      <div className="container-lux">
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          className="text-center mb-14"
+        >
+          <span className="text-label text-gold mb-2 block">Simple & Seamless</span>
+          <h2 className="font-display text-4xl md:text-5xl font-bold text-[#0F172A] mb-4">
+            How LuxeWay Works
+          </h2>
+          <p className="text-slate-500 max-w-xl mx-auto text-lg">
+            From discovery to driving, your luxury experience in three effortless steps.
+          </p>
+        </motion.div>
+
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: '-50px' }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 relative"
+        >
+          {/* Connector Lines (desktop only) */}
+          <div className="hidden md:flex absolute top-16 left-1/3 right-1/3 items-center justify-between px-4 pointer-events-none" style={{ zIndex: 0 }}>
+            {[0, 1].map(i => (
+              <div key={i} className="flex-1 flex items-center">
+                <div className="flex-1 h-px border-t-2 border-dashed border-slate-200" />
+                <ChevronRight className="w-4 h-4 text-slate-300 flex-shrink-0" />
+              </div>
+            ))}
+          </div>
+
+          {steps.map((step, i) => (
+            <motion.div
+              key={step.title}
+              variants={staggerItem}
+              whileHover={{ y: -6 }}
+              transition={{ type: 'spring', damping: 15 }}
+              className="relative bg-white rounded-3xl p-8 shadow-sm border border-slate-100 text-center group hover:shadow-luxury transition-all duration-300"
+              style={{ zIndex: 1 }}
+            >
+              {/* Step Number */}
+              <div className={`absolute -top-4 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-gradient-to-br ${step.color} text-white text-xs font-bold flex items-center justify-center shadow-md`}>
+                {step.number}
+              </div>
+
+              {/* Icon */}
+              <div className={`w-16 h-16 ${step.bgLight} rounded-2xl flex items-center justify-center mx-auto mb-5 group-hover:scale-110 transition-transform duration-300`}>
+                <step.icon className={`w-8 h-8 ${step.iconColor}`} />
+              </div>
+
+              <h3 className="font-display text-xl font-bold text-[#0F172A] mb-3">{step.title}</h3>
+              <p className="text-slate-500 text-sm leading-relaxed">{step.desc}</p>
+            </motion.div>
+          ))}
+        </motion.div>
+
+        {/* CTA */}
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          className="text-center mt-12"
+        >
+          <a href="/marketplace" className="btn-primary px-10 py-4 text-base inline-flex items-center gap-2">
+            <Zap className="w-5 h-5" /> Start Exploring Now
+          </a>
+        </motion.div>
+      </div>
+    </section>
+  );
+};
+
 const LandingPage: React.FC = () => {
   return (
     <div>
@@ -903,6 +1007,7 @@ const LandingPage: React.FC = () => {
       <StatsSection />
       <CategoriesSection />
       <FeaturedVehiclesSection />
+      <HowItWorksSection />
       <TopCitiesSection />
       <ReviewsSection />
       <BusinessSection />

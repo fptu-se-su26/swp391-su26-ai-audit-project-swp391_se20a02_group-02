@@ -1,0 +1,15 @@
+node_modules/
+.idea/
+.vscode/
+build/
+target/
+*.class
+*.jar
+*.war
+.env
+.env.local
+.env.*.local
+dist/
+dist-ssr/
+*.local
+.DS_Store

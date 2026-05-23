@@ -500,10 +500,11 @@ const BookingWizardPage: React.FC = () => {
                   <h2 className="font-display text-xl font-bold text-[#0F172A] mb-5">Payment Details</h2>
 
                   {/* Payment Method Selection */}
-                  <div className="grid grid-cols-3 gap-3 mb-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
                     {[
                       { id: 'card', label: 'Credit Card', icon: '💳' },
                       { id: 'stripe', label: 'Stripe', icon: '🔵' },
+                      { id: 'vnpay', label: 'VNPay', icon: '🏦' },
                       { id: 'wallet', label: 'LuxeWallet', icon: '💰' },
                     ].map(method => (
                       <button
@@ -541,6 +542,19 @@ const BookingWizardPage: React.FC = () => {
                           <label className="block text-sm font-medium text-[#0F172A] mb-1.5">CVC</label>
                           <input value={cardCVC} onChange={e => setCardCVC(e.target.value)} className="lux-input" placeholder="•••" maxLength={4} type="password" />
                         </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {paymentMethod === 'vnpay' && (
+                    <div className="p-5 bg-blue-50 rounded-2xl text-center">
+                      <p className="text-3xl mb-3">🏦</p>
+                      <p className="font-semibold text-[#0F172A] mb-1">Pay with VNPay</p>
+                      <p className="text-slate-500 text-sm mb-3">You will be redirected to VNPay's secure payment gateway to complete your transaction.</p>
+                      <div className="flex gap-2 justify-center flex-wrap">
+                        {['Vietcombank', 'VietinBank', 'BIDV', 'Techcombank', 'MB Bank'].map(bank => (
+                          <span key={bank} className="text-xs px-2 py-1 bg-white rounded-lg border border-blue-100 text-slate-600 font-medium">{bank}</span>
+                        ))}
                       </div>
                     </div>
                   )}

@@ -1,12 +1,12 @@
 import React, { useEffect, Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { initializeDatabase } from '@/mock/db';
 import { useAuthStore, useUIStore } from '@/store';
 import { VehicleCard } from '@/components/vehicle/VehicleCard';
 import { vehicleService } from '@/services/vehicleService';
-import { notificationService } from '@/services/otherServices';
-import type { Vehicle, Notification } from '@/types';
+import { notificationService, reviewService } from '@/services/otherServices';
+import type { Vehicle, Notification, Review } from '@/types';
+import { formatDate } from '@/utils';
 
 // Layouts
 import RootLayout from '@/layouts/RootLayout';
@@ -20,16 +20,29 @@ import BookingWizardPage from '@/pages/booking/BookingWizardPage';
 import HelpPage from '@/pages/help/HelpPage';
 
 // Lazy loaded pages
+const TestBackend = lazy(() => import('@/pages/TestBackend'));
 const DashboardLayout = lazy(() => import('@/pages/dashboard/CustomerDashboard').then(m => ({ default: m.DashboardLayout })));
 const CustomerOverview = lazy(() => import('@/pages/dashboard/CustomerDashboard').then(m => ({ default: m.CustomerOverview })));
 const MyBookingsPage = lazy(() => import('@/pages/dashboard/CustomerDashboard').then(m => ({ default: m.MyBookingsPage })));
 const ProfilePage = lazy(() => import('@/pages/dashboard/CustomerDashboard').then(m => ({ default: m.ProfilePage })));
+const SecurityPage = lazy(() => import('@/pages/dashboard/CustomerDashboard').then(m => ({ default: m.SecurityPage })));
+const DocumentsPage = lazy(() => import('@/pages/dashboard/CustomerDashboard').then(m => ({ default: m.DocumentsPage })));
+const PaymentHistoryPage = lazy(() => import('@/pages/dashboard/CustomerDashboard').then(m => ({ default: m.PaymentHistoryPage })));
+const SettingsPage = lazy(() => import('@/pages/dashboard/CustomerDashboard').then(m => ({ default: m.SettingsPage })));
+const MyReviewsPage = lazy(() => import('@/pages/dashboard/CustomerDashboard').then(m => ({ default: m.MyReviewsPage })));
 const OwnerOverview = lazy(() => import('@/pages/dashboard/OwnerDashboard').then(m => ({ default: m.OwnerOverview })));
 const VehicleManagePage = lazy(() => import('@/pages/dashboard/OwnerDashboard').then(m => ({ default: m.VehicleManagePage })));
 const VehicleFormPage = lazy(() => import('@/pages/dashboard/OwnerDashboard').then(m => ({ default: m.VehicleFormPage })));
 const OwnerCalendarPage = lazy(() => import('@/pages/dashboard/OwnerDashboard').then(m => ({ default: m.OwnerCalendarPage })));
+const OwnerBookingsPage = lazy(() => import('@/pages/dashboard/OwnerDashboard').then(m => ({ default: m.OwnerBookingsPage })));
+const OwnerRevenuePage = lazy(() => import('@/pages/dashboard/OwnerDashboard').then(m => ({ default: m.OwnerRevenuePage })));
 const MessengerPage = lazy(() => import('@/pages/messages/MessengerPage'));
 const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'));
+
+// Static pages
+const AboutPage = lazy(() => import('@/pages/static/StaticPages').then(m => ({ default: m.AboutPage })));
+const TermsPage = lazy(() => import('@/pages/static/StaticPages').then(m => ({ default: m.TermsPage })));
+const PrivacyPage = lazy(() => import('@/pages/static/StaticPages').then(m => ({ default: m.PrivacyPage })));
 
 // ====== LOADING FALLBACK ======
 const PageLoader: React.FC = () => (
@@ -78,7 +91,14 @@ const WishlistPage: React.FC = () => {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
-      <h1 className="font-display text-2xl font-bold text-[#0F172A] mb-6">My Wishlist</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="font-display text-2xl font-bold text-[#0F172A] dark:text-white">My Wishlist</h1>
+        {!loading && vehicles.length > 0 && (
+          <span className="px-3 py-1 bg-accent/10 text-accent font-semibold rounded-full text-sm">
+            {vehicles.length} saved
+          </span>
+        )}
+      </div>
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(3)].map((_, i) => <div key={i} className="skeleton h-64 rounded-3xl" />)}
@@ -92,7 +112,20 @@ const WishlistPage: React.FC = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {vehicles.map(v => <VehicleCard key={v.id} vehicle={v} />)}
+          {vehicles.map(v => (
+            <div key={v.id} className="relative group">
+              <VehicleCard vehicle={v} />
+              <button 
+                onClick={() => {
+                  if (user?.id) vehicleService.toggleWishlist(v.id, user.id);
+                  setVehicles(prev => prev.filter(veh => veh.id !== v.id));
+                }}
+                className="absolute top-4 right-4 w-8 h-8 bg-white/80 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all z-10 shadow-sm backdrop-blur-sm"
+              >
+                ✕
+              </button>
+            </div>
+          ))}
         </div>
       )}
     </div>
@@ -150,30 +183,57 @@ const NotificationsPage: React.FC = () => {
 
 // ====== REVIEWS PUBLIC PAGE ======
 const ReviewsPage: React.FC = () => {
-  const [vehicles, setVehicles] = React.useState<Vehicle[]>([]);
-  React.useEffect(() => { vehicleService.getAll({}, 1, 12).then(r => setVehicles(r.data)); }, []);
+  const [reviews, setReviews] = React.useState<Review[]>([]);
+  
+  React.useEffect(() => {
+    reviewService.getAll().then(setReviews);
+  }, []);
+
+  const avgRating = reviews.length ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1) : '0';
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-900 pt-24 pb-16">
       <div className="max-w-6xl mx-auto px-4">
         <h1 className="font-display text-4xl font-bold text-[#0F172A] dark:text-white mb-2">Customer Reviews</h1>
         <p className="text-slate-500 mb-8">What our community says about LuxeWay</p>
+        
+        <div className="flex items-center gap-6 mb-8 p-6 bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700">
+          <div className="text-center">
+            <p className="text-4xl font-display font-bold text-[#0F172A] dark:text-white">{avgRating}</p>
+            <div className="flex text-yellow-400 mt-1">
+              {[...Array(5)].map((_, i) => <span key={i} className={i < Math.round(Number(avgRating)) ? 'text-yellow-400' : 'text-slate-200 dark:text-slate-600'}>★</span>)}
+            </div>
+          </div>
+          <div className="w-px h-12 bg-slate-200 dark:bg-slate-700"></div>
+          <div>
+            <p className="text-xl font-bold text-[#0F172A] dark:text-white">{reviews.length}</p>
+            <p className="text-sm text-slate-500">Total verified reviews</p>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {vehicles.map(v => (
-            <div key={v.id} className="luxury-card p-5">
-              <div className="flex items-center gap-3 mb-3">
-                <img src={v.thumbnailUrl} alt={v.name} className="w-12 h-12 rounded-2xl object-cover" />
-                <div>
-                  <p className="font-semibold text-sm text-[#0F172A] dark:text-white">{v.name}</p>
-                  <div className="flex items-center gap-1">
-                    {[...Array(5)].map((_, i) => <span key={i} className={`text-xs ${i < Math.round(v.rating) ? 'text-yellow-400' : 'text-slate-200'}`}>★</span>)}
-                    <span className="text-xs text-slate-400 ml-1">{v.rating}</span>
+          {reviews.map(review => {
+            return (
+              <div key={review.id} className="luxury-card p-5">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-500 overflow-hidden">
+                    U
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm text-[#0F172A] dark:text-white">User {review.reviewerId.substring(0,4)}</p>
+                    <div className="flex items-center gap-1">
+                      {[...Array(5)].map((_, i) => <span key={i} className={`text-xs ${i < review.rating ? 'text-yellow-400' : 'text-slate-200 dark:text-slate-700'}`}>★</span>)}
+                      <span className="text-xs text-slate-400 ml-1">{formatDate(review.createdAt, 'short')}</span>
+                    </div>
                   </div>
                 </div>
+                <p className="text-sm text-slate-500 dark:text-slate-400 italic mb-3">"{review.comment}"</p>
               </div>
-              <p className="text-sm text-slate-500 dark:text-slate-400 italic">"{v.name} was an incredible experience. Highly recommend!"</p>
-              <p className="text-xs text-slate-400 mt-2">— Verified Renter</p>
-            </div>
-          ))}
+            );
+          })}
+          {reviews.length === 0 && (
+            <p className="text-slate-500 col-span-full">No reviews yet.</p>
+          )}
         </div>
       </div>
     </div>
@@ -249,7 +309,6 @@ const App: React.FC = () => {
   const { theme } = useUIStore();
 
   useEffect(() => {
-    initializeDatabase();
     initAuth();
     // Restore theme on load
     const stored = JSON.parse(localStorage.getItem('luxeway_ui_prefs') || '{}');
@@ -287,7 +346,11 @@ const App: React.FC = () => {
               </ProtectedRoute>
             } />
             <Route path="help" element={<HelpPage />} />
+            <Route path="test-backend" element={<TestBackend />} />
             <Route path="reviews" element={<ReviewsPage />} />
+            <Route path="about" element={<AboutPage />} />
+            <Route path="terms" element={<TermsPage />} />
+            <Route path="privacy" element={<PrivacyPage />} />
           </Route>
 
           {/* Auth pages */}
@@ -305,7 +368,11 @@ const App: React.FC = () => {
             <Route path="profile" element={<ProfilePage />} />
             <Route path="wishlist" element={<WishlistPage />} />
             <Route path="notifications" element={<NotificationsPage />} />
-            <Route path="reviews" element={<NotificationsPage />} />
+            <Route path="reviews" element={<MyReviewsPage />} />
+            <Route path="security" element={<SecurityPage />} />
+            <Route path="documents" element={<DocumentsPage />} />
+            <Route path="payments" element={<PaymentHistoryPage />} />
+            <Route path="settings" element={<SettingsPage />} />
           </Route>
 
           {/* Owner Dashboard */}
@@ -314,8 +381,10 @@ const App: React.FC = () => {
             <Route path="vehicles" element={<VehicleManagePage />} />
             <Route path="vehicles/new" element={<VehicleFormPage />} />
             <Route path="vehicles/:id/edit" element={<VehicleFormPage />} />
-            <Route path="analytics" element={<OwnerOverview />} />
+            <Route path="analytics" element={<OwnerRevenuePage />} />
             <Route path="calendar" element={<OwnerCalendarPage />} />
+            <Route path="bookings" element={<OwnerBookingsPage />} />
+            <Route path="revenue" element={<OwnerRevenuePage />} />
           </Route>
 
           {/* Admin */}

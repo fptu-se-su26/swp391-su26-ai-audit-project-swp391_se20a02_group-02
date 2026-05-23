@@ -204,7 +204,7 @@ const VehicleDetailPage: React.FC = () => {
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className={`badge ${vehicle.category === 'supercar' ? 'badge-red' : vehicle.category === 'electric' ? 'badge-green' : 'badge-blue'}`}>
+                    <span className={`badge ${vehicle.category === 'electric' ? 'badge-green' : vehicle.category === 'motorbike' ? 'badge-blue' : 'badge-gold'}`}>
                       {vehicle.category.charAt(0).toUpperCase() + vehicle.category.slice(1)}
                     </span>
                     {vehicle.instantBook && (
@@ -487,9 +487,9 @@ const VehicleDetailPage: React.FC = () => {
               {/* Contact Owner */}
               <div className="luxury-card p-5 mt-4">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="avatar w-12 h-12 rounded-2xl text-sm">OW</div>
+                  <div className="avatar w-12 h-12 rounded-2xl text-sm">TT</div>
                   <div>
-                    <p className="font-semibold text-sm text-[#0F172A]">James Whitmore</p>
+                    <p className="font-semibold text-sm text-[#0F172A]">Trần Tuấn</p>
                     <p className="text-xs text-slate-400">Superhost · 87 reviews</p>
                   </div>
                   <div className="ml-auto flex items-center gap-1">
