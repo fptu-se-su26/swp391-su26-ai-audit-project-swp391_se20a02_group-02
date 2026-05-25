@@ -180,7 +180,6 @@ export const Navbar: React.FC = () => {
   const navLinks = [
     { href: '/marketplace', label: t.nav.marketplace },
     { href: '/reviews', label: t.nav.reviews },
-    { href: '/test-backend', label: '🔧 Backend Test' },
     { href: '/help', label: t.nav.help },
   ];
 

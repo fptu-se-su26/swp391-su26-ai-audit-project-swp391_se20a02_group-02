@@ -27,8 +27,12 @@ public interface PaymentRepository extends JpaRepository<Payment, String> {
     @Query("SELECT SUM(p.amount) FROM Payment p WHERE p.user.id = :userId AND p.status = :status")
     BigDecimal sumAmountByUserIdAndStatus(@Param("userId") String userId, @Param("status") PaymentStatus status);
 
-    @Query("SELECT SUM(p.amount) FROM Payment p WHERE p.status = com.luxeway.enums.PaymentStatus.COMPLETED")
-    BigDecimal sumTotalCompletedPayments();
+    @Query("SELECT SUM(p.amount) FROM Payment p WHERE p.status = :status")
+    BigDecimal sumTotalPaymentsByStatus(@Param("status") PaymentStatus status);
+
+    default BigDecimal sumTotalCompletedPayments() {
+        return sumTotalPaymentsByStatus(PaymentStatus.SUCCEEDED);
+    }
 
     long countByStatus(PaymentStatus status);
 

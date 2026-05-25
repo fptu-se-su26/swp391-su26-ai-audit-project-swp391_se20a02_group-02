@@ -58,7 +58,8 @@ public class SecurityConfig {
                     "/swagger-ui.html",
                     "/api-docs/**",
                     "/actuator/health",
-                    "/payments/vnpay/callback"
+                    "/payments/vnpay/callback",
+                    "/test/**"
                 ).permitAll()
                 // Public vehicle browsing
                 .requestMatchers(HttpMethod.GET,
@@ -66,7 +67,8 @@ public class SecurityConfig {
                     "/vehicles/{id}",
                     "/vehicles/featured",
                     "/vehicles/search",
-                    "/reviews/vehicle/**"
+                    "/reviews/vehicle/**",
+                    "/users"
                 ).permitAll()
                 // Admin only
                 .requestMatchers("/admin/**").hasRole("ADMIN")

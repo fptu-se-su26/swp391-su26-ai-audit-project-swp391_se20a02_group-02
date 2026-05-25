@@ -12,7 +12,7 @@
 | Tên sinh viên / Nhóm | Nguyễn Văn Dạng - Nhóm 2 |
 | MSSV / Danh sách MSSV | DE190324 |
 | Giảng viên hướng dẫn | (Giảng viên môn SWP391) |
-| Ngày hoàn thành reflection | 2026-05-24 |
+| Ngày hoàn thành reflection | 2026-05-25 |
 
 ---
 
@@ -72,6 +72,16 @@ Bài học lớn nhất là: việc thiết kế Service Layer tốt từ ban đ
 Quá trình chạy Backend gặp một số trở ngại lớn mà nhóm đã học được cách giải quyết cùng AI:
 1. **Lỗi thiếu Method JPA**: Khi Spring Boot báo lỗi `cannot find symbol method`, nhóm nhận ra dù AI đã sinh ra các Service dùng các method query (`findByStatusOrderByCreatedAtDesc`, v.v) nhưng lại quên không khai báo chúng trong interface `VehicleRepository`. Học được cách đọc lỗi biên dịch Java để tìm chính xác interface nào đang thiếu khai báo.
 2. **Lỗi khóa file của HĐH (Windows File Lock)**: Mặc dù đã thêm code vào Repository, lỗi cũ vẫn liên tục xuất hiện. Qua sự hỗ trợ của AI, nhóm hiểu rằng do ứng dụng Java cũ chưa tắt hẳn, nó đã "khóa" (lock) thư mục `build/classes`. Gradle không thể xóa file cũ để dịch file mới. Bài học: Sử dụng PowerShell kill process (`taskkill /F /IM java.exe`), force delete thư mục `build`, và dùng tính năng `Rebuild Project` của IntelliJ để giải quyết triệt để các lỗi out-of-sync của IDE.
+
+## Reflection - Các API nâng cao & Đa ngôn ngữ (2026-05-25)
+
+Trong ngày hôm nay (2026-05-25), mình đã sử dụng AI để hỗ trợ hoàn thành các cấu hình và API nâng cao cho LuxeWay.
+1. Triển khai Spring WebSocket: Cấu hình và tạo ChatController giúp hoàn thiện backend cho Messenger, thay thế phần WebSocket giả lập trước đó ở Frontend.
+2. API quản lý (Coupon, DigitalContract, Dispute, FAQ, Location, Stats): AI sinh nhanh các Entity và REST controllers, giúp nhóm có đủ tài nguyên để quản lý mã giảm giá, tranh chấp, hợp đồng thuê xe điện tử và thống kê tổng quan doanh thu của hệ thống.
+3. Hỗ trợ đa ngôn ngữ (i18n): Thiết lập react-i18next với cấu hình translations EN/VI ở Frontend. AI đã sinh component switcher LanguageSwitcher giúp chuyển đổi ngôn ngữ mượt mà.
+4. Token Refresh & OTP Flow: Bổ sung logic token refresh tự động trong authService.ts và xử lý mã OTP cho việc thay đổi/khôi phục mật khẩu.
+
+Bài học lớn nhất rút ra: Việc chia nhỏ cấu hình Spring Boot (multi-profile) giúp việc demo dự án linh hoạt hơn khi có thể chạy dễ dàng trên cả SQL Server, MySQL lẫn in-memory H2 DB mà không cần sửa code gốc. Đồng thời, cấu hình dịch thuật (i18n) nên được tách thành các file JSON độc lập để dễ dàng bảo trì dịch thuật hơn là hardcode trực tiếp trong file config của AI.
 
 Công cụ sử dụng nhiều nhất: Antigravity (AI coding assistant tích hợp trong IDE).
 AI giúp tăng tốc đáng kể - ước tính tiết kiệm 60-70% thời gian coding cho các component phức tạp.
@@ -565,4 +575,4 @@ Sinh viên/nhóm hiểu rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-05-24 |
+| Nguyễn Văn Dạng - DE190324 | 2026-05-25 |

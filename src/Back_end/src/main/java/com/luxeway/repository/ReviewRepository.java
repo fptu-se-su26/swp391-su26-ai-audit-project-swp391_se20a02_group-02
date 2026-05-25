@@ -25,4 +25,9 @@ public interface ReviewRepository extends JpaRepository<Review, String> {
     Double findAverageRatingByVehicleId(@Param("vehicleId") String vehicleId);
 
     long countByVehicleId(String vehicleId);
+    
+    @Query("SELECT AVG(r.rating) FROM Review r")
+    Double getAverageRating();
+
+    Page<Review> findByRatingGreaterThanEqualOrderByCreatedAtDesc(Integer rating, Pageable pageable);
 }

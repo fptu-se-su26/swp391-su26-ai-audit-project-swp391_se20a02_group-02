@@ -18,7 +18,7 @@ CREATE TABLE users (
     display_name                NVARCHAR(200),
     avatar                      NVARCHAR(500),
     phone                       NVARCHAR(20),
-    role                        NVARCHAR(20)    NOT NULL CONSTRAINT CHK_users_role CHECK (role IN ('customer','owner','admin')),
+    role                        NVARCHAR(20)    NOT NULL CONSTRAINT CHK_users_role CHECK (role IN ('CUSTOMER','OWNER','ADMIN')),
     verified                    BIT             NOT NULL DEFAULT 0,
     kyc_verified                BIT             NOT NULL DEFAULT 0,
     driving_license_verified    BIT             NOT NULL DEFAULT 0,
@@ -47,8 +47,8 @@ BEGIN
 CREATE TABLE user_documents (
     id              NVARCHAR(36)    NOT NULL PRIMARY KEY,
     user_id         NVARCHAR(36)    NOT NULL,
-    document_type   NVARCHAR(30)    NOT NULL CONSTRAINT CHK_user_docs_type CHECK (document_type IN ('passport','national_id','driving_license','insurance')),
-    status          NVARCHAR(20)    NOT NULL DEFAULT 'pending' CONSTRAINT CHK_user_docs_status CHECK (status IN ('pending','verified','rejected')),
+    document_type   NVARCHAR(30)    NOT NULL CONSTRAINT CHK_user_docs_type CHECK (document_type IN ('PASSPORT','NATIONAL_ID','DRIVING_LICENSE','INSURANCE')),
+    status          NVARCHAR(20)    NOT NULL DEFAULT 'PENDING' CONSTRAINT CHK_user_docs_status CHECK (status IN ('PENDING','VERIFIED','REJECTED')),
     url             NVARCHAR(500)   NOT NULL,
     rejection_reason NVARCHAR(MAX),
     uploaded_at     DATETIME2       NOT NULL DEFAULT GETDATE(),
@@ -97,7 +97,7 @@ CREATE TABLE vehicles (
     brand                   NVARCHAR(100)   NOT NULL,
     model                   NVARCHAR(100)   NOT NULL,
     year                    INT             NOT NULL,
-    category                NVARCHAR(20)    NOT NULL CONSTRAINT CHK_vehicles_category CHECK (category IN ('economy','family','business','electric','motorbike','suv','city_car','tourism')),
+    category                NVARCHAR(20)    NOT NULL CONSTRAINT CHK_vehicles_category CHECK (category IN ('ECONOMY','FAMILY','BUSINESS','ELECTRIC','MOTORBIKE','SUV','CITY_CAR','TOURISM')),
     description             NVARCHAR(MAX),
     thumbnail_url           NVARCHAR(500),
     price_per_day           DECIMAL(12,0)   NOT NULL,
@@ -113,8 +113,8 @@ CREATE TABLE vehicles (
     acceleration            DECIMAL(4,2),
     seats                   INT             NOT NULL,
     doors                   INT,
-    transmission            NVARCHAR(20)    NOT NULL CONSTRAINT CHK_vehicles_transmission CHECK (transmission IN ('automatic','manual')),
-    fuel_type               NVARCHAR(20)    NOT NULL CONSTRAINT CHK_vehicles_fuel CHECK (fuel_type IN ('gasoline','diesel','electric','hybrid')),
+    transmission            NVARCHAR(20)    NOT NULL CONSTRAINT CHK_vehicles_transmission CHECK (transmission IN ('AUTOMATIC','MANUAL')),
+    fuel_type               NVARCHAR(20)    NOT NULL CONSTRAINT CHK_vehicles_fuel CHECK (fuel_type IN ('GASOLINE','DIESEL','ELECTRIC','HYBRID')),
     range_km                INT,
     engine_size             NVARCHAR(20),
     color                   NVARCHAR(50),
@@ -122,7 +122,7 @@ CREATE TABLE vehicles (
     min_rental_days         INT             NOT NULL DEFAULT 1,
     max_rental_days         INT             NOT NULL DEFAULT 30,
     advance_booking_days    INT             NOT NULL DEFAULT 365,
-    status                  NVARCHAR(20)    NOT NULL DEFAULT 'pending_approval' CONSTRAINT CHK_vehicles_status CHECK (status IN ('available','rented','maintenance','pending_approval')),
+    status                  NVARCHAR(20)    NOT NULL DEFAULT 'PENDING_APPROVAL' CONSTRAINT CHK_vehicles_status CHECK (status IN ('AVAILABLE','RENTED','MAINTENANCE','PENDING_APPROVAL','REJECTED','INACTIVE')),
     rating                  DECIMAL(3,2)    NOT NULL DEFAULT 0.00,
     total_reviews           INT             NOT NULL DEFAULT 0,
     total_bookings          INT             NOT NULL DEFAULT 0,
@@ -225,7 +225,7 @@ CREATE TABLE bookings (
     vehicle_id          NVARCHAR(36)    NOT NULL,
     renter_id           NVARCHAR(36)    NOT NULL,
     owner_id            NVARCHAR(36)    NOT NULL,
-    status              NVARCHAR(20)    NOT NULL DEFAULT 'pending' CONSTRAINT CHK_bookings_status CHECK (status IN ('pending','confirmed','active','completed','cancelled','disputed')),
+    status              NVARCHAR(20)    NOT NULL DEFAULT 'PENDING' CONSTRAINT CHK_bookings_status CHECK (status IN ('PENDING','CONFIRMED','ACTIVE','COMPLETED','CANCELLED','DISPUTED')),
     start_date          DATE            NOT NULL,
     end_date            DATE            NOT NULL,
     total_days          INT             NOT NULL,
@@ -293,7 +293,7 @@ CREATE TABLE vehicle_availability (
     vehicle_id  NVARCHAR(36)    NOT NULL,
     date        DATE            NOT NULL,
     is_available BIT            NOT NULL DEFAULT 0,
-    reason      NVARCHAR(20)    NOT NULL DEFAULT 'booked' CONSTRAINT CHK_avail_reason CHECK (reason IN ('booked','maintenance','owner_blocked','holiday')),
+    reason      NVARCHAR(20)    NOT NULL DEFAULT 'BOOKED' CONSTRAINT CHK_avail_reason CHECK (reason IN ('BOOKED','MAINTENANCE','OWNER_BLOCKED','HOLIDAY')),
     booking_id  NVARCHAR(36),
     notes       NVARCHAR(MAX),
     CONSTRAINT FK_availability_vehicle FOREIGN KEY (vehicle_id) REFERENCES vehicles(id)  ON DELETE CASCADE,
@@ -316,8 +316,8 @@ CREATE TABLE payments (
     user_id                     NVARCHAR(36)    NOT NULL,
     amount                      DECIMAL(12,0)   NOT NULL,
     currency                    NVARCHAR(3)     NOT NULL DEFAULT 'VND',
-    status                      NVARCHAR(20)    NOT NULL CONSTRAINT CHK_payments_status CHECK (status IN ('pending','processing','succeeded','failed','refunded')),
-    method                      NVARCHAR(20)    NOT NULL CONSTRAINT CHK_payments_method CHECK (method IN ('stripe','vnpay','wallet','bank_transfer')),
+    status                      NVARCHAR(20)    NOT NULL CONSTRAINT CHK_payments_status CHECK (status IN ('PENDING','PROCESSING','SUCCEEDED','FAILED','REFUNDED')),
+    method                      NVARCHAR(20)    NOT NULL CONSTRAINT CHK_payments_method CHECK (method IN ('STRIPE','VNPAY','WALLET','BANK_TRANSFER')),
     stripe_payment_intent_id    NVARCHAR(200),
     transaction_id              NVARCHAR(200)   UNIQUE,
     description                 NVARCHAR(MAX),
@@ -460,22 +460,18 @@ GO
 IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'disputes')
 BEGIN
 CREATE TABLE disputes (
-    id              NVARCHAR(36)    NOT NULL PRIMARY KEY,
+    id              BIGINT          IDENTITY(1,1) NOT NULL PRIMARY KEY,
     booking_id      NVARCHAR(36)    NOT NULL,
-    raised_by       NVARCHAR(36)    NOT NULL,
-    against_user    NVARCHAR(36)    NOT NULL,
-    status          NVARCHAR(20)    NOT NULL DEFAULT 'open'  CONSTRAINT CHK_disputes_status CHECK (status IN ('open','investigating','resolved','closed')),
-    type            NVARCHAR(20)    NOT NULL CONSTRAINT CHK_disputes_type   CHECK (type   IN ('damage','payment','cancellation','behavior','other')),
-    title           NVARCHAR(200)   NOT NULL,
+    reporter_id     NVARCHAR(36)    NOT NULL,
+    reason          NVARCHAR(100)   NOT NULL,
     description     NVARCHAR(MAX)   NOT NULL,
-    resolution      NVARCHAR(MAX),
-    admin_id        NVARCHAR(36),
+    evidence_url    NVARCHAR(500),
+    status          NVARCHAR(50)    NOT NULL DEFAULT 'OPEN' CONSTRAINT CHK_disputes_status CHECK (status IN ('OPEN','INVESTIGATING','RESOLVED','REJECTED')),
+    admin_decision  NVARCHAR(MAX),
     created_at      DATETIME2       NOT NULL DEFAULT GETDATE(),
-    resolved_at     DATETIME2,
+    updated_at      DATETIME2       NOT NULL DEFAULT GETDATE(),
     CONSTRAINT FK_disputes_booking      FOREIGN KEY (booking_id)   REFERENCES bookings(id) ON DELETE NO ACTION,
-    CONSTRAINT FK_disputes_raised_by    FOREIGN KEY (raised_by)    REFERENCES users(id)    ON DELETE NO ACTION,
-    CONSTRAINT FK_disputes_against      FOREIGN KEY (against_user) REFERENCES users(id)    ON DELETE NO ACTION,
-    CONSTRAINT FK_disputes_admin        FOREIGN KEY (admin_id)     REFERENCES users(id)    ON DELETE SET NULL
+    CONSTRAINT FK_disputes_reporter     FOREIGN KEY (reporter_id)  REFERENCES users(id)    ON DELETE NO ACTION
 );
 CREATE INDEX IDX_disputes_booking ON disputes(booking_id);
 CREATE INDEX IDX_disputes_status  ON disputes(status);
@@ -489,7 +485,7 @@ IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'dispute_evidence')
 BEGIN
 CREATE TABLE dispute_evidence (
     id              NVARCHAR(36)    NOT NULL PRIMARY KEY,
-    dispute_id      NVARCHAR(36)    NOT NULL,
+    dispute_id      BIGINT          NOT NULL,
     uploaded_by     NVARCHAR(36)    NOT NULL,
     type            NVARCHAR(20)    NOT NULL CONSTRAINT CHK_evidence_type CHECK (type IN ('image','document','video')),
     url             NVARCHAR(500)   NOT NULL,
@@ -508,21 +504,19 @@ GO
 IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'coupons')
 BEGIN
 CREATE TABLE coupons (
-    id                  NVARCHAR(36)    NOT NULL PRIMARY KEY,
+    id                  BIGINT          IDENTITY(1,1) NOT NULL PRIMARY KEY,
     code                NVARCHAR(50)    NOT NULL UNIQUE,
-    type                NVARCHAR(20)    NOT NULL CONSTRAINT CHK_coupons_type CHECK (type IN ('percentage','fixed')),
-    value               DECIMAL(10,2)   NOT NULL,
-    min_amount          DECIMAL(12,0)   NOT NULL DEFAULT 0,
-    max_discount        DECIMAL(12,0),
-    usage_limit         INT             NOT NULL DEFAULT 1,
-    usage_count         INT             NOT NULL DEFAULT 0,
-    expires_at          DATETIME2       NOT NULL,
-    valid_for_first_time BIT            NOT NULL DEFAULT 0,
+    discount_percentage INT             NOT NULL,
+    max_discount_amount DECIMAL(10,2),
+    valid_from          DATETIME2,
+    valid_until         DATETIME2,
     is_active           BIT             NOT NULL DEFAULT 1,
+    max_uses            INT             NOT NULL DEFAULT 100,
+    current_uses        INT             NOT NULL DEFAULT 0,
     created_at          DATETIME2       NOT NULL DEFAULT GETDATE()
 );
 CREATE INDEX IDX_coupons_code       ON coupons(code);
-CREATE INDEX IDX_coupons_expires_at ON coupons(expires_at);
+CREATE INDEX IDX_coupons_expires_at ON coupons(valid_until);
 END
 GO
 

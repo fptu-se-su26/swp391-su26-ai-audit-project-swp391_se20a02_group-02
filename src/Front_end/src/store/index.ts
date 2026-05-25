@@ -12,70 +12,118 @@ interface AuthStore {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  error: string | null;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   register: (data: RegisterData) => Promise<boolean>;
-  updateUser: (data: Partial<User>) => void;
-  initAuth: () => void;
+  updateUser: (data: Partial<User>) => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
+  initAuth: () => Promise<void>;
+  refreshUser: () => Promise<void>;
+  clearError: () => void;
 }
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
   user: null,
   isAuthenticated: false,
   isLoading: false,
+  error: null,
 
-  initAuth: () => {
+  initAuth: async () => {
     const user = authService.getCurrentUser();
-    if (user) {
+    const token = authService.getAccessToken();
+    
+    if (user && token) {
       set({ user, isAuthenticated: true });
+      
+      // Fetch fresh user data from backend
+      try {
+        const freshUser = await authService.fetchCurrentUser();
+        if (freshUser) {
+          set({ user: freshUser });
+        }
+      } catch (error) {
+        console.warn('Failed to refresh user data:', error);
+      }
     }
   },
 
   login: async (email, password) => {
-    set({ isLoading: true });
+    set({ isLoading: true, error: null });
     try {
       const user = await authService.login(email, password);
       if (user) {
-        set({ user, isAuthenticated: true, isLoading: false });
+        set({ user, isAuthenticated: true, isLoading: false, error: null });
         return true;
       }
-      set({ isLoading: false });
+      set({ isLoading: false, error: 'Login failed' });
       return false;
-    } catch {
-      set({ isLoading: false });
+    } catch (error: any) {
+      const errorMessage = error.message || 'Invalid email or password';
+      set({ isLoading: false, error: errorMessage });
       return false;
     }
   },
 
   logout: () => {
     authService.logout();
-    set({ user: null, isAuthenticated: false });
+    set({ user: null, isAuthenticated: false, error: null });
   },
 
   register: async (data) => {
-    set({ isLoading: true });
+    set({ isLoading: true, error: null });
     try {
       const user = await authService.register(data);
       if (user) {
-        set({ user, isAuthenticated: true, isLoading: false });
+        set({ user, isAuthenticated: true, isLoading: false, error: null });
         return true;
       }
-      set({ isLoading: false });
+      set({ isLoading: false, error: 'Registration failed' });
       return false;
-    } catch {
-      set({ isLoading: false });
+    } catch (error: any) {
+      const errorMessage = error.message || 'Registration failed. Email may already exist.';
+      set({ isLoading: false, error: errorMessage });
       return false;
     }
   },
 
-  updateUser: (data) => {
+  updateUser: async (data) => {
     const current = get().user;
-    if (current) {
-      const updated = { ...current, ...data };
-      set({ user: updated });
-      localStorage.setItem('luxeway_current_user', JSON.stringify(updated));
+    if (!current) return;
+    
+    try {
+      const updated = await authService.updateProfile(current.id, data);
+      if (updated) {
+        set({ user: updated });
+      }
+    } catch (error) {
+      console.error('Failed to update user:', error);
+      throw error;
     }
   },
+
+  changePassword: async (currentPassword, newPassword) => {
+    try {
+      await authService.changePassword(currentPassword, newPassword);
+      return true;
+    } catch (error) {
+      console.error('Failed to change password:', error);
+      throw error;
+    }
+  },
+
+  refreshUser: async () => {
+    try {
+      const user = await authService.fetchCurrentUser();
+      if (user) {
+        set({ user });
+      }
+    } catch (error) {
+      console.error('Failed to refresh user:', error);
+    }
+  },
+
+  clearError: () => set({ error: null }),
 }));
 
 // ====== UI STORE ======
@@ -136,7 +184,10 @@ export const useUIStore = create<UIStore>()(
         document.documentElement.classList.toggle('dark', next === 'dark');
       },
 
-      setLanguage: (lang) => set({ language: lang }),
+      setLanguage: (lang) => {
+        set({ language: lang });
+        import('@/i18n/config').then(m => m.default.changeLanguage(lang));
+      },
     }),
     {
       name: 'luxeway_ui_prefs',

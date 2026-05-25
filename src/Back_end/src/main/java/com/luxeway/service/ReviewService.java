@@ -76,6 +76,14 @@ public class ReviewService {
                 .map(this::toResponse);
     }
 
+    // ====== Get featured reviews ======
+
+    public Page<ReviewDTOs.ReviewResponse> getFeaturedReviews(int limit) {
+        Pageable pageable = PageRequest.of(0, limit);
+        return reviewRepository.findByRatingGreaterThanEqualOrderByCreatedAtDesc(5, pageable)
+                .map(this::toResponse);
+    }
+
     // ====== Owner responds to review ======
 
     @Transactional

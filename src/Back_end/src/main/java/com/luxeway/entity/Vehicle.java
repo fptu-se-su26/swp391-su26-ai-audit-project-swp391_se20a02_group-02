@@ -219,4 +219,53 @@ public class Vehicle {
             id = java.util.UUID.randomUUID().toString();
         }
     }
+
+    @com.fasterxml.jackson.annotation.JsonProperty("location")
+    public java.util.Map<String, Object> getLocationData() {
+        java.util.Map<String, Object> loc = new java.util.HashMap<>();
+        loc.put("city", this.city);
+        loc.put("country", this.country);
+        loc.put("address", this.address);
+        loc.put("lat", this.latitude);
+        loc.put("lng", this.longitude);
+        loc.put("timezone", "Asia/Ho_Chi_Minh");
+        return loc;
+    }
+
+    @com.fasterxml.jackson.annotation.JsonProperty("specs")
+    public java.util.Map<String, Object> getSpecsData() {
+        java.util.Map<String, Object> sp = new java.util.HashMap<>();
+        sp.put("horsepower", this.horsepower);
+        sp.put("topSpeed", this.topSpeed);
+        sp.put("acceleration", this.acceleration);
+        sp.put("seats", this.seats);
+        sp.put("doors", this.doors);
+        sp.put("transmission", this.transmission != null ? this.transmission.name().toLowerCase() : null);
+        sp.put("fuelType", this.fuelType != null ? this.fuelType.name().toLowerCase() : null);
+        sp.put("range", this.rangeKm);
+        sp.put("engineSize", this.engineSize);
+        sp.put("color", this.color);
+        sp.put("licensePlate", this.licensePlate);
+        return sp;
+    }
+
+    @com.fasterxml.jackson.annotation.JsonProperty("images")
+    public java.util.List<String> getImagesList() {
+        if (this.images == null) return new java.util.ArrayList<>();
+        return this.images.stream()
+                .sorted(java.util.Comparator.comparing(VehicleImage::getSortOrder, java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder())))
+                .map(VehicleImage::getUrl)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    @com.fasterxml.jackson.annotation.JsonProperty("features")
+    public java.util.List<String> getFeaturesList() {
+        if (this.features == null) return new java.util.ArrayList<>();
+        return this.features.stream().map(VehicleFeature::getFeature).collect(java.util.stream.Collectors.toList());
+    }
+
+    @com.fasterxml.jackson.annotation.JsonProperty("ownerId")
+    public String getOwnerIdProperty() {
+        return this.owner != null ? this.owner.getId() : null;
+    }
 }

@@ -61,6 +61,7 @@ public class VehicleService {
             transmission,
             fuelType,
             filter.getMinRating(),
+            filter.isFeatured(),
             filter.isInstantBook(),
             filter.isDeliveryAvailable(),
             pageable

@@ -40,7 +40,7 @@ Nguyên tắc ghi changelog:
 | Phase 01 | 2026-05-12 | Khởi tạo project, cấu trúc repo | Completed |
 | Phase 02 | 2026-05-13 | Phân tích yêu cầu, xác định user roles | In Progress |
 | Phase 03 | 2026-05-14 | Thiết kế hệ thống, thiết kế UI/UX Frontend | In Progress |
-| Phase 04 | 2026-05-14 đến 2026-05-21 | Implementation Frontend (React UI/UX) | In Progress |
+| Phase 04 | 2026-05-14 đến 2026-05-25 | Implementation (Frontend & Backend Advanced) | Completed |
 | Phase 05 | (Chưa bắt đầu) | Testing & Debug | Not Started |
 | Phase 06 | (Chưa bắt đầu) | Hoàn thiện báo cáo và demo | Not Started |
 
@@ -387,6 +387,56 @@ AI tự động tìm kiếm các đoạn import mock/db và tạo code API thay 
 
 ---
 
+# [Phase 04.7] Advanced Features & Multi-profile Integration
+
+## Ngày thực hiện
+
+```text
+2026-05-25
+```
+
+## Đã hoàn thành
+
+- [x] Triển khai real-time WebSocket messaging với Spring WebSocket & STOMP.
+- [x] Tạo module Coupon (Discount code CRUD, validation) ở Backend.
+- [x] Tạo các API quản lý DigitalContract, Dispute, FAQ, Location, và Statistics.
+- [x] Cấu hình multi-profile cho Spring Boot backend (SQL Server, MySQL, H2).
+- [x] Xây dựng `adminService.ts` tích hợp API Dashboard admin thực tế.
+- [x] Thêm i18n hỗ trợ song ngữ (EN/VI) bằng `react-i18next` cùng switcher.
+- [x] Nâng cấp `authService` hỗ trợ real token refresh, password changes, và OTP forgot/reset flows.
+
+## Thay đổi chi tiết - Nguyễn Văn Dạng (DE190324)
+
+| STT | Nội dung thay đổi | Người thực hiện | File/Module liên quan | Minh chứng |
+|---:|---|---|---|---|
+| 1 | WebSocket Config & Chat API | Nguyễn Văn Dạng | WebSocketConfig.java, ChatController.java | Backend |
+| 2 | Coupon, Dispute, Contract, FAQ APIs | Nguyễn Văn Dạng | Coupon, Dispute, DigitalContract, FAQ controllers | Backend |
+| 3 | Cấu hình DB profiles | Nguyễn Văn Dạng | application.yml, application-h2.yml, application-mysql.yml | Backend config |
+| 4 | adminService API client | Nguyễn Văn Dạng | adminService.ts | Frontend services |
+| 5 | Tích hợp Admin Dashboard thực | Nguyễn Văn Dạng | AdminDashboard.tsx | Admin page |
+| 6 | Cấu hình i18n đa ngôn ngữ | Nguyễn Văn Dạng | LanguageSwitcher.tsx, ThemeToggle.tsx, config.ts | Frontend ui/i18n |
+| 7 | Hỗ trợ full Auth flow (OTP, Token Refresh) | Nguyễn Văn Dạng | authService.ts | Frontend services |
+
+## AI có hỗ trợ không?
+
+- [x] Có
+- [ ] Không
+
+Nếu có, mô tả AI đã hỗ trợ phần nào:
+
+```text
+AI hỗ trợ viết boilerplate controllers/services cho các module phụ, sinh code i18n config, LanguageSwitcher và struct cho adminService.ts.
+```
+
+## Commit/Screenshot minh chứng
+
+```text
+Branch: NguuyenVanDang
+Chưa commit các thay đổi nâng cao của ngày 2026-05-25 (đang ở trạng thái modified/untracked).
+```
+
+---
+
 # [Phase 05] Testing & Debug
 
 ## Ngày thực hiện
@@ -458,21 +508,25 @@ AI tự động tìm kiếm các đoạn import mock/db và tạo code API thay 
 | 6 | Customer Dashboard (overview, bookings, profile, wishlist) | Completed | CustomerDashboard.tsx | Zustand auth state |
 | 7 | Owner Dashboard (vehicles, calendar, analytics) | Completed | OwnerDashboard.tsx | Vehicle management CRUD |
 | 8 | Admin Dashboard | Completed | AdminDashboard.tsx | Role-based access |
-| 9 | Messenger (real-time chat UI) | Completed | MessengerPage.tsx | Mock WebSocket |
+| 9 | Messenger (real-time chat) | Completed | MessengerPage.tsx, ChatController.java | Tích hợp Spring WebSocket & STOMP |
 | 10 | Help Page | Completed | HelpPage.tsx | FAQ accordion |
 | 11 | Dark mode toggle | Completed | Navbar.tsx, globals.css | Persist localStorage |
 | 12 | Responsive design (mobile/tablet/desktop) | Partial | Toàn bộ UI | Mobile menu chưa hoàn thiện |
 | 13 | Backend API (Spring Boot) | Completed | Thư mục Back_end | Full Controller, Service, Repository |
-| 14 | Database (SQL Server) | Completed | Cấu hình trong application.properties | Tự tạo qua JPA Hibernate |
+| 14 | Database (SQL Server, MySQL, H2) | Completed | Cấu hình trong application.yml | Cấu hình profiles đa nền tảng |
 | 15 | Payment integration | Completed | PaymentService.java | Xử lý mock callback VNPay |
+| 16 | Coupon & Discount management | Completed | CouponController.java | CRUD & logic validation |
+| 17 | Digital Lease Contract | Completed | DigitalContractController.java | Quản lý hợp đồng điện tử |
+| 18 | Dispute Resolution | Completed | DisputeController.java | Xử lý tranh chấp khách thuê & chủ xe |
+| 19 | Multilingual support (i18n) | Completed | LanguageSwitcher.tsx | Bản dịch EN/VI hoàn chỉnh |
+| 20 | Admin Dashboard Analytics | Completed | AdminDashboard.tsx, adminService.ts | Quản lý user/xe và doanh thu thực |
 
 ## 4.2. Các chức năng chưa hoàn thành
 
 | STT | Chức năng | Lý do chưa hoàn thành | Hướng cải thiện |
 |---:|---|---|---|
-| 1 | Real-time messaging (WebSocket) | Cần backend | Integrate Spring WebSocket |
-| 2 | Image upload (xe, avatar) | Cần backend storage | Integrate cloud storage (AWS S3 / Cloudinary) |
-| 3 | Mobile responsive hoàn chỉnh | Thiếu thời gian | Fix Navbar mobile menu |
+| 1 | Image upload (xe, avatar) | Cần backend storage | Integrate cloud storage (AWS S3 / Cloudinary) |
+| 2 | Mobile responsive hoàn chỉnh | Thiếu thời gian | Fix Navbar mobile menu |
 
 ## 4.3. Tổng hợp AI hỗ trợ trong project
 
@@ -527,4 +581,4 @@ Sinh viên/nhóm cam kết rằng nội dung changelog phản ánh đúng các t
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-05-24 |
+| Nguyễn Văn Dạng - DE190324 | 2026-05-25 |

@@ -41,6 +41,16 @@ export const reviewService = {
   async getAll(): Promise<Review[]> {
     return [];
   },
+
+  async getFeaturedReviews(): Promise<Review[]> {
+    try {
+      const response = await apiClient.get<any>('/reviews/featured?limit=3');
+      return response.data?.data?.content || [];
+    } catch (error) {
+      console.error('Failed to fetch featured reviews', error);
+      return [];
+    }
+  },
 };
 
 // ====== NOTIFICATION SERVICE ======
@@ -153,4 +163,43 @@ export const messageService = {
     localStorage.setItem(CONV_KEY, JSON.stringify(convs));
     return newConv;
   },
+};
+
+// ====== STATISTIC SERVICE ======
+export const statisticService = {
+  async getLandingPageStats(): Promise<any> {
+    try {
+      const response = await apiClient.get<any>('/stats');
+      return response.data;
+    } catch (error) {
+      console.error('Failed to fetch stats', error);
+      return null;
+    }
+  }
+};
+
+// ====== LOCATION SERVICE ======
+export const locationService = {
+  async getTopCities(): Promise<any[]> {
+    try {
+      const response = await apiClient.get<any[]>('/locations/top');
+      return response || [];
+    } catch (error) {
+      console.error('Failed to fetch locations', error);
+      return [];
+    }
+  }
+};
+
+// ====== FAQ SERVICE ======
+export const faqService = {
+  async getFAQs(): Promise<any[]> {
+    try {
+      const response = await apiClient.get<any[]>('/faqs');
+      return response || [];
+    } catch (error) {
+      console.error('Failed to fetch FAQs', error);
+      return [];
+    }
+  }
 };

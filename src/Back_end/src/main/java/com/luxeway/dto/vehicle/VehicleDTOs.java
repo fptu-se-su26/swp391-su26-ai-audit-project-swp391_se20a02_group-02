@@ -120,6 +120,7 @@ public class VehicleDTOs {
         private boolean instantBook;
         private boolean deliveryAvailable;
         private boolean verifiedOnly;
+        private boolean isFeatured;
         private String sortBy; // price_asc, price_desc, rating, newest, popular
         private int page = 0;
         private int size = 12;

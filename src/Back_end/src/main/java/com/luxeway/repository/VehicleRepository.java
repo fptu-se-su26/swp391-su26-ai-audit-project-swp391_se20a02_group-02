@@ -87,15 +87,24 @@ public interface VehicleRepository extends JpaRepository<Vehicle, String> {
                                  @Param("transmission") TransmissionType transmission,
                                  @Param("fuelType") FuelType fuelType,
                                  @Param("minRating") Double minRating,
+                                 @Param("isFeatured") boolean isFeatured,
                                  @Param("instantBook") boolean instantBook,
                                  @Param("deliveryAvailable") boolean deliveryAvailable,
                                  Pageable pageable);
     
     // Statistics
+    long countByCategoryAndStatus(VehicleCategory category, VehicleStatus status);
+    
     long countByStatus(VehicleStatus status);
     
     long countByOwnerId(String ownerId);
     
     @Query("SELECT COUNT(v) FROM Vehicle v WHERE v.owner.id = :ownerId AND v.status = :status")
     long countByOwnerIdAndStatus(@Param("ownerId") String ownerId, @Param("status") VehicleStatus status);
+
+    @Query("SELECT COUNT(DISTINCT v.city) FROM Vehicle v")
+    long countDistinctCity();
+
+    @Query("SELECT v.city, COUNT(v) FROM Vehicle v GROUP BY v.city ORDER BY COUNT(v) DESC")
+    List<Object[]> findTopCities(Pageable pageable);
 }

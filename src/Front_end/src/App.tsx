@@ -20,7 +20,7 @@ import BookingWizardPage from '@/pages/booking/BookingWizardPage';
 import HelpPage from '@/pages/help/HelpPage';
 
 // Lazy loaded pages
-const TestBackend = lazy(() => import('@/pages/TestBackend'));
+
 const DashboardLayout = lazy(() => import('@/pages/dashboard/CustomerDashboard').then(m => ({ default: m.DashboardLayout })));
 const CustomerOverview = lazy(() => import('@/pages/dashboard/CustomerDashboard').then(m => ({ default: m.CustomerOverview })));
 const MyBookingsPage = lazy(() => import('@/pages/dashboard/CustomerDashboard').then(m => ({ default: m.MyBookingsPage })));
@@ -60,7 +60,12 @@ const PageLoader: React.FC = () => (
 const ProtectedRoute: React.FC<{ children: React.ReactNode; requiredRole?: string }> = ({ children, requiredRole }) => {
   const { isAuthenticated, user } = useAuthStore();
   if (!isAuthenticated) return <Navigate to="/auth/login" replace />;
-  if (requiredRole && user?.role !== requiredRole) return <Navigate to="/dashboard" replace />;
+  
+  if (requiredRole && user?.role !== requiredRole) {
+    if (user?.role === 'admin') return <Navigate to="/admin" replace />;
+    if (user?.role === 'owner') return <Navigate to="/owner" replace />;
+    return <Navigate to="/dashboard" replace />;
+  }
   return <>{children}</>;
 };
 
@@ -346,7 +351,7 @@ const App: React.FC = () => {
               </ProtectedRoute>
             } />
             <Route path="help" element={<HelpPage />} />
-            <Route path="test-backend" element={<TestBackend />} />
+
             <Route path="reviews" element={<ReviewsPage />} />
             <Route path="about" element={<AboutPage />} />
             <Route path="terms" element={<TermsPage />} />
@@ -362,7 +367,7 @@ const App: React.FC = () => {
           </Route>
 
           {/* Customer Dashboard */}
-          <Route path="dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+          <Route path="dashboard" element={<ProtectedRoute requiredRole="customer"><DashboardLayout /></ProtectedRoute>}>
             <Route index element={<CustomerOverview />} />
             <Route path="bookings" element={<MyBookingsPage />} />
             <Route path="profile" element={<ProfilePage />} />
@@ -376,7 +381,7 @@ const App: React.FC = () => {
           </Route>
 
           {/* Owner Dashboard */}
-          <Route path="owner" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+          <Route path="owner" element={<ProtectedRoute requiredRole="owner"><DashboardLayout /></ProtectedRoute>}>
             <Route index element={<OwnerOverview />} />
             <Route path="vehicles" element={<VehicleManagePage />} />
             <Route path="vehicles/new" element={<VehicleFormPage />} />

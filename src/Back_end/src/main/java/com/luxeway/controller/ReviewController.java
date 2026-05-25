@@ -52,6 +52,18 @@ public class ReviewController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/featured")
+    @Operation(summary = "Get featured 5-star reviews (public)")
+    public ResponseEntity<ApiResponse<Page<ReviewDTOs.ReviewResponse>>> getFeaturedReviews(
+            @RequestParam(defaultValue = "3") int limit) {
+        Page<ReviewDTOs.ReviewResponse> reviews = reviewService.getFeaturedReviews(limit);
+        ApiResponse<Page<ReviewDTOs.ReviewResponse>> response = ApiResponse.<Page<ReviewDTOs.ReviewResponse>>builder()
+                .success(true)
+                .data(reviews)
+                .build();
+        return ResponseEntity.ok(response);
+    }
+
     @PutMapping("/{id}/respond")
     @Operation(summary = "Owner responds to a review")
     public ResponseEntity<ApiResponse<ReviewDTOs.ReviewResponse>> respond(

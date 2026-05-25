@@ -258,12 +258,16 @@ const HeroSection: React.FC = () => {
 };
 
 // ====== STATS SECTION ======
-const StatsSection: React.FC = () => {
+interface StatsSectionProps {
+  statsData: any;
+}
+
+const StatsSection: React.FC<StatsSectionProps> = ({ statsData }) => {
   const stats = [
-    { value: 5000, suffix: '+', label: 'Quality Vehicles', icon: Car },
-    { value: 63, suffix: '', label: 'Provinces', icon: Globe },
-    { value: 250000, suffix: '+', label: 'Happy Clients', icon: Users },
-    { value: 4.98, suffix: '/5', label: 'Average Rating', icon: Star, decimal: true },
+    { value: statsData ? statsData.qualityVehicles : 5000, suffix: '+', label: 'Quality Vehicles', icon: Car },
+    { value: statsData ? statsData.provinces : 63, suffix: '', label: 'Provinces', icon: Globe },
+    { value: statsData ? statsData.happyClients : 250000, suffix: '+', label: 'Happy Clients', icon: Users },
+    { value: statsData ? statsData.averageRating : 4.98, suffix: '/5', label: 'Average Rating', icon: Star, decimal: true },
   ];
 
   return (
@@ -304,14 +308,24 @@ const StatsSection: React.FC = () => {
 };
 
 // ====== CATEGORIES SECTION ======
-const CategoriesSection: React.FC = () => {
+interface CategoriesSectionProps {
+  categoryCounts: Record<string, number> | undefined;
+}
+
+const CategoriesSection: React.FC<CategoriesSectionProps> = ({ categoryCounts }) => {
+  const getCategoryCountText = (catName: string, defaultText: string) => {
+    if (!categoryCounts) return defaultText;
+    const count = categoryCounts[catName.toLowerCase()];
+    return `${count ?? 0} vehicle${count === 1 ? '' : 's'}`;
+  };
+
   const categories = [
     {
       title: 'Economy',
       subtitle: 'Reliable and affordable',
       image: 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?q=80&w=2070&auto=format&fit=crop',
       href: '/marketplace?category=economy',
-      count: '30 vehicles',
+      count: getCategoryCountText('economy', '30 vehicles'),
       span: 'md:col-span-8',
       height: 'h-[360px]',
     },
@@ -320,7 +334,7 @@ const CategoriesSection: React.FC = () => {
       subtitle: 'Spacious comfort for everyone',
       image: 'https://images.unsplash.com/photo-1559416523-140ddc3d238c?q=80&w=1964&auto=format&fit=crop',
       href: '/marketplace?category=family',
-      count: '25 vehicles',
+      count: getCategoryCountText('family', '25 vehicles'),
       span: 'md:col-span-4',
       height: 'h-[360px]',
     },
@@ -329,7 +343,7 @@ const CategoriesSection: React.FC = () => {
       subtitle: 'Perfect for city navigation',
       image: 'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=2070&auto=format&fit=crop',
       href: '/marketplace?category=motorbike',
-      count: '45 vehicles',
+      count: getCategoryCountText('motorbike', '45 vehicles'),
       span: 'md:col-span-4',
       height: 'h-[300px]',
     },
@@ -338,7 +352,7 @@ const CategoriesSection: React.FC = () => {
       subtitle: 'Professional and premium',
       image: 'https://images.unsplash.com/photo-1549924231-f129b911e442?q=80&w=2070&auto=format&fit=crop',
       href: '/marketplace?category=business',
-      count: '15 vehicles',
+      count: getCategoryCountText('business', '15 vehicles'),
       span: 'md:col-span-4',
       height: 'h-[300px]',
     },
@@ -347,7 +361,7 @@ const CategoriesSection: React.FC = () => {
       subtitle: 'Eco-friendly and quiet',
       image: 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7?q=80&w=2070&auto=format&fit=crop',
       href: '/marketplace?category=electric',
-      count: '10 vehicles',
+      count: getCategoryCountText('electric', '10 vehicles'),
       span: 'md:col-span-4',
       height: 'h-[300px]',
     },
@@ -484,14 +498,22 @@ const FeaturedVehiclesSection: React.FC = () => {
 };
 
 const TopCitiesSection: React.FC = () => {
-  const cities = [
-    { name: 'Ho Chi Minh', country: 'Vietnam', image: 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?q=80&w=800&auto=format&fit=crop', vehicles: 240, gradient: 'from-amber-500 to-orange-600' },
-    { name: 'Ha Noi', country: 'Vietnam', image: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?q=80&w=800&auto=format&fit=crop', vehicles: 186, gradient: 'from-blue-500 to-cyan-600' },
-    { name: 'Da Nang', country: 'Vietnam', image: 'https://images.unsplash.com/photo-1518684079-3c830dcef090?q=80&w=800&auto=format&fit=crop', vehicles: 94, gradient: 'from-red-500 to-rose-600' },
-    { name: 'Nha Trang', country: 'Vietnam', image: 'https://images.unsplash.com/photo-1506966953602-c20cc11f75e3?q=80&w=800&auto=format&fit=crop', vehicles: 120, gradient: 'from-purple-500 to-violet-600' },
-    { name: 'Da Lat', country: 'Vietnam', image: 'https://images.unsplash.com/photo-1580655653885-65763b2597d0?q=80&w=800&auto=format&fit=crop', vehicles: 158, gradient: 'from-slate-500 to-slate-700' },
-    { name: 'Hai Phong', country: 'Vietnam', image: 'https://images.unsplash.com/photo-1530973428-5bf2db2e4d71?q=80&w=800&auto=format&fit=crop', vehicles: 127, gradient: 'from-pink-500 to-rose-600' },
-  ];
+  const [cities, setCities] = useState<any[]>([
+    { name: 'Ho Chi Minh', country: 'Vietnam', image: 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?q=80&w=800&auto=format&fit=crop', vehicles: 240 },
+    { name: 'Ha Noi', country: 'Vietnam', image: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?q=80&w=800&auto=format&fit=crop', vehicles: 186 },
+    { name: 'Da Nang', country: 'Vietnam', image: 'https://images.unsplash.com/photo-1518684079-3c830dcef090?q=80&w=800&auto=format&fit=crop', vehicles: 94 },
+    { name: 'Nha Trang', country: 'Vietnam', image: 'https://images.unsplash.com/photo-1506966953602-c20cc11f75e3?q=80&w=800&auto=format&fit=crop', vehicles: 120 },
+    { name: 'Da Lat', country: 'Vietnam', image: 'https://images.unsplash.com/photo-1580655653885-65763b2597d0?q=80&w=800&auto=format&fit=crop', vehicles: 158 },
+    { name: 'Hai Phong', country: 'Vietnam', image: 'https://images.unsplash.com/photo-1530973428-5bf2db2e4d71?q=80&w=800&auto=format&fit=crop', vehicles: 127 },
+  ]);
+
+  useEffect(() => {
+    import('@/services/otherServices').then(({ locationService }) => {
+      locationService.getTopCities().then(data => {
+        if (data && data.length > 0) setCities(data);
+      });
+    });
+  }, []);
 
   return (
     <section className="section">
@@ -548,7 +570,7 @@ const TopCitiesSection: React.FC = () => {
 
 // ====== REVIEWS SECTION ======
 const ReviewsSection: React.FC = () => {
-  const reviews = [
+  const [reviews, setReviews] = useState<any[]>([
     {
       name: 'Alexander Petrova',
       location: 'Moscow, Russia',
@@ -573,7 +595,24 @@ const ReviewsSection: React.FC = () => {
       rating: 5,
       comment: 'I\'ve rented from Turo, Hertz, and others. LuxeWay is in an entirely different league. The vetting process, insurance options, and overall experience is second to none.',
     },
-  ];
+  ]);
+
+  useEffect(() => {
+    import('@/services/otherServices').then(({ reviewService }) => {
+      reviewService.getFeaturedReviews().then(data => {
+        if (data && data.length > 0) {
+          const formatted = data.map((r: any) => ({
+            name: r.reviewer?.displayName || 'Anonymous',
+            avatar: r.reviewer?.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
+            vehicle: 'Luxury Vehicle', // Could fetch from vehicle API
+            rating: r.rating || 5,
+            comment: r.comment || 'Great experience!'
+          }));
+          setReviews(formatted);
+        }
+      });
+    });
+  }, []);
 
   return (
     <section className="section bg-[#0F172A] relative overflow-hidden">
@@ -721,15 +760,22 @@ const BusinessSection: React.FC = () => {
 // ====== FAQ SECTION ======
 const FAQSection: React.FC = () => {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
-
-  const faqs = [
+  const [faqs, setFaqs] = useState<any[]>([
     { q: 'How does LuxeWay verify vehicles?', a: 'Every vehicle undergoes a comprehensive 120-point inspection by certified mechanics, including photo verification, document checks, and insurance validation before listing.' },
     { q: 'What insurance is included?', a: 'All rentals include our baseline $1M coverage. Premium plans up to $5M are available. You can also add your own insurance during booking.' },
     { q: 'Can I cancel my booking?', a: 'Yes. Free cancellation is available up to 48 hours before pickup. Late cancellations may incur a fee depending on the vehicle\'s policy.' },
     { q: 'How does delivery work?', a: 'Owners with delivery enabled will bring the vehicle to your specified address. Fees vary by distance and are shown transparently at checkout.' },
     { q: 'Is there a minimum age requirement?', a: 'Renters must be at least 25 years old and hold a valid driving license for at least 3 years. Some exotic vehicles may have higher requirements.' },
     { q: 'How are payments processed?', a: 'We use Stripe and VNPay for secure payments. You can also use our LuxeWay wallet. Payments are only released to owners after successful pickup confirmation.' },
-  ];
+  ]);
+
+  useEffect(() => {
+    import('@/services/otherServices').then(({ faqService }) => {
+      faqService.getFAQs().then((data: any) => {
+        if (data && data.length > 0) setFaqs(data);
+      });
+    });
+  }, []);
 
   return (
     <section className="section">
@@ -1001,11 +1047,21 @@ const HowItWorksSection: React.FC = () => {
 };
 
 const LandingPage: React.FC = () => {
+  const [statsData, setStatsData] = useState<any>(null);
+
+  useEffect(() => {
+    import('@/services/otherServices').then(({ statisticService }) => {
+      statisticService.getLandingPageStats().then(data => {
+        if (data) setStatsData(data);
+      });
+    });
+  }, []);
+
   return (
     <div>
       <HeroSection />
-      <StatsSection />
-      <CategoriesSection />
+      <StatsSection statsData={statsData} />
+      <CategoriesSection categoryCounts={statsData?.categoryCounts} />
       <FeaturedVehiclesSection />
       <HowItWorksSection />
       <TopCitiesSection />

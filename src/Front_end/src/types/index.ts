@@ -335,6 +335,8 @@ export interface VehicleFilters {
   verified?: boolean;
   deliveryAvailable?: boolean;
   sortBy?: 'price_asc' | 'price_desc' | 'rating' | 'newest' | 'popular';
+  status?: VehicleStatus;
+  isFeatured?: boolean;
 }
 
 // ====== STORE AUTH STATE ======
@@ -355,6 +357,7 @@ export interface RegisterData {
   password: string;
   phone: string;
   role?: UserRole;
+  accountType?: 'individual' | 'business';
 }
 
 // ====== API RESPONSE ======

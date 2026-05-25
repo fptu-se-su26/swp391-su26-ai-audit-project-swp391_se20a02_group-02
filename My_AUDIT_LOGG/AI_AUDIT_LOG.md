@@ -13,7 +13,7 @@
 | MSSV / Danh sách MSSV | DE190324 |
 | Giảng viên hướng dẫn | (Giảng viên môn SWP391) |
 | Ngày bắt đầu | 2026-05-12 |
-| Ngày hoàn thành | 2026-05-24 |
+| Ngày hoàn thành | 2026-05-25 |
 
 ---
 
@@ -200,6 +200,20 @@ Cụ thể:
 
 ---
 
+## Log #11
+
+- **Date:** 2026-05-25
+- **Author:** Nguyễn Văn Dạng (DE190324)
+- **AI Tool:** Antigravity
+- **Purpose:** Triển khai các API backend nâng cao (WebSocket/Chat, Coupon, DigitalContract, Dispute, FAQ, Location, Stats), cấu hình multi-profile DB (SQL Server, MySQL, H2), và nâng cấp Frontend với adminService, i18n đa ngôn ngữ.
+- **Prompt Reference:** PROMPTS.md#prompt-11
+- **AI Output Summary:** Sinh mã nguồn cho các Controller, Service, Repository cho Chat, Coupon, Contract, Dispute, FAQ, Location, Stats; cấu hình profiles trong Spring Boot; sinh service `adminService.ts`, component `LanguageSwitcher`, `ThemeToggle` và cấu hình i18n bằng `react-i18next` ở Frontend.
+- **Human Decision:** Áp dụng code backend, điều chỉnh cấu hình database config trong các file yaml và yml tương thích với cấu hình SQL Server local; chỉnh sửa giao diện AdminDashboard sử dụng các endpoints thực tế; tích hợp các component switcher vào header/navbar.
+- **Applied To:** Toàn bộ project (src/Back_end/, src/Front_end/).
+- **Verification:** Chạy thành công ứng dụng với các profile khác nhau, kiểm tra API qua Swagger; kiểm tra Frontend chuyển đổi ngôn ngữ EN/VI hoạt động đúng, giao diện AdminDashboard hiển thị dữ liệu thực từ database.
+
+---
+
 ## 5. Bảng tổng hợp mức độ sử dụng AI
 
 Đánh dấu mức độ AI hỗ trợ ở từng hạng mục.
@@ -382,4 +396,4 @@ Sinh viên/nhóm cam kết rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-05-21 |
+| Nguyễn Văn Dạng - DE190324 | 2026-05-25 |

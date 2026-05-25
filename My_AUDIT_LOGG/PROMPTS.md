@@ -62,6 +62,7 @@ Sinh viên/nhóm cần ghi lại:
 | 8 | 2026-05-23 | Antigravity | Hoàn thiện Back-end Spring Boot | Hỏi tạo các module: Review, Notification, Payment, User, Admin | Full API Controller, Service, DTO, Repositories | Có | src/Back_end/ |
 | 9 | 2026-05-24 | Antigravity | Tích hợp Frontend với Backend thực tế | Kết nối frontend với API Spring Boot và xóa bỏ mock/db | Các services sử dụng apiClient, xóa mock/db | Có | src/Front_end/src/services/ |
 | 10 | 2026-05-24 | Antigravity | Debug lỗi Spring Data JPA và Gradle build | Hỏi cách fix lỗi missing symbol method trong Repository và lỗi Unable to delete directory build | Khai báo method JPA, script kill java, force delete folder | Có | src/Back_end/src/main/java/com/luxeway/repository/ |
+| 11 | 2026-05-25 | Antigravity | Triển khai các API phụ và tích hợp i18n, adminService | Hỏi tạo các module backend nâng cao, cấu hình profiles, adminService.ts và LanguageSwitcher | Các controller/services backend mới, files config và component đa ngôn ngữ | Có | src/Back_end/, src/Front_end/ |
 
 ---
 
@@ -540,6 +541,81 @@ Học được cách clear cache và rebuild của IntelliJ IDEA (Build -> Rebui
 | Kết quả chạy/test | Dòng thông báo: `🚗 LuxeWay Backend is running on http://localhost:8080/api/v1` |
 | Ghi chú khác | Backend compile thành công |
 
+### Prompt số 11
+
+| Nội dung | Thông tin |
+|---|---|
+| Ngày sử dụng | 2026-05-25 |
+| Công cụ AI | Antigravity |
+| Mục đích | Triển khai các API backend nâng cao, cấu hình profiles và tích hợp adminService, i18n ở Frontend |
+| Phần việc liên quan | Fullstack (Backend & Frontend) |
+| Mức độ sử dụng | Hỏi sinh code |
+
+#### 5.1. Prompt nguyên văn
+
+```text
+Build the remaining backend APIs for LuxeWay:
+1. Spring Boot WebSocket configuration and ChatController for real-time messaging using STOMP.
+2. CRUD endpoints and services for Coupon (discount codes), DigitalContract (lease agreements), Dispute (renter-owner issues), FAQ, and Location.
+3. StatisticService and StatisticController to aggregate user, vehicle, booking count and revenue stats.
+4. Support multi-profile database configs in application.yml, application-h2.yml, application-mysql.yml.
+
+And on React Frontend:
+1. Create adminService.ts using apiClient to query the admin stats and list users/vehicles/bookings for AdminDashboard.tsx.
+2. Implement multilingual support (i18n) using react-i18next: configure i18n/config.ts, and create LanguageSwitcher and ThemeToggle components.
+3. Enhance authService.ts with token refresh, change password, and forgot/verify/reset password OTP flows.
+```
+
+#### 5.2. Bối cảnh khi viết prompt
+
+```text
+Đây là giai đoạn nước rút để hoàn thiện toàn bộ các tính năng bổ sung của cả Backend và Frontend, kết nối 100% API thực tế cho dashboard admin, hỗ trợ đa ngôn ngữ, hệ thống chat thời gian thực và quản lý khuyến mãi/hợp đồng/tranh chấp.
+```
+
+#### 5.3. Kết quả AI trả về
+
+```text
+AI cung cấp:
+- Toàn bộ các Entity, Repository, Service và Controller Spring Boot cho WebSocket/Chat, Coupon, DigitalContract, Dispute, FAQ, Location, Stats.
+- Cấu hình file YAML chia profiles cho DB H2, MySQL, SQL Server.
+- File adminService.ts ở Frontend thực hiện các REST API calls đến `/admin/...`.
+- Cấu hình i18n/config.ts với bản dịch EN/VI, component LanguageSwitcher và ThemeToggle sử dụng Tailwind/CSS custom.
+- Các phương thức refresh, change-password, reset-password trong authService.ts.
+```
+
+#### 5.4. Kết quả đã áp dụng vào bài
+
+```text
+Áp dụng toàn bộ code vào dự án. Cấu hình database kết nối thành công, Frontend chuyển đổi ngôn ngữ EN/VI mượt mà, AdminDashboard load động dữ liệu thống kê từ server backend.
+```
+
+#### 5.5. Phần sinh viên/nhóm đã chỉnh sửa hoặc cải tiến
+
+```text
+- Tự viết thêm logic map dữ liệu API về state của AdminDashboard để tránh lỗi Undefined khi dữ liệu rỗng.
+- Điều chỉnh styles của LanguageSwitcher khớp với Glassmorphism theme của LuxeWay.
+- Thiết lập biến môi trường SPRING_PROFILES_ACTIVE mặc định là sqlserver để chạy đúng với DB local.
+```
+
+#### 5.6. Đánh giá chất lượng prompt
+
+- [x] Prompt rõ ràng
+- [x] Prompt có đủ bối cảnh
+- [ ] Prompt còn thiếu thông tin
+- [x] Prompt tạo ra kết quả tốt
+- [ ] Prompt tạo ra kết quả chưa phù hợp
+- [ ] Cần hỏi lại AI nhiều lần
+- [x] Cần tự kiểm tra và chỉnh sửa nhiều
+- [ ] Kết quả AI có lỗi hoặc chưa chính xác
+
+#### 5.7. Minh chứng liên quan
+
+| Loại minh chứng | Nội dung |
+|---|---|
+| Link commit | (Chưa commit) |
+| File liên quan | src/Back_end/ và src/Front_end/src/services/adminService.ts |
+| Kết quả chạy/test | Đăng nhập tài liệu Admin hiển thị statistics động; đổi ngôn ngữ EN/VI hoạt động đúng |
+
 ---
 
 ## 6. Prompt quan trọng nhất
@@ -753,4 +829,4 @@ Sinh viên/nhóm cam kết rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-05-21 |
+| Nguyễn Văn Dạng - DE190324 | 2026-05-25 |

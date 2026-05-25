@@ -57,10 +57,7 @@ try {
 } catch {
     Write-Host "❌ Cannot connect to SQL Server on localhost:1433" -ForegroundColor Red
     Write-Host "Please make sure SQL Server is running and database 'car_rental_platform' exists" -ForegroundColor Yellow
-    $continue = Read-Host "Continue anyway? (y/n)"
-    if ($continue -ne "y") {
-        exit 1
-    }
+    Write-Host "Continuing anyway..." -ForegroundColor Yellow
 }
 
 # Run the application
@@ -83,5 +80,5 @@ if ($useMaven) {
 }
 
 Write-Host ""
-Write-Host "Press any key to exit..." -ForegroundColor Gray
-$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+Write-Host "Done" -ForegroundColor Gray
+

@@ -33,20 +33,18 @@ export const LoginPage: React.FC = () => {
 
     const success = await login(email, password);
     if (success) {
+      const { user } = useAuthStore.getState();
       toast.success('Welcome back!', 'You have been signed in successfully.');
-      navigate('/dashboard');
+      if (user?.role === 'admin') navigate('/admin');
+      else if (user?.role === 'owner') navigate('/owner');
+      else navigate('/dashboard');
     } else {
       toast.error('Invalid credentials', 'Please check your email and password.');
       setErrors({ password: 'Invalid email or password' });
     }
   };
 
-  const demoAccounts = [
-    { label: 'Customer', email: 'user@luxeway.com', password: 'User@123', color: 'text-blue-600 bg-blue-50' },
-    { label: 'Owner', email: 'owner@luxeway.com', password: 'Owner@123', color: 'text-green-600 bg-green-50' },
-    { label: 'Admin', email: 'admin@luxeway.com', password: 'Admin@123', color: 'text-purple-600 bg-purple-50' },
-    { label: 'Business', email: 'business@luxeway.com', password: 'Business@123', color: 'text-gold bg-yellow-50' },
-  ];
+
 
   return (
     <div className="min-h-screen flex">
@@ -100,22 +98,7 @@ export const LoginPage: React.FC = () => {
           <h1 className="font-display text-3xl font-bold text-[#0F172A] mb-2">Welcome back</h1>
           <p className="text-slate-500 mb-8">Sign in to your LuxeWay account</p>
 
-          {/* Demo Accounts */}
-          <div className="mb-6 p-4 bg-white rounded-2xl border border-slate-200">
-            <p className="text-xs font-semibold text-slate-500 mb-3 uppercase tracking-wider">Quick Demo Access</p>
-            <div className="grid grid-cols-2 gap-2">
-              {demoAccounts.map(acc => (
-                <button
-                  key={acc.label}
-                  type="button"
-                  onClick={() => { setEmail(acc.email); setPassword(acc.password); }}
-                  className={`text-xs font-semibold px-3 py-2 rounded-xl transition-colors ${acc.color} hover:opacity-80`}
-                >
-                  {acc.label}
-                </button>
-              ))}
-            </div>
-          </div>
+
 
           {/* Google Login */}
           <GoogleLoginButton onSuccess={() => navigate('/dashboard')} />
@@ -302,8 +285,11 @@ export const RegisterPage: React.FC = () => {
     });
 
     if (success) {
+      const { user } = useAuthStore.getState();
       toast.success('Account created!', 'Welcome to LuxeWay.');
-      navigate('/dashboard');
+      if (user?.role === 'admin') navigate('/admin');
+      else if (user?.role === 'owner') navigate('/owner');
+      else navigate('/dashboard');
     } else {
       toast.error('Email already exists', 'Try signing in instead.');
     }
