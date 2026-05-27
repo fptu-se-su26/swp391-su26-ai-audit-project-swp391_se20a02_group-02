@@ -435,6 +435,50 @@ Branch: NguuyenVanDang
 Chưa commit các thay đổi nâng cao của ngày 2026-05-25 (đang ở trạng thái modified/untracked).
 ```
 
+# [Phase 04.8] Refactoring & Form API Integration
+
+## Ngày thực hiện
+
+```text
+2026-05-28
+```
+
+## Đã hoàn thành
+
+- [x] Tích hợp component `ImageUploader` kéo-thả ảnh xe vào `VehicleFormPage` trên Owner Dashboard.
+- [x] Triển khai gọi APIs thực tế từ frontend `VehicleFormPage` sang Spring Boot backend (`vehicleService.create` / `vehicleService.update`).
+- [x] Thêm logic load dữ liệu xe cũ động từ REST API khi truy cập trang chỉnh sửa xe.
+- [x] Đổi tên nhánh sang `feature/de190324-vehicle-rental-platform` và đồng bộ commit messages theo convention.
+- [x] Khôi phục các trang `ComparePage.tsx` và `BusinessPage.tsx` bị mất từ stash, giải quyết hoàn toàn lỗi build frontend.
+- [x] Xử lý untrack và bỏ qua thư mục cache Gradle (`.gradle/`) cùng config `.idea/`.
+
+## Thay đổi chi tiết - Nguyễn Văn Dạng (DE190324)
+
+| STT | Nội dung thay đổi | Người thực hiện | File/Module liên quan | Minh chứng |
+|---:|---|---|---|---|
+| 1 | Tích hợp ImageUploader & REST API vào VehicleFormPage | Nguyễn Văn Dạng | OwnerDashboard.tsx | OwnerDashboard.tsx |
+| 2 | Khôi phục các file page bị thiếu | Nguyễn Văn Dạng | ComparePage.tsx, BusinessPage.tsx | Các file được checkout lại |
+| 3 | Cấu hình .gitignore & dọn dẹp Git tracking | Nguyễn Văn Dạng | .gitignore, compiler.xml, .gradle/ | Git status clean |
+| 4 | Đổi tên nhánh & rewriting commits | Nguyễn Văn Dạng | Git | feature/de190324-vehicle-rental-platform |
+
+## AI có hỗ trợ không?
+
+- [x] Có
+- [ ] Không
+
+Nếu có, mô tả AI đã hỗ trợ phần nào:
+
+```text
+AI (Antigravity) cung cấp mã tích hợp ImageUploader, cấu trúc load/save REST API ở VehicleFormPage, hướng dẫn workaround đổi tên nhánh trên Windows và dọn dẹp Git tracking.
+```
+
+## Commit/Screenshot minh chứng
+
+```text
+Branch: feature/de190324-vehicle-rental-platform
+Commit: 01aec85 - [DE190324] feat: integrate image uploader and edit/create functionality in OwnerDashboard
+```
+
 ---
 
 # [Phase 05] Testing & Debug

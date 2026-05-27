@@ -214,6 +214,20 @@ Cụ thể:
 
 ---
 
+## Log #12
+
+- **Date:** 2026-05-28
+- **Author:** Nguyễn Văn Dạng (DE190324)
+- **AI Tool:** Antigravity
+- **Purpose:** Tích hợp ImageUploader vào VehicleFormPage ở dashboard, thực hiện lưu trữ/đồng bộ dữ liệu thực tế với Backend REST API và khôi phục các trang BusinessPage/ComparePage bị thiếu.
+- **Prompt Reference:** PROMPTS.md#prompt-12
+- **AI Output Summary:** Cung cấp giải pháp tích hợp ImageUploader component, cập nhật edit/create submit calls để lưu vào backend REST API, và khôi phục files.
+- **Human Decision:** Áp dụng toàn bộ, chỉnh sửa: ép kiểu `vehicle.location` sang `any` để giải quyết lỗi build TypeScript liên quan đến truy cập trường `state` và `zip`.
+- **Applied To:** `src/Front_end/src/pages/dashboard/OwnerDashboard.tsx`, `src/Front_end/src/pages/compare/ComparePage.tsx`, `src/Front_end/src/pages/static/BusinessPage.tsx`
+- **Verification:** Chạy `npm run type-check` compile 100% thành công với 0 lỗi.
+
+---
+
 ## 5. Bảng tổng hợp mức độ sử dụng AI
 
 Đánh dấu mức độ AI hỗ trợ ở từng hạng mục.

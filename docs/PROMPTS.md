@@ -63,6 +63,8 @@ Sinh viên/nhóm cần ghi lại:
 | 9 | 2026-05-24 | Antigravity | Tích hợp Frontend với Backend thực tế | Kết nối frontend với API Spring Boot và xóa bỏ mock/db | Các services sử dụng apiClient, xóa mock/db | Có | src/Front_end/src/services/ |
 | 10 | 2026-05-24 | Antigravity | Debug lỗi Spring Data JPA và Gradle build | Hỏi cách fix lỗi missing symbol method trong Repository và lỗi Unable to delete directory build | Khai báo method JPA, script kill java, force delete folder | Có | src/Back_end/src/main/java/com/luxeway/repository/ |
 | 11 | 2026-05-25 | Antigravity | Triển khai các API phụ và tích hợp i18n, adminService | Hỏi tạo các module backend nâng cao, cấu hình profiles, adminService.ts và LanguageSwitcher | Các controller/services backend mới, files config và component đa ngôn ngữ | Có | src/Back_end/, src/Front_end/ |
+| 12 | 2026-05-28 | Antigravity | Tích hợp ImageUploader & REST API vào form xe | Hỏi cách tích hợp kéo-thả ImageUploader vào VehicleFormPage và gọi API lưu xe | VehicleFormPage gọi REST API create/update xe, tích hợp ImageUploader | Có | src/pages/dashboard/OwnerDashboard.tsx |
+
 
 ---
 
@@ -615,6 +617,71 @@ AI cung cấp:
 | Link commit | (Chưa commit) |
 | File liên quan | src/Back_end/ và src/Front_end/src/services/adminService.ts |
 | Kết quả chạy/test | Đăng nhập tài liệu Admin hiển thị statistics động; đổi ngôn ngữ EN/VI hoạt động đúng |
+
+### Prompt số 12
+
+| Nội dung | Thông tin |
+|---|---|
+| Ngày sử dụng | 2026-05-28 |
+| Công cụ AI | Antigravity |
+| Mục đích | Tích hợp kéo-thả ImageUploader vào VehicleFormPage và gọi API lưu xe |
+| Phần việc liên quan | Frontend / Coding |
+| Mức độ sử dụng | Hỏi sinh code |
+
+#### 5.1. Prompt nguyên văn
+
+```text
+Please help me integrate the custom ImageUploader component into the VehicleFormPage inside OwnerDashboard.tsx.
+I want to:
+1. Replace the plain thumbnailUrl text input in step 2 with the ImageUploader component.
+2. In step 2, let users upload up to 5 images. The first image uploaded should automatically update the form's thumbnailUrl.
+3. Update the handleSubmit function to call vehicleService.create (when adding a vehicle) or vehicleService.update (when editing a vehicle) and pass the uploaded images array instead of mock delays.
+4. Add fetching vehicle logic using vehicleService.getById(id) inside a useEffect if the vehicle id is present in the URL, and populate the form states for editing.
+```
+
+#### 5.2. Bối cảnh khi viết prompt
+
+```text
+Chúng tôi đã có sẵn component ImageUploader và các REST API endpoints để lưu xe vào backend Spring Boot, nhưng trang điền thông tin đăng ký xe vẫn đang sử dụng mock delay và ô nhập link ảnh tĩnh. Cần tích hợp mọi thứ lại để chủ xe có thể thực sự upload ảnh và lưu xe.
+```
+
+#### 5.3. Kết quả AI trả về
+
+```text
+AI cung cấp giải pháp chỉnh sửa VehicleFormPage: thêm useParams() để lấy id xe, viết hàm useEffect tải dữ liệu xe từ backend và map vào form state, chỉnh sửa form step 2 để thay thế text input bằng ImageUploader component, cập nhật handleSubmit để gọi vehicleService.create/update dựa trên sự hiện diện của id.
+```
+
+#### 5.4. Kết quả đã áp dụng vào bài
+
+```text
+Đã áp dụng toàn bộ code vào `OwnerDashboard.tsx`, qua đó gỡ bỏ hoàn toàn mock delay ở form đăng ký và sửa đổi UI trực quan hơn nhờ việc kéo thả ảnh xe thực tế.
+```
+
+#### 5.5. Phần sinh viên/nhóm đã chỉnh sửa hoặc cải tiến
+
+```text
+- Ép kiểu `vehicle.location as any` khi truy cập `state` và `zip` để giải quyết triệt để lỗi kiểu dữ liệu TypeScript khi build project.
+- Thêm vòng xoay spinner hiển thị lúc đang tải dữ liệu xe cũ từ API.
+```
+
+#### 5.6. Đánh giá chất lượng prompt
+
+- [x] Prompt rõ ràng
+- [x] Prompt có đủ bối cảnh
+- [ ] Prompt còn thiếu thông tin
+- [x] Prompt tạo ra kết quả tốt
+- [ ] Prompt tạo ra kết quả chưa phù hợp
+- [ ] Cần hỏi lại AI nhiều lần
+- [x] Cần tự kiểm tra và chỉnh sửa nhiều
+- [ ] Kết quả AI có lỗi hoặc chưa chính xác
+
+#### 5.7. Minh chứng liên quan
+
+| Loại minh chứng | Nội dung |
+|---|---|
+| Link commit | Commit 01aec85 |
+| File liên quan | src/pages/dashboard/OwnerDashboard.tsx |
+| Kết quả chạy/test | Upload ảnh xe và lưu thành công, không còn lỗi TypeScript build |
 
 ---
 

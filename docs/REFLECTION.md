@@ -83,6 +83,15 @@ Trong ngày hôm nay (2026-05-25), mình đã sử dụng AI để hỗ trợ ho
 
 Bài học lớn nhất rút ra: Việc chia nhỏ cấu hình Spring Boot (multi-profile) giúp việc demo dự án linh hoạt hơn khi có thể chạy dễ dàng trên cả SQL Server, MySQL lẫn in-memory H2 DB mà không cần sửa code gốc. Đồng thời, cấu hình dịch thuật (i18n) nên được tách thành các file JSON độc lập để dễ dàng bảo trì dịch thuật hơn là hardcode trực tiếp trong file config của AI.
 
+## Reflection - Tích hợp ImageUploader & REST API (2026-05-28)
+
+Hôm nay (2026-05-28), nhóm đã sử dụng AI để hỗ trợ hoàn thiện tích hợp REST API thực tế cho `VehicleFormPage` thay thế phần dữ liệu mock cũ và tích hợp kéo thả ảnh với `ImageUploader` component.
+
+Bài học rút ra:
+1. **Lỗi kiểu dữ liệu TypeScript**: Trong quá trình chỉnh sửa, hệ thống báo lỗi do trường `state` và `zip` không được định nghĩa rõ ràng trong kiểu dữ liệu `location` của Vehicle. Ép kiểu dữ liệu `vehicle.location as any` là giải pháp nhanh chóng và thực tế để giải quyết các hạn chế về kiểu dữ liệu khi làm việc với API động từ backend.
+2. **Khôi phục files**: Bằng cách sử dụng git checkout trên mã băm commit stash, nhóm đã dễ dàng lấy lại các file bị mất (`ComparePage.tsx` và `BusinessPage.tsx`), khôi phục trạng thái build hoàn chỉnh cho dự án.
+3. **Chuẩn hóa Git**: Quy trình làm việc monorepo đòi hỏi kỷ luật cao về việc ignore các file rác sinh ra bởi Gradle và IDE để tránh gây phiền toái khi rebase hoặc filter-branch.
+
 Công cụ sử dụng nhiều nhất: Antigravity (AI coding assistant tích hợp trong IDE).
 AI giúp tăng tốc đáng kể - ước tính tiết kiệm 60-70% thời gian coding cho các component phức tạp.
 Tuy nhiên, vẫn phải đầu tư nhiều thời gian để đọc, hiểu, test và chỉnh sửa kết quả AI.
