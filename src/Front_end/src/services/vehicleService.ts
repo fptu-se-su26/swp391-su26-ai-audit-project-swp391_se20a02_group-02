@@ -44,10 +44,15 @@ export const vehicleService = {
       if (filters) {
         if (filters.status) queryParams.append('status', filters.status);
         if (filters.location) queryParams.append('location', filters.location);
+        // Send ALL selected categories as repeated params: category=suv&category=economy
         if (filters.category && filters.category.length > 0) {
-          queryParams.append('category', filters.category[0]);
+          filters.category.forEach(cat => queryParams.append('category', cat));
         }
-        if (filters.minPrice !== undefined) queryParams.append('minPrice', filters.minPrice.toString());
+        // Send ALL selected brands as repeated params: brand=toyota&brand=honda
+        if (filters.brands && filters.brands.length > 0) {
+          filters.brands.forEach(b => queryParams.append('brand', b.toLowerCase()));
+        }
+        if (filters.minPrice !== undefined && filters.minPrice > 0) queryParams.append('minPrice', filters.minPrice.toString());
         if (filters.maxPrice !== undefined) queryParams.append('maxPrice', filters.maxPrice.toString());
         if (filters.minSeats !== undefined) queryParams.append('minSeats', filters.minSeats.toString());
         if (filters.transmission && filters.transmission.length > 0) {
@@ -57,9 +62,9 @@ export const vehicleService = {
           queryParams.append('fuelType', filters.fuelType[0]);
         }
         if (filters.minRating !== undefined) queryParams.append('minRating', filters.minRating.toString());
-        if (filters.instantBook !== undefined) queryParams.append('instantBook', filters.instantBook.toString());
-        if (filters.deliveryAvailable !== undefined) queryParams.append('deliveryAvailable', filters.deliveryAvailable.toString());
-        if (filters.isFeatured !== undefined) queryParams.append('isFeatured', filters.isFeatured.toString());
+        if (filters.instantBook) queryParams.append('instantBook', 'true');
+        if (filters.deliveryAvailable) queryParams.append('deliveryAvailable', 'true');
+        if (filters.isFeatured) queryParams.append('isFeatured', 'true');
         if (filters.sortBy) queryParams.append('sortBy', filters.sortBy);
       }
       
@@ -175,7 +180,12 @@ export const vehicleService = {
   },
 
   getBrands(): string[] {
-    return ['Mercedes-Benz', 'BMW', 'Audi', 'Porsche', 'Tesla', 'Lamborghini', 'Ferrari', 'Range Rover'];
+    // Vietnamese market brands matching actual vehicle data in the platform
+    return [
+      'Honda', 'Yamaha', 'Toyota', 'Mazda', 'KIA',
+      'Hyundai', 'Ford', 'VinFast', 'Mitsubishi',
+      'Piaggio', 'Vespa', 'SYM', 'Suzuki'
+    ];
   },
 
   getCities(): string[] {
