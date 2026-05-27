@@ -34,11 +34,27 @@ public class VehicleService {
     public Page<VehicleDTOs.VehicleResponse> getVehicles(VehicleDTOs.VehicleFilterRequest filter) {
         Pageable pageable = buildPageable(filter.getSortBy(), filter.getPage(), filter.getSize());
 
-        VehicleCategory category = null;
-        if (filter.getCategory() != null && !filter.getCategory().isBlank()) {
-            try { category = VehicleCategory.valueOf(filter.getCategory().toUpperCase()); }
-            catch (IllegalArgumentException ignored) {}
+        // Parse categories (multi-select)
+        List<VehicleCategory> categoryList = null;
+        if (filter.getCategories() != null && !filter.getCategories().isEmpty()) {
+            categoryList = filter.getCategories().stream()
+                .map(c -> {
+                    try { return VehicleCategory.valueOf(c.toUpperCase()); }
+                    catch (IllegalArgumentException e) { return null; }
+                })
+                .filter(c -> c != null)
+                .collect(Collectors.toList());
+        } else if (filter.getCategory() != null && !filter.getCategory().isBlank()) {
+            // Legacy single category fallback
+            try {
+                categoryList = List.of(VehicleCategory.valueOf(filter.getCategory().toUpperCase()));
+            } catch (IllegalArgumentException ignored) {}
         }
+
+        // Brands (lowercase for case-insensitive IN query)
+        List<String> brandList = (filter.getBrands() != null && !filter.getBrands().isEmpty())
+            ? filter.getBrands().stream().map(String::toLowerCase).collect(Collectors.toList())
+            : null;
 
         TransmissionType transmission = null;
         if (filter.getTransmission() != null && !filter.getTransmission().isBlank()) {
@@ -52,9 +68,10 @@ public class VehicleService {
             catch (IllegalArgumentException ignored) {}
         }
 
-        Page<Vehicle> page = vehicleRepository.filterVehicles(
+        Page<Vehicle> page = vehicleRepository.filterVehiclesMulti(
             filter.getLocation(),
-            category,
+            categoryList,
+            brandList,
             filter.getMinPrice(),
             filter.getMaxPrice(),
             filter.getMinSeats(),

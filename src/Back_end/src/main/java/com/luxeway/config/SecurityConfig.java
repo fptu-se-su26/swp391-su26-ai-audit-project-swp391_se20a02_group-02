@@ -57,9 +57,11 @@ public class SecurityConfig {
                     "/swagger-ui/**",
                     "/swagger-ui.html",
                     "/api-docs/**",
-                    "/actuator/health",
+                    "/actuator/**",
                     "/payments/vnpay/callback",
-                    "/test/**"
+                    "/test/**",
+                    "/upload",
+                    "/uploads/**"
                 ).permitAll()
                 // Public vehicle browsing
                 .requestMatchers(HttpMethod.GET,

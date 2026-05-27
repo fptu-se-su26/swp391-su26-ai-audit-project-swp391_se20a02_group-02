@@ -110,7 +110,12 @@ public class VehicleDTOs {
     @Data
     public static class VehicleFilterRequest {
         private String location;
+        // Single category (legacy)
         private String category;
+        // Multi-select categories (new)
+        private List<String> categories;
+        // Multi-select brands
+        private List<String> brands;
         private BigDecimal minPrice;
         private BigDecimal maxPrice;
         private Integer minSeats;
@@ -120,7 +125,7 @@ public class VehicleDTOs {
         private boolean instantBook;
         private boolean deliveryAvailable;
         private boolean verifiedOnly;
-        private boolean isFeatured;
+        private boolean featured;
         private String sortBy; // price_asc, price_desc, rating, newest, popular
         private int page = 0;
         private int size = 12;

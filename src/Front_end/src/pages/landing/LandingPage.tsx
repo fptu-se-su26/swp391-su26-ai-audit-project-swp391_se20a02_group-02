@@ -23,7 +23,10 @@ const HeroSection: React.FC = () => {
   const opacity = useTransform(scrollY, [0, 400], [1, 0]);
   const [location, setLocation] = useState('');
   const [vehicleType, setVehicleType] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const today = new Date().toISOString().split('T')[0];
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -40,6 +43,8 @@ const HeroSection: React.FC = () => {
     const params = new URLSearchParams();
     if (location) params.set('location', location);
     if (vehicleType) params.set('category', vehicleType);
+    if (startDate) params.set('startDate', startDate);
+    if (endDate) params.set('endDate', endDate);
     navigate(`/marketplace?${params.toString()}`);
   };
 
@@ -74,7 +79,8 @@ const HeroSection: React.FC = () => {
             className="w-full h-full object-cover"
           />
         </AnimatePresence>
-        <div className="hero-overlay absolute inset-0" />
+        {/* Gradient overlay - lighter to improve text readability without full black */}
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0.65) 100%)' }} />
       </motion.div>
 
       {/* Floating Particles */}
@@ -146,84 +152,103 @@ const HeroSection: React.FC = () => {
           <motion.div
             custom={3}
             variants={heroTextVariants}
-            className="glass rounded-3xl p-2 max-w-4xl w-full mx-auto"
+            className="glass rounded-3xl p-3 max-w-5xl w-full mx-auto"
           >
-            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
               {/* Location */}
-              <div className="sm:col-span-4 relative">
-                <div className="flex items-center gap-3 px-4 py-3.5 bg-white rounded-2xl text-left">
-                  <MapPin className="w-5 h-5 text-accent flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Location</p>
-                      <input
-                        type="text"
-                        value={location}
-                        onChange={e => setLocation(e.target.value)}
-                        placeholder="Ho Chi Minh, Ha Noi, Da Nang..."
-                        className="w-full text-sm font-medium text-[#0F172A] placeholder:text-slate-400 outline-none bg-transparent"
-                        onKeyDown={e => e.key === 'Enter' && handleSearch()}
-                      />
-                  </div>
+              <div className="flex items-center gap-3 px-4 py-3.5 bg-white rounded-2xl text-left">
+                <MapPin className="w-5 h-5 text-accent flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Location</p>
+                  <input
+                    type="text"
+                    value={location}
+                    onChange={e => setLocation(e.target.value)}
+                    placeholder="Ho Chi Minh, Ha Noi..."
+                    className="w-full text-sm font-medium text-[#0F172A] placeholder:text-slate-400 outline-none bg-transparent"
+                    onKeyDown={e => e.key === 'Enter' && handleSearch()}
+                  />
                 </div>
               </div>
 
-              {/* Dates */}
-              <div className="sm:col-span-4 relative">
-                <div className="flex items-center gap-3 px-4 py-3.5 bg-white rounded-2xl text-left">
-                  <Calendar className="w-5 h-5 text-accent flex-shrink-0" />
+              {/* Start Date */}
+              <div className="flex items-center gap-3 px-4 py-3.5 bg-white rounded-2xl">
+                <Calendar className="w-5 h-5 text-accent flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Pick-up Date</p>
+                  <input
+                    type="date"
+                    value={startDate}
+                    min={today}
+                    onChange={e => setStartDate(e.target.value)}
+                    className="w-full text-sm font-medium text-[#0F172A] outline-none bg-transparent cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              {/* End Date */}
+              <div className="flex items-center gap-3 px-4 py-3.5 bg-white rounded-2xl">
+                <Calendar className="w-5 h-5 text-accent flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Return Date</p>
+                  <input
+                    type="date"
+                    value={endDate}
+                    min={startDate || today}
+                    onChange={e => setEndDate(e.target.value)}
+                    className="w-full text-sm font-medium text-[#0F172A] outline-none bg-transparent cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              {/* Category + Search */}
+              <div className="flex gap-2">
+                <div className="flex-1 flex items-center gap-3 px-4 py-3.5 bg-white rounded-2xl">
+                  <Car className="w-5 h-5 text-accent flex-shrink-0" />
                   <div className="flex-1">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Pick-up & Return</p>
-                    <p className="text-sm font-medium text-slate-400">Select dates</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Category</p>
+                    <select
+                      value={vehicleType}
+                      onChange={e => setVehicleType(e.target.value)}
+                      className="w-full text-sm font-medium text-[#0F172A] outline-none bg-transparent appearance-none cursor-pointer"
+                    >
+                      <option value="">All Types</option>
+                      <option value="motorbike">Motorbike</option>
+                      <option value="economy">Economy</option>
+                      <option value="family">Family</option>
+                      <option value="suv">SUV</option>
+                      <option value="city_car">City Car</option>
+                      <option value="business">Business</option>
+                      <option value="electric">Electric</option>
+                      <option value="tourism">Tourism</option>
+                    </select>
                   </div>
                 </div>
-              </div>
-
-              {/* Vehicle Type */}
-              <div className="sm:col-span-4">
-                <div className="flex gap-2 h-full">
-                  <div className="flex-1 flex items-center gap-3 px-4 py-3.5 bg-white rounded-2xl">
-                    <Car className="w-5 h-5 text-accent flex-shrink-0" />
-                    <div className="flex-1">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Category</p>
-                      <select
-                        value={vehicleType}
-                        onChange={e => setVehicleType(e.target.value)}
-                        className="w-full text-sm font-medium text-[#0F172A] outline-none bg-transparent appearance-none cursor-pointer"
-                      >
-                        <option value="">All Vehicles</option>
-                        <option value="motorbike">Motorbike</option>
-                        <option value="economy">Economy</option>
-                        <option value="family">Family</option>
-                        <option value="suv">SUV</option>
-                        <option value="city_car">City Car</option>
-                        <option value="business">Business</option>
-                        <option value="electric">Electric</option>
-                        <option value="tourism">Tourism</option>
-                      </select>
-                    </div>
-                  </div>
-                  <motion.button
-                    onClick={handleSearch}
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
-                    className="flex items-center gap-2 px-6 py-3.5 bg-[#0F172A] text-white font-semibold rounded-2xl text-sm whitespace-nowrap"
-                    style={{ boxShadow: '0 4px 20px rgba(15,23,42,0.4)' }}
-                  >
-                    <Search className="w-4 h-4" />
-                    Search
-                  </motion.button>
-                </div>
+                <motion.button
+                  onClick={handleSearch}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  className="flex items-center gap-2 px-5 py-3.5 bg-[#0F172A] text-white font-semibold rounded-2xl text-sm whitespace-nowrap"
+                  style={{ boxShadow: '0 4px 20px rgba(15,23,42,0.4)' }}
+                >
+                  <Search className="w-4 h-4" />
+                  <span className="hidden sm:inline">Search</span>
+                </motion.button>
               </div>
             </div>
           </motion.div>
 
-          {/* Quick Tags */}
+          {/* Quick Brand Tags - pass brand to marketplace filter */}
           <motion.div custom={4} variants={heroTextVariants} className="flex flex-wrap justify-center gap-2 mt-6">
             {['Honda', 'Yamaha', 'VinFast', 'Toyota', 'KIA', 'Mazda'].map(brand => (
               <button
                 key={brand}
-                onClick={() => navigate(`/marketplace?brand=${brand}`)}
-                className="px-3 py-1.5 glass text-white/80 text-xs font-medium rounded-full hover:bg-white/20 transition-colors duration-200"
+                onClick={() => {
+                  const params = new URLSearchParams();
+                  params.set('brand', brand.toLowerCase());
+                  navigate(`/marketplace?${params.toString()}`);
+                }}
+                className="px-3 py-1.5 glass text-white/80 text-xs font-medium rounded-full hover:bg-white/20 transition-colors duration-200 border border-white/20"
               >
                 {brand}
               </button>
@@ -264,10 +289,11 @@ interface StatsSectionProps {
 
 const StatsSection: React.FC<StatsSectionProps> = ({ statsData }) => {
   const stats = [
-    { value: statsData ? statsData.qualityVehicles : 5000, suffix: '+', label: 'Quality Vehicles', icon: Car },
-    { value: statsData ? statsData.provinces : 63, suffix: '', label: 'Provinces', icon: Globe },
-    { value: statsData ? statsData.happyClients : 250000, suffix: '+', label: 'Happy Clients', icon: Users },
-    { value: statsData ? statsData.averageRating : 4.98, suffix: '/5', label: 'Average Rating', icon: Star, decimal: true },
+    { value: statsData?.qualityVehicles ?? 5000, suffix: '+', label: 'Quality Vehicles', icon: Car },
+    { value: statsData?.provinces ?? 63, suffix: '', label: 'Provinces', icon: Globe },
+    { value: statsData?.happyClients ?? 250000, suffix: '+', label: 'Happy Clients', icon: Users },
+    { value: statsData?.averageRating ?? 4.98, suffix: '/5', label: 'Average Rating', icon: Star, decimal: true },
+
   ];
 
   return (
@@ -469,15 +495,15 @@ const FeaturedVehiclesSection: React.FC = () => {
         >
           {loading
             ? Array.from({ length: 6 }).map((_, i) => (
-                <motion.div key={i} variants={staggerItem}>
-                  <VehicleCardSkeleton />
-                </motion.div>
-              ))
+              <motion.div key={i} variants={staggerItem}>
+                <VehicleCardSkeleton />
+              </motion.div>
+            ))
             : vehicles.map(vehicle => (
-                <motion.div key={vehicle.id} variants={staggerItem}>
-                  <VehicleCard vehicle={vehicle} />
-                </motion.div>
-              ))
+              <motion.div key={vehicle.id} variants={staggerItem}>
+                <VehicleCard vehicle={vehicle} />
+              </motion.div>
+            ))
           }
         </motion.div>
 
@@ -1050,12 +1076,45 @@ const LandingPage: React.FC = () => {
   const [statsData, setStatsData] = useState<any>(null);
 
   useEffect(() => {
-    import('@/services/otherServices').then(({ statisticService }) => {
-      statisticService.getLandingPageStats().then(data => {
-        if (data) setStatsData(data);
-      });
-    });
+    const loadStats = async () => {
+      try {
+        // Try the dedicated statistics endpoint first
+        const { statisticService } = await import('@/services/otherServices');
+        const data = await statisticService.getLandingPageStats();
+        if (data) {
+          setStatsData(data);
+          return;
+        }
+      } catch (_) { /* fall through */ }
+
+      // Fallback: compute category counts from the vehicles API directly
+      try {
+        const CATS = ['economy', 'family', 'motorbike', 'business', 'electric', 'suv', 'city_car', 'tourism'] as const;
+        const results = await Promise.all(
+          CATS.map(cat => vehicleService.getAll({ category: [cat] }, 1, 1))
+        );
+        const categoryCounts: Record<string, number> = {};
+        CATS.forEach((cat, i) => {
+          categoryCounts[cat] = results[i].meta?.total ?? 0;
+        });
+        // Also get total vehicles
+        const totalResult = await vehicleService.getAll({}, 1, 1);
+        setStatsData({
+          qualityVehicles: totalResult.meta?.total ?? 0,
+          provinces: 63,
+          happyClients: null,
+          averageRating: null,
+          categoryCounts,
+        });
+      } catch (_) {
+        // If all APIs are down, show zeros rather than misleading fake numbers
+        setStatsData({ categoryCounts: {} });
+      }
+    };
+
+    loadStats();
   }, []);
+
 
   return (
     <div>

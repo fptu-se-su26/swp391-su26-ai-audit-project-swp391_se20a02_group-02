@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -29,7 +30,8 @@ public class VehicleController {
     @GetMapping
     public ResponseEntity<Map<String, Object>> getAllVehicles(
             @RequestParam(required = false) String location,
-            @RequestParam(required = false) String category,
+            @RequestParam(required = false) List<String> category,
+            @RequestParam(required = false) List<String> brand,
             @RequestParam(required = false) java.math.BigDecimal minPrice,
             @RequestParam(required = false) java.math.BigDecimal maxPrice,
             @RequestParam(required = false) Integer minSeats,
@@ -62,10 +64,20 @@ public class VehicleController {
                 return ResponseEntity.ok(response);
             }
             
-            // Otherwise, route to VehicleService.getVehicles which supports full database filtering
+            // Build filter with multi-select support
             com.luxeway.dto.vehicle.VehicleDTOs.VehicleFilterRequest filter = new com.luxeway.dto.vehicle.VehicleDTOs.VehicleFilterRequest();
             filter.setLocation(location);
-            filter.setCategory(category);
+            // Support both single category param and multi category list
+            if (category != null && !category.isEmpty()) {
+                filter.setCategories(category);
+                filter.setCategory(category.get(0)); // legacy fallback
+            }
+            // Multi-select brands (all lowercase for case-insensitive matching)
+            if (brand != null && !brand.isEmpty()) {
+                filter.setBrands(brand.stream()
+                    .map(String::toLowerCase)
+                    .collect(java.util.stream.Collectors.toList()));
+            }
             filter.setMinPrice(minPrice);
             filter.setMaxPrice(maxPrice);
             filter.setMinSeats(minSeats);

@@ -6,6 +6,7 @@ import {
   Plus, Edit, Trash2, Eye, CheckCircle, Clock, DollarSign,
   BarChart2, Shield, AlertTriangle
 } from 'lucide-react';
+
 import { useAuthStore } from '@/store';
 import { vehicleService } from '@/services/vehicleService';
 import { bookingService } from '@/services/bookingService';
@@ -815,3 +816,329 @@ export const OwnerRevenuePage: React.FC = () => {
     </div>
   );
 };
+
+// ====== FLEET MANAGEMENT PAGE (SRS REQ-FLEET-001) ======
+export const FleetManagementPage: React.FC = () => {
+  const { user } = useAuthStore();
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedStatus, setSelectedStatus] = useState('all');
+
+  useEffect(() => {
+    if (!user) return;
+    vehicleService.getByOwner(user.id).then(v => {
+      setVehicles(v);
+      setLoading(false);
+    });
+  }, [user]);
+
+  const filtered = selectedStatus === 'all' ? vehicles : vehicles.filter(v => v.status === selectedStatus);
+
+  const stats = {
+    total: vehicles.length,
+    available: vehicles.filter(v => v.status === 'available').length,
+    rented: vehicles.filter(v => v.status === 'rented').length,
+    maintenance: vehicles.filter(v => v.status === 'maintenance').length,
+  };
+
+  const utilizationRate = stats.total > 0 ? Math.round((stats.rented / stats.total) * 100) : 0;
+
+  return (
+    <div>
+      <motion.div variants={fadeUp} initial="hidden" animate="visible" className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="font-display text-2xl font-bold text-[#0F172A]">Fleet Management</h1>
+          <p className="text-slate-500 text-sm mt-0.5">Oversee and manage your entire vehicle fleet</p>
+        </div>
+        <Link to="/owner/vehicles/new" className="btn-primary flex items-center gap-2 text-sm">
+          <Plus className="w-4 h-4" /> Add to Fleet
+        </Link>
+      </motion.div>
+
+      {/* Fleet Stats */}
+      <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {[
+          { label: 'Total Fleet', value: stats.total, icon: Car, color: 'bg-blue-50 text-blue-600', sub: 'All vehicles' },
+          { label: 'Available', value: stats.available, icon: CheckCircle, color: 'bg-green-50 text-green-600', sub: 'Ready to rent' },
+          { label: 'Currently Rented', value: stats.rented, icon: Users, color: 'bg-purple-50 text-purple-600', sub: `${utilizationRate}% utilization` },
+          { label: 'In Maintenance', value: stats.maintenance, icon: Shield, color: 'bg-orange-50 text-orange-600', sub: 'Under service' },
+        ].map(stat => (
+          <motion.div key={stat.label} variants={staggerItem} className="stat-card">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${stat.color}`}>
+              <stat.icon className="w-5 h-5" />
+            </div>
+            <p className="text-2xl font-bold text-[#0F172A]">{stat.value}</p>
+            <p className="text-sm text-slate-500 mt-0.5">{stat.label}</p>
+            <p className="text-xs text-slate-400 mt-1">{stat.sub}</p>
+          </motion.div>
+        ))}
+      </motion.div>
+
+      {/* Utilization Bar */}
+      <div className="luxury-card p-5 mb-6">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-sm font-semibold text-[#0F172A]">Fleet Utilization Rate</p>
+          <span className="text-sm font-bold text-accent">{utilizationRate}%</span>
+        </div>
+        <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${utilizationRate}%` }}
+            transition={{ duration: 1.2, ease: 'easeOut' }}
+            className="h-full bg-gradient-to-r from-accent to-blue-400 rounded-full"
+          />
+        </div>
+        <p className="text-xs text-slate-400 mt-2">{stats.rented} of {stats.total} vehicles currently generating revenue</p>
+      </div>
+
+      {/* Filter Tabs */}
+      <div className="flex gap-2 overflow-x-auto pb-1 mb-5">
+        {['all', 'available', 'rented', 'maintenance', 'unavailable'].map(s => (
+          <button
+            key={s}
+            onClick={() => setSelectedStatus(s)}
+            className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap border-2 transition-all ${selectedStatus === s ? 'border-accent bg-blue-50 text-accent' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}
+          >
+            {s.charAt(0).toUpperCase() + s.slice(1).replace('_', ' ')}
+            {s === 'all' && ` (${vehicles.length})`}
+          </button>
+        ))}
+      </div>
+
+      {/* Fleet Table */}
+      {loading ? (
+        <div className="space-y-3">{[...Array(5)].map((_, i) => <div key={i} className="skeleton h-16 rounded-2xl" />)}</div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-16">
+          <Car className="w-14 h-14 text-slate-300 mx-auto mb-3" />
+          <p className="text-slate-400">No vehicles with status: {selectedStatus}</p>
+        </div>
+      ) : (
+        <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="luxury-card overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-slate-50 border-b border-slate-100">
+              <tr>
+                {['Vehicle', 'Status', 'Price/Day', 'Rating', 'Location', 'Actions'].map(h => (
+                  <th key={h} className="py-3.5 px-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider first:pl-5">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {filtered.map(vehicle => (
+                <motion.tr key={vehicle.id} variants={staggerItem} className="hover:bg-slate-50/50 transition-colors">
+                  <td className="py-3 px-4 pl-5">
+                    <div className="flex items-center gap-3">
+                      <img src={vehicle.thumbnailUrl} alt={vehicle.name} className="w-12 h-9 object-cover rounded-xl flex-shrink-0" />
+                      <div>
+                        <p className="font-semibold text-sm text-[#0F172A]">{vehicle.name}</p>
+                        <p className="text-xs text-slate-400">{vehicle.brand} · {vehicle.year}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="py-3 px-4">
+                    <span className={`badge text-[10px] border ${getStatusColor(vehicle.status)}`}>
+                      {vehicle.status.replace('_', ' ')}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4 text-sm font-medium text-[#0F172A]">{formatCurrency(vehicle.pricePerDay)}</td>
+                  <td className="py-3 px-4">
+                    <div className="flex items-center gap-1 text-sm">
+                      <span className="text-yellow-500">⭐</span>
+                      <span className="font-medium">{vehicle.rating?.toFixed(1) ?? '—'}</span>
+                    </div>
+                  </td>
+                  <td className="py-3 px-4 text-sm text-slate-500">{vehicle.location?.city ?? '—'}</td>
+                  <td className="py-3 px-4">
+                    <div className="flex items-center gap-1">
+                      <Link to={`/vehicles/${vehicle.id}`} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-accent transition-colors" title="View">
+                        <Eye className="w-4 h-4" />
+                      </Link>
+                      <Link to={`/owner/vehicles/${vehicle.id}/edit`} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-blue-600 transition-colors" title="Edit">
+                        <Edit className="w-4 h-4" />
+                      </Link>
+                    </div>
+                  </td>
+                </motion.tr>
+              ))}
+            </tbody>
+          </table>
+        </motion.div>
+      )}
+    </div>
+  );
+};
+
+// ====== EMPLOYEE MANAGEMENT PAGE (SRS REQ-FLEET-003) ======
+interface Employee {
+  id: string;
+  name: string;
+  email: string;
+  role: 'driver' | 'manager' | 'staff';
+  status: 'active' | 'inactive';
+  joinedAt: string;
+  assignedVehicles: number;
+}
+
+const MOCK_EMPLOYEES: Employee[] = [
+  { id: '1', name: 'Nguyen Van A', email: 'vana@example.com', role: 'driver', status: 'active', joinedAt: '2025-01-15', assignedVehicles: 2 },
+  { id: '2', name: 'Tran Thi B', email: 'thib@example.com', role: 'manager', status: 'active', joinedAt: '2024-11-03', assignedVehicles: 5 },
+  { id: '3', name: 'Le Van C', email: 'vanc@example.com', role: 'staff', status: 'inactive', joinedAt: '2025-03-22', assignedVehicles: 0 },
+];
+
+export const EmployeeManagementPage: React.FC = () => {
+  const [employees, setEmployees] = useState<Employee[]>(MOCK_EMPLOYEES);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newEmployee, setNewEmployee] = useState({ name: '', email: '', role: 'driver' as Employee['role'] });
+  const toast = useToast();
+
+  const addEmployee = () => {
+    if (!newEmployee.name || !newEmployee.email) return;
+    const emp: Employee = {
+      id: Date.now().toString(),
+      ...newEmployee,
+      status: 'active',
+      joinedAt: new Date().toISOString().slice(0, 10),
+      assignedVehicles: 0,
+    };
+    setEmployees(prev => [emp, ...prev]);
+    setNewEmployee({ name: '', email: '', role: 'driver' });
+    setShowAddForm(false);
+    toast.success('Employee added', `${emp.name} has been added to your team.`);
+  };
+
+  const toggleStatus = (id: string) => {
+    setEmployees(prev => prev.map(e => e.id === id ? { ...e, status: e.status === 'active' ? 'inactive' : 'active' } : e));
+  };
+
+  const roleColors: Record<Employee['role'], string> = {
+    driver: 'bg-blue-50 text-blue-600 border-blue-200',
+    manager: 'bg-purple-50 text-purple-600 border-purple-200',
+    staff: 'bg-slate-50 text-slate-600 border-slate-200',
+  };
+
+  return (
+    <div>
+      <motion.div variants={fadeUp} initial="hidden" animate="visible" className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="font-display text-2xl font-bold text-[#0F172A]">Team & Employees</h1>
+          <p className="text-slate-500 text-sm mt-0.5">Manage your drivers, managers, and staff</p>
+        </div>
+        <button onClick={() => setShowAddForm(true)} className="btn-primary flex items-center gap-2 text-sm">
+          <Plus className="w-4 h-4" /> Add Employee
+        </button>
+      </motion.div>
+
+      {/* Stats Row */}
+      <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid grid-cols-3 gap-4 mb-8">
+        {[
+          { label: 'Total Staff', value: employees.length, color: 'bg-blue-50 text-blue-600' },
+          { label: 'Active', value: employees.filter(e => e.status === 'active').length, color: 'bg-green-50 text-green-600' },
+          { label: 'Drivers', value: employees.filter(e => e.role === 'driver').length, color: 'bg-purple-50 text-purple-600' },
+        ].map(s => (
+          <motion.div key={s.label} variants={staggerItem} className="stat-card text-center">
+            <p className={`text-3xl font-bold ${s.color.split(' ')[1]}`}>{s.value}</p>
+            <p className="text-sm text-slate-500 mt-1">{s.label}</p>
+          </motion.div>
+        ))}
+      </motion.div>
+
+      {/* Add Employee Form */}
+      {showAddForm && (
+        <motion.div variants={fadeUp} initial="hidden" animate="visible" className="luxury-card p-6 mb-6 border-2 border-accent/20">
+          <h3 className="font-display text-lg font-bold text-[#0F172A] mb-4">Add New Employee</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 mb-1.5">Full Name *</label>
+              <input
+                value={newEmployee.name}
+                onChange={e => setNewEmployee(p => ({ ...p, name: e.target.value }))}
+                className="lux-input"
+                placeholder="Nguyen Van A"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 mb-1.5">Email *</label>
+              <input
+                type="email"
+                value={newEmployee.email}
+                onChange={e => setNewEmployee(p => ({ ...p, email: e.target.value }))}
+                className="lux-input"
+                placeholder="employee@example.com"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 mb-1.5">Role</label>
+              <select
+                value={newEmployee.role}
+                onChange={e => setNewEmployee(p => ({ ...p, role: e.target.value as Employee['role'] }))}
+                className="lux-input bg-white"
+              >
+                <option value="driver">Driver</option>
+                <option value="manager">Manager</option>
+                <option value="staff">Staff</option>
+              </select>
+            </div>
+          </div>
+          <div className="flex gap-3 mt-4">
+            <button onClick={addEmployee} className="btn-primary text-sm px-6 py-2.5">Add Employee</button>
+            <button onClick={() => setShowAddForm(false)} className="btn-ghost border border-slate-200 text-sm px-6 py-2.5 rounded-xl">Cancel</button>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Employee Table */}
+      <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="luxury-card overflow-hidden">
+        <table className="w-full">
+          <thead className="bg-slate-50 border-b border-slate-100">
+            <tr>
+              {['Employee', 'Role', 'Assigned Vehicles', 'Joined', 'Status', 'Actions'].map(h => (
+                <th key={h} className="py-3.5 px-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider first:pl-5">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-50">
+            {employees.map(emp => (
+              <motion.tr key={emp.id} variants={staggerItem} className="hover:bg-slate-50/50 transition-colors">
+                <td className="py-3.5 px-4 pl-5">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-accent to-blue-700 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                      {emp.name.charAt(0)}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm text-[#0F172A]">{emp.name}</p>
+                      <p className="text-xs text-slate-400">{emp.email}</p>
+                    </div>
+                  </div>
+                </td>
+                <td className="py-3.5 px-4">
+                  <span className={`badge text-[10px] border ${roleColors[emp.role]}`}>{emp.role}</span>
+                </td>
+                <td className="py-3.5 px-4">
+                  <div className="flex items-center gap-1.5 text-sm">
+                    <Car className="w-4 h-4 text-slate-400" />
+                    <span className="font-medium text-[#0F172A]">{emp.assignedVehicles}</span>
+                  </div>
+                </td>
+                <td className="py-3.5 px-4 text-sm text-slate-500">{emp.joinedAt}</td>
+                <td className="py-3.5 px-4">
+                  <span className={`badge text-[10px] border ${emp.status === 'active' ? 'bg-green-50 text-green-600 border-green-200' : 'bg-slate-50 text-slate-400 border-slate-200'}`}>
+                    {emp.status}
+                  </span>
+                </td>
+                <td className="py-3.5 px-4">
+                  <button
+                    onClick={() => toggleStatus(emp.id)}
+                    className="text-xs px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:border-accent hover:text-accent transition-colors"
+                  >
+                    {emp.status === 'active' ? 'Deactivate' : 'Activate'}
+                  </button>
+                </td>
+              </motion.tr>
+            ))}
+          </tbody>
+        </table>
+      </motion.div>
+    </div>
+  );
+};
+

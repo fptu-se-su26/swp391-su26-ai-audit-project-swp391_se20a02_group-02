@@ -4,8 +4,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Calendar, Heart, Bell, User, Shield, FileText,
   CreditCard, Settings, LogOut, ChevronRight, Car, Star, TrendingUp,
-  Package, Clock, CheckCircle, AlertCircle, X, Menu, Eye, EyeOff
+  Package, Clock, CheckCircle, AlertCircle, X, Menu, Eye, EyeOff, Users
 } from 'lucide-react';
+
 import { useAuthStore, useUIStore } from '@/store';
 import { bookingService } from '@/services/bookingService';
 import { notificationService, reviewService } from '@/services/otherServices';
@@ -39,11 +40,14 @@ const DashboardSidebar: React.FC<{ role: string }> = ({ role }) => {
     { href: '/owner/vehicles', icon: Car, label: 'My Vehicles' },
     { href: '/owner/bookings', icon: Calendar, label: 'Bookings' },
     { href: '/owner/calendar', icon: Clock, label: 'Calendar' },
+    { href: '/owner/fleet', icon: Package, label: 'Fleet Management' },
+    { href: '/owner/employees', icon: Users, label: 'Team & Employees' },
     { href: '/owner/revenue', icon: TrendingUp, label: 'Revenue' },
     { href: '/owner/analytics', icon: TrendingUp, label: 'Analytics' },
     { href: '/dashboard/profile', icon: User, label: 'Profile' },
     { href: '/dashboard/settings', icon: Settings, label: 'Settings' },
   ];
+
 
   const links = (role === 'owner') ? ownerLinks : customerLinks;
 

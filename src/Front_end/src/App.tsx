@@ -36,13 +36,17 @@ const VehicleFormPage = lazy(() => import('@/pages/dashboard/OwnerDashboard').th
 const OwnerCalendarPage = lazy(() => import('@/pages/dashboard/OwnerDashboard').then(m => ({ default: m.OwnerCalendarPage })));
 const OwnerBookingsPage = lazy(() => import('@/pages/dashboard/OwnerDashboard').then(m => ({ default: m.OwnerBookingsPage })));
 const OwnerRevenuePage = lazy(() => import('@/pages/dashboard/OwnerDashboard').then(m => ({ default: m.OwnerRevenuePage })));
+const FleetManagementPage = lazy(() => import('@/pages/dashboard/OwnerDashboard').then(m => ({ default: m.FleetManagementPage })));
+const EmployeeManagementPage = lazy(() => import('@/pages/dashboard/OwnerDashboard').then(m => ({ default: m.EmployeeManagementPage })));
 const MessengerPage = lazy(() => import('@/pages/messages/MessengerPage'));
 const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'));
 
-// Static pages
+// Static & feature pages
 const AboutPage = lazy(() => import('@/pages/static/StaticPages').then(m => ({ default: m.AboutPage })));
 const TermsPage = lazy(() => import('@/pages/static/StaticPages').then(m => ({ default: m.TermsPage })));
 const PrivacyPage = lazy(() => import('@/pages/static/StaticPages').then(m => ({ default: m.PrivacyPage })));
+const BusinessPage = lazy(() => import('@/pages/static/BusinessPage'));
+const ComparePage = lazy(() => import('@/pages/compare/ComparePage'));
 
 // ====== LOADING FALLBACK ======
 const PageLoader: React.FC = () => (
@@ -351,6 +355,8 @@ const App: React.FC = () => {
               </ProtectedRoute>
             } />
             <Route path="help" element={<HelpPage />} />
+            <Route path="compare" element={<ComparePage />} />
+            <Route path="business" element={<BusinessPage />} />
 
             <Route path="reviews" element={<ReviewsPage />} />
             <Route path="about" element={<AboutPage />} />
@@ -390,6 +396,8 @@ const App: React.FC = () => {
             <Route path="calendar" element={<OwnerCalendarPage />} />
             <Route path="bookings" element={<OwnerBookingsPage />} />
             <Route path="revenue" element={<OwnerRevenuePage />} />
+            <Route path="fleet" element={<FleetManagementPage />} />
+            <Route path="employees" element={<EmployeeManagementPage />} />
           </Route>
 
           {/* Admin */}

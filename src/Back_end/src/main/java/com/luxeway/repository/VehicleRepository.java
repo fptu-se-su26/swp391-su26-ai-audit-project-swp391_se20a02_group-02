@@ -91,6 +91,35 @@ public interface VehicleRepository extends JpaRepository<Vehicle, String> {
                                  @Param("instantBook") boolean instantBook,
                                  @Param("deliveryAvailable") boolean deliveryAvailable,
                                  Pageable pageable);
+
+    // Multi-select filter: supports multiple categories and brands
+    @Query("SELECT v FROM Vehicle v WHERE " +
+           "(:location IS NULL OR LOWER(v.city) LIKE LOWER(CONCAT('%', :location, '%')) OR LOWER(v.country) LIKE LOWER(CONCAT('%', :location, '%'))) AND " +
+           "(:#{#categories == null || #categories.isEmpty()} = true OR v.category IN :categories) AND " +
+           "(:#{#brands == null || #brands.isEmpty()} = true OR LOWER(v.brand) IN :brands) AND " +
+           "(:minPrice IS NULL OR v.pricePerDay >= :minPrice) AND " +
+           "(:maxPrice IS NULL OR v.pricePerDay <= :maxPrice) AND " +
+           "(:minSeats IS NULL OR v.seats >= :minSeats) AND " +
+           "(:transmission IS NULL OR v.transmission = :transmission) AND " +
+           "(:fuelType IS NULL OR v.fuelType = :fuelType) AND " +
+           "(:minRating IS NULL OR v.rating >= :minRating) AND " +
+           "(:isFeatured = false OR v.isFeatured = true) AND " +
+           "(:instantBook = false OR v.instantBook = true) AND " +
+           "(:deliveryAvailable = false OR v.deliveryAvailable = true) AND " +
+           "v.status = 'AVAILABLE'")
+    Page<Vehicle> filterVehiclesMulti(@Param("location") String location,
+                                      @Param("categories") List<VehicleCategory> categories,
+                                      @Param("brands") List<String> brands,
+                                      @Param("minPrice") BigDecimal minPrice,
+                                      @Param("maxPrice") BigDecimal maxPrice,
+                                      @Param("minSeats") Integer minSeats,
+                                      @Param("transmission") TransmissionType transmission,
+                                      @Param("fuelType") FuelType fuelType,
+                                      @Param("minRating") Double minRating,
+                                      @Param("isFeatured") boolean isFeatured,
+                                      @Param("instantBook") boolean instantBook,
+                                      @Param("deliveryAvailable") boolean deliveryAvailable,
+                                      Pageable pageable);
     
     // Statistics
     long countByCategoryAndStatus(VehicleCategory category, VehicleStatus status);
