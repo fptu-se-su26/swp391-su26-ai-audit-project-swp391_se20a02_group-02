@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Link, Outlet, useNavigate } from 'react-router-dom';
+import { Link, Outlet, useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import ImageUploader from '@/components/ui/ImageUploader';
+
 import {
   LayoutDashboard, Car, Calendar, TrendingUp, Users, Settings,
   Plus, Edit, Trash2, Eye, CheckCircle, Clock, DollarSign,
@@ -280,8 +282,11 @@ export const VehicleFormPage: React.FC = () => {
   const { user } = useAuthStore();
   const navigate = useNavigate();
   const toast = useToast();
+  const { id } = useParams();
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(false);
   const [step, setStep] = useState(1);
+  const [images, setImages] = useState<string[]>([]);
 
   const [form, setForm] = useState({
     name: '', brand: '', category: 'supercar', year: new Date().getFullYear(),
@@ -291,6 +296,43 @@ export const VehicleFormPage: React.FC = () => {
     address: '', city: '', state: '', zip: '', country: 'US',
     thumbnailUrl: 'https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=800&q=80',
   });
+
+  useEffect(() => {
+    if (!id) return;
+    setFetching(true);
+    vehicleService.getById(id).then(vehicle => {
+      if (vehicle) {
+        setForm({
+          name: vehicle.name || '',
+          brand: vehicle.brand || '',
+          category: vehicle.category || 'supercar',
+          year: vehicle.year || new Date().getFullYear(),
+          pricePerDay: vehicle.pricePerDay || 500,
+          description: vehicle.description || '',
+          seats: vehicle.specs?.seats || 2,
+          doors: vehicle.specs?.doors || 2,
+          transmission: vehicle.specs?.transmission || 'Automatic',
+          fuelType: vehicle.specs?.fuelType || 'Gasoline',
+          features: vehicle.features ? vehicle.features.join(', ') : 'Bluetooth, Navigation, Backup Camera',
+          address: vehicle.location?.address || '',
+          city: vehicle.location?.city || '',
+          state: (vehicle.location as any)?.state || '',
+          zip: (vehicle.location as any)?.zip || '',
+          country: vehicle.location?.country || 'US',
+          thumbnailUrl: vehicle.thumbnailUrl || 'https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=800&q=80',
+        });
+        setImages(vehicle.images || (vehicle.thumbnailUrl ? [vehicle.thumbnailUrl] : []));
+      } else {
+        toast.error('Vehicle not found.');
+        navigate('/owner/vehicles');
+      }
+      setFetching(false);
+    }).catch(err => {
+      console.error(err);
+      toast.error('Error loading vehicle data.');
+      setFetching(false);
+    });
+  }, [id]);
 
   const update = (k: string, v: string | number) => setForm(f => ({ ...f, [k]: v }));
 
@@ -303,9 +345,9 @@ export const VehicleFormPage: React.FC = () => {
     }
 
     setLoading(true);
-    await new Promise(r => setTimeout(r, 1000)); // Simulate API
+    const currentThumbnail = images.length > 0 ? images[0] : form.thumbnailUrl;
 
-    const newVehicle: Omit<Vehicle, 'id'> = {
+    const vehicleData: Omit<Vehicle, 'id'> = {
       ownerId: user?.id || '',
       name: form.name,
       brand: form.brand,
@@ -315,8 +357,8 @@ export const VehicleFormPage: React.FC = () => {
       description: form.description,
       status: 'available',
       rating: 5.0,
-      thumbnailUrl: form.thumbnailUrl,
-      images: [form.thumbnailUrl],
+      thumbnailUrl: currentThumbnail,
+      images: images.length > 0 ? images : [currentThumbnail],
       rules: ['No smoking', 'No pets'],
       insurance: { included: true, provider: 'LuxeWay Shield', coverage: 'Premium' },
       availability: { blockedDates: [], minRentalDays: 1, maxRentalDays: 30, advanceBookingDays: 1 },
@@ -331,7 +373,7 @@ export const VehicleFormPage: React.FC = () => {
         color: 'Black',
         licensePlate: 'LUXEWAY'
       },
-      features: form.features.split(',').map(s => s.trim()),
+      features: form.features.split(',').map(s => s.trim()).filter(Boolean),
       location: {
         address: form.address,
         city: form.city,
@@ -355,10 +397,30 @@ export const VehicleFormPage: React.FC = () => {
       deliveryFee: 0
     };
 
-    // In a real app, we'd use vehicleService.create(newVehicle)
-    toast.success('Vehicle Listed Successfully!', 'Your vehicle is now live on the marketplace.');
-    navigate('/owner/vehicles');
+    try {
+      if (id) {
+        await vehicleService.update(id, vehicleData);
+        toast.success('Vehicle Updated Successfully!', 'Your vehicle details have been saved.');
+      } else {
+        await vehicleService.create(user?.id || '', vehicleData);
+        toast.success('Vehicle Listed Successfully!', 'Your vehicle is now live on the marketplace.');
+      }
+      navigate('/owner/vehicles');
+    } catch (error) {
+      toast.error('Failed to save vehicle listing.');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  if (fetching) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="w-10 h-10 border-4 border-[#0F172A] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -367,7 +429,9 @@ export const VehicleFormPage: React.FC = () => {
           ←
         </Link>
         <div>
-          <h1 className="font-display text-2xl font-bold text-[#0F172A]">List Your Vehicle</h1>
+          <h1 className="font-display text-2xl font-bold text-[#0F172A]">
+            {id ? 'Edit Your Vehicle' : 'List Your Vehicle'}
+          </h1>
           <p className="text-slate-500 text-sm">Step {step} of 3</p>
         </div>
       </div>
@@ -443,9 +507,18 @@ export const VehicleFormPage: React.FC = () => {
               <label className="block text-sm font-medium mb-1.5">Features (comma separated)</label>
               <input value={form.features} onChange={e => update('features', e.target.value)} className="lux-input" placeholder="Bluetooth, Apple CarPlay, Heated Seats..." />
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1.5">Primary Image URL</label>
-              <input value={form.thumbnailUrl} onChange={e => update('thumbnailUrl', e.target.value)} className="lux-input" placeholder="https://..." />
+            <div className="mt-4">
+              <ImageUploader 
+                value={images} 
+                onChange={(urls) => {
+                  setImages(urls);
+                  if (urls.length > 0) {
+                    update('thumbnailUrl', urls[0]);
+                  }
+                }}
+                maxFiles={5}
+                label="Vehicle Images"
+              />
             </div>
           </motion.div>
         )}
