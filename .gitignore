@@ -13,3 +13,5 @@ dist/
 dist-ssr/
 *.local
 .DS_Store
+.gradle/
+
