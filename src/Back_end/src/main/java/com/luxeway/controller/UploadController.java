@@ -13,6 +13,7 @@ import java.util.*;
 @Slf4j
 @RestController
 @RequestMapping("/upload")
+@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:5173"})
 public class UploadController {
 
     @Value("${file.upload-dir:uploads/}")
@@ -68,7 +69,8 @@ public class UploadController {
             log.info("File uploaded: {}", fileUrl);
 
             return ResponseEntity.ok(Map.of(
-                "url", fileUrl,
+                "imageUrl", "/" + fileUrl,
+                "url", "/" + fileUrl,
                 "filename", uniqueName,
                 "size", file.getSize(),
                 "contentType", contentType
@@ -84,5 +86,15 @@ public class UploadController {
     @GetMapping("/health")
     public ResponseEntity<Map<String, String>> healthCheck() {
         return ResponseEntity.ok(Map.of("status", "Upload service is running"));
+    }
+
+    /**
+     * Alias endpoint specifically for vehicle image upload.
+     * Frontend ImageUploader calls POST /upload/vehicle-image
+     */
+    @PostMapping("/vehicle-image")
+    public ResponseEntity<Map<String, Object>> uploadVehicleImage(
+            @RequestParam("file") MultipartFile file) {
+        return uploadFile(file);
     }
 }

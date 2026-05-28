@@ -99,23 +99,42 @@ export const bookingService = {
 };
 
 export const paymentService = {
-  async processPayment(bookingId: string, method: string, amount: number): Promise<{ success: boolean; transactionId: string }> {
+  async processPayment(bookingId: string, method: string, amount: number, returnUrl?: string): Promise<{ success: boolean; transactionId: string; paymentUrl?: string }> {
     try {
       const payload = {
         bookingId,
-        paymentMethod: method.toUpperCase(),
-        amount
+        method: method.toUpperCase(),
+        amount,
+        returnUrl
       };
       const response = await apiClient.post<any>('/payments', payload);
       
-      // If method is VNPay, it should return a paymentUrl, but for SPA mockup flow we return success
       return {
-        success: true,
-        transactionId: response.data?.transactionId || `txn_${faker.string.alphanumeric(20)}`,
+        success: response.success !== false,
+        transactionId: response.data?.transactionId || '',
+        paymentUrl: response.data?.paymentUrl
       };
     } catch (error) {
       console.error('Payment processing failed', error);
       return { success: false, transactionId: '' };
+    }
+  },
+
+  async topUpWallet(amount: number, method: string, returnUrl?: string): Promise<{ success: boolean; paymentUrl?: string }> {
+    try {
+      const payload = {
+        amount,
+        method: method.toUpperCase(),
+        returnUrl
+      };
+      const response = await apiClient.post<any>('/payments/wallet/topup', payload);
+      return {
+        success: response.success !== false,
+        paymentUrl: response.data?.paymentUrl
+      };
+    } catch (error) {
+      console.error('Wallet top-up failed', error);
+      return { success: false };
     }
   },
 

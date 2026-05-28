@@ -1,255 +1,268 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, X, CheckCircle, AlertCircle, Image, Plus } from 'lucide-react';
-import { imageService, validateImageFile, formatFileSize, getLocalPreviewUrl } from '@/services/imageService';
-
-interface FileItem {
-  id: string;
-  file: File;
-  preview: string;
-  status: 'pending' | 'uploading' | 'done' | 'error';
-  progress: number;
-  url?: string;
-  error?: string;
-}
+import { Upload, X, Image, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 
 interface ImageUploaderProps {
-  value?: string[];
-  onChange: (urls: string[]) => void;
-  maxFiles?: number;
-  label?: string;
+  value?: string; // Current image URL
+  onChange: (url: string) => void;
+  onError?: (error: string) => void;
+  className?: string;
 }
 
-const ImageUploader: React.FC<ImageUploaderProps> = ({
-  value = [],
+const MAX_SIZE_MB = 5;
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const ALLOWED_EXT = '.jpg, .jpeg, .png, .webp';
+
+export const ImageUploader: React.FC<ImageUploaderProps> = ({
+  value,
   onChange,
-  maxFiles = 5,
-  label = 'Upload Images',
+  onError,
+  className = '',
 }) => {
-  const [items, setItems] = useState<FileItem[]>([]);
-  const [dragging, setDragging] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [preview, setPreview] = useState<string>(value || '');
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadError, setUploadError] = useState('');
+  const [uploadSuccess, setUploadSuccess] = useState(false);
 
-  const addFiles = useCallback((files: File[]) => {
-    const remaining = maxFiles - (value.length + items.filter(i => i.status === 'done').length);
-    const toAdd = files.slice(0, remaining);
+  const validateFile = (file: File): string | null => {
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      return `Invalid file type. Allowed: ${ALLOWED_EXT}`;
+    }
+    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+      return `File too large. Max size: ${MAX_SIZE_MB}MB`;
+    }
+    return null;
+  };
 
-    const newItems: FileItem[] = toAdd.map(file => {
-      const validation = validateImageFile(file);
-      return {
-        id: `${Date.now()}_${Math.random()}`,
-        file,
-        preview: getLocalPreviewUrl(file),
-        status: validation.valid ? 'pending' : 'error',
-        progress: 0,
-        error: validation.valid ? undefined : validation.error,
-      };
-    });
+  const uploadFile = async (file: File) => {
+    const error = validateFile(file);
+    if (error) {
+      setUploadError(error);
+      onError?.(error);
+      return;
+    }
 
-    setItems(prev => [...prev, ...newItems]);
+    // Show preview immediately
+    const reader = new FileReader();
+    reader.onload = (e) => setPreview(e.target?.result as string);
+    reader.readAsDataURL(file);
 
-    // Auto-upload valid files
-    newItems.forEach(item => {
-      if (item.status === 'pending') {
-        uploadItem(item);
-      }
-    });
-  }, [items, value, maxFiles]);
-
-  const uploadItem = async (item: FileItem) => {
-    setItems(prev => prev.map(i =>
-      i.id === item.id ? { ...i, status: 'uploading', progress: 0 } : i
-    ));
+    setUploading(true);
+    setUploadError('');
+    setUploadSuccess(false);
+    setUploadProgress(0);
 
     try {
-      const url = await imageService.upload(item.file, (pct) => {
-        setItems(prev => prev.map(i =>
-          i.id === item.id ? { ...i, progress: pct } : i
-        ));
+      const formData = new FormData();
+      formData.append('file', file);
+
+      // Simulate progress
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => Math.min(prev + 15, 85));
+      }, 200);
+
+      const token = localStorage.getItem('luxeway_access_token');
+      const response = await fetch('http://localhost:8080/api/v1/upload/vehicle-image', {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
       });
 
-      setItems(prev => {
-        const updated = prev.map(i =>
-          i.id === item.id ? { ...i, status: 'done' as const, progress: 100, url } : i
-        );
-        // Notify parent with all completed URLs
-        const doneUrls = updated.filter(i => i.status === 'done' && i.url).map(i => i.url!);
-        onChange([...value, ...doneUrls]);
-        return updated;
-      });
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+
+      if (!response.ok) {
+        throw new Error(`Upload failed: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const imageUrl = data.imageUrl || data.url || data.filePath;
+
+      if (!imageUrl) {
+        throw new Error('No image URL in response');
+      }
+
+      onChange(imageUrl);
+      setUploadSuccess(true);
+      setTimeout(() => setUploadSuccess(false), 3000);
     } catch (err: any) {
-      setItems(prev => prev.map(i =>
-        i.id === item.id ? { ...i, status: 'error', error: err.message } : i
-      ));
+      const msg = err.message || 'Upload failed. Please try again.';
+      setUploadError(msg);
+      onError?.(msg);
+      setPreview(value || '');
+    } finally {
+      setUploading(false);
     }
   };
 
-  const removeItem = (id: string) => {
-    setItems(prev => {
-      const item = prev.find(i => i.id === id);
-      if (item?.preview) URL.revokeObjectURL(item.preview);
-      const updated = prev.filter(i => i.id !== id);
-      const doneUrls = updated.filter(i => i.status === 'done' && i.url).map(i => i.url!);
-      onChange(doneUrls);
-      return updated;
-    });
-  };
-
-  const removeExistingUrl = (url: string) => {
-    onChange(value.filter(u => u !== url));
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-    setDragging(false);
-    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
-    if (files.length > 0) addFiles(files);
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) uploadFile(file);
+  }, []);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
   };
 
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length > 0) addFiles(files);
+  const handleDragLeave = () => setIsDragging(false);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) uploadFile(file);
     e.target.value = '';
   };
 
-  const canAddMore = (value.length + items.filter(i => i.status === 'done').length) < maxFiles;
+  const handleRemove = () => {
+    setPreview('');
+    onChange('');
+    setUploadError('');
+    setUploadSuccess(false);
+  };
 
   return (
-    <div className="space-y-3">
-      {label && <p className="text-sm font-medium text-[#0F172A]">{label}</p>}
-
-      {/* Drop Zone */}
-      {canAddMore && (
-        <div
-          onDragOver={e => { e.preventDefault(); setDragging(true); }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={handleDrop}
-          onClick={() => fileInputRef.current?.click()}
-          className={`relative border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-200 ${
-            dragging
-              ? 'border-accent bg-blue-50 scale-[1.01]'
-              : 'border-slate-200 hover:border-accent hover:bg-slate-50'
-          }`}
-        >
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
-            multiple
-            onChange={handleFileInput}
-            className="hidden"
+    <div className={`relative ${className}`}>
+      {preview ? (
+        <div className="relative rounded-2xl overflow-hidden border-2 border-slate-200 group">
+          <img
+            src={preview}
+            alt="Vehicle preview"
+            className="w-full h-56 object-cover"
           />
-          <div className="flex flex-col items-center gap-3">
-            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors ${
-              dragging ? 'bg-accent text-white' : 'bg-slate-100 text-slate-400'
-            }`}>
-              {dragging ? <Upload className="w-6 h-6" /> : <Image className="w-6 h-6" />}
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-[#0F172A]">
-                {dragging ? 'Drop to upload' : 'Click or drag to upload'}
-              </p>
-              <p className="text-xs text-slate-400 mt-0.5">
-                JPG, PNG, WEBP · Max 5MB each · Up to {maxFiles} images
-              </p>
-            </div>
+          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-3">
+            <label className="cursor-pointer px-4 py-2 bg-white/90 text-[#0F172A] text-sm font-semibold rounded-xl hover:bg-white transition-colors">
+              <Upload className="w-4 h-4 inline mr-2" />
+              Change
+              <input
+                type="file"
+                accept={ALLOWED_TYPES.join(',')}
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={handleRemove}
+              className="px-4 py-2 bg-red-500/90 text-white text-sm font-semibold rounded-xl hover:bg-red-500 transition-colors"
+            >
+              <X className="w-4 h-4 inline mr-1" />
+              Remove
+            </button>
           </div>
-        </div>
-      )}
 
-      {/* Existing URLs (from saved data) */}
-      {value.length > 0 && (
-        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-          {value.map(url => (
-            <div key={url} className="relative group rounded-xl overflow-hidden aspect-square bg-slate-100">
-              <img src={url} alt="Vehicle" className="w-full h-full object-cover" />
-              <button
-                type="button"
-                onClick={() => removeExistingUrl(url)}
-                className="absolute top-1.5 right-1.5 w-6 h-6 bg-red-500 text-white rounded-full items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity flex"
+          <AnimatePresence>
+            {uploading && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 bg-white/90 flex flex-col items-center justify-center"
               >
-                <X className="w-3 h-3" />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* New Upload Items */}
-      <AnimatePresence>
-        {items.map(item => (
-          <motion.div
-            key={item.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className={`flex items-center gap-3 p-3 rounded-2xl border ${
-              item.status === 'error' ? 'border-red-200 bg-red-50' :
-              item.status === 'done' ? 'border-green-200 bg-green-50' :
-              'border-slate-200 bg-white'
-            }`}
-          >
-            {/* Preview */}
-            <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-slate-100">
-              <img src={item.preview} alt="" className="w-full h-full object-cover" />
-            </div>
-
-            {/* Info */}
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-[#0F172A] truncate">{item.file.name}</p>
-              <p className="text-xs text-slate-400">{formatFileSize(item.file.size)}</p>
-
-              {/* Progress bar */}
-              {item.status === 'uploading' && (
-                <div className="mt-2 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                <Loader2 className="w-8 h-8 text-accent animate-spin mb-3" />
+                <p className="text-sm font-medium text-[#0F172A] mb-2">Uploading...</p>
+                <div className="w-48 h-2 bg-slate-200 rounded-full overflow-hidden">
                   <motion.div
                     className="h-full bg-accent rounded-full"
-                    animate={{ width: `${item.progress}%` }}
-                    transition={{ duration: 0.2 }}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${uploadProgress}%` }}
+                    transition={{ ease: 'easeOut' }}
                   />
                 </div>
-              )}
-
-              {/* Error msg */}
-              {item.status === 'error' && (
-                <p className="text-xs text-red-500 mt-1">{item.error}</p>
-              )}
-            </div>
-
-            {/* Status icon */}
-            <div className="flex-shrink-0">
-              {item.status === 'uploading' && (
-                <div className="w-5 h-5 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-              )}
-              {item.status === 'done' && (
-                <CheckCircle className="w-5 h-5 text-green-500" />
-              )}
-              {item.status === 'error' && (
-                <AlertCircle className="w-5 h-5 text-red-500" />
-              )}
-              {item.status === 'pending' && (
-                <div className="w-5 h-5 border-2 border-slate-300 rounded-full animate-pulse" />
-              )}
-            </div>
-
-            {/* Remove */}
-            {(item.status === 'done' || item.status === 'error') && (
-              <button
-                type="button"
-                onClick={() => removeItem(item.id)}
-                className="flex-shrink-0 w-7 h-7 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg flex items-center justify-center transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
+                <p className="text-xs text-slate-400 mt-1">{uploadProgress}%</p>
+              </motion.div>
             )}
-          </motion.div>
-        ))}
-      </AnimatePresence>
+          </AnimatePresence>
+        </div>
+      ) : (
+        <div
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          className={`
+            relative border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-300
+            ${isDragging
+              ? 'border-accent bg-blue-50 scale-[1.02]'
+              : 'border-slate-300 hover:border-accent hover:bg-slate-50'
+            }
+          `}
+        >
+          <label className="cursor-pointer block">
+            <input
+              type="file"
+              accept={ALLOWED_TYPES.join(',')}
+              onChange={handleFileSelect}
+              className="hidden"
+            />
 
-      {/* Add more button */}
-      {!canAddMore && (
-        <p className="text-xs text-slate-400 text-center">Maximum {maxFiles} images reached</p>
+            <AnimatePresence mode="wait">
+              {isDragging ? (
+                <motion.div
+                  key="dragging"
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.9, opacity: 0 }}
+                >
+                  <div className="w-16 h-16 bg-accent/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Upload className="w-8 h-8 text-accent" />
+                  </div>
+                  <p className="text-accent font-semibold">Drop to upload!</p>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="idle"
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.9, opacity: 0 }}
+                >
+                  <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Image className="w-8 h-8 text-slate-400" />
+                  </div>
+                  <p className="text-[#0F172A] font-semibold mb-1">
+                    Drag & drop your image here
+                  </p>
+                  <p className="text-slate-400 text-sm mb-4">or click to browse files</p>
+                  <span className="inline-flex items-center gap-2 px-4 py-2 bg-[#0F172A] text-white text-sm font-medium rounded-xl hover:bg-slate-800 transition-colors">
+                    <Upload className="w-4 h-4" />
+                    Choose File
+                  </span>
+                  <p className="text-xs text-slate-400 mt-4">
+                    JPG, PNG, WEBP · Max {MAX_SIZE_MB}MB
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </label>
+        </div>
       )}
+
+      <AnimatePresence>
+        {uploadError && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="flex items-center gap-2 mt-2 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600"
+          >
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            {uploadError}
+          </motion.div>
+        )}
+        {uploadSuccess && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="flex items-center gap-2 mt-2 p-3 bg-green-50 border border-green-200 rounded-xl text-sm text-green-600"
+          >
+            <CheckCircle className="w-4 h-4 flex-shrink-0" />
+            Image uploaded successfully!
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

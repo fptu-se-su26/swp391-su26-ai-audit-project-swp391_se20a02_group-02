@@ -355,10 +355,14 @@ const VehicleDetailPage: React.FC = () => {
                   reviews.map(review => (
                     <div key={review.id} className="pb-4 border-b border-slate-100 last:border-0">
                       <div className="flex items-start gap-3 mb-2">
-                        <div className="avatar w-9 h-9 rounded-xl text-xs flex-shrink-0">{review.reviewerId.slice(0, 2).toUpperCase()}</div>
+                        <div className="avatar w-9 h-9 rounded-xl text-xs flex-shrink-0">
+                          {(review.reviewer?.displayName || review.reviewerId || 'UR').slice(0, 2).toUpperCase()}
+                        </div>
                         <div className="flex-1">
                           <div className="flex items-center justify-between">
-                            <p className="font-semibold text-sm text-[#0F172A]">Verified Renter</p>
+                            <p className="font-semibold text-sm text-[#0F172A]">
+                              {review.reviewer?.displayName || 'Verified Renter'}
+                            </p>
                             <span className="text-xs text-slate-400">{formatDate(review.createdAt, 'short')}</span>
                           </div>
                           <div className="flex gap-0.5 mt-0.5">

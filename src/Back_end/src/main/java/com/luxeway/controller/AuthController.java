@@ -53,6 +53,7 @@ public class AuthController {
         info.setAccountType(user.getAccountType());
         info.setVerified(user.getVerified());
         info.setKycVerified(user.getKycVerified());
+        info.setWalletBalance(user.getWalletBalance());
         return ResponseEntity.ok(ApiResponse.success(info));
     }
 

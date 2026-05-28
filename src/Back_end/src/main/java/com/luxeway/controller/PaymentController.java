@@ -79,4 +79,13 @@ public class PaymentController {
         PaymentDTOs.PaymentResponse payment = paymentService.processVNPayCallback(params);
         return ResponseEntity.ok(ApiResponse.success("Payment return processed", payment));
     }
+
+    @PostMapping("/wallet/topup")
+    @Operation(summary = "Top up LuxeWallet balance")
+    public ResponseEntity<ApiResponse<PaymentDTOs.PaymentResponse>> topUpWallet(
+            @AuthenticationPrincipal User user,
+            @Valid @RequestBody PaymentDTOs.TopUpRequest request) {
+        PaymentDTOs.PaymentResponse payment = paymentService.topUpWallet(user.getId(), request);
+        return ResponseEntity.ok(ApiResponse.success("Top-up initiated successfully", payment));
+    }
 }

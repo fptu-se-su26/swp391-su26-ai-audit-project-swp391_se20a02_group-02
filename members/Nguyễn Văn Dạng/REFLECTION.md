@@ -92,6 +92,15 @@ Bài học rút ra:
 2. **Khôi phục files**: Bằng cách sử dụng git checkout trên mã băm commit stash, nhóm đã dễ dàng lấy lại các file bị mất (`ComparePage.tsx` và `BusinessPage.tsx`), khôi phục trạng thái build hoàn chỉnh cho dự án.
 3. **Chuẩn hóa Git**: Quy trình làm việc monorepo đòi hỏi kỷ luật cao về việc ignore các file rác sinh ra bởi Gradle và IDE để tránh gây phiền toái khi rebase hoặc filter-branch.
 
+## Reflection - Dịch Thuật Toàn Diện & Sửa Lỗi Biên Dịch Vite (2026-05-28)
+
+Nhóm đã sử dụng AI để rà soát toàn bộ các lỗi biên dịch kiểu dữ liệu (TypeScript compiler errors) khi chạy lệnh đóng gói static bundle (`npm run build`).
+
+Bài học rút ra:
+1. **Lỗi import & JSX Element Types**: Đôi khi việc chỉnh sửa i18n hàng loạt làm mất đi các imports hoặc cấu trúc JSX (như trường hợp Settings sidebar link bị thiếu nhãn label và icon và Loader2 bị thiếu). Nhờ AI phát hiện sớm, nhóm đã khôi phục cấu trúc chuẩn xác và biên dịch thành công.
+2. **Kiểm soát Null-Safety trong Asynchronous States**: Việc truy xuất các thuộc tính lồng nhau của một đối tượng bất đồng bộ (ví dụ: `vehicle.pricePerDay` trong `canProceed()`) luôn cần khối guard check `!vehicle` để đảm bảo trình biên dịch tĩnh của TypeScript không đánh dấu lỗi "possibly null".
+3. **Cấu hình Spring Security linh hoạt**: Luôn đảm bảo các endpoints callback trung gian của các cổng thanh toán (như VNPay callback/return) được whitelisting công khai để tránh lỗi chặn truy cập 403 Forbidden từ filter chain.
+
 Công cụ sử dụng nhiều nhất: Antigravity (AI coding assistant tích hợp trong IDE).
 AI giúp tăng tốc đáng kể - ước tính tiết kiệm 60-70% thời gian coding cho các component phức tạp.
 Tuy nhiên, vẫn phải đầu tư nhiều thời gian để đọc, hiểu, test và chỉnh sửa kết quả AI.
@@ -584,4 +593,4 @@ Sinh viên/nhóm hiểu rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-05-25 |
+| Nguyễn Văn Dạng - DE190324 | 2026-05-28 |

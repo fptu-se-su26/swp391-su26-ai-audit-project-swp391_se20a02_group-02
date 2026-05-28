@@ -150,3 +150,23 @@ INSERT INTO vehicle_features (id, vehicle_id, feature) VALUES
 ('feat-023', 'vehicle-005', 'Hệ thống âm thanh Harman Kardon'),
 ('feat-024', 'vehicle-005', 'Cửa sổ trời toàn cảnh'),
 ('feat-025', 'vehicle-005', 'Hỗ trợ đỗ xe tự động');
+
+-- ====== BOOKINGS & REVIEWS SEEDS (H2/MySQL compatible simple IDs) ======
+INSERT INTO bookings (id, vehicle_id, renter_id, owner_id, status, start_date, end_date, total_days, base_price, price_per_day, addons_total, insurance_fee, delivery_fee, service_fee, taxes, discount, total, deposit, deposit_refunded, include_insurance, include_delivery, created_at, updated_at) VALUES
+('booking-001', 'vehicle-004', 'customer-001', 'owner-002', 'COMPLETED', '2024-05-10', '2024-05-12', 2, 5000000.00, 2500000.00, 0.00, 0.00, 0.00, 600000.00, 400000.00, 0.00, 6000000.00, 8000000.00, 1, 1, 0, '2024-05-12 12:00:00', '2024-05-12 12:00:00'),
+('booking-002', 'vehicle-006', 'customer-002', 'business-001', 'COMPLETED', '2024-05-15', '2024-05-18', 3, 5400000.00, 1800000.00, 0.00, 0.00, 0.00, 648000.00, 432000.00, 0.00, 6480000.00, 6000000.00, 1, 1, 0, '2024-05-18 12:00:00', '2024-05-18 12:00:00'),
+('booking-003', 'vehicle-008', 'customer-003', 'business-001', 'COMPLETED', '2024-05-20', '2024-05-22', 2, 4400000.00, 2200000.00, 0.00, 0.00, 0.00, 528000.00, 352000.00, 0.00, 5280000.00, 7000000.00, 1, 1, 0, '2024-05-22 12:00:00', '2024-05-22 12:00:00');
+
+INSERT INTO reviews (id, vehicle_id, booking_id, reviewer_id, owner_id, rating, cleanliness, accuracy, communication, value_rating, comment, helpful, created_at, updated_at) VALUES
+('review-001', 'vehicle-004', 'booking-001', 'customer-001', 'owner-002', 5, 5, 5, 5, 5, 'Absolutely breathtaking experience. The car was in perfect condition, the owner was incredibly professional. LuxeWay has set a new standard for luxury rentals worldwide.', 5, '2024-05-12 13:00:00', '2024-05-12 13:00:00'),
+('review-002', 'vehicle-006', 'booking-002', 'customer-002', 'business-001', 5, 5, 5, 5, 5, 'Rented a Camry for our anniversary and it was magical. The seamless delivery to our hotel, impeccable service, and the car itself left us speechless. Worth every penny.', 4, '2024-05-18 13:00:00', '2024-05-18 13:00:00'),
+('review-003', 'vehicle-008', 'booking-003', 'customer-003', 'business-001', 5, 5, 5, 5, 5, 'I''ve rented from Turo, Hertz, and others. LuxeWay is in an entirely different league. The vetting process, insurance options, and overall experience is second to none.', 8, '2024-05-22 13:00:00', '2024-05-22 13:00:00');
+
+-- ====== FAQS SEEDS ======
+INSERT INTO faqs (question, answer, is_active, display_order) VALUES
+('How does LuxeWay verify vehicles?', 'Every vehicle undergoes a comprehensive 120-point inspection by certified mechanics, including photo verification, document checks, and insurance validation before listing.', 1, 1),
+('What insurance is included?', 'All rentals include our baseline $1M coverage. Premium plans up to $5M are available. You can also add your own insurance during booking.', 1, 2),
+('Can I cancel my booking?', 'Yes. Free cancellation is available up to 48 hours before pickup. Late cancellations may incur a fee depending on the vehicle''s policy.', 1, 3),
+('How does delivery work?', 'Owners with delivery enabled will bring the vehicle to your specified address. Fees vary by distance and are shown transparently at checkout.', 1, 4),
+('Is there a minimum age requirement?', 'Renters must be at least 25 years old and hold a valid driving license for at least 3 years. Some exotic vehicles may have higher requirements.', 1, 5),
+('How are payments processed?', 'We use Stripe and VNPay for secure payments. You can also use our LuxeWay wallet. Payments are only released to owners after successful pickup confirmation.', 1, 6);

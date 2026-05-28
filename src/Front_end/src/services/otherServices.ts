@@ -2,12 +2,27 @@ import apiClient from './api';
 import type { Review, Notification, Message, Conversation } from '@/types';
 import { faker } from '@faker-js/faker';
 
+// Helper function to map backend review DTO to frontend Review interface
+const mapReview = (r: any): Review => {
+  if (!r) return r;
+  return {
+    ...r,
+    reviewerId: r.reviewer?.id || r.reviewerId || 'anonymous',
+    photos: r.photos || [],
+    cleanliness: r.cleanliness || 5,
+    accuracy: r.accuracy || 5,
+    communication: r.communication || 5,
+    value: r.value !== undefined ? r.value : (r.valueRating !== undefined ? r.valueRating : 5),
+    rating: r.rating || r.averageRating || 5
+  };
+};
+
 // ====== REVIEW SERVICE ======
 export const reviewService = {
   async getByVehicle(vehicleId: string): Promise<Review[]> {
     try {
       const response = await apiClient.get<any>(`/reviews/vehicle/${vehicleId}?page=0&size=50`);
-      return response.data?.content || [];
+      return (response.data?.content || []).map(mapReview);
     } catch (error) {
       return [];
     }
@@ -16,7 +31,7 @@ export const reviewService = {
   async getByUser(userId: string): Promise<Review[]> {
     try {
       const response = await apiClient.get<any>(`/reviews/user/${userId}?page=0&size=50`);
-      return response.data?.content || [];
+      return (response.data?.content || []).map(mapReview);
     } catch (error) {
       return [];
     }
@@ -30,12 +45,11 @@ export const reviewService = {
       cleanliness: data.cleanliness,
       accuracy: data.accuracy,
       communication: data.communication,
-      value: data.value,
+      valueRating: data.value !== undefined ? data.value : 5, // DTO expects valueRating
       comment: data.comment,
-      photos: data.photos,
     };
     const response = await apiClient.post<any>('/reviews', payload);
-    return response.data;
+    return response.data ? mapReview(response.data) : (payload as any as Review);
   },
 
   async getAll(): Promise<Review[]> {
@@ -45,7 +59,7 @@ export const reviewService = {
   async getFeaturedReviews(): Promise<Review[]> {
     try {
       const response = await apiClient.get<any>('/reviews/featured?limit=3');
-      return response.data?.data?.content || [];
+      return (response.data?.content || response.data?.data?.content || []).map(mapReview);
     } catch (error) {
       console.error('Failed to fetch featured reviews', error);
       return [];
@@ -170,7 +184,7 @@ export const statisticService = {
   async getLandingPageStats(): Promise<any> {
     try {
       const response = await apiClient.get<any>('/stats');
-      return response.data;
+      return response;
     } catch (error) {
       console.error('Failed to fetch stats', error);
       return null;

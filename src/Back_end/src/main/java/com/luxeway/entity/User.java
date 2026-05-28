@@ -105,6 +105,10 @@ public class User implements UserDetails {
     @Column(name = "stripe_customer_id", length = 100)
     private String stripeCustomerId;
     
+    @Column(name = "wallet_balance", precision = 18, scale = 2, nullable = false)
+    @Builder.Default
+    private BigDecimal walletBalance = BigDecimal.ZERO;
+    
     @Column(name = "is_active", nullable = false)
     @Builder.Default
     private Boolean isActive = true;

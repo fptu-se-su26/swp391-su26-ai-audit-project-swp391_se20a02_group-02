@@ -27,7 +27,7 @@ public class Payment {
     private String id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "booking_id", nullable = false)
+    @JoinColumn(name = "booking_id", nullable = true)
     @JsonIgnore
     private Booking booking;
 

@@ -14,9 +14,11 @@ import type { Vehicle } from '@/types';
 import { formatCurrency, formatNumber } from '@/utils';
 import { staggerContainer, staggerItem, fadeUp, heroTextVariants } from '@/animations/variants';
 import logoImage from '@/image/logo.png';
+import { useT } from '@/i18n/translations';
 
 // ====== HERO SECTION ======
 const HeroSection: React.FC = () => {
+  const t = useT();
   const navigate = useNavigate();
   const { scrollY } = useScroll();
   const y = useTransform(scrollY, [0, 500], [0, 150]);
@@ -124,7 +126,7 @@ const HeroSection: React.FC = () => {
             className="inline-flex items-center gap-2 px-4 py-2 glass text-white/90 text-sm font-medium rounded-full mb-8"
           >
             <Sparkles className="w-4 h-4 text-gold animate-pulse" />
-            Vietnam's Premier Vehicle Rental Platform
+            {t.landing.hero.badge}
             <Sparkles className="w-4 h-4 text-gold animate-pulse" />
           </motion.div>
 
@@ -134,9 +136,9 @@ const HeroSection: React.FC = () => {
             variants={heroTextVariants}
             className="font-display text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white leading-none tracking-tight mb-6"
           >
-            Explore Vietnam
+            {t.landing.hero.title1}
             <br />
-            <span className="text-gradient-gold">Your Way.</span>
+            <span className="text-gradient-gold">{t.landing.hero.title2}</span>
           </motion.h1>
 
           {/* Subtext */}
@@ -145,7 +147,7 @@ const HeroSection: React.FC = () => {
             variants={heroTextVariants}
             className="text-white/80 text-lg sm:text-xl max-w-2xl mx-auto mb-12 leading-relaxed"
           >
-            Rent the perfect car or motorbike for your journey. From economical scooters to spacious family SUVs, delivered to your door.
+            {t.landing.hero.subtitle}
           </motion.p>
 
           {/* Search Card */}
@@ -159,12 +161,12 @@ const HeroSection: React.FC = () => {
               <div className="flex items-center gap-3 px-4 py-3.5 bg-white rounded-2xl text-left">
                 <MapPin className="w-5 h-5 text-accent flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Location</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{t.landing.hero.location}</p>
                   <input
                     type="text"
                     value={location}
                     onChange={e => setLocation(e.target.value)}
-                    placeholder="Ho Chi Minh, Ha Noi..."
+                    placeholder={t.landing.hero.locationPlaceholder}
                     className="w-full text-sm font-medium text-[#0F172A] placeholder:text-slate-400 outline-none bg-transparent"
                     onKeyDown={e => e.key === 'Enter' && handleSearch()}
                   />
@@ -175,7 +177,7 @@ const HeroSection: React.FC = () => {
               <div className="flex items-center gap-3 px-4 py-3.5 bg-white rounded-2xl">
                 <Calendar className="w-5 h-5 text-accent flex-shrink-0" />
                 <div className="flex-1">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Pick-up Date</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{t.landing.hero.pickUp}</p>
                   <input
                     type="date"
                     value={startDate}
@@ -190,7 +192,7 @@ const HeroSection: React.FC = () => {
               <div className="flex items-center gap-3 px-4 py-3.5 bg-white rounded-2xl">
                 <Calendar className="w-5 h-5 text-accent flex-shrink-0" />
                 <div className="flex-1">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Return Date</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{t.landing.hero.return}</p>
                   <input
                     type="date"
                     value={endDate}
@@ -206,21 +208,21 @@ const HeroSection: React.FC = () => {
                 <div className="flex-1 flex items-center gap-3 px-4 py-3.5 bg-white rounded-2xl">
                   <Car className="w-5 h-5 text-accent flex-shrink-0" />
                   <div className="flex-1">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Category</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{t.landing.hero.category}</p>
                     <select
                       value={vehicleType}
                       onChange={e => setVehicleType(e.target.value)}
                       className="w-full text-sm font-medium text-[#0F172A] outline-none bg-transparent appearance-none cursor-pointer"
                     >
-                      <option value="">All Types</option>
-                      <option value="motorbike">Motorbike</option>
-                      <option value="economy">Economy</option>
-                      <option value="family">Family</option>
-                      <option value="suv">SUV</option>
-                      <option value="city_car">City Car</option>
-                      <option value="business">Business</option>
-                      <option value="electric">Electric</option>
-                      <option value="tourism">Tourism</option>
+                      <option value="">{t.categories.all}</option>
+                      <option value="motorbike">{t.categories.motorbike}</option>
+                      <option value="economy">{t.categories.economy}</option>
+                      <option value="family">{t.categories.family}</option>
+                      <option value="suv">{t.categories.suv}</option>
+                      <option value="city_car">{t.categories.city_car}</option>
+                      <option value="business">{t.categories.business}</option>
+                      <option value="electric">{t.categories.electric}</option>
+                      <option value="tourism">{t.categories.tourism}</option>
                     </select>
                   </div>
                 </div>
@@ -232,7 +234,7 @@ const HeroSection: React.FC = () => {
                   style={{ boxShadow: '0 4px 20px rgba(15,23,42,0.4)' }}
                 >
                   <Search className="w-4 h-4" />
-                  <span className="hidden sm:inline">Search</span>
+                  <span className="hidden sm:inline">{t.landing.hero.search}</span>
                 </motion.button>
               </div>
             </div>
@@ -288,12 +290,12 @@ interface StatsSectionProps {
 }
 
 const StatsSection: React.FC<StatsSectionProps> = ({ statsData }) => {
+  const t = useT();
   const stats = [
-    { value: statsData?.qualityVehicles ?? 5000, suffix: '+', label: 'Quality Vehicles', icon: Car },
-    { value: statsData?.provinces ?? 63, suffix: '', label: 'Provinces', icon: Globe },
-    { value: statsData?.happyClients ?? 250000, suffix: '+', label: 'Happy Clients', icon: Users },
-    { value: statsData?.averageRating ?? 4.98, suffix: '/5', label: 'Average Rating', icon: Star, decimal: true },
-
+    { value: statsData?.qualityVehicles ?? 0, suffix: (statsData?.qualityVehicles > 0) ? '+' : '', label: t.landing.stats.vehicles, icon: Car },
+    { value: statsData?.provinces ?? 0, suffix: '', label: t.landing.stats.provinces, icon: Globe },
+    { value: statsData?.happyClients ?? 0, suffix: (statsData?.happyClients > 0) ? '+' : '', label: t.landing.stats.clients, icon: Users },
+    { value: statsData?.averageRating ?? 0, suffix: (statsData?.averageRating > 0) ? '/5' : '', label: t.landing.stats.rating, icon: Star, decimal: true },
   ];
 
   return (
@@ -339,55 +341,62 @@ interface CategoriesSectionProps {
 }
 
 const CategoriesSection: React.FC<CategoriesSectionProps> = ({ categoryCounts }) => {
-  const getCategoryCountText = (catName: string, defaultText: string) => {
-    if (!categoryCounts) return defaultText;
+  const t = useT();
+  const getCategoryCountText = (catName: string) => {
+    if (!categoryCounts) return t.common.loading;
     const count = categoryCounts[catName.toLowerCase()];
+    const isVi = t.common.loading.includes('Đang');
+    if (isVi) {
+      return `${count ?? 0} xe`;
+    }
     return `${count ?? 0} vehicle${count === 1 ? '' : 's'}`;
   };
 
+  const isVi = t.common.loading.includes('Đang');
+
   const categories = [
     {
-      title: 'Economy',
-      subtitle: 'Reliable and affordable',
+      title: t.categories.economy,
+      subtitle: isVi ? 'Đáng tin cậy và tiết kiệm' : 'Reliable and affordable',
       image: 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?q=80&w=2070&auto=format&fit=crop',
       href: '/marketplace?category=economy',
-      count: getCategoryCountText('economy', '30 vehicles'),
+      count: getCategoryCountText('economy'),
       span: 'md:col-span-8',
       height: 'h-[360px]',
     },
     {
-      title: 'Family',
-      subtitle: 'Spacious comfort for everyone',
+      title: t.categories.family,
+      subtitle: isVi ? 'Rộng rãi và thoải mái cho mọi người' : 'Spacious comfort for everyone',
       image: 'https://images.unsplash.com/photo-1559416523-140ddc3d238c?q=80&w=1964&auto=format&fit=crop',
       href: '/marketplace?category=family',
-      count: getCategoryCountText('family', '25 vehicles'),
+      count: getCategoryCountText('family'),
       span: 'md:col-span-4',
       height: 'h-[360px]',
     },
     {
-      title: 'Motorbikes',
-      subtitle: 'Perfect for city navigation',
+      title: t.categories.motorbike,
+      subtitle: isVi ? 'Hoàn hảo để đi lại trong thành phố' : 'Perfect for city navigation',
       image: 'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=2070&auto=format&fit=crop',
       href: '/marketplace?category=motorbike',
-      count: getCategoryCountText('motorbike', '45 vehicles'),
+      count: getCategoryCountText('motorbike'),
       span: 'md:col-span-4',
       height: 'h-[300px]',
     },
     {
-      title: 'Business',
-      subtitle: 'Professional and premium',
+      title: t.categories.business,
+      subtitle: isVi ? 'Chuyên nghiệp và sang trọng' : 'Professional and premium',
       image: 'https://images.unsplash.com/photo-1549924231-f129b911e442?q=80&w=2070&auto=format&fit=crop',
       href: '/marketplace?category=business',
-      count: getCategoryCountText('business', '15 vehicles'),
+      count: getCategoryCountText('business'),
       span: 'md:col-span-4',
       height: 'h-[300px]',
     },
     {
-      title: 'Electric',
-      subtitle: 'Eco-friendly and quiet',
+      title: t.categories.electric,
+      subtitle: isVi ? 'Thân thiện với môi trường và êm ái' : 'Eco-friendly and quiet',
       image: 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7?q=80&w=2070&auto=format&fit=crop',
       href: '/marketplace?category=electric',
-      count: getCategoryCountText('electric', '10 vehicles'),
+      count: getCategoryCountText('electric'),
       span: 'md:col-span-4',
       height: 'h-[300px]',
     },
@@ -404,13 +413,13 @@ const CategoriesSection: React.FC<CategoriesSectionProps> = ({ categoryCounts })
           className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-12"
         >
           <div>
-            <span className="text-label text-gold mb-2 block">The Curated Collection</span>
+            <span className="text-label text-gold mb-2 block">{isVi ? 'Bộ Sưu Tập Tuyển Chọn' : 'The Curated Collection'}</span>
             <h2 className="font-display text-4xl md:text-5xl font-bold text-[#0F172A]">
-              Browse by Category
+              {t.landing.categories.title}
             </h2>
           </div>
           <Link to="/marketplace" className="mt-4 sm:mt-0 flex items-center gap-2 text-sm font-semibold text-accent hover:text-blue-700 transition-colors">
-            View All <ArrowRight className="w-4 h-4" />
+            {t.landing.featured.viewAll} <ArrowRight className="w-4 h-4" />
           </Link>
         </motion.div>
 
@@ -443,7 +452,7 @@ const CategoriesSection: React.FC<CategoriesSectionProps> = ({ categoryCounts })
                   <h3 className="font-display text-2xl font-bold text-white mb-1">{cat.title}</h3>
                   <p className="text-white/70 text-sm">{cat.subtitle}</p>
                   <div className="flex items-center gap-1 text-gold text-sm font-medium mt-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    Explore <ArrowRight className="w-4 h-4" />
+                    {isVi ? 'Khám phá' : 'Explore'} <ArrowRight className="w-4 h-4" />
                   </div>
                 </div>
               </Link>
@@ -457,6 +466,7 @@ const CategoriesSection: React.FC<CategoriesSectionProps> = ({ categoryCounts })
 
 // ====== FEATURED VEHICLES SECTION ======
 const FeaturedVehiclesSection: React.FC = () => {
+  const t = useT();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -477,12 +487,12 @@ const FeaturedVehiclesSection: React.FC = () => {
           viewport={{ once: true }}
           className="text-center mb-12"
         >
-          <span className="text-label text-gold mb-2 block">Popular in Vietnam</span>
+          <span className="text-label text-gold mb-2 block">{t.landing.featured.titleLabel}</span>
           <h2 className="font-display text-4xl md:text-5xl font-bold text-[#0F172A] mb-4">
-            Trending Vehicles
+            {t.landing.featured.title}
           </h2>
           <p className="text-slate-500 max-w-2xl mx-auto text-lg">
-            Curated from our top-rated partners, offering the best value and comfort.
+            {t.landing.featured.subtitle}
           </p>
         </motion.div>
 
@@ -515,7 +525,7 @@ const FeaturedVehiclesSection: React.FC = () => {
           className="text-center mt-12"
         >
           <Link to="/marketplace" className="btn-outline px-8 py-4 text-base inline-flex items-center gap-2">
-            Explore All Vehicles <ArrowRight className="w-5 h-5" />
+            {t.landing.featured.viewAll} <ArrowRight className="w-5 h-5" />
           </Link>
         </motion.div>
       </div>
@@ -524,6 +534,7 @@ const FeaturedVehiclesSection: React.FC = () => {
 };
 
 const TopCitiesSection: React.FC = () => {
+  const t = useT();
   const [cities, setCities] = useState<any[]>([
     { name: 'Ho Chi Minh', country: 'Vietnam', image: 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?q=80&w=800&auto=format&fit=crop', vehicles: 240 },
     { name: 'Ha Noi', country: 'Vietnam', image: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?q=80&w=800&auto=format&fit=crop', vehicles: 186 },
@@ -536,7 +547,32 @@ const TopCitiesSection: React.FC = () => {
   useEffect(() => {
     import('@/services/otherServices').then(({ locationService }) => {
       locationService.getTopCities().then(data => {
-        if (data && data.length > 0) setCities(data);
+        if (data && data.length > 0) {
+          const normalize = (name: string) =>
+            name
+              .toLowerCase()
+              .normalize('NFD')
+              .replace(/[\u0300-\u036f]/g, '')
+              .replace(/đ/g, 'd')
+              .trim();
+
+          setCities(prevCities =>
+            prevCities.map(city => {
+              const match = data.find(
+                (db: any) => normalize(db.name) === normalize(city.name)
+              );
+              return {
+                ...city,
+                vehicles: match ? Number(match.vehicles) : 0,
+              };
+            })
+          );
+        } else {
+          // If backend returns empty array, set all counts to 0 to be honest with DB
+          setCities(prevCities => prevCities.map(c => ({ ...c, vehicles: 0 })));
+        }
+      }).catch(() => {
+        setCities(prevCities => prevCities.map(c => ({ ...c, vehicles: 0 })));
       });
     });
   }, []);
@@ -552,13 +588,13 @@ const TopCitiesSection: React.FC = () => {
           className="flex justify-between items-end mb-12"
         >
           <div>
-            <span className="text-label text-gold mb-2 block">Luxury Hubs</span>
+            <span className="text-label text-gold mb-2 block">{t.landing.destinations.label}</span>
             <h2 className="font-display text-4xl md:text-5xl font-bold text-[#0F172A]">
-              Top Destinations
+              {t.landing.destinations.title}
             </h2>
           </div>
           <Link to="/marketplace" className="flex items-center gap-2 text-sm font-semibold text-accent hover:text-blue-700 transition-colors">
-            All Cities <ArrowRight className="w-4 h-4" />
+            {t.landing.destinations.viewAll} <ArrowRight className="w-4 h-4" />
           </Link>
         </motion.div>
 
@@ -583,7 +619,7 @@ const TopCitiesSection: React.FC = () => {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
                 <div className="absolute bottom-0 left-0 right-0 p-4">
                   <p className="font-display font-bold text-white text-base leading-tight">{city.name}</p>
-                  <p className="text-white/60 text-xs">{city.vehicles} vehicles</p>
+                  <p className="text-white/60 text-xs">{city.vehicles} {t.landing.destinations.vehicles}</p>
                 </div>
               </Link>
             </motion.div>
@@ -596,32 +632,10 @@ const TopCitiesSection: React.FC = () => {
 
 // ====== REVIEWS SECTION ======
 const ReviewsSection: React.FC = () => {
-  const [reviews, setReviews] = useState<any[]>([
-    {
-      name: 'Alexander Petrova',
-      location: 'Moscow, Russia',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
-      vehicle: 'Lamborghini Huracán EVO',
-      rating: 5,
-      comment: 'Absolutely breathtaking experience. The car was in perfect condition, the owner was incredibly professional. LuxeWay has set a new standard for luxury rentals worldwide.',
-    },
-    {
-      name: 'Sophia Laurent',
-      location: 'Paris, France',
-      avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop',
-      vehicle: 'Rolls-Royce Ghost',
-      rating: 5,
-      comment: 'Rented a Ghost for our anniversary and it was magical. The seamless delivery to our hotel, impeccable service, and the car itself left us speechless. Worth every penny.',
-    },
-    {
-      name: 'Marcus Chen',
-      location: 'Dubai, UAE',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop',
-      vehicle: 'Bugatti Chiron',
-      rating: 5,
-      comment: 'I\'ve rented from Turo, Hertz, and others. LuxeWay is in an entirely different league. The vetting process, insurance options, and overall experience is second to none.',
-    },
-  ]);
+  const t = useT();
+  const isVi = t.common.loading.includes('Đang');
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     import('@/services/otherServices').then(({ reviewService }) => {
@@ -630,15 +644,21 @@ const ReviewsSection: React.FC = () => {
           const formatted = data.map((r: any) => ({
             name: r.reviewer?.displayName || 'Anonymous',
             avatar: r.reviewer?.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
-            vehicle: 'Luxury Vehicle', // Could fetch from vehicle API
+            vehicle: isVi ? 'Xe Cao Cấp' : 'Luxury Vehicle',
             rating: r.rating || 5,
             comment: r.comment || 'Great experience!'
           }));
           setReviews(formatted);
+        } else {
+          setReviews([]);
         }
+        setLoading(false);
+      }).catch(() => {
+        setReviews([]);
+        setLoading(false);
       });
     });
-  }, []);
+  }, [isVi]);
 
   return (
     <section className="section bg-[#0F172A] relative overflow-hidden">
@@ -655,9 +675,9 @@ const ReviewsSection: React.FC = () => {
           viewport={{ once: true }}
           className="text-center mb-12"
         >
-          <span className="text-label text-gold mb-2 block">Client Testimonials</span>
+          <span className="text-label text-gold mb-2 block">{t.landing.testimonials.title}</span>
           <h2 className="font-display text-4xl md:text-5xl font-bold text-white mb-4">
-            What Our Clients Say
+            {t.landing.testimonials.subtitle}
           </h2>
           <div className="flex justify-center items-center gap-3">
             <div className="flex">
@@ -665,39 +685,58 @@ const ReviewsSection: React.FC = () => {
                 <Star key={i} className="w-5 h-5 fill-gold text-gold" />
               ))}
             </div>
-            <span className="text-white text-base font-semibold">4.98 out of 5</span>
-            <span className="text-slate-400 text-sm">from 25,000+ reviews</span>
+            <span className="text-white text-base font-semibold">5.00 {t.landing.testimonials.outOf5}</span>
+            <span className="text-slate-400 text-sm">{t.landing.testimonials.verified}</span>
           </div>
         </motion.div>
 
-        <motion.div
-          variants={staggerContainer}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-6"
-        >
-          {reviews.map(review => (
-            <motion.div key={review.name} variants={staggerItem}>
-              <div className="glass-dark rounded-3xl p-6 h-full flex flex-col">
-                <Quote className="w-8 h-8 text-gold mb-4 opacity-60" />
-                <p className="text-white/80 text-sm leading-relaxed flex-1 mb-6">{review.comment}</p>
-                <div className="flex items-center gap-3 pt-4 border-t border-white/10">
-                  <img src={review.avatar} alt={review.name} className="w-10 h-10 rounded-xl object-cover" />
-                  <div>
-                    <p className="font-semibold text-white text-sm">{review.name}</p>
-                    <p className="text-slate-400 text-xs">{review.vehicle}</p>
-                  </div>
-                  <div className="ml-auto flex">
-                    {[...Array(review.rating)].map((_, i) => (
-                      <Star key={i} className="w-3.5 h-3.5 fill-gold text-gold" />
-                    ))}
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="glass-dark rounded-3xl p-6 h-48 animate-pulse bg-white/5" />
+            ))}
+          </div>
+        ) : reviews.length === 0 ? (
+          <div className="text-center py-12 glass-dark rounded-3xl p-8 max-w-md mx-auto">
+            <Quote className="w-10 h-10 text-gold mx-auto mb-4 opacity-40" />
+            <p className="text-white text-lg font-semibold mb-2">{isVi ? 'Chưa có đánh giá nào' : 'No Reviews Yet'}</p>
+            <p className="text-slate-400 text-sm leading-relaxed mb-6">
+              {t.landing.testimonials.empty}
+            </p>
+            <Link to="/marketplace" className="btn-gold px-6 py-3 text-sm inline-flex items-center gap-2">
+              {t.nav.marketplace}
+            </Link>
+          </div>
+        ) : (
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            className="grid grid-cols-1 md:grid-cols-3 gap-6"
+          >
+            {reviews.map((review, idx) => (
+              <motion.div key={idx} variants={staggerItem}>
+                <div className="glass-dark rounded-3xl p-6 h-full flex flex-col">
+                  <Quote className="w-8 h-8 text-gold mb-4 opacity-60" />
+                  <p className="text-white/80 text-sm leading-relaxed flex-1 mb-6">{review.comment}</p>
+                  <div className="flex items-center gap-3 pt-4 border-t border-white/10">
+                    <img src={review.avatar} alt={review.name} className="w-10 h-10 rounded-xl object-cover" />
+                    <div>
+                      <p className="font-semibold text-white text-sm">{review.name}</p>
+                      <p className="text-slate-400 text-xs">{review.vehicle}</p>
+                    </div>
+                    <div className="ml-auto flex">
+                      {[...Array(review.rating)].map((_, i) => (
+                        <Star key={i} className="w-3.5 h-3.5 fill-gold text-gold" />
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
       </div>
     </section>
   );
@@ -705,11 +744,12 @@ const ReviewsSection: React.FC = () => {
 
 // ====== BUSINESS SECTION ======
 const BusinessSection: React.FC = () => {
+  const t = useT();
   const features = [
-    { icon: Shield, title: '$5M Premium Insurance', desc: 'Every rental is covered by our comprehensive insurance policy.' },
-    { icon: CheckCircle, title: 'Identity Verification', desc: 'Rigorous KYC process ensures only trusted renters access your vehicle.' },
-    { icon: TrendingUp, title: 'Earn More', desc: 'Average owners earn $8,500/month with top earners surpassing $45,000.' },
-    { icon: Clock, title: '24/7 Concierge', desc: 'Our dedicated team handles every aspect of the rental process for you.' },
+    { icon: Shield, title: t.landing.owner.f1Title, desc: t.landing.owner.f1Desc },
+    { icon: CheckCircle, title: t.landing.owner.f2Title, desc: t.landing.owner.f2Desc },
+    { icon: TrendingUp, title: t.landing.owner.f3Title, desc: t.landing.owner.f3Desc },
+    { icon: Clock, title: t.landing.owner.f4Title, desc: t.landing.owner.f4Desc },
   ];
 
   return (
@@ -725,13 +765,13 @@ const BusinessSection: React.FC = () => {
               viewport={{ once: true }}
             >
               <motion.span variants={staggerItem} className="text-label text-gold mb-3 block">
-                LuxeWay for Owners
+                {t.landing.owner.label}
               </motion.span>
               <motion.h2 variants={staggerItem} className="font-display text-3xl lg:text-4xl font-bold text-white mb-6">
-                Monetize Your Masterpiece
+                {t.landing.owner.title}
               </motion.h2>
               <motion.p variants={staggerItem} className="text-slate-400 text-base leading-relaxed mb-8">
-                Turn your luxury asset into a high-yield investment. Connect with vetted, high-net-worth clients globally while we handle all the complexities.
+                {t.landing.owner.desc}
               </motion.p>
               <motion.div variants={staggerContainer} className="space-y-4 mb-10">
                 {features.map(f => (
@@ -749,7 +789,7 @@ const BusinessSection: React.FC = () => {
               <motion.div variants={staggerItem}>
                 <Link to="/owner" className="btn-gold px-8 py-4 text-base inline-flex items-center gap-2">
                   <Sparkles className="w-5 h-5" />
-                  List Your Vehicle
+                  {t.landing.owner.btn}
                 </Link>
               </motion.div>
             </motion.div>
@@ -770,10 +810,10 @@ const BusinessSection: React.FC = () => {
               transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
               className="absolute bottom-8 right-8 glass rounded-2xl p-4 max-w-[180px]"
             >
-              <p className="text-xs text-slate-500 mb-1">Monthly Earnings</p>
+              <p className="text-xs text-slate-500 mb-1">{t.landing.owner.earningsLabel}</p>
               <p className="font-display text-2xl font-bold text-[#0F172A]">$12,450</p>
               <p className="text-xs text-success flex items-center gap-1 mt-1">
-                <TrendingUp className="w-3 h-3" /> +23% this month
+                <TrendingUp className="w-3 h-3" /> +23% {t.landing.owner.growth}
               </p>
             </motion.div>
           </div>
@@ -785,23 +825,43 @@ const BusinessSection: React.FC = () => {
 
 // ====== FAQ SECTION ======
 const FAQSection: React.FC = () => {
+  const t = useT();
+  const isVi = t.common.loading.includes('Đang');
   const [openIndex, setOpenIndex] = useState<number | null>(null);
-  const [faqs, setFaqs] = useState<any[]>([
+
+  const faqsEn = [
     { q: 'How does LuxeWay verify vehicles?', a: 'Every vehicle undergoes a comprehensive 120-point inspection by certified mechanics, including photo verification, document checks, and insurance validation before listing.' },
     { q: 'What insurance is included?', a: 'All rentals include our baseline $1M coverage. Premium plans up to $5M are available. You can also add your own insurance during booking.' },
     { q: 'Can I cancel my booking?', a: 'Yes. Free cancellation is available up to 48 hours before pickup. Late cancellations may incur a fee depending on the vehicle\'s policy.' },
     { q: 'How does delivery work?', a: 'Owners with delivery enabled will bring the vehicle to your specified address. Fees vary by distance and are shown transparently at checkout.' },
     { q: 'Is there a minimum age requirement?', a: 'Renters must be at least 25 years old and hold a valid driving license for at least 3 years. Some exotic vehicles may have higher requirements.' },
     { q: 'How are payments processed?', a: 'We use Stripe and VNPay for secure payments. You can also use our LuxeWay wallet. Payments are only released to owners after successful pickup confirmation.' },
-  ]);
+  ];
+
+  const faqsVi = [
+    { q: 'LuxeWay xác minh phương tiện như thế nào?', a: 'Mỗi phương tiện đều trải qua quy trình kiểm tra toàn diện 120 điểm bởi các kỹ thuật viên được chứng nhận, bao gồm xác minh hình ảnh, kiểm tra giấy tờ và hiệu lực bảo hiểm trước khi đăng tải.' },
+    { q: 'Những gói bảo hiểm nào được bao gồm?', a: 'Tất cả các chuyến thuê xe đều bao gồm gói bảo hiểm cơ bản trị giá 1 triệu USD. Các gói cao cấp lên đến 5 triệu USD luôn có sẵn để đăng ký thêm khi đặt xe.' },
+    { q: 'Tôi có thể hủy đặt xe không?', a: 'Có. Miễn phí hủy đặt xe trước giờ nhận xe 48 tiếng. Việc hủy muộn hơn có thể phát sinh một khoản phí nhỏ tùy thuộc vào chính sách của chủ xe.' },
+    { q: 'Dịch vụ giao nhận xe hoạt động như thế nào?', a: 'Những chủ xe có bật dịch vụ giao xe sẽ đưa xe đến địa chỉ bạn yêu cầu. Phí giao xe tùy thuộc vào khoảng cách và được hiển thị minh bạch khi thanh toán.' },
+    { q: 'Yêu cầu về độ tuổi tối thiểu là bao nhiêu?', a: 'Khách thuê phải từ 25 tuổi trở lên và có bằng lái xe hợp lệ từ 3 năm trở lên. Một số dòng xe siêu sang hoặc đặc biệt có thể yêu cầu cao hơn.' },
+    { q: 'Phương thức thanh toán được xử lý ra sao?', a: 'Chúng tôi sử dụng cổng thanh toán Stripe và VNPay để đảm bảo an toàn tuyệt đối. Bạn cũng có thể dùng ví điện tử LuxeWallet. Tiền thuê xe chỉ được chuyển cho chủ xe sau khi bạn nhận xe thành công.' },
+  ];
+
+  const [faqs, setFaqs] = useState<any[]>(faqsEn);
 
   useEffect(() => {
     import('@/services/otherServices').then(({ faqService }) => {
       faqService.getFAQs().then((data: any) => {
-        if (data && data.length > 0) setFaqs(data);
+        if (data && data.length > 0) {
+          setFaqs(data);
+        } else {
+          setFaqs(isVi ? faqsVi : faqsEn);
+        }
+      }).catch(() => {
+        setFaqs(isVi ? faqsVi : faqsEn);
       });
     });
-  }, []);
+  }, [isVi]);
 
   return (
     <section className="section">
@@ -813,9 +873,9 @@ const FAQSection: React.FC = () => {
           viewport={{ once: true }}
           className="text-center mb-12"
         >
-          <span className="text-label text-gold mb-2 block">Got Questions?</span>
+          <span className="text-label text-gold mb-2 block">{t.landing.faq.label}</span>
           <h2 className="font-display text-4xl font-bold text-[#0F172A]">
-            Frequently Asked Questions
+            {t.landing.faq.title}
           </h2>
         </motion.div>
 
@@ -867,30 +927,34 @@ const FAQSection: React.FC = () => {
 };
 
 // ====== FOOTER ======
+// ====== FOOTER ======
 const Footer: React.FC = () => {
-  const links = {
-    Explore: [
-      { label: 'Marketplace', href: '/marketplace' },
-      { label: 'Search', href: '/search' },
-      { label: 'Top Destinations', href: '/marketplace' },
-      { label: 'Compare Vehicles', href: '/compare' },
+  const t = useT();
+  const isVi = t.common.loading.includes('Đang');
+
+  const sections = {
+    [t.landing.footer.explore]: [
+      { label: t.landing.footer.marketplace, href: '/marketplace' },
+      { label: t.landing.footer.search, href: '/marketplace' },
+      { label: t.landing.footer.topDestinations, href: '/marketplace' },
+      { label: t.landing.footer.compare, href: '/marketplace' },
     ],
-    Host: [
-      { label: 'List Your Vehicle', href: '/owner' },
-      { label: 'Owner Dashboard', href: '/owner' },
-      { label: 'Business Solutions', href: '/business' },
-      { label: 'Pricing Guide', href: '/help' },
+    [t.landing.footer.host]: [
+      { label: t.landing.footer.listVehicle, href: '/owner' },
+      { label: t.landing.footer.ownerDashboard, href: '/owner' },
+      { label: t.landing.footer.business, href: '/marketplace' },
+      { label: t.landing.footer.pricing, href: '/help' },
     ],
-    Support: [
-      { label: 'Help Center', href: '/help' },
-      { label: 'Trust & Safety', href: '/help' },
-      { label: 'Contact Us', href: '/help/contact' },
-      { label: 'Insurance Info', href: '/help' },
+    [t.landing.footer.support]: [
+      { label: t.landing.footer.helpCenter, href: '/help' },
+      { label: t.landing.footer.trust, href: '/help' },
+      { label: t.landing.footer.contactUs, href: '/help/contact' },
+      { label: t.landing.footer.insurance, href: '/help' },
     ],
-    Legal: [
-      { label: 'About LuxeWay', href: '/about' },
-      { label: 'Terms of Service', href: '/terms' },
-      { label: 'Privacy Policy', href: '/privacy' },
+    [t.landing.footer.legal]: [
+      { label: t.landing.footer.about, href: '/about' },
+      { label: t.landing.footer.terms, href: '/terms' },
+      { label: t.landing.footer.privacy, href: '/privacy' },
     ],
   };
 
@@ -904,25 +968,25 @@ const Footer: React.FC = () => {
               <img src={logoImage} alt="LuxeWay" className="logo-effect h-12 w-auto object-contain brightness-0 invert" />
             </Link>
             <p className="text-slate-400 text-sm leading-relaxed mb-6">
-              Redefining luxury vehicle experiences globally. Precision, prestige, and performance — delivered to your door.
+              {t.landing.footer.desc}
             </p>
             {/* Newsletter */}
             <div className="flex gap-2">
               <input
                 type="email"
-                placeholder="Your email address"
+                placeholder={t.landing.footer.placeholder}
                 className="flex-1 px-4 py-2.5 bg-white/10 border border-white/10 rounded-xl text-sm text-white placeholder:text-slate-500 outline-none focus:border-accent/50 transition-colors"
               />
               <button className="btn-gold px-4 py-2.5 text-sm rounded-xl">
-                Subscribe
+                {t.landing.footer.subscribe}
               </button>
             </div>
           </div>
 
           {/* Links */}
-          {Object.entries(links).map(([section, items]) => (
-            <div key={section}>
-              <h4 className="font-semibold text-white mb-4 text-sm">{section}</h4>
+          {Object.entries(sections).map(([sectionName, items]) => (
+            <div key={sectionName}>
+              <h4 className="font-semibold text-white mb-4 text-sm">{sectionName}</h4>
               <ul className="space-y-2.5">
                 {items.map(item => (
                   <li key={item.label}>
@@ -941,7 +1005,7 @@ const Footer: React.FC = () => {
 
         {/* Bottom */}
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p className="text-slate-500 text-xs">© 2026 LuxeWay International. All rights reserved.</p>
+          <p className="text-slate-500 text-xs">© 2026 LuxeWay International. {t.landing.footer.rights}</p>
           <div className="flex items-center gap-4">
             {/* Social Links */}
             {['Twitter', 'Instagram', 'LinkedIn', 'YouTube'].map(social => (
@@ -954,7 +1018,7 @@ const Footer: React.FC = () => {
             <Globe className="w-3.5 h-3.5" />
             <span>USD</span>
             <span>•</span>
-            <span>English</span>
+            <span>{isVi ? 'Tiếng Việt' : 'English'}</span>
           </div>
         </div>
       </div>
@@ -963,13 +1027,15 @@ const Footer: React.FC = () => {
 };
 
 // ====== HOW IT WORKS SECTION ======
+// ====== HOW IT WORKS SECTION ======
 const HowItWorksSection: React.FC = () => {
+  const t = useT();
   const steps = [
     {
       number: '01',
       icon: Search,
-      title: 'Search & Discover',
-      desc: 'Browse thousands of verified luxury vehicles by location, brand, or category. Use smart filters to find your perfect match.',
+      title: t.landing.howItWorks.step1Title,
+      desc: t.landing.howItWorks.step1Desc,
       color: 'from-blue-500 to-blue-700',
       bgLight: 'bg-blue-50',
       iconColor: 'text-blue-600',
@@ -977,8 +1043,8 @@ const HowItWorksSection: React.FC = () => {
     {
       number: '02',
       icon: Calendar,
-      title: 'Book Instantly',
-      desc: 'Select your dates, choose extras like premium insurance or door-to-door delivery, and confirm your booking in under 2 minutes.',
+      title: t.landing.howItWorks.step2Title,
+      desc: t.landing.howItWorks.step2Desc,
       color: 'from-gold to-yellow-600',
       bgLight: 'bg-yellow-50',
       iconColor: 'text-yellow-600',
@@ -986,8 +1052,8 @@ const HowItWorksSection: React.FC = () => {
     {
       number: '03',
       icon: Car,
-      title: 'Drive & Enjoy',
-      desc: 'Pick up your dream car or have it delivered to your door. Experience the thrill with full insurance coverage and 24/7 support.',
+      title: t.landing.howItWorks.step3Title,
+      desc: t.landing.howItWorks.step3Desc,
       color: 'from-emerald-500 to-emerald-700',
       bgLight: 'bg-emerald-50',
       iconColor: 'text-emerald-600',
@@ -1004,12 +1070,12 @@ const HowItWorksSection: React.FC = () => {
           viewport={{ once: true }}
           className="text-center mb-14"
         >
-          <span className="text-label text-gold mb-2 block">Simple & Seamless</span>
+          <span className="text-label text-gold mb-2 block">{t.landing.howItWorks.label}</span>
           <h2 className="font-display text-4xl md:text-5xl font-bold text-[#0F172A] mb-4">
-            How LuxeWay Works
+            {t.landing.howItWorks.title}
           </h2>
           <p className="text-slate-500 max-w-xl mx-auto text-lg">
-            From discovery to driving, your luxury experience in three effortless steps.
+            {t.landing.howItWorks.subtitle}
           </p>
         </motion.div>
 
@@ -1064,7 +1130,7 @@ const HowItWorksSection: React.FC = () => {
           className="text-center mt-12"
         >
           <a href="/marketplace" className="btn-primary px-10 py-4 text-base inline-flex items-center gap-2">
-            <Zap className="w-5 h-5" /> Start Exploring Now
+            <Zap className="w-5 h-5" /> {t.landing.howItWorks.btn}
           </a>
         </motion.div>
       </div>

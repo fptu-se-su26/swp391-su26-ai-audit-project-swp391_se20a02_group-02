@@ -39,6 +39,9 @@ public class PaymentService {
     @Value("${payment.vnpay.tmn-code:LUXEWAY1}")
     private String vnpayTmnCode;
 
+    @Value("${payment.vnpay.secret-key:IKGZVMMTMTUYKQLJILPBYXJVHOUCGFDF}")
+    private String vnpaySecretKey;
+
     // ====== Create Payment ======
 
     @Transactional
@@ -53,7 +56,7 @@ public class PaymentService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        String transactionId = UUID.randomUUID().toString().replace("-", "").substring(0, 20).toUpperCase();
+        String transactionId = "TXN" + UUID.randomUUID().toString().replace("-", "").substring(0, 17).toUpperCase();
 
         Payment payment = Payment.builder()
                 .booking(booking)
@@ -61,7 +64,7 @@ public class PaymentService {
                 .amount(req.getAmount())
                 .currency(req.getCurrency() != null ? req.getCurrency() : "VND")
                 .status(PaymentStatus.PENDING)
-                .method(req.getMethod())
+                .method(req.getMethod().toUpperCase())
                 .transactionId(transactionId)
                 .description(req.getDescription() != null ? req.getDescription() :
                         "Payment for booking " + booking.getId())
@@ -71,13 +74,85 @@ public class PaymentService {
 
         PaymentDTOs.PaymentResponse response = toResponse(payment);
 
-        // For VNPay: generate payment URL (mock/simplified)
-        if ("vnpay".equalsIgnoreCase(req.getMethod())) {
+        if ("wallet".equalsIgnoreCase(req.getMethod())) {
+            if (user.getWalletBalance().compareTo(req.getAmount()) < 0) {
+                throw new RuntimeException("Insufficient wallet balance. Please top up your LuxeWallet.");
+            }
+            // Deduct balance
+            user.setWalletBalance(user.getWalletBalance().subtract(req.getAmount()));
+            userRepository.save(user);
+
+            // Complete payment
+            payment.setStatus(PaymentStatus.SUCCEEDED);
+            payment.setProcessedAt(LocalDateTime.now());
+            paymentRepository.save(payment);
+
+            // Confirm booking
+            booking.setStatus(com.luxeway.enums.BookingStatus.CONFIRMED);
+            bookingRepository.save(booking);
+
+            response = toResponse(payment);
+            log.info("LuxeWallet payment successful: deducted {} from user {}", req.getAmount(), userId);
+        } else if ("stripe".equalsIgnoreCase(req.getMethod()) || "card".equalsIgnoreCase(req.getMethod())) {
+            // Complete payment immediately for simulated flow
+            payment.setStatus(PaymentStatus.SUCCEEDED);
+            payment.setProcessedAt(LocalDateTime.now());
+            paymentRepository.save(payment);
+
+            // Confirm booking
+            booking.setStatus(com.luxeway.enums.BookingStatus.CONFIRMED);
+            bookingRepository.save(booking);
+
+            response = toResponse(payment);
+            log.info("Stripe/Card payment successful immediately: {}", transactionId);
+        } else if ("vnpay".equalsIgnoreCase(req.getMethod())) {
             String paymentUrl = buildVNPayUrl(payment, req.getReturnUrl());
             response.setPaymentUrl(paymentUrl);
         }
 
         log.info("Payment created: {} for booking {} by user {}", payment.getId(), req.getBookingId(), userId);
+        return response;
+    }
+
+    @Transactional
+    public PaymentDTOs.PaymentResponse topUpWallet(String userId, PaymentDTOs.TopUpRequest req) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        String transactionId = "TOPUP" + UUID.randomUUID().toString().replace("-", "").substring(0, 15).toUpperCase();
+
+        Payment payment = Payment.builder()
+                .booking(null)
+                .user(user)
+                .amount(req.getAmount())
+                .currency("VND")
+                .status(PaymentStatus.PENDING)
+                .method(req.getMethod().toUpperCase())
+                .transactionId(transactionId)
+                .description("LuxeWallet Top Up: " + req.getAmount() + " VND")
+                .build();
+
+        payment = paymentRepository.save(payment);
+
+        PaymentDTOs.PaymentResponse response = toResponse(payment);
+
+        if ("vnpay".equalsIgnoreCase(req.getMethod())) {
+            String paymentUrl = buildVNPayUrl(payment, req.getReturnUrl());
+            response.setPaymentUrl(paymentUrl);
+        } else {
+            // Stripe or Credit Card top-up succeeds instantly
+            payment.setStatus(PaymentStatus.SUCCEEDED);
+            payment.setProcessedAt(LocalDateTime.now());
+            paymentRepository.save(payment);
+            
+            // Add wallet balance
+            user.setWalletBalance(user.getWalletBalance().add(req.getAmount()));
+            userRepository.save(user);
+            
+            response = toResponse(payment);
+            log.info("LuxeWallet Top Up successful: user {} balance is now {}", userId, user.getWalletBalance());
+        }
+
         return response;
     }
 
@@ -109,6 +184,38 @@ public class PaymentService {
 
     @Transactional
     public PaymentDTOs.PaymentResponse processVNPayCallback(Map<String, String> params) {
+        // Verify VNPay signature
+        String secureHash = params.get("vnp_SecureHash");
+        if (secureHash != null) {
+            Map<String, String> sortedParams = new java.util.TreeMap<>();
+            for (Map.Entry<String, String> entry : params.entrySet()) {
+                if (entry.getKey().startsWith("vnp_") && !entry.getKey().equals("vnp_SecureHash") && !entry.getKey().equals("vnp_SecureHashType")) {
+                    sortedParams.put(entry.getKey(), entry.getValue());
+                }
+            }
+
+            StringBuilder hashData = new StringBuilder();
+            java.util.Iterator<Map.Entry<String, String>> itr = sortedParams.entrySet().iterator();
+            while (itr.hasNext()) {
+                Map.Entry<String, String> entry = itr.next();
+                hashData.append(entry.getKey()).append('=');
+                try {
+                    hashData.append(java.net.URLEncoder.encode(entry.getValue(), java.nio.charset.StandardCharsets.US_ASCII.toString()));
+                } catch (Exception e) {
+                    log.error("Encoding error in callback verification", e);
+                }
+                if (itr.hasNext()) {
+                    hashData.append('&');
+                }
+            }
+
+            String calculatedHash = hmacSHA512(vnpaySecretKey, hashData.toString());
+            if (!calculatedHash.equalsIgnoreCase(secureHash)) {
+                log.error("VNPay signature verification failed. Calculated: {}, Received: {}", calculatedHash, secureHash);
+                throw new RuntimeException("VNPay payment signature verification failed");
+            }
+        }
+
         String transactionId = params.get("vnp_TxnRef");
         String responseCode = params.get("vnp_ResponseCode");
 
@@ -118,7 +225,20 @@ public class PaymentService {
         if ("00".equals(responseCode)) {
             payment.setStatus(PaymentStatus.SUCCEEDED);
             payment.setProcessedAt(LocalDateTime.now());
-            log.info("VNPay payment completed: {}", transactionId);
+            
+            if (payment.getBooking() == null) {
+                // Wallet top-up!
+                User user = payment.getUser();
+                user.setWalletBalance(user.getWalletBalance().add(payment.getAmount()));
+                userRepository.save(user);
+                log.info("VNPay Top Up callback successful: user {} balance is now {}", user.getId(), user.getWalletBalance());
+            } else {
+                // Booking payment!
+                Booking booking = payment.getBooking();
+                booking.setStatus(com.luxeway.enums.BookingStatus.CONFIRMED);
+                bookingRepository.save(booking);
+                log.info("VNPay booking payment callback completed and booking confirmed: {}", transactionId);
+            }
         } else {
             payment.setStatus(PaymentStatus.FAILED);
             log.warn("VNPay payment failed: {} with code {}", transactionId, responseCode);
@@ -148,15 +268,80 @@ public class PaymentService {
         return toResponse(payment);
     }
 
-    // ====== Build VNPay URL (simplified mock) ======
+    // ====== Build VNPay URL ======
 
     private String buildVNPayUrl(Payment payment, String returnUrl) {
-        // Simplified – in production, add proper HMAC-SHA512 signature
-        return String.format("%s?vnp_TmnCode=%s&vnp_Amount=%s&vnp_TxnRef=%s&vnp_ReturnUrl=%s",
-                vnpayUrl, vnpayTmnCode,
-                payment.getAmount().multiply(BigDecimal.valueOf(100)).longValue(),
-                payment.getTransactionId(),
-                returnUrl != null ? returnUrl : "http://localhost:5173/payment/return");
+        Map<String, String> vnp_Params = new java.util.HashMap<>();
+        vnp_Params.put("vnp_Version", "2.1.0");
+        vnp_Params.put("vnp_Command", "pay");
+        vnp_Params.put("vnp_TmnCode", vnpayTmnCode);
+        vnp_Params.put("vnp_Amount", String.valueOf(payment.getAmount().multiply(BigDecimal.valueOf(100)).longValue()));
+        vnp_Params.put("vnp_CurrCode", "VND");
+        vnp_Params.put("vnp_TxnRef", payment.getTransactionId());
+        vnp_Params.put("vnp_OrderInfo", payment.getDescription() != null ? payment.getDescription() : "Payment for booking " + payment.getTransactionId());
+        vnp_Params.put("vnp_OrderType", "other");
+        vnp_Params.put("vnp_Locale", "vn");
+        vnp_Params.put("vnp_ReturnUrl", returnUrl != null ? returnUrl : "http://localhost:5173/payment/vnpay/return");
+        vnp_Params.put("vnp_IpAddr", "127.0.0.1");
+
+        java.util.Calendar cld = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("Etc/GMT+7"));
+        java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat("yyyyMMddHHmmss");
+        vnp_Params.put("vnp_CreateDate", formatter.format(cld.getTime()));
+
+        List<String> fieldNames = new java.util.ArrayList<>(vnp_Params.keySet());
+        java.util.Collections.sort(fieldNames);
+
+        StringBuilder hashData = new StringBuilder();
+        StringBuilder query = new StringBuilder();
+        java.util.Iterator<String> itr = fieldNames.iterator();
+        while (itr.hasNext()) {
+            String fieldName = itr.next();
+            String fieldValue = vnp_Params.get(fieldName);
+            if ((fieldValue != null) && (fieldValue.length() > 0)) {
+                // Build hash data
+                hashData.append(fieldName);
+                hashData.append('=');
+                try {
+                    hashData.append(java.net.URLEncoder.encode(fieldValue, java.nio.charset.StandardCharsets.US_ASCII.toString()));
+                    // Build query
+                    query.append(java.net.URLEncoder.encode(fieldName, java.nio.charset.StandardCharsets.US_ASCII.toString()));
+                    query.append('=');
+                    query.append(java.net.URLEncoder.encode(fieldValue, java.nio.charset.StandardCharsets.US_ASCII.toString()));
+                } catch (Exception e) {
+                    log.error("Error encoding parameter: {}", fieldName, e);
+                }
+                if (itr.hasNext()) {
+                    query.append('&');
+                    hashData.append('&');
+                }
+            }
+        }
+
+        String queryUrl = query.toString();
+        String vnp_SecureHash = hmacSHA512(vnpaySecretKey, hashData.toString());
+        queryUrl += "&vnp_SecureHash=" + vnp_SecureHash;
+        return vnpayUrl + "?" + queryUrl;
+    }
+
+    private String hmacSHA512(String key, String data) {
+        try {
+            if (key == null || data == null) {
+                throw new NullPointerException();
+            }
+            javax.crypto.Mac hmac512 = javax.crypto.Mac.getInstance("HmacSHA512");
+            byte[] hmacKeyBytes = key.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            javax.crypto.spec.SecretKeySpec secretKey = new javax.crypto.spec.SecretKeySpec(hmacKeyBytes, "HmacSHA512");
+            hmac512.init(secretKey);
+            byte[] result = hmac512.doFinal(data.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder(2 * result.length);
+            for (byte b : result) {
+                sb.append(String.format("%02x", b & 0xff));
+            }
+            return sb.toString();
+        } catch (Exception ex) {
+            log.error("Error in hmacSHA512 generation", ex);
+            return "";
+        }
     }
 
     // ====== DTO Mapping ======

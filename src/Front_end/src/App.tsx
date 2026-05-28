@@ -17,6 +17,7 @@ import { LoginPage, RegisterPage, ForgotPasswordPage } from '@/pages/auth/AuthPa
 import MarketplacePage from '@/pages/marketplace/MarketplacePage';
 import VehicleDetailPage from '@/pages/marketplace/VehicleDetailPage';
 import BookingWizardPage from '@/pages/booking/BookingWizardPage';
+import VNPayReturnPage from '@/pages/booking/VNPayReturnPage';
 import HelpPage from '@/pages/help/HelpPage';
 
 // Lazy loaded pages
@@ -29,6 +30,7 @@ const SecurityPage = lazy(() => import('@/pages/dashboard/CustomerDashboard').th
 const DocumentsPage = lazy(() => import('@/pages/dashboard/CustomerDashboard').then(m => ({ default: m.DocumentsPage })));
 const PaymentHistoryPage = lazy(() => import('@/pages/dashboard/CustomerDashboard').then(m => ({ default: m.PaymentHistoryPage })));
 const SettingsPage = lazy(() => import('@/pages/dashboard/CustomerDashboard').then(m => ({ default: m.SettingsPage })));
+const LuxeWalletPage = lazy(() => import('@/pages/dashboard/CustomerDashboard').then(m => ({ default: m.LuxeWalletPage })));
 const MyReviewsPage = lazy(() => import('@/pages/dashboard/CustomerDashboard').then(m => ({ default: m.MyReviewsPage })));
 const OwnerOverview = lazy(() => import('@/pages/dashboard/OwnerDashboard').then(m => ({ default: m.OwnerOverview })));
 const VehicleManagePage = lazy(() => import('@/pages/dashboard/OwnerDashboard').then(m => ({ default: m.VehicleManagePage })));
@@ -229,7 +231,9 @@ const ReviewsPage: React.FC = () => {
                     U
                   </div>
                   <div>
-                    <p className="font-semibold text-sm text-[#0F172A] dark:text-white">User {review.reviewerId.substring(0,4)}</p>
+                    <p className="font-semibold text-sm text-[#0F172A] dark:text-white">
+                      User {(review.reviewerId || 'anon').substring(0, 4)}
+                    </p>
                     <div className="flex items-center gap-1">
                       {[...Array(5)].map((_, i) => <span key={i} className={`text-xs ${i < review.rating ? 'text-yellow-400' : 'text-slate-200 dark:text-slate-700'}`}>★</span>)}
                       <span className="text-xs text-slate-400 ml-1">{formatDate(review.createdAt, 'short')}</span>
@@ -339,10 +343,29 @@ const App: React.FC = () => {
           <Route element={<RootLayout />}>
             <Route index element={<LandingPage />} />
             <Route path="marketplace" element={<MarketplacePage />} />
+            <Route path="vehicles" element={<MarketplacePage />} />
             <Route path="search" element={<MarketplacePage />} />
             <Route path="vehicles/:id" element={<VehicleDetailPage />} />
             <Route path="booking/:vehicleId" element={
               <ProtectedRoute><BookingWizardPage /></ProtectedRoute>
+            } />
+            <Route path="payment/:bookingId" element={
+              <ProtectedRoute><BookingWizardPage /></ProtectedRoute>
+            } />
+            <Route path="payment/vnpay/return" element={
+              <ProtectedRoute><VNPayReturnPage /></ProtectedRoute>
+            } />
+            <Route path="success" element={
+              <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
+                <div className="text-center">
+                  <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <span className="text-4xl">✅</span>
+                  </div>
+                  <h1 className="font-display text-3xl font-bold text-[#0F172A] mb-3">Booking Confirmed!</h1>
+                  <p className="text-slate-500 mb-8">Your vehicle has been successfully booked. Check your email for details.</p>
+                  <a href="/" className="btn-primary px-8 py-3">Back to Home</a>
+                </div>
+              </div>
             } />
             <Route path="messages" element={
               <ProtectedRoute><MessengerPage /></ProtectedRoute>
@@ -382,6 +405,7 @@ const App: React.FC = () => {
             <Route path="reviews" element={<MyReviewsPage />} />
             <Route path="security" element={<SecurityPage />} />
             <Route path="documents" element={<DocumentsPage />} />
+            <Route path="wallet" element={<LuxeWalletPage />} />
             <Route path="payments" element={<PaymentHistoryPage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>

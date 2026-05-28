@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Car, Search, Bell, MessageSquare, Menu, X,
   User, LogOut, LayoutDashboard, Heart, ChevronDown,
-  Sparkles, Shield, Star, Sun, Moon, Globe, Check
+  Sparkles, Shield, Star, Sun, Moon, Globe, Check, Wallet
 } from 'lucide-react';
 import { useAuthStore, useUIStore, useNotificationStore } from '@/store';
 import { cn, getInitials } from '@/utils';
@@ -342,6 +342,7 @@ export const Navbar: React.FC = () => {
                           <div className="p-2">
                             {[
                               { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
+                              { icon: Wallet, label: 'LuxeWallet', href: '/dashboard/wallet' },
                               { icon: Heart, label: 'Wishlist', href: '/dashboard/wishlist' },
                               { icon: User, label: 'Profile', href: '/dashboard/profile' },
                               { icon: Bell, label: 'Notifications', href: '/dashboard/notifications' },

@@ -10,6 +10,10 @@ SET CONCAT_NULL_YIELDS_NULL ON;
 SET NUMERIC_ROUNDABORT OFF;
 
 -- Clear existing data (in reverse order of dependencies)
+DELETE FROM reviews;
+DELETE FROM payments;
+DELETE FROM bookings;
+DELETE FROM faqs;
 DELETE FROM vehicle_features;
 DELETE FROM vehicle_images;
 DELETE FROM vehicles;
@@ -128,8 +132,7 @@ INSERT INTO vehicle_features (id, vehicle_id, feature) VALUES
 ('FEATPY6Z-7A8B-9012-FEAT-PPPPPPPPPPPP', 'V5E6F7G8-H9I0-1234-VHCL-555555555555', N'Hỗ trợ đỗ xe tự động');
 
 -- ====== SYSTEM SETTINGS ======
-IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'system_settings')
-BEGIN
+IF OBJECT_ID('dbo.system_settings', 'U') IS NULL 
 CREATE TABLE system_settings (
     id          NVARCHAR(36)    NOT NULL PRIMARY KEY,
     key_name    NVARCHAR(100)   NOT NULL UNIQUE,
@@ -140,7 +143,6 @@ CREATE TABLE system_settings (
     created_at  DATETIME2       NOT NULL DEFAULT GETDATE(),
     updated_at  DATETIME2       NOT NULL DEFAULT GETDATE()
 );
-END
 
 DELETE FROM system_settings;
 INSERT INTO system_settings (id, key_name, value, data_type, description, is_public, created_at, updated_at) VALUES
@@ -162,6 +164,26 @@ INSERT INTO coupons (code, discount_percentage, max_discount_amount, valid_from,
 ('STUDENT100K', 10, 100000.00, '2024-03-01 00:00:00', '2024-12-31 23:59:59', 1, 300, 78, '2024-03-01 00:00:00'),
 ('VIP25', 25, 1000000.00, '2024-01-01 00:00:00', '2024-12-31 23:59:59', 1, 100, 12, '2024-01-01 00:00:00');
 
+-- ====== BOOKINGS & REVIEWS SEEDS (SQL Server Compatible UUIDs) ======
+INSERT INTO bookings (id, vehicle_id, renter_id, owner_id, status, start_date, end_date, total_days, base_price, price_per_day, addons_total, insurance_fee, delivery_fee, service_fee, taxes, discount, total, deposit, deposit_refunded, include_insurance, include_delivery, created_at, updated_at) VALUES
+('BK111111-1111-1111-1111-111111111111', 'V4D5E6F7-G8H9-0123-VHCL-444444444444', 'B2C3D4E5-F6G7-8901-BCDE-234567890123', 'F6G7H8I9-J0K1-2345-FGHI-678901234567', 'COMPLETED', '2024-05-10', '2024-05-12', 2, 5000000.00, 2500000.00, 0.00, 0.00, 0.00, 600000.00, 400000.00, 0.00, 6000000.00, 8000000.00, 1, 1, 0, '2024-05-12 12:00:00', '2024-05-12 12:00:00'),
+('BK222222-2222-2222-2222-222222222222', 'V6F7G8H9-I0J1-2345-VHCL-666666666666', 'C3D4E5F6-G7H8-9012-CDEF-345678901234', 'G7H8I9J0-K1L2-3456-GHIJ-789012345678', 'COMPLETED', '2024-05-15', '2024-05-18', 3, 5400000.00, 1800000.00, 0.00, 0.00, 0.00, 648000.00, 432000.00, 0.00, 6480000.00, 6000000.00, 1, 1, 0, '2024-05-18 12:00:00', '2024-05-18 12:00:00'),
+('BK333333-3333-3333-3333-333333333333', 'V8H9I0J1-K2L3-4567-VHCL-888888888888', 'D4E5F6G7-H8I9-0123-DEFG-456789012345', 'G7H8I9J0-K1L2-3456-GHIJ-789012345678', 'COMPLETED', '2024-05-20', '2024-05-22', 2, 4400000.00, 2200000.00, 0.00, 0.00, 0.00, 528000.00, 352000.00, 0.00, 5280000.00, 7000000.00, 1, 1, 0, '2024-05-22 12:00:00', '2024-05-22 12:00:00');
+
+INSERT INTO reviews (id, vehicle_id, booking_id, reviewer_id, owner_id, rating, cleanliness, accuracy, communication, value_rating, comment, helpful, created_at, updated_at) VALUES
+('RV111111-1111-1111-1111-111111111111', 'V4D5E6F7-G8H9-0123-VHCL-444444444444', 'BK111111-1111-1111-1111-111111111111', 'B2C3D4E5-F6G7-8901-BCDE-234567890123', 'F6G7H8I9-J0K1-2345-FGHI-678901234567', 5, 5, 5, 5, 5, N'Absolutely breathtaking experience. The car was in perfect condition, the owner was incredibly professional. LuxeWay has set a new standard for luxury rentals worldwide.', 5, '2024-05-12 13:00:00', '2024-05-12 13:00:00'),
+('RV222222-2222-2222-2222-222222222222', 'V6F7G8H9-I0J1-2345-VHCL-666666666666', 'BK222222-2222-2222-2222-222222222222', 'C3D4E5F6-G7H8-9012-CDEF-345678901234', 'G7H8I9J0-K1L2-3456-GHIJ-789012345678', 5, 5, 5, 5, 5, N'Rented a Camry for our anniversary and it was magical. The seamless delivery to our hotel, impeccable service, and the car itself left us speechless. Worth every penny.', 4, '2024-05-18 13:00:00', '2024-05-18 13:00:00'),
+('RV333333-3333-3333-3333-333333333333', 'V8H9I0J1-K2L3-4567-VHCL-888888888888', 'BK333333-3333-3333-3333-333333333333', 'D4E5F6G7-H8I9-0123-DEFG-456789012345', 'G7H8I9J0-K1L2-3456-GHIJ-789012345678', 5, 5, 5, 5, 5, N'I''ve rented from Turo, Hertz, and others. LuxeWay is in an entirely different league. The vetting process, insurance options, and overall experience is second to none.', 8, '2024-05-22 13:00:00', '2024-05-22 13:00:00');
+
+-- ====== FAQS SEEDS ======
+INSERT INTO faqs (question, answer, is_active, display_order) VALUES
+(N'How does LuxeWay verify vehicles?', N'Every vehicle undergoes a comprehensive 120-point inspection by certified mechanics, including photo verification, document checks, and insurance validation before listing.', 1, 1),
+(N'What insurance is included?', N'All rentals include our baseline $1M coverage. Premium plans up to $5M are available. You can also add your own insurance during booking.', 1, 2),
+(N'Can I cancel my booking?', N'Yes. Free cancellation is available up to 48 hours before pickup. Late cancellations may incur a fee depending on the vehicle''s policy.', 1, 3),
+(N'How does delivery work?', N'Owners with delivery enabled will bring the vehicle to your specified address. Fees vary by distance and are shown transparently at checkout.', 1, 4),
+(N'Is there a minimum age requirement?', N'Renters must be at least 25 years old and hold a valid driving license for at least 3 years. Some exotic vehicles may have higher requirements.', 1, 5),
+(N'How are payments processed?', N'We use Stripe and VNPay for secure payments. You can also use our LuxeWay wallet. Payments are only released to owners after successful pickup confirmation.', 1, 6);
+
 -- Success message
 PRINT 'LuxeWay sample data has been successfully inserted!';
 PRINT 'Total Users: 8 (1 Admin, 3 Customers, 2 Individual Owners, 2 Business Owners)';
@@ -170,6 +192,9 @@ PRINT 'Total Vehicle Images: 12';
 PRINT 'Total Vehicle Features: 25';
 PRINT 'Total System Settings: 8';
 PRINT 'Total Coupons: 5';
+PRINT 'Total Bookings: 3';
+PRINT 'Total Reviews: 3';
+PRINT 'Total FAQs: 6';
 PRINT '';
 PRINT 'Test Accounts:';
 PRINT 'Admin: admin@luxeway.vn / password';

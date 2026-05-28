@@ -7,29 +7,70 @@ const WISHLIST_KEY = 'luxeway_wishlist';
 // Helper function to map flat backend vehicle DTO to nested frontend Vehicle type
 const mapVehicle = (v: any): Vehicle => {
   if (!v) return v;
+  
+  const defaultLocation = {
+    city: v.city || '',
+    country: v.country || 'Vietnam',
+    address: v.address || '',
+    lat: v.latitude || 0,
+    lng: v.longitude || 0,
+    timezone: 'Asia/Ho_Chi_Minh'
+  };
+  
+  const defaultSpecs = {
+    horsepower: v.horsepower || 0,
+    topSpeed: v.topSpeed || 0,
+    acceleration: v.acceleration || 0,
+    seats: v.seats || 0,
+    doors: v.doors || 4,
+    transmission: v.transmission || 'automatic',
+    fuelType: v.fuelType || 'gasoline',
+    range: v.rangeKm || 0,
+    engineSize: v.engineSize || '',
+    color: v.color || '',
+    licensePlate: v.licensePlate || ''
+  };
+
+  const defaultInsurance = {
+    included: true,
+    provider: 'LuxeWay Shield',
+    coverage: 'Premium protection'
+  };
+
+  const defaultAvailability = {
+    blockedDates: [],
+    minRentalDays: 1,
+    maxRentalDays: 30,
+    advanceBookingDays: 1
+  };
+
   return {
     ...v,
-    location: v.location || {
-      city: v.city || '',
-      country: v.country || 'Vietnam',
-      address: v.address || '',
-      lat: v.latitude || 0,
-      lng: v.longitude || 0,
-      timezone: 'Asia/Ho_Chi_Minh'
+    category: v.category || 'economy',
+    location: {
+      ...defaultLocation,
+      ...(v.location || {})
     },
-    specs: v.specs || {
-      horsepower: v.horsepower || 0,
-      topSpeed: v.topSpeed || 0,
-      acceleration: v.acceleration || 0,
-      seats: v.seats || 0,
-      doors: v.doors || 4,
-      transmission: v.transmission || 'automatic',
-      fuelType: v.fuelType || 'gasoline',
-      range: v.rangeKm,
-      engineSize: v.engineSize,
-      color: v.color || '',
-      licensePlate: v.licensePlate || ''
-    }
+    specs: {
+      ...defaultSpecs,
+      ...(v.specs || {})
+    },
+    insurance: {
+      ...defaultInsurance,
+      ...(v.insurance || {})
+    },
+    availability: {
+      ...defaultAvailability,
+      ...(v.availability || {})
+    },
+    rules: v.rules || [],
+    features: v.features || [],
+    addons: v.addons || [],
+    images: v.images || [],
+    rating: v.rating !== undefined && v.rating !== null ? v.rating : 5.0,
+    totalReviews: v.totalReviews !== undefined && v.totalReviews !== null ? v.totalReviews : 0,
+    instantBook: v.instantBook !== undefined && v.instantBook !== null ? v.instantBook : false,
+    deposit: v.deposit !== undefined && v.deposit !== null ? v.deposit : 0
   };
 };
 

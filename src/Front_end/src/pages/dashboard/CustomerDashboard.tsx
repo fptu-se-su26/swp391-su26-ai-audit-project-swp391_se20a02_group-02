@@ -4,17 +4,19 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Calendar, Heart, Bell, User, Shield, FileText,
   CreditCard, Settings, LogOut, ChevronRight, Car, Star, TrendingUp,
-  Package, Clock, CheckCircle, AlertCircle, X, Menu, Eye, EyeOff, Users
+  Package, Clock, CheckCircle, AlertCircle, X, Menu, Eye, EyeOff, Users, Wallet,
+  Loader2
 } from 'lucide-react';
 
 import { useAuthStore, useUIStore } from '@/store';
-import { bookingService } from '@/services/bookingService';
+import { bookingService, paymentService } from '@/services/bookingService';
 import { notificationService, reviewService } from '@/services/otherServices';
 import type { Booking, Notification } from '@/types';
 import { formatCurrency, formatDate, getStatusColor, getInitials } from '@/utils';
 import { staggerContainer, staggerItem, fadeUp } from '@/animations/variants';
 import { StatCardSkeleton, TableSkeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
+import { useT } from '@/i18n/translations';
 
 // ====== DASHBOARD SIDEBAR ======
 const DashboardSidebar: React.FC<{ role: string }> = ({ role }) => {
@@ -22,17 +24,19 @@ const DashboardSidebar: React.FC<{ role: string }> = ({ role }) => {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
   const { sidebarOpen, setSidebarOpen } = useUIStore();
+  const t = useT();
 
   const customerLinks = [
-    { href: '/dashboard', icon: LayoutDashboard, label: 'Overview', exact: true },
-    { href: '/dashboard/bookings', icon: Calendar, label: 'My Bookings' },
-    { href: '/dashboard/wishlist', icon: Heart, label: 'Wishlist' },
-    { href: '/dashboard/notifications', icon: Bell, label: 'Notifications' },
-    { href: '/dashboard/profile', icon: User, label: 'Profile' },
-    { href: '/dashboard/security', icon: Shield, label: 'Security' },
-    { href: '/dashboard/documents', icon: FileText, label: 'Documents' },
-    { href: '/dashboard/payments', icon: CreditCard, label: 'Payment History' },
-    { href: '/dashboard/settings', icon: Settings, label: 'Settings' },
+    { href: '/dashboard', icon: LayoutDashboard, label: t.dashboard.overview, exact: true },
+    { href: '/dashboard/bookings', icon: Calendar, label: t.dashboard.myBookings },
+    { href: '/dashboard/wishlist', icon: Heart, label: t.dashboard.wishlist },
+    { href: '/dashboard/notifications', icon: Bell, label: t.dashboard.notifications },
+    { href: '/dashboard/profile', icon: User, label: t.dashboard.profile },
+    { href: '/dashboard/security', icon: Shield, label: t.dashboard.security },
+    { href: '/dashboard/documents', icon: FileText, label: t.dashboard.documents },
+    { href: '/dashboard/wallet', icon: Wallet, label: t.wallet.title },
+    { href: '/dashboard/payments', icon: CreditCard, label: t.dashboard.payments },
+    { href: '/dashboard/settings', icon: Settings, label: t.dashboard.settings },
   ];
 
   const ownerLinks = [
@@ -44,8 +48,8 @@ const DashboardSidebar: React.FC<{ role: string }> = ({ role }) => {
     { href: '/owner/employees', icon: Users, label: 'Team & Employees' },
     { href: '/owner/revenue', icon: TrendingUp, label: 'Revenue' },
     { href: '/owner/analytics', icon: TrendingUp, label: 'Analytics' },
-    { href: '/dashboard/profile', icon: User, label: 'Profile' },
-    { href: '/dashboard/settings', icon: Settings, label: 'Settings' },
+    { href: '/dashboard/profile', icon: User, label: t.dashboard.profile },
+    { href: '/dashboard/settings', icon: Settings, label: t.dashboard.settings },
   ];
 
 
@@ -116,7 +120,7 @@ const DashboardSidebar: React.FC<{ role: string }> = ({ role }) => {
             className="sidebar-link w-full text-red-500 hover:bg-red-50 hover:text-red-600"
           >
             <LogOut className="w-4 h-4" />
-            Sign Out
+            {t.dashboard.signOut}
           </button>
         </div>
       </motion.aside>
@@ -157,6 +161,8 @@ export const CustomerOverview: React.FC = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const t = useT();
+  const isVi = t.common.loading.includes('Đang');
 
   useEffect(() => {
     if (!user) return;
@@ -181,9 +187,9 @@ export const CustomerOverview: React.FC = () => {
     <div>
       <motion.div variants={fadeUp} initial="hidden" animate="visible">
         <h1 className="font-display text-3xl font-bold text-[#0F172A] mb-1">
-          Welcome back, {user?.firstName}! 👋
+          {t.dashboard.welcome}, {user?.firstName}! 👋
         </h1>
-        <p className="text-slate-500 mb-8">Here's what's happening with your rentals.</p>
+        <p className="text-slate-500 mb-8">{isVi ? 'Đây là thông tin về các chuyến xe bạn thuê.' : "Here's what's happening with your rentals."}</p>
       </motion.div>
 
       {/* Stats */}
@@ -199,10 +205,10 @@ export const CustomerOverview: React.FC = () => {
           className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
         >
           {[
-            { label: 'Total Bookings', value: stats.total, icon: Calendar, color: 'bg-blue-50 text-blue-600', change: '+2 this month' },
-            { label: 'Active Rentals', value: stats.active, icon: Car, color: 'bg-green-50 text-green-600', change: 'Currently active' },
-            { label: 'Completed Trips', value: stats.completed, icon: CheckCircle, color: 'bg-purple-50 text-purple-600', change: 'Lifetime total' },
-            { label: 'Total Spent', value: formatCurrency(stats.spent), icon: CreditCard, color: 'bg-yellow-50 text-yellow-600', change: 'Lifetime total', isString: true },
+            { label: t.dashboard.totalBookings, value: stats.total, icon: Calendar, color: 'bg-blue-50 text-blue-600', change: isVi ? '+2 tháng này' : '+2 this month' },
+            { label: t.dashboard.activeRentals, value: stats.active, icon: Car, color: 'bg-green-50 text-green-600', change: isVi ? 'Đang hoạt động' : 'Currently active' },
+            { label: t.dashboard.completedTrips, value: stats.completed, icon: CheckCircle, color: 'bg-purple-50 text-purple-600', change: isVi ? 'Tổng trọn đời' : 'Lifetime total' },
+            { label: t.dashboard.totalSpent, value: formatCurrency(stats.spent), icon: CreditCard, color: 'bg-yellow-50 text-yellow-600', change: isVi ? 'Tổng trọn đời' : 'Lifetime total', isString: true },
           ].map(stat => (
             <motion.div key={stat.label} variants={staggerItem} className="stat-card">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${stat.color}`}>
@@ -220,14 +226,14 @@ export const CustomerOverview: React.FC = () => {
         {/* Recent Bookings */}
         <div className="lg:col-span-2 luxury-card p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-display text-lg font-bold text-[#0F172A]">Recent Bookings</h3>
-            <Link to="/dashboard/bookings" className="text-sm text-accent hover:text-blue-700 font-medium">View All →</Link>
+            <h3 className="font-display text-lg font-bold text-[#0F172A]">{isVi ? 'Đặt Xe Gần Đây' : 'Recent Bookings'}</h3>
+            <Link to="/dashboard/bookings" className="text-sm text-accent hover:text-blue-700 font-medium">{isVi ? 'Xem Tất Cả →' : 'View All →'}</Link>
           </div>
           {loading ? <TableSkeleton rows={3} /> : bookings.length === 0 ? (
             <div className="text-center py-10">
               <Calendar className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-              <p className="text-slate-400 text-sm">No bookings yet</p>
-              <Link to="/marketplace" className="btn-primary mt-4 text-sm">Explore Vehicles</Link>
+              <p className="text-slate-400 text-sm">{isVi ? 'Chưa có đơn đặt xe nào' : 'No bookings yet'}</p>
+              <Link to="/marketplace" className="btn-primary mt-4 text-sm">{isVi ? 'Khám phá xe' : 'Explore Vehicles'}</Link>
             </div>
           ) : (
             <div className="space-y-3">
@@ -255,12 +261,12 @@ export const CustomerOverview: React.FC = () => {
         {/* Recent Notifications */}
         <div className="luxury-card p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-display text-lg font-bold text-[#0F172A]">Notifications</h3>
-            <Link to="/dashboard/notifications" className="text-xs text-accent font-medium">View All</Link>
+            <h3 className="font-display text-lg font-bold text-[#0F172A]">{t.dashboard.notifications}</h3>
+            <Link to="/dashboard/notifications" className="text-xs text-accent font-medium">{isVi ? 'Xem Tất Cả' : 'View All'}</Link>
           </div>
           <div className="space-y-3">
             {notifications.length === 0 ? (
-              <p className="text-slate-400 text-sm text-center py-6">No new notifications</p>
+              <p className="text-slate-400 text-sm text-center py-6">{isVi ? 'Không có thông báo mới' : 'No new notifications'}</p>
             ) : (
               notifications.map(notif => (
                 <div key={notif.id} className={`p-3 rounded-2xl text-sm ${!notif.read ? 'bg-blue-50' : 'bg-slate-50'}`}>
@@ -370,8 +376,8 @@ export const MyBookingsPage: React.FC = () => {
 
               {/* Actions */}
               <div className="flex gap-2 mt-4 pt-4 border-t border-slate-100">
-                <Link to={`/booking/${booking.vehicleId}/status?bookingId=${booking.id}`} className="btn-ghost text-xs px-3 py-2 border border-slate-200 rounded-xl">
-                  View Details
+                <Link to={`/vehicles/${booking.vehicleId}`} className="btn-ghost text-xs px-3 py-2 border border-slate-200 rounded-xl">
+                  View Vehicle
                 </Link>
                 {(booking.status === 'pending' || booking.status === 'confirmed') && (
                   <button
@@ -933,3 +939,324 @@ export const MyReviewsPage: React.FC = () => {
     </div>
   );
 };
+
+// ====== LUXEWALLET PAGE ======
+export const LuxeWalletPage: React.FC = () => {
+  const t = useT();
+  const { user, refreshUser } = useAuthStore();
+  const toast = useToast();
+  const [topUpAmount, setTopUpAmount] = useState<number>(100000);
+  const [customAmount, setCustomAmount] = useState<string>('100000');
+  const [method, setMethod] = useState<'card' | 'stripe' | 'vnpay'>('card');
+  const [processing, setProcessing] = useState(false);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [txLoading, setTxLoading] = useState(true);
+
+  const fetchTransactions = async () => {
+    if (!user) return;
+    try {
+      const txs = await paymentService.getByUser(user.id);
+      setTransactions(txs);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setTxLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTransactions();
+    refreshUser();
+  }, [user?.id]);
+
+  const handlePresetSelect = (amt: number) => {
+    setTopUpAmount(amt);
+    setCustomAmount(amt.toString());
+  };
+
+  const handleCustomAmountChange = (val: string) => {
+    const numeric = val.replace(/\D/g, '');
+    setCustomAmount(numeric);
+    setTopUpAmount(Number(numeric) || 0);
+  };
+
+  const handleTopUpSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (topUpAmount < 10000) {
+      toast.warning(t.wallet.invalidAmount, t.wallet.invalidAmountDesc);
+      return;
+    }
+    setProcessing(true);
+    try {
+      const returnUrl = window.location.origin + '/payment/vnpay/return';
+      const result = await paymentService.topUpWallet(topUpAmount, method, returnUrl);
+      if (result.success) {
+        if (result.paymentUrl) {
+          // Redirect to VNPay sandbox
+          window.location.href = result.paymentUrl;
+        } else {
+          // Instant top up success (Stripe/Credit Card)
+          toast.success(t.wallet.topUpSuccess, t.wallet.topUpSuccessDesc.replace('{amount}', formatCurrency(topUpAmount)));
+          setCustomAmount('100000');
+          setTopUpAmount(100000);
+          await refreshUser();
+          await fetchTransactions();
+        }
+      } else {
+        toast.error(t.wallet.topUpFailed, t.wallet.topUpFailedDesc);
+      }
+    } catch (err: any) {
+      toast.error(t.common.error, err.message || t.wallet.topUpFailedDesc);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const balance = user?.walletBalance || 0;
+
+  return (
+    <div className="space-y-8">
+      {/* Header */}
+      <motion.div variants={fadeUp} initial="hidden" animate="visible">
+        <h1 className="font-display text-3xl font-bold text-[#0F172A]">{t.wallet.title}</h1>
+        <p className="text-slate-500">{t.wallet.subtitle}</p>
+      </motion.div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left Columns - Card & Top Up Form */}
+        <div className="lg:col-span-2 space-y-6">
+          
+          {/* Card & Quick Summary */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Deluxe Wallet Card */}
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A] p-6 text-white shadow-xl min-h-[180px] flex flex-col justify-between">
+              {/* Shiny circle overlay */}
+              <div className="absolute -right-16 -top-16 w-48 h-48 rounded-full bg-white/5 blur-xl pointer-events-none" />
+              <div className="absolute -left-16 -bottom-16 w-48 h-48 rounded-full bg-blue-500/10 blur-xl pointer-events-none" />
+              
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-xs uppercase tracking-widest text-slate-400 font-bold">LuxeWallet</p>
+                  <p className="text-[10px] text-gold font-semibold uppercase tracking-wider mt-0.5">{t.wallet.premiumBalance}</p>
+                </div>
+                <div className="text-2xl font-bold text-slate-300">LW</div>
+              </div>
+
+              <div>
+                <p className="text-xs text-slate-400">{t.wallet.availableBalance}</p>
+                <h3 className="text-3xl font-display font-bold mt-1 tracking-tight text-white">{formatCurrency(balance)}</h3>
+              </div>
+
+              <div className="flex justify-between items-center text-xs text-slate-400 border-t border-white/10 pt-3">
+                <span className="font-medium truncate max-w-[150px]">{user?.displayName}</span>
+                <span className="bg-white/10 text-white px-2 py-0.5 rounded-md font-mono text-[10px]">ACTIVE</span>
+              </div>
+            </div>
+
+            {/* Quick stats / info card */}
+            <div className="luxury-card p-6 flex flex-col justify-between">
+              <div>
+                <h4 className="font-semibold text-slate-800 text-sm mb-2">{t.wallet.whyTitle}</h4>
+                <ul className="space-y-2 text-xs text-slate-500">
+                  <li className="flex items-center gap-2">
+                    <span className="text-green-500">✓</span> {t.wallet.whyBenefit1}
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-green-500">✓</span> {t.wallet.whyBenefit2}
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-green-500">✓</span> {t.wallet.whyBenefit3}
+                  </li>
+                </ul>
+              </div>
+              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
+                <span>{t.wallet.verificationStatus}</span>
+                <span className="text-success font-semibold flex items-center gap-1">
+                  <Shield className="w-3 h-3" /> {t.wallet.secureWallet}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Top Up Wallet Form */}
+          <div className="luxury-card p-6">
+            <h3 className="font-display text-lg font-bold text-[#0F172A] mb-4 flex items-center gap-2">
+              💰 {t.wallet.topUpTitle}
+            </h3>
+            
+            <form onSubmit={handleTopUpSubmit} className="space-y-6">
+              {/* Preset buttons */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2.5">
+                  {t.wallet.quickSelect}
+                </label>
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                  {[50000, 100000, 200000, 500000, 1000000, 2000000].map(amt => (
+                    <button
+                      key={amt}
+                      type="button"
+                      onClick={() => handlePresetSelect(amt)}
+                      className={`py-2 px-1 text-xs rounded-xl border font-semibold transition-all text-center ${
+                        topUpAmount === amt
+                          ? 'border-accent bg-blue-50 text-accent font-bold ring-1 ring-accent'
+                          : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                      }`}
+                    >
+                      {formatCurrency(amt).replace('₫', '').trim()} ₫
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Input for custom amount */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                  {t.wallet.enterAmount}
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={customAmount}
+                    onChange={e => handleCustomAmountChange(e.target.value)}
+                    className="lux-input text-lg font-bold pr-12 text-[#0F172A]"
+                    placeholder={t.wallet.enterAmountPlaceholder}
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-sm">VND</span>
+                </div>
+                {topUpAmount > 0 && (
+                  <p className="text-xs text-slate-400 mt-1.5 italic">
+                    {t.wallet.formattedAmount}: <strong className="text-slate-600 font-semibold">{formatCurrency(topUpAmount)}</strong>
+                  </p>
+                )}
+              </div>
+
+              {/* Payment Methods */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2.5">
+                  {t.wallet.selectMethod}
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {[
+                    { id: 'card', label: 'Credit Card', desc: 'Simulated 100% success', icon: '💳' },
+                    { id: 'stripe', label: 'Stripe', desc: 'Simulated 100% success', icon: '🔵' },
+                    { id: 'vnpay', label: 'VNPay Sandbox', desc: 'Real VNPay Gateway Redirect', icon: '🏦' },
+                  ].map(m => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => setMethod(m.id as any)}
+                      className={`p-3 rounded-2xl border-2 text-left transition-all ${
+                        method === m.id
+                          ? 'border-accent bg-blue-50/50'
+                          : 'border-slate-200 hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="text-xl mb-1">{m.icon}</div>
+                      <p className="text-xs font-bold text-[#0F172A]">{m.label}</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">{m.desc}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Button Top-up */}
+              <motion.button
+                type="submit"
+                disabled={processing || topUpAmount < 10000}
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                className="btn-primary w-full py-3.5 font-bold disabled:opacity-50"
+              >
+                {processing ? (
+                  <><Loader2 className="w-5 h-5 animate-spin mr-2" /> {t.wallet.processing}</>
+                ) : (
+                  <>{t.wallet.numpadTopUp.replace('{amount}', formatCurrency(topUpAmount))}</>
+                )}
+              </motion.button>
+            </form>
+          </div>
+        </div>
+
+        {/* Right Column - Recent Transactions */}
+        <div className="luxury-card p-6 flex flex-col h-full">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-display text-lg font-bold text-[#0F172A]">{t.wallet.transactions}</h3>
+            <button onClick={fetchTransactions} className="text-xs text-accent hover:underline font-semibold">
+              {t.wallet.refresh}
+            </button>
+          </div>
+
+          {txLoading ? (
+            <div className="space-y-4 py-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="flex gap-3 items-center">
+                  <div className="w-8 h-8 rounded-full bg-slate-100 skeleton" />
+                  <div className="flex-1 space-y-1.5">
+                    <div className="h-3 bg-slate-100 rounded w-2/3 skeleton" />
+                    <div className="h-2 bg-slate-100 rounded w-1/3 skeleton" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : transactions.length === 0 ? (
+            <div className="text-center py-10 flex-1 flex flex-col items-center justify-center">
+              <span className="text-3xl mb-2">📜</span>
+              <p className="text-slate-400 text-xs">{t.wallet.noTransactions}</p>
+            </div>
+          ) : (
+            <div className="space-y-4 divide-y divide-slate-100 overflow-y-auto max-h-[420px] pr-1">
+              {transactions.map((tx, idx) => {
+                const isTopUp = tx.bookingId === null || tx.description?.toLowerCase().includes('top up') || tx.transactionId?.startsWith('TOPUP');
+                const isSuccess = tx.status === 'succeeded';
+                const isFailed = tx.status === 'failed';
+                
+                return (
+                  <div key={tx.id || idx} className={`flex items-start gap-3 pt-3 first:pt-0`}>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-sm ${
+                      isFailed 
+                        ? 'bg-red-50 text-danger' 
+                        : isTopUp 
+                          ? 'bg-green-50 text-green-700' 
+                          : 'bg-blue-50 text-accent'
+                    }`}>
+                      {isFailed ? '✕' : isTopUp ? '↓' : '↑'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-slate-800 line-clamp-1">
+                        {tx.description || (isTopUp ? t.wallet.walletTopUp : t.wallet.bookingPayment)}
+                      </p>
+                      <p className="text-[10px] text-slate-400">
+                        {tx.createdAt ? formatDate(tx.createdAt, 'short') : ''} · <span className="uppercase">{tx.method}</span>
+                      </p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className={`text-xs font-bold ${
+                        isFailed 
+                          ? 'text-slate-400 line-through' 
+                          : isTopUp 
+                            ? 'text-green-600' 
+                            : 'text-red-500'
+                      }`}>
+                        {isTopUp ? '+' : '-'}{formatCurrency(tx.amount)}
+                      </p>
+                      <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded border ${
+                        isSuccess
+                          ? 'bg-green-50 text-green-700 border-green-200'
+                          : isFailed
+                            ? 'bg-red-50 text-red-700 border-red-200'
+                            : 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                      }`}>
+                        {tx.status}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+

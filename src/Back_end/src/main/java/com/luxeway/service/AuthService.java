@@ -128,6 +128,7 @@ public class AuthService {
         userInfo.setAccountType(user.getAccountType());
         userInfo.setVerified(user.getVerified());
         userInfo.setKycVerified(user.getKycVerified());
+        userInfo.setWalletBalance(user.getWalletBalance());
 
         AuthDTOs.AuthResponse response = new AuthDTOs.AuthResponse();
         response.setAccessToken(accessToken);

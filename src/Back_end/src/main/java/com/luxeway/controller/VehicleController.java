@@ -136,20 +136,71 @@ public class VehicleController {
     
     @GetMapping("/search")
     public ResponseEntity<Map<String, Object>> searchVehicles(
-            @RequestParam String keyword,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String brand,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String location,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size) {
         
         try {
+            // Use advanced filter if brand/category/location provided
+            if ((brand != null && !brand.isEmpty()) || 
+                (category != null && !category.isEmpty()) || 
+                (location != null && !location.isEmpty())) {
+                
+                com.luxeway.dto.vehicle.VehicleDTOs.VehicleFilterRequest filter = 
+                    new com.luxeway.dto.vehicle.VehicleDTOs.VehicleFilterRequest();
+                filter.setPage(page);
+                filter.setSize(size);
+                
+                if (keyword != null && !keyword.isEmpty()) {
+                    // keyword will be used by getVehicles for name search
+                    filter.setLocation(location);
+                }
+                if (location != null && !location.isEmpty()) {
+                    filter.setLocation(location);
+                }
+                if (category != null && !category.isEmpty()) {
+                    filter.setCategory(category);
+                    filter.setCategories(java.util.List.of(category));
+                }
+                if (brand != null && !brand.isEmpty()) {
+                    filter.setBrands(java.util.List.of(brand.toLowerCase()));
+                }
+                
+                org.springframework.data.domain.Page<com.luxeway.dto.vehicle.VehicleDTOs.VehicleResponse> vehiclesPage = 
+                    vehicleService.getVehicles(filter);
+                
+                Map<String, Object> response = new HashMap<>();
+                response.put("vehicles", vehiclesPage.getContent());
+                response.put("currentPage", vehiclesPage.getNumber());
+                response.put("totalItems", vehiclesPage.getTotalElements());
+                response.put("totalPages", vehiclesPage.getTotalPages());
+                if (keyword != null) response.put("keyword", keyword);
+                
+                return ResponseEntity.ok(response);
+            }
+            
+            // Basic keyword search
+            String searchTerm = (keyword != null && !keyword.isEmpty()) ? keyword : "";
             Pageable pageable = PageRequest.of(page, size);
-            Page<Vehicle> vehicles = vehicleRepository.searchVehicles(keyword, VehicleStatus.AVAILABLE, pageable);
+            Page<Vehicle> vehicles;
+            
+            if (!searchTerm.isEmpty()) {
+                vehicles = vehicleRepository.searchVehicles(searchTerm, VehicleStatus.AVAILABLE, pageable);
+            } else {
+                vehicles = vehicleRepository.findByStatus(VehicleStatus.AVAILABLE, pageable);
+            }
             
             Map<String, Object> response = new HashMap<>();
-            response.put("vehicles", vehicles.getContent());
+            response.put("vehicles", vehicles.getContent().stream()
+                .map(vehicleService::toResponse)
+                .collect(java.util.stream.Collectors.toList()));
             response.put("currentPage", vehicles.getNumber());
             response.put("totalItems", vehicles.getTotalElements());
             response.put("totalPages", vehicles.getTotalPages());
-            response.put("keyword", keyword);
+            response.put("keyword", searchTerm);
             
             return ResponseEntity.ok(response);
             

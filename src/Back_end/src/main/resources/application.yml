@@ -77,8 +77,8 @@ cors:
 # Payment Configuration
 payment:
   vnpay:
-    tmn-code: ${VNPAY_TMN_CODE:your-vnpay-tmn-code}
-    secret-key: ${VNPAY_SECRET_KEY:your-vnpay-secret-key}
+    tmn-code: ${VNPAY_TMN_CODE:2QXGXM8Y}
+    secret-key: ${VNPAY_SECRET_KEY:IKGZVMMTMTUYKQLJILPBYXJVHOUCGFDF}
     url: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
     return-url: http://localhost:5173/payment/vnpay/return
   stripe:

@@ -64,6 +64,7 @@ public class AuthDTOs {
             private String accountType;
             private boolean verified;
             private boolean kycVerified;
+            private java.math.BigDecimal walletBalance;
         }
     }
 

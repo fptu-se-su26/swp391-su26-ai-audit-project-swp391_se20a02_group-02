@@ -53,4 +53,15 @@ public class PaymentDTOs {
         private String vnp_SecureHash;
         private Map<String, String> allParams;
     }
+
+    @Data
+    public static class TopUpRequest {
+        @NotNull @Positive
+        private BigDecimal amount;
+
+        @NotBlank(message = "Payment method is required")
+        private String method;
+
+        private String returnUrl;
+    }
 }

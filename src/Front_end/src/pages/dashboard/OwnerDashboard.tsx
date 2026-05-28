@@ -508,17 +508,51 @@ export const VehicleFormPage: React.FC = () => {
               <input value={form.features} onChange={e => update('features', e.target.value)} className="lux-input" placeholder="Bluetooth, Apple CarPlay, Heated Seats..." />
             </div>
             <div className="mt-4">
-              <ImageUploader 
-                value={images} 
-                onChange={(urls) => {
-                  setImages(urls);
-                  if (urls.length > 0) {
-                    update('thumbnailUrl', urls[0]);
-                  }
-                }}
-                maxFiles={5}
-                label="Vehicle Images"
-              />
+              <label className="block text-sm font-medium mb-2">Vehicle Image</label>
+              <div className="border-2 border-dashed border-slate-300 rounded-2xl p-6 text-center hover:border-accent transition-colors cursor-pointer relative">
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    try {
+                      const token = localStorage.getItem('luxeway_access_token');
+                      const res = await fetch('http://localhost:8080/api/v1/upload/vehicle-image', {
+                        method: 'POST',
+                        headers: token ? { Authorization: `Bearer ${token}` } : {},
+                        body: formData,
+                      });
+                      const data = await res.json();
+                      const url = data.imageUrl || data.url;
+                      if (url) {
+                        setImages([url]);
+                        update('thumbnailUrl', url);
+                      }
+                    } catch (err) {
+                      console.error('Upload failed:', err);
+                    }
+                    e.target.value = '';
+                  }}
+                />
+                {images.length > 0 ? (
+                  <div className="relative">
+                    <img src={images[0]} alt="Preview" className="w-full h-48 object-cover rounded-xl mb-2" />
+                    <p className="text-xs text-green-600 font-medium">✓ Image uploaded</p>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                      <span className="text-2xl">📷</span>
+                    </div>
+                    <p className="text-sm font-medium text-[#0F172A] mb-1">Click or drag to upload image</p>
+                    <p className="text-xs text-slate-400">JPG, PNG, WEBP · Max 5MB</p>
+                  </div>
+                )}
+              </div>
             </div>
           </motion.div>
         )}

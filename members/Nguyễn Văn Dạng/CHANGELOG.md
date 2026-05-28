@@ -481,6 +481,52 @@ Commit: 01aec85 - [DE190324] feat: integrate image uploader and edit/create func
 
 ---
 
+# [Phase 04.9] Bilingual Translations, Security Whitelisting & TypeScript Compilation Fixes
+
+## Ngày thực hiện
+
+```text
+2026-05-28
+```
+
+## Đã hoàn thành
+
+- [x] Hoàn tất và chuẩn hóa bản dịch song ngữ Anh-Việt (i18n) cho Landing page, Booking wizard, và Customer dashboard.
+- [x] Nhận diện và sửa lỗi import Lucide icon `Loader2` trong `CustomerDashboard.tsx`.
+- [x] Khắc phục cú pháp cấu hình sidebar link Settings trong Customer dashboard (đầy đủ icon và label).
+- [x] Thêm khối kiểm tra an toàn dữ liệu `!vehicle` (null-safety) ở Case 4 của `canProceed()` trong `BookingWizardPage.tsx` để vượt qua bộ lọc biên dịch TypeScript.
+- [x] Khai báo cho phép công khai VNPay checkout return callback (`/payments/vnpay/return`) tại Spring Security configuration `SecurityConfig.java`.
+- [x] Biên dịch thành công 100% dự án tĩnh (`npm run build`) không có lỗi.
+
+## Thay đổi chi tiết - Nguyễn Văn Dạng (DE190324)
+
+| STT | Nội dung thay đổi | Người thực hiện | File/Module liên quan | Minh chứng |
+|---:|---|---|---|---|
+| 1 | Sửa lỗi biên dịch Settings sidebar link & import Loader2 | Nguyễn Văn Dạng | CustomerDashboard.tsx | CustomerDashboard.tsx |
+| 2 | Sửa lỗi null check an toàn vehicle trong canProceed() | Nguyễn Văn Dạng | BookingWizardPage.tsx | BookingWizardPage.tsx |
+| 3 | Thêm whitelist endpoint VNPay return vào permitAll() | Nguyễn Văn Dạng | SecurityConfig.java | SecurityConfig.java |
+| 4 | Chạy biên dịch tĩnh thành công toàn bộ website | Nguyễn Văn Dạng | Front-end | tsc -b && vite build (0 errors) |
+
+## AI có hỗ trợ không?
+
+- [x] Có
+- [ ] Không
+
+Nếu có, mô tả AI đã hỗ trợ phần nào:
+
+```text
+AI (Antigravity) phát hiện lỗi syntax Settings sidebar, gợi ý import Loader2 còn thiếu, gợi ý null safety guard check cho vehicle, và cấu hình an toàn Spring Security.
+```
+
+## Commit/Screenshot minh chứng
+
+```text
+Branch: feature/de190324-vehicle-rental-platform
+Commit: [DE190324] fix: resolve typescript compiler errors, clean settings sidebar, and whitelist vnpay return redirect
+```
+
+---
+
 # [Phase 05] Testing & Debug
 
 ## Ngày thực hiện
@@ -625,4 +671,4 @@ Sinh viên/nhóm cam kết rằng nội dung changelog phản ánh đúng các t
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-05-25 |
+| Nguyễn Văn Dạng - DE190324 | 2026-05-28 |

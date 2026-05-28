@@ -46,6 +46,7 @@ export interface User {
   isActive: boolean;
   accountType?: 'individual' | 'business';
   companyName?: string;
+  walletBalance?: number;
 }
 
 // ====== VEHICLE ======
@@ -251,6 +252,11 @@ export interface Review {
   bookingId: string;
   reviewerId: string;
   ownerId: string;
+  reviewer?: {
+    id: string;
+    displayName: string;
+    avatar?: string;
+  };
   rating: number;
   cleanliness: number;
   accuracy: number;

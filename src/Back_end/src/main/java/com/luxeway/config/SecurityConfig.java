@@ -59,9 +59,15 @@ public class SecurityConfig {
                     "/api-docs/**",
                     "/actuator/**",
                     "/payments/vnpay/callback",
+                    "/payments/vnpay/return",
                     "/test/**",
                     "/upload",
-                    "/uploads/**"
+                    "/uploads/**",
+                    "/locations/**",
+                    "/faqs/**",
+                    "/faqs",
+                    "/stats/**",
+                    "/stats"
                 ).permitAll()
                 // Public vehicle browsing
                 .requestMatchers(HttpMethod.GET,
@@ -70,6 +76,7 @@ public class SecurityConfig {
                     "/vehicles/featured",
                     "/vehicles/search",
                     "/reviews/vehicle/**",
+                    "/reviews/featured",
                     "/users"
                 ).permitAll()
                 // Admin only
