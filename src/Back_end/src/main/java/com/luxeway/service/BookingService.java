@@ -44,23 +44,31 @@ public class BookingService {
     public BookingDTOs.BookingResponse createBooking(String renterId, BookingDTOs.CreateBookingRequest req) {
 
         // Validate dates
-        if (!req.getStartDate().isBefore(req.getEndDate())) {
+        if (req.getStartDate() == null || req.getEndDate() == null) {
+            throw new RuntimeException("Start date and end date are required");
+        }
+        if (!req.getStartDate().isBefore(req.getEndDate()) && !req.getStartDate().isEqual(req.getEndDate())) {
             throw new RuntimeException("End date must be after start date");
         }
         if (req.getStartDate().isBefore(LocalDate.now())) {
             throw new RuntimeException("Start date cannot be in the past");
         }
 
-        Vehicle vehicle = vehicleRepository.findById(req.getVehicleId())
-                .orElseThrow(() -> new RuntimeException("Vehicle not found"));
+        // Acquire PESSIMISTIC WRITE lock on the vehicle row to prevent race condition:
+        // If two users try to book the same vehicle simultaneously, only one can hold the lock.
+        Vehicle vehicle = vehicleRepository.findByIdForUpdate(req.getVehicleId())
+                .orElseThrow(() -> new RuntimeException("Vehicle not found: " + req.getVehicleId()));
 
         if (vehicle.getStatus() != VehicleStatus.AVAILABLE) {
-            throw new RuntimeException("Vehicle is not available for booking");
+            throw new RuntimeException("Vehicle is not available for booking (status: " + vehicle.getStatus() + ")");
         }
 
-        // Check for date conflicts
+        // Check for overlapping bookings (PENDING, CONFIRMED, ACTIVE overlap with requested dates)
         if (bookingRepository.hasConflictingBooking(req.getVehicleId(), req.getStartDate(), req.getEndDate())) {
-            throw new RuntimeException("Vehicle is already booked for the selected dates");
+            throw new RuntimeException(
+                "Vehicle is already booked for dates " + req.getStartDate() + " to " + req.getEndDate() +
+                ". Please choose different dates."
+            );
         }
 
         User renter = userRepository.findById(renterId)

@@ -55,4 +55,14 @@ public class Dispute {
     @Column(name = "updated_at")
     @LastModifiedDate
     private LocalDateTime updatedAt;
+
+    @com.fasterxml.jackson.annotation.JsonProperty("bookingId")
+    public String getAssociatedBookingId() {
+        return booking != null ? booking.getId() : null;
+    }
+
+    @com.fasterxml.jackson.annotation.JsonProperty("reporterName")
+    public String getAssociatedReporterName() {
+        return reporter != null ? reporter.getDisplayName() : null;
+    }
 }

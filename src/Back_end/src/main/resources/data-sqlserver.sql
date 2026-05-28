@@ -10,6 +10,8 @@ SET CONCAT_NULL_YIELDS_NULL ON;
 SET NUMERIC_ROUNDABORT OFF;
 
 -- Clear existing data (in reverse order of dependencies)
+DELETE FROM dispute_evidence;
+DELETE FROM disputes;
 DELETE FROM reviews;
 DELETE FROM payments;
 DELETE FROM bookings;
@@ -183,6 +185,12 @@ INSERT INTO faqs (question, answer, is_active, display_order) VALUES
 (N'How does delivery work?', N'Owners with delivery enabled will bring the vehicle to your specified address. Fees vary by distance and are shown transparently at checkout.', 1, 4),
 (N'Is there a minimum age requirement?', N'Renters must be at least 25 years old and hold a valid driving license for at least 3 years. Some exotic vehicles may have higher requirements.', 1, 5),
 (N'How are payments processed?', N'We use Stripe and VNPay for secure payments. You can also use our LuxeWay wallet. Payments are only released to owners after successful pickup confirmation.', 1, 6);
+
+-- ====== DISPUTES ======
+DELETE FROM disputes;
+INSERT INTO disputes (booking_id, reporter_id, reason, description, evidence_url, status, admin_decision, created_at, updated_at) VALUES
+('BK111111-1111-1111-1111-111111111111', 'B2C3D4E5-F6G7-8901-BCDE-234567890123', N'Vehicle damaged upon return', N'Chủ xe cáo buộc tôi làm trầy xước đuôi xe nhưng vết xước này đã có từ trước khi nhận xe. Tôi có ảnh chụp bàn giao làm bằng chứng.', 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=800', 'OPEN', NULL, GETDATE(), GETDATE()),
+('BK222222-2222-2222-2222-222222222222', 'C3D4E5F6-G7H8-9012-CDEF-345678901234', N'Renter late for pickup', N'Khách thuê đến muộn hơn 3 tiếng so với giờ hẹn mà không thông báo trước. Tôi yêu cầu bồi thường phí chờ đợi theo quy định.', NULL, 'RESOLVED', N'Đã hoàn trả 10% tiền cọc cho chủ xe làm phí bồi thường trễ hẹn.', GETDATE(), GETDATE());
 
 -- Success message
 PRINT 'LuxeWay sample data has been successfully inserted!';

@@ -34,6 +34,9 @@ public class VehicleService {
     public Page<VehicleDTOs.VehicleResponse> getVehicles(VehicleDTOs.VehicleFilterRequest filter) {
         Pageable pageable = buildPageable(filter.getSortBy(), filter.getPage(), filter.getSize());
 
+        // Normalize location: supports both Vietnamese ("Hà Nội") and plain ASCII ("Ha Noi")
+        String resolvedLocation = resolveLocation(filter.getLocation());
+
         // Parse categories (multi-select)
         List<VehicleCategory> categoryList = null;
         if (filter.getCategories() != null && !filter.getCategories().isEmpty()) {
@@ -69,7 +72,7 @@ public class VehicleService {
         }
 
         Page<Vehicle> page = vehicleRepository.filterVehiclesMulti(
-            filter.getLocation(),
+            resolvedLocation,
             categoryList,
             brandList,
             filter.getMinPrice(),
@@ -85,6 +88,41 @@ public class VehicleService {
         );
 
         return page.map(this::toResponse);
+    }
+
+    /**
+     * Resolves location string to the Vietnamese form stored in the database.
+     * Handles both diacritic form ("Hà Nội") and plain ASCII form ("Ha Noi", "ha noi").
+     * If no mapping is found, returns the original string (allows partial matching via LIKE).
+     */
+    private String resolveLocation(String location) {
+        if (location == null || location.isBlank()) return null;
+
+        // Mapping table: lowercase no-diacritic form → Vietnamese form in DB
+        java.util.Map<String, String> cityMap = new java.util.HashMap<>();
+        cityMap.put("ho chi minh",  "Hồ Chí Minh");
+        cityMap.put("hcm",          "Hồ Chí Minh");
+        cityMap.put("tp hcm",       "Hồ Chí Minh");
+        cityMap.put("sai gon",      "Hồ Chí Minh");
+        cityMap.put("saigon",       "Hồ Chí Minh");
+        cityMap.put("ha noi",       "Hà Nội");
+        cityMap.put("hanoi",        "Hà Nội");
+        cityMap.put("da nang",      "Đà Nẵng");
+        cityMap.put("danang",       "Đà Nẵng");
+        cityMap.put("nha trang",    "Nha Trang");
+        cityMap.put("nhatrang",     "Nha Trang");
+        cityMap.put("da lat",       "Đà Lạt");
+        cityMap.put("dalat",        "Đà Lạt");
+        cityMap.put("hai phong",    "Hải Phòng");
+        cityMap.put("haiphong",     "Hải Phòng");
+        cityMap.put("hue",          "Huế");
+        cityMap.put("can tho",      "Cần Thơ");
+        cityMap.put("cantho",       "Cần Thơ");
+        cityMap.put("vung tau",     "Vũng Tàu");
+        cityMap.put("vungtau",      "Vũng Tàu");
+
+        String key = location.toLowerCase().trim();
+        return cityMap.getOrDefault(key, location); // fallback: use as-is (supports Vietnamese input & partial match)
     }
 
     // ====== Search ======
