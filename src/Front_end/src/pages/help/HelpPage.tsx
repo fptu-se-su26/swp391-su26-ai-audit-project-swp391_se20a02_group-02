@@ -3,42 +3,33 @@ import { motion } from 'framer-motion';
 import { HelpCircle, MessageSquare, Book, Phone, ChevronDown, ChevronRight, Search, Zap, Shield, Star } from 'lucide-react';
 import { fadeUp, staggerContainer, staggerItem } from '@/animations/variants';
 
-const FAQS = [
-  {
-    category: 'Booking',
-    items: [
-      { q: 'How do I book a vehicle?', a: 'Browse our marketplace, select a vehicle, choose your dates, add extras, and complete payment. Most vehicles offer instant booking — no approval needed.' },
-      { q: 'Can I cancel my booking?', a: 'Yes! Free cancellation up to 48 hours before pickup. After that, a 50% cancellation fee applies. Cancellations within 12 hours are non-refundable.' },
-      { q: 'What happens if the owner cancels?', a: 'You\'ll receive a full refund within 2-3 business days, plus a 10% credit on your next booking as a goodwill gesture.' },
-      { q: 'How does Instant Book work?', a: 'Vehicles with the ⚡ badge can be booked immediately without waiting for owner approval. Your booking is confirmed the moment payment is processed.' },
-    ]
-  },
-  {
-    category: 'Insurance & Safety',
-    items: [
-      { q: 'Am I insured during the rental?', a: 'All rentals include basic third-party liability. We strongly recommend adding our Premium Insurance ($45/day) which covers $5M damage, theft, and zero excess.' },
-      { q: 'What documents do I need?', a: 'A valid driver\'s license, government-issued ID, and a credit card in your name. International licenses are accepted in most countries.' },
-      { q: 'What if I\'m in an accident?', a: 'Contact emergency services first. Then call our 24/7 support line at 1-800-LUXEWAY. We\'ll handle everything including towing and insurance claims.' },
-    ]
-  },
-  {
-    category: 'Payments',
-    items: [
-      { q: 'When am I charged?', a: 'You\'re charged when your booking is confirmed. For instant book vehicles, that\'s immediately. For request-based vehicles, once the owner accepts.' },
-      { q: 'What payment methods are accepted?', a: 'Visa, Mastercard, Amex, Apple Pay, Google Pay, and LuxeWallet (our prepaid balance). Crypto coming soon.' },
-      { q: 'When is the security deposit returned?', a: 'Within 3-5 business days after the vehicle is returned in the agreed condition. If there\'s damage, the assessment process may take up to 14 days.' },
-    ]
-  },
-];
-
 const HelpPage: React.FC = () => {
   const [openFaq, setOpenFaq] = React.useState<string | null>(null);
   const [search, setSearch] = React.useState('');
+  const [faqs, setFaqs] = React.useState<any[]>([
+    {
+      category: 'General',
+      items: [
+        { q: 'How does LuxeWay verify vehicles?', a: 'Every vehicle undergoes a comprehensive inspection...' }
+      ]
+    }
+  ]);
 
-  const filtered = FAQS.map(cat => ({
+  React.useEffect(() => {
+    import('@/services/otherServices').then(({ faqService }) => {
+      faqService.getFAQs().then((data: any) => {
+        if (data && data.length > 0) {
+          // Group by category (we don't have category in DB yet, so group under General)
+          setFaqs([{ category: 'General', items: data }]);
+        }
+      });
+    });
+  }, []);
+
+  const filtered = faqs.map(cat => ({
     ...cat,
     items: cat.items.filter(
-      i => !search || i.q.toLowerCase().includes(search.toLowerCase()) || i.a.toLowerCase().includes(search.toLowerCase())
+      (i: any) => !search || i.q.toLowerCase().includes(search.toLowerCase()) || i.a.toLowerCase().includes(search.toLowerCase())
     )
   })).filter(cat => cat.items.length > 0);
 
@@ -105,7 +96,7 @@ const HelpPage: React.FC = () => {
               <div key={cat.category}>
                 <h3 className="text-sm font-semibold uppercase tracking-widest text-slate-400 mb-3">{cat.category}</h3>
                 <div className="space-y-2">
-                  {cat.items.map(item => (
+                  {cat.items.map((item: any) => (
                     <div key={item.q} className="luxury-card overflow-hidden">
                       <button
                         onClick={() => setOpenFaq(openFaq === item.q ? null : item.q)}

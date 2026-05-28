@@ -13,12 +13,14 @@ import { formatCurrency, debounce } from '@/utils';
 import { fadeUp, staggerContainer, staggerItem } from '@/animations/variants';
 
 const CATEGORIES: { value: VehicleCategory; label: string }[] = [
-  { value: 'supercar', label: 'Supercars' },
-  { value: 'suv', label: 'Luxury SUVs' },
-  { value: 'luxury', label: 'Ultra Luxury' },
-  { value: 'convertible', label: 'Convertibles' },
-  { value: 'classic', label: 'Classics' },
+  { value: 'motorbike', label: 'Motorbike' },
+  { value: 'economy', label: 'Economy' },
+  { value: 'family', label: 'Family' },
+  { value: 'suv', label: 'SUV' },
+  { value: 'city_car', label: 'City Car' },
+  { value: 'business', label: 'Business' },
   { value: 'electric', label: 'Electric' },
+  { value: 'tourism', label: 'Tourism' },
 ];
 
 const SORT_OPTIONS = [
@@ -37,9 +39,14 @@ const FilterPanel: React.FC<{
   onClose?: () => void;
 }> = ({ filters, onChange, brands, onClose }) => {
   const [priceRange, setPriceRange] = useState<[number, number]>([
-    filters.minPrice || 0,
-    filters.maxPrice || 15000,
+    filters.minPrice ?? 0,
+    filters.maxPrice ?? 15000,
   ]);
+
+  // Sync priceRange when filters reset externally (e.g. clearAll)
+  useEffect(() => {
+    setPriceRange([filters.minPrice ?? 0, filters.maxPrice ?? 15000]);
+  }, [filters.minPrice, filters.maxPrice]);
 
   const toggleCategory = (cat: VehicleCategory) => {
     const current = filters.category || [];
@@ -53,9 +60,14 @@ const FilterPanel: React.FC<{
     onChange({ ...filters, brands: next });
   };
 
-  const clearAll = () => onChange({});
+  const clearAll = () => {
+    setPriceRange([0, 15000]);
+    onChange({});
+  };
 
-  const hasFilters = Object.values(filters).some(v => v !== undefined && v !== '' && (Array.isArray(v) ? v.length > 0 : true));
+  const hasFilters = Object.values(filters).some(v =>
+    v !== undefined && v !== '' && (Array.isArray(v) ? v.length > 0 : true)
+  );
 
   return (
     <div className="space-y-6">
@@ -83,11 +95,10 @@ const FilterPanel: React.FC<{
             <button
               key={cat.value}
               onClick={() => toggleCategory(cat.value)}
-              className={`px-3 py-2 rounded-xl text-xs font-medium border-2 transition-all duration-200 ${
-                (filters.category || []).includes(cat.value)
+              className={`px-3 py-2 rounded-xl text-xs font-medium border-2 transition-all duration-200 ${(filters.category || []).includes(cat.value)
                   ? 'border-accent bg-blue-50 text-accent'
                   : 'border-slate-200 text-slate-600 hover:border-slate-300'
-              }`}
+                }`}
             >
               {cat.label}
             </button>
@@ -103,20 +114,39 @@ const FilterPanel: React.FC<{
             {formatCurrency(priceRange[0])} – {formatCurrency(priceRange[1])}
           </span>
         </div>
-        <div className="space-y-2">
-          <input
-            type="range"
-            min={0}
-            max={15000}
-            step={100}
-            value={priceRange[1]}
-            onChange={e => {
-              const val = Number(e.target.value);
-              setPriceRange([priceRange[0], val]);
-              onChange({ ...filters, maxPrice: val });
-            }}
-            className="w-full accent-accent"
-          />
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs text-slate-400 mb-1 block">Min price</label>
+            <input
+              type="range"
+              min={0}
+              max={15000}
+              step={100}
+              value={priceRange[0]}
+              onChange={e => {
+                const val = Math.min(Number(e.target.value), priceRange[1] - 100);
+                setPriceRange([val, priceRange[1]]);
+                onChange({ ...filters, minPrice: val > 0 ? val : undefined });
+              }}
+              className="w-full accent-accent"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-slate-400 mb-1 block">Max price</label>
+            <input
+              type="range"
+              min={0}
+              max={15000}
+              step={100}
+              value={priceRange[1]}
+              onChange={e => {
+                const val = Math.max(Number(e.target.value), priceRange[0] + 100);
+                setPriceRange([priceRange[0], val]);
+                onChange({ ...filters, maxPrice: val < 15000 ? val : undefined });
+              }}
+              className="w-full accent-accent"
+            />
+          </div>
           <div className="flex justify-between text-xs text-slate-400">
             <span>$0</span>
             <span>$15,000</span>
@@ -150,9 +180,8 @@ const FilterPanel: React.FC<{
             <button
               key={r}
               onClick={() => onChange({ ...filters, minRating: filters.minRating === r ? undefined : r })}
-              className={`flex-1 py-2 rounded-xl text-xs font-medium border-2 transition-all duration-200 ${
-                filters.minRating === r ? 'border-gold bg-yellow-50 text-yellow-700' : 'border-slate-200 text-slate-600'
-              }`}
+              className={`flex-1 py-2 rounded-xl text-xs font-medium border-2 transition-all duration-200 ${filters.minRating === r ? 'border-gold bg-yellow-50 text-yellow-700' : 'border-slate-200 text-slate-600'
+                }`}
             >
               ⭐ {r}+
             </button>
@@ -195,13 +224,42 @@ const MarketplacePage: React.FC = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
-  const [filters, setFilters] = useState<VehicleFilters>({
-    location: searchParams.get('location') || undefined,
-    category: searchParams.get('category') ? [searchParams.get('category') as VehicleCategory] : undefined,
-    sortBy: (searchParams.get('sort') as VehicleFilters['sortBy']) || 'popular',
+
+  // Read ALL params from URL on mount (from landing page search / brand quick-filters)
+  const [filters, setFilters] = useState<VehicleFilters>(() => {
+    const location = searchParams.get('location') || undefined;
+    const sortBy = (searchParams.get('sort') as VehicleFilters['sortBy']) || 'popular';
+
+    // Multi-value categories: ?category=suv&category=economy
+    const categoryParams = searchParams.getAll('category');
+    const category = categoryParams.length > 0
+      ? categoryParams as VehicleCategory[]
+      : (searchParams.get('category') ? [searchParams.get('category') as VehicleCategory] : undefined);
+
+    // Multi-value brands from URL: ?brand=toyota&brand=honda
+    const brandParams = searchParams.getAll('brand');
+    const urlBrands = brandParams.length > 0
+      ? brandParams.map(b => b.charAt(0).toUpperCase() + b.slice(1).toLowerCase())
+      : undefined;
+
+    return {
+      location,
+      category,
+      brands: urlBrands,
+      sortBy,
+    };
   });
+
   const [brands, setBrands] = useState<string[]>([]);
   const [totalPages, setTotalPages] = useState(1);
+
+  // Auto-show filter sidebar if filters came from URL
+  useEffect(() => {
+    const hasPreFilter =
+      searchParams.getAll('brand').length > 0 ||
+      searchParams.getAll('category').length > 0;
+    if (hasPreFilter) setShowFilters(true);
+  }, []);
 
   useEffect(() => {
     setBrands(vehicleService.getBrands());
@@ -392,9 +450,8 @@ const MarketplacePage: React.FC = () => {
                       <button
                         key={p}
                         onClick={() => setPage(p)}
-                        className={`w-10 h-10 rounded-xl text-sm font-medium transition-all ${
-                          page === p ? 'bg-[#0F172A] text-white' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300'
-                        }`}
+                        className={`w-10 h-10 rounded-xl text-sm font-medium transition-all ${page === p ? 'bg-[#0F172A] text-white' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300'
+                          }`}
                       >
                         {p}
                       </button>

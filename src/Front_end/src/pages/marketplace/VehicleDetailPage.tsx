@@ -115,6 +115,10 @@ const VehicleDetailPage: React.FC = () => {
   const taxes = Math.round(basePrice * 0.08);
   const total = basePrice + serviceFee + taxes;
 
+  const images = vehicle.images && vehicle.images.length > 0
+    ? vehicle.images
+    : [vehicle.thumbnailUrl || 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=1000'];
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] pt-20">
       {/* Breadcrumb */}
@@ -143,7 +147,7 @@ const VehicleDetailPage: React.FC = () => {
                 <AnimatePresence mode="wait">
                   <motion.img
                     key={activeImage}
-                    src={vehicle.images[activeImage]}
+                    src={images[activeImage]}
                     alt={vehicle.name}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -154,16 +158,16 @@ const VehicleDetailPage: React.FC = () => {
                 </AnimatePresence>
 
                 {/* Navigation Arrows */}
-                {vehicle.images.length > 1 && (
+                {images.length > 1 && (
                   <>
                     <button
-                      onClick={e => { e.stopPropagation(); setActiveImage(prev => (prev - 1 + vehicle.images.length) % vehicle.images.length); }}
+                      onClick={e => { e.stopPropagation(); setActiveImage(prev => (prev - 1 + images.length) % images.length); }}
                       className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 glass rounded-2xl flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <ChevronLeft className="w-5 h-5" />
                     </button>
                     <button
-                      onClick={e => { e.stopPropagation(); setActiveImage(prev => (prev + 1) % vehicle.images.length); }}
+                      onClick={e => { e.stopPropagation(); setActiveImage(prev => (prev + 1) % images.length); }}
                       className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 glass rounded-2xl flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <ChevronRight className="w-5 h-5" />
@@ -173,7 +177,7 @@ const VehicleDetailPage: React.FC = () => {
 
                 {/* Photo count */}
                 <div className="absolute bottom-4 right-4 glass px-3 py-1.5 rounded-xl text-white text-xs font-medium">
-                  {activeImage + 1} / {vehicle.images.length} photos
+                  {activeImage + 1} / {images.length} photos
                 </div>
 
                 {/* Badges */}
@@ -184,9 +188,9 @@ const VehicleDetailPage: React.FC = () => {
               </div>
 
               {/* Thumbnail Strip */}
-              {vehicle.images.length > 1 && (
+              {images.length > 1 && (
                 <div className="flex gap-2 mt-2 overflow-x-auto pb-1">
-                  {vehicle.images.map((img, i) => (
+                  {images.map((img, i) => (
                     <button
                       key={i}
                       onClick={() => setActiveImage(i)}
@@ -204,7 +208,7 @@ const VehicleDetailPage: React.FC = () => {
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className={`badge ${vehicle.category === 'supercar' ? 'badge-red' : vehicle.category === 'electric' ? 'badge-green' : 'badge-blue'}`}>
+                    <span className={`badge ${vehicle.category === 'electric' ? 'badge-green' : vehicle.category === 'motorbike' ? 'badge-blue' : 'badge-gold'}`}>
                       {vehicle.category.charAt(0).toUpperCase() + vehicle.category.slice(1)}
                     </span>
                     {vehicle.instantBook && (
@@ -351,10 +355,14 @@ const VehicleDetailPage: React.FC = () => {
                   reviews.map(review => (
                     <div key={review.id} className="pb-4 border-b border-slate-100 last:border-0">
                       <div className="flex items-start gap-3 mb-2">
-                        <div className="avatar w-9 h-9 rounded-xl text-xs flex-shrink-0">{review.reviewerId.slice(0, 2).toUpperCase()}</div>
+                        <div className="avatar w-9 h-9 rounded-xl text-xs flex-shrink-0">
+                          {(review.reviewer?.displayName || review.reviewerId || 'UR').slice(0, 2).toUpperCase()}
+                        </div>
                         <div className="flex-1">
                           <div className="flex items-center justify-between">
-                            <p className="font-semibold text-sm text-[#0F172A]">Verified Renter</p>
+                            <p className="font-semibold text-sm text-[#0F172A]">
+                              {review.reviewer?.displayName || 'Verified Renter'}
+                            </p>
                             <span className="text-xs text-slate-400">{formatDate(review.createdAt, 'short')}</span>
                           </div>
                           <div className="flex gap-0.5 mt-0.5">
@@ -487,9 +495,9 @@ const VehicleDetailPage: React.FC = () => {
               {/* Contact Owner */}
               <div className="luxury-card p-5 mt-4">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="avatar w-12 h-12 rounded-2xl text-sm">OW</div>
+                  <div className="avatar w-12 h-12 rounded-2xl text-sm">TT</div>
                   <div>
-                    <p className="font-semibold text-sm text-[#0F172A]">James Whitmore</p>
+                    <p className="font-semibold text-sm text-[#0F172A]">Trần Tuấn</p>
                     <p className="text-xs text-slate-400">Superhost · 87 reviews</p>
                   </div>
                   <div className="ml-auto flex items-center gap-1">
@@ -521,10 +529,10 @@ const VehicleDetailPage: React.FC = () => {
             <button onClick={() => setLightboxOpen(false)} className="absolute top-4 right-4 p-2 rounded-xl text-white hover:bg-white/10">
               <X className="w-6 h-6" />
             </button>
-            <img src={vehicle.images[activeImage]} alt={vehicle.name} className="max-w-full max-h-[80vh] object-contain rounded-2xl" />
-            {vehicle.images.length > 1 && (
+            <img src={images[activeImage]} alt={vehicle.name} className="max-w-full max-h-[80vh] object-contain rounded-2xl" />
+            {images.length > 1 && (
               <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
-                {vehicle.images.map((_, i) => (
+                {images.map((_, i) => (
                   <button key={i} onClick={() => setActiveImage(i)} className={`w-2 h-2 rounded-full transition-all ${activeImage === i ? 'bg-white w-6' : 'bg-white/40'}`} />
                 ))}
               </div>

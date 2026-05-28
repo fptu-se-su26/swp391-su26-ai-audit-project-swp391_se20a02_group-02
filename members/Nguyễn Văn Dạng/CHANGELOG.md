@@ -40,7 +40,7 @@ Nguyên tắc ghi changelog:
 | Phase 01 | 2026-05-12 | Khởi tạo project, cấu trúc repo | Completed |
 | Phase 02 | 2026-05-13 | Phân tích yêu cầu, xác định user roles | In Progress |
 | Phase 03 | 2026-05-14 | Thiết kế hệ thống, thiết kế UI/UX Frontend | In Progress |
-| Phase 04 | 2026-05-14 đến 2026-05-21 | Implementation Frontend (React UI/UX) | In Progress |
+| Phase 04 | 2026-05-14 đến 2026-05-25 | Implementation (Frontend & Backend Advanced) | Completed |
 | Phase 05 | (Chưa bắt đầu) | Testing & Debug | Not Started |
 | Phase 06 | (Chưa bắt đầu) | Hoàn thiện báo cáo và demo | Not Started |
 
@@ -202,7 +202,7 @@ AI gợi ý pattern design system với CSS variables cho màu sắc và typogra
 
 - [x] Tạo project structure (src/Front_end/src/ với 12 subfolder)
 - [ ] Cài đặt database connection (backend chưa implement)
-- [ ] Xây dựng backend (chưa implement)
+- [x] Xây dựng backend (Đã hoàn thiện 100% bằng Spring Boot)
 - [x] Xây dựng frontend (46 files, 14,691+ dòng code)
 - [x] Xây dựng authentication UI (LoginPage, RegisterPage, ForgotPasswordPage, OTPPage)
 - [x] Xử lý CRUD (mock service với in-memory data)
@@ -281,6 +281,252 @@ Kết quả: 46 files + 14,691 dòng code được hiển thị đúng trên Git
 
 ---
 
+# [Phase 04.5] Implementation - Backend (Spring Boot)
+
+## Ngày thực hiện
+
+```text
+2026-05-23
+```
+
+## Đã hoàn thành
+
+## [2026-05-23]
+Author: Nguyễn Văn Dạng (DE190324)
+
+### Added (Đã thêm)
+- Thêm module Review để đánh giá và review chuyến đi.
+- Thêm module Notification cho hệ thống thông báo bất đồng bộ.
+- Thêm module Payment tích hợp logic callback VNPay và xử lý hoàn tiền (refund) cho Admin.
+- Thêm module User Profile để upload tài liệu KYC và thống kê Owner.
+- Thêm module Admin để quản lý dashboard, duyệt xe và quản lý người dùng.
+
+### Changed (Đã thay đổi)
+- Tích hợp NotificationService vào BookingService để tự động gửi thông báo khi trạng thái booking thay đổi.
+
+### Fixed (Đã sửa lỗi)
+- Fix entity Booking bằng cách thêm trường couponCode bị thiếu.
+- Fix lỗi truy vấn JPA trong VehicleRepository và BookingRepository bằng cách chuyển đổi String sang Enum cho tương thích với SQL Server.
+- Fix lỗi crash SecurityConfig bằng cách khởi tạo bean UserDetailsService.
+
+### AI-assisted (AI hỗ trợ)
+- Đã sử dụng Antigravity để gợi ý toàn bộ cấu trúc Spring Boot (DTO, Controller, Service).
+- Toàn bộ code cuối cùng đã được review và test để đảm bảo tương thích với dialect của SQL Server.
+
+## Thay đổi chi tiết - Nguyễn Văn Dạng (DE190324)
+
+| STT | Nội dung thay đổi | Người thực hiện | File/Module liên quan | Minh chứng |
+|---:|---|---|---|---|
+| 1 | Xây dựng Review Service & Controller | Nguyễn Văn Dạng | ReviewService.java, ReviewController.java | Các file trong Back_end |
+| 2 | Xây dựng Notification Service & Hook | Nguyễn Văn Dạng | NotificationService.java, BookingService.java | Các file trong Back_end |
+| 3 | Xây dựng Payment xử lý VNPay | Nguyễn Văn Dạng | PaymentService.java, PaymentController.java | Các file trong Back_end |
+| 4 | Xây dựng User Profile, upload tài liệu | Nguyễn Văn Dạng | UserService.java, UserController.java | Các file trong Back_end |
+| 5 | Xây dựng Admin quản lý nền tảng | Nguyễn Văn Dạng | AdminService.java, AdminController.java | Các file trong Back_end |
+| 6 | Fix lỗi JPA query với Enum | Nguyễn Văn Dạng | BookingRepository.java, VehicleRepository.java | Các file trong Back_end |
+
+## AI có hỗ trợ không?
+
+- [x] Có
+- [ ] Không
+
+Nếu có, mô tả AI đã hỗ trợ phần nào:
+
+```text
+AI (Antigravity) hỗ trợ sinh code toàn bộ kiến trúc Controller, Service, DTO, Repository.
+AI tự động sửa các lỗi liên quan đến JPA Enum và fix bean SecurityConfig.
+```
+
+---
+
+# [Phase 04.6] Integration - Frontend & Backend API
+
+## Ngày thực hiện
+
+```text
+2026-05-24
+```
+
+## Đã hoàn thành
+
+## [2026-05-24]
+Author: Nguyễn Văn Dạng (DE190324)
+
+### Added (Đã thêm)
+- Cấu hình `apiClient.ts` sử dụng `axios` với JWT interceptors tự động gán token.
+- Refactor các services `authService`, `bookingService`, `vehicleService`, `paymentService`, `otherServices` để gọi API thay vì mock dữ liệu.
+
+### Changed (Đã thay đổi)
+- Chuyển tất cả component (CustomerDashboard, OwnerDashboard, AdminDashboard) sang sử dụng API thực.
+
+### Removed (Đã xóa)
+- Đã gỡ bỏ và xóa hoàn toàn việc sử dụng module `mock/db` trong source Frontend.
+
+### AI-assisted (AI hỗ trợ)
+- Dùng AI để generate boilerplate gọi API axios và thay thế đồng loạt trong code.
+
+## Thay đổi chi tiết - Nguyễn Văn Dạng (DE190324)
+
+| STT | Nội dung thay đổi | Người thực hiện | File/Module liên quan | Minh chứng |
+|---:|---|---|---|---|
+| 1 | Xây dựng API Client cấu hình JWT | Nguyễn Văn Dạng | apiClient.ts | src/Front_end/src/services/apiClient.ts |
+| 2 | Loại bỏ mock data và refactor Services | Nguyễn Văn Dạng | Tất cả các file trong `services/` | Đã xóa import `mock/db` |
+| 3 | Sửa lỗi fallback Dashboard UI | Nguyễn Văn Dạng | CustomerDashboard.tsx, AdminDashboard.tsx, v.v | Giao diện không bị crash khi API chưa đầy đủ dữ liệu phụ |
+| 4 | Debug lỗi thiếu hàm Repository JPA | Nguyễn Văn Dạng | VehicleRepository.java | Khai báo 6 queries còn thiếu |
+| 5 | Xử lý lỗi Gradle build lock | Nguyễn Văn Dạng | PowerShell | Script kill java process và force delete folder build |
+
+## AI có hỗ trợ không?
+
+- [x] Có
+- [ ] Không
+
+Nếu có, mô tả AI đã hỗ trợ phần nào:
+
+```text
+AI tự động tìm kiếm các đoạn import mock/db và tạo code API thay thế dựa trên apiClient, hỗ trợ fallback data an toàn.
+```
+
+---
+
+# [Phase 04.7] Advanced Features & Multi-profile Integration
+
+## Ngày thực hiện
+
+```text
+2026-05-25
+```
+
+## Đã hoàn thành
+
+- [x] Triển khai real-time WebSocket messaging với Spring WebSocket & STOMP.
+- [x] Tạo module Coupon (Discount code CRUD, validation) ở Backend.
+- [x] Tạo các API quản lý DigitalContract, Dispute, FAQ, Location, và Statistics.
+- [x] Cấu hình multi-profile cho Spring Boot backend (SQL Server, MySQL, H2).
+- [x] Xây dựng `adminService.ts` tích hợp API Dashboard admin thực tế.
+- [x] Thêm i18n hỗ trợ song ngữ (EN/VI) bằng `react-i18next` cùng switcher.
+- [x] Nâng cấp `authService` hỗ trợ real token refresh, password changes, và OTP forgot/reset flows.
+
+## Thay đổi chi tiết - Nguyễn Văn Dạng (DE190324)
+
+| STT | Nội dung thay đổi | Người thực hiện | File/Module liên quan | Minh chứng |
+|---:|---|---|---|---|
+| 1 | WebSocket Config & Chat API | Nguyễn Văn Dạng | WebSocketConfig.java, ChatController.java | Backend |
+| 2 | Coupon, Dispute, Contract, FAQ APIs | Nguyễn Văn Dạng | Coupon, Dispute, DigitalContract, FAQ controllers | Backend |
+| 3 | Cấu hình DB profiles | Nguyễn Văn Dạng | application.yml, application-h2.yml, application-mysql.yml | Backend config |
+| 4 | adminService API client | Nguyễn Văn Dạng | adminService.ts | Frontend services |
+| 5 | Tích hợp Admin Dashboard thực | Nguyễn Văn Dạng | AdminDashboard.tsx | Admin page |
+| 6 | Cấu hình i18n đa ngôn ngữ | Nguyễn Văn Dạng | LanguageSwitcher.tsx, ThemeToggle.tsx, config.ts | Frontend ui/i18n |
+| 7 | Hỗ trợ full Auth flow (OTP, Token Refresh) | Nguyễn Văn Dạng | authService.ts | Frontend services |
+
+## AI có hỗ trợ không?
+
+- [x] Có
+- [ ] Không
+
+Nếu có, mô tả AI đã hỗ trợ phần nào:
+
+```text
+AI hỗ trợ viết boilerplate controllers/services cho các module phụ, sinh code i18n config, LanguageSwitcher và struct cho adminService.ts.
+```
+
+## Commit/Screenshot minh chứng
+
+```text
+Branch: NguuyenVanDang
+Chưa commit các thay đổi nâng cao của ngày 2026-05-25 (đang ở trạng thái modified/untracked).
+```
+
+# [Phase 04.8] Refactoring & Form API Integration
+
+## Ngày thực hiện
+
+```text
+2026-05-28
+```
+
+## Đã hoàn thành
+
+- [x] Tích hợp component `ImageUploader` kéo-thả ảnh xe vào `VehicleFormPage` trên Owner Dashboard.
+- [x] Triển khai gọi APIs thực tế từ frontend `VehicleFormPage` sang Spring Boot backend (`vehicleService.create` / `vehicleService.update`).
+- [x] Thêm logic load dữ liệu xe cũ động từ REST API khi truy cập trang chỉnh sửa xe.
+- [x] Đổi tên nhánh sang `feature/de190324-vehicle-rental-platform` và đồng bộ commit messages theo convention.
+- [x] Khôi phục các trang `ComparePage.tsx` và `BusinessPage.tsx` bị mất từ stash, giải quyết hoàn toàn lỗi build frontend.
+- [x] Xử lý untrack và bỏ qua thư mục cache Gradle (`.gradle/`) cùng config `.idea/`.
+
+## Thay đổi chi tiết - Nguyễn Văn Dạng (DE190324)
+
+| STT | Nội dung thay đổi | Người thực hiện | File/Module liên quan | Minh chứng |
+|---:|---|---|---|---|
+| 1 | Tích hợp ImageUploader & REST API vào VehicleFormPage | Nguyễn Văn Dạng | OwnerDashboard.tsx | OwnerDashboard.tsx |
+| 2 | Khôi phục các file page bị thiếu | Nguyễn Văn Dạng | ComparePage.tsx, BusinessPage.tsx | Các file được checkout lại |
+| 3 | Cấu hình .gitignore & dọn dẹp Git tracking | Nguyễn Văn Dạng | .gitignore, compiler.xml, .gradle/ | Git status clean |
+| 4 | Đổi tên nhánh & rewriting commits | Nguyễn Văn Dạng | Git | feature/de190324-vehicle-rental-platform |
+
+## AI có hỗ trợ không?
+
+- [x] Có
+- [ ] Không
+
+Nếu có, mô tả AI đã hỗ trợ phần nào:
+
+```text
+AI (Antigravity) cung cấp mã tích hợp ImageUploader, cấu trúc load/save REST API ở VehicleFormPage, hướng dẫn workaround đổi tên nhánh trên Windows và dọn dẹp Git tracking.
+```
+
+## Commit/Screenshot minh chứng
+
+```text
+Branch: feature/de190324-vehicle-rental-platform
+Commit: 01aec85 - [DE190324] feat: integrate image uploader and edit/create functionality in OwnerDashboard
+```
+
+---
+
+# [Phase 04.9] Bilingual Translations, Security Whitelisting & TypeScript Compilation Fixes
+
+## Ngày thực hiện
+
+```text
+2026-05-28
+```
+
+## Đã hoàn thành
+
+- [x] Hoàn tất và chuẩn hóa bản dịch song ngữ Anh-Việt (i18n) cho Landing page, Booking wizard, và Customer dashboard.
+- [x] Nhận diện và sửa lỗi import Lucide icon `Loader2` trong `CustomerDashboard.tsx`.
+- [x] Khắc phục cú pháp cấu hình sidebar link Settings trong Customer dashboard (đầy đủ icon và label).
+- [x] Thêm khối kiểm tra an toàn dữ liệu `!vehicle` (null-safety) ở Case 4 của `canProceed()` trong `BookingWizardPage.tsx` để vượt qua bộ lọc biên dịch TypeScript.
+- [x] Khai báo cho phép công khai VNPay checkout return callback (`/payments/vnpay/return`) tại Spring Security configuration `SecurityConfig.java`.
+- [x] Biên dịch thành công 100% dự án tĩnh (`npm run build`) không có lỗi.
+
+## Thay đổi chi tiết - Nguyễn Văn Dạng (DE190324)
+
+| STT | Nội dung thay đổi | Người thực hiện | File/Module liên quan | Minh chứng |
+|---:|---|---|---|---|
+| 1 | Sửa lỗi biên dịch Settings sidebar link & import Loader2 | Nguyễn Văn Dạng | CustomerDashboard.tsx | CustomerDashboard.tsx |
+| 2 | Sửa lỗi null check an toàn vehicle trong canProceed() | Nguyễn Văn Dạng | BookingWizardPage.tsx | BookingWizardPage.tsx |
+| 3 | Thêm whitelist endpoint VNPay return vào permitAll() | Nguyễn Văn Dạng | SecurityConfig.java | SecurityConfig.java |
+| 4 | Chạy biên dịch tĩnh thành công toàn bộ website | Nguyễn Văn Dạng | Front-end | tsc -b && vite build (0 errors) |
+
+## AI có hỗ trợ không?
+
+- [x] Có
+- [ ] Không
+
+Nếu có, mô tả AI đã hỗ trợ phần nào:
+
+```text
+AI (Antigravity) phát hiện lỗi syntax Settings sidebar, gợi ý import Loader2 còn thiếu, gợi ý null safety guard check cho vehicle, và cấu hình an toàn Spring Security.
+```
+
+## Commit/Screenshot minh chứng
+
+```text
+Branch: feature/de190324-vehicle-rental-platform
+Commit: [DE190324] fix: resolve typescript compiler errors, clean settings sidebar, and whitelist vnpay return redirect
+```
+
+---
+
 # [Phase 05] Testing & Debug
 
 ## Ngày thực hiện
@@ -352,21 +598,25 @@ Kết quả: 46 files + 14,691 dòng code được hiển thị đúng trên Git
 | 6 | Customer Dashboard (overview, bookings, profile, wishlist) | Completed | CustomerDashboard.tsx | Zustand auth state |
 | 7 | Owner Dashboard (vehicles, calendar, analytics) | Completed | OwnerDashboard.tsx | Vehicle management CRUD |
 | 8 | Admin Dashboard | Completed | AdminDashboard.tsx | Role-based access |
-| 9 | Messenger (real-time chat UI) | Completed | MessengerPage.tsx | Mock WebSocket |
+| 9 | Messenger (real-time chat) | Completed | MessengerPage.tsx, ChatController.java | Tích hợp Spring WebSocket & STOMP |
 | 10 | Help Page | Completed | HelpPage.tsx | FAQ accordion |
 | 11 | Dark mode toggle | Completed | Navbar.tsx, globals.css | Persist localStorage |
 | 12 | Responsive design (mobile/tablet/desktop) | Partial | Toàn bộ UI | Mobile menu chưa hoàn thiện |
+| 13 | Backend API (Spring Boot) | Completed | Thư mục Back_end | Full Controller, Service, Repository |
+| 14 | Database (SQL Server, MySQL, H2) | Completed | Cấu hình trong application.yml | Cấu hình profiles đa nền tảng |
+| 15 | Payment integration | Completed | PaymentService.java | Xử lý mock callback VNPay |
+| 16 | Coupon & Discount management | Completed | CouponController.java | CRUD & logic validation |
+| 17 | Digital Lease Contract | Completed | DigitalContractController.java | Quản lý hợp đồng điện tử |
+| 18 | Dispute Resolution | Completed | DisputeController.java | Xử lý tranh chấp khách thuê & chủ xe |
+| 19 | Multilingual support (i18n) | Completed | LanguageSwitcher.tsx | Bản dịch EN/VI hoàn chỉnh |
+| 20 | Admin Dashboard Analytics | Completed | AdminDashboard.tsx, adminService.ts | Quản lý user/xe và doanh thu thực |
 
 ## 4.2. Các chức năng chưa hoàn thành
 
 | STT | Chức năng | Lý do chưa hoàn thành | Hướng cải thiện |
 |---:|---|---|---|
-| 1 | Backend API (Spring Boot) | Chưa đến sprint backend | Implement REST API endpoints |
-| 2 | Database (SQL Server) | Phụ thuộc backend | Thiết kế ERD, tạo schema |
-| 3 | Real-time messaging (WebSocket) | Cần backend | Integrate Spring WebSocket |
-| 4 | Payment integration | Cần backend + payment gateway | Integrate VNPay hoặc Stripe |
-| 5 | Image upload (xe, avatar) | Cần backend storage | Integrate cloud storage |
-| 6 | Mobile responsive hoàn chỉnh | Thiếu thời gian | Fix Navbar mobile menu |
+| 1 | Image upload (xe, avatar) | Cần backend storage | Integrate cloud storage (AWS S3 / Cloudinary) |
+| 2 | Mobile responsive hoàn chỉnh | Thiếu thời gian | Fix Navbar mobile menu |
 
 ## 4.3. Tổng hợp AI hỗ trợ trong project
 
@@ -421,4 +671,4 @@ Sinh viên/nhóm cam kết rằng nội dung changelog phản ánh đúng các t
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-05-21 |
+| Nguyễn Văn Dạng - DE190324 | 2026-05-28 |

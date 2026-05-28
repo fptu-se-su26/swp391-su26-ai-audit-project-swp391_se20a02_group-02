@@ -12,7 +12,7 @@
 | Tên sinh viên / Nhóm | Nguyễn Văn Dạng - Nhóm 2 |
 | MSSV / Danh sách MSSV | DE190324 |
 | Giảng viên hướng dẫn | (Giảng viên môn SWP391) |
-| Ngày hoàn thành reflection | 2026-05-21 |
+| Ngày hoàn thành reflection | 2026-05-25 |
 
 ---
 
@@ -44,8 +44,62 @@ Cách mình dùng AI:
   MarketplacePage (414 dòng), FilterPanel, App.tsx với routing, VehicleCard, animation variants.
   Mỗi lần đều đọc code kỹ, test, và chỉnh sửa trước khi dùng.
 
+## Reflection - Triển khai Backend (2026-05-23)
+
+Trong giai đoạn này, nhóm đã sử dụng Antigravity để sinh toàn bộ logic cho các module backend Spring Boot còn thiếu (Review, Notification, Payment, User Profile, Admin).
+Tuy nhiên, một số câu truy vấn JPA do AI tạo ra ban đầu sử dụng String literal cho Enum, điều này gây ra lỗi dialect với SQL Server.
+
+Nhóm đã review code của AI và sửa lại các câu truy vấn JPA trong `VehicleRepository` và `BookingRepository` để sử dụng đường dẫn Enum đầy đủ (ví dụ: `com.luxeway.enums.BookingStatus.COMPLETED`).
+Quá trình này giúp nhóm hiểu được tầm quan trọng của việc kiểm tra các truy vấn database do AI sinh ra so với dialect SQL cụ thể đang được sử dụng.
+
+Bài học lớn nhất rút ra là: mặc dù AI cực kỳ xuất sắc trong việc tạo ra một lượng lớn code khung (Controllers, Services, DTOs), lập trình viên luôn phải kiểm tra kỹ ORM và các ràng buộc database để đảm bảo code có thể chạy tốt trên môi trường thực tế.
+
 - Giai đoạn debug (2026-05-17): Gặp lỗi git submodule (src/Front_end không hiện code trên GitHub).
   AI giải thích nguyên nhân và hướng dẫn fix step by step.
+
+- Giai đoạn Backend (2026-05-23): Sử dụng AI để sinh toàn bộ các module Backend thiếu sót bằng Spring Boot. 
+  Từ Review, Notification, Payment, đến User và Admin. AI giúp liên kết logic rất tốt (như bắn notification khi tạo booking).
+
+## Reflection - Tích hợp Frontend & Backend (2026-05-24)
+
+Mình đã sử dụng Antigravity để refactor toàn bộ service layer ở frontend. Ban đầu project bị phụ thuộc vào module `mock/db` do chính AI gợi ý ở giai đoạn đầu để làm Frontend độc lập.
+Khi Backend Spring Boot hoàn tất, mình đã yêu cầu AI tạo `apiClient.ts` sử dụng `axios` với interceptors tự động gán JWT.
+Sau đó, AI hỗ trợ loại bỏ hoàn toàn module mock và gọi API thực tế.
+Bài học lớn nhất là: việc thiết kế Service Layer tốt từ ban đầu (tách biệt UI và logic gọi data) đã giúp quá trình chuyển đổi từ Mock sang Real API cực kỳ dễ dàng, gần như không phải sửa đổi component UI (chỉ cần đảm bảo fallback an toàn khi API thiếu dữ liệu).
+
+## Reflection - Kỹ năng Debugging (2026-05-24)
+
+Quá trình chạy Backend gặp một số trở ngại lớn mà nhóm đã học được cách giải quyết cùng AI:
+1. **Lỗi thiếu Method JPA**: Khi Spring Boot báo lỗi `cannot find symbol method`, nhóm nhận ra dù AI đã sinh ra các Service dùng các method query (`findByStatusOrderByCreatedAtDesc`, v.v) nhưng lại quên không khai báo chúng trong interface `VehicleRepository`. Học được cách đọc lỗi biên dịch Java để tìm chính xác interface nào đang thiếu khai báo.
+2. **Lỗi khóa file của HĐH (Windows File Lock)**: Mặc dù đã thêm code vào Repository, lỗi cũ vẫn liên tục xuất hiện. Qua sự hỗ trợ của AI, nhóm hiểu rằng do ứng dụng Java cũ chưa tắt hẳn, nó đã "khóa" (lock) thư mục `build/classes`. Gradle không thể xóa file cũ để dịch file mới. Bài học: Sử dụng PowerShell kill process (`taskkill /F /IM java.exe`), force delete thư mục `build`, và dùng tính năng `Rebuild Project` của IntelliJ để giải quyết triệt để các lỗi out-of-sync của IDE.
+
+## Reflection - Các API nâng cao & Đa ngôn ngữ (2026-05-25)
+
+Trong ngày hôm nay (2026-05-25), mình đã sử dụng AI để hỗ trợ hoàn thành các cấu hình và API nâng cao cho LuxeWay.
+1. Triển khai Spring WebSocket: Cấu hình và tạo ChatController giúp hoàn thiện backend cho Messenger, thay thế phần WebSocket giả lập trước đó ở Frontend.
+2. API quản lý (Coupon, DigitalContract, Dispute, FAQ, Location, Stats): AI sinh nhanh các Entity và REST controllers, giúp nhóm có đủ tài nguyên để quản lý mã giảm giá, tranh chấp, hợp đồng thuê xe điện tử và thống kê tổng quan doanh thu của hệ thống.
+3. Hỗ trợ đa ngôn ngữ (i18n): Thiết lập react-i18next với cấu hình translations EN/VI ở Frontend. AI đã sinh component switcher LanguageSwitcher giúp chuyển đổi ngôn ngữ mượt mà.
+4. Token Refresh & OTP Flow: Bổ sung logic token refresh tự động trong authService.ts và xử lý mã OTP cho việc thay đổi/khôi phục mật khẩu.
+
+Bài học lớn nhất rút ra: Việc chia nhỏ cấu hình Spring Boot (multi-profile) giúp việc demo dự án linh hoạt hơn khi có thể chạy dễ dàng trên cả SQL Server, MySQL lẫn in-memory H2 DB mà không cần sửa code gốc. Đồng thời, cấu hình dịch thuật (i18n) nên được tách thành các file JSON độc lập để dễ dàng bảo trì dịch thuật hơn là hardcode trực tiếp trong file config của AI.
+
+## Reflection - Tích hợp ImageUploader & REST API (2026-05-28)
+
+Hôm nay (2026-05-28), nhóm đã sử dụng AI để hỗ trợ hoàn thiện tích hợp REST API thực tế cho `VehicleFormPage` thay thế phần dữ liệu mock cũ và tích hợp kéo thả ảnh với `ImageUploader` component.
+
+Bài học rút ra:
+1. **Lỗi kiểu dữ liệu TypeScript**: Trong quá trình chỉnh sửa, hệ thống báo lỗi do trường `state` và `zip` không được định nghĩa rõ ràng trong kiểu dữ liệu `location` của Vehicle. Ép kiểu dữ liệu `vehicle.location as any` là giải pháp nhanh chóng và thực tế để giải quyết các hạn chế về kiểu dữ liệu khi làm việc với API động từ backend.
+2. **Khôi phục files**: Bằng cách sử dụng git checkout trên mã băm commit stash, nhóm đã dễ dàng lấy lại các file bị mất (`ComparePage.tsx` và `BusinessPage.tsx`), khôi phục trạng thái build hoàn chỉnh cho dự án.
+3. **Chuẩn hóa Git**: Quy trình làm việc monorepo đòi hỏi kỷ luật cao về việc ignore các file rác sinh ra bởi Gradle và IDE để tránh gây phiền toái khi rebase hoặc filter-branch.
+
+## Reflection - Dịch Thuật Toàn Diện & Sửa Lỗi Biên Dịch Vite (2026-05-28)
+
+Nhóm đã sử dụng AI để rà soát toàn bộ các lỗi biên dịch kiểu dữ liệu (TypeScript compiler errors) khi chạy lệnh đóng gói static bundle (`npm run build`).
+
+Bài học rút ra:
+1. **Lỗi import & JSX Element Types**: Đôi khi việc chỉnh sửa i18n hàng loạt làm mất đi các imports hoặc cấu trúc JSX (như trường hợp Settings sidebar link bị thiếu nhãn label và icon và Loader2 bị thiếu). Nhờ AI phát hiện sớm, nhóm đã khôi phục cấu trúc chuẩn xác và biên dịch thành công.
+2. **Kiểm soát Null-Safety trong Asynchronous States**: Việc truy xuất các thuộc tính lồng nhau của một đối tượng bất đồng bộ (ví dụ: `vehicle.pricePerDay` trong `canProceed()`) luôn cần khối guard check `!vehicle` để đảm bảo trình biên dịch tĩnh của TypeScript không đánh dấu lỗi "possibly null".
+3. **Cấu hình Spring Security linh hoạt**: Luôn đảm bảo các endpoints callback trung gian của các cổng thanh toán (như VNPay callback/return) được whitelisting công khai để tránh lỗi chặn truy cập 403 Forbidden từ filter chain.
 
 Công cụ sử dụng nhiều nhất: Antigravity (AI coding assistant tích hợp trong IDE).
 AI giúp tăng tốc đáng kể - ước tính tiết kiệm 60-70% thời gian coding cho các component phức tạp.
@@ -539,4 +593,4 @@ Sinh viên/nhóm hiểu rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-05-21 |
+| Nguyễn Văn Dạng - DE190324 | 2026-05-28 |
