@@ -67,6 +67,8 @@ public class AuthService {
             role = UserRole.CUSTOMER;
         }
 
+        // DEV MODE: Auto-verify user on registration (no email verification step).
+        // In production, set verified=false and send a confirmation email via JavaMailSender.
         User user = User.builder()
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
@@ -76,7 +78,7 @@ public class AuthService {
                 .role(role)
                 .accountType(request.getAccountType() != null ? request.getAccountType() : "INDIVIDUAL")
                 .companyName(request.getCompanyName())
-                .verified(false)
+                .verified(true)   // auto-verified in dev mode
                 .kycVerified(false)
                 .drivingLicenseVerified(false)
                 .isActive(true)

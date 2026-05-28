@@ -536,12 +536,12 @@ const FeaturedVehiclesSection: React.FC = () => {
 const TopCitiesSection: React.FC = () => {
   const t = useT();
   const [cities, setCities] = useState<any[]>([
-    { name: 'Ho Chi Minh', country: 'Vietnam', image: 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?q=80&w=800&auto=format&fit=crop', vehicles: 240 },
-    { name: 'Ha Noi', country: 'Vietnam', image: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?q=80&w=800&auto=format&fit=crop', vehicles: 186 },
-    { name: 'Da Nang', country: 'Vietnam', image: 'https://images.unsplash.com/photo-1518684079-3c830dcef090?q=80&w=800&auto=format&fit=crop', vehicles: 94 },
-    { name: 'Nha Trang', country: 'Vietnam', image: 'https://images.unsplash.com/photo-1506966953602-c20cc11f75e3?q=80&w=800&auto=format&fit=crop', vehicles: 120 },
-    { name: 'Da Lat', country: 'Vietnam', image: 'https://images.unsplash.com/photo-1580655653885-65763b2597d0?q=80&w=800&auto=format&fit=crop', vehicles: 158 },
-    { name: 'Hai Phong', country: 'Vietnam', image: 'https://images.unsplash.com/photo-1530973428-5bf2db2e4d71?q=80&w=800&auto=format&fit=crop', vehicles: 127 },
+    { name: 'Ho Chi Minh', locationQuery: 'Hồ Chí Minh', country: 'Vietnam', image: 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?q=80&w=800&auto=format&fit=crop', vehicles: 240 },
+    { name: 'Ha Noi', locationQuery: 'Hà Nội', country: 'Vietnam', image: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?q=80&w=800&auto=format&fit=crop', vehicles: 186 },
+    { name: 'Da Nang', locationQuery: 'Đà Nẵng', country: 'Vietnam', image: 'https://images.unsplash.com/photo-1518684079-3c830dcef090?q=80&w=800&auto=format&fit=crop', vehicles: 94 },
+    { name: 'Nha Trang', locationQuery: 'Nha Trang', country: 'Vietnam', image: 'https://images.unsplash.com/photo-1506966953602-c20cc11f75e3?q=80&w=800&auto=format&fit=crop', vehicles: 120 },
+    { name: 'Da Lat', locationQuery: 'Đà Lạt', country: 'Vietnam', image: 'https://images.unsplash.com/photo-1580655653885-65763b2597d0?q=80&w=800&auto=format&fit=crop', vehicles: 158 },
+    { name: 'Hai Phong', locationQuery: 'Hải Phòng', country: 'Vietnam', image: 'https://images.unsplash.com/photo-1530973428-5bf2db2e4d71?q=80&w=800&auto=format&fit=crop', vehicles: 127 },
   ]);
 
   useEffect(() => {
@@ -608,7 +608,7 @@ const TopCitiesSection: React.FC = () => {
           {cities.map(city => (
             <motion.div key={city.name} variants={staggerItem}>
               <Link
-                to={`/marketplace?location=${city.name}`}
+                to={`/marketplace?location=${encodeURIComponent(city.locationQuery || city.name)}`}
                 className="relative rounded-2xl overflow-hidden h-48 block group"
               >
                 <img

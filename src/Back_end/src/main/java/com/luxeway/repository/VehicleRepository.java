@@ -3,9 +3,11 @@ package com.luxeway.repository;
 import com.luxeway.entity.Vehicle;
 import com.luxeway.enums.VehicleCategory;
 import com.luxeway.enums.VehicleStatus;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -14,6 +16,8 @@ import com.luxeway.enums.FuelType;
 import com.luxeway.enums.TransmissionType;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
+
 
 @Repository
 public interface VehicleRepository extends JpaRepository<Vehicle, String> {
@@ -34,6 +38,12 @@ public interface VehicleRepository extends JpaRepository<Vehicle, String> {
     Page<Vehicle> findByStatusOrderByCreatedAtDesc(VehicleStatus status, Pageable pageable);
     
     List<Vehicle> findByIsFeaturedTrueAndStatusOrderByRatingDesc(VehicleStatus status);
+    
+    // Pessimistic lock — dùng trước khi tạo booking để tránh double-booking race condition
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT v FROM Vehicle v WHERE v.id = :id")
+    Optional<Vehicle> findByIdForUpdate(@Param("id") String id);
+
     
     // Category and location
     List<Vehicle> findByCategory(VehicleCategory category);

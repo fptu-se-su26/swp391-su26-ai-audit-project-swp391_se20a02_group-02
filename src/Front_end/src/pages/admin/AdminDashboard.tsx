@@ -9,12 +9,34 @@ import { formatCurrency, formatDate, getStatusColor } from '@/utils';
 import { staggerContainer, staggerItem, fadeUp } from '@/animations/variants';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, Legend
+  ResponsiveContainer, PieChart, Pie, Cell
 } from 'recharts';
 import { adminService, AdminStats } from '@/services/adminService';
 import { useToast } from '@/components/ui/Toast';
 
-const COLORS = ['#3B82F6', '#EAB308', '#22C55E', '#EF4444', '#8B5CF6'];
+const COLORS = ['#EAB308', '#6366F1', '#10B981', '#A855F7', '#06B6D4'];
+
+// Custom glassmorphic tooltip for Admin charts
+const AdminCustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white border border-slate-150 p-3.5 rounded-2xl shadow-xl text-xs font-semibold text-slate-800">
+        <p className="text-slate-500 font-bold mb-1">{label}</p>
+        <p className="text-slate-800 font-extrabold flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-blue-500 inline-block" />
+          Revenue: <span className="text-blue-600">{formatCurrency(payload[0].value)}</span>
+        </p>
+        {payload[0].payload.bookings !== undefined && (
+          <p className="text-slate-600 font-medium mt-0.5 flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+            Bookings: {payload[0].payload.bookings}
+          </p>
+        )}
+      </div>
+    );
+  }
+  return null;
+};
 
 const AdminDashboard: React.FC = () => {
   const toast = useToast();
@@ -28,7 +50,7 @@ const AdminDashboard: React.FC = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
-  const [payments, setPayments] = useState<any[]>([]);
+  const [disputes, setDisputes] = useState<any[]>([]);
 
   // Fetch Dashboard Stats & Primary Data
   const fetchOverviewData = async () => {
@@ -72,6 +94,10 @@ const AdminDashboard: React.FC = () => {
         setLoading(true);
         const data = await adminService.listAllBookings(undefined, 0, 100);
         setBookings(data.content || []);
+      } else if (activeTab === 'disputes') {
+        setLoading(true);
+        const data = await adminService.listAllDisputes();
+        setDisputes(data || []);
       } else if (activeTab === 'overview') {
         await fetchOverviewData();
       }
@@ -161,10 +187,49 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  // Action: Resolve/Update Dispute Status
+  const handleResolveDispute = async (disputeId: number, currentStatus: string) => {
+    const decision = prompt(`Please enter the resolution decision for Dispute #${disputeId}:`);
+    if (decision === null) return;
+    if (!decision.trim()) {
+      toast.error('Validation Error', 'A resolution decision is required.');
+      return;
+    }
+
+    try {
+      await adminService.updateDisputeStatus(disputeId, 'RESOLVED', decision);
+      toast.success('Dispute Resolved', `Dispute status updated to RESOLVED.`);
+      
+      // Update state local
+      setDisputes(prev => prev.map(d => d.id === disputeId ? { ...d, status: 'RESOLVED', adminDecision: decision } : d));
+    } catch (err: any) {
+      toast.error('Operation Failed', 'Failed to resolve dispute.');
+    }
+  };
+
+  const handleRejectDispute = async (disputeId: number) => {
+    const decision = prompt(`Please enter the rejection reason for Dispute #${disputeId}:`);
+    if (decision === null) return;
+    if (!decision.trim()) {
+      toast.error('Validation Error', 'A rejection reason is required.');
+      return;
+    }
+
+    try {
+      await adminService.updateDisputeStatus(disputeId, 'REJECTED', decision);
+      toast.success('Dispute Rejected', `Dispute status updated to REJECTED.`);
+      
+      // Update state local
+      setDisputes(prev => prev.map(d => d.id === disputeId ? { ...d, status: 'REJECTED', adminDecision: decision } : d));
+    } catch (err: any) {
+      toast.error('Operation Failed', 'Failed to reject dispute.');
+    }
+  };
+
   // Derived Analytics Data Mapped to DB Stats
   const displayStats = {
     totalUsers: stats?.totalUsers || users.length || 0,
-    activeUsers: stats?.totalUsers ? (stats.totalUsers - stats.cancelledBookings /* safe representation */) : users.filter(u => u.active || u.isActive).length,
+    activeUsers: stats?.totalUsers ? (stats.totalUsers - stats.cancelledBookings) : users.filter(u => u.active || u.isActive).length,
     totalVehicles: stats?.totalVehicles || vehicles.length || 0,
     availableVehicles: stats?.availableVehicles || vehicles.filter(v => v.status === 'available').length || 0,
     totalBookings: stats?.totalBookings || bookings.length || 0,
@@ -173,13 +238,13 @@ const AdminDashboard: React.FC = () => {
     pendingApproval: stats?.pendingApprovalVehicles || vehicles.filter(v => v.status === 'pending_approval').length || 0,
   };
 
-  // Mock charts fallback to prevent crash, populated by DB if available
+  // Fallback revenue charts data
   const monthlyData = [
-    { date: '2026-01', revenue: displayStats.totalRevenue * 0.15 || 15000, bookings: displayStats.totalBookings * 0.1 || 5 },
-    { date: '2026-02', revenue: displayStats.totalRevenue * 0.25 || 25000, bookings: displayStats.totalBookings * 0.2 || 12 },
-    { date: '2026-03', revenue: displayStats.totalRevenue * 0.45 || 45000, bookings: displayStats.totalBookings * 0.35 || 18 },
-    { date: '2026-04', revenue: displayStats.totalRevenue * 0.75 || 75000, bookings: displayStats.totalBookings * 0.6 || 32 },
-    { date: '2026-05', revenue: displayStats.totalRevenue || 125000, bookings: displayStats.totalBookings || 48 },
+    { date: 'Jan', revenue: displayStats.totalRevenue * 0.15 || 15000, bookings: displayStats.totalBookings * 0.1 || 5 },
+    { date: 'Feb', revenue: displayStats.totalRevenue * 0.25 || 25000, bookings: displayStats.totalBookings * 0.2 || 12 },
+    { date: 'Mar', revenue: displayStats.totalRevenue * 0.45 || 45000, bookings: displayStats.totalBookings * 0.35 || 18 },
+    { date: 'Apr', revenue: displayStats.totalRevenue * 0.75 || 75000, bookings: displayStats.totalBookings * 0.6 || 32 },
+    { date: 'May', revenue: displayStats.totalRevenue || 125000, bookings: displayStats.totalBookings || 48 },
   ];
 
   const categoryData = [
@@ -192,61 +257,83 @@ const AdminDashboard: React.FC = () => {
 
   const pendingVehicles = vehicles.filter(v => v.status === 'pending_approval');
   const recentUsers = [...users].slice(0, 5);
-  const recentBookings = [...bookings].slice(0, 8);
 
   return (
-    <div className="min-h-screen bg-[#0F172A] pt-20">
+    <div className="min-h-screen bg-[#f4f7fe] text-slate-800 pt-20 relative overflow-hidden">
+      {/* Background ambient glowing orbs */}
+      <div className="absolute top-0 left-0 w-full h-[600px] bg-gradient-to-b from-blue-500/5 via-indigo-500/3 to-transparent pointer-events-none" />
+      <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
+      <div className="absolute top-80 left-1/4 w-96 h-96 rounded-full bg-indigo-500/5 blur-3xl pointer-events-none" />
+
       {/* Admin Header */}
-      <div className="bg-[#0F172A] border-b border-white/10 sticky top-20 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
+      <div className="bg-white/80 border-b border-slate-200/80 sticky top-20 z-30 shadow-sm backdrop-blur-md">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h1 className="font-display text-2xl font-bold text-white">Admin Control Center</h1>
-              <p className="text-slate-400 text-sm">LuxeWay Platform Management</p>
+              <h1 className="font-display text-3xl font-bold tracking-tight text-slate-900">Admin Control Center</h1>
+              <p className="text-slate-500 text-xs font-semibold mt-1">LuxeWay Platform Management</p>
             </div>
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-success/10 rounded-xl">
-                <div className="w-2 h-2 bg-success rounded-full animate-pulse" />
-                <span className="text-success text-xs font-medium">System Operational</span>
+              <div className="flex items-center gap-2 px-3.5 py-2 bg-emerald-50 border border-emerald-250 rounded-2xl shadow-sm">
+                <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-ping" />
+                <span className="text-emerald-600 text-[10px] font-extrabold uppercase tracking-widest">System Live</span>
               </div>
-              <Link to="/" className="text-slate-400 hover:text-white text-sm transition-colors">← Exit Admin</Link>
+              <Link to="/" className="text-slate-600 hover:text-blue-600 text-xs font-extrabold bg-white border border-slate-200 hover:border-blue-300 px-4.5 py-2.5 rounded-2xl transition-all duration-300 hover:bg-slate-50 hover-lift">
+                ← Exit Admin
+              </Link>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
         {/* Tab Navigation */}
-        <div className="flex gap-2 overflow-x-auto pb-4 mb-4 border-b border-white/10">
-          {['overview', 'users', 'vehicles', 'bookings', 'disputes'].map(tab => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab as any)}
-              className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors ${
-                activeTab === tab 
-                  ? 'bg-blue-600 text-white' 
-                  : 'text-slate-400 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </button>
-          ))}
+        <div className="flex gap-3 overflow-x-auto pb-3 mb-8 border-b border-slate-200/60 scrollbar-none">
+          {[
+            { id: 'overview', label: 'Overview', icon: BarChart2 },
+            { id: 'users', label: 'Users', icon: Users },
+            { id: 'vehicles', label: 'Vehicles', icon: Car },
+            { id: 'bookings', label: 'Bookings', icon: Calendar },
+            { id: 'disputes', label: 'Disputes', icon: AlertTriangle },
+          ].map(tab => {
+            const ActiveIcon = tab.icon;
+            const active = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`flex items-center gap-2.5 px-5.5 py-3 rounded-2xl text-xs font-extrabold uppercase tracking-widest whitespace-nowrap transition-all duration-300 hover-lift shadow-sm ${
+                  active 
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25 ring-2 ring-blue-500/30' 
+                    : 'text-slate-500 bg-white border border-slate-200 hover:text-slate-800 hover:bg-slate-50 hover:border-slate-300'
+                }`}
+              >
+                <ActiveIcon className="w-4 h-4" />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Loading Spinner */}
         {loading && (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-            <span className="text-slate-400 text-sm ml-3">Loading secure server data...</span>
+          <div className="flex flex-col items-center justify-center py-36">
+            <Loader2 className="w-12 h-12 animate-spin text-gold" />
+            <span className="text-slate-455 text-xs font-extrabold tracking-widest uppercase mt-5 animate-pulse">Syncing Database Ledgers...</span>
           </div>
         )}
 
         {/* Error Display */}
         {error && !loading && (
-          <div className="bg-red-900/20 border border-red-500/30 rounded-2xl p-4 mb-6">
-            <div className="flex items-center">
-              <div className="text-red-400 font-medium">❌ Connection Error:</div>
-              <div className="text-red-300 ml-2">{error}</div>
+          <div className="bg-red-950/30 border border-red-500/20 rounded-[2rem] p-5 mb-8 shadow-xl animate-fade-in">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 bg-red-500/10 text-red-500 rounded-xl flex items-center justify-center flex-shrink-0 border border-red-500/20">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-red-400 font-extrabold text-sm uppercase tracking-wider">System Database Error</div>
+                <div className="text-red-300/80 text-xs mt-0.5">{error}</div>
+              </div>
             </div>
           </div>
         )}
@@ -255,77 +342,123 @@ const AdminDashboard: React.FC = () => {
         {!loading && activeTab === 'overview' && (
           <>
             {/* Stats Grid */}
-            <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
               {[
-                { label: 'Total Revenue', value: formatCurrency(displayStats.totalRevenue), icon: DollarSign, color: 'from-blue-500 to-blue-700', change: '+23%' },
-                { label: 'Total Users', value: displayStats.totalUsers.toLocaleString(), icon: Users, color: 'from-green-500 to-green-700', change: '+12%' },
-                { label: 'Total Vehicles', value: displayStats.totalVehicles.toLocaleString(), icon: Car, color: 'from-purple-500 to-purple-700', change: '+8%' },
-                { label: 'Total Bookings', value: displayStats.totalBookings.toLocaleString(), icon: Calendar, color: 'from-gold to-yellow-600', change: '+31%' },
+                { label: 'Total Earnings', value: formatCurrency(displayStats.totalRevenue), icon: DollarSign, color: 'bg-emerald-50 text-emerald-600 border border-emerald-200/50', change: '+23% this mo', isRevenue: true },
+                { label: 'Total Accounts', value: displayStats.totalUsers.toLocaleString(), icon: Users, color: 'bg-blue-50 text-blue-600 border border-blue-200/50', change: '+12% active' },
+                { label: 'Total Fleet', value: displayStats.totalVehicles.toLocaleString(), icon: Car, color: 'bg-purple-50 text-purple-600 border border-purple-200/50', change: '+8% listings' },
+                { label: 'Trips Placed', value: displayStats.totalBookings.toLocaleString(), icon: Calendar, color: 'bg-amber-50 text-amber-600 border border-amber-200/50', change: '+31% checkout' },
               ].map(stat => (
-                <motion.div key={stat.label} variants={staggerItem} className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${stat.color} p-5 text-white`}>
-                  <div className="flex items-start justify-between mb-4"><stat.icon className="w-6 h-6 opacity-80" /><span className="text-xs font-semibold bg-white/20 px-2 py-0.5 rounded-full">{stat.change}</span></div>
-                  <p className="text-2xl font-bold mb-1">{stat.value}</p>
-                  <p className="text-white/70 text-sm">{stat.label}</p>
-                  <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-white/10 rounded-full" />
+                <motion.div key={stat.label} variants={staggerItem} className="bg-white border border-slate-150/70 p-5.5 rounded-3xl relative overflow-hidden shadow-md shadow-slate-200/30 hover-lift hover-shadow transition-all duration-300">
+                  <div className="flex items-center justify-between mb-4.5">
+                    <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${stat.color} shadow-sm`}>
+                      <stat.icon className="w-5.5 h-5.5" />
+                    </div>
+                    <span className="text-[9px] font-extrabold bg-slate-50 border border-slate-100 px-2.5 py-0.5 rounded-lg uppercase tracking-widest text-slate-500">{stat.change}</span>
+                  </div>
+                  <p className={`text-2.5xl font-black mb-0.5 tracking-tight ${stat.isRevenue ? 'text-emerald-600' : 'text-slate-900'}`}>{stat.value}</p>
+                  <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider">{stat.label}</p>
+                  <div className="absolute -bottom-4 -right-4 w-20 h-20 bg-slate-50 rounded-full blur-xl" />
                 </motion.div>
               ))}
             </motion.div>
 
-            <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            {/* Quick Metrics */}
+            <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
               {[
-                { label: 'Pending Approval', value: displayStats.pendingApproval, icon: AlertTriangle, color: 'text-yellow-400 bg-yellow-900/30' },
-                { label: 'Completed Trips', value: displayStats.completedBookings, icon: CheckCircle, color: 'text-green-400 bg-green-900/30' },
-                { label: 'Active Users', value: displayStats.activeUsers, icon: Users, color: 'text-blue-400 bg-blue-900/30' },
-                { label: 'Platform Status', value: 'Live', icon: Globe, color: 'text-purple-400 bg-purple-900/30' },
+                { label: 'Pending Approvals', value: displayStats.pendingApproval, icon: AlertTriangle, color: 'bg-amber-50 text-amber-600 border border-amber-100 shadow-sm' },
+                { label: 'Completed Trips', value: displayStats.completedBookings, icon: CheckCircle, color: 'bg-emerald-50 text-emerald-600 border border-emerald-100 shadow-sm' },
+                { label: 'Active Users', value: displayStats.activeUsers, icon: Users, color: 'bg-blue-50 text-blue-600 border border-blue-100 shadow-sm' },
+                { label: 'Operational Nodes', value: 'Global', icon: Globe, color: 'bg-purple-50 text-purple-600 border border-purple-100 shadow-sm' },
               ].map(stat => (
-                <motion.div key={stat.label} variants={staggerItem} className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                  <div className={`inline-flex items-center justify-center w-9 h-9 rounded-xl mb-3 ${stat.color}`}><stat.icon className="w-5 h-5" /></div>
-                  <p className="text-xl font-bold text-white">{stat.value.toLocaleString()}</p>
-                  <p className="text-slate-400 text-sm">{stat.label}</p>
+                <motion.div key={stat.label} variants={staggerItem} className={`bg-white border border-slate-200/60 rounded-2xl p-4 shadow-sm shadow-slate-200/20 hover-scale cursor-default transition-all duration-300 border-l-4 ${
+                  stat.label === 'Pending Approvals' ? 'border-l-amber-500' :
+                  stat.label === 'Completed Trips' ? 'border-l-emerald-500' :
+                  stat.label === 'Active Users' ? 'border-l-blue-500' :
+                  'border-l-purple-500'
+                }`}>
+                  <div className="flex items-center gap-3">
+                    <div className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-slate-50 border border-slate-100"><stat.icon className="w-4.5 h-4.5 text-slate-650" /></div>
+                    <div>
+                      <p className="text-lg font-black tracking-tight text-slate-800">{stat.value.toLocaleString()}</p>
+                      <p className="text-slate-500 text-[10px] font-extrabold uppercase tracking-widest">{stat.label}</p>
+                    </div>
+                  </div>
                 </motion.div>
               ))}
             </motion.div>
 
             {/* Charts */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-              <div className="lg:col-span-2 bg-white/5 border border-white/10 rounded-3xl p-6">
-                <h3 className="font-display text-lg font-bold text-white mb-4">Platform Revenue Trend</h3>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 animate-fade-in">
+              <div className="lg:col-span-2 bg-white border border-slate-150/70 rounded-3xl p-6 shadow-xl shadow-slate-200/30">
+                <div className="flex items-center justify-between mb-6 border-b border-slate-100 pb-3">
+                  <h3 className="font-display text-sm font-bold text-slate-800 uppercase tracking-wider">Revenue Stream Trend</h3>
+                  <span className="text-[10px] font-extrabold text-blue-600 uppercase tracking-widest">Interactive Area Map</span>
+                </div>
                 <ResponsiveContainer width="100%" height={220}>
                   <AreaChart data={monthlyData}>
-                    <defs><linearGradient id="adminRevenueGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} /><stop offset="95%" stopColor="#3B82F6" stopOpacity={0} /></linearGradient></defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#FFFFFF10" />
-                    <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#94A3B8' }} stroke="transparent" />
-                    <YAxis tick={{ fontSize: 11, fill: '#94A3B8' }} stroke="transparent" tickFormatter={v => `$${(v/1000).toFixed(0)}K`} />
-                    <Tooltip contentStyle={{ background: '#1E293B', border: '1px solid #334155', borderRadius: '12px', color: '#F8FAFC' }} formatter={(v: number) => [formatCurrency(v), 'Revenue']} />
-                    <Area type="monotone" dataKey="revenue" stroke="#3B82F6" fill="url(#adminRevenueGrad)" strokeWidth={2} />
+                    <defs>
+                      <linearGradient id="adminRevenueGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2} />
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(0, 0, 0, 0.03)" />
+                    <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#64748B', fontWeight: '600' }} stroke="transparent" />
+                    <YAxis tick={{ fontSize: 10, fill: '#64748B', fontWeight: '600' }} stroke="transparent" tickFormatter={v => `$${(v/1000).toFixed(0)}K`} />
+                    <Tooltip content={<AdminCustomTooltip />} />
+                    <Area type="monotone" dataKey="revenue" stroke="#3b82f6" fill="url(#adminRevenueGrad)" strokeWidth={3} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
 
-              <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
-                <h3 className="font-display text-lg font-bold text-white mb-4">Fleet Categories</h3>
-                <ResponsiveContainer width="100%" height={220}>
-                  <PieChart><Pie data={categoryData} cx="50%" cy="50%" innerRadius={60} outerRadius={90} dataKey="value" paddingAngle={3}>{categoryData.map((_, index) => (<Cell key={index} fill={COLORS[index % COLORS.length]} />))}</Pie><Tooltip contentStyle={{ background: '#1E293B', border: '1px solid #334155', borderRadius: '12px', color: '#F8FAFC' }} /></PieChart>
-                </ResponsiveContainer>
-                <div className="grid grid-cols-2 gap-1 mt-2">{categoryData.map((item, i) => (<div key={item.name} className="flex items-center gap-1.5 text-xs text-slate-400"><div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: COLORS[i % COLORS.length] }} />{item.name} ({item.value})</div>))}</div>
+              <div className="bg-white border border-slate-150/70 rounded-3xl p-6 shadow-xl shadow-slate-200/30 flex flex-col justify-between">
+                <div>
+                  <h3 className="font-display text-sm font-bold text-slate-800 uppercase tracking-wider mb-5 border-b border-slate-100 pb-3">Fleet Inventory distribution</h3>
+                  <div className="h-44 relative flex items-center justify-center">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={categoryData} cx="50%" cy="50%" innerRadius={55} outerRadius={78} dataKey="value" paddingAngle={4}>
+                          {categoryData.map((_, index) => (<Cell key={index} fill={COLORS[index % COLORS.length]} />))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 mt-4 px-2">
+                  {categoryData.map((item, i) => (
+                    <div key={item.name} className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-wide">
+                      <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: COLORS[i % COLORS.length] }} />
+                      <span className="truncate">{item.name} ({item.value})</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-
-            {/* Pending Approvals */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
-                <div className="flex items-center justify-between mb-4"><h3 className="font-display text-lg font-bold text-white">Pending Approvals</h3><span className="badge-gold">{pendingVehicles.length} pending</span></div>
-                <div className="space-y-3">
+            </div>            {/* Pending Approvals & Logs */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in">
+              <div className="bg-white border border-slate-150/70 rounded-3xl p-6 shadow-xl shadow-slate-200/30 flex flex-col">
+                <div className="flex items-center justify-between mb-5 border-b border-slate-100 pb-3">
+                  <h3 className="font-display text-sm font-bold text-slate-800 uppercase tracking-wider">Pending Listings</h3>
+                  <span className="text-[9px] font-extrabold bg-amber-50 border border-amber-200 text-amber-600 px-2.5 py-0.5 rounded-lg uppercase tracking-widest">{pendingVehicles.length} vehicles</span>
+                </div>
+                <div className="space-y-3.5 overflow-y-auto flex-1 max-h-[350px] pr-1">
                   {pendingVehicles.length === 0 ? (
-                    <p className="text-slate-400 text-sm text-center py-6">No vehicles pending approval</p>
+                    <div className="text-center py-14 my-auto">
+                      <CheckCircle className="w-10 h-10 text-emerald-500 mx-auto mb-3" />
+                      <p className="text-slate-500 text-xs font-semibold">All vehicles reviewed successfully</p>
+                    </div>
                   ) : (
                     pendingVehicles.map(vehicle => (
-                      <div key={vehicle.id} className="flex items-center gap-3 p-3 bg-white/5 rounded-2xl">
-                        <img src={vehicle.thumbnailUrl || 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=100&fit=crop'} alt={vehicle.name} className="w-12 h-9 rounded-lg object-cover" />
-                        <div className="flex-1 min-w-0"><p className="text-white text-sm font-medium truncate">{vehicle.name}</p><p className="text-slate-400 text-xs">{formatCurrency(vehicle.pricePerDay)}/day | {vehicle.brand}</p></div>
-                        <div className="flex gap-1.5">
-                          <button onClick={() => handleApproveVehicle(vehicle.id)} className="p-1.5 bg-success/20 text-success rounded-lg hover:bg-success/30" title="Approve"><CheckCircle className="w-4 h-4" /></button>
-                          <button onClick={() => handleRejectVehicle(vehicle.id)} className="p-1.5 bg-danger/20 text-danger rounded-lg hover:bg-danger/30" title="Reject"><XCircle className="w-4 h-4" /></button>
+                      <div key={vehicle.id} className="flex items-center gap-3.5 p-3 bg-slate-50/50 border border-slate-100 rounded-2.5xl hover:border-blue-300 transition-all duration-300 hover-lift">
+                        <img src={vehicle.thumbnailUrl || 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=100&fit=crop'} alt={vehicle.name} className="w-14 h-10 rounded-xl object-cover border border-slate-200/60 flex-shrink-0 shadow-md" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-slate-800 text-xs font-bold truncate">{vehicle.name}</p>
+                          <p className="text-slate-500 text-[10px] font-semibold tracking-wide mt-1"><span className="text-blue-600 font-extrabold">{formatCurrency(vehicle.pricePerDay)}</span>/day · {vehicle.brand}</p>
+                        </div>
+                        <div className="flex gap-2 flex-shrink-0">
+                          <button onClick={() => handleApproveVehicle(vehicle.id)} className="p-2 bg-emerald-550 hover:bg-emerald-600 text-white rounded-xl transition-all hover-lift shadow-sm shadow-emerald-500/10" title="Approve"><CheckCircle className="w-4.5 h-4.5" /></button>
+                          <button onClick={() => handleRejectVehicle(vehicle.id)} className="p-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-250 rounded-xl transition-all hover-lift" title="Reject"><XCircle className="w-4.5 h-4.5" /></button>
                         </div>
                       </div>
                     ))
@@ -333,17 +466,30 @@ const AdminDashboard: React.FC = () => {
                 </div>
               </div>
 
-              <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
-                <div className="flex items-center justify-between mb-4"><h3 className="font-display text-lg font-bold text-white">Recent Users</h3></div>
-                <div className="space-y-3">
+              <div className="bg-white border border-slate-150/70 rounded-3xl p-6 shadow-xl shadow-slate-200/30 flex flex-col">
+                <div className="flex items-center justify-between mb-5 border-b border-slate-100 pb-3">
+                  <h3 className="font-display text-sm font-bold text-slate-800 uppercase tracking-wider">Recently Registered Users</h3>
+                  <span className="text-[9px] font-extrabold text-blue-600 uppercase tracking-wider">System Audited</span>
+                </div>
+                <div className="space-y-3.5 overflow-y-auto flex-1 max-h-[350px] pr-1">
                   {recentUsers.length === 0 ? (
-                    <p className="text-slate-400 text-sm text-center py-6">No users found</p>
+                    <p className="text-slate-500 text-xs text-center py-10 font-medium my-auto">No accounts created</p>
                   ) : (
                     recentUsers.map(u => (
-                      <div key={u.id} className="flex items-center gap-3 p-3 bg-white/5 rounded-2xl">
-                        {u.avatar ? (<img src={u.avatar} alt={u.displayName} className="w-9 h-9 rounded-xl object-cover" />) : (<div className="avatar w-9 h-9 rounded-xl text-xs bg-slate-700 text-white flex items-center justify-center font-bold">{u.firstName ? u.firstName[0] : 'U'}</div>)}
-                        <div className="flex-1 min-w-0"><p className="text-white text-sm font-medium truncate">{u.displayName}</p><p className="text-slate-400 text-xs truncate">{u.email}</p></div>
-                        <div className="flex flex-col items-end gap-1"><span className={`badge text-[10px] ${u.role === 'admin' ? 'badge-gold' : u.role === 'owner' ? 'badge-blue' : 'badge-slate'}`}>{u.role}</span>{u.verified && <Shield className="w-3 h-3 text-success" />}</div>
+                      <div key={u.id} className="flex items-center gap-3.5 p-3 bg-slate-50/50 border border-slate-100 rounded-2.5xl hover:border-blue-300 transition-all duration-300 hover-lift">
+                        {u.avatar ? (
+                          <img src={u.avatar} alt={u.displayName} className="w-10 h-10 rounded-xl object-cover border border-slate-200/60 flex-shrink-0 shadow-md" />
+                        ) : (
+                          <div className="w-10 h-10 rounded-xl text-xs bg-slate-200 text-slate-700 border border-slate-300 flex items-center justify-center font-black flex-shrink-0">{u.firstName ? u.firstName[0].toUpperCase() : 'U'}</div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-slate-800 text-xs font-bold truncate">{u.displayName}</p>
+                          <p className="text-slate-500 text-[10px] truncate mt-1">{u.email}</p>
+                        </div>
+                        <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                          <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded-lg border uppercase tracking-widest ${u.role === 'admin' ? 'border-yellow-300 text-yellow-600 bg-yellow-50' : u.role === 'owner' ? 'border-indigo-300 text-indigo-600 bg-indigo-50' : 'border-slate-300 text-slate-600 bg-slate-50'}`}>{u.role}</span>
+                          {u.verified && <Shield className="w-3.5 h-3.5 text-emerald-500 shadow-sm" />}
+                        </div>
                       </div>
                     ))
                   )}
@@ -355,139 +501,74 @@ const AdminDashboard: React.FC = () => {
 
         {/* ============ USERS TAB ============ */}
         {!loading && activeTab === 'users' && (
-          <div>
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="font-display text-xl font-bold text-white">User Management</h2>
+          <motion.div variants={fadeUp} initial="hidden" animate="visible" className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="font-display text-2xl font-extrabold text-slate-900 tracking-tight">Platform Accounts</h2>
+                <p className="text-slate-500 text-xs mt-1">Audit, activate, and manage platform permissions for operational users</p>
+              </div>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-400" />
                 <input
-                  placeholder="Search users..."
+                  placeholder="Search accounts by name or email..."
                   value={userSearch}
                   onChange={e => setUserSearch(e.target.value)}
-                  className="pl-9 pr-4 py-2 bg-white/10 rounded-xl text-sm text-white placeholder:text-slate-500 outline-none w-60 focus:bg-white/15 transition-colors"
+                  className="pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-xs text-slate-800 placeholder:text-slate-400 outline-none w-72 focus:bg-slate-50 focus:border-blue-500/50 transition-all duration-300 shadow-sm"
                 />
               </div>
             </div>
-            <div className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden">
-              <table className="w-full">
-                <thead className="border-b border-white/10">
-                  <tr>
-                    {['User', 'Email', 'Role', 'Status', 'Joined', 'Actions'].map(h => (
-                      <th key={h} className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="text-slate-400 text-sm text-center py-10">No users found match search term.</td>
-                    </tr>
-                  ) : (
-                    users.map(u => (
-                      <tr key={u.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            {u.avatar ? <img src={u.avatar} alt="" className="w-7 h-7 rounded-lg object-cover" /> : <div className="avatar w-7 h-7 rounded-lg text-[10px] bg-slate-700 text-white flex items-center justify-center font-bold">{u.firstName ? u.firstName[0] : 'U'}</div>}
-                            <span className="text-white text-sm font-medium">{u.displayName}</span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-xs text-slate-400">{u.email}</td>
-                        <td className="px-4 py-3"><span className={`badge text-[10px] uppercase ${u.role === 'admin' ? 'badge-gold' : u.role === 'owner' ? 'badge-blue' : 'badge-slate'}`}>{u.role}</span></td>
-                        <td className="px-4 py-3">
-                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${u.active === false ? 'border-red-800 text-red-400 bg-red-900/20' : 'border-green-800 text-green-400 bg-green-900/20'}`}>
-                            {u.active === false ? 'Inactive' : 'Active'}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-xs text-slate-400">{formatDate(u.joinedAt || u.createdAt, 'short')}</td>
-                        <td className="px-4 py-3">
-                          <div className="flex gap-1.5">
-                            <button
-                              onClick={() => handleToggleUserStatus(u.id, u.active !== false)}
-                              className={`text-[10px] px-2 py-1 rounded-lg font-medium transition-colors ${
-                                u.active === false ? 'bg-green-900/30 text-green-400 hover:bg-green-900/50' : 'bg-red-900/30 text-red-400 hover:bg-red-900/50'
-                              }`}
-                            >
-                              {u.active === false ? 'Activate' : 'Deactivate'}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* ============ VEHICLES TAB ============ */}
-        {!loading && activeTab === 'vehicles' && (
-          <div>
-            <h2 className="font-display text-xl font-bold text-white mb-5">Vehicle Management</h2>
-            <div className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden">
-              <table className="w-full">
-                <thead className="border-b border-white/10">
-                  <tr>{['Vehicle', 'Brand', 'Category', 'Price/day', 'Instant Book', 'Status', 'Actions'].map(h => (<th key={h} className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400">{h}</th>))}</tr>
-                </thead>
-                <tbody>
-                  {vehicles.length === 0 ? (
-                    <tr><td colSpan={7} className="text-slate-400 text-sm text-center py-10">No vehicles listed.</td></tr>
-                  ) : (
-                    vehicles.map(v => (
-                      <tr key={v.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            <img src={v.thumbnailUrl || 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=100&fit=crop'} alt={v.name} className="w-10 h-7 rounded-lg object-cover" />
-                            <span className="text-white text-sm font-medium">{v.name}</span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-xs text-slate-400">{v.brand}</td>
-                        <td className="px-4 py-3 text-xs text-slate-400 capitalize">{v.category}</td>
-                        <td className="px-4 py-3 text-xs text-white font-semibold">{formatCurrency(v.pricePerDay)}</td>
-                        <td className="px-4 py-3 text-xs text-slate-400">{v.instantBook ? '⚡ Yes' : 'No'}</td>
-                        <td className="px-4 py-3"><span className={`badge text-[10px] border capitalize ${getStatusColor(v.status)}`}>{v.status?.replace('_', ' ')}</span></td>
-                        <td className="px-4 py-3">
-                          <div className="flex gap-1.5">
-                            {v.status === 'pending_approval' && (
-                              <>
-                                <button onClick={() => handleApproveVehicle(v.id)} className="text-[10px] px-2 py-1 bg-green-900/30 text-green-400 rounded-lg hover:bg-green-900/50 transition-colors">Approve</button>
-                                <button onClick={() => handleRejectVehicle(v.id)} className="text-[10px] px-2 py-1 bg-red-900/30 text-red-400 rounded-lg hover:bg-red-900/50 transition-colors">Reject</button>
-                              </>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* ============ BOOKINGS TAB ============ */}
-        {!loading && activeTab === 'bookings' && (
-          <div>
-            <h2 className="font-display text-xl font-bold text-white mb-5">Platform Bookings</h2>
-            <div className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden">
+            <div className="bg-white border border-slate-150/70 rounded-3xl overflow-hidden shadow-xl shadow-slate-200/30 animate-scale-in">
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="border-b border-white/10">
-                    <tr>{['Booking ID', 'Renter', 'Vehicle', 'Dates', 'Total Price', 'Status'].map(h => (<th key={h} className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400">{h}</th>))}</tr>
+                  <thead className="border-b border-slate-150 bg-slate-50/80">
+                    <tr>
+                      {['User Account', 'Email Address', 'System Role', 'Operational Status', 'Joined Date', 'Actions'].map(h => (
+                        <th key={h} className="text-left px-6 py-4.5 text-xs font-black uppercase tracking-widest text-slate-500">{h}</th>
+                      ))}
+                    </tr>
                   </thead>
-                  <tbody>
-                    {bookings.length === 0 ? (
-                      <tr><td colSpan={6} className="text-slate-400 text-sm text-center py-10">No bookings found.</td></tr>
+                  <tbody className="divide-y divide-slate-100">
+                    {users.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="text-slate-500 text-sm text-center py-16">No users match your criteria.</td>
+                      </tr>
                     ) : (
-                      bookings.map(booking => {
+                      users.map(u => {
+                        const isUserActive = u.active !== false;
                         return (
-                          <tr key={booking.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                            <td className="py-3 px-4 text-white text-xs font-mono">#{booking.id.slice(-8).toUpperCase()}</td>
-                            <td className="py-3 px-4 text-slate-300 text-xs">{booking.renter?.displayName || 'Customer'}</td>
-                            <td className="py-3 px-4 text-slate-300 text-xs">{booking.vehicle?.name || 'Luxury Vehicle'}</td>
-                            <td className="py-3 px-4 text-slate-400 text-xs">{formatDate(booking.startDate, 'short')} - {formatDate(booking.endDate, 'short')}</td>
-                            <td className="py-3 px-4 text-white text-xs font-semibold">{formatCurrency(booking.pricing?.total)}</td>
-                            <td className="py-3 px-4"><span className={`badge text-[10px] border capitalize ${getStatusColor(booking.status)}`}>{booking.status}</span></td>
+                          <tr key={u.id} className="hover:bg-slate-50/40 transition-colors">
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-3.5">
+                                {u.avatar ? (
+                                  <img src={u.avatar} alt="" className="w-9 h-9 rounded-xl object-cover border border-slate-200 shadow-sm" />
+                                ) : (
+                                  <div className="w-9 h-9 rounded-xl text-xs bg-slate-100 text-slate-655 border border-slate-250 flex items-center justify-center font-extrabold shadow-sm">{u.firstName ? u.firstName[0].toUpperCase() : 'U'}</div>
+                                )}
+                                <span className="text-slate-800 text-sm font-bold tracking-tight">{u.displayName}</span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-xs text-slate-600 font-semibold">{u.email}</td>
+                            <td className="px-6 py-4">
+                              <span className={`text-[9px] font-extrabold px-2.5 py-0.5 rounded-lg border uppercase tracking-widest ${u.role === 'admin' ? 'border-yellow-300 text-yellow-600 bg-yellow-50' : u.role === 'owner' ? 'border-indigo-300 text-indigo-600 bg-indigo-50' : 'border-slate-300 text-slate-600 bg-slate-50'}`}>{u.role}</span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className={`text-[9px] font-extrabold px-2.5 py-0.5 rounded-lg border uppercase tracking-widest ${!isUserActive ? 'border-red-250 text-red-600 bg-red-50' : 'border-emerald-250 text-emerald-600 bg-emerald-50'}`}>
+                                {isUserActive ? 'Active' : 'Deactivated'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-xs text-slate-500 font-semibold">{formatDate(u.joinedAt || u.createdAt, 'short')}</td>
+                            <td className="px-6 py-4">
+                              <button
+                                onClick={() => handleToggleUserStatus(u.id, isUserActive)}
+                                className={`text-[10px] px-3.5 py-1.5 rounded-xl font-extrabold uppercase tracking-widest hover-scale transition-all duration-300 shadow-sm ${
+                                  !isUserActive 
+                                    ? 'bg-emerald-500 text-white hover:bg-emerald-600 shadow-emerald-500/10' 
+                                    : 'bg-red-50 hover:bg-red-500 hover:text-white text-red-600 border border-red-250'
+                                }`}
+                              >
+                                {isUserActive ? 'Deactivate' : 'Activate'}
+                              </button>
+                            </td>
                           </tr>
                         );
                       })
@@ -496,52 +577,204 @@ const AdminDashboard: React.FC = () => {
                 </table>
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
 
-        {/* ============ DISPUTES TAB ============ */}
-        {!loading && activeTab === 'disputes' && (
-          <div>
-            <h2 className="font-display text-xl font-bold text-white mb-5">Disputes & Resolution</h2>
-            <div className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden">
+        {/* ============ VEHICLES TAB ============ */}
+        {!loading && activeTab === 'vehicles' && (
+          <motion.div variants={fadeUp} initial="hidden" animate="visible" className="space-y-6">
+            <div>
+              <h2 className="font-display text-2xl font-extrabold text-slate-900 tracking-tight">Platform Vehicles</h2>
+              <p className="text-slate-500 text-xs mt-1">Review active listings, verify technical specs, and coordinate approvals</p>
+            </div>
+            <div className="bg-white border border-slate-150/70 rounded-3xl overflow-hidden shadow-xl shadow-slate-200/30 animate-scale-in">
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="border-b border-white/10">
+                  <thead className="border-b border-slate-150 bg-slate-50/80">
                     <tr>
-                      <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400">ID</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400">Booking ID</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400">Reason</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400">Date</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400">Status</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400">Actions</th>
+                      {['Vehicle Model', 'Brand Name', 'Category Type', 'Daily Rate', 'Instant Booking', 'Listing Status', 'Actions'].map(h => (
+                        <th key={h} className="text-left px-6 py-4.5 text-xs font-black uppercase tracking-widest text-slate-500">{h}</th>
+                      ))}
                     </tr>
                   </thead>
-                  <tbody>
-                    <tr className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                      <td className="py-3 px-4 text-white text-xs font-mono">#DSP001</td>
-                      <td className="py-3 px-4 text-slate-300 text-xs">#BKG8X4T2</td>
-                      <td className="py-3 px-4 text-slate-300 text-xs">Vehicle damaged upon return</td>
-                      <td className="py-3 px-4 text-slate-400 text-xs">Oct 24, 2023</td>
-                      <td className="py-3 px-4"><span className="text-[10px] px-2 py-0.5 rounded-full border border-yellow-800 text-yellow-400 bg-yellow-900/20">Pending</span></td>
-                      <td className="py-3 px-4">
-                        <button className="text-[10px] px-2 py-1 bg-white/10 text-slate-300 rounded-lg hover:bg-white/20 transition-colors">Resolve</button>
-                      </td>
-                    </tr>
-                    <tr className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                      <td className="py-3 px-4 text-white text-xs font-mono">#DSP002</td>
-                      <td className="py-3 px-4 text-slate-300 text-xs">#BKG5M9P1</td>
-                      <td className="py-3 px-4 text-slate-300 text-xs">Renter late for pickup</td>
-                      <td className="py-3 px-4 text-slate-400 text-xs">Oct 20, 2023</td>
-                      <td className="py-3 px-4"><span className="text-[10px] px-2 py-0.5 rounded-full border border-green-800 text-green-400 bg-green-900/20">Resolved</span></td>
-                      <td className="py-3 px-4">
-                        <button className="text-[10px] px-2 py-1 bg-white/10 text-slate-300 rounded-lg hover:bg-white/20 transition-colors">View</button>
-                      </td>
-                    </tr>
+                  <tbody className="divide-y divide-slate-100">
+                    {vehicles.length === 0 ? (
+                      <tr><td colSpan={7} className="text-slate-500 text-sm text-center py-16">No vehicles registered on platform.</td></tr>
+                    ) : (
+                      vehicles.map(v => (
+                        <tr key={v.id} className="hover:bg-slate-50/40 transition-colors">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3.5">
+                              <img src={v.thumbnailUrl || 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=100&fit=crop'} alt={v.name} className="w-14 h-10 rounded-xl object-cover border border-slate-200 shadow-md animate-fade-in" />
+                              <span className="text-slate-800 text-sm font-bold tracking-tight">{v.name}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-xs text-slate-600 font-bold">{v.brand}</td>
+                          <td className="px-6 py-4 text-xs text-slate-600 font-bold capitalize">{v.category?.toLowerCase()}</td>
+                          <td className="px-6 py-4 text-xs text-blue-600 font-extrabold">{formatCurrency(v.pricePerDay)}</td>
+                          <td className="px-6 py-4 text-xs text-slate-500 font-semibold">{v.instantBook ? '⚡ Instant' : 'Manual'}</td>
+                          <td className="px-6 py-4">
+                            <span className={`text-[9px] font-extrabold uppercase tracking-widest px-2.5 py-0.5 border-2 rounded-lg ${
+                              v.status?.toLowerCase() === 'available' ? 'border-emerald-200 text-emerald-600 bg-emerald-50 shadow-sm shadow-emerald-100/30' :
+                              v.status?.toLowerCase() === 'pending_approval' ? 'border-amber-250 text-amber-600 bg-amber-50 shadow-sm shadow-amber-100/30' :
+                              'border-red-250 text-red-600 bg-red-50 shadow-sm shadow-red-100/30'
+                            }`}>
+                              {v.status?.replace('_', ' ')}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex gap-2">
+                              {v.status === 'pending_approval' && (
+                                <>
+                                  <button onClick={() => handleApproveVehicle(v.id)} className="text-[10px] px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-extrabold shadow-sm transition-all hover-lift">Approve</button>
+                                  <button onClick={() => handleRejectVehicle(v.id)} className="text-[10px] px-3.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-250 rounded-xl font-extrabold transition-all hover-lift">Reject</button>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
             </div>
-          </div>
+          </motion.div>
+        )}
+
+        {/* ============ BOOKINGS TAB ============ */}
+        {!loading && activeTab === 'bookings' && (
+          <motion.div variants={fadeUp} initial="hidden" animate="visible" className="space-y-6">
+            <div>
+              <h2 className="font-display text-2xl font-extrabold text-slate-900 tracking-tight">Trip Ledger</h2>
+              <p className="text-slate-500 text-xs mt-1">Review active transaction agreements, rental dates, and financial flows</p>
+            </div>
+            <div className="bg-white border border-slate-150/70 rounded-3xl overflow-hidden shadow-xl shadow-slate-200/30 animate-scale-in">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="border-b border-slate-150 bg-slate-50/80">
+                    <tr>
+                      {['Transaction ID', 'Customer Renter', 'Vehicle Reserved', 'Dates Interval', 'Total Charge', 'Trip Status'].map(h => (
+                        <th key={h} className="text-left px-6 py-4.5 text-xs font-black uppercase tracking-widest text-slate-500">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {bookings.length === 0 ? (
+                      <tr><td colSpan={6} className="text-slate-500 text-sm text-center py-16">No checkouts documented.</td></tr>
+                    ) : (
+                      bookings.map(booking => {
+                        return (
+                          <tr key={booking.id} className="hover:bg-slate-50/40 transition-colors">
+                            <td className="py-4 px-6 text-slate-800 text-xs font-mono tracking-wider font-bold">#{booking.id.slice(-8).toUpperCase()}</td>
+                            <td className="py-4 px-6 text-slate-700 text-xs font-semibold">{booking.renter?.displayName || 'Customer Account'}</td>
+                            <td className="py-4 px-6 text-slate-700 text-xs font-semibold">{booking.vehicle?.name || 'Luxury Vehicle'}</td>
+                            <td className="py-4 px-6 text-slate-500 text-xs font-bold">📅 {formatDate(booking.startDate, 'short')} - {formatDate(booking.endDate, 'short')}</td>
+                            <td className="py-4 px-6 text-emerald-600 text-xs font-black">{formatCurrency(booking.pricing?.total)}</td>
+                            <td className="py-4 px-6">
+                              <span className={`text-[9px] font-extrabold uppercase tracking-widest px-2.5 py-0.5 border-2 rounded-lg ${
+                                booking.status?.toLowerCase() === 'completed' || booking.status?.toLowerCase() === 'confirmed' || booking.status?.toLowerCase() === 'active' ? 'border-emerald-250 text-emerald-600 bg-emerald-50' :
+                                booking.status?.toLowerCase() === 'pending' ? 'border-amber-250 text-amber-600 bg-amber-50' :
+                                'border-red-250 text-red-600 bg-red-50'
+                              }`}>
+                                {booking.status}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* ============ DISPUTES TAB ============ */}
+        {!loading && activeTab === 'disputes' && (
+          <motion.div variants={fadeUp} initial="hidden" animate="visible" className="space-y-6">
+            <div>
+              <h2 className="font-display text-2xl font-extrabold text-slate-900 tracking-tight">Claims Resolution Desk</h2>
+              <p className="text-slate-500 text-xs mt-1">Investigate operational conflicts, view photographic proof, and execute verdicts</p>
+            </div>
+            
+            <div className="bg-white border border-slate-150/70 rounded-3xl overflow-hidden shadow-xl shadow-slate-200/30 animate-scale-in">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="border-b border-slate-150 bg-slate-50/80">
+                    <tr>
+                      {['Claim ID', 'Booking Ref', 'Reporter Name', 'Conflict Description', 'Evidence', 'Created Date', 'Settlement Status', 'Operations'].map(h => (
+                        <th key={h} className="text-left px-6 py-4.5 text-xs font-black uppercase tracking-widest text-slate-500">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {disputes.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="text-slate-500 text-sm text-center py-16">
+                          <AlertTriangle className="w-10 h-10 mx-auto text-slate-300 mb-4 animate-bounce" />
+                          No active conflict disputes recorded in database.
+                        </td>
+                      </tr>
+                    ) : (
+                      disputes.map(dispute => {
+                        return (
+                          <tr key={dispute.id} className="hover:bg-slate-50/40 transition-colors">
+                            <td className="py-4 px-6 text-slate-800 text-xs font-mono tracking-wider font-extrabold">#DSP{dispute.id}</td>
+                            <td className="py-4 px-6 text-blue-600 text-xs font-mono font-extrabold hover:underline">
+                              <Link to={`/booking/${dispute.bookingId}`}>
+                                #{dispute.bookingId ? dispute.bookingId.slice(-8).toUpperCase() : 'N/A'}
+                              </Link>
+                            </td>
+                            <td className="py-4 px-6 text-slate-700 text-xs font-semibold">{dispute.reporterName || 'Customer'}</td>
+                            <td className="py-4 px-6 max-w-xs">
+                              <div className="text-slate-800 text-xs font-bold truncate" title={dispute.reason}>{dispute.reason}</div>
+                              <div className="text-slate-500 text-[11px] truncate mt-1 font-medium" title={dispute.description}>{dispute.description}</div>
+                              {dispute.adminDecision && (
+                                <div className="text-emerald-700 text-[10px] mt-2 bg-emerald-50 border border-emerald-200 rounded-lg px-2.5 py-1 font-bold">
+                                  <strong>Verdict Decision:</strong> {dispute.adminDecision}
+                                </div>
+                              )}
+                            </td>
+                            <td className="py-4 px-6 text-xs">
+                              {dispute.evidenceUrl ? (
+                                <a href={dispute.evidenceUrl} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-700 hover:underline inline-flex items-center gap-1 font-extrabold uppercase tracking-widest text-[9px] hover-lift">
+                                  <Eye className="w-4 h-4 text-blue-600" /> Photo Proof
+                                </a>
+                              ) : (
+                                <span className="text-slate-400">None</span>
+                              )}
+                            </td>
+                            <td className="py-4 px-6 text-slate-500 text-xs font-semibold">{formatDate(dispute.createdAt, 'short')}</td>
+                            <td className="py-4 px-6">
+                              <span className={`text-[9px] font-extrabold px-2.5 py-1 rounded-lg border-2 uppercase tracking-widest ${
+                                dispute.status?.toLowerCase() === 'resolved' ? 'border-emerald-250 text-emerald-600 bg-emerald-50' :
+                                dispute.status?.toLowerCase() === 'open' || dispute.status?.toLowerCase() === 'investigating' ? 'border-amber-250 text-amber-600 bg-amber-50' :
+                                'border-red-250 text-red-600 bg-red-50'
+                              }`}>
+                                {dispute.status}
+                              </span>
+                            </td>
+                            <td className="py-4 px-6">
+                              {dispute.status === 'OPEN' ? (
+                                <div className="flex gap-2">
+                                  <button onClick={() => handleResolveDispute(dispute.id, dispute.status)} className="text-[10px] px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-extrabold shadow-sm transition-all hover-lift">Resolve</button>
+                                  <button onClick={() => handleRejectDispute(dispute.id)} className="text-[10px] px-3.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-250 rounded-xl font-extrabold transition-all hover-lift">Reject</button>
+                                </div>
+                              ) : (
+                                <span className="text-slate-400 text-xs uppercase tracking-wider font-extrabold">Settled</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </motion.div>
         )}
       </div>
     </div>

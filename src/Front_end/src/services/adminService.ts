@@ -153,4 +153,30 @@ export const adminService = {
       return { content: [], totalElements: 0, totalPages: 0 };
     }
   },
+
+  /**
+   * List all platform disputes
+   */
+  async listAllDisputes(): Promise<any[]> {
+    try {
+      const response = await apiClient.get<any>('/admin/disputes');
+      return response.data || response;
+    } catch (error) {
+      console.error('Failed to list disputes:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Update dispute status & decision
+   */
+  async updateDisputeStatus(id: number | string, status: string, adminDecision?: string): Promise<any> {
+    try {
+      const response = await apiClient.put<any>(`/disputes/${id}/status`, { status, adminDecision });
+      return response.data || response;
+    } catch (error) {
+      console.error('Failed to update dispute status:', error);
+      throw error;
+    }
+  },
 };

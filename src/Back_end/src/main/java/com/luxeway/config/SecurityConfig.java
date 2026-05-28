@@ -117,8 +117,8 @@ public class SecurityConfig {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
         provider.setUserDetailsService(userDetailsService());
         provider.setPasswordEncoder(passwordEncoder());
-        // Don't check isEnabled() so unverified users can still log in (dev mode)
-        provider.setPreAuthenticationChecks(userDetails -> {});
+        // Standard Spring Security checks: isAccountNonLocked, isEnabled, etc.
+        // Users are auto-verified on registration (dev mode), so isEnabled() = true.
         return provider;
     }
 

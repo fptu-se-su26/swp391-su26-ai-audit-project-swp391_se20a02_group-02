@@ -5,6 +5,7 @@ import com.luxeway.dto.booking.BookingDTOs;
 import com.luxeway.dto.payment.PaymentDTOs;
 import com.luxeway.dto.user.UserDTOs;
 import com.luxeway.dto.vehicle.VehicleDTOs;
+import com.luxeway.entity.Dispute;
 import com.luxeway.entity.User;
 import com.luxeway.entity.Vehicle;
 import com.luxeway.enums.BookingStatus;
@@ -35,6 +36,7 @@ public class AdminService {
     private final VehicleService vehicleService;
     private final BookingService bookingService;
     private final PaymentService paymentService;
+    private final DisputeRepository disputeRepository;
 
     // ====== Dashboard Statistics ======
 
@@ -154,7 +156,7 @@ public class AdminService {
         if (status != null && !status.isBlank()) {
             try {
                 BookingStatus bookingStatus = BookingStatus.valueOf(status.toUpperCase());
-                return bookingRepository.findByOwnerIdOrderByCreatedAtDesc(null, pageable)
+                return bookingRepository.findByStatus(bookingStatus, pageable)
                         .map(bookingService::toResponse);
             } catch (IllegalArgumentException ignored) {}
         }
@@ -172,5 +174,11 @@ public class AdminService {
     @Transactional
     public PaymentDTOs.PaymentResponse processRefund(String paymentId, AdminDTOs.RefundPaymentRequest req, String adminId) {
         return paymentService.refundPayment(paymentId, req.getRefundAmount(), adminId);
+    }
+
+    // ====== Dispute Management ======
+
+    public java.util.List<Dispute> listAllDisputes() {
+        return disputeRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
     }
 }

@@ -6,6 +6,7 @@ import com.luxeway.dto.booking.BookingDTOs;
 import com.luxeway.dto.payment.PaymentDTOs;
 import com.luxeway.dto.user.UserDTOs;
 import com.luxeway.dto.vehicle.VehicleDTOs;
+import com.luxeway.entity.Dispute;
 import com.luxeway.entity.User;
 import com.luxeway.service.AdminService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -154,5 +155,13 @@ public class AdminController {
             @RequestBody AdminDTOs.RefundPaymentRequest request) {
         PaymentDTOs.PaymentResponse payment = adminService.processRefund(id, request, admin.getId());
         return ResponseEntity.ok(ApiResponse.success("Refund processed", payment));
+    }
+
+    // ====== Dispute Management ======
+
+    @GetMapping("/disputes")
+    @Operation(summary = "List all disputes on the platform")
+    public ResponseEntity<ApiResponse<java.util.List<Dispute>>> listAllDisputes() {
+        return ResponseEntity.ok(ApiResponse.success("Success", adminService.listAllDisputes()));
     }
 }

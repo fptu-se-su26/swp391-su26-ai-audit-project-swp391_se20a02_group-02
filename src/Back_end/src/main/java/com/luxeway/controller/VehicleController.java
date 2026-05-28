@@ -1,5 +1,6 @@
 package com.luxeway.controller;
 
+import com.luxeway.dto.vehicle.VehicleDTOs;
 import com.luxeway.entity.Vehicle;
 import com.luxeway.enums.VehicleStatus;
 import com.luxeway.repository.VehicleRepository;
@@ -13,17 +14,17 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/vehicles")
 @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173"})
 @org.springframework.transaction.annotation.Transactional(readOnly = true)
 public class VehicleController {
-    
+
+    // Injected only for admin/status queries that aren't covered by VehicleService yet
     @Autowired
     private VehicleRepository vehicleRepository;
-    
+
     @Autowired
     private com.luxeway.service.VehicleService vehicleService;
     
@@ -115,19 +116,20 @@ public class VehicleController {
     @GetMapping("/{id}")
     public ResponseEntity<Map<String, Object>> getVehicleById(@PathVariable String id) {
         try {
-            Optional<Vehicle> vehicle = vehicleRepository.findById(id);
-            
+            // Use vehicleService to get properly mapped DTO (includes owner, images, features)
+            VehicleDTOs.VehicleResponse vehicle = vehicleService.getById(id);
+
             Map<String, Object> response = new HashMap<>();
-            if (vehicle.isPresent()) {
-                response.put("vehicle", vehicle.get());
-                return ResponseEntity.ok(response);
-            } else {
-                response.put("error", "Vehicle not found");
-                return ResponseEntity.status(404).body(response);
-            }
-            
-        } catch (Exception e) {
+            response.put("vehicle", vehicle);
+            return ResponseEntity.ok(response);
+
+        } catch (RuntimeException e) {
             Map<String, Object> errorResponse = new HashMap<>();
+            if (e.getMessage() != null && e.getMessage().contains("not found")) {
+                errorResponse.put("error", "Vehicle not found");
+                errorResponse.put("id", id);
+                return ResponseEntity.status(404).body(errorResponse);
+            }
             errorResponse.put("error", "Failed to fetch vehicle");
             errorResponse.put("message", e.getMessage());
             return ResponseEntity.status(500).body(errorResponse);
@@ -217,20 +219,27 @@ public class VehicleController {
             @PathVariable String ownerId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size) {
-        
+
         try {
-            Pageable pageable = PageRequest.of(page, size);
-            Page<Vehicle> vehicles = vehicleRepository.findByOwnerId(ownerId, pageable);
-            
+            // Use vehicleService to get properly mapped DTOs (consistent with other endpoints)
+            List<VehicleDTOs.VehicleResponse> vehicles = vehicleService.getByOwner(ownerId);
+
+            // Manual pagination since getByOwner returns List
+            int start = page * size;
+            int end = Math.min(start + size, vehicles.size());
+            List<VehicleDTOs.VehicleResponse> paged = (start < vehicles.size())
+                    ? vehicles.subList(start, end)
+                    : List.of();
+
             Map<String, Object> response = new HashMap<>();
-            response.put("vehicles", vehicles.getContent());
-            response.put("currentPage", vehicles.getNumber());
-            response.put("totalItems", vehicles.getTotalElements());
-            response.put("totalPages", vehicles.getTotalPages());
+            response.put("vehicles", paged);
+            response.put("currentPage", page);
+            response.put("totalItems", vehicles.size());
+            response.put("totalPages", (int) Math.ceil((double) vehicles.size() / size));
             response.put("ownerId", ownerId);
-            
+
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("error", "Failed to fetch owner's vehicles");
