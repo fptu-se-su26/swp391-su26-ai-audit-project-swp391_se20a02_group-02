@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
 import { Navbar } from '@/components/navigation/Navbar';
 import { ToastContainer } from '@/components/ui/Toast';
+import { ChatbotWidget } from '@/components/ui/ChatbotWidget';
 import { pageVariants, pageTransition } from '@/animations/variants';
 
 export const RootLayout: React.FC = () => {
@@ -25,6 +26,7 @@ export const RootLayout: React.FC = () => {
         </motion.main>
       </AnimatePresence>
       <ToastContainer />
+      <ChatbotWidget />
     </div>
   );
 };
