@@ -13,8 +13,10 @@ import { useToast } from '@/components/ui/Toast';
 import { formatCurrency, formatDate, getRatingLabel } from '@/utils';
 import { fadeUp, staggerContainer, staggerItem } from '@/animations/variants';
 import { VehicleCardSkeleton } from '@/components/ui/Skeleton';
+import { useT } from '@/i18n/translations';
 
 const VehicleDetailPage: React.FC = () => {
+  const t = useT();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
@@ -80,7 +82,7 @@ const VehicleDetailPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] pt-24">
+      <div className="min-h-screen bg-background pt-24">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-4">
@@ -97,11 +99,11 @@ const VehicleDetailPage: React.FC = () => {
 
   if (!vehicle) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <div className="text-6xl mb-4">🚗</div>
-          <h2 className="text-2xl font-bold text-[#0F172A] mb-2">Vehicle Not Found</h2>
-          <Link to="/marketplace" className="btn-primary mt-4">Back to Marketplace</Link>
+          <h2 className="text-2xl font-bold text-foreground mb-2">{t.marketplace.vehicleNotFound}</h2>
+          <Link to="/marketplace" className="btn-primary mt-4">{t.marketplace.backToMarketplace}</Link>
         </div>
       </div>
     );
@@ -120,16 +122,16 @@ const VehicleDetailPage: React.FC = () => {
     : [vehicle.thumbnailUrl || 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=1000'];
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] pt-20">
+    <div className="min-h-screen bg-background pt-20">
       {/* Breadcrumb */}
-      <div className="bg-white border-b border-slate-100">
+      <div className="bg-card border-b border-slate-100 dark:border-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex items-center gap-2 text-xs text-slate-500">
-            <Link to="/" className="hover:text-[#0F172A]">Home</Link>
+            <Link to="/" className="hover:text-foreground">{t.marketplace.home}</Link>
             <ChevronRight className="w-3 h-3" />
-            <Link to="/marketplace" className="hover:text-[#0F172A]">Marketplace</Link>
+            <Link to="/marketplace" className="hover:text-foreground">{t.marketplace.title}</Link>
             <ChevronRight className="w-3 h-3" />
-            <span className="text-[#0F172A] font-medium truncate">{vehicle.name}</span>
+            <span className="text-foreground font-medium truncate">{vehicle.name}</span>
           </div>
         </div>
       </div>
@@ -177,13 +179,13 @@ const VehicleDetailPage: React.FC = () => {
 
                 {/* Photo count */}
                 <div className="absolute bottom-4 right-4 glass px-3 py-1.5 rounded-xl text-white text-xs font-medium">
-                  {activeImage + 1} / {images.length} photos
+                  {activeImage + 1} / {images.length} {t.marketplace.photos}
                 </div>
 
                 {/* Badges */}
                 <div className="absolute top-4 left-4 flex gap-2">
-                  {vehicle.isFeatured && <span className="badge-gold">⭐ Featured</span>}
-                  {vehicle.isVerified && <span className="flex items-center gap-1 bg-blue-500 text-white text-xs font-semibold px-2.5 py-1 rounded-full"><Shield className="w-3 h-3" /> Verified</span>}
+                  {vehicle.isFeatured && <span className="badge-gold">⭐ {t.marketplace.featured}</span>}
+                  {vehicle.isVerified && <span className="flex items-center gap-1 bg-blue-500 text-white text-xs font-semibold px-2.5 py-1 rounded-full"><Shield className="w-3 h-3" /> {t.marketplace.verifiedBadge}</span>}
                 </div>
               </div>
 
@@ -209,20 +211,20 @@ const VehicleDetailPage: React.FC = () => {
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <span className={`badge ${vehicle.category === 'electric' ? 'badge-green' : vehicle.category === 'motorbike' ? 'badge-blue' : 'badge-gold'}`}>
-                      {vehicle.category.charAt(0).toUpperCase() + vehicle.category.slice(1)}
+                      {(t.categories as any)[vehicle.category] || vehicle.category}
                     </span>
                     {vehicle.instantBook && (
                       <span className="flex items-center gap-1 badge badge-green">
-                        <Clock className="w-3 h-3" /> Instant Book
+                        <Clock className="w-3 h-3" /> {t.marketplace.instantBookBadge}
                       </span>
                     )}
                   </div>
-                  <h1 className="font-display text-3xl md:text-4xl font-bold text-[#0F172A]">{vehicle.name}</h1>
+                  <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground">{vehicle.name}</h1>
                   <div className="flex items-center gap-3 mt-2 text-sm text-slate-500">
                     <div className="flex items-center gap-1">
                       <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                      <span className="font-semibold text-[#0F172A]">{vehicle.rating}</span>
-                      <span>({vehicle.totalReviews} reviews)</span>
+                      <span className="font-semibold text-foreground">{vehicle.rating}</span>
+                      <span>({vehicle.totalReviews} {t.marketplace.reviews})</span>
                     </div>
                     <span>•</span>
                     <div className="flex items-center gap-1">
@@ -234,11 +236,11 @@ const VehicleDetailPage: React.FC = () => {
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <button
                     onClick={handleWishlist}
-                    className={`p-2.5 rounded-2xl border-2 transition-all ${wishlisted ? 'border-red-200 bg-red-50 text-red-500' : 'border-slate-200 text-slate-400 hover:border-red-200'}`}
+                    className={`p-2.5 rounded-2xl border-2 transition-all ${wishlisted ? 'border-red-200 bg-red-50 text-red-500' : 'border-slate-200 dark:border-slate-700 text-slate-400 hover:border-red-200'}`}
                   >
                     <Heart className={`w-5 h-5 ${wishlisted ? 'fill-red-500' : ''}`} />
                   </button>
-                  <button className="p-2.5 rounded-2xl border-2 border-slate-200 text-slate-400 hover:border-slate-300 transition-colors">
+                  <button className="p-2.5 rounded-2xl border-2 border-slate-200 dark:border-slate-700 text-slate-400 hover:border-slate-350 transition-colors">
                     <Share2 className="w-5 h-5" />
                   </button>
                 </div>
@@ -248,37 +250,37 @@ const VehicleDetailPage: React.FC = () => {
             {/* Key Specs */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
-                { icon: Zap, label: 'Horsepower', value: `${vehicle.specs.horsepower} HP` },
-                { icon: Gauge, label: 'Top Speed', value: `${vehicle.specs.topSpeed} km/h` },
-                { icon: Car, label: '0-100 km/h', value: `${vehicle.specs.acceleration}s` },
-                { icon: Users, label: 'Seats', value: `${vehicle.specs.seats} Seats` },
+                { icon: Zap, label: t.marketplace.hp, value: `${vehicle.specs.horsepower} HP` },
+                { icon: Gauge, label: t.marketplace.topSpeed, value: `${vehicle.specs.topSpeed} km/h` },
+                { icon: Car, label: t.marketplace.acceleration, value: `${vehicle.specs.acceleration}s` },
+                { icon: Users, label: t.marketplace.seats, value: `${vehicle.specs.seats} ${t.marketplace.seats}` },
               ].map(spec => (
                 <div key={spec.label} className="luxury-card p-4 text-center">
                   <spec.icon className="w-5 h-5 text-accent mx-auto mb-2" />
-                  <p className="font-bold text-[#0F172A] text-base">{spec.value}</p>
-                  <p className="text-xs text-slate-500">{spec.label}</p>
+                  <p className="font-bold text-foreground text-base">{spec.value}</p>
+                  <p className="text-xs text-slate-500 capitalize">{spec.label}</p>
                 </div>
               ))}
             </div>
 
             {/* Description */}
             <div className="luxury-card p-6">
-              <h3 className="font-display text-xl font-bold text-[#0F172A] mb-3">About This Vehicle</h3>
-              <p className="text-slate-600 leading-relaxed text-sm">{vehicle.description}</p>
+              <h3 className="font-display text-xl font-bold text-foreground mb-3">{t.marketplace.aboutVehicle}</h3>
+              <p className="text-slate-655 dark:text-slate-300 leading-relaxed text-sm">{vehicle.description}</p>
 
               {/* Specs Grid */}
-              <div className="grid grid-cols-2 gap-x-6 gap-y-3 mt-6 pt-6 border-t border-slate-100">
+              <div className="grid grid-cols-2 gap-x-6 gap-y-3 mt-6 pt-6 border-t border-slate-100 dark:border-slate-800/80">
                 {[
-                  { label: 'Transmission', value: vehicle.specs.transmission === 'automatic' ? 'Automatic' : 'Manual' },
-                  { label: 'Fuel Type', value: vehicle.specs.fuelType.charAt(0).toUpperCase() + vehicle.specs.fuelType.slice(1) },
-                  { label: 'Color', value: vehicle.specs.color },
-                  { label: 'Doors', value: `${vehicle.specs.doors} Doors` },
-                  { label: 'Engine', value: vehicle.specs.engineSize || 'Electric' },
-                  { label: 'Year', value: vehicle.year.toString() },
+                  { label: t.marketplace.transmission, value: vehicle.specs.transmission === 'automatic' ? t.marketplace.automatic : t.marketplace.manual },
+                  { label: t.marketplace.fuelType, value: vehicle.specs.fuelType.charAt(0).toUpperCase() + vehicle.specs.fuelType.slice(1) },
+                  { label: t.marketplace.color, value: vehicle.specs.color },
+                  { label: t.marketplace.doors, value: `${vehicle.specs.doors} ${t.marketplace.doors}` },
+                  { label: t.marketplace.engine, value: vehicle.specs.engineSize || 'Electric' },
+                  { label: t.marketplace.year, value: vehicle.year.toString() },
                 ].map(s => (
                   <div key={s.label} className="flex justify-between text-sm">
                     <span className="text-slate-500">{s.label}</span>
-                    <span className="font-medium text-[#0F172A]">{s.value}</span>
+                    <span className="font-medium text-foreground">{s.value}</span>
                   </div>
                 ))}
               </div>
@@ -286,10 +288,10 @@ const VehicleDetailPage: React.FC = () => {
 
             {/* Features */}
             <div className="luxury-card p-6">
-              <h3 className="font-display text-xl font-bold text-[#0F172A] mb-4">Features & Amenities</h3>
+              <h3 className="font-display text-xl font-bold text-foreground mb-4">{t.marketplace.amenities}</h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {vehicle.features.map(feature => (
-                  <div key={feature} className="flex items-center gap-2 text-sm text-slate-600">
+                  <div key={feature} className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
                     <Check className="w-4 h-4 text-success flex-shrink-0" />
                     {feature}
                   </div>
@@ -300,10 +302,10 @@ const VehicleDetailPage: React.FC = () => {
             {/* Rules */}
             {vehicle.rules.length > 0 && (
               <div className="luxury-card p-6">
-                <h3 className="font-display text-xl font-bold text-[#0F172A] mb-4">Rental Rules</h3>
+                <h3 className="font-display text-xl font-bold text-foreground mb-4">{t.marketplace.rules}</h3>
                 <div className="space-y-2">
                   {vehicle.rules.map(rule => (
-                    <div key={rule} className="flex items-center gap-2 text-sm text-slate-600">
+                    <div key={rule} className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
                       <div className="w-1.5 h-1.5 bg-slate-400 rounded-full flex-shrink-0" />
                       {rule}
                     </div>
@@ -314,15 +316,15 @@ const VehicleDetailPage: React.FC = () => {
 
             {/* Insurance */}
             <div className="luxury-card p-6">
-              <h3 className="font-display text-xl font-bold text-[#0F172A] mb-4">Insurance & Protection</h3>
-              <div className="flex items-start gap-3 p-4 bg-green-50 rounded-2xl">
+              <h3 className="font-display text-xl font-bold text-foreground mb-4">{t.marketplace.insuranceTitle}</h3>
+              <div className="flex items-start gap-3 p-4 bg-green-50 dark:bg-green-950/20 rounded-2xl">
                 <Shield className="w-5 h-5 text-success mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="font-semibold text-[#0F172A] text-sm">{vehicle.insurance.provider}</p>
+                  <p className="font-semibold text-foreground text-sm">{vehicle.insurance.provider}</p>
                   <p className="text-slate-500 text-sm">{vehicle.insurance.coverage}</p>
                   {vehicle.insurance.included && (
                     <span className="inline-flex items-center gap-1 text-xs text-success font-semibold mt-1">
-                      <Check className="w-3 h-3" /> Included in rental price
+                      <Check className="w-3 h-3" /> {t.marketplace.included}
                     </span>
                   )}
                 </div>
@@ -332,11 +334,11 @@ const VehicleDetailPage: React.FC = () => {
             {/* Reviews */}
             <div className="luxury-card p-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="font-display text-xl font-bold text-[#0F172A]">
-                  Reviews <span className="text-slate-400 font-sans text-base font-normal">({vehicle.totalReviews})</span>
+                <h3 className="font-display text-xl font-bold text-foreground">
+                  {t.marketplace.reviews} <span className="text-slate-400 font-sans text-base font-normal">({vehicle.totalReviews})</span>
                 </h3>
                 <div className="flex items-center gap-2">
-                  <span className="text-3xl font-bold text-[#0F172A]">{vehicle.rating}</span>
+                  <span className="text-3xl font-bold text-foreground">{vehicle.rating}</span>
                   <div>
                     <div className="flex">
                       {[1, 2, 3, 4, 5].map(s => (
@@ -353,14 +355,14 @@ const VehicleDetailPage: React.FC = () => {
                   <p className="text-slate-400 text-sm text-center py-6">No reviews yet. Be the first!</p>
                 ) : (
                   reviews.map(review => (
-                    <div key={review.id} className="pb-4 border-b border-slate-100 last:border-0">
+                    <div key={review.id} className="pb-4 border-b border-slate-100 dark:border-slate-800/80 last:border-0">
                       <div className="flex items-start gap-3 mb-2">
                         <div className="avatar w-9 h-9 rounded-xl text-xs flex-shrink-0">
                           {(review.reviewer?.displayName || review.reviewerId || 'UR').slice(0, 2).toUpperCase()}
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center justify-between">
-                            <p className="font-semibold text-sm text-[#0F172A]">
+                            <p className="font-semibold text-sm text-foreground">
                               {review.reviewer?.displayName || 'Verified Renter'}
                             </p>
                             <span className="text-xs text-slate-400">{formatDate(review.createdAt, 'short')}</span>
@@ -372,10 +374,10 @@ const VehicleDetailPage: React.FC = () => {
                           </div>
                         </div>
                       </div>
-                      <p className="text-sm text-slate-600 leading-relaxed">{review.comment}</p>
+                      <p className="text-sm text-slate-655 dark:text-slate-300 leading-relaxed">{review.comment}</p>
                       {review.ownerResponse && (
                         <div className="mt-3 pl-3 border-l-2 border-accent/30 text-sm text-slate-500 italic">
-                          <span className="font-semibold text-[#0F172A] not-italic">Owner: </span>
+                          <span className="font-semibold text-foreground not-italic">{t.marketplace.owner || 'Owner'}: </span>
                           {review.ownerResponse}
                         </div>
                       )}
@@ -393,8 +395,8 @@ const VehicleDetailPage: React.FC = () => {
                 {/* Price */}
                 <div className="flex items-end justify-between mb-5">
                   <div>
-                    <span className="text-3xl font-bold text-[#0F172A]">{formatCurrency(vehicle.pricePerDay)}</span>
-                    <span className="text-slate-500 text-sm"> / day</span>
+                    <span className="text-3xl font-bold text-foreground">{formatCurrency(vehicle.pricePerDay)}</span>
+                    <span className="text-slate-500 text-sm"> {t.marketplace.perDay}</span>
                   </div>
                   <div className="text-right">
                     <div className="flex items-center gap-1">
@@ -406,26 +408,26 @@ const VehicleDetailPage: React.FC = () => {
                 </div>
 
                 {/* Date Picker */}
-                <div className="border-2 border-slate-200 rounded-2xl overflow-hidden mb-4">
-                  <div className="grid grid-cols-2 divide-x divide-slate-200">
+                <div className="border-2 border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden mb-4">
+                  <div className="grid grid-cols-2 divide-x divide-slate-200 dark:divide-slate-700">
                     <div className="p-3">
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Pick-up</label>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">{t.booking.pickUp}</label>
                       <input
                         type="date"
                         value={startDate}
                         min={new Date().toISOString().split('T')[0]}
                         onChange={e => setStartDate(e.target.value)}
-                        className="text-sm font-medium text-[#0F172A] outline-none w-full bg-transparent"
+                        className="text-sm font-medium text-foreground outline-none w-full bg-transparent"
                       />
                     </div>
                     <div className="p-3">
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Return</label>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">{t.booking.return}</label>
                       <input
                         type="date"
                         value={endDate}
                         min={startDate || new Date().toISOString().split('T')[0]}
                         onChange={e => setEndDate(e.target.value)}
-                        className="text-sm font-medium text-[#0F172A] outline-none w-full bg-transparent"
+                        className="text-sm font-medium text-foreground outline-none w-full bg-transparent"
                       />
                     </div>
                   </div>
@@ -436,26 +438,26 @@ const VehicleDetailPage: React.FC = () => {
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
-                    className="space-y-2 mb-4 p-4 bg-slate-50 rounded-2xl text-sm"
+                    className="space-y-2 mb-4 p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl text-sm"
                   >
                     <div className="flex justify-between">
-                      <span className="text-slate-500">{formatCurrency(vehicle.pricePerDay)} × {totalDays} days</span>
-                      <span className="font-medium">{formatCurrency(basePrice)}</span>
+                      <span className="text-slate-500">{formatCurrency(vehicle.pricePerDay)} × {totalDays} {t.booking.totalDays}</span>
+                      <span className="font-medium text-foreground">{formatCurrency(basePrice)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-500">Service fee (12%)</span>
-                      <span className="font-medium">{formatCurrency(serviceFee)}</span>
+                      <span className="text-slate-500">{t.booking.serviceFee} (12%)</span>
+                      <span className="font-medium text-foreground">{formatCurrency(serviceFee)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-500">Taxes & fees</span>
-                      <span className="font-medium">{formatCurrency(taxes)}</span>
+                      <span className="text-slate-500">{t.booking.taxes}</span>
+                      <span className="font-medium text-foreground">{formatCurrency(taxes)}</span>
                     </div>
-                    <div className="border-t border-slate-200 pt-2 flex justify-between font-bold text-[#0F172A]">
-                      <span>Total</span>
+                    <div className="border-t border-slate-200 dark:border-slate-700 pt-2 flex justify-between font-bold text-foreground">
+                      <span>{t.booking.total}</span>
                       <span>{formatCurrency(total)}</span>
                     </div>
                     <p className="text-xs text-slate-400 text-center">
-                      + {formatCurrency(vehicle.deposit)} security deposit (refundable)
+                      + {formatCurrency(vehicle.deposit)} {t.booking.deposit}
                     </p>
                   </motion.div>
                 )}
@@ -469,24 +471,24 @@ const VehicleDetailPage: React.FC = () => {
                   className="btn-primary w-full py-4 text-base mb-3"
                 >
                   {bookingLoading ? (
-                    <><Loader2 className="w-5 h-5 animate-spin" /> Processing...</>
+                    <><Loader2 className="w-5 h-5 animate-spin" /> ...</>
                   ) : (
-                    <>Book Experience <ArrowRight className="w-5 h-5" /></>
+                    <>{t.booking.bookNow} <ArrowRight className="w-5 h-5" /></>
                   )}
                 </motion.button>
 
-                <p className="text-center text-xs text-slate-400 mb-4">You won't be charged yet</p>
+                <p className="text-center text-xs text-slate-400 mb-4">{t.booking.notCharged}</p>
 
                 {/* Trust Signals */}
-                <div className="space-y-2 pt-4 border-t border-slate-100">
+                <div className="space-y-2 pt-4 border-t border-slate-100 dark:border-slate-800">
                   {[
-                    { icon: Shield, text: 'Free cancellation up to 48h before' },
-                    { icon: Check, text: 'Insurance included' },
-                    { icon: Clock, text: `Responds in ${vehicle.instantBook ? '< 1 hour' : '< 12 hours'}` },
-                  ].map(t => (
-                    <div key={t.text} className="flex items-center gap-2 text-xs text-slate-500">
-                      <t.icon className="w-4 h-4 text-success" />
-                      {t.text}
+                    { icon: Shield, text: t.booking.freeCancel },
+                    { icon: Check, text: t.booking.insurance },
+                    { icon: Clock, text: `Responds ${vehicle.instantBook ? '< 1 hour' : '< 12 hours'}` },
+                  ].map(tsig => (
+                    <div key={tsig.text} className="flex items-center gap-2 text-xs text-slate-500">
+                      <tsig.icon className="w-4 h-4 text-success" />
+                      {tsig.text}
                     </div>
                   ))}
                 </div>
@@ -497,19 +499,19 @@ const VehicleDetailPage: React.FC = () => {
                 <div className="flex items-center gap-3 mb-3">
                   <div className="avatar w-12 h-12 rounded-2xl text-sm">TT</div>
                   <div>
-                    <p className="font-semibold text-sm text-[#0F172A]">Trần Tuấn</p>
-                    <p className="text-xs text-slate-400">Superhost · 87 reviews</p>
+                    <p className="font-semibold text-sm text-foreground">Trần Tuấn</p>
+                    <p className="text-xs text-slate-400">{t.marketplace.superhost} · 87 reviews</p>
                   </div>
                   <div className="ml-auto flex items-center gap-1">
                     <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                    <span className="text-sm font-bold">4.9</span>
+                    <span className="text-sm font-bold text-foreground">4.9</span>
                   </div>
                 </div>
                 <Link
                   to={isAuthenticated ? `/messages` : '/auth/login'}
-                  className="btn-outline w-full py-2.5 text-sm justify-center"
+                  className="btn-outline w-full py-2.5 text-sm justify-center border border-slate-200 dark:border-slate-700 text-foreground hover:bg-slate-50 dark:hover:bg-slate-800"
                 >
-                  Contact Owner
+                  {t.marketplace.contactOwner}
                 </Link>
               </div>
             </div>

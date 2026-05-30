@@ -85,11 +85,25 @@ public class AuthDTOs {
     }
 
     @Data
+    public static class VerifyOtpRequest {
+        @NotBlank
+        @Email
+        private String email;
+        @NotBlank
+        @Size(min = 6, max = 6)
+        private String otp;
+    }
+
+    @Data
     public static class ResetPasswordRequest {
-        @NotBlank
+        @NotBlank(message = "Token is required")
         private String token;
-        @NotBlank
-        @Size(min = 8)
+
+        @NotBlank(message = "New password is required")
+        @Size(min = 8, message = "Password must be at least 8 characters")
         private String newPassword;
+
+        @NotBlank(message = "Confirm password is required")
+        private String confirmPassword;
     }
 }

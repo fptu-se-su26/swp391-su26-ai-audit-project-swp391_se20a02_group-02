@@ -24,6 +24,9 @@ public class DisputeService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private EmailService emailService;
+
     @Transactional
     public Dispute createDispute(String bookingId, String reporterId, String reason, String description, String evidenceUrl) {
         Booking booking = bookingRepository.findById(bookingId).orElseThrow(() -> new RuntimeException("Booking not found"));
@@ -60,6 +63,12 @@ public class DisputeService {
         if (adminDecision != null) {
             dispute.setAdminDecision(adminDecision);
         }
-        return disputeRepository.save(dispute);
+        Dispute saved = disputeRepository.save(dispute);
+        try {
+            emailService.sendDisputeUpdate(saved.getReporter().getEmail(), saved);
+        } catch (Exception e) {
+            // Log warning but don't crash
+        }
+        return saved;
     }
 }

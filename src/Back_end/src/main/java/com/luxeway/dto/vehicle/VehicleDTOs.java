@@ -129,5 +129,7 @@ public class VehicleDTOs {
         private String sortBy; // price_asc, price_desc, rating, newest, popular
         private int page = 0;
         private int size = 12;
+        private java.time.LocalDate startDate;
+        private java.time.LocalDate endDate;
     }
 }

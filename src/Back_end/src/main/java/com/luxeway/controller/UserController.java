@@ -96,4 +96,86 @@ public class UserController {
             return ResponseEntity.status(500).body(errorResponse);
         }
     }
+
+    @Autowired
+    private com.luxeway.service.UserService userService;
+
+    @org.springframework.beans.factory.annotation.Value("${file.upload-dir:uploads/}")
+    private String uploadDir;
+
+    @PostMapping("/documents")
+    public ResponseEntity<?> uploadUserDocument(
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.luxeway.entity.User user,
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file,
+            @RequestParam("documentType") String documentType) {
+        
+        if (user == null) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Unauthorized");
+            return ResponseEntity.status(401).body(errorResponse);
+        }
+
+        if (file.isEmpty()) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "No file provided");
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+
+        if (file.getSize() > 5 * 1024 * 1024) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "File size exceeds 5MB limit");
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+
+        String contentType = file.getContentType();
+        if (contentType == null || (!contentType.startsWith("image/") && !contentType.equalsIgnoreCase("application/pdf"))) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Only image or PDF files are allowed");
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+
+        try {
+            java.nio.file.Path uploadPath = java.nio.file.Paths.get(uploadDir);
+            if (!java.nio.file.Files.exists(uploadPath)) {
+                java.nio.file.Files.createDirectories(uploadPath);
+            }
+
+            String originalName = java.util.Objects.requireNonNull(file.getOriginalFilename());
+            String extension = originalName.contains(".")
+                ? originalName.substring(originalName.lastIndexOf("."))
+                : ".jpg";
+            String uniqueName = java.util.UUID.randomUUID() + extension;
+
+            java.nio.file.Path filePath = uploadPath.resolve(uniqueName);
+            java.nio.file.Files.copy(file.getInputStream(), filePath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+
+            String fileUrl = "/" + uploadDir + uniqueName;
+
+            com.luxeway.dto.user.UserDTOs.UploadDocumentRequest req = new com.luxeway.dto.user.UserDTOs.UploadDocumentRequest();
+            req.setDocumentType(documentType);
+            req.setUrl(fileUrl);
+
+            com.luxeway.dto.user.UserDTOs.DocumentResponse docResp = userService.uploadDocument(user.getId(), req);
+
+            return ResponseEntity.status(201).body(docResp);
+
+        } catch (java.io.IOException e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Failed to save file");
+            errorResponse.put("message", e.getMessage());
+            return ResponseEntity.status(500).body(errorResponse);
+        }
+    }
+
+    @GetMapping("/documents")
+    public ResponseEntity<?> getUserDocuments(
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.luxeway.entity.User user) {
+        if (user == null) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Unauthorized");
+            return ResponseEntity.status(401).body(errorResponse);
+        }
+        java.util.List<com.luxeway.dto.user.UserDTOs.DocumentResponse> docs = userService.getMyDocuments(user.getId());
+        return ResponseEntity.ok(docs);
+    }
 }

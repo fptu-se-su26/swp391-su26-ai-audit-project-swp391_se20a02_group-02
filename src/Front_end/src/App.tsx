@@ -7,9 +7,11 @@ import { vehicleService } from '@/services/vehicleService';
 import { notificationService, reviewService } from '@/services/otherServices';
 import type { Vehicle, Notification, Review } from '@/types';
 import { formatDate } from '@/utils';
+import { useT } from '@/i18n/translations';
 
 // Layouts
 import RootLayout from '@/layouts/RootLayout';
+
 
 // Pages (Eager loaded - critical path)
 import LandingPage from '@/pages/landing/LandingPage';
@@ -51,16 +53,19 @@ const BusinessPage = lazy(() => import('@/pages/static/BusinessPage'));
 const ComparePage = lazy(() => import('@/pages/compare/ComparePage'));
 
 // ====== LOADING FALLBACK ======
-const PageLoader: React.FC = () => (
-  <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
-    <motion.div
-      animate={{ rotate: 360 }}
-      transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-      className="w-10 h-10 rounded-full"
-      style={{ border: '3px solid #E2E8F0', borderTopColor: '#3B82F6' }}
-    />
-  </div>
-);
+const PageLoader: React.FC = () => {
+  const { theme } = useUIStore();
+  return (
+    <div className={`min-h-screen flex items-center justify-center ${theme === 'dark' ? 'bg-slate-900' : 'bg-[#F8FAFC]'}`}>
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+        className="w-10 h-10 rounded-full"
+        style={{ border: theme === 'dark' ? '3px solid #1E2D45' : '3px solid #E2E8F0', borderTopColor: '#3B82F6' }}
+      />
+    </div>
+  );
+};
 
 // ====== PROTECTED ROUTE ======
 const ProtectedRoute: React.FC<{ children: React.ReactNode; requiredRole?: string }> = ({ children, requiredRole }) => {
@@ -76,20 +81,28 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; requiredRole?: strin
 };
 
 // ====== NOT FOUND ======
-const NotFoundPage: React.FC = () => (
-  <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] px-4">
-    <div className="text-center">
-      <div className="text-8xl font-display font-bold text-[#0F172A] mb-4">404</div>
-      <h1 className="text-2xl font-semibold text-[#0F172A] mb-2">Page not found</h1>
-      <p className="text-slate-500 mb-8">The page you're looking for doesn't exist.</p>
-      <a href="/" className="btn-primary">Go Home</a>
+const NotFoundPage: React.FC = () => {
+  const t = useT();
+  const { theme } = useUIStore();
+  const isDark = theme === 'dark';
+  return (
+    <div className={`min-h-screen flex items-center justify-center px-4 ${isDark ? 'bg-slate-900' : 'bg-[#F8FAFC]'}`}>
+      <div className="text-center">
+        <div className={`text-8xl font-display font-bold mb-4 ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>404</div>
+        <h1 className={`text-2xl font-semibold mb-2 ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>Page not found</h1>
+        <p className="text-slate-500 mb-8">The page you&apos;re looking for doesn&apos;t exist.</p>
+        <a href="/" className="btn-primary">{t.landing.howItWorks.btn}</a>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 // ====== WISHLIST PAGE ======
 const WishlistPage: React.FC = () => {
   const { user } = useAuthStore();
+  const { theme } = useUIStore();
+  const t = useT();
+  const isDark = theme === 'dark';
   const [vehicles, setVehicles] = React.useState<Vehicle[]>([]);
   const [loading, setLoading] = React.useState(true);
 
@@ -103,7 +116,7 @@ const WishlistPage: React.FC = () => {
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="font-display text-2xl font-bold text-[#0F172A] dark:text-white">My Wishlist</h1>
+        <h1 className={`font-display text-2xl font-bold ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>{t.dashboard.wishlist}</h1>
         {!loading && vehicles.length > 0 && (
           <span className="px-3 py-1 bg-accent/10 text-accent font-semibold rounded-full text-sm">
             {vehicles.length} saved
@@ -117,9 +130,9 @@ const WishlistPage: React.FC = () => {
       ) : vehicles.length === 0 ? (
         <div className="text-center py-20">
           <div className="text-5xl mb-4">❤️</div>
-          <h3 className="font-semibold text-[#0F172A] mb-2">No saved vehicles</h3>
-          <p className="text-slate-400 text-sm mb-6">Browse and heart vehicles you love</p>
-          <a href="/marketplace" className="btn-primary">Browse Marketplace</a>
+          <h3 className={`font-semibold mb-2 ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>{t.dashboard.noBookings}</h3>
+          <p className="text-slate-400 text-sm mb-6">{t.dashboard.noBookingsDesc}</p>
+          <a href="/marketplace" className="btn-primary">{t.dashboard.exploreVehicles}</a>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -146,6 +159,9 @@ const WishlistPage: React.FC = () => {
 // ====== NOTIFICATIONS PAGE ======
 const NotificationsPage: React.FC = () => {
   const { user } = useAuthStore();
+  const { theme } = useUIStore();
+  const t = useT();
+  const isDark = theme === 'dark';
   const [notifications, setNotifications] = React.useState<Notification[]>([]);
 
   React.useEffect(() => {
@@ -160,7 +176,7 @@ const NotificationsPage: React.FC = () => {
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="font-display text-2xl font-bold text-[#0F172A]">Notifications</h1>
+        <h1 className={`font-display text-2xl font-bold ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>{t.dashboard.notifications}</h1>
         <button onClick={() => notificationService.markAllRead(user?.id || '')} className="text-sm text-accent font-medium">
           Mark all read
         </button>
@@ -174,7 +190,7 @@ const NotificationsPage: React.FC = () => {
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className={`text-sm font-semibold ${!n.read ? 'text-accent' : 'text-[#0F172A]'}`}>{n.title}</p>
+                <p className={`text-sm font-semibold ${!n.read ? 'text-accent' : isDark ? 'text-white' : 'text-[#0F172A]'}`}>{n.title}</p>
                 <p className="text-sm text-slate-500 mt-0.5">{n.body}</p>
               </div>
               {!n.read && <div className="w-2.5 h-2.5 bg-accent rounded-full flex-shrink-0 mt-1" />}
@@ -184,7 +200,7 @@ const NotificationsPage: React.FC = () => {
         {notifications.length === 0 && (
           <div className="text-center py-20">
             <div className="text-5xl mb-4">🔔</div>
-            <p className="text-slate-400">No notifications yet</p>
+            <p className="text-slate-400">{t.dashboard.noNotifications}</p>
           </div>
         )}
       </div>
@@ -194,6 +210,9 @@ const NotificationsPage: React.FC = () => {
 
 // ====== REVIEWS PUBLIC PAGE ======
 const ReviewsPage: React.FC = () => {
+  const { theme } = useUIStore();
+  const t = useT();
+  const isDark = theme === 'dark';
   const [reviews, setReviews] = React.useState<Review[]>([]);
   
   React.useEffect(() => {
@@ -203,22 +222,22 @@ const ReviewsPage: React.FC = () => {
   const avgRating = reviews.length ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1) : '0';
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-900 pt-24 pb-16">
+    <div className={`min-h-screen pt-24 pb-16 ${isDark ? 'bg-slate-900' : 'bg-[#F8FAFC]'}`}>
       <div className="max-w-6xl mx-auto px-4">
-        <h1 className="font-display text-4xl font-bold text-[#0F172A] dark:text-white mb-2">Customer Reviews</h1>
-        <p className="text-slate-500 mb-8">What our community says about LuxeWay</p>
+        <h1 className={`font-display text-4xl font-bold mb-2 ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>{t.marketplace.reviews}</h1>
+        <p className="text-slate-500 mb-8">{t.landing.testimonials.subtitle}</p>
         
-        <div className="flex items-center gap-6 mb-8 p-6 bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700">
+        <div className={`flex items-center gap-6 mb-8 p-6 rounded-3xl shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}>
           <div className="text-center">
-            <p className="text-4xl font-display font-bold text-[#0F172A] dark:text-white">{avgRating}</p>
+            <p className={`text-4xl font-display font-bold ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>{avgRating}</p>
             <div className="flex text-yellow-400 mt-1">
-              {[...Array(5)].map((_, i) => <span key={i} className={i < Math.round(Number(avgRating)) ? 'text-yellow-400' : 'text-slate-200 dark:text-slate-600'}>★</span>)}
+              {[...Array(5)].map((_, i) => <span key={i} className={i < Math.round(Number(avgRating)) ? 'text-yellow-400' : isDark ? 'text-slate-600' : 'text-slate-200'}>★</span>)}
             </div>
           </div>
-          <div className="w-px h-12 bg-slate-200 dark:bg-slate-700"></div>
+          <div className={`w-px h-12 ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`}></div>
           <div>
-            <p className="text-xl font-bold text-[#0F172A] dark:text-white">{reviews.length}</p>
-            <p className="text-sm text-slate-500">Total verified reviews</p>
+            <p className={`text-xl font-bold ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>{reviews.length}</p>
+            <p className="text-sm text-slate-500">{t.landing.testimonials.verified}</p>
           </div>
         </div>
 
@@ -227,25 +246,25 @@ const ReviewsPage: React.FC = () => {
             return (
               <div key={review.id} className="luxury-card p-5">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-500 overflow-hidden">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold overflow-hidden ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-500'}`}>
                     U
                   </div>
                   <div>
-                    <p className="font-semibold text-sm text-[#0F172A] dark:text-white">
+                    <p className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
                       User {(review.reviewerId || 'anon').substring(0, 4)}
                     </p>
                     <div className="flex items-center gap-1">
-                      {[...Array(5)].map((_, i) => <span key={i} className={`text-xs ${i < review.rating ? 'text-yellow-400' : 'text-slate-200 dark:text-slate-700'}`}>★</span>)}
+                      {[...Array(5)].map((_, i) => <span key={i} className={`text-xs ${i < review.rating ? 'text-yellow-400' : isDark ? 'text-slate-700' : 'text-slate-200'}`}>★</span>)}
                       <span className="text-xs text-slate-400 ml-1">{formatDate(review.createdAt, 'short')}</span>
                     </div>
                   </div>
                 </div>
-                <p className="text-sm text-slate-500 dark:text-slate-400 italic mb-3">"{review.comment}"</p>
+                <p className={`text-sm italic mb-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>&quot;{review.comment}&quot;</p>
               </div>
             );
           })}
           {reviews.length === 0 && (
-            <p className="text-slate-500 col-span-full">No reviews yet.</p>
+            <p className="text-slate-500 col-span-full">{t.landing.testimonials.empty}</p>
           )}
         </div>
       </div>
@@ -256,6 +275,9 @@ const ReviewsPage: React.FC = () => {
 // ====== OTP PAGE ======
 const OTPPage: React.FC = () => {
   const navigate = useNavigate();
+  const { theme } = useUIStore();
+  const t = useT();
+  const isDark = theme === 'dark';
   const [code, setCode] = React.useState(['', '', '', '', '', '']);
   const [success, setSuccess] = React.useState(false);
   const inputs = React.useRef<HTMLInputElement[]>([]);
@@ -276,19 +298,19 @@ const OTPPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-[#F8FAFC] dark:bg-slate-900">
+    <div className={`min-h-screen flex items-center justify-center p-6 ${isDark ? 'bg-slate-900' : 'bg-[#F8FAFC]'}`}>
       <div className="w-full max-w-md luxury-card p-8 text-center">
         {success ? (
           <div>
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <span className="text-3xl">✅</span>
             </div>
-            <h2 className="font-display text-2xl font-bold text-[#0F172A] dark:text-white">Verified!</h2>
-            <p className="text-slate-500 mt-2">Redirecting to login...</p>
+            <h2 className={`font-display text-2xl font-bold ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>{t.auth.welcomeBack}</h2>
+            <p className="text-slate-500 mt-2">{t.auth.signInSuccess}</p>
           </div>
         ) : (
           <>
-            <h1 className="font-display text-2xl font-bold text-[#0F172A] dark:text-white mb-2">Enter OTP</h1>
+            <h1 className={`font-display text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>Enter OTP</h1>
             <p className="text-slate-500 text-sm mb-8">Enter the 6-digit code sent to your email. (Demo: <strong>123456</strong>)</p>
             <div className="flex gap-3 justify-center mb-6">
               {code.map((c, i) => (
@@ -307,11 +329,41 @@ const OTPPage: React.FC = () => {
               Verify Code
             </button>
             <button onClick={() => navigate('/auth/login')} className="mt-3 text-sm text-slate-400 hover:text-accent transition-colors">
-              ← Back to login
+              ← {t.auth.backToLogin}
             </button>
           </>
         )}
       </div>
+    </div>
+  );
+};
+
+// ====== BOOKING SUCCESS PAGE ======
+const BookingSuccessPage: React.FC = () => {
+  const { theme } = useUIStore();
+  const t = useT();
+  const isDark = theme === 'dark';
+  return (
+    <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-slate-900' : 'bg-[#F8FAFC]'}`}>
+      <div className="text-center">
+        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <span className="text-4xl">✅</span>
+        </div>
+        <h1 className={`font-display text-3xl font-bold mb-3 ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>{t.booking.bookingConfirmed}</h1>
+        <p className="text-slate-500 mb-8">{t.booking.insurance}</p>
+        <a href="/" className="btn-primary px-8 py-3">{t.landing.howItWorks.btn}</a>
+      </div>
+    </div>
+  );
+};
+
+// ====== NOTIFICATIONS PAGE WRAPPER ======
+const NotificationsPageWrapper: React.FC = () => {
+  const { theme } = useUIStore();
+  const isDark = theme === 'dark';
+  return (
+    <div className={`min-h-screen pt-20 ${isDark ? 'bg-slate-900' : 'bg-[#F8FAFC]'}`}>
+      <NotificationsPage />
     </div>
   );
 };
@@ -355,26 +407,19 @@ const App: React.FC = () => {
             <Route path="payment/vnpay/return" element={
               <ProtectedRoute><VNPayReturnPage /></ProtectedRoute>
             } />
-            <Route path="success" element={
-              <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
-                <div className="text-center">
-                  <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <span className="text-4xl">✅</span>
-                  </div>
-                  <h1 className="font-display text-3xl font-bold text-[#0F172A] mb-3">Booking Confirmed!</h1>
-                  <p className="text-slate-500 mb-8">Your vehicle has been successfully booked. Check your email for details.</p>
-                  <a href="/" className="btn-primary px-8 py-3">Back to Home</a>
-                </div>
-              </div>
+            <Route path="success" element={<BookingSuccessPage />} />
+            <Route path="bookings/:bookingId" element={
+              <ProtectedRoute><Navigate to="/dashboard/bookings" replace /></ProtectedRoute>
+            } />
+            <Route path="owner/bookings/:bookingId" element={
+              <ProtectedRoute><Navigate to="/owner/bookings" replace /></ProtectedRoute>
             } />
             <Route path="messages" element={
               <ProtectedRoute><MessengerPage /></ProtectedRoute>
             } />
             <Route path="notifications" element={
               <ProtectedRoute>
-                <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-900 pt-20">
-                  <NotificationsPage />
-                </div>
+                <NotificationsPageWrapper />
               </ProtectedRoute>
             } />
             <Route path="help" element={<HelpPage />} />

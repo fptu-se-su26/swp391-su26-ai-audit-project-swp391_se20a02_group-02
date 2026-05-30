@@ -37,6 +37,7 @@ public class AdminService {
     private final BookingService bookingService;
     private final PaymentService paymentService;
     private final DisputeRepository disputeRepository;
+    private final UserDocumentRepository userDocumentRepository;
 
     // ====== Dashboard Statistics ======
 
@@ -180,5 +181,56 @@ public class AdminService {
 
     public java.util.List<Dispute> listAllDisputes() {
         return disputeRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
+    }
+
+    @Transactional
+    public UserDTOs.DocumentResponse reviewDocument(String documentId, AdminDTOs.ReviewDocumentRequest req) {
+        com.luxeway.entity.UserDocument doc = userDocumentRepository.findById(documentId)
+                .orElseThrow(() -> new RuntimeException("Document not found"));
+
+        String status = req.getStatus().toUpperCase();
+        if (!status.equals("VERIFIED") && !status.equals("REJECTED")) {
+            throw new IllegalArgumentException("Invalid status. Must be VERIFIED or REJECTED");
+        }
+
+        doc.setStatus(status);
+        doc.setVerifiedAt(java.time.LocalDateTime.now());
+        if (status.equals("REJECTED")) {
+            doc.setRejectionReason(req.getRejectionReason());
+        } else {
+            doc.setRejectionReason(null);
+        }
+
+        doc = userDocumentRepository.save(doc);
+
+        // Synchronize user verification flags
+        User user = doc.getUser();
+        String docType = doc.getDocumentType().toUpperCase();
+        if (status.equals("VERIFIED")) {
+            if (docType.equals("DRIVING_LICENSE")) {
+                user.setDrivingLicenseVerified(true);
+            } else if (docType.equals("PASSPORT") || docType.equals("NATIONAL_ID")) {
+                user.setKycVerified(true);
+            }
+        } else {
+            // REJECTED
+            if (docType.equals("DRIVING_LICENSE")) {
+                user.setDrivingLicenseVerified(false);
+            } else if (docType.equals("PASSPORT") || docType.equals("NATIONAL_ID")) {
+                user.setKycVerified(false);
+            }
+        }
+
+        // Synchronize overall user.verified status (requires both driving license and kyc/passport/national id)
+        if (Boolean.TRUE.equals(user.getKycVerified()) && Boolean.TRUE.equals(user.getDrivingLicenseVerified())) {
+            user.setVerified(true);
+        } else {
+            user.setVerified(false);
+        }
+
+        userRepository.save(user);
+        log.info("Document {} reviewed by admin. Status={}, User verified={}", documentId, status, user.getVerified());
+
+        return userService.toDocumentResponse(doc);
     }
 }

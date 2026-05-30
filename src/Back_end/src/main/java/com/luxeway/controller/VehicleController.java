@@ -10,6 +10,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 import java.util.HashMap;
 import java.util.List;
@@ -45,7 +46,9 @@ public class VehicleController {
             @RequestParam(required = false) String sortBy,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size,
-            @RequestParam(required = false) String status) {
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate startDate,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate endDate) {
         
         try {
             // Keep compatibility with specific non-AVAILABLE status queries (like Admin or list status queries)
@@ -91,6 +94,8 @@ public class VehicleController {
             filter.setSortBy(sortBy);
             filter.setPage(page);
             filter.setSize(size);
+            filter.setStartDate(startDate);
+            filter.setEndDate(endDate);
             
             Page<com.luxeway.dto.vehicle.VehicleDTOs.VehicleResponse> vehiclesPage = vehicleService.getVehicles(filter);
             
@@ -243,6 +248,61 @@ public class VehicleController {
         } catch (Exception e) {
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("error", "Failed to fetch owner's vehicles");
+            errorResponse.put("message", e.getMessage());
+            return ResponseEntity.status(500).body(errorResponse);
+        }
+    }
+
+    @PostMapping
+    public ResponseEntity<Map<String, Object>> createVehicle(
+            @AuthenticationPrincipal com.luxeway.entity.User user,
+            @RequestBody VehicleDTOs.CreateVehicleRequest request) {
+        try {
+            VehicleDTOs.VehicleResponse vehicle = vehicleService.create(user.getId(), request);
+            Map<String, Object> response = new HashMap<>();
+            response.put("vehicle", vehicle);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Failed to create vehicle");
+            errorResponse.put("message", e.getMessage());
+            return ResponseEntity.status(500).body(errorResponse);
+        }
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Map<String, Object>> updateVehicle(
+            @PathVariable String id,
+            @AuthenticationPrincipal com.luxeway.entity.User user,
+            @RequestBody VehicleDTOs.CreateVehicleRequest request) {
+        try {
+            VehicleDTOs.VehicleResponse vehicle = vehicleService.update(id, user.getId(), request);
+            Map<String, Object> response = new HashMap<>();
+            response.put("vehicle", vehicle);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Failed to update vehicle");
+            errorResponse.put("message", e.getMessage());
+            return ResponseEntity.status(500).body(errorResponse);
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Map<String, Object>> deleteVehicle(
+            @PathVariable String id,
+            @AuthenticationPrincipal com.luxeway.entity.User user) {
+        try {
+            boolean isAdmin = user.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+            vehicleService.delete(id, user.getId(), isAdmin);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Vehicle deleted successfully");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Failed to delete vehicle");
             errorResponse.put("message", e.getMessage());
             return ResponseEntity.status(500).body(errorResponse);
         }

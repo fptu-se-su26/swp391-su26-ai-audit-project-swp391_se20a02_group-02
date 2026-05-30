@@ -179,4 +179,122 @@ export const adminService = {
       throw error;
     }
   },
+
+  /**
+   * Fetch all system settings
+   */
+  async listSettings(): Promise<any[]> {
+    try {
+      const response = await apiClient.get<any>('/admin/settings');
+      return response.data || response;
+    } catch (error) {
+      console.error('Failed to list system settings:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Update a system setting key/value pair
+   */
+  async updateSetting(settingKey: string, settingValue: string): Promise<any> {
+    try {
+      const response = await apiClient.put<any>('/admin/settings', { settingKey, settingValue });
+      return response.data || response;
+    } catch (error) {
+      console.error('Failed to update system setting:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * List all platform FAQs (both active and inactive)
+   */
+  async listAllFAQs(): Promise<any[]> {
+    try {
+      const response = await apiClient.get<any>('/admin/faqs');
+      return response.data || response;
+    } catch (error) {
+      console.error('Failed to list FAQs:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Create a new FAQ resource
+   */
+  async createFAQ(faq: { question: String; answer: String; displayOrder: number; isActive: boolean }): Promise<any> {
+    try {
+      const response = await apiClient.post<any>('/admin/faqs', faq);
+      return response.data || response;
+    } catch (error) {
+      console.error('Failed to create FAQ:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Update an existing FAQ entry
+   */
+  async updateFAQ(id: number, faq: { question: String; answer: String; displayOrder: number; isActive: boolean }): Promise<any> {
+    try {
+      const response = await apiClient.put<any>(`/admin/faqs/${id}`, faq);
+      return response.data || response;
+    } catch (error) {
+      console.error('Failed to update FAQ:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Delete an FAQ entry
+   */
+  async deleteFAQ(id: number): Promise<any> {
+    try {
+      const response = await apiClient.delete<any>(`/admin/faqs/${id}`);
+      return response.data || response;
+    } catch (error) {
+      console.error('Failed to delete FAQ:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Fetch platform-wide cumulative summary analytics
+   */
+  async getAnalyticsOverview(): Promise<any> {
+    try {
+      const response = await apiClient.get<any>('/admin/analytics/overview');
+      return response.data || response;
+    } catch (error) {
+      console.error('Failed to get analytics overview:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Fetch historical daily statistics records
+   */
+  async getHistoricalAnalytics(days = 30): Promise<any[]> {
+    try {
+      const response = await apiClient.get<any>(`/admin/analytics/historical?days=${days}`);
+      return response.data || response;
+    } catch (error) {
+      console.error('Failed to fetch historical analytics:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Manually trigger daily metrics aggregation for a specific date
+   */
+  async triggerAnalyticsAggregation(date: string): Promise<any> {
+    try {
+      const response = await apiClient.post<any>(`/admin/analytics/trigger?date=${date}`, {});
+      return response.data || response;
+    } catch (error) {
+      console.error('Failed to trigger aggregation:', error);
+      throw error;
+    }
+  },
 };
+

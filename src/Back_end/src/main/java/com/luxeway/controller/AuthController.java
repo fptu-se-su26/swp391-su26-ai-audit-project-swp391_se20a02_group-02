@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
@@ -64,5 +65,29 @@ public class AuthController {
             @Valid @RequestBody AuthDTOs.ChangePasswordRequest request) {
         authService.changePassword(user.getId(), request);
         return ResponseEntity.ok(ApiResponse.success("Password changed successfully", null));
+    }
+
+    @PostMapping("/forgot-password")
+    @Operation(summary = "Request password reset OTP code")
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(
+            @Valid @RequestBody AuthDTOs.ForgotPasswordRequest request) {
+        authService.processForgotPassword(request);
+        return ResponseEntity.ok(ApiResponse.success("If the email is registered, an OTP will be dispatched.", null));
+    }
+
+    @PostMapping("/verify-otp")
+    @Operation(summary = "Verify OTP code and retrieve password reset transient token")
+    public ResponseEntity<ApiResponse<Map<String, String>>> verifyOtp(
+            @Valid @RequestBody AuthDTOs.VerifyOtpRequest request) {
+        String resetToken = authService.verifyOtp(request);
+        return ResponseEntity.ok(ApiResponse.success("OTP verification successful", Map.of("token", resetToken)));
+    }
+
+    @PostMapping("/reset-password")
+    @Operation(summary = "Reset password using transient token issued after OTP validation")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(
+            @Valid @RequestBody AuthDTOs.ResetPasswordRequest request) {
+        authService.resetPassword(request);
+        return ResponseEntity.ok(ApiResponse.success("Password has been reset successfully", null));
     }
 }

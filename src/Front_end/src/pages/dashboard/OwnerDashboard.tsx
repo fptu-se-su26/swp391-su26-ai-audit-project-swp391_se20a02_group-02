@@ -9,13 +9,15 @@ import {
   BarChart2, Shield, AlertTriangle
 } from 'lucide-react';
 
-import { useAuthStore } from '@/store';
+import { useAuthStore, useUIStore } from '@/store';
 import { vehicleService } from '@/services/vehicleService';
 import { bookingService } from '@/services/bookingService';
+import apiClient from '@/services/api';
 import type { Vehicle, Booking } from '@/types';
 import { formatCurrency, formatDate, getStatusColor } from '@/utils';
 import { staggerContainer, staggerItem, fadeUp } from '@/animations/variants';
 import { useToast } from '@/components/ui/Toast';
+import { useT } from '@/i18n/translations';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, BarChart, Bar
@@ -49,6 +51,8 @@ export const OwnerOverview: React.FC = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const t = useT();
+  const isVi = t.common.loading.includes('Đang');
   const analytics: any[] = [];
 
   useEffect(() => {
@@ -87,11 +91,11 @@ export const OwnerOverview: React.FC = () => {
     <div className="space-y-8 animate-fade-in">
       <motion.div variants={fadeUp} initial="hidden" animate="visible" className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="font-display text-3.5xl font-extrabold text-slate-800 dark:text-white mb-1.5 tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">Owner Overview</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm font-semibold">Welcome back, {user?.firstName}. Here's your fleet's current performance.</p>
+          <h1 className="font-display text-3.5xl font-extrabold text-slate-800 dark:text-white mb-1.5 tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">{t.ownerDashboard.title}</h1>
+          <p className="text-slate-500 dark:text-slate-400 text-sm font-semibold">{t.ownerDashboard.subtitle.replace('{name}', user?.firstName || '')}</p>
         </div>
         <Link to="/owner/vehicles/new" className="btn-gold flex items-center gap-2 text-xs font-extrabold px-6 py-3.5 rounded-xl shadow-lg shadow-gold/20 hover:shadow-gold/30 hover-lift">
-          <Plus className="w-4.5 h-4.5" /> Add Vehicle
+          <Plus className="w-4.5 h-4.5" /> {t.ownerDashboard.addVehicle}
         </Link>
       </motion.div>
 
@@ -103,54 +107,93 @@ export const OwnerOverview: React.FC = () => {
         className="grid grid-cols-2 lg:grid-cols-4 gap-5"
       >
         {[
-          { label: 'Total Revenue', value: formatCurrency(stats.revenue), icon: DollarSign, color: 'bg-emerald-500/10 text-emerald-500 ring-1 ring-emerald-500/20', change: '+18% this month', isRevenue: true },
-          { label: 'Active Vehicles', value: `${stats.activeVehicles}/${stats.totalVehicles}`, icon: Car, color: 'bg-blue-500/10 text-blue-500 ring-1 ring-blue-500/20', change: 'Currently listed' },
-          { label: 'Total Bookings', value: stats.totalBookings, icon: Calendar, color: 'bg-purple-500/10 text-purple-500 ring-1 ring-purple-500/20', change: 'All time' },
-          { label: 'My Rating', value: `${stats.rating || '5.0'}/5`, icon: CheckCircle, color: 'bg-amber-500/10 text-amber-500 ring-1 ring-amber-500/20', change: `${user?.totalReviews || 0} reviews` },
+          {
+            label: t.ownerDashboard.totalRevenue,
+            value: formatCurrency(stats.revenue),
+            icon: DollarSign,
+            gradient: 'linear-gradient(135deg, #10B981, #059669)',
+            change: isVi ? '+18% tháng này' : '+18% this month',
+          },
+          {
+            label: t.ownerDashboard.activeVehicles,
+            value: `${stats.activeVehicles}/${stats.totalVehicles}`,
+            icon: Car,
+            gradient: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+            change: t.ownerDashboard.activeVehiclesDesc,
+          },
+          {
+            label: t.ownerDashboard.totalBookings,
+            value: stats.totalBookings,
+            icon: Calendar,
+            gradient: 'linear-gradient(135deg, #F59E0B, #D97706)',
+            change: t.ownerDashboard.totalBookingsDesc,
+          },
+          {
+            label: t.ownerDashboard.myRating,
+            value: `${stats.rating || '5.0'}/5`,
+            icon: CheckCircle,
+            gradient: 'linear-gradient(135deg, #EC4899, #DB2777)',
+            change: t.ownerDashboard.myRatingDesc.replace('{count}', String(user?.totalReviews || 0)),
+          },
         ].map(stat => (
-          <motion.div key={stat.label} variants={staggerItem} className="stat-card glass hover-lift hover-glow border border-slate-200/50 dark:border-white/5 p-5.5 rounded-3xl relative overflow-hidden shadow-sm">
-            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center mb-4.5 ${stat.color} shadow-sm`}>
-              <stat.icon className="w-5.5 h-5.5" />
+          <motion.div
+            key={stat.label}
+            variants={staggerItem}
+            whileHover={{ y: -4, boxShadow: '0 20px 40px rgba(0,0,0,0.12)' }}
+            className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-5 cursor-default transition-all duration-300 shadow-sm relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 w-28 h-28 rounded-full -translate-y-1/2 translate-x-1/2 opacity-60 blur-2xl pointer-events-none"
+              style={{ background: stat.gradient }} />
+            <div className="relative z-10">
+              <div className="w-11 h-11 rounded-2xl flex items-center justify-center mb-3 shadow-lg"
+                style={{ background: stat.gradient }}>
+                <stat.icon className="w-5 h-5 text-white" />
+              </div>
+              <p className="text-2xl font-extrabold text-slate-800 dark:text-white tracking-tight">{stat.value}</p>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-1">{stat.label}</p>
+              <p className="text-[10px] text-emerald-500 mt-2 flex items-center gap-1 font-bold">
+                <TrendingUp className="w-3 h-3 text-emerald-550" /> {stat.change}
+              </p>
             </div>
-            <p className={`text-2.5xl font-extrabold tracking-tight ${stat.isRevenue ? 'text-emerald-500 dark:text-emerald-400' : 'text-slate-800 dark:text-white'}`}>{stat.value}</p>
-            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-wider">{stat.label}</p>
-            <p className="text-[10px] text-emerald-500 mt-2.5 flex items-center gap-1 font-bold">
-              <TrendingUp className="w-3 h-3 text-emerald-500" /> {stat.change}
-            </p>
           </motion.div>
         ))}
       </motion.div>
 
       {/* Revenue Chart */}
-      <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm">
-        <div className="flex items-center justify-between mb-6 border-b border-slate-200/30 dark:border-white/5 pb-3">
-          <h3 className="font-display text-lg font-bold text-slate-800 dark:text-white">Revenue (Last 14 Days)</h3>
-          <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">Live Analytics</span>
+      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h3 className="font-display text-lg font-bold text-slate-800 dark:text-white">{t.ownerDashboard.revenueChartTitle}</h3>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{t.ownerDashboard.revenueChartSub}</p>
+          </div>
+          <span className="flex items-center gap-1.5 text-xs font-bold text-amber-600 bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 px-3 py-1.5 rounded-xl">
+            {t.ownerDashboard.liveAnalytics}
+          </span>
         </div>
         <ResponsiveContainer width="100%" height={240}>
           <AreaChart data={revenueData}>
             <defs>
-              <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#EAB308" stopOpacity={0.2} />
-                <stop offset="95%" stopColor="#EAB308" stopOpacity={0} />
+              <linearGradient id="ownerRevGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.2} />
+                <stop offset="95%" stopColor="#F59E0B" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.05)" />
-            <XAxis dataKey="date" tick={{ fontSize: 11, fontWeight: 600 }} stroke="#94A3B8" />
-            <YAxis tick={{ fontSize: 11, fontWeight: 600 }} stroke="#94A3B8" tickFormatter={v => `$${v}`} />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(226,232,240,0.8)" />
+            <XAxis dataKey="date" tick={{ fontSize: 11, fontWeight: 600, fill: '#94A3B8' }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: 11, fontWeight: 600, fill: '#94A3B8' }} axisLine={false} tickLine={false} tickFormatter={v => `${(v/1000).toFixed(0)}K`} />
             <Tooltip content={<CustomTooltip />} />
-            <Area type="monotone" dataKey="revenue" stroke="#EAB308" fill="url(#revenueGradient)" strokeWidth={3} />
+            <Area type="monotone" dataKey="revenue" stroke="#F59E0B" fill="url(#ownerRevGradient)" strokeWidth={3} dot={false} />
           </AreaChart>
         </ResponsiveContainer>
-      </div>
-
-      {/* Recent Bookings + Vehicle Status */}
+      </div>      {/* Recent Bookings + Vehicle Status */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Pending Bookings */}
-        <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm flex flex-col">
-          <div className="flex items-center justify-between mb-5 border-b border-slate-200/10 dark:border-white/5 pb-3">
-            <h3 className="font-display text-lg font-bold text-slate-800 dark:text-white">Pending Requests</h3>
-            <span className="badge-red text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-lg border border-red-500/20">{stats.pending} pending</span>
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-sm flex flex-col">
+          <div className="flex items-center justify-between mb-5">
+            <h3 className="font-display text-lg font-bold text-slate-800 dark:text-white">{t.ownerDashboard.pendingRequests}</h3>
+            <span className="text-xs font-bold px-3 py-1.5 rounded-xl bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-900/30">
+              {t.ownerDashboard.pendingCount.replace('{count}', String(stats.pending))}
+            </span>
           </div>
           <div className="space-y-3.5 overflow-y-auto flex-1 max-h-[350px] pr-1">
             {bookings.filter(b => b.status === 'pending').slice(0, 4).map(booking => (
@@ -174,7 +217,7 @@ export const OwnerOverview: React.FC = () => {
               </div>
             ))}
             {bookings.filter(b => b.status === 'pending').length === 0 && (
-              <p className="text-slate-400 dark:text-slate-500 text-sm text-center py-12 font-medium my-auto">No pending requests</p>
+              <p className="text-slate-400 dark:text-slate-500 text-sm text-center py-12 font-medium my-auto">{t.ownerDashboard.noPendingRequests}</p>
             )}
           </div>
         </div>
@@ -182,8 +225,8 @@ export const OwnerOverview: React.FC = () => {
         {/* My Vehicles */}
         <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm flex flex-col">
           <div className="flex items-center justify-between mb-5 border-b border-slate-200/10 dark:border-white/5 pb-3">
-            <h3 className="font-display text-lg font-bold text-slate-800 dark:text-white">My Fleet</h3>
-            <Link to="/owner/vehicles" className="text-xs font-extrabold text-gold hover:underline">Manage Fleet →</Link>
+            <h3 className="font-display text-lg font-bold text-slate-800 dark:text-white">{t.ownerDashboard.myFleet}</h3>
+            <Link to="/owner/vehicles" className="text-xs font-extrabold text-gold hover:underline">{t.ownerDashboard.manageFleet}</Link>
           </div>
           <div className="space-y-3.5 overflow-y-auto flex-1 max-h-[350px] pr-1">
             {vehicles.slice(0, 4).map(vehicle => (
@@ -191,7 +234,7 @@ export const OwnerOverview: React.FC = () => {
                 <img src={vehicle.thumbnailUrl} alt={vehicle.name} className="w-14 h-11 rounded-xl object-cover flex-shrink-0 border-2 border-white/10 shadow-md" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">{vehicle.name}</p>
-                  <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-1">{formatCurrency(vehicle.pricePerDay)}/day</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-1">{formatCurrency(vehicle.pricePerDay)}{t.marketplace.perDay}</p>
                 </div>
                 <span className={`badge text-[9px] font-extrabold tracking-wider uppercase border-2 ${getStatusColor(vehicle.status)}`}>
                   {vehicle.status.replace('_', ' ')}
@@ -201,8 +244,8 @@ export const OwnerOverview: React.FC = () => {
             {vehicles.length === 0 && (
               <div className="text-center py-10 my-auto">
                 <Car className="w-12 h-12 text-slate-300 dark:text-slate-700 mx-auto mb-3" />
-                <p className="text-slate-400 dark:text-slate-500 text-sm font-medium">No vehicles yet</p>
-                <Link to="/owner/vehicles/new" className="btn-gold mt-4 text-xs font-bold px-5 py-2.5 rounded-xl">Add First Vehicle</Link>
+                <p className="text-slate-400 dark:text-slate-500 text-sm font-medium">{t.ownerDashboard.noVehiclesYet}</p>
+                <Link to="/owner/vehicles/new" className="btn-gold mt-4 text-xs font-bold px-5 py-2.5 rounded-xl">{t.ownerDashboard.addFirstVehicle}</Link>
               </div>
             )}
           </div>
@@ -218,6 +261,8 @@ export const VehicleManagePage: React.FC = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const toast = useToast();
+  const t = useT();
+  const isVi = t.common.loading.includes('Đang');
 
   useEffect(() => {
     if (!user) return;
@@ -228,10 +273,10 @@ export const VehicleManagePage: React.FC = () => {
   }, [user]);
 
   const handleDelete = async (vehicleId: string, vehicleName: string) => {
-    if (window.confirm(`Delete ${vehicleName}?`)) {
+    if (window.confirm(isVi ? `Xác nhận xóa xe ${vehicleName}?` : `Delete ${vehicleName}?`)) {
       await vehicleService.delete(vehicleId);
       setVehicles(prev => prev.filter(v => v.id !== vehicleId));
-      toast.success('Vehicle deleted');
+      toast.success(isVi ? 'Đã xóa phương tiện thành công' : 'Vehicle deleted');
     }
   };
 
@@ -239,11 +284,11 @@ export const VehicleManagePage: React.FC = () => {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
         <div>
-          <h1 className="font-display text-2.5xl font-extrabold text-slate-800 dark:text-white tracking-tight">My Fleet Vehicles</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-xs font-semibold mt-0.5">Manage listings and operational statuses for your vehicles</p>
+          <h1 className="font-display text-2.5xl font-extrabold text-slate-800 dark:text-white tracking-tight">{t.ownerDashboard.myVehicles}</h1>
+          <p className="text-slate-500 dark:text-slate-400 text-xs font-semibold mt-0.5">{t.ownerDashboard.fleetSubtitle}</p>
         </div>
         <Link to="/owner/vehicles/new" className="btn-gold flex items-center gap-2 text-xs font-extrabold px-5 py-3 rounded-xl shadow-lg shadow-gold/20 hover:shadow-gold/30 hover-lift">
-          <Plus className="w-4 h-4" /> Add Vehicle
+          <Plus className="w-4 h-4" /> {t.ownerDashboard.addVehicle}
         </Link>
       </div>
 
@@ -254,9 +299,9 @@ export const VehicleManagePage: React.FC = () => {
       ) : vehicles.length === 0 ? (
         <div className="glass border border-slate-200/50 dark:border-white/5 text-center py-20 rounded-[2.5rem] shadow-sm">
           <Car className="w-16 h-16 text-slate-300 dark:text-slate-700 mx-auto mb-4 animate-bounce" />
-          <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-2 text-lg">No vehicles listed</h3>
-          <p className="text-slate-400 text-sm font-medium mb-6">Start earning by listing your first luxury vehicle today.</p>
-          <Link to="/owner/vehicles/new" className="btn-gold px-6 py-3.5 rounded-xl text-xs font-extrabold font-display hover-lift">List Your First Vehicle</Link>
+          <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-2 text-lg">{t.ownerDashboard.noVehiclesYet}</h3>
+          <p className="text-slate-400 text-sm font-medium mb-6">{isVi ? 'Bắt đầu kiếm thu nhập bằng cách đăng ký chiếc xe cao cấp đầu tiên của bạn ngay.' : 'Start earning by listing your first luxury vehicle today.'}</p>
+          <Link to="/owner/vehicles/new" className="btn-gold px-6 py-3.5 rounded-xl text-xs font-extrabold font-display hover-lift">{t.ownerDashboard.addFirstVehicle}</Link>
         </div>
       ) : (
         <motion.div
@@ -280,7 +325,7 @@ export const VehicleManagePage: React.FC = () => {
                 <div className="flex items-start justify-between mb-4 border-b border-slate-200/10 dark:border-white/5 pb-3.5">
                   <div>
                     <h4 className="font-bold text-base text-slate-800 dark:text-slate-100 tracking-tight">{vehicle.name}</h4>
-                    <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-1">{vehicle.location.city} · <span className="text-gold font-extrabold">{formatCurrency(vehicle.pricePerDay)}</span>/day</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-1">{vehicle.location.city} · <span className="text-gold font-extrabold">{formatCurrency(vehicle.pricePerDay)}</span>{t.marketplace.perDay}</p>
                   </div>
                   <div className="flex items-center gap-1 text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-500/5 dark:bg-white/5 border border-slate-200/10 dark:border-white/10 px-2.5 py-1 rounded-lg shadow-sm">
                     <span className="text-amber-500">⭐</span> {vehicle.rating?.toFixed(1) ?? '5.0'}
@@ -288,16 +333,16 @@ export const VehicleManagePage: React.FC = () => {
                 </div>
                 <div className="flex gap-2.5">
                   <Link to={`/vehicles/${vehicle.id}`} className="btn-ghost border border-slate-200/60 dark:border-white/10 text-xs px-4 py-2.5 rounded-xl flex items-center gap-1.5 font-extrabold text-slate-600 dark:text-slate-300 hover:border-gold hover:text-gold transition-colors">
-                    <Eye className="w-4 h-4" /> View Listing
+                    <Eye className="w-4 h-4" /> {isVi ? 'Xem Tin Đăng' : 'View Listing'}
                   </Link>
                   <Link to={`/owner/vehicles/${vehicle.id}/edit`} className="btn-ghost border border-slate-200/60 dark:border-white/10 text-xs px-4 py-2.5 rounded-xl flex items-center gap-1.5 font-extrabold text-slate-600 dark:text-slate-300 hover:border-blue-500 hover:text-blue-500 transition-colors">
-                    <Edit className="w-4 h-4" /> Edit
+                    <Edit className="w-4 h-4" /> {t.common.edit}
                   </Link>
                   <button
                     onClick={() => handleDelete(vehicle.id, vehicle.name)}
                     className="text-xs font-extrabold px-4 py-2.5 text-red-500 hover:bg-red-500/10 rounded-xl border border-red-500/20 hover:border-red-500/40 transition-all flex items-center gap-1.5 ml-auto shadow-sm"
                   >
-                    <Trash2 className="w-4 h-4" /> Delete
+                    <Trash2 className="w-4 h-4" /> {t.common.delete}
                   </button>
                 </div>
               </div>
@@ -315,6 +360,9 @@ export const VehicleFormPage: React.FC = () => {
   const navigate = useNavigate();
   const toast = useToast();
   const { id } = useParams();
+  const t = useT();
+  const isVi = t.common.loading.includes('Đang');
+  const isJa = t.common.loading.includes('読み込み');
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
   const [step, setStep] = useState(1);
@@ -355,13 +403,13 @@ export const VehicleFormPage: React.FC = () => {
         });
         setImages(vehicle.images || (vehicle.thumbnailUrl ? [vehicle.thumbnailUrl] : []));
       } else {
-        toast.error('Vehicle not found.');
+        toast.error(isVi ? 'Không tìm thấy phương tiện.' : 'Vehicle not found.');
         navigate('/owner/vehicles');
       }
       setFetching(false);
     }).catch(err => {
       console.error(err);
-      toast.error('Error loading vehicle data.');
+      toast.error(isVi ? 'Lỗi khi tải thông tin xe.' : 'Error loading vehicle data.');
       setFetching(false);
     });
   }, [id]);
@@ -432,14 +480,20 @@ export const VehicleFormPage: React.FC = () => {
     try {
       if (id) {
         await vehicleService.update(id, vehicleData);
-        toast.success('Vehicle Updated Successfully!', 'Your vehicle details have been saved.');
+        toast.success(
+          isVi ? 'Cập Nhật Xe Thành Công!' : 'Vehicle Updated Successfully!',
+          isVi ? 'Thông tin xe của bạn đã được lưu lại.' : 'Your vehicle details have been saved.'
+        );
       } else {
         await vehicleService.create(user?.id || '', vehicleData);
-        toast.success('Vehicle Listed Successfully!', 'Your vehicle is now live on the marketplace.');
+        toast.success(
+          isVi ? 'Đăng Ký Xe Thành Công!' : 'Vehicle Listed Successfully!',
+          isVi ? 'Xe của bạn hiện đã hiển thị trên marketplace.' : 'Your vehicle is now live on the marketplace.'
+        );
       }
       navigate('/owner/vehicles');
     } catch (error) {
-      toast.error('Failed to save vehicle listing.');
+      toast.error(isVi ? 'Không thể lưu thông tin xe.' : 'Failed to save vehicle listing.');
       console.error(error);
     } finally {
       setLoading(false);
@@ -455,22 +509,22 @@ export const VehicleFormPage: React.FC = () => {
   }
 
   const stepsInfo = [
-    { num: 1, label: 'Vehicle Profile' },
-    { num: 2, label: 'Specs & Upload' },
-    { num: 3, label: 'Rates & Location' }
+    { num: 1, label: isVi ? 'Hồ Sơ Xe' : isJa ? '車両プロフィール' : 'Vehicle Profile' },
+    { num: 2, label: isVi ? 'Thông Số & Tải Lên' : isJa ? 'スペック・アップロード' : 'Specs & Upload' },
+    { num: 3, label: isVi ? 'Giá Cả & Địa Điểm' : isJa ? '料金・所在地' : 'Rates & Location' }
   ];
 
   return (
     <div className="max-w-3xl mx-auto animate-fade-in">
       <div className="flex items-center gap-4 mb-8">
         <Link to="/owner/vehicles" className="p-3 rounded-xl border border-slate-200/50 dark:border-white/10 hover:bg-slate-500/5 transition-colors text-slate-500 dark:text-slate-400 font-extrabold hover:text-[#EAB308]">
-          ← Back
+          ← {isVi ? 'Quay Lại' : isJa ? '戻る' : 'Back'}
         </Link>
         <div>
           <h1 className="font-display text-2.5xl font-extrabold text-slate-800 dark:text-white tracking-tight">
-            {id ? 'Edit Your Vehicle' : 'List a Luxury Vehicle'}
+            {id ? (isVi ? 'Chỉnh Sửa Phương Tiện' : isJa ? '車両情報を編集' : 'Edit Your Vehicle') : (isVi ? 'Đăng Xe Cao Cấp Mới' : isJa ? '高級車を掲載' : 'List a Luxury Vehicle')}
           </h1>
-          <p className="text-slate-500 dark:text-slate-400 text-xs font-semibold mt-0.5">Define your high-end experience</p>
+          <p className="text-slate-500 dark:text-slate-400 text-xs font-semibold mt-0.5">{isVi ? 'Định nghĩa trải nghiệm đẳng cấp của bạn' : 'Define your high-end experience'}</p>
         </div>
       </div>
 
@@ -491,18 +545,18 @@ export const VehicleFormPage: React.FC = () => {
       <form onSubmit={handleSubmit} className="glass border border-slate-200/50 dark:border-white/5 p-6 md:p-8 rounded-[2rem] shadow-md">
         {step === 1 && (
           <motion.div variants={fadeUp} initial="hidden" animate="visible" className="space-y-6">
-            <h3 className="font-display text-xl font-bold text-slate-800 dark:text-white border-b border-slate-200/10 dark:border-white/5 pb-3">Basic Information</h3>
+            <h3 className="font-display text-xl font-bold text-slate-800 dark:text-white border-b border-slate-200/10 dark:border-white/5 pb-3">{isVi ? 'Thông Tin Cơ Bản' : isJa ? '基本情報' : 'Basic Information'}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
-                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Vehicle Name *</label>
+                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? 'Tên Xe *' : isJa ? '車両名 *' : 'Vehicle Name *'}</label>
                 <input value={form.name} onChange={e => update('name', e.target.value)} required placeholder="e.g. Ferrari F8 Tributo" className="lux-input w-full bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl px-4 py-3 text-sm focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20" />
               </div>
               <div>
-                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Brand *</label>
+                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? 'Thương Hiệu *' : isJa ? 'ブランド *' : 'Brand *'}</label>
                 <input value={form.brand} onChange={e => update('brand', e.target.value)} required placeholder="e.g. Ferrari" className="lux-input w-full bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl px-4 py-3 text-sm focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20" />
               </div>
               <div>
-                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Category *</label>
+                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? 'Phân Khúc *' : isJa ? 'カテゴリー *' : 'Category *'}</label>
                 <select value={form.category} onChange={e => update('category', e.target.value)} className="lux-input w-full bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl px-4 py-3 text-sm text-slate-800 dark:text-slate-100 focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20">
                   <option value="supercar">Supercar</option>
                   <option value="suv">Luxury SUV</option>
@@ -513,12 +567,12 @@ export const VehicleFormPage: React.FC = () => {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Year *</label>
+                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? 'Năm Sản Xuất *' : isJa ? '製造年 *' : 'Year *'}</label>
                 <input type="number" value={form.year} onChange={e => update('year', e.target.value)} required min="1950" max={new Date().getFullYear() + 1} className="lux-input w-full bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl px-4 py-3 text-sm focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20" />
               </div>
               <div className="md:col-span-2">
-                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Description *</label>
-                <textarea value={form.description} onChange={e => update('description', e.target.value)} required rows={4} className="lux-input w-full bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl px-4 py-3 text-sm resize-none focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20" placeholder="Describe your vehicle's condition, drive feeling, and unique amenities..." />
+                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? 'Mô Tả Chi Tiết *' : isJa ? '詳細説明 *' : 'Description *'}</label>
+                <textarea value={form.description} onChange={e => update('description', e.target.value)} required rows={4} className="lux-input w-full bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl px-4 py-3 text-sm resize-none focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20" placeholder={isVi ? 'Mô tả chi tiết về tình trạng xe, cảm giác lái và các trang bị độc đáo...' : 'Describe your vehicle\'s condition, drive feeling, and unique amenities...'} />
               </div>
             </div>
           </motion.div>
@@ -526,35 +580,35 @@ export const VehicleFormPage: React.FC = () => {
 
         {step === 2 && (
           <motion.div variants={fadeUp} initial="hidden" animate="visible" className="space-y-6">
-            <h3 className="font-display text-xl font-bold text-slate-800 dark:text-white border-b border-slate-200/10 dark:border-white/5 pb-3">Specs & Features</h3>
+            <h3 className="font-display text-xl font-bold text-slate-800 dark:text-white border-b border-slate-200/10 dark:border-white/5 pb-3">{isVi ? 'Thông Số & Tiện Nghi' : isJa ? 'スペック・装備' : 'Specs & Features'}</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
-                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Seats</label>
+                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? 'Số Chỗ' : isJa ? '座席数' : 'Seats'}</label>
                 <input type="number" value={form.seats} onChange={e => update('seats', e.target.value)} min="1" className="lux-input w-full bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl px-4 py-3 text-sm focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20" />
               </div>
               <div>
-                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Doors</label>
+                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? 'Số Cửa' : isJa ? 'ドア数' : 'Doors'}</label>
                 <input type="number" value={form.doors} onChange={e => update('doors', e.target.value)} min="2" className="lux-input w-full bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl px-4 py-3 text-sm focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20" />
               </div>
               <div>
-                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Transmission</label>
+                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? 'Hộp Số' : isJa ? 'ギア' : 'Transmission'}</label>
                 <select value={form.transmission} onChange={e => update('transmission', e.target.value)} className="lux-input w-full bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl px-4 py-3 text-sm text-slate-800 dark:text-slate-100 focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20">
                   <option>Automatic</option><option>Manual</option><option>Dual-Clutch</option>
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Fuel Type</label>
+                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? 'Nhiên Liệu' : isJa ? '燃料' : 'Fuel Type'}</label>
                 <select value={form.fuelType} onChange={e => update('fuelType', e.target.value)} className="lux-input w-full bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl px-4 py-3 text-sm text-slate-800 dark:text-slate-100 focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20">
                   <option>Gasoline</option><option>Electric</option><option>Hybrid</option><option>Diesel</option>
                 </select>
               </div>
             </div>
             <div>
-              <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Features (comma separated)</label>
+              <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? 'Tiện Nghi (Ngăn Cách Bởi Dấu Phẩy)' : isJa ? '装備（カンマ区切り）' : 'Features (comma separated)'}</label>
               <input value={form.features} onChange={e => update('features', e.target.value)} className="lux-input w-full bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl px-4 py-3 text-sm focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20" placeholder="Bluetooth, Apple CarPlay, Heated Seats..." />
             </div>
             <div className="mt-4">
-              <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Vehicle Image</label>
+              <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">{isVi ? 'Hình Ảnh Xe' : isJa ? '車両画像' : 'Vehicle Image'}</label>
               <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-gold rounded-3xl p-7 text-center transition-colors cursor-pointer relative bg-slate-500/5 hover:bg-slate-500/10 group animate-fade-in">
                 <input
                   type="file"
@@ -587,14 +641,14 @@ export const VehicleFormPage: React.FC = () => {
                 {images.length > 0 ? (
                   <div className="relative rounded-2xl overflow-hidden shadow-md">
                     <img src={images[0]} alt="Preview" className="w-full h-56 object-cover rounded-2xl mb-2.5" />
-                    <p className="text-xs text-emerald-500 font-extrabold flex items-center justify-center gap-1.5">✓ Image Loaded Successfully</p>
+                    <p className="text-xs text-emerald-500 font-extrabold flex items-center justify-center gap-1.5">✓ {isVi ? 'Tải ảnh lên thành công' : 'Image Loaded Successfully'}</p>
                   </div>
                 ) : (
                   <div>
                     <div className="w-14 h-14 bg-slate-100 dark:bg-slate-800/80 rounded-2.5xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300 shadow-sm border border-slate-200/10">
                       <span className="text-2xl">📷</span>
                     </div>
-                    <p className="text-sm font-bold text-slate-800 dark:text-white mb-1.5">Click or drag to upload vehicle image</p>
+                    <p className="text-sm font-bold text-slate-800 dark:text-white mb-1.5">{isVi ? 'Nhấp hoặc kéo thả để tải lên ảnh xe' : 'Click or drag to upload vehicle image'}</p>
                     <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold">JPG, PNG, WEBP · Max 5MB</p>
                   </div>
                 )}
@@ -605,26 +659,26 @@ export const VehicleFormPage: React.FC = () => {
 
         {step === 3 && (
           <motion.div variants={fadeUp} initial="hidden" animate="visible" className="space-y-6">
-            <h3 className="font-display text-xl font-bold text-slate-800 dark:text-white border-b border-slate-200/10 dark:border-white/5 pb-3">Pricing & Location</h3>
+            <h3 className="font-display text-xl font-bold text-slate-800 dark:text-white border-b border-slate-200/10 dark:border-white/5 pb-3">{isVi ? 'Giá Cả & Địa Điểm' : isJa ? '料金・所在地' : 'Pricing & Location'}</h3>
             <div>
-              <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Daily Rate (USD) *</label>
+              <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? 'Giá Thuê Hàng Ngày (USD) *' : isJa ? '一日あたりの料金（USD） *' : 'Daily Rate (USD) *'}</label>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-extrabold">$</span>
                 <input type="number" value={form.pricePerDay} onChange={e => update('pricePerDay', e.target.value)} required min="50" className="lux-input w-full pl-9 pr-4 py-3 bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl text-slate-800 dark:text-white font-extrabold text-sm focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20" />
               </div>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-2.5 font-medium">LuxeWay average: {formatCurrency(450)} - {formatCurrency(800)} based on supercars.</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-2.5 font-medium">{isVi ? 'Trung bình trên LuxeWay: $450 - $800 dựa trên phân khúc siêu xe.' : `LuxeWay average: ${formatCurrency(450)} - ${formatCurrency(800)} based on supercars.`}</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="md:col-span-2">
-                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Street Address</label>
+                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? 'Địa Chỉ Cụ Thể' : isJa ? '所在地（住所）' : 'Street Address'}</label>
                 <input value={form.address} onChange={e => update('address', e.target.value)} className="lux-input w-full bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl px-4 py-3 text-sm focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20" />
               </div>
               <div>
-                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">City *</label>
+                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? 'Thành Phố *' : isJa ? '市区町村 *' : 'City *'}</label>
                 <input value={form.city} onChange={e => update('city', e.target.value)} required className="lux-input w-full bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl px-4 py-3 text-sm focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20" />
               </div>
               <div>
-                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">State/Province *</label>
+                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? 'Tỉnh/Bang *' : isJa ? '都道府県 *' : 'State/Province *'}</label>
                 <input value={form.state} onChange={e => update('state', e.target.value)} required className="lux-input w-full bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl px-4 py-3 text-sm focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20" />
               </div>
             </div>
@@ -634,11 +688,11 @@ export const VehicleFormPage: React.FC = () => {
         <div className="flex gap-4 mt-8 pt-6 border-t border-slate-200/10 dark:border-white/5">
           {step > 1 && (
             <button type="button" onClick={() => { setStep(s => s - 1); window.scrollTo(0, 0); }} className="btn-ghost border border-slate-200 dark:border-white/10 px-6 py-3 rounded-xl font-extrabold text-slate-600 dark:text-slate-300 hover:text-[#EAB308] transition-colors">
-              Back
+              {isVi ? 'Quay Lại' : isJa ? '戻る' : 'Back'}
             </button>
           )}
           <button type="submit" disabled={loading} className="btn-primary flex-1 py-3.5 text-sm font-extrabold rounded-xl shadow-lg hover-lift">
-            {loading ? 'Publishing listing...' : step === 3 ? 'Publish Listing' : 'Next Step'}
+            {loading ? (isVi ? 'Đang Đăng Xe...' : 'Publishing listing...') : step === 3 ? (isVi ? 'Đăng Xe Lên Hệ Thống' : isJa ? '車両を掲載する' : 'Publish Listing') : (isVi ? 'Tiếp Theo' : isJa ? '次へ' : 'Next Step')}
           </button>
         </div>
       </form>
@@ -1158,47 +1212,78 @@ interface Employee {
   id: string;
   name: string;
   email: string;
-  role: 'driver' | 'manager' | 'staff';
-  status: 'active' | 'inactive';
-  joinedAt: string;
-  assignedVehicles: number;
+  phone: string;
+  role: string;
+  status: string;
+  createdAt: string;
+  assignedVehicles?: any[];
 }
 
-const MOCK_EMPLOYEES: Employee[] = [
-  { id: '1', name: 'Nguyen Van A', email: 'vana@example.com', role: 'driver', status: 'active', joinedAt: '2025-01-15', assignedVehicles: 2 },
-  { id: '2', name: 'Tran Thi B', email: 'thib@example.com', role: 'manager', status: 'active', joinedAt: '2024-11-03', assignedVehicles: 5 },
-  { id: '3', name: 'Le Van C', email: 'vanc@example.com', role: 'staff', status: 'inactive', joinedAt: '2025-03-22', assignedVehicles: 0 },
-];
-
 export const EmployeeManagementPage: React.FC = () => {
-  const [employees, setEmployees] = useState<Employee[]>(MOCK_EMPLOYEES);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newEmployee, setNewEmployee] = useState({ name: '', email: '', role: 'driver' as Employee['role'] });
+  const [newEmployee, setNewEmployee] = useState({ name: '', email: '', phone: '', role: 'driver' });
   const toast = useToast();
 
-  const addEmployee = () => {
-    if (!newEmployee.name || !newEmployee.email) return;
-    const emp: Employee = {
-      id: Date.now().toString(),
-      ...newEmployee,
-      status: 'active',
-      joinedAt: new Date().toISOString().slice(0, 10),
-      assignedVehicles: 0,
-    };
-    setEmployees(prev => [emp, ...prev]);
-    setNewEmployee({ name: '', email: '', role: 'driver' });
-    setShowAddForm(false);
-    toast.success('Employee added', `${emp.name} has been added to your team.`);
+  useEffect(() => {
+    apiClient.get<any>('/employees')
+      .then(res => {
+        setEmployees(res.data || res.content || []);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setLoading(false);
+      });
+  }, []);
+
+  const addEmployee = async () => {
+    if (!newEmployee.name || !newEmployee.email || !newEmployee.phone) return;
+    try {
+      const res = await apiClient.post<any>('/employees', {
+        name: newEmployee.name,
+        email: newEmployee.email,
+        phone: newEmployee.phone,
+        role: newEmployee.role.toUpperCase(),
+        status: 'ACTIVE'
+      });
+      const emp = res.data;
+      if (emp) {
+        setEmployees(prev => [emp, ...prev]);
+        setNewEmployee({ name: '', email: '', phone: '', role: 'driver' });
+        setShowAddForm(false);
+        toast.success('Employee added', `${emp.name} has been added to your team.`);
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error('Error', 'Failed to add employee');
+    }
   };
 
-  const toggleStatus = (id: string) => {
-    setEmployees(prev => prev.map(e => e.id === id ? { ...e, status: e.status === 'active' ? 'inactive' : 'active' } : e));
+  const toggleStatus = async (emp: Employee) => {
+    const newStatus = emp.status.toUpperCase() === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+    try {
+      const res = await apiClient.put<any>(`/employees/${emp.id}`, {
+        ...emp,
+        status: newStatus
+      });
+      const updated = res.data;
+      if (updated) {
+        setEmployees(prev => prev.map(e => e.id === emp.id ? updated : e));
+        toast.success('Status updated', `${emp.name} is now ${newStatus.toLowerCase()}.`);
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error('Error', 'Failed to update employee status');
+    }
   };
 
-  const roleColors: Record<Employee['role'], string> = {
-    driver: 'bg-blue-500/10 text-blue-500 border-blue-200/20',
-    manager: 'bg-purple-500/10 text-purple-500 border-purple-200/20',
-    staff: 'bg-slate-500/5 text-slate-500 border-slate-200/20',
+  const getRoleColor = (role: string) => {
+    const r = (role || '').toLowerCase();
+    if (r === 'driver') return 'bg-blue-500/10 text-blue-500 border-blue-200/20';
+    if (r === 'manager') return 'bg-purple-500/10 text-purple-550 border-purple-200/20';
+    return 'bg-slate-500/5 text-slate-500 border-slate-200/20';
   };
 
   return (
@@ -1217,8 +1302,8 @@ export const EmployeeManagementPage: React.FC = () => {
       <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid grid-cols-3 gap-5 mb-6">
         {[
           { label: 'Total Staff', value: employees.length, color: 'text-blue-500' },
-          { label: 'Active Roster', value: employees.filter(e => e.status === 'active').length, color: 'text-emerald-500' },
-          { label: 'Drivers', value: employees.filter(e => e.role === 'driver').length, color: 'text-purple-500' },
+          { label: 'Active Roster', value: employees.filter(e => e.status.toUpperCase() === 'ACTIVE').length, color: 'text-emerald-500' },
+          { label: 'Drivers', value: employees.filter(e => e.role.toLowerCase() === 'driver').length, color: 'text-purple-500' },
         ].map(s => (
           <motion.div key={s.label} variants={staggerItem} className="glass border border-slate-200/50 dark:border-white/5 p-4.5 rounded-[1.5rem] text-center shadow-sm hover-lift">
             <p className={`text-3xl font-extrabold tracking-tight ${s.color}`}>{s.value}</p>
@@ -1231,7 +1316,7 @@ export const EmployeeManagementPage: React.FC = () => {
       {showAddForm && (
         <motion.div variants={fadeUp} initial="hidden" animate="visible" className="glass border border-slate-200/50 dark:border-white/5 p-6 mb-6 rounded-[2rem] shadow-md animate-fade-in">
           <h3 className="font-display text-lg font-bold text-slate-800 dark:text-white mb-4 border-b border-slate-200/10 dark:border-white/5 pb-2.5">Add New Employee</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div>
               <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Full Name *</label>
               <input
@@ -1252,10 +1337,19 @@ export const EmployeeManagementPage: React.FC = () => {
               />
             </div>
             <div>
+              <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Phone *</label>
+              <input
+                value={newEmployee.phone}
+                onChange={e => setNewEmployee(p => ({ ...p, phone: e.target.value }))}
+                className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-850 dark:text-white rounded-xl px-4 py-2.5 text-sm focus:border-gold/50"
+                placeholder="0912345678"
+              />
+            </div>
+            <div>
               <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Role</label>
               <select
                 value={newEmployee.role}
-                onChange={e => setNewEmployee(p => ({ ...p, role: e.target.value as Employee['role'] }))}
+                onChange={e => setNewEmployee(p => ({ ...p, role: e.target.value }))}
                 className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-850 dark:text-white rounded-xl px-4 py-2.5 text-sm focus:border-gold/50"
               >
                 <option value="driver">Driver</option>
@@ -1283,44 +1377,62 @@ export const EmployeeManagementPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200/10 dark:divide-white/5">
-              {employees.map(emp => (
-                <motion.tr key={emp.id} variants={staggerItem} className="hover:bg-slate-500/3 transition-colors">
-                  <td className="py-4 px-4 pl-6">
-                    <div className="flex items-center gap-3.5">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gold to-yellow-600 flex items-center justify-center text-slate-900 text-sm font-extrabold flex-shrink-0 border-2 border-white/10 shadow-sm">
-                        {emp.name.charAt(0)}
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-10 text-slate-400 text-xs font-semibold">Loading team roster...</td>
+                </tr>
+              ) : employees.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-16 text-slate-400 text-xs font-semibold">No registered team members found.</td>
+                </tr>
+              ) : (
+                employees.map(emp => (
+                  <motion.tr key={emp.id} variants={staggerItem} className="hover:bg-slate-500/3 transition-colors">
+                    <td className="py-4 px-4 pl-6">
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gold to-yellow-600 flex items-center justify-center text-slate-900 text-sm font-extrabold flex-shrink-0 border-2 border-white/10 shadow-sm">
+                          {emp.name ? emp.name.charAt(0).toUpperCase() : 'E'}
+                        </div>
+                        <div>
+                          <p className="font-bold text-sm text-slate-800 dark:text-slate-100 tracking-tight">{emp.name}</p>
+                          <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold">{emp.email} · {emp.phone}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-bold text-sm text-slate-800 dark:text-slate-100 tracking-tight">{emp.name}</p>
-                        <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold">{emp.email}</p>
+                    </td>
+                    <td className="py-4 px-4">
+                      <span className={`badge text-[9px] font-extrabold uppercase tracking-widest border-2 px-2.5 py-0.5 rounded-lg ${getRoleColor(emp.role)}`}>
+                        {emp.role}
+                      </span>
+                    </td>
+                    <td className="py-4 px-4">
+                      <div className="flex items-center gap-1.5 text-xs font-extrabold text-slate-800 dark:text-slate-200">
+                        <Car className="w-4 h-4 text-slate-450" />
+                        <span>{emp.assignedVehicles?.length || 0} vehicles</span>
                       </div>
-                    </div>
-                  </td>
-                  <td className="py-4 px-4">
-                    <span className={`badge text-[9px] font-extrabold uppercase tracking-widest border-2 px-2.5 py-0.5 rounded-lg ${roleColors[emp.role]}`}>{emp.role}</span>
-                  </td>
-                  <td className="py-4 px-4">
-                    <div className="flex items-center gap-1.5 text-xs font-extrabold text-slate-800 dark:text-slate-200">
-                      <Car className="w-4 h-4 text-slate-450" />
-                      <span>{emp.assignedVehicles} vehicles</span>
-                    </div>
-                  </td>
-                  <td className="py-4 px-4 text-xs font-bold text-slate-500 dark:text-slate-400">{emp.joinedAt}</td>
-                  <td className="py-4 px-4">
-                    <span className={`badge text-[9px] font-extrabold uppercase tracking-widest border-2 px-2.5 py-0.5 rounded-lg ${emp.status === 'active' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-slate-500/5 text-slate-450 border-slate-200/20'}`}>
-                      {emp.status}
-                    </span>
-                  </td>
-                  <td className="py-4 px-4">
-                    <button
-                      onClick={() => toggleStatus(emp.id)}
-                      className="text-[10px] font-extrabold px-3 py-2 rounded-lg border border-slate-200/60 dark:border-white/10 text-slate-600 dark:text-slate-350 hover:border-gold hover:text-gold hover:bg-yellow-500/5 transition-all shadow-sm"
-                    >
-                      {emp.status === 'active' ? 'Deactivate' : 'Activate'}
-                    </button>
-                  </td>
-                </motion.tr>
-              ))}
+                    </td>
+                    <td className="py-4 px-4 text-xs font-bold text-slate-500 dark:text-slate-400">
+                      {formatDate(emp.createdAt || new Date().toISOString(), 'short')}
+                    </td>
+                    <td className="py-4 px-4">
+                      <span className={`badge text-[9px] font-extrabold uppercase tracking-widest border-2 px-2.5 py-0.5 rounded-lg ${
+                        emp.status.toUpperCase() === 'ACTIVE' 
+                          ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' 
+                          : 'bg-slate-500/5 text-slate-450 border-slate-200/20'
+                      }`}>
+                        {emp.status}
+                      </span>
+                    </td>
+                    <td className="py-4 px-4">
+                      <button
+                        onClick={() => toggleStatus(emp)}
+                        className="text-[10px] font-extrabold px-3 py-2 rounded-lg border border-slate-200/60 dark:border-white/10 text-slate-600 dark:text-slate-350 hover:border-gold hover:text-gold hover:bg-yellow-500/5 transition-all shadow-sm"
+                      >
+                        {emp.status.toUpperCase() === 'ACTIVE' ? 'Deactivate' : 'Activate'}
+                      </button>
+                    </td>
+                  </motion.tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

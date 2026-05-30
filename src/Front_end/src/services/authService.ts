@@ -6,6 +6,17 @@ const TOKEN_KEY = 'luxeway_access_token';
 const REFRESH_TOKEN_KEY = 'luxeway_refresh_token';
 const USER_KEY = 'luxeway_user';
 
+const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8080/api/v1';
+
+const resolveImageUrl = (url: string | null | undefined): string => {
+  if (!url) return '';
+  if (url.startsWith('/uploads') || url.startsWith('uploads')) {
+    const cleanUrl = url.startsWith('/') ? url : '/' + url;
+    return `${API_BASE}${cleanUrl}`;
+  }
+  return url;
+};
+
 // ====== REAL BACKEND AUTH SERVICE ======
 export const authService = {
   /**
@@ -35,7 +46,7 @@ export const authService = {
           displayName: userInfo.displayName || `${userInfo.firstName} ${userInfo.lastName}`,
           role: userInfo.role?.toLowerCase() || 'customer',
           phone: userInfo.phone || '',
-          avatar: userInfo.avatar || '',
+          avatar: resolveImageUrl(userInfo.avatar),
           verified: userInfo.verified || false,
           rating: userInfo.rating || 5.0,
           totalReviews: userInfo.totalReviews || 0,
@@ -89,7 +100,7 @@ export const authService = {
           displayName: userInfo.displayName || `${userInfo.firstName} ${userInfo.lastName}`,
           role: userInfo.role?.toLowerCase() || 'customer',
           phone: userInfo.phone || '',
-          avatar: userInfo.avatar || '',
+          avatar: resolveImageUrl(userInfo.avatar),
           verified: false,
           rating: 0,
           totalReviews: 0,
@@ -163,7 +174,7 @@ export const authService = {
           displayName: userInfo.displayName || `${userInfo.firstName} ${userInfo.lastName}`,
           role: userInfo.role?.toLowerCase() || 'customer',
           phone: userInfo.phone || '',
-          avatar: userInfo.avatar || userInfo.profilePicture || null,
+          avatar: resolveImageUrl(userInfo.avatar || userInfo.profilePicture),
           verified: userInfo.verified || userInfo.isVerified || false,
           rating: userInfo.rating || 0,
           totalReviews: userInfo.totalReviews || 0,
@@ -200,6 +211,7 @@ export const authService = {
           ...userInfo,
           id: userInfo.id?.toString() || userId,
           displayName: userInfo.displayName || `${userInfo.firstName} ${userInfo.lastName}`,
+          avatar: resolveImageUrl(userInfo.avatar || userInfo.profilePicture),
         } as User;
         
         localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));

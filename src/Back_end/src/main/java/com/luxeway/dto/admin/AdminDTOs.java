@@ -51,4 +51,11 @@ public class AdminDTOs {
         private BigDecimal refundAmount; // null = full refund
         private String reason;
     }
+
+    @Data
+    public static class ReviewDocumentRequest {
+        @NotBlank(message = "Status is required")
+        private String status; // VERIFIED or REJECTED
+        private String rejectionReason;
+    }
 }

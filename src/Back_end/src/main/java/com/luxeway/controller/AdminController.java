@@ -25,6 +25,9 @@ import org.springframework.web.bind.annotation.*;
 public class AdminController {
 
     private final AdminService adminService;
+    private final com.luxeway.service.SystemSettingService systemSettingService;
+    private final com.luxeway.service.FAQService faqService;
+    private final com.luxeway.service.AnalyticsService analyticsService;
 
     // ====== Dashboard ======
 
@@ -163,5 +166,108 @@ public class AdminController {
     @Operation(summary = "List all disputes on the platform")
     public ResponseEntity<ApiResponse<java.util.List<Dispute>>> listAllDisputes() {
         return ResponseEntity.ok(ApiResponse.success("Success", adminService.listAllDisputes()));
+    }
+
+    @PutMapping("/users/documents/{id}/status")
+    @Operation(summary = "Review user KYC/Verification Document")
+    public ResponseEntity<ApiResponse<UserDTOs.DocumentResponse>> reviewUserDocument(
+            @PathVariable String id,
+            @Valid @RequestBody AdminDTOs.ReviewDocumentRequest request) {
+        UserDTOs.DocumentResponse doc = adminService.reviewDocument(id, request);
+        return ResponseEntity.ok(ApiResponse.success("Document status updated successfully", doc));
+    }
+
+    @GetMapping("/settings")
+    @Operation(summary = "List all dynamic platform system configurations")
+    public ResponseEntity<ApiResponse<java.util.List<com.luxeway.entity.SystemSetting>>> listSettings() {
+        return ResponseEntity.ok(ApiResponse.success("System settings retrieved successfully", systemSettingService.getAllSettings()));
+    }
+
+    @PutMapping("/settings")
+    @Operation(summary = "Update a specific platform configuration setting")
+    public ResponseEntity<ApiResponse<com.luxeway.entity.SystemSetting>> updateSetting(
+            @RequestBody java.util.Map<String, String> payload) {
+        String key = payload.get("settingKey");
+        String value = payload.get("settingValue");
+        if (key == null || value == null) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("settingKey and settingValue are required"));
+        }
+        try {
+            com.luxeway.entity.SystemSetting updated = systemSettingService.updateSetting(key, value);
+            return ResponseEntity.ok(ApiResponse.success("System setting updated successfully", updated));
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    @GetMapping("/faqs")
+    @Operation(summary = "List all active and inactive FAQs for admin panel")
+    public ResponseEntity<ApiResponse<java.util.List<com.luxeway.entity.FAQ>>> listAllFAQs() {
+        return ResponseEntity.ok(ApiResponse.success("FAQs retrieved successfully", faqService.getAllFAQs()));
+    }
+
+    @PostMapping("/faqs")
+    @Operation(summary = "Create a new FAQ resource entry")
+    public ResponseEntity<ApiResponse<com.luxeway.entity.FAQ>> createFAQ(
+            @RequestBody com.luxeway.entity.FAQ faq) {
+        try {
+            com.luxeway.entity.FAQ created = faqService.createFAQ(faq);
+            return ResponseEntity.status(201).body(ApiResponse.success("FAQ created successfully", created));
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    @PutMapping("/faqs/{id}")
+    @Operation(summary = "Update an existing FAQ entry by ID")
+    public ResponseEntity<ApiResponse<com.luxeway.entity.FAQ>> updateFAQ(
+            @PathVariable Long id,
+            @RequestBody com.luxeway.entity.FAQ faq) {
+        try {
+            com.luxeway.entity.FAQ updated = faqService.updateFAQ(id, faq);
+            return ResponseEntity.ok(ApiResponse.success("FAQ updated successfully", updated));
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/faqs/{id}")
+    @Operation(summary = "Hard delete an FAQ entry from platform resources")
+    public ResponseEntity<ApiResponse<Void>> deleteFAQ(
+            @PathVariable Long id) {
+        try {
+            faqService.deleteFAQ(id);
+            return ResponseEntity.ok(ApiResponse.success("FAQ deleted successfully", null));
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    // ====== Analytics Management ======
+
+    @GetMapping("/analytics/overview")
+    @Operation(summary = "Get platform-wide cumulative summary analytics")
+    public ResponseEntity<ApiResponse<java.util.Map<String, Object>>> getAnalyticsOverview() {
+        return ResponseEntity.ok(ApiResponse.success("Analytics overview retrieved", analyticsService.getOverviewStats()));
+    }
+
+    @GetMapping("/analytics/historical")
+    @Operation(summary = "Get historical daily analytics records")
+    public ResponseEntity<ApiResponse<java.util.List<com.luxeway.entity.Analytics>>> getHistoricalAnalytics(
+            @RequestParam(defaultValue = "30") int days) {
+        return ResponseEntity.ok(ApiResponse.success("Historical metrics retrieved", analyticsService.getHistoricalMetrics(days)));
+    }
+
+    @PostMapping("/analytics/trigger")
+    @Operation(summary = "Trigger manual analytics compilation for a specific date")
+    public ResponseEntity<ApiResponse<com.luxeway.entity.Analytics>> triggerCompilation(
+            @RequestParam String date) {
+        try {
+            java.time.LocalDate localDate = java.time.LocalDate.parse(date);
+            com.luxeway.entity.Analytics compiled = analyticsService.compileAnalyticsForDate(localDate);
+            return ResponseEntity.ok(ApiResponse.success("Analytics compiled successfully", compiled));
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body(ApiResponse.error(e.getMessage()));
+        }
     }
 }

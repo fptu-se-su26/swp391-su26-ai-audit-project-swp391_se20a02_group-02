@@ -6,6 +6,7 @@ import { vehicleService } from '@/services/vehicleService';
 import type { Vehicle } from '@/types';
 import { formatCurrency } from '@/utils';
 import { fadeUp, staggerContainer, staggerItem } from '@/animations/variants';
+import { useT } from '@/i18n/translations';
 
 const MAX_COMPARE = 3;
 
@@ -17,17 +18,17 @@ const SpecRow: React.FC<{ label: string; values: (string | number | boolean | un
   };
 
   return (
-    <tr className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
+    <tr className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/50 dark:hover:bg-slate-850/50 transition-colors">
       <td className="py-3 pr-4 text-sm font-medium text-slate-500 whitespace-nowrap w-36">{label}</td>
       {values.map((v, i) => (
-        <td key={i} className="py-3 px-4 text-sm text-slate-800 text-center">
+        <td key={i} className="py-3 px-4 text-sm text-slate-800 dark:text-slate-200 text-center">
           {format(v)}
         </td>
       ))}
       {/* Empty cells for unfilled slots */}
       {Array.from({ length: MAX_COMPARE - values.length }).map((_, i) => (
         <td key={`empty-${i}`} className="py-3 px-4 text-center">
-          <Minus className="w-4 h-4 text-slate-200 mx-auto" />
+          <Minus className="w-4 h-4 text-slate-200 dark:text-slate-700 mx-auto" />
         </td>
       ))}
     </tr>
@@ -40,18 +41,19 @@ const VehicleSlot: React.FC<{
   onRemove: () => void;
   onAdd: () => void;
 }> = ({ vehicle, index, onRemove, onAdd }) => {
+  const t = useT();
   if (!vehicle) {
     return (
       <div className="flex-1 min-w-0">
         <button
           onClick={onAdd}
-          className="w-full h-56 rounded-3xl border-2 border-dashed border-slate-200 hover:border-accent hover:bg-blue-50/50 transition-all duration-200 flex flex-col items-center justify-center gap-3 group"
+          className="w-full h-56 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-accent hover:bg-blue-50/50 dark:hover:bg-blue-950/20 transition-all duration-200 flex flex-col items-center justify-center gap-3 group bg-white dark:bg-slate-900"
         >
-          <div className="w-12 h-12 rounded-2xl bg-slate-100 group-hover:bg-accent/10 flex items-center justify-center transition-colors">
+          <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 group-hover:bg-accent/10 flex items-center justify-center transition-colors">
             <Plus className="w-6 h-6 text-slate-400 group-hover:text-accent transition-colors" />
           </div>
           <span className="text-sm font-medium text-slate-400 group-hover:text-accent transition-colors">
-            Add Vehicle {index + 1}
+            {t.compare.addVehicle} {index + 1}
           </span>
         </button>
       </div>
@@ -62,10 +64,10 @@ const VehicleSlot: React.FC<{
 
   return (
     <motion.div variants={staggerItem} className="flex-1 min-w-0">
-      <div className="relative group luxury-card overflow-hidden">
+      <div className="relative group luxury-card overflow-hidden bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800">
         <button
           onClick={onRemove}
-          className="absolute top-3 right-3 z-20 w-7 h-7 bg-white shadow-md rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 hover:text-red-500"
+          className="absolute top-3 right-3 z-20 w-7 h-7 bg-white dark:bg-slate-800 shadow-md rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-500"
         >
           <X className="w-3.5 h-3.5" />
         </button>
@@ -74,13 +76,13 @@ const VehicleSlot: React.FC<{
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
           {vehicle.isFeatured && (
             <span className="absolute top-3 left-3 px-2 py-1 bg-gold text-[#0F172A] text-[10px] font-bold rounded-full">
-              ⭐ Featured
+              {t.compare.featured}
             </span>
           )}
         </div>
         <div className="px-1">
           <p className="text-xs font-semibold text-accent mb-1">{vehicle.brand}</p>
-          <h3 className="font-display text-lg font-bold text-[#0F172A] leading-tight mb-2">{vehicle.name}</h3>
+          <h3 className="font-display text-lg font-bold text-[#0F172A] dark:text-white leading-tight mb-2 truncate">{vehicle.name}</h3>
           <div className="flex items-center gap-1 text-xs text-slate-500 mb-3">
             <MapPin className="w-3 h-3" />
             <span>{vehicle.location?.city || 'Vietnam'}</span>
@@ -90,14 +92,14 @@ const VehicleSlot: React.FC<{
           </div>
           <div className="flex items-center justify-between">
             <div>
-              <span className="text-xl font-bold text-[#0F172A]">{formatCurrency(vehicle.pricePerDay)}</span>
-              <span className="text-xs text-slate-400">/day</span>
+              <span className="text-xl font-bold text-[#0F172A] dark:text-white">{formatCurrency(vehicle.pricePerDay)}</span>
+              <span className="text-xs text-slate-400">{t.marketplace.perDay}</span>
             </div>
             <Link
               to={`/vehicles/${vehicle.id}`}
               className="flex items-center gap-1 text-xs font-semibold text-accent hover:text-blue-700 transition-colors"
             >
-              View <ArrowRight className="w-3 h-3" />
+              {t.common.view} <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
         </div>
@@ -106,12 +108,12 @@ const VehicleSlot: React.FC<{
   );
 };
 
-// Simple picker modal
 const VehiclePicker: React.FC<{
   onSelect: (v: Vehicle) => void;
   onClose: () => void;
   excluded: string[];
 }> = ({ onSelect, onClose, excluded }) => {
+  const t = useT();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(false);
@@ -137,11 +139,11 @@ const VehiclePicker: React.FC<{
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-lg luxury-card p-6 max-h-[80vh] flex flex-col"
+        className="w-full max-w-lg luxury-card p-6 max-h-[80vh] flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800"
       >
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-display text-xl font-bold text-[#0F172A]">Select a Vehicle</h3>
-          <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 transition-colors">
+          <h3 className="font-display text-xl font-bold text-[#0F172A] dark:text-white">{t.compare.selectVehicle}</h3>
+          <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -149,7 +151,7 @@ const VehiclePicker: React.FC<{
           type="text"
           value={query}
           onChange={e => setQuery(e.target.value)}
-          placeholder="Search by name or brand..."
+          placeholder={t.compare.searchPlaceholder}
           className="lux-input mb-4"
           autoFocus
         />
@@ -159,13 +161,13 @@ const VehiclePicker: React.FC<{
               <div key={i} className="skeleton h-16 rounded-2xl" />
             ))
           ) : filtered.length === 0 ? (
-            <p className="text-center text-slate-400 py-8">No vehicles found</p>
+            <p className="text-center text-slate-400 py-8">{t.compare.noVehiclesFound}</p>
           ) : (
             filtered.map(v => (
               <button
                 key={v.id}
                 onClick={() => { onSelect(v); onClose(); }}
-                className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-50 border border-slate-100 hover:border-accent/30 transition-all text-left"
+                className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-850/50 border border-slate-100 dark:border-slate-800 hover:border-accent/30 transition-all text-left"
               >
                 <img
                   src={v.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?q=80&w=80'}
@@ -173,8 +175,8 @@ const VehiclePicker: React.FC<{
                   className="w-14 h-10 object-cover rounded-xl flex-shrink-0"
                 />
                 <div>
-                  <p className="font-semibold text-sm text-[#0F172A]">{v.name}</p>
-                  <p className="text-xs text-slate-500">{v.brand} • {formatCurrency(v.pricePerDay)}/day</p>
+                  <p className="font-semibold text-sm text-[#0F172A] dark:text-white">{v.name}</p>
+                  <p className="text-xs text-slate-500">{v.brand} • {formatCurrency(v.pricePerDay)}{t.marketplace.perDay}</p>
                 </div>
               </button>
             ))
@@ -186,6 +188,7 @@ const VehiclePicker: React.FC<{
 };
 
 const ComparePage: React.FC = () => {
+  const t = useT();
   const [searchParams] = useSearchParams();
   const [vehicles, setVehicles] = useState<(Vehicle | null)[]>([null, null, null]);
   const [pickerIndex, setPickerIndex] = useState<number | null>(null);
@@ -222,16 +225,16 @@ const ComparePage: React.FC = () => {
   const excludedIds = filled.map(v => v.id);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] pt-24 pb-16">
+    <div className="min-h-screen bg-[#F8FAFF] dark:bg-[#070B14] pt-24 pb-16">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div variants={fadeUp} initial="hidden" animate="visible" className="mb-10">
-          <span className="text-label text-gold mb-2 block">Side-by-Side</span>
-          <h1 className="font-display text-4xl md:text-5xl font-bold text-[#0F172A] mb-3">
-            Compare Vehicles
+          <span className="text-label text-gold mb-2 block">{t.compare.sideBySide}</span>
+          <h1 className="font-display text-4xl md:text-5xl font-bold text-[#0F172A] dark:text-white mb-3">
+            {t.compare.title}
           </h1>
-          <p className="text-slate-500 text-lg max-w-xl">
-            Select up to {MAX_COMPARE} vehicles to compare specs, pricing, and features side-by-side.
+          <p className="text-slate-500 dark:text-slate-400 text-lg max-w-xl">
+            {t.compare.subtitle}
           </p>
         </motion.div>
 
@@ -240,7 +243,7 @@ const ComparePage: React.FC = () => {
           variants={staggerContainer}
           initial="hidden"
           animate="visible"
-          className="flex gap-4 mb-10"
+          className="flex flex-col md:flex-row gap-4 mb-10"
         >
           {vehicles.map((v, i) => (
             <VehicleSlot
@@ -259,15 +262,15 @@ const ComparePage: React.FC = () => {
             variants={fadeUp}
             initial="hidden"
             animate="visible"
-            className="luxury-card p-6 overflow-x-auto"
+            className="luxury-card p-6 overflow-x-auto bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800"
           >
-            <h2 className="font-display text-xl font-bold text-[#0F172A] mb-6">Specification Comparison</h2>
+            <h2 className="font-display text-xl font-bold text-[#0F172A] dark:text-white mb-6">{t.compare.specComparison}</h2>
             <table className="w-full">
               <thead>
-                <tr className="border-b-2 border-slate-100">
-                  <th className="py-3 text-left text-sm font-semibold text-slate-400 w-36">Spec</th>
+                <tr className="border-b-2 border-slate-100 dark:border-slate-800">
+                  <th className="py-3 text-left text-sm font-semibold text-slate-400 w-36">{t.compare.spec}</th>
                   {filled.map(v => (
-                    <th key={v.id} className="py-3 px-4 text-center text-sm font-bold text-[#0F172A]">
+                    <th key={v.id} className="py-3 px-4 text-center text-sm font-bold text-[#0F172A] dark:text-white">
                       {v.name}
                     </th>
                   ))}
@@ -277,29 +280,29 @@ const ComparePage: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                <SpecRow label="Price/Day" values={filled.map(v => formatCurrency(v.pricePerDay))} />
-                <SpecRow label="Category" values={filled.map(v => v.category)} />
-                <SpecRow label="Brand" values={filled.map(v => v.brand)} />
-                <SpecRow label="Seats" values={filled.map(v => v.specs?.seats)} />
-                <SpecRow label="Transmission" values={filled.map(v => v.specs?.transmission)} />
-                <SpecRow label="Fuel Type" values={filled.map(v => v.specs?.fuelType)} />
-                <SpecRow label="Rating" values={filled.map(v => v.rating?.toFixed(1))} />
-                <SpecRow label="Reviews" values={filled.map(v => v.totalReviews)} />
-                <SpecRow label="Instant Book" values={filled.map(v => v.instantBook)} />
-                <SpecRow label="Delivery" values={filled.map(v => v.deliveryAvailable)} />
-                <SpecRow label="Location" values={filled.map(v => v.location?.city)} />
+                <SpecRow label={t.compare.priceDay} values={filled.map(v => formatCurrency(v.pricePerDay))} />
+                <SpecRow label={t.compare.category} values={filled.map(v => v.category)} />
+                <SpecRow label={t.compare.brand} values={filled.map(v => v.brand)} />
+                <SpecRow label={t.compare.seats} values={filled.map(v => v.specs?.seats)} />
+                <SpecRow label={t.compare.transmission} values={filled.map(v => v.specs?.transmission)} />
+                <SpecRow label={t.compare.fuelType} values={filled.map(v => v.specs?.fuelType)} />
+                <SpecRow label={t.compare.rating} values={filled.map(v => v.rating?.toFixed(1))} />
+                <SpecRow label={t.compare.reviews} values={filled.map(v => v.totalReviews)} />
+                <SpecRow label={t.compare.instantBook} values={filled.map(v => v.instantBook)} />
+                <SpecRow label={t.compare.delivery} values={filled.map(v => v.deliveryAvailable)} />
+                <SpecRow label={t.compare.location} values={filled.map(v => v.location?.city)} />
               </tbody>
             </table>
 
             {/* Book CTA */}
-            <div className="flex gap-4 mt-6 pt-6 border-t border-slate-100">
+            <div className="flex gap-4 mt-6 pt-6 border-t border-slate-100 dark:border-slate-800">
               {filled.map(v => (
                 <div key={v.id} className="flex-1">
                   <Link
                     to={`/booking/${v.id}`}
                     className="btn-primary w-full text-center block py-3 text-sm"
                   >
-                    Book {v.name.split(' ')[0]}
+                    {t.compare.bookCar.replace('{name}', v.name.split(' ')[0])}
                   </Link>
                 </div>
               ))}
@@ -318,9 +321,9 @@ const ComparePage: React.FC = () => {
             className="text-center py-16"
           >
             <div className="text-6xl mb-4">🚗</div>
-            <p className="text-slate-500 text-lg">Add at least 2 vehicles to see a comparison.</p>
+            <p className="text-slate-500 dark:text-slate-400 text-lg">{t.compare.addAtLeast2}</p>
             <Link to="/marketplace" className="btn-primary inline-flex items-center gap-2 mt-6">
-              Browse Vehicles <ArrowRight className="w-4 h-4" />
+              {t.compare.browseVehicles} <ArrowRight className="w-4 h-4" />
             </Link>
           </motion.div>
         )}

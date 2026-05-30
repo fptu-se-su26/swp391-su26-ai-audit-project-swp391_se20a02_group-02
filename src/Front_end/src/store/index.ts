@@ -5,7 +5,8 @@ import { authService } from '@/services/authService';
 import { faker } from '@faker-js/faker';
 
 export type Theme = 'light' | 'dark';
-export type Language = 'en' | 'vi';
+export type Language = 'en' | 'vi' | 'ja';
+
 
 // ====== AUTH STORE ======
 interface AuthStore {
@@ -155,7 +156,13 @@ export const useUIStore = create<UIStore>()(
       activeModal: null,
       isScrolled: false,
       theme: 'light',
-      language: 'en',
+      language: (() => {
+        try {
+          const lang = localStorage.getItem('language');
+          if (lang && ['en', 'vi', 'ja'].includes(lang)) return lang as Language;
+        } catch {}
+        return 'en';
+      })() as Language,
 
       setSidebarOpen: (open) => set({ sidebarOpen: open }),
       setMobileMenuOpen: (open) => set({ mobileMenuOpen: open }),
@@ -186,6 +193,8 @@ export const useUIStore = create<UIStore>()(
 
       setLanguage: (lang) => {
         set({ language: lang });
+        // Sync with i18n (uses 'language' key in localStorage)
+        try { localStorage.setItem('language', lang); } catch {}
         import('@/i18n/config').then(m => m.default.changeLanguage(lang));
       },
     }),
@@ -195,6 +204,7 @@ export const useUIStore = create<UIStore>()(
     }
   )
 );
+
 
 // ====== VEHICLE STORE ======
 interface VehicleStore {

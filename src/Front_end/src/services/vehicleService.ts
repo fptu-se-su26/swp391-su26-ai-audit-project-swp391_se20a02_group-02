@@ -4,6 +4,17 @@ import type { Vehicle, VehicleFilters, ApiResponse } from '@/types';
 // Storage key for wishlist fallback since backend may not have a dedicated endpoint yet
 const WISHLIST_KEY = 'luxeway_wishlist';
 
+const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8080/api/v1';
+
+const resolveImageUrl = (url: string | null | undefined): string => {
+  if (!url) return '';
+  if (url.startsWith('/uploads') || url.startsWith('uploads')) {
+    const cleanUrl = url.startsWith('/') ? url : '/' + url;
+    return `${API_BASE}${cleanUrl}`;
+  }
+  return url;
+};
+
 // Helper function to map flat backend vehicle DTO to nested frontend Vehicle type
 const mapVehicle = (v: any): Vehicle => {
   if (!v) return v;
@@ -44,8 +55,18 @@ const mapVehicle = (v: any): Vehicle => {
     advanceBookingDays: 1
   };
 
+  const resolvedThumbnailUrl = resolveImageUrl(v.thumbnailUrl);
+  const resolvedImages = (v.images || []).map((img: string) => resolveImageUrl(img));
+  const resolvedOwner = v.owner ? {
+    ...v.owner,
+    avatar: resolveImageUrl(v.owner.avatar)
+  } : undefined;
+
   return {
     ...v,
+    thumbnailUrl: resolvedThumbnailUrl,
+    images: resolvedImages,
+    owner: resolvedOwner,
     category: v.category || 'economy',
     location: {
       ...defaultLocation,
@@ -66,7 +87,6 @@ const mapVehicle = (v: any): Vehicle => {
     rules: v.rules || [],
     features: v.features || [],
     addons: v.addons || [],
-    images: v.images || [],
     rating: v.rating !== undefined && v.rating !== null ? v.rating : 5.0,
     totalReviews: v.totalReviews !== undefined && v.totalReviews !== null ? v.totalReviews : 0,
     instantBook: v.instantBook !== undefined && v.instantBook !== null ? v.instantBook : false,
@@ -107,6 +127,8 @@ export const vehicleService = {
         if (filters.deliveryAvailable) queryParams.append('deliveryAvailable', 'true');
         if (filters.isFeatured) queryParams.append('isFeatured', 'true');
         if (filters.sortBy) queryParams.append('sortBy', filters.sortBy);
+        if (filters.startDate) queryParams.append('startDate', filters.startDate);
+        if (filters.endDate) queryParams.append('endDate', filters.endDate);
       }
       
       const response = await apiClient.get<any>(`/vehicles?${queryParams.toString()}`);
