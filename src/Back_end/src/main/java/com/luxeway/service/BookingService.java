@@ -31,6 +31,7 @@ public class BookingService {
     private final VehicleRepository vehicleRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final EmailService emailService;
 
     @Value("${business.pricing.service-fee-rate:0.12}")
     private double serviceFeeRate;
@@ -116,13 +117,23 @@ public class BookingService {
         // Notify owner
         notificationService.createNotification(
             booking.getOwner().getId(),
-            "BOOKING_CREATED",
+            "booking",
             "New Booking Request",
             renter.getDisplayName() + " has requested to book your " + vehicle.getName(),
             "/owner/bookings/" + booking.getId()
         );
 
         log.info("Booking created: {} for vehicle {} by renter {}", booking.getId(), vehicle.getId(), renterId);
+        
+        // Dispatch email confirmation if confirmed instantly
+        if (booking.getStatus() == BookingStatus.CONFIRMED) {
+            try {
+                emailService.sendBookingConfirmation(booking.getRenter().getEmail(), booking);
+            } catch (Exception e) {
+                log.error("Failed to dispatch email confirmation: {}", e.getMessage());
+            }
+        }
+
         return toResponse(booking);
     }
 
@@ -182,7 +193,7 @@ public class BookingService {
                 
         notificationService.createNotification(
             notifyUserId,
-            "BOOKING_CANCELLED",
+            "booking",
             "Booking Cancelled",
             "Booking for " + booking.getVehicle().getName() + " has been cancelled.",
             "/bookings/" + booking.getId()
@@ -221,13 +232,23 @@ public class BookingService {
         // Notify renter
         notificationService.createNotification(
             booking.getRenter().getId(),
-            "BOOKING_UPDATED",
+            "booking",
             "Booking Status Updated",
             "Your booking for " + booking.getVehicle().getName() + " is now " + newStatus.getDisplayName(),
             "/bookings/" + booking.getId()
         );
 
         log.info("Booking {} status updated to {} by owner {}", bookingId, newStatus, ownerId);
+
+        // Dispatch email confirmation if approved by owner
+        if (newStatus == BookingStatus.CONFIRMED) {
+            try {
+                emailService.sendBookingConfirmation(booking.getRenter().getEmail(), booking);
+            } catch (Exception e) {
+                log.error("Failed to dispatch email confirmation: {}", e.getMessage());
+            }
+        }
+
         return toResponse(booking);
     }
 

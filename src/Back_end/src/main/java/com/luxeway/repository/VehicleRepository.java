@@ -116,6 +116,11 @@ public interface VehicleRepository extends JpaRepository<Vehicle, String> {
            "(:isFeatured = false OR v.isFeatured = true) AND " +
            "(:instantBook = false OR v.instantBook = true) AND " +
            "(:deliveryAvailable = false OR v.deliveryAvailable = true) AND " +
+           "(:startDate IS NULL OR :endDate IS NULL OR NOT EXISTS (" +
+           "  SELECT b FROM Booking b WHERE b.vehicle.id = v.id AND " +
+           "  b.status IN (com.luxeway.enums.BookingStatus.PENDING, com.luxeway.enums.BookingStatus.CONFIRMED, com.luxeway.enums.BookingStatus.ACTIVE) AND " +
+           "  b.startDate <= :endDate AND b.endDate >= :startDate" +
+           ")) AND " +
            "v.status = 'AVAILABLE'")
     Page<Vehicle> filterVehiclesMulti(@Param("location") String location,
                                       @Param("categories") List<VehicleCategory> categories,
@@ -129,6 +134,8 @@ public interface VehicleRepository extends JpaRepository<Vehicle, String> {
                                       @Param("isFeatured") boolean isFeatured,
                                       @Param("instantBook") boolean instantBook,
                                       @Param("deliveryAvailable") boolean deliveryAvailable,
+                                      @Param("startDate") java.time.LocalDate startDate,
+                                      @Param("endDate") java.time.LocalDate endDate,
                                       Pageable pageable);
     
     // Statistics

@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import java.util.List;
 import java.util.Map;
 
@@ -44,10 +45,10 @@ public class DisputeController {
     }
 
     @PutMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Dispute>> updateStatus(
             @PathVariable Long id,
             @RequestBody Map<String, String> request) {
-        // In a real scenario, this endpoint should be restricted to ADMIN role.
         Dispute dispute = disputeService.updateDisputeStatus(id, request.get("status"), request.get("adminDecision"));
         return ResponseEntity.ok(ApiResponse.success("Dispute updated", dispute));
     }

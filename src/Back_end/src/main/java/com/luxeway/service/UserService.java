@@ -148,7 +148,7 @@ public class UserService {
         return resp;
     }
 
-    private UserDTOs.DocumentResponse toDocumentResponse(UserDocument doc) {
+    public UserDTOs.DocumentResponse toDocumentResponse(UserDocument doc) {
         UserDTOs.DocumentResponse resp = new UserDTOs.DocumentResponse();
         resp.setId(doc.getId());
         resp.setDocumentType(doc.getDocumentType());

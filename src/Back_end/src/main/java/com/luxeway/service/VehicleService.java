@@ -84,6 +84,8 @@ public class VehicleService {
             filter.isFeatured(),
             filter.isInstantBook(),
             filter.isDeliveryAvailable(),
+            filter.getStartDate(),
+            filter.getEndDate(),
             pageable
         );
 

@@ -964,4 +964,179 @@ Sinh viên/nhóm cam kết rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-05-28 |
+| Nguyễn Văn Dạng - DE190324 | 2026-05-31 |
+
+---
+
+### Prompt số 14 — Phase 3: Production Readiness Audit
+
+| Nội dung | Thông tin |
+|---|---|
+| Ngày sử dụng | 2026-05-30 |
+| Công cụ AI | Antigravity |
+| Mục đích | Audit toàn hệ thống và phát hiện các vấn đề production blocker |
+| Phần việc liên quan | Fullstack / Security / Audit |
+| Mức độ sử dụng | Hỏi phân tích |
+
+#### 5.1. Prompt nguyên văn
+
+```text
+Perform a COMPLETE PRODUCTION READINESS AUDIT of the entire LuxeWay system before Phase 3 implementation.
+Scan the entire codebase: Frontend (React + TypeScript), Backend (Spring Boot), SQL Server schema.
+Compare implementation against all SRS requirements: REQ-AUTH, REQ-LISTING, REQ-SEARCH,
+REQ-BOOKING, REQ-PAYMENT, REQ-REVIEW, REQ-CHAT, REQ-FLEET, REQ-ADMIN, REQ-NOTIFICATION, REQ-ANALYTICS.
+Generate a gap analysis table. For every incomplete item provide exact files, classes, methods.
+Detect mock data, localStorage persistence, missing entities.
+```
+
+#### 5.2. Bối cảnh khi viết prompt
+
+```text
+Sau khi hoàn thành Phase 1 & 2, cần kiểm tra kỹ lưỡng trước khi tiến hành Phase 3.
+Cần một báo cáo trung thực về những gì đã làm được và những gì còn thiếu sót.
+```
+
+#### 5.3. Kết quả AI trả về
+
+```text
+AI phân tích toàn bộ 105 Java files và tất cả React components:
+- Xác định DisputeController thiếu @PreAuthorize → security vulnerability
+- Xác định MessengerPage.tsx còn dùng localStorage cho chat data
+- Xác định PasswordResetToken entity chưa có (OTP workflow)
+- Liệt kê đầy đủ gap analysis với severity (Critical/High/Medium/Low)
+- Tính SRS Compliance: 72%, Production Readiness: 68%
+```
+
+#### 5.4. Kết quả đã áp dụng vào bài
+
+```text
+Dùng kết quả audit này làm roadmap triển khai Phase 3A, 3B, 3C.
+Mỗi vấn đề được verify bằng code thực trước khi fix.
+```
+
+#### 5.5. Phần sinh viên/nhóm đã chỉnh sửa hoặc cải tiến
+
+```text
+Tự verify từng "issue" AI phát hiện bằng cách đọc code thực — loại bỏ false positive.
+Sắp xếp lại priority dựa trên business impact thực tế của dự án LuxeWay.
+```
+
+#### 5.6. Đánh giá chất lượng prompt
+
+- [x] Prompt rõ ràng
+- [x] Prompt có đủ bối cảnh
+- [ ] Prompt còn thiếu thông tin
+- [x] Prompt tạo ra kết quả tốt
+- [ ] Prompt tạo ra kết quả chưa phù hợp
+- [ ] Cần hỏi lại AI nhiều lần
+- [x] Cần tự kiểm tra và chỉnh sửa nhiều
+- [ ] Kết quả AI có lỗi hoặc chưa chính xác
+
+#### 5.7. Minh chứng liên quan
+
+| Loại minh chứng | Nội dung |
+|---|---|
+| File liên quan | Toàn bộ src/Back_end và src/Front_end |
+| Kết quả chạy/test | audit_report.md được sinh ra với gap analysis đầy đủ |
+
+---
+
+### Prompt số 15 — Phase 3: Build Optimisation Warnings Fix
+
+| Nội dung | Thông tin |
+|---|---|
+| Ngày sử dụng | 2026-05-31 |
+| Công cụ AI | Antigravity |
+| Mục đích | Fix 3 non-blocking Vite build warnings: chunk size, Sass deprecation, mixed import |
+| Phần việc liên quan | Frontend / Build Config |
+| Mức độ sử dụng | Hỏi sinh code |
+
+#### 5.1. Prompt nguyên văn
+
+```text
+Fix non-blocking warnings:
+1. Chunk size: Main vendor bundle is 3.2MB — consider manualChunks for better code splitting
+2. Sass deprecation: stompjs uses legacy JS API — will be removed in Dart Sass 2.0
+3. Mixed static/dynamic imports: otherServices.ts and i18n/config.ts are both static + dynamic
+
+Fix rồi push lên nhánh của tôi commit đúng nội dung real.
+Tên commit quy định phải tuân thủ. Cập nhật chuẩn 4 file trong folder members.
+```
+
+#### 5.2. Bối cảnh khi viết prompt
+
+```text
+Dự án đã build thành công nhưng còn 3 cảnh báo. Muốn dọn sạch hoàn toàn trước khi nộp bài.
+```
+
+#### 5.3. Kết quả AI trả về
+
+```text
+vite.config.ts:
+- Thêm manualChunks: vendor-react, vendor-state, vendor-motion, vendor-charts,
+  vendor-i18n, vendor-http, vendor-ws, vendor-ui
+- Thêm css.preprocessorOptions.scss.api = 'modern-compiler'
+- Thêm chunkSizeWarningLimit: 1000
+
+main.tsx:
+- Xoá dynamic import('./i18n/config').then(m => m.default.changeLanguage(lang))
+- Thay bằng i18n.changeLanguage(lang) dùng thẳng static import
+
+4 file members được cập nhật đầy đủ nội dung Phase 3.
+Commit theo convention: [DE190324] perf + fix + docs
+```
+
+#### 5.4. Kết quả đã áp dụng vào bài
+
+```text
+Build sạch 100%: ✓ built in 7.15s — 0 errors, 0 warnings
+Chunk output:
+  vendor-react.js, vendor-state.js, vendor-motion.js, vendor-charts.js
+  vendor-i18n.js, vendor-http.js, vendor-ws.js, vendor-ui.js
+  + các route chunk riêng biệt
+4 file docs/members được cập nhật và commit đúng convention.
+```
+
+#### 5.5. Phần sinh viên/nhóm đã chỉnh sửa hoặc cải tiến
+
+```text
+- Verify main.tsx không còn useUIStore (unused import được xoá)
+- Chạy lại npm run build để xác nhận 0 warning trước khi commit
+- Viết nội dung CHANGELOG, AI_AUDIT_LOG, REFLECTION, PROMPTS theo trải nghiệm thực tế
+```
+
+#### 5.6. Đánh giá chất lượng prompt
+
+- [x] Prompt rõ ràng
+- [x] Prompt có đủ bối cảnh
+- [ ] Prompt còn thiếu thông tin
+- [x] Prompt tạo ra kết quả tốt
+- [ ] Prompt tạo ra kết quả chưa phù hợp
+- [ ] Cần hỏi lại AI nhiều lần
+- [ ] Cần tự kiểm tra và chỉnh sửa nhiều
+- [ ] Kết quả AI có lỗi hoặc chưa chính xác
+
+#### 5.7. Minh chứng liên quan
+
+| Loại minh chứng | Nội dung |
+|---|---|
+| File liên quan | vite.config.ts, main.tsx, members/ (4 files) |
+| Kết quả chạy/test | npm run build: ✓ built in 7.15s, 0 warnings |
+| Link commit | [DE190324] perf(frontend): add manualChunks, fix Sass deprecation, fix mixed i18n import |
+
+---
+
+## 11. Cam kết sử dụng prompt minh bạch
+
+Sinh viên/nhóm cam kết rằng:
+
+- Các prompt quan trọng đã được ghi lại trung thực.
+- Không che giấu việc sử dụng AI trong các phần quan trọng của bài.
+- Không nộp nguyên văn kết quả AI nếu chưa kiểm tra và chỉnh sửa.
+- Có khả năng giải thích các phần đã sử dụng từ AI.
+- Chịu trách nhiệm với sản phẩm cuối cùng.
+
+| Đại diện sinh viên/nhóm | Ngày xác nhận |
+|---|---|
+| Nguyễn Văn Dạng - DE190324 | 2026-05-31 |
+

@@ -20,9 +20,6 @@ public class UploadController {
     private String uploadDir;
 
     private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-    private static final Set<String> ALLOWED_TYPES = Set.of(
-        "image/jpeg", "image/jpg", "image/png", "image/webp"
-    );
 
     @PostMapping
     public ResponseEntity<Map<String, Object>> uploadFile(
@@ -40,11 +37,31 @@ public class UploadController {
                 .body(Map.of("error", "File size exceeds 5MB limit"));
         }
 
-        // Validate content type
+        // Validate content type using Apache Tika Magic Number check
         String contentType = file.getContentType();
-        if (contentType == null || !ALLOWED_TYPES.contains(contentType.toLowerCase())) {
+        try {
+            org.apache.tika.Tika tika = new org.apache.tika.Tika();
+            String detectedType = tika.detect(file.getInputStream());
+            log.info("File upload security check: claimed={}, detected={}", contentType, detectedType);
+
+            Set<String> allowedTypes = Set.of(
+                "image/jpeg", "image/png", "image/webp", "application/pdf"
+            );
+
+            if (detectedType == null || !allowedTypes.contains(detectedType.toLowerCase())) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Security check failed: Only JPG, PNG, WEBP, and PDF files are allowed"));
+            }
+
+            // Also check that the claimed content type matches the allowed ones
+            if (contentType == null || !allowedTypes.contains(contentType.toLowerCase())) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Claimed format not supported"));
+            }
+        } catch (IOException e) {
+            log.error("Failed to verify file magic number using Tika: {}", e.getMessage());
             return ResponseEntity.badRequest()
-                .body(Map.of("error", "Only JPG, PNG, and WEBP files are allowed"));
+                .body(Map.of("error", "Failed to verify file integrity"));
         }
 
         try {

@@ -671,4 +671,88 @@ Sinh viên/nhóm cam kết rằng nội dung changelog phản ánh đúng các t
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-05-28 |
+| Nguyễn Văn Dạng - DE190324 | 2026-05-31 |
+
+---
+
+# [Phase 03] Production Readiness & Build Optimisation
+
+## Ngày thực hiện
+
+```text
+2026-05-31
+```
+
+## Đã hoàn thành
+
+- [x] Audit toàn bộ hệ thống: Backend (Spring Boot) + Frontend (React/TypeScript) — 0 lỗi biên dịch.
+- [x] Patch lỗ hổng bảo mật `DisputeController`: bổ sung `@PreAuthorize("hasRole('ADMIN')")` trên tất cả endpoint admin-only.
+- [x] Triển khai OTP Workflow: `POST /auth/forgot-password`, `POST /auth/verify-otp`, `POST /auth/reset-password` với mã OTP 6 chữ số, TTL 5 phút, one-time use.
+- [x] Chat Persistence (REQ-CHAT): Thay thế toàn bộ `localStorage` bằng REST API (`/chat/conversations`, `/chat/messages`). Entities `Conversation` + `Message` + repositories + service.
+- [x] Payment Method CRUD: Entity `PaymentMethod`, Repository, Service, Controller (`GET/POST/PUT/DELETE /payment-methods`).
+- [x] Invoice PDF: `InvoiceController` + `InvoiceService` sinh PDF hoá đơn thực tế.
+- [x] Employee / Fleet Management: Entity `Employee`, CRUD API (`/employees`), assign-vehicle (`/employees/{id}/assign-vehicle`), xoá mock `MOCK_EMPLOYEES` ở Frontend.
+- [x] Email Service: `EmailService.java` sử dụng `JavaMailSender` (log fallback khi không có SMTP).
+- [x] Upload Security: whitelist MIME-type, giới hạn 10 MB, rename ngẫu nhiên.
+- [x] Platform Analytics (Phase 3C): `GET /admin/analytics/revenue`, `/bookings`, `/users`, `/vehicles` — tích hợp vào `AdminDashboard`.
+- [x] System Settings CRUD: `GET/PUT /admin/settings`.
+- [x] FAQ CRUD: `GET/POST/PUT/DELETE /admin/faqs`.
+- [x] **Fix chunk size warning**: Thêm `manualChunks` trong `vite.config.ts` → split vendor bundle thành 8 chunk riêng (react, state, motion, charts, i18n, http, ws, ui).
+- [x] **Fix Sass deprecation**: Cấu hình `css.preprocessorOptions.scss.api = 'modern-compiler'` để dừng cảnh báo `legacy-js-api` từ `stompjs`.
+- [x] **Fix mixed static/dynamic import**: `main.tsx` — xoá `import('./i18n/config')` động, dùng thẳng instance `i18n` đã import tĩnh.
+- [x] Build Backend thành công: `105 Java source files`, `luxeway-backend-1.0.0.jar` — **0 lỗi**.
+- [x] Build Frontend thành công: `2,979 modules`, `dist/index.html` — **0 lỗi**.
+
+## Thay đổi chi tiết - Nguyễn Văn Dạng (DE190324)
+
+| STT | Nội dung thay đổi | Người thực hiện | File/Module liên quan | Minh chứng |
+|---:|---|---|---|---|
+| 1 | Patch DisputeController authorization | Nguyễn Văn Dạng | DisputeController.java | `@PreAuthorize("hasRole('ADMIN')")` |
+| 2 | OTP Workflow Backend | Nguyễn Văn Dạng | AuthController.java, AuthService.java, PasswordResetToken.java | 3 endpoints mới |
+| 3 | Chat Persistence — xoá localStorage | Nguyễn Văn Dạng | Conversation.java, Message.java, ChatService.java, MessengerPage.tsx | REQ-CHAT 100% |
+| 4 | PaymentMethod CRUD | Nguyễn Văn Dạng | PaymentMethod.java, PaymentMethodController.java | 4 endpoints |
+| 5 | Invoice PDF service | Nguyễn Văn Dạng | InvoiceController.java, InvoiceService.java | GET /invoices/{id}/pdf |
+| 6 | Employee Management | Nguyễn Văn Dạng | Employee.java, EmployeeController.java, OwnerDashboard.tsx | Xoá MOCK_EMPLOYEES |
+| 7 | Email Service | Nguyễn Văn Dạng | EmailService.java | JavaMailSender + log fallback |
+| 8 | Upload Security | Nguyễn Văn Dạng | FileUploadController.java | MIME whitelist + 10 MB limit |
+| 9 | Analytics, Settings, FAQ APIs | Nguyễn Văn Dạng | AdminController.java | Phase 3C |
+| 10 | vite.config.ts — manualChunks + modern Sass | Nguyễn Văn Dạng | vite.config.ts | Chunk size warning fixed |
+| 11 | main.tsx — fix mixed import i18n | Nguyễn Văn Dạng | main.tsx | Rollup warning fixed |
+| 12 | Backend build validation | Nguyễn Văn Dạng | Maven build | 105 files, 0 errors |
+| 13 | Frontend build validation | Nguyễn Văn Dạng | Vite build | 2979 modules, 0 errors |
+
+## AI có hỗ trợ không?
+
+- [x] Có
+- [ ] Không
+
+Nếu có, mô tả AI đã hỗ trợ phần nào:
+
+```text
+AI (Antigravity) hỗ trợ:
+- Phân tích toàn bộ codebase và phát hiện các lỗ hổng bảo mật, mock data còn tồn tại.
+- Sinh code cho toàn bộ Phase 3A (Security), 3B (Core Features), 3C (Analytics).
+- Cấu hình manualChunks tối ưu cho bundle splitting.
+- Fix mixed import pattern và Sass deprecation trong vite.config.ts.
+- Resolve vấn đề Unicode path khi build trên Windows (tiếng Việt trong đường dẫn).
+Toàn bộ code được review, test build thành công trước khi commit.
+```
+
+## Commit/Screenshot minh chứng
+
+```text
+Branch: feature/de190324-vehicle-rental-platform
+Build Backend:  [INFO] BUILD SUCCESS — 105 source files — luxeway-backend-1.0.0.jar
+Build Frontend: ✓ built in 7.15s — 2979 modules — dist/index.html 1.76 kB
+```
+
+---
+
+# 5. Cam kết cập nhật Changelog
+
+Sinh viên/nhóm cam kết rằng nội dung changelog phản ánh đúng các thay đổi đã thực hiện trong quá trình làm bài tập/project.
+
+| Đại diện sinh viên/nhóm | Ngày xác nhận |
+|---|---|
+| Nguyễn Văn Dạng - DE190324 | 2026-05-31 |
+

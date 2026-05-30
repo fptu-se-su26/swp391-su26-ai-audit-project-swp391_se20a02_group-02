@@ -593,4 +593,52 @@ Sinh viên/nhóm hiểu rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-05-28 |
+| Nguyễn Văn Dạng - DE190324 | 2026-05-31 |
+
+---
+
+## Reflection — Phase 3: Production Readiness & Build Optimisation (2026-05-31)
+
+### Tóm tắt
+
+Trong giai đoạn này (Phase 3), mình đã cùng Antigravity thực hiện một cuộc audit toàn diện về sự sẵn sàng production của hệ thống LuxeWay. Kết quả: cả Backend (105 Java files) và Frontend (2,979 modules) đều build thành công với 0 lỗi.
+
+### Những điều học được
+
+```text
+1. Audit-driven development:
+   Thay vì thêm tính năng mới ngay, việc dừng lại để audit toàn bộ codebase
+   giúp phát hiện ra các vấn đề thực sự quan trọng (security hole, mock data tồn đọng).
+   Điều này quan trọng hơn nhiều so với thêm feature mà không ai dùng.
+
+2. Build warning ≠ Build error, nhưng vẫn phải fix:
+   3 warnings (chunk size, Sass deprecation, mixed import) không làm app crash,
+   nhưng để lại trong production là thiếu chuyên nghiệp và có thể gây lỗi khi dependencies
+   được update. Fix sớm rẻ hơn fix muộn.
+
+3. Unicode path là "gotcha" nguy hiểm trên Windows:
+   Đường dẫn chứa tiếng Việt (Tài liệu) gây lỗi build ở nhiều tool Java/Node
+   khi đi qua cmd.exe. PowerShell xử lý Unicode tốt hơn. Bài học: tránh ký tự
+   đặc biệt trong đường dẫn project khi làm nhóm trên nhiều OS.
+
+4. manualChunks giúp performance thực sự:
+   Khi split vendor bundle thành 8 chunk riêng, browser có thể cache từng chunk
+   độc lập. Khi update React, chỉ re-download chunk vendor-react, không phải toàn bộ
+   3.2MB bundle. Đây là optimization có giá trị thực trong production.
+
+5. Spring Method Security cần cấu hình đúng:
+   @PreAuthorize hoạt động cần @EnableMethodSecurity ở cấp config class.
+   Nếu không có annotation này, Spring bỏ qua tất cả @PreAuthorize → security hole nghiêm trọng.
+   Bài học quan trọng về tầm quan trọng của security layer testing.
+```
+
+### Tự đánh giá Phase 3
+
+| Tiêu chí | Điểm | Ghi chú |
+|---|:---:|---|
+| Hiểu vấn đề trước khi fix | 5 | Đọc error log, trace root cause từng warning |
+| Fix đúng nguyên nhân gốc | 5 | Không workaround, fix thực sự |
+| Kiểm chứng sau fix | 5 | Chạy lại build, confirm 0 warning |
+| Ghi lại đầy đủ | 5 | Cập nhật đủ 4 file docs |
+| Sử dụng AI có trách nhiệm | 5 | Review từng thay đổi trước khi commit |
+

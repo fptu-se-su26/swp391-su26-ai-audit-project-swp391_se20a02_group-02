@@ -425,4 +425,194 @@ Sinh viên/nhóm cam kết rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-05-28 |
+| Nguyễn Văn Dạng - DE190324 | 2026-05-31 |
+
+---
+
+## Lần sử dụng AI #8 — Phase 3A: Security Hardening
+
+### Thông tin
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-05-30 |
+| Công cụ AI | Antigravity |
+| Mục tiêu | Patch lỗ hổng phân quyền DisputeController và audit toàn bộ endpoint admin |
+| Phần bài tập | Backend Security — DisputeController, SecurityConfig |
+
+### Prompt chính
+
+```text
+Audit all admin-only endpoints. Patch DisputeController authorization vulnerability.
+Add @PreAuthorize("hasRole('ADMIN')") where required. Verify SecurityConfig supports method security.
+```
+
+### Kết quả AI sinh ra
+
+```text
+- Thêm @EnableMethodSecurity vào SecurityConfig
+- Bổ sung @PreAuthorize("hasRole('ADMIN')") cho toàn bộ endpoint trong DisputeController, AdminController, EmployeeController
+- Danh sách đầy đủ các endpoint còn thiếu role check
+```
+
+### Kiểm tra và chỉnh sửa
+
+```text
+- Đọc từng annotation được thêm vào, đảm bảo chỉ endpoint admin-only bị ảnh hưởng
+- Không sửa business logic, chỉ thêm security annotation
+- Build Maven thành công sau khi patch
+```
+
+### Đánh giá
+
+| Tiêu chí | Kết quả |
+|---|---|
+| Chính xác | Đúng — đúng endpoint, đúng role |
+| Cần chỉnh sửa | Ít — review từng endpoint thủ công |
+| Bài học | Spring Method Security cần @EnableMethodSecurity mới có tác dụng |
+
+---
+
+## Lần sử dụng AI #9 — Phase 3B: OTP Forgot Password
+
+### Thông tin
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-05-30 |
+| Công cụ AI | Antigravity |
+| Mục tiêu | Triển khai full OTP workflow: forgot-password → verify-otp → reset-password |
+| Phần bài tập | Backend Auth — AuthController, AuthService, PasswordResetToken entity |
+
+### Prompt chính
+
+```text
+Implement POST /auth/forgot-password, POST /auth/verify-otp, POST /auth/reset-password.
+OTP: 6 digits random, 5 minutes TTL, one-time use only. Log OTP to console (no SMTP).
+```
+
+### Kết quả AI sinh ra
+
+```text
+- Entity PasswordResetToken với trường otp, expiresAt, used
+- ForgotPasswordRequest, VerifyOtpRequest, ResetPasswordRequest DTOs
+- AuthService: generateOtp(), verifyOtp(), resetPassword()
+- AuthController: 3 endpoint mới
+```
+
+### Kiểm tra và chỉnh sửa
+
+```text
+- Kiểm tra logic expiry: Instant.now().isAfter(token.getExpiresAt())
+- Kiểm tra one-time: token.isUsed() flag được set sau khi verify
+- Build thành công, log OTP hiển thị đúng trong console
+```
+
+---
+
+## Lần sử dụng AI #10 — Phase 3B: Chat Persistence, PaymentMethod, Employee
+
+### Thông tin
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-05-30 |
+| Công cụ AI | Antigravity |
+| Mục tiêu | Thay thế localStorage chat bằng DB; triển khai PaymentMethod và Employee CRUD |
+| Phần bài tập | Backend + Frontend REQ-CHAT, REQ-PAYMENT |
+
+### Prompt chính
+
+```text
+MODULE 1: CHAT — Conversation, Message entities, ChatService, ChatController REST API.
+MODULE 2: EMPLOYEE — Employee entity, CRUD /employees, assign-vehicle.
+MODULE 3: PAYMENT METHOD — PaymentMethod entity, CRUD /payment-methods.
+Frontend: xoá localStorage.getItem(CONV_KEY), thay bằng api.get('/chat/conversations').
+```
+
+### Kết quả AI sinh ra
+
+```text
+- Conversation.java, Message.java, ConversationRepository, MessageRepository
+- ChatService (getConversations, getMessages, sendMessage, createConversation)
+- ChatController REST
+- Employee.java, EmployeeController.java
+- PaymentMethod.java, PaymentMethodController.java
+- MessengerPage.tsx: xoá toàn bộ localStorage, gọi API thực
+```
+
+### Kiểm tra và chỉnh sửa
+
+```text
+- Đọc MessengerPage.tsx để đảm bảo không còn localStorage key nào liên quan đến chat
+- Build Frontend thành công: 2979 modules, 0 lỗi
+- Build Backend thành công: 105 files
+```
+
+---
+
+## Lần sử dụng AI #11 — Phase 3 Build Optimisation
+
+### Thông tin
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-05-31 |
+| Công cụ AI | Antigravity |
+| Mục tiêu | Fix 3 non-blocking build warnings: chunk size, Sass deprecation, mixed import |
+| Phần bài tập | Frontend — vite.config.ts, main.tsx |
+
+### Prompt chính
+
+```text
+Fix: (1) chunk size 3.2MB → manualChunks; (2) Sass legacy-js-api warning from stompjs;
+(3) mixed static/dynamic import: otherServices.ts and i18n/config.ts.
+Commit theo convention. Update members/CHANGELOG, AI_AUDIT_LOG, REFLECTION, PROMPTS.
+```
+
+### Kết quả AI sinh ra
+
+```text
+vite.config.ts:
+- manualChunks: vendor-react, vendor-state, vendor-motion, vendor-charts, vendor-i18n, vendor-http, vendor-ws, vendor-ui
+- css.preprocessorOptions.scss.api = 'modern-compiler'
+- chunkSizeWarningLimit: 1000
+
+main.tsx:
+- Xoá dynamic import('./i18n/config').then(...)
+- Dùng thẳng import i18n from './i18n/config' (đã có static import)
+- Xoá useUIStore không dùng
+```
+
+### Kiểm tra và chỉnh sửa
+
+```text
+- Chạy npm run build: ✓ built in 7.15s — 0 errors, 0 warnings (chunk/Sass/mixed import đã biến mất)
+- Kiểm tra các chunk được tạo ra đúng tên trong dist/assets/
+- Verify main.tsx không còn dynamic import i18n
+```
+
+### Đánh giá
+
+| Tiêu chí | Kết quả |
+|---|---|
+| Chính xác | Đúng — tất cả 3 warnings đều được fix |
+| Cần chỉnh sửa | Không — build sạch hoàn toàn |
+| Bài học | manualChunks giúp browser cache hiệu quả hơn; static import luôn ưu tiên hơn dynamic cùng module |
+
+---
+
+## 10. Cam kết học thuật
+
+Sinh viên/nhóm cam kết rằng:
+
+- Nội dung AI hỗ trợ đã được ghi nhận trung thực.
+- Không nộp nguyên văn kết quả AI mà không kiểm tra.
+- Có khả năng giải thích các phần đã nộp.
+- Chịu trách nhiệm về tính đúng đắn của sản phẩm cuối cùng.
+- Hiểu rằng việc sử dụng AI không khai báo có thể ảnh hưởng đến kết quả đánh giá.
+
+| Đại diện sinh viên/nhóm | Ngày xác nhận |
+|---|---|
+| Nguyễn Văn Dạng - DE190324 | 2026-05-31 |
+

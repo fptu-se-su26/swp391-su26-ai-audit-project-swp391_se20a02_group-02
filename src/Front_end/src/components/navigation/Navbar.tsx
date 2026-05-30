@@ -12,24 +12,17 @@ import { notificationService } from '@/services/otherServices';
 import { useT } from '@/i18n/translations';
 import logoImage from '@/image/logo.png';
 
-// ====== DARK MODE INITIALIZER (run in App.tsx useEffect too) ======
-export function applyStoredTheme() {
-  try {
-    const stored = JSON.parse(localStorage.getItem('luxeway_ui_prefs') || '{}');
-    if (stored?.state?.theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    }
-  } catch {}
-}
 
 // ====== LANGUAGE LABELS ======
 const LANGS = [
   { code: 'en' as const, label: 'English', flag: '🇺🇸' },
   { code: 'vi' as const, label: 'Tiếng Việt', flag: '🇻🇳' },
+  { code: 'ja' as const, label: '日本語', flag: '🇯🇵' },
 ];
 
 // ====== THEME TOGGLE BUTTON ======
 const ThemeToggle: React.FC = () => {
+  const t = useT();
   const { theme, toggleTheme } = useUIStore();
   const isDark = theme === 'dark';
 
@@ -38,7 +31,7 @@ const ThemeToggle: React.FC = () => {
       onClick={toggleTheme}
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
-      title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+      title={isDark ? t.nav.themeLight : t.nav.themeDark}
       className={cn(
         'relative p-2.5 rounded-xl transition-all duration-300',
         isDark
@@ -75,6 +68,7 @@ const ThemeToggle: React.FC = () => {
 
 // ====== LANGUAGE SWITCHER ======
 const LanguageSwitcher: React.FC = () => {
+  const t = useT();
   const { language, setLanguage } = useUIStore();
   const [open, setOpen] = React.useState(false);
   const ref = React.useRef<HTMLDivElement>(null);
@@ -93,8 +87,8 @@ const LanguageSwitcher: React.FC = () => {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 p-2.5 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors duration-200"
-        title="Change Language"
+        className="flex items-center gap-1.5 p-2.5 rounded-xl text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700 hover:text-slate-900 transition-colors duration-200"
+        title={t.nav.changeLanguage}
       >
         <Globe className="w-4 h-4" />
         <span className="text-xs font-semibold uppercase hidden sm:block">{current.code}</span>
@@ -331,7 +325,7 @@ export const Navbar: React.FC = () => {
                                 <p className="text-xs text-slate-400">{user.email}</p>
                                 {user.verified && (
                                   <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-blue-500 mt-0.5">
-                                    <Shield className="w-3 h-3" /> Verified
+                                    <Shield className="w-3 h-3" /> {t.nav.verified}
                                   </span>
                                 )}
                               </div>
@@ -341,11 +335,11 @@ export const Navbar: React.FC = () => {
                           {/* Menu Items */}
                           <div className="p-2">
                             {[
-                              { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
-                              { icon: Wallet, label: 'LuxeWallet', href: '/dashboard/wallet' },
-                              { icon: Heart, label: 'Wishlist', href: '/dashboard/wishlist' },
-                              { icon: User, label: 'Profile', href: '/dashboard/profile' },
-                              { icon: Bell, label: 'Notifications', href: '/dashboard/notifications' },
+                              { icon: LayoutDashboard, label: t.nav.dashboard, href: '/dashboard' },
+                              { icon: Wallet, label: t.nav.wallet, href: '/dashboard/wallet' },
+                              { icon: Heart, label: t.nav.wishlist, href: '/dashboard/wishlist' },
+                              { icon: User, label: t.nav.profile, href: '/dashboard/profile' },
+                              { icon: Bell, label: t.nav.notifications, href: '/dashboard/notifications' },
                             ].map(item => (
                               <Link
                                 key={item.href}
@@ -368,7 +362,7 @@ export const Navbar: React.FC = () => {
                                 className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-accent hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
                               >
                                 <Sparkles className="w-4 h-4" />
-                                Owner Dashboard
+                                {t.nav.ownerDashboardFull}
                               </Link>
                             )}
 
@@ -380,7 +374,7 @@ export const Navbar: React.FC = () => {
                                 style={{ color: '#EAB308' }}
                               >
                                 <Shield className="w-4 h-4" />
-                                Admin Panel
+                                {t.nav.adminPanel}
                               </Link>
                             )}
                           </div>
@@ -391,7 +385,7 @@ export const Navbar: React.FC = () => {
                               className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                             >
                               <LogOut className="w-4 h-4" />
-                              Sign Out
+                              {t.nav.logout}
                             </button>
                           </div>
                         </motion.div>
@@ -402,10 +396,10 @@ export const Navbar: React.FC = () => {
               ) : (
                 <div className="flex items-center gap-2">
                   <Link to="/auth/login" className={cn('hidden sm:block text-sm font-medium px-3 py-2 rounded-xl transition-colors', textColor, hoverBg)}>
-                    Sign In
+                    {t.nav.signIn}
                   </Link>
                   <Link to="/auth/register" className="btn-primary text-sm px-4 py-2">
-                    Get Started
+                    {t.nav.signUp}
                   </Link>
                 </div>
               )}
@@ -449,8 +443,8 @@ export const Navbar: React.FC = () => {
                 ))}
                 {!isAuthenticated && (
                   <div className="pt-3 border-t border-slate-100 dark:border-slate-700 flex flex-col gap-2">
-                    <Link to="/auth/login" onClick={() => setMobileMenuOpen(false)} className="btn-outline w-full justify-center py-2.5">Sign In</Link>
-                    <Link to="/auth/register" onClick={() => setMobileMenuOpen(false)} className="btn-primary w-full justify-center py-2.5">Get Started</Link>
+                    <Link to="/auth/login" onClick={() => setMobileMenuOpen(false)} className="btn-outline w-full justify-center py-2.5">{t.nav.signIn}</Link>
+                    <Link to="/auth/register" onClick={() => setMobileMenuOpen(false)} className="btn-primary w-full justify-center py-2.5">{t.nav.signUp}</Link>
                   </div>
                 )}
               </div>

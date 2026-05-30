@@ -24,6 +24,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthenticationManager authenticationManager;
+    private final EmailService emailService;
 
     // ====== Login ======
 
@@ -114,6 +115,117 @@ public class AuthService {
     public User getCurrentUser(String email) {
         return userRepository.findByEmailAndIsActiveTrue(email)
                 .orElseThrow(() -> new RuntimeException("User not found or inactive"));
+    }
+
+    // ====== Forgot Password, Verify OTP, Reset Password Workflow ======
+
+    private static class OtpData {
+        final String otp;
+        final java.time.LocalDateTime expiry;
+
+        OtpData(String otp, java.time.LocalDateTime expiry) {
+            this.otp = otp;
+            this.expiry = expiry;
+        }
+    }
+
+    private static class ResetTokenData {
+        final String email;
+        final java.time.LocalDateTime expiry;
+
+        ResetTokenData(String email, java.time.LocalDateTime expiry) {
+            this.email = email;
+            this.expiry = expiry;
+        }
+    }
+
+    private final java.util.Map<String, OtpData> otpStore = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.Map<String, ResetTokenData> resetTokenStore = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.security.SecureRandom secureRandom = new java.security.SecureRandom();
+
+    @Transactional(readOnly = true)
+    public void processForgotPassword(AuthDTOs.ForgotPasswordRequest req) {
+        String email = req.getEmail().trim().toLowerCase();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Email is not registered"));
+
+        // Generate dynamic secure 6-digit OTP code
+        int otpNum = 100000 + secureRandom.nextInt(900000);
+        String otpCode = String.valueOf(otpNum);
+
+        // Standard 5 minutes expiry
+        java.time.LocalDateTime expiry = java.time.LocalDateTime.now().plusMinutes(5);
+        otpStore.put(email, new OtpData(otpCode, expiry));
+
+        // DEV / STAGING LOG EXPOSURE AS REQUESTED
+        log.info("==================================================");
+        log.info("LUXEWAY SECURE OTP DISPATCH SYSTEM");
+        log.info("RECIPIENT EMAIL: {}", email);
+        log.info("SECURITY OTP CODE: {}", otpCode);
+        log.info("VALID FOR: 5 MINUTES (Expires at {})", expiry);
+        log.info("==================================================");
+
+        // Dispatch real SMTP email via EmailService
+        emailService.sendOtp(email, otpCode);
+    }
+
+    public String verifyOtp(AuthDTOs.VerifyOtpRequest req) {
+        String email = req.getEmail().trim().toLowerCase();
+        String enteredOtp = req.getOtp().trim();
+
+        OtpData otpData = otpStore.get(email);
+        if (otpData == null) {
+            throw new RuntimeException("Invalid OTP session or email context");
+        }
+
+        if (java.time.LocalDateTime.now().isAfter(otpData.expiry)) {
+            otpStore.remove(email);
+            throw new RuntimeException("OTP code has expired. Please request a new one");
+        }
+
+        if (!otpData.otp.equals(enteredOtp)) {
+            throw new RuntimeException("Incorrect OTP code. Please verify and try again");
+        }
+
+        // OTP is verified - invalidate it instantly (one-time usage)
+        otpStore.remove(email);
+
+        // Generate transient secure reset token
+        String resetToken = java.util.UUID.randomUUID().toString();
+        // Reset token valid for 10 minutes
+        resetTokenStore.put(resetToken, new ResetTokenData(email, java.time.LocalDateTime.now().plusMinutes(10)));
+
+        log.info("OTP verification successful for {}. Issued reset token: {}", email, resetToken);
+        return resetToken;
+    }
+
+    @Transactional
+    public void resetPassword(AuthDTOs.ResetPasswordRequest req) {
+        String token = req.getToken().trim();
+        ResetTokenData tokenData = resetTokenStore.get(token);
+
+        if (tokenData == null) {
+            throw new RuntimeException("Invalid password reset token context");
+        }
+
+        if (java.time.LocalDateTime.now().isAfter(tokenData.expiry)) {
+            resetTokenStore.remove(token);
+            throw new RuntimeException("Reset token has expired. Please request a new OTP code");
+        }
+
+        User user = userRepository.findByEmail(tokenData.email)
+                .orElseThrow(() -> new RuntimeException("User account associated with this token not found"));
+
+        if (!req.getNewPassword().equals(req.getConfirmPassword())) {
+            throw new RuntimeException("Password confirmation does not match the new password");
+        }
+
+        user.setPassword(passwordEncoder.encode(req.getNewPassword()));
+        userRepository.save(user);
+
+        // Invalidate transient reset token immediately
+        resetTokenStore.remove(token);
+        log.info("Password successfully reset for account: {}", tokenData.email);
     }
 
     // ====== Private Helpers ======

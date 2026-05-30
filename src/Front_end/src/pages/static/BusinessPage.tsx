@@ -6,6 +6,7 @@ import {
   CheckCircle, ArrowRight, Star, Phone, Mail
 } from 'lucide-react';
 import { fadeUp, staggerContainer, staggerItem } from '@/animations/variants';
+import { useUIStore } from '@/store';
 
 const FEATURES = [
   {
@@ -113,8 +114,10 @@ const TESTIMONIALS = [
 ];
 
 const BusinessPage: React.FC = () => {
+  const { theme } = useUIStore();
+  const isDark = theme === 'dark';
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
+    <div className={`min-h-screen ${isDark ? 'bg-slate-900' : 'bg-[#F8FAFC]'}`}>
       {/* Hero */}
       <section className="relative overflow-hidden pt-32 pb-24 bg-gradient-to-br from-[#0F172A] via-[#1E3A5F] to-[#0F172A]">
         {/* Animated grid background */}
@@ -178,7 +181,7 @@ const BusinessPage: React.FC = () => {
         <div className="container-lux">
           <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-14">
             <span className="text-label text-gold mb-2 block">Why LuxeWay Business?</span>
-            <h2 className="font-display text-4xl md:text-5xl font-bold text-[#0F172A] mb-4">
+            <h2 className={`font-display text-4xl md:text-5xl font-bold mb-4 ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
               Everything Your Business Needs
             </h2>
             <p className="text-slate-500 max-w-2xl mx-auto text-lg">
@@ -203,7 +206,7 @@ const BusinessPage: React.FC = () => {
                 <div className={`w-14 h-14 ${f.bg} rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300`}>
                   <f.icon className={`w-7 h-7 ${f.iconColor}`} />
                 </div>
-                <h3 className="font-display text-xl font-bold text-[#0F172A] mb-2">{f.title}</h3>
+                <h3 className={`font-display text-xl font-bold mb-2 ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>{f.title}</h3>
                 <p className="text-slate-500 text-sm leading-relaxed">{f.desc}</p>
               </motion.div>
             ))}
@@ -212,7 +215,7 @@ const BusinessPage: React.FC = () => {
       </section>
 
       {/* Pricing */}
-      <section className="section bg-slate-50">
+      <section className={`section ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
         <div className="container-lux">
           <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-14">
             <span className="text-label text-gold mb-2 block">Transparent Pricing</span>

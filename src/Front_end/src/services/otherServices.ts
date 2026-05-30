@@ -103,79 +103,51 @@ export const notificationService = {
   },
 };
 
-// ====== MESSAGE SERVICE (Local Fallback) ======
-const MESSAGES_KEY = 'luxeway_messages';
-const CONV_KEY = 'luxeway_conversations';
-
+// ====== MESSAGE SERVICE ======
 export const messageService = {
   async getConversations(userId: string): Promise<Conversation[]> {
-    const convs: Conversation[] = JSON.parse(localStorage.getItem(CONV_KEY) || '[]');
-    const msgs: Message[] = JSON.parse(localStorage.getItem(MESSAGES_KEY) || '[]');
-
-    const userConvs = convs.filter(c => c.participants.includes(userId));
-    return userConvs.map(conv => {
-      const convMessages = msgs.filter(m => m.conversationId === conv.id);
-      const lastMessage = convMessages.sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      )[0];
-      return { ...conv, lastMessage };
-    }).sort((a, b) => new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime());
+    try {
+      const response = await apiClient.get<any>('/chat/conversations');
+      const convs = response.data?.data || [];
+      return convs.map((c: any) => ({
+        ...c,
+        participants: (c.participants || []).map((p: any) => typeof p === 'string' ? p : p.id)
+      }));
+    } catch (error) {
+      console.error('Failed to fetch conversations', error);
+      return [];
+    }
   },
 
   async getMessages(conversationId: string): Promise<Message[]> {
-    const msgs: Message[] = JSON.parse(localStorage.getItem(MESSAGES_KEY) || '[]');
-    return msgs
-      .filter(m => m.conversationId === conversationId)
-      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    try {
+      const response = await apiClient.get<any>(`/chat/conversations/${conversationId}/messages`);
+      return response.data?.data || [];
+    } catch (error) {
+      console.error('Failed to fetch messages', error);
+      return [];
+    }
   },
 
   async sendMessage(conversationId: string, senderId: string, receiverId: string, content: string): Promise<Message> {
-    const msgs: Message[] = JSON.parse(localStorage.getItem(MESSAGES_KEY) || '[]');
-    const convs: Conversation[] = JSON.parse(localStorage.getItem(CONV_KEY) || '[]');
-
-    const newMessage: Message = {
-      id: `msg-${faker.string.uuid()}`,
+    const response = await apiClient.post<any>('/chat/messages', {
       conversationId,
-      senderId,
       receiverId,
-      type: 'text',
-      content,
-      createdAt: new Date().toISOString(),
-      edited: false,
-    };
-
-    msgs.push(newMessage);
-    localStorage.setItem(MESSAGES_KEY, JSON.stringify(msgs));
-
-    const convIndex = convs.findIndex(c => c.id === conversationId);
-    if (convIndex >= 0) {
-      convs[convIndex].lastActivity = new Date().toISOString();
-      localStorage.setItem(CONV_KEY, JSON.stringify(convs));
-    }
-
-    return newMessage;
+      content
+    });
+    return response.data?.data;
   },
 
   async createConversation(userId: string, ownerId: string, vehicleId?: string): Promise<Conversation> {
-    const convs: Conversation[] = JSON.parse(localStorage.getItem(CONV_KEY) || '[]');
-    const existing = convs.find(c =>
-      c.participants.includes(userId) && c.participants.includes(ownerId) &&
-      (vehicleId ? c.vehicleId === vehicleId : true)
-    );
-    if (existing) return existing;
-
-    const newConv: Conversation = {
-      id: `conv-${faker.string.uuid()}`,
-      participants: [userId, ownerId],
-      vehicleId,
-      lastActivity: new Date().toISOString(),
-      unreadCount: { [userId]: 0, [ownerId]: 0 },
-      createdAt: new Date().toISOString(),
+    const response = await apiClient.post<any>('/chat/conversations', {
+      otherId: ownerId,
+      vehicleId
+    });
+    const c = response.data?.data;
+    return {
+      ...c,
+      participants: (c.participants || []).map((p: any) => typeof p === 'string' ? p : p.id)
     };
-
-    convs.push(newConv);
-    localStorage.setItem(CONV_KEY, JSON.stringify(convs));
-    return newConv;
   },
 };
 
