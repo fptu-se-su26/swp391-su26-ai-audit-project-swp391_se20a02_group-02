@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +22,7 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     // ====== Get notifications for user ======
 
@@ -44,7 +46,7 @@ public class NotificationService {
                 .orElseThrow(() -> new RuntimeException("Notification not found"));
 
         if (!notification.getUser().getId().equals(userId)) {
-            throw new RuntimeException("Not authorized to update this notification");
+            throw new org.springframework.security.access.AccessDeniedException("Not authorized to update this notification");
         }
 
         notification.setIsRead(true);
@@ -76,8 +78,16 @@ public class NotificationService {
                     .isRead(false)
                     .build();
 
-            notificationRepository.save(notification);
+            notification = notificationRepository.save(notification);
             log.debug("Notification created for user {}: {}", userId, title);
+
+            // Broadcast via STOMP WebSocket in real-time
+            try {
+                messagingTemplate.convertAndSendToUser(userId, "/queue/notifications", toResponse(notification));
+                log.info("Broadcasted realtime notification to user {}: {}", userId, title);
+            } catch (Exception wsEx) {
+                log.error("Failed to broadcast realtime notification: {}", wsEx.getMessage());
+            }
         } catch (Exception e) {
             log.error("Failed to create notification for user {}: {}", userId, e.getMessage());
         }

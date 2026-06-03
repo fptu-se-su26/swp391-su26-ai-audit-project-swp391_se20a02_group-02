@@ -19,7 +19,12 @@ public class WebConfig implements WebMvcConfigurer {
         Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
         String uploadUri = uploadPath.toUri().toString();
 
-        registry.addResourceHandler("/uploads/**")
+        registry.addResourceHandler("/uploads/**", "/api/v1/uploads/**")
                 .addResourceLocations(uploadUri);
+    }
+
+    @Override
+    public void configurePathMatch(org.springframework.web.servlet.config.annotation.PathMatchConfigurer configurer) {
+        configurer.addPathPrefix("/api/v1", org.springframework.web.method.HandlerTypePredicate.forAnnotation(org.springframework.web.bind.annotation.RestController.class));
     }
 }

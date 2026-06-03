@@ -16,14 +16,26 @@ public class SystemSetting {
     @Column(length = 36)
     private String id;
 
-    @Column(name = "setting_key", nullable = false, unique = true, length = 100)
+    // DB column is 'key_name' not 'setting_key'
+    @Column(name = "key_name", nullable = false, unique = true, length = 100)
     private String settingKey;
 
-    @Column(name = "setting_value", nullable = false, columnDefinition = "NVARCHAR(MAX)")
+    // DB column is 'value' not 'setting_value'
+    @Column(name = "value", nullable = false, columnDefinition = "NVARCHAR(MAX)")
     private String settingValue;
+
+    @Column(name = "data_type", length = 50)
+    private String dataType;
 
     @Column(length = 500)
     private String description;
+
+    @Column(name = "is_public", nullable = false)
+    @Builder.Default
+    private Boolean isPublic = true;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
@@ -32,6 +44,9 @@ public class SystemSetting {
     private void prePersist() {
         if (id == null) {
             id = java.util.UUID.randomUUID().toString();
+        }
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
         }
         if (updatedAt == null) {
             updatedAt = LocalDateTime.now();

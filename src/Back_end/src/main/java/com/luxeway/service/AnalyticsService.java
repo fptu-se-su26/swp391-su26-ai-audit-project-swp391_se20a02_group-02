@@ -12,6 +12,7 @@ import com.luxeway.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +25,7 @@ import java.util.*;
 
 @Slf4j
 @Service
+@Order(2)
 @RequiredArgsConstructor
 public class AnalyticsService implements CommandLineRunner {
 

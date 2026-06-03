@@ -31,11 +31,20 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
-@RequiredArgsConstructor
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final UserRepository userRepository;
+    private final com.luxeway.security.OAuth2AuthenticationSuccessHandler oAuth2SuccessHandler;
+
+    public SecurityConfig(
+            JwtAuthenticationFilter jwtAuthFilter,
+            UserRepository userRepository,
+            @org.springframework.context.annotation.Lazy com.luxeway.security.OAuth2AuthenticationSuccessHandler oAuth2SuccessHandler) {
+        this.jwtAuthFilter = jwtAuthFilter;
+        this.userRepository = userRepository;
+        this.oAuth2SuccessHandler = oAuth2SuccessHandler;
+    }
 
     @Bean
     public UserDetailsService userDetailsService() {
@@ -50,43 +59,100 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .exceptionHandling(exceptions -> exceptions
+                .authenticationEntryPoint((request, response, authException) -> {
+                    response.setContentType("application/json;charset=UTF-8");
+                    response.setStatus(401);
+                    response.getWriter().write("{\"error\":\"Unauthorized\",\"message\":\"Authentication is required to access this resource\"}");
+                })
+                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                    response.setContentType("application/json;charset=UTF-8");
+                    response.setStatus(403);
+                    response.getWriter().write("{\"error\":\"Forbidden\",\"message\":\"Access denied: insufficient privileges\"}");
+                })
+            )
             .authorizeHttpRequests(auth -> auth
-                // Public endpoints
+                // ======== Public endpoints ========
+                // BUG-11 FIX: Controllers map to /auth/**, /vehicles/**, etc. (no /api/v1/ prefix).
+                // Keeping /api/v1/** variants for forward compatibility, but also adding unprefixed paths.
                 .requestMatchers(
+                    // Auth flows
                     "/auth/**",
+                    "/api/v1/auth/**",
+                    // OAuth2
+                    "/oauth2/**",
+                    "/login/oauth2/**",
+                    // Swagger / OpenAPI docs
                     "/swagger-ui/**",
                     "/swagger-ui.html",
                     "/api-docs/**",
+                    "/v3/api-docs/**",
+                    // Actuator
                     "/actuator/**",
+                    // VNPay callbacks (must be public since VNPay server calls them)
                     "/payments/vnpay/callback",
                     "/payments/vnpay/return",
-                    "/test/**",
-                    "/upload",
+                    "/api/v1/payments/vnpay/callback",
+                    "/api/v1/payments/vnpay/return",
+                    // Static uploads
                     "/uploads/**",
+                    // Public pages
+                    "/stats/**",
+                    "/stats",
+                    "/api/v1/stats/**",
+                    "/api/v1/stats",
+                    "/home/**",
+                    "/api/v1/home/**",
                     "/locations/**",
+                    "/api/v1/locations/**",
                     "/faqs/**",
                     "/faqs",
-                    "/stats/**",
-                    "/stats"
+                    "/api/v1/faqs/**",
+                    "/api/v1/faqs",
+                    // Help Center Knowledge Base (public — no auth needed)
+                    "/help/**",
+                    "/api/v1/help/**",
+                    "/error"
                 ).permitAll()
-                // Public vehicle browsing
+                // Support ticket endpoints — must be authenticated
+                .requestMatchers("/support/**", "/api/v1/support/**").authenticated()
+                // Public vehicle browsing (no auth needed)
                 .requestMatchers(HttpMethod.GET,
                     "/vehicles",
-                    "/vehicles/{id}",
-                    "/vehicles/featured",
                     "/vehicles/search",
+                    "/vehicles/featured",
+                    "/vehicles/{id}",
+                    "/api/v1/vehicles",
+                    "/api/v1/vehicles/search",
+                    "/api/v1/vehicles/featured",
+                    "/api/v1/vehicles/{id}",
                     "/reviews/vehicle/**",
                     "/reviews/featured",
-                    "/users"
+                    "/api/v1/reviews/vehicle/**",
+                    "/api/v1/reviews/featured"
                 ).permitAll()
-                // Admin only
+                // ======== Admin only ========
                 .requestMatchers("/admin/**").hasRole("ADMIN")
-                // Owner or Admin
-                .requestMatchers(HttpMethod.POST, "/vehicles").hasAnyRole("OWNER", "ADMIN")
-                .requestMatchers(HttpMethod.PUT, "/vehicles/**").hasAnyRole("OWNER", "ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/vehicles/**").hasAnyRole("OWNER", "ADMIN")
-                // All authenticated users
+                .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                .requestMatchers("/test/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.GET, "/users", "/api/v1/users").hasRole("ADMIN")
+                // ======== Owner or Admin ========
+                .requestMatchers(HttpMethod.POST,
+                    "/vehicles", "/api/v1/vehicles"
+                ).hasAnyRole("OWNER", "ADMIN")
+                .requestMatchers(HttpMethod.PUT,
+                    "/vehicles/**", "/api/v1/vehicles/**"
+                ).hasAnyRole("OWNER", "ADMIN")
+                .requestMatchers(HttpMethod.DELETE,
+                    "/vehicles/**", "/api/v1/vehicles/**"
+                ).hasAnyRole("OWNER", "ADMIN")
+                // Upload endpoint requires authentication
+                .requestMatchers(HttpMethod.POST, "/upload", "/upload/**", "/users/documents", "/api/v1/users/documents").authenticated()
+                // All other requests must be authenticated
                 .anyRequest().authenticated()
+            )
+            .oauth2Login(oauth2 -> oauth2
+                .successHandler(oAuth2SuccessHandler)
             )
             .authenticationProvider(authenticationProvider())
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

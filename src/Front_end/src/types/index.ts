@@ -53,6 +53,7 @@ export interface User {
 export interface Vehicle {
   id: string;
   ownerId: string;
+  owner?: User;
   name: string;
   brand: string;
   model: string;

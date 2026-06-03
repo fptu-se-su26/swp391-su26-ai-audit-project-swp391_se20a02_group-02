@@ -3,11 +3,13 @@ package com.luxeway.config;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
+@Order(1)
 @RequiredArgsConstructor
 public class DatabaseMigration implements CommandLineRunner {
 
@@ -41,6 +43,118 @@ public class DatabaseMigration implements CommandLineRunner {
                 log.info("Successfully added wallet_balance column to users table (Standard)");
             } catch (Exception ex) {
                 log.info("wallet_balance column already exists or alter failed: {}", ex.getMessage());
+            }
+        }
+
+        // CREATE TABLE: owners
+        try {
+            jdbcTemplate.execute("IF OBJECT_ID('owners', 'U') IS NULL " +
+                    "BEGIN " +
+                    "    CREATE TABLE owners (" +
+                    "        owner_id NVARCHAR(36) PRIMARY KEY, " +
+                    "        bio NVARCHAR(MAX) NULL, " +
+                    "        account_type NVARCHAR(20) NOT NULL DEFAULT 'INDIVIDUAL', " +
+                    "        company_name NVARCHAR(200) NULL, " +
+                    "        stripe_account_id NVARCHAR(100) NULL, " +
+                    "        wallet_balance DECIMAL(18,2) NOT NULL DEFAULT 0.00, " +
+                    "        is_active BIT NOT NULL DEFAULT 1, " +
+                    "        created_at DATETIME2 NOT NULL DEFAULT GETDATE(), " +
+                    "        updated_at DATETIME2 NULL, " +
+                    "        FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE" +
+                    "    ); " +
+                    "END");
+            log.info("Successfully created table: owners");
+        } catch (Exception e) {
+            log.debug("owners table creation failed or already exists: {}", e.getMessage());
+            try {
+                // Fallback for MySQL/H2
+                jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS owners (" +
+                        "owner_id VARCHAR(36) PRIMARY KEY, " +
+                        "bio TEXT NULL, " +
+                        "account_type VARCHAR(20) NOT NULL DEFAULT 'INDIVIDUAL', " +
+                        "company_name VARCHAR(200) NULL, " +
+                        "stripe_account_id VARCHAR(100) NULL, " +
+                        "wallet_balance DECIMAL(18,2) NOT NULL DEFAULT 0.00, " +
+                        "is_active BOOLEAN NOT NULL DEFAULT TRUE, " +
+                        "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
+                        "updated_at TIMESTAMP NULL, " +
+                        "FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE" +
+                        ")");
+                log.info("Successfully created table: owners (Standard)");
+            } catch (Exception ex) {
+                log.error("Failed to create owners table: {}", ex.getMessage());
+            }
+        }
+
+        // CREATE TABLE: owner_ratings
+        try {
+            jdbcTemplate.execute("IF OBJECT_ID('owner_ratings', 'U') IS NULL " +
+                    "BEGIN " +
+                    "    CREATE TABLE owner_ratings (" +
+                    "        owner_id NVARCHAR(36) PRIMARY KEY, " +
+                    "        avg_rating DECIMAL(3,2) NOT NULL DEFAULT 5.00, " +
+                    "        total_reviews INT NOT NULL DEFAULT 0, " +
+                    "        response_rate DECIMAL(5,2) NOT NULL DEFAULT 100.00, " +
+                    "        avg_response_time_minutes INT NOT NULL DEFAULT 15, " +
+                    "        FOREIGN KEY (owner_id) REFERENCES owners(owner_id) ON DELETE CASCADE" +
+                    "    ); " +
+                    "END");
+            log.info("Successfully created table: owner_ratings");
+        } catch (Exception e) {
+            log.debug("owner_ratings table creation failed or already exists: {}", e.getMessage());
+            try {
+                // Fallback for MySQL/H2
+                jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS owner_ratings (" +
+                        "owner_id VARCHAR(36) PRIMARY KEY, " +
+                        "avg_rating DECIMAL(3,2) NOT NULL DEFAULT 5.00, " +
+                        "total_reviews INT NOT NULL DEFAULT 0, " +
+                        "response_rate DECIMAL(5,2) NOT NULL DEFAULT 100.00, " +
+                        "avg_response_time_minutes INT NOT NULL DEFAULT 15, " +
+                        "FOREIGN KEY (owner_id) REFERENCES owners(owner_id) ON DELETE CASCADE" +
+                        ")");
+                log.info("Successfully created table: owner_ratings (Standard)");
+            } catch (Exception ex) {
+                log.error("Failed to create owner_ratings table: {}", ex.getMessage());
+            }
+        }
+
+        // CREATE TABLE: owner_verifications
+        try {
+            jdbcTemplate.execute("IF OBJECT_ID('owner_verifications', 'U') IS NULL " +
+                    "BEGIN " +
+                    "    CREATE TABLE owner_verifications (" +
+                    "        id NVARCHAR(36) PRIMARY KEY, " +
+                    "        owner_id NVARCHAR(36) NOT NULL, " +
+                    "        document_type NVARCHAR(50) NOT NULL, " +
+                    "        document_number NVARCHAR(100) NOT NULL, " +
+                    "        document_image_url NVARCHAR(500) NOT NULL, " +
+                    "        status NVARCHAR(20) NOT NULL DEFAULT 'PENDING', " +
+                    "        reviewer_comment NVARCHAR(500) NULL, " +
+                    "        verified_at DATETIME2 NULL, " +
+                    "        created_at DATETIME2 NOT NULL DEFAULT GETDATE(), " +
+                    "        FOREIGN KEY (owner_id) REFERENCES owners(owner_id) ON DELETE CASCADE" +
+                    "    ); " +
+                    "END");
+            log.info("Successfully created table: owner_verifications");
+        } catch (Exception e) {
+            log.debug("owner_verifications table creation failed or already exists: {}", e.getMessage());
+            try {
+                // Fallback for MySQL/H2
+                jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS owner_verifications (" +
+                        "id VARCHAR(36) PRIMARY KEY, " +
+                        "owner_id VARCHAR(36) NOT NULL, " +
+                        "document_type VARCHAR(50) NOT NULL, " +
+                        "document_number VARCHAR(100) NOT NULL, " +
+                        "document_image_url VARCHAR(500) NOT NULL, " +
+                        "status VARCHAR(20) NOT NULL DEFAULT 'PENDING', " +
+                        "reviewer_comment VARCHAR(500) NULL, " +
+                        "verified_at TIMESTAMP NULL, " +
+                        "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
+                        "FOREIGN KEY (owner_id) REFERENCES owners(owner_id) ON DELETE CASCADE" +
+                        ")");
+                log.info("Successfully created table: owner_verifications (Standard)");
+            } catch (Exception ex) {
+                log.error("Failed to create owner_verifications table: {}", ex.getMessage());
             }
         }
 
@@ -138,6 +252,13 @@ public class DatabaseMigration implements CommandLineRunner {
 
         // CREATE TABLE: analytics
         try {
+            // If the table exists but doesn't have the record_date column (old schema), drop it
+            jdbcTemplate.execute("IF OBJECT_ID('analytics', 'U') IS NOT NULL AND COL_LENGTH('analytics', 'record_date') IS NULL DROP TABLE analytics");
+        } catch (Exception e) {
+            log.warn("Failed to check/drop old analytics table: {}", e.getMessage());
+        }
+
+        try {
             jdbcTemplate.execute("CREATE TABLE analytics (" +
                     "id NVARCHAR(36) NOT NULL PRIMARY KEY, " +
                     "record_date DATE NOT NULL UNIQUE, " +
@@ -174,6 +295,64 @@ public class DatabaseMigration implements CommandLineRunner {
             }
         } catch (Exception e) {
             log.debug("system_settings table already exists: {}", e.getMessage());
+        }
+
+        // CREATE TABLE: destination_analytics
+        try {
+            jdbcTemplate.execute("IF OBJECT_ID('destination_analytics', 'U') IS NULL " +
+                    "BEGIN " +
+                    "    CREATE TABLE destination_analytics (" +
+                    "        city NVARCHAR(100) PRIMARY KEY, " +
+                    "        vehicle_count INT NOT NULL DEFAULT 0, " +
+                    "        average_price BIGINT NOT NULL DEFAULT 0, " +
+                    "        top_category NVARCHAR(50) NOT NULL DEFAULT 'economy', " +
+                    "        image_url NVARCHAR(500) NULL, " +
+                    "        display_order INT NOT NULL DEFAULT 0, " +
+                    "        active BIT NOT NULL DEFAULT 1" +
+                    "    ); " +
+                    "END");
+            log.info("Successfully created table: destination_analytics");
+
+            // Seed default destinations
+            Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM destination_analytics", Integer.class);
+            if (count == null || count == 0) {
+                jdbcTemplate.execute("INSERT INTO destination_analytics (city, vehicle_count, average_price, top_category, image_url, display_order, active) VALUES " +
+                        "('Ho Chi Minh', 240, 750000, 'suv', 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?q=80&w=800&auto=format&fit=crop', 1, 1), " +
+                        "('Ha Noi', 186, 650000, 'economy', 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?q=80&w=800&auto=format&fit=crop', 2, 1), " +
+                        "('Da Nang', 94, 700000, 'motorbike', 'https://images.unsplash.com/photo-1518684079-3c830dcef090?q=80&w=800&auto=format&fit=crop', 3, 1), " +
+                        "('Nha Trang', 120, 600000, 'family', 'https://images.unsplash.com/photo-1506966953602-c20cc11f75e3?q=80&w=800&auto=format&fit=crop', 4, 1), " +
+                        "('Da Lat', 158, 580000, 'motorbike', 'https://images.unsplash.com/photo-1580655653885-65763b2597d0?q=80&w=800&auto=format&fit=crop', 5, 1), " +
+                        "('Hue', 85, 520000, 'economy', 'https://images.unsplash.com/photo-1560969184-10fe8719e047?q=80&w=800&auto=format&fit=crop', 6, 1)");
+                log.info("Successfully seeded default destination_analytics");
+            }
+        } catch (Exception e) {
+            log.debug("destination_analytics table creation or seeding failed: {}", e.getMessage());
+            try {
+                // Standard SQL fallback for MySQL/H2
+                jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS destination_analytics (" +
+                        "city VARCHAR(100) PRIMARY KEY, " +
+                        "vehicle_count INT NOT NULL DEFAULT 0, " +
+                        "average_price BIGINT NOT NULL DEFAULT 0, " +
+                        "top_category VARCHAR(50) NOT NULL DEFAULT 'economy', " +
+                        "image_url VARCHAR(500) NULL, " +
+                        "display_order INT NOT NULL DEFAULT 0, " +
+                        "active BOOLEAN NOT NULL DEFAULT TRUE" +
+                        ")");
+                log.info("Successfully created table: destination_analytics (Standard)");
+                Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM destination_analytics", Integer.class);
+                if (count == null || count == 0) {
+                    jdbcTemplate.execute("INSERT INTO destination_analytics (city, vehicle_count, average_price, top_category, image_url, display_order, active) VALUES " +
+                            "('Ho Chi Minh', 240, 750000, 'suv', 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?q=80&w=800&auto=format&fit=crop', 1, true), " +
+                            "('Ha Noi', 186, 650000, 'economy', 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?q=80&w=800&auto=format&fit=crop', 2, true), " +
+                            "('Da Nang', 94, 700000, 'motorbike', 'https://images.unsplash.com/photo-1518684079-3c830dcef090?q=80&w=800&auto=format&fit=crop', 3, true), " +
+                            "('Nha Trang', 120, 600000, 'family', 'https://images.unsplash.com/photo-1506966953602-c20cc11f75e3?q=80&w=800&auto=format&fit=crop', 4, true), " +
+                            "('Da Lat', 158, 580000, 'motorbike', 'https://images.unsplash.com/photo-1580655653885-65763b2597d0?q=80&w=800&auto=format&fit=crop', 5, true), " +
+                            "('Hue', 85, 520000, 'economy', 'https://images.unsplash.com/photo-1560969184-10fe8719e047?q=80&w=800&auto=format&fit=crop', 6, true)");
+                    log.info("Successfully seeded default destination_analytics (Standard)");
+                }
+            } catch (Exception ex) {
+                log.error("Failed to create destination_analytics table: {}", ex.getMessage());
+            }
         }
     }
 }

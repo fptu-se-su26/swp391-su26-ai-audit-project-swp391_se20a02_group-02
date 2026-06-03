@@ -18,7 +18,10 @@ const LANGS = [
   { code: 'en' as const, label: 'English', flag: '🇺🇸' },
   { code: 'vi' as const, label: 'Tiếng Việt', flag: '🇻🇳' },
   { code: 'ja' as const, label: '日本語', flag: '🇯🇵' },
+  { code: 'ko' as const, label: '한국어', flag: '🇰🇷' },
+  { code: 'zh' as const, label: '中文', flag: '🇨🇳' },
 ];
+
 
 // ====== THEME TOGGLE BUTTON ======
 const ThemeToggle: React.FC = () => {
@@ -126,6 +129,77 @@ const LanguageSwitcher: React.FC = () => {
     </div>
   );
 };
+
+// ====== CURRENCY LABELS ======
+const CURRENCIES = [
+  { code: 'VND', label: 'VND', flag: '🇻🇳', symbol: '₫' },
+  { code: 'USD', label: 'USD', flag: '🇺🇸', symbol: '$' },
+  { code: 'EUR', label: 'EUR', flag: '🇪🇺', symbol: '€' },
+  { code: 'JPY', label: 'JPY', flag: '🇯🇵', symbol: '¥' },
+  { code: 'SGD', label: 'SGD', flag: '🇸🇬', symbol: 'S$' },
+  { code: 'KRW', label: 'KRW', flag: '🇰🇷', symbol: '₩' },
+];
+
+// ====== CURRENCY SWITCHER ======
+const CurrencySwitcher: React.FC = () => {
+  const { currency, setCurrency } = useUIStore();
+  const [open, setOpen] = React.useState(false);
+  const ref = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const current = CURRENCIES.find(c => c.code === currency) || CURRENCIES[0];
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-1.5 p-2.5 rounded-xl text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700 hover:text-slate-900 transition-colors duration-200"
+        title="Change Currency"
+      >
+        <Globe className="w-4 h-4 text-slate-400" />
+        <span className="text-xs font-semibold uppercase">{current.code}</span>
+        <span className="text-xs">{current.symbol}</span>
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: 8, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 8, scale: 0.95 }}
+            transition={{ duration: 0.15 }}
+            className="absolute right-0 mt-2 w-44 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-luxury overflow-hidden z-50"
+          >
+            {CURRENCIES.map(curr => (
+              <button
+                key={curr.code}
+                onClick={() => { setCurrency(curr.code); setOpen(false); }}
+                className={cn(
+                  'w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors',
+                  currency === curr.code
+                    ? 'bg-blue-50 text-accent font-semibold dark:bg-blue-900/30'
+                    : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-700'
+                )}
+              >
+                <span className="text-lg">{curr.flag}</span>
+                <span className="font-semibold">{curr.code} ({curr.symbol})</span>
+                {currency === curr.code && <Check className="w-3.5 h-3.5 ml-auto text-accent" />}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
 
 // ====== MAIN NAVBAR ======
 export const Navbar: React.FC = () => {
@@ -253,6 +327,9 @@ export const Navbar: React.FC = () => {
               {/* Language Switcher */}
               <LanguageSwitcher />
 
+              {/* Currency Switcher */}
+              <CurrencySwitcher />
+
               {isAuthenticated && user ? (
                 <>
                   {/* Notifications */}
@@ -334,49 +411,51 @@ export const Navbar: React.FC = () => {
 
                           {/* Menu Items */}
                           <div className="p-2">
-                            {[
-                              { icon: LayoutDashboard, label: t.nav.dashboard, href: '/dashboard' },
-                              { icon: Wallet, label: t.nav.wallet, href: '/dashboard/wallet' },
-                              { icon: Heart, label: t.nav.wishlist, href: '/dashboard/wishlist' },
-                              { icon: User, label: t.nav.profile, href: '/dashboard/profile' },
-                              { icon: Bell, label: t.nav.notifications, href: '/dashboard/notifications' },
-                            ].map(item => (
-                              <Link
-                                key={item.href}
-                                to={item.href}
-                                onClick={() => setUserMenuOpen(false)}
-                                className={cn(
-                                  'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors',
-                                  isDark ? 'text-slate-300 hover:bg-slate-700 hover:text-white' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                                )}
-                              >
-                                <item.icon className="w-4 h-4 text-slate-400" />
-                                {item.label}
-                              </Link>
-                            ))}
+                            {(() => {
+                              const roleUpper = user.role?.toUpperCase();
+                              const accTypeUpper = user.accountType?.toUpperCase();
+                              const userIsBusiness = roleUpper === 'BUSINESS_OWNER' || (roleUpper === 'OWNER' && accTypeUpper === 'BUSINESS');
 
-                          {(user.role === 'owner') && (
-                              <Link
-                                to="/owner"
-                                onClick={() => setUserMenuOpen(false)}
-                                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-accent hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
-                              >
-                                <Sparkles className="w-4 h-4" />
-                                {t.nav.ownerDashboardFull}
-                              </Link>
-                            )}
+                              let menuItems: Array<{ icon: any; label: string; href: string }> = [];
+                              if (roleUpper === 'CUSTOMER') {
+                                menuItems = [
+                                  { icon: LayoutDashboard, label: t.nav.dashboard, href: '/dashboard' },
+                                  { icon: Wallet, label: t.nav.wallet, href: '/dashboard/wallet' },
+                                  { icon: Heart, label: t.nav.wishlist, href: '/dashboard/wishlist' },
+                                  { icon: User, label: t.nav.profile, href: '/dashboard/profile' },
+                                  { icon: Bell, label: t.nav.notifications, href: '/dashboard/notifications' },
+                                ];
+                              } else if (userIsBusiness) {
+                                menuItems = [
+                                  { icon: LayoutDashboard, label: 'Business Panel', href: '/business' },
+                                  { icon: User, label: t.nav.profile, href: '/dashboard/profile' },
+                                ];
+                              } else if (roleUpper === 'OWNER') {
+                                menuItems = [
+                                  { icon: LayoutDashboard, label: t.nav.ownerDashboardFull, href: '/owner' },
+                                  { icon: User, label: t.nav.profile, href: '/dashboard/profile' },
+                                ];
+                              } else if (roleUpper === 'ADMIN') {
+                                menuItems = [
+                                  { icon: Shield, label: t.nav.adminPanel, href: '/admin' },
+                                ];
+                              }
 
-                            {user.role === 'admin' && (
-                              <Link
-                                to="/admin"
-                                onClick={() => setUserMenuOpen(false)}
-                                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm hover:bg-yellow-50 dark:hover:bg-yellow-900/20 transition-colors"
-                                style={{ color: '#EAB308' }}
-                              >
-                                <Shield className="w-4 h-4" />
-                                {t.nav.adminPanel}
-                              </Link>
-                            )}
+                              return menuItems.map(item => (
+                                <Link
+                                  key={item.href}
+                                  to={item.href}
+                                  onClick={() => setUserMenuOpen(false)}
+                                  className={cn(
+                                    'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors',
+                                    isDark ? 'text-slate-300 hover:bg-slate-700 hover:text-white' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                                  )}
+                                >
+                                  <item.icon className="w-4 h-4 text-slate-400" />
+                                  {item.label}
+                                </Link>
+                              ));
+                            })()}
                           </div>
 
                           <div className={cn('border-t p-2', isDark ? 'border-slate-700' : 'border-slate-100')}>

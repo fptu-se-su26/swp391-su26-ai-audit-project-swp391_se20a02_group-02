@@ -6,6 +6,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.context.annotation.Profile;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -14,6 +16,8 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/test")
+@PreAuthorize("hasRole('ADMIN')")
+@Profile("dev")
 public class TestController {
     
     @Autowired
@@ -64,8 +68,6 @@ public class TestController {
             response.put("database_product_version", connection.getMetaData().getDatabaseProductVersion());
             response.put("driver_name", connection.getMetaData().getDriverName());
             response.put("driver_version", connection.getMetaData().getDriverVersion());
-            response.put("url", connection.getMetaData().getURL());
-            response.put("username", connection.getMetaData().getUserName());
             
             connection.close();
             

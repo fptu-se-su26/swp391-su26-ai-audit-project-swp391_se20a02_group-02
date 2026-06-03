@@ -35,9 +35,14 @@ public class DisputeController {
     }
 
     @GetMapping("/booking/{bookingId}")
-    public ResponseEntity<ApiResponse<List<Dispute>>> getDisputesByBooking(@PathVariable String bookingId) {
-        return ResponseEntity.ok(ApiResponse.success("Success", disputeService.getDisputesByBooking(bookingId)));
+    public ResponseEntity<ApiResponse<List<Dispute>>> getDisputesByBooking(
+            @PathVariable String bookingId,
+            @AuthenticationPrincipal User user) {
+        boolean isAdmin = user.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        return ResponseEntity.ok(ApiResponse.success("Success", disputeService.getDisputesByBooking(bookingId, user.getId(), isAdmin)));
     }
+
 
     @GetMapping("/my-disputes")
     public ResponseEntity<ApiResponse<List<Dispute>>> getMyDisputes(@AuthenticationPrincipal User user) {

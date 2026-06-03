@@ -10,6 +10,9 @@ import type { Language } from '@/store';
 const languages = [
   { code: 'en' as Language, name: 'English', flag: '🇺🇸' },
   { code: 'vi' as Language, name: 'Tiếng Việt', flag: '🇻🇳' },
+  { code: 'ja' as Language, name: '日本語', flag: '🇯🇵' },
+  { code: 'ko' as Language, name: '한국어', flag: '🇰🇷' },
+  { code: 'zh' as Language, name: '中文', flag: '🇨🇳' },
 ];
 
 export const LanguageSwitcher: React.FC<{ className?: string }> = ({ className = '' }) => {
@@ -103,7 +106,9 @@ export const LanguageSwitcherMinimal: React.FC<{ className?: string }> = ({ clas
   const { language, setLanguage } = useUIStore();
 
   const toggleLanguage = () => {
-    setLanguage(language === 'en' ? 'vi' : 'en');
+    const currentIndex = languages.findIndex(l => l.code === language);
+    const nextIndex = (currentIndex + 1) % languages.length;
+    setLanguage(languages[nextIndex].code);
   };
 
   const currentLang = languages.find(l => l.code === language) || languages[0];

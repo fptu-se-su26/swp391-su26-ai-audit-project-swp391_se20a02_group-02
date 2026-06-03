@@ -43,6 +43,8 @@ public interface UserRepository extends JpaRepository<User, String> {
     Page<User> searchUsers(@Param("keyword") String keyword, Pageable pageable);
     
     // Statistics
+    long countByRole(UserRole role);
+
     @Query("SELECT COUNT(u) FROM User u WHERE u.role = :role AND u.isActive = true")
     long countByRoleAndIsActiveTrue(@Param("role") UserRole role);
     

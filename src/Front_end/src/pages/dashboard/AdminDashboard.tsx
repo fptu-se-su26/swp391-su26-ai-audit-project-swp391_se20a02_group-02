@@ -23,6 +23,7 @@ const AdminSidebar: React.FC = () => {
   const { sidebarOpen, setSidebarOpen } = useUIStore();
 
   const adminLinks = [
+    { href: '/', icon: Globe, label: 'Go to Home', exact: true },
     { href: '/admin', icon: LayoutDashboard, label: 'Dashboard', exact: true },
     { href: '/admin/users', icon: Users, label: 'User Management' },
     { href: '/admin/vehicles', icon: Car, label: 'Vehicle Management' },
@@ -119,7 +120,7 @@ const AdminSidebar: React.FC = () => {
         {/* Logout */}
         <div className="p-3 relative z-10" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
           <button
-            onClick={() => { logout(); navigate('/'); }}
+            onClick={() => { logout(); navigate('/auth/login'); }}
             className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 w-full transition-all duration-200"
           >
             <LogOut className="w-4 h-4" />

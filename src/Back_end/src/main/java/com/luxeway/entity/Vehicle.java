@@ -48,7 +48,7 @@ public class Vehicle {
     @NotBlank(message = "Model is required")
     private String model;
     
-    @Column(nullable = false)
+    @Column(name = "`year`", nullable = false)
     @NotNull(message = "Year is required")
     private Integer year;
     
@@ -188,6 +188,18 @@ public class Vehicle {
     private LocalDateTime updatedAt;
     
     // Relationships
+    @OneToOne(mappedBy = "vehicle", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private VehicleSpecification specification;
+
+    @OneToOne(mappedBy = "vehicle", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private VehicleLocation location;
+
+    @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<VehicleAvailability> availabilities;
+
+    @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<VehiclePricingRule> pricingRules;
+
     @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
     private Set<VehicleImage> images;

@@ -602,6 +602,66 @@ main.tsx:
 
 ---
 
+## Lần sử dụng AI #12 — Phase 4: E2E Verification & Database Startup Fix
+
+### Thông tin
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-05-31 |
+| Công cụ AI | Antigravity |
+| Mục tiêu | Khắc phục lỗi khởi động SQL Server (Invalid column name 'record_date') và thực hiện E2E Audit |
+| Phần bài tập | Database Startup & E2E Verification — DatabaseMigration, AnalyticsService, E2E Routes |
+
+### Prompt chính
+
+```text
+Audit LuxeWay Car Rental Platform:
+1. Verify frontend (http://localhost:5173) and backend health check (http://localhost:8080/api/v1/test/health).
+2. Fix SQL Server startup database migration / analytics service boot issue.
+3. Automatically discover routes and audit for common UX flaws: Loading States, Error UI, Empty States, Responsive Mobile, Form Validation, Role-Based Menu.
+```
+
+### Kết quả AI sinh ra
+
+```text
+- DatabaseMigration.java: Thêm câu lệnh DROP TABLE IF EXISTS cho bảng analytics cũ thiếu cột record_date để đảm bảo khởi động ứng dụng trơn tru trên SQL Server.
+- Startup Ordering Fix: Cấu hình annotation @Order(1) trên DatabaseMigration và @Order(2) trên AnalyticsService để đảm bảo các migration tùy chỉnh chạy trước khi dịch vụ truy vấn kiểm tra dữ liệu.
+- E2E Verification Report: Thực hiện E2E audit, lập bản đồ chi tiết 40+ routes của hệ thống và đánh giá đầy đủ 6 lỗ hổng UX phổ biến.
+```
+
+### Kiểm tra và chỉnh sửa
+
+```text
+- Biên dịch lại backend thành công (mvn package). Khởi động ứng dụng bằng file JAR trên môi trường SQL Server.
+- Kiểm tra endpoint Health Check: database_connected = true, total_users = 8.
+- Kiểm tra giao diện Frontend hoạt động mượt mà tại cổng 5173.
+```
+
+### Đánh giá
+
+| Tiêu chí | Kết quả |
+|---|---|
+| Chính xác | Xuất sắc — Hệ thống khởi động trơn tru trên SQL Server và hoàn tất E2E audit |
+| Cần chỉnh sửa | Không — Mọi lỗi startup được giải quyết triệt để |
+| Bài học | Quản lý thứ tự khởi động (Startup ordering) trong Spring Boot cực kỳ quan trọng khi khởi tạo dữ liệu ban đầu. |
+
+---
+
+## Log #13
+
+- **Date:** 2026-06-03 đến 2026-06-04
+- **Author:** NguyenVanDang (DE190324)
+- **AI Tool:** Antigravity
+- **Purpose:** Nâng cấp Help Center lên cấp Enterprise và sửa lỗi hiển thị statistics Landing Page
+- **Prompt Reference:** PROMPTS.md#prompt-14
+- **AI Output Summary:** Gợi ý DDL schema và dữ liệu seed SQL Server cho help center; code khung cho các entities, repositories, services, controllers; layout React HelpPage mới; API client `helpService.ts`; cách đổi tên JPA query method thành findByUser_Id để fix lỗi Spring Boot startup; và logic kiểm tra vehicle count hiển thị statistics.
+- **Human Decision:** Áp dụng toàn bộ mô hình dữ liệu (DDL, entities, services). Tự viết classpath launcher để chạy Maven compiler bypass lỗi Unicode path. Sửa query JPA method thành `findByUser_Id` và thay đổi filter làm tròn stats card thành `${stats.totalVehicles < 100 ? stats.totalVehicles : ...}`.
+- **Applied To:** Back_end (HelpCategory, HelpArticle, SupportTicket, SupportTicketMessage và config bảo mật), Front_end (helpService.ts, HelpPage.tsx, LandingPage.tsx).
+- **Verification:** PowerShell `Invoke-RestMethod` và kiểm tra trực quan tự động bằng browser subagents.
+
+---
+
 ## 10. Cam kết học thuật
 
 Sinh viên/nhóm cam kết rằng:
@@ -614,5 +674,5 @@ Sinh viên/nhóm cam kết rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-05-31 |
+| Nguyễn Văn Dạng - DE190324 | 2026-06-04 |
 

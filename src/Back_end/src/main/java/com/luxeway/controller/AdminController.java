@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/admin")
 @RequiredArgsConstructor
 @Tag(name = "Admin", description = "Admin-only management endpoints")
+@lombok.extern.slf4j.Slf4j
 public class AdminController {
 
     private final AdminService adminService;
@@ -268,6 +269,44 @@ public class AdminController {
             return ResponseEntity.ok(ApiResponse.success("Analytics compiled successfully", compiled));
         } catch (Exception e) {
             return ResponseEntity.status(400).body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    // ====== Report Exporters ======
+
+    @GetMapping("/reports/revenue/pdf")
+    @Operation(summary = "Export platform gross revenue and sales audit report in PDF format")
+    public ResponseEntity<byte[]> exportRevenueReportPdf() {
+        try {
+            byte[] pdfBytes = adminService.exportRevenueReportPdf();
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.setContentType(org.springframework.http.MediaType.APPLICATION_PDF);
+            headers.setContentDisposition(org.springframework.http.ContentDisposition.builder("attachment")
+                    .filename("luxeway-revenue-report-" + System.currentTimeMillis() + ".pdf")
+                    .build());
+            headers.setContentLength(pdfBytes.length);
+            return new ResponseEntity<>(pdfBytes, headers, org.springframework.http.HttpStatus.OK);
+        } catch (Exception e) {
+            log.error("Failed to generate and export PDF report: {}", e.getMessage());
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/reports/revenue/excel")
+    @Operation(summary = "Export platform gross revenue and sales report in Excel CSV format")
+    public ResponseEntity<byte[]> exportRevenueReportExcel() {
+        try {
+            byte[] csvBytes = adminService.exportRevenueReportExcel();
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.setContentType(org.springframework.http.MediaType.parseMediaType("text/csv"));
+            headers.setContentDisposition(org.springframework.http.ContentDisposition.builder("attachment")
+                    .filename("luxeway-revenue-report-" + System.currentTimeMillis() + ".csv")
+                    .build());
+            headers.setContentLength(csvBytes.length);
+            return new ResponseEntity<>(csvBytes, headers, org.springframework.http.HttpStatus.OK);
+        } catch (Exception e) {
+            log.error("Failed to generate and export Excel report: {}", e.getMessage());
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 }

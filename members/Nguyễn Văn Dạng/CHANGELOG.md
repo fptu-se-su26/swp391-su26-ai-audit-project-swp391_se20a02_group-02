@@ -748,11 +748,74 @@ Build Frontend: ✓ built in 7.15s — 2979 modules — dist/index.html 1.76 kB
 
 ---
 
+# [Phase 04.10] Enterprise Help Center & Live Landing Page Statistics Fix
+
+## Ngày thực hiện
+
+```text
+2026-06-03 đến 2026-06-04
+```
+
+## Đã hoàn thành
+
+- [x] Sửa lỗi hiển thị thống kê Landing Page:
+  - Khắc phục lỗi làm tròn `Math.floor(stats.totalVehicles / 100) * 100` gây hiển thị `0+` xe khi số lượng xe trong DB nhỏ hơn 100 (hiện tại là 12 xe).
+  - Loại bỏ hoàn toàn mock data và silent zero fallbacks tại trang Landing Page, tích hợp live stats trực tiếp từ cơ sở dữ liệu SQL Server.
+  - Thêm error alert banner kèm nút **Retry** khi gọi API stats thất bại để tăng khả năng chống chịu lỗi của giao diện.
+- [x] Xây dựng hệ thống Help Center doanh nghiệp:
+  - Thiết kế DDL và dữ liệu mẫu (mock-free seeds) cho các bảng `help_categories`, `help_articles`, `support_tickets`, và `support_ticket_messages` trong `data-sqlserver.sql`.
+  - Tạo các Entity Java tương ứng: `HelpCategory.java`, `HelpArticle.java`, `SupportTicket.java`, `SupportTicketMessage.java`.
+  - Triển khai Repositories, Services, và REST Controllers cho Help Center và Support Ticket.
+  - Sửa lỗi mapping JPA query method bằng cách đổi tên method `findByUserId` thành `findByUser_IdOrderByCreatedAtDesc` để tránh exception khởi động Spring Boot.
+  - whitelisting công khai các endpoint `/api/v1/help/**` trong `SecurityConfig.java` và phân quyền bảo mật cho `/api/v1/support/**`.
+- [x] Nâng cấp Frontend Help Page:
+  - Viết `helpService.ts` tích hợp API categories, articles, ticket submission, và thread replies.
+  - Redesign giao diện Help Center với các category cards hiển thị live article count, trang chi tiết bài viết, thanh tìm kiếm debounced gọi API thực tế, form submit support ticket và dashboard theo dõi/phản hồi ticket.
+- [x] Biên dịch thành công backend JAR và frontend Vite bundle, xác thực E2E thông qua các browser subagents.
+
+## Thay đổi chi tiết - Nguyễn Văn Dạng (DE190324)
+
+| STT | Nội dung thay đổi | Người thực hiện | File/Module liên quan | Minh chứng |
+|---:|---|---|---|---|
+| 1 | Sửa lỗi làm tròn hiển thị số lượng xe | Nguyễn Văn Dạng | LandingPage.tsx | `stats.totalVehicles < 100 ? ...` |
+| 2 | Tạo Entity, Repository, Service & Controller cho Help Center | Nguyễn Văn Dạng | HelpCategory.java, HelpArticle.java, HelpController.java, HelpService.java | Backend source files |
+| 3 | Tạo Entity, Repository, Service & Controller cho Support Ticket | Nguyễn Văn Dạng | SupportTicket.java, SupportTicketMessage.java, SupportTicketController.java, SupportTicketService.java | Backend source files |
+| 4 | Sửa lỗi JPA query method mapping | Nguyễn Văn Dạng | SupportTicketRepository.java, SupportTicketService.java | `findByUser_IdOrderByCreatedAtDesc` |
+| 5 | whitelisting public help endpoints & Security Config | Nguyễn Văn Dạng | SecurityConfig.java | `permitAll()` `/help/**` |
+| 6 | Thêm DDL & Seed dữ liệu thật vào data-sqlserver.sql | Nguyễn Văn Dạng | data-sqlserver.sql | Tạo 8 categories và 15 articles |
+| 7 | Viết helpService.ts gọi live APIs | Nguyễn Văn Dạng | helpService.ts | Frontend services |
+| 8 | Redesign UI HelpPage & tích hợp forms, search, ticket thread | Nguyễn Văn Dạng | HelpPage.tsx | Rebuilt 100% |
+
+## AI có hỗ trợ không?
+
+- [x] Có
+- [ ] Không
+
+Nếu có, mô tả AI đã hỗ trợ phần nào:
+
+```text
+AI (Antigravity) hỗ trợ:
+- Gợi ý cấu trúc DDL, entities, controllers/services cho Help Center và Support Ticket.
+- Phát hiện và đề xuất đổi tên query method thành findByUser_Id để giải quyết lỗi Spring Boot bootup query-creation.
+- Gợi ý giải pháp classpath launcher để bypass lỗi build Maven do Unicode path (Tài liệu) trên Windows.
+- Hỗ trợ xây dựng giao diện Help Center, search debounced, và form submittal/reply.
+Toàn bộ code được kiểm chứng hoạt động thực tế trên browser và backend database.
+```
+
+## Commit/Screenshot minh chứng
+
+```text
+Branch: feature/de190324-vehicle-rental-platform
+Commit: [DE190324] feat: upgrade help center to enterprise marketplace support and fix landing page stats
+```
+
+---
+
 # 5. Cam kết cập nhật Changelog
 
 Sinh viên/nhóm cam kết rằng nội dung changelog phản ánh đúng các thay đổi đã thực hiện trong quá trình làm bài tập/project.
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-05-31 |
+| Nguyễn Văn Dạng - DE190324 | 2026-06-04 |
 

@@ -80,7 +80,9 @@ public class ReviewService {
 
     public Page<ReviewDTOs.ReviewResponse> getFeaturedReviews(int limit) {
         Pageable pageable = PageRequest.of(0, limit);
-        return reviewRepository.findByRatingGreaterThanEqualOrderByCreatedAtDesc(5, pageable)
+        // BUG-13 FIX: Use >= 4 to include both 4 and 5-star reviews for featured section.
+        // Using >= 5 was too restrictive and consistent with HomeService.getTestimonials().
+        return reviewRepository.findByRatingGreaterThanEqualOrderByCreatedAtDesc(4, pageable)
                 .map(this::toResponse);
     }
 

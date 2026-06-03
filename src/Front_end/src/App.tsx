@@ -1,10 +1,12 @@
 import React, { useEffect, Suspense, lazy } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuthStore, useUIStore } from '@/store';
 import { VehicleCard } from '@/components/vehicle/VehicleCard';
 import { vehicleService } from '@/services/vehicleService';
+import { authService } from '@/services/authService';
 import { notificationService, reviewService } from '@/services/otherServices';
+import { useToast } from '@/components/ui/Toast';
 import type { Vehicle, Notification, Review } from '@/types';
 import { formatDate } from '@/utils';
 import { useT } from '@/i18n/translations';
@@ -16,6 +18,7 @@ import RootLayout from '@/layouts/RootLayout';
 // Pages (Eager loaded - critical path)
 import LandingPage from '@/pages/landing/LandingPage';
 import { LoginPage, RegisterPage, ForgotPasswordPage } from '@/pages/auth/AuthPages';
+import OAuth2RedirectHandler from '@/pages/auth/OAuth2RedirectHandler';
 import MarketplacePage from '@/pages/marketplace/MarketplacePage';
 import VehicleDetailPage from '@/pages/marketplace/VehicleDetailPage';
 import BookingWizardPage from '@/pages/booking/BookingWizardPage';
@@ -24,7 +27,7 @@ import HelpPage from '@/pages/help/HelpPage';
 
 // Lazy loaded pages
 
-const DashboardLayout = lazy(() => import('@/pages/dashboard/CustomerDashboard').then(m => ({ default: m.DashboardLayout })));
+const CustomerDashboardLayout = lazy(() => import('@/pages/dashboard/CustomerDashboard').then(m => ({ default: m.CustomerDashboardLayout })));
 const CustomerOverview = lazy(() => import('@/pages/dashboard/CustomerDashboard').then(m => ({ default: m.CustomerOverview })));
 const MyBookingsPage = lazy(() => import('@/pages/dashboard/CustomerDashboard').then(m => ({ default: m.MyBookingsPage })));
 const ProfilePage = lazy(() => import('@/pages/dashboard/CustomerDashboard').then(m => ({ default: m.ProfilePage })));
@@ -34,14 +37,20 @@ const PaymentHistoryPage = lazy(() => import('@/pages/dashboard/CustomerDashboar
 const SettingsPage = lazy(() => import('@/pages/dashboard/CustomerDashboard').then(m => ({ default: m.SettingsPage })));
 const LuxeWalletPage = lazy(() => import('@/pages/dashboard/CustomerDashboard').then(m => ({ default: m.LuxeWalletPage })));
 const MyReviewsPage = lazy(() => import('@/pages/dashboard/CustomerDashboard').then(m => ({ default: m.MyReviewsPage })));
+const OwnerDashboardLayout = lazy(() => import('@/pages/dashboard/OwnerDashboard').then(m => ({ default: m.OwnerDashboardLayout })));
 const OwnerOverview = lazy(() => import('@/pages/dashboard/OwnerDashboard').then(m => ({ default: m.OwnerOverview })));
 const VehicleManagePage = lazy(() => import('@/pages/dashboard/OwnerDashboard').then(m => ({ default: m.VehicleManagePage })));
 const VehicleFormPage = lazy(() => import('@/pages/dashboard/OwnerDashboard').then(m => ({ default: m.VehicleFormPage })));
 const OwnerCalendarPage = lazy(() => import('@/pages/dashboard/OwnerDashboard').then(m => ({ default: m.OwnerCalendarPage })));
 const OwnerBookingsPage = lazy(() => import('@/pages/dashboard/OwnerDashboard').then(m => ({ default: m.OwnerBookingsPage })));
 const OwnerRevenuePage = lazy(() => import('@/pages/dashboard/OwnerDashboard').then(m => ({ default: m.OwnerRevenuePage })));
-const FleetManagementPage = lazy(() => import('@/pages/dashboard/OwnerDashboard').then(m => ({ default: m.FleetManagementPage })));
-const EmployeeManagementPage = lazy(() => import('@/pages/dashboard/OwnerDashboard').then(m => ({ default: m.EmployeeManagementPage })));
+const BusinessOwnerDashboardLayout = lazy(() => import('@/pages/dashboard/BusinessOwnerDashboard').then(m => ({ default: m.BusinessOwnerDashboardLayout })));
+const BusinessOverview = lazy(() => import('@/pages/dashboard/BusinessOwnerDashboard').then(m => ({ default: m.BusinessOverview })));
+const FleetManagementPage = lazy(() => import('@/pages/dashboard/BusinessOwnerDashboard').then(m => ({ default: m.FleetManagementPage })));
+const EmployeeManagementPage = lazy(() => import('@/pages/dashboard/BusinessOwnerDashboard').then(m => ({ default: m.EmployeeManagementPage })));
+const DriverManagementPage = lazy(() => import('@/pages/dashboard/BusinessOwnerDashboard').then(m => ({ default: m.DriverManagementPage })));
+const FleetAnalyticsPage = lazy(() => import('@/pages/dashboard/BusinessOwnerDashboard').then(m => ({ default: m.FleetAnalyticsPage })));
+const CorporateReportsPage = lazy(() => import('@/pages/dashboard/BusinessOwnerDashboard').then(m => ({ default: m.CorporateReportsPage })));
 const MessengerPage = lazy(() => import('@/pages/messages/MessengerPage'));
 const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'));
 
@@ -68,16 +77,74 @@ const PageLoader: React.FC = () => {
 };
 
 // ====== PROTECTED ROUTE ======
-const ProtectedRoute: React.FC<{ children: React.ReactNode; requiredRole?: string }> = ({ children, requiredRole }) => {
-  const { isAuthenticated, user } = useAuthStore();
+const ProtectedRoute: React.FC<{ children: React.ReactNode; requiredRole?: 'customer' | 'owner' | 'business_owner' | 'admin' }> = ({ children, requiredRole }) => {
+  const { isAuthenticated, user, isInitialized } = useAuthStore();
+  
+  if (!isInitialized) {
+    return <PageLoader />;
+  }
+  
   if (!isAuthenticated) return <Navigate to="/auth/login" replace />;
   
-  if (requiredRole && user?.role !== requiredRole) {
-    if (user?.role === 'admin') return <Navigate to="/admin" replace />;
-    if (user?.role === 'owner') return <Navigate to="/owner" replace />;
-    return <Navigate to="/dashboard" replace />;
+  if (requiredRole) {
+    const roleUpper = user?.role?.toUpperCase();
+    const accTypeUpper = user?.accountType?.toUpperCase();
+    const userIsBusiness = roleUpper === 'BUSINESS_OWNER' || (roleUpper === 'OWNER' && accTypeUpper === 'BUSINESS');
+    
+    let authorized = false;
+    if (requiredRole === 'admin') {
+      authorized = roleUpper === 'ADMIN';
+    } else if (requiredRole === 'business_owner') {
+      authorized = userIsBusiness;
+    } else if (requiredRole === 'owner') {
+      authorized = roleUpper === 'OWNER' && !userIsBusiness;
+    } else if (requiredRole === 'customer') {
+      authorized = roleUpper === 'CUSTOMER';
+    }
+    
+    if (!authorized) {
+      return <Navigate to="/403" replace />;
+    }
   }
   return <>{children}</>;
+};
+
+// ====== FORBIDDEN 403 PAGE ======
+const ForbiddenPage: React.FC = () => {
+  const { theme } = useUIStore();
+  const isDark = theme === 'dark';
+  const { user } = useAuthStore();
+  const navigate = useNavigate();
+
+  const getBackRoute = () => {
+    if (!user) return '/';
+    const roleUpper = user.role?.toUpperCase();
+    const accTypeUpper = user.accountType?.toUpperCase();
+    if (roleUpper === 'ADMIN') return '/admin';
+    if (roleUpper === 'BUSINESS_OWNER' || (roleUpper === 'OWNER' && accTypeUpper === 'BUSINESS')) return '/business';
+    if (roleUpper === 'OWNER') return '/owner';
+    return '/dashboard';
+  };
+
+  return (
+    <div className={`min-h-screen flex items-center justify-center px-4 ${isDark ? 'bg-slate-950 text-white' : 'bg-[#F8FAFC] text-[#0F172A]'}`}>
+      <div className="text-center max-w-md p-8 rounded-[2rem] glass dark:glass-dark border border-red-500/20 shadow-2xl relative overflow-hidden">
+        <div className="absolute -top-12 -right-12 w-32 h-32 bg-red-500/10 rounded-full blur-2xl pointer-events-none" />
+        
+        <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-red-500/20 shadow-lg">
+          <span className="text-2xl">🛡️</span>
+        </div>
+        <h1 className="text-display text-4xl font-extrabold mb-2 text-red-500 tracking-tight">403</h1>
+        <h2 className="text-xl font-bold mb-3 tracking-tight">Access Denied</h2>
+        <p className="text-slate-400 text-sm mb-8 leading-relaxed">
+          Your credentials do not grant access to this secure node. Please check your privileges or contact the platform administrator.
+        </p>
+        <button onClick={() => navigate(getBackRoute())} className="btn-primary w-full py-3.5 bg-gradient-to-r from-red-650 to-rose-650 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-red-500/15 hover-lift">
+          Return to Portal
+        </button>
+      </div>
+    </div>
+  );
 };
 
 // ====== NOT FOUND ======
@@ -275,11 +342,25 @@ const ReviewsPage: React.FC = () => {
 // ====== OTP PAGE ======
 const OTPPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { theme } = useUIStore();
   const t = useT();
+  const toast = useToast();
   const isDark = theme === 'dark';
+  
+  const queryEmail = new URLSearchParams(location.search).get('email') || '';
+  const stateEmail = (location.state as any)?.email || '';
+  const email = queryEmail || stateEmail;
+
+  const [step, setStep] = React.useState<'otp' | 'reset'>('otp');
   const [code, setCode] = React.useState(['', '', '', '', '', '']);
+  const [resetToken, setResetToken] = React.useState('');
+  const [newPassword, setNewPassword] = React.useState('');
+  const [confirmPassword, setConfirmPassword] = React.useState('');
+  
+  const [loading, setLoading] = React.useState(false);
   const [success, setSuccess] = React.useState(false);
+  
   const inputs = React.useRef<HTMLInputElement[]>([]);
 
   const handleChange = (val: string, idx: number) => {
@@ -289,11 +370,48 @@ const OTPPage: React.FC = () => {
     if (val && idx < 5) inputs.current[idx + 1]?.focus();
   };
 
-  const handleVerify = () => {
+  const handleVerify = async () => {
     const entered = code.join('');
-    if (entered === '123456') {
-      setSuccess(true);
-      setTimeout(() => navigate('/auth/login'), 2000);
+    setLoading(true);
+    try {
+      const token = await authService.verifyOTP(email, entered);
+      if (token) {
+        setResetToken(token);
+        setStep('reset');
+        toast.success('OTP Verified', 'Please enter your new password.');
+      } else {
+        toast.error('Invalid OTP', 'The verification code was rejected.');
+      }
+    } catch (err: any) {
+      toast.error('Verification Error', err.message || 'OTP verification failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPassword || newPassword.length < 8) {
+      toast.error('Invalid Password', 'Password must be at least 8 characters long.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error('Mismatch', 'Passwords do not match.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const ok = await authService.resetPassword(resetToken, newPassword);
+      if (ok) {
+        setSuccess(true);
+        toast.success('Success', 'Your password has been reset successfully.');
+        setTimeout(() => navigate('/auth/login'), 2000);
+      }
+    } catch (err: any) {
+      toast.error('Reset Failed', err.message || 'Failed to reset password.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -302,16 +420,16 @@ const OTPPage: React.FC = () => {
       <div className="w-full max-w-md luxury-card p-8 text-center">
         {success ? (
           <div>
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-green-100 dark:bg-green-950/30 rounded-full flex items-center justify-center mx-auto mb-4">
               <span className="text-3xl">✅</span>
             </div>
             <h2 className={`font-display text-2xl font-bold ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>{t.auth.welcomeBack}</h2>
             <p className="text-slate-500 mt-2">{t.auth.signInSuccess}</p>
           </div>
-        ) : (
+        ) : step === 'otp' ? (
           <>
             <h1 className={`font-display text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>Enter OTP</h1>
-            <p className="text-slate-500 text-sm mb-8">Enter the 6-digit code sent to your email. (Demo: <strong>123456</strong>)</p>
+            <p className="text-slate-500 text-sm mb-4">Enter the 6-digit verification code sent to <strong>{email || 'your email'}</strong></p>
             <div className="flex gap-3 justify-center mb-6">
               {code.map((c, i) => (
                 <input
@@ -325,13 +443,54 @@ const OTPPage: React.FC = () => {
                 />
               ))}
             </div>
-            <button onClick={handleVerify} disabled={code.join('').length < 6} className="btn-primary w-full py-3.5 disabled:opacity-50">
-              Verify Code
+            <button 
+              onClick={handleVerify} 
+              disabled={loading || code.join('').length < 6} 
+              className="btn-primary w-full py-3.5 disabled:opacity-50 justify-center"
+            >
+              {loading ? 'Verifying...' : 'Verify Code'}
             </button>
-            <button onClick={() => navigate('/auth/login')} className="mt-3 text-sm text-slate-400 hover:text-accent transition-colors">
+            <button onClick={() => navigate('/auth/login')} className="mt-3 text-sm text-slate-400 hover:text-accent transition-colors block mx-auto">
               ← {t.auth.backToLogin}
             </button>
           </>
+        ) : (
+          <form onSubmit={handleResetPassword} className="space-y-4 text-left">
+            <h1 className={`font-display text-2xl font-bold text-center mb-2 ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>Reset Password</h1>
+            <p className="text-slate-500 text-sm text-center mb-6">Create a strong new password for your account.</p>
+            
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">{t.auth.password}</label>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                placeholder="New Password (min 8 chars)"
+                className="lux-input w-full"
+                required
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">{t.auth.confirmPassword}</label>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                placeholder="Confirm Password"
+                className="lux-input w-full"
+                required
+              />
+            </div>
+
+            <button 
+              type="submit" 
+              disabled={loading} 
+              className="btn-primary w-full py-3.5 disabled:opacity-50 justify-center"
+            >
+              {loading ? 'Resetting...' : 'Update Password'}
+            </button>
+          </form>
         )}
       </div>
     </div>
@@ -440,8 +599,10 @@ const App: React.FC = () => {
             <Route path="otp" element={<OTPPage />} />
           </Route>
 
+          <Route path="oauth2/redirect" element={<OAuth2RedirectHandler />} />
+
           {/* Customer Dashboard */}
-          <Route path="dashboard" element={<ProtectedRoute requiredRole="customer"><DashboardLayout /></ProtectedRoute>}>
+          <Route path="dashboard" element={<ProtectedRoute requiredRole="customer"><CustomerDashboardLayout /></ProtectedRoute>}>
             <Route index element={<CustomerOverview />} />
             <Route path="bookings" element={<MyBookingsPage />} />
             <Route path="profile" element={<ProfilePage />} />
@@ -456,7 +617,7 @@ const App: React.FC = () => {
           </Route>
 
           {/* Owner Dashboard */}
-          <Route path="owner" element={<ProtectedRoute requiredRole="owner"><DashboardLayout /></ProtectedRoute>}>
+          <Route path="owner" element={<ProtectedRoute requiredRole="owner"><OwnerDashboardLayout /></ProtectedRoute>}>
             <Route index element={<OwnerOverview />} />
             <Route path="vehicles" element={<VehicleManagePage />} />
             <Route path="vehicles/new" element={<VehicleFormPage />} />
@@ -469,8 +630,21 @@ const App: React.FC = () => {
             <Route path="employees" element={<EmployeeManagementPage />} />
           </Route>
 
+          {/* Business Owner Dashboard */}
+          <Route path="business" element={<ProtectedRoute requiredRole="business_owner"><BusinessOwnerDashboardLayout /></ProtectedRoute>}>
+            <Route index element={<BusinessOverview />} />
+            <Route path="fleet" element={<FleetManagementPage />} />
+            <Route path="employees" element={<EmployeeManagementPage />} />
+            <Route path="drivers" element={<DriverManagementPage />} />
+            <Route path="analytics" element={<FleetAnalyticsPage />} />
+            <Route path="reports" element={<CorporateReportsPage />} />
+          </Route>
+
           {/* Admin */}
           <Route path="admin" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
+
+          {/* Forbidden 403 */}
+          <Route path="403" element={<ForbiddenPage />} />
 
           {/* 404 */}
           <Route path="*" element={<NotFoundPage />} />

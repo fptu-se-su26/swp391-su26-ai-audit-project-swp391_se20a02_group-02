@@ -28,6 +28,7 @@ public class VehicleService {
 
     private final VehicleRepository vehicleRepository;
     private final UserRepository userRepository;
+    private final EmailService emailService;
 
     // ====== Get all (with filters) ======
 
@@ -234,6 +235,14 @@ public class VehicleService {
 
         vehicle = vehicleRepository.save(vehicle);
         log.info("Vehicle created: {} by owner {}", vehicle.getId(), ownerId);
+        try {
+            emailService.sendAdminNotification(
+                "New Vehicle Listing Pending Approval",
+                "Vehicle: " + vehicle.getBrand() + " " + vehicle.getModel() + " (" + vehicle.getLicensePlate() + ") has been submitted by Owner ID: " + ownerId
+            );
+        } catch (Exception e) {
+            log.warn("Failed to send admin notification email for new vehicle creation: {}", e.getMessage());
+        }
         return toResponse(vehicle);
     }
 
@@ -241,12 +250,12 @@ public class VehicleService {
 
     @Transactional
     public VehicleDTOs.VehicleResponse update(String vehicleId, String ownerId,
-                                              VehicleDTOs.CreateVehicleRequest req) {
+                                              VehicleDTOs.CreateVehicleRequest req, boolean isAdmin) {
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
                 .orElseThrow(() -> new RuntimeException("Vehicle not found"));
 
-        if (!vehicle.getOwner().getId().equals(ownerId)) {
-            throw new RuntimeException("Not authorized to update this vehicle");
+        if (!isAdmin && !vehicle.getOwner().getId().equals(ownerId)) {
+            throw new org.springframework.security.access.AccessDeniedException("Not authorized to update this vehicle");
         }
 
         vehicle.setName(req.getName());
@@ -274,7 +283,7 @@ public class VehicleService {
                 .orElseThrow(() -> new RuntimeException("Vehicle not found"));
 
         if (!isAdmin && !vehicle.getOwner().getId().equals(requesterId)) {
-            throw new RuntimeException("Not authorized to delete this vehicle");
+            throw new org.springframework.security.access.AccessDeniedException("Not authorized to delete this vehicle");
         }
 
         vehicleRepository.delete(vehicle);
@@ -302,8 +311,8 @@ public class VehicleService {
         r.setSeats(v.getSeats());
         r.setDoors(v.getDoors());
         r.setHorsepower(v.getHorsepower());
-        r.setTransmission(v.getTransmission().name().toLowerCase());
-        r.setFuelType(v.getFuelType().name().toLowerCase());
+        r.setTransmission(v.getTransmission() != null ? v.getTransmission().name().toLowerCase() : null);
+        r.setFuelType(v.getFuelType() != null ? v.getFuelType().name().toLowerCase() : null);
         r.setColor(v.getColor());
         r.setLicensePlate(v.getLicensePlate());
         r.setStatus(v.getStatus().name().toLowerCase());

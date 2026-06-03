@@ -5,15 +5,19 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 import en from './en.json';
 import vi from './vi.json';
 import ja from './ja.json';
+import ko from './ko.json';
+import zh from './zh.json';
 
 // Supported languages
 export const SUPPORTED_LANGUAGES = [
   { code: 'en', label: 'English', flag: '🇬🇧' },
   { code: 'vi', label: 'Tiếng Việt', flag: '🇻🇳' },
   { code: 'ja', label: '日本語', flag: '🇯🇵' },
+  { code: 'ko', label: '한국어', flag: '🇰🇷' },
+  { code: 'zh', label: '中文', flag: '🇨🇳' },
 ] as const;
 
-export type LangCode = 'en' | 'vi' | 'ja';
+export type LangCode = 'en' | 'vi' | 'ja' | 'ko' | 'zh';
 
 const LANGUAGE_KEY = 'language';
 
@@ -21,7 +25,7 @@ const LANGUAGE_KEY = 'language';
 const getStoredLanguage = (): LangCode => {
   try {
     const stored = localStorage.getItem(LANGUAGE_KEY) as LangCode;
-    if (stored && ['en', 'vi', 'ja'].includes(stored)) return stored;
+    if (stored && ['en', 'vi', 'ja', 'ko', 'zh'].includes(stored)) return stored;
   } catch {}
   return 'en';
 };
@@ -34,10 +38,12 @@ i18n
       en: { translation: en },
       vi: { translation: vi },
       ja: { translation: ja },
+      ko: { translation: ko },
+      zh: { translation: zh },
     },
     lng: getStoredLanguage(),
     fallbackLng: 'en',
-    supportedLngs: ['en', 'vi', 'ja'],
+    supportedLngs: ['en', 'vi', 'ja', 'ko', 'zh'],
     interpolation: {
       escapeValue: false,
     },

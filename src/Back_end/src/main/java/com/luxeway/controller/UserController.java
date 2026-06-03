@@ -8,6 +8,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -22,6 +24,7 @@ public class UserController {
     private UserRepository userRepository;
     
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> getAllUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
@@ -31,7 +34,10 @@ public class UserController {
             Page<User> users = userRepository.findAll(pageable);
             
             Map<String, Object> response = new HashMap<>();
-            response.put("users", users.getContent());
+            // BUG-10 FIX: Map to DTO instead of returning raw User entities
+            response.put("users", users.getContent().stream()
+                    .map(userService::toProfileResponse)
+                    .collect(java.util.stream.Collectors.toList()));
             response.put("currentPage", users.getNumber());
             response.put("totalItems", users.getTotalElements());
             response.put("totalPages", users.getTotalPages());
@@ -49,13 +55,24 @@ public class UserController {
     }
     
     @GetMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> getUserById(@PathVariable String id) {
+    public ResponseEntity<Map<String, Object>> getUserById(
+            @PathVariable String id,
+            @AuthenticationPrincipal User requester) {
+        if (requester == null) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Unauthorized");
+            return ResponseEntity.status(401).body(errorResponse);
+        }
+        if (!requester.isAdmin() && !requester.getId().equals(id)) {
+            throw new org.springframework.security.access.AccessDeniedException("Not authorized to view this user profile");
+        }
         try {
             Optional<User> user = userRepository.findById(id);
             
             Map<String, Object> response = new HashMap<>();
             if (user.isPresent()) {
-                response.put("user", user.get());
+                // BUG-09 FIX: Map to DTO instead of returning raw User entity (avoids exposing sensitive fields)
+                response.put("user", userService.toProfileResponse(user.get()));
                 return ResponseEntity.ok(response);
             } else {
                 response.put("error", "User not found");
@@ -71,6 +88,7 @@ public class UserController {
     }
     
     @GetMapping("/search")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> searchUsers(
             @RequestParam String keyword,
             @RequestParam(defaultValue = "0") int page,
@@ -81,7 +99,10 @@ public class UserController {
             Page<User> users = userRepository.searchUsers(keyword, pageable);
             
             Map<String, Object> response = new HashMap<>();
-            response.put("users", users.getContent());
+            // BUG-10 FIX: Map to DTO instead of returning raw User entities
+            response.put("users", users.getContent().stream()
+                    .map(userService::toProfileResponse)
+                    .collect(java.util.stream.Collectors.toList()));
             response.put("currentPage", users.getNumber());
             response.put("totalItems", users.getTotalElements());
             response.put("totalPages", users.getTotalPages());
@@ -105,7 +126,7 @@ public class UserController {
 
     @PostMapping("/documents")
     public ResponseEntity<?> uploadUserDocument(
-            @org.springframework.security.core.annotation.AuthenticationPrincipal com.luxeway.entity.User user,
+            @AuthenticationPrincipal com.luxeway.entity.User user,
             @RequestParam("file") org.springframework.web.multipart.MultipartFile file,
             @RequestParam("documentType") String documentType) {
         
@@ -128,9 +149,23 @@ public class UserController {
         }
 
         String contentType = file.getContentType();
-        if (contentType == null || (!contentType.startsWith("image/") && !contentType.equalsIgnoreCase("application/pdf"))) {
+        try {
+            org.apache.tika.Tika tika = new org.apache.tika.Tika();
+            String detectedType = tika.detect(file.getInputStream());
+            if (detectedType == null || (!detectedType.startsWith("image/") && !detectedType.equalsIgnoreCase("application/pdf"))) {
+                Map<String, String> errorResponse = new HashMap<>();
+                errorResponse.put("error", "Security check failed: Only image or PDF files are allowed");
+                return ResponseEntity.badRequest().body(errorResponse);
+            }
+            if (contentType == null || (!contentType.startsWith("image/") && !contentType.equalsIgnoreCase("application/pdf"))) {
+                Map<String, String> errorResponse = new HashMap<>();
+                errorResponse.put("error", "Claimed format not supported");
+                return ResponseEntity.badRequest().body(errorResponse);
+            }
+        } catch (java.io.IOException e) {
             Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Only image or PDF files are allowed");
+            errorResponse.put("error", "Failed to verify file integrity");
+            errorResponse.put("message", e.getMessage());
             return ResponseEntity.badRequest().body(errorResponse);
         }
 

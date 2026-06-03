@@ -125,9 +125,12 @@ export const authService = {
    * Logout - Clear tokens and user data
    */
   logout(): void {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(REFRESH_TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch (e) {
+      console.error('Failed to clear storage in authService:', e);
+    }
   },
 
   /**
@@ -247,39 +250,91 @@ export const authService = {
     try {
       await apiClient.post('/auth/forgot-password', { email });
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to send OTP:', error);
-      throw new Error('Failed to send OTP. Check your email address.');
+      throw new Error(error.response?.data?.message || 'Failed to send OTP. Check your email address.');
     }
   },
 
   /**
-   * Verify OTP - REAL BACKEND
+   * Verify OTP - REAL BACKEND returning transient reset token
    */
-  async verifyOTP(email: string, otp: string): Promise<boolean> {
+  async verifyOTP(email: string, otp: string): Promise<string | null> {
     try {
-      const response = await apiClient.post<any>('/auth/verify-otp', { email, otp });
-      return response.valid || response.success || false;
-    } catch (error) {
+      const res = await apiClient.post<any>('/auth/verify-otp', { email, otp });
+      const response = res.data || res;
+      const token = response?.token || response?.data?.token || response;
+      if (typeof token === 'string') {
+        return token;
+      }
+      if (response?.data && typeof response.data === 'object' && response.data.token) {
+        return response.data.token;
+      }
+      return null;
+    } catch (error: any) {
       console.error('Failed to verify OTP:', error);
-      return false;
+      throw new Error(error.response?.data?.message || 'Invalid or expired OTP code');
     }
   },
 
   /**
-   * Reset password with OTP - REAL BACKEND
+   * Reset password with transient token - REAL BACKEND
    */
-  async resetPassword(email: string, otp: string, newPassword: string): Promise<boolean> {
+  async resetPassword(token: string, newPassword: string): Promise<boolean> {
     try {
       await apiClient.post('/auth/reset-password', {
-        email,
-        otp,
+        token,
         newPassword,
+        confirmPassword: newPassword,
       });
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to reset password:', error);
-      throw new Error('Failed to reset password. Invalid OTP or expired.');
+      throw new Error(error.response?.data?.message || 'Failed to reset password. Token may be expired.');
+    }
+  },
+
+  /**
+   * Login/Register with Google OAuth Token - REAL BACKEND
+   */
+  async loginWithGoogle(idToken: string): Promise<User | null> {
+    try {
+      const res = await apiClient.post<any>('/auth/google', { idToken });
+      const response = res.data || res;
+      
+      if (response.accessToken) {
+        localStorage.setItem(TOKEN_KEY, response.accessToken);
+        if (response.refreshToken) {
+          localStorage.setItem(REFRESH_TOKEN_KEY, response.refreshToken);
+        }
+        
+        const userInfo = response.user;
+        const user = {
+          id: userInfo.id?.toString() || userInfo.userId?.toString(),
+          email: userInfo.email,
+          firstName: userInfo.firstName,
+          lastName: userInfo.lastName,
+          displayName: userInfo.displayName || `${userInfo.firstName} ${userInfo.lastName}`,
+          role: userInfo.role?.toLowerCase() || 'customer',
+          phone: userInfo.phone || '',
+          avatar: resolveImageUrl(userInfo.avatar),
+          verified: userInfo.verified || false,
+          rating: userInfo.rating || 5.0,
+          totalReviews: userInfo.totalReviews || 0,
+          joinedAt: userInfo.joinedAt || new Date().toISOString(),
+          location: userInfo.location || '',
+          bio: userInfo.bio || '',
+          badges: userInfo.badges || [],
+          accountType: userInfo.accountType || 'INDIVIDUAL',
+        } as unknown as User;
+        
+        localStorage.setItem(USER_KEY, JSON.stringify(user));
+        return user;
+      }
+      return null;
+    } catch (error: any) {
+      console.error('Google login failed:', error);
+      throw new Error(error.response?.data?.message || 'Google authentication failed');
     }
   },
 

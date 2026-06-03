@@ -4,6 +4,7 @@ const API_BASE_URL = 'http://localhost:8080/api/v1';
 // API Client with error handling
 class ApiClient {
   private baseURL: string;
+  public onUnauthorized?: () => void;
 
   constructor(baseURL: string) {
     this.baseURL = baseURL;
@@ -35,9 +36,17 @@ class ApiClient {
       
       if (!response.ok) {
         if (response.status === 401) {
-          localStorage.removeItem('luxeway_access_token');
-          localStorage.removeItem('luxeway_user');
-          window.location.href = '/auth/login';
+          try {
+            localStorage.clear();
+            sessionStorage.clear();
+          } catch (e) {
+            console.error('Failed to clear storage on 401:', e);
+          }
+          if (this.onUnauthorized) {
+            this.onUnauthorized();
+          } else {
+            window.location.href = '/auth/login';
+          }
         }
         throw new Error(`HTTP error! status: ${response.status}`);
       }

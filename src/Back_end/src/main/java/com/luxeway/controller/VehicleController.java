@@ -19,7 +19,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/vehicles")
 @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173"})
-@org.springframework.transaction.annotation.Transactional(readOnly = true)
 public class VehicleController {
 
     // Injected only for admin/status queries that aren't covered by VehicleService yet
@@ -222,10 +221,27 @@ public class VehicleController {
     @GetMapping("/owner/{ownerId}")
     public ResponseEntity<Map<String, Object>> getVehiclesByOwner(
             @PathVariable String ownerId,
+            @AuthenticationPrincipal com.luxeway.entity.User user,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size) {
 
         try {
+            if (user == null) {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("error", "Unauthorized");
+                return ResponseEntity.status(401).body(errorResponse);
+            }
+
+            boolean isAdmin = user.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+            if (!isAdmin && !user.getId().equals(ownerId)) {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("error", "Forbidden");
+                errorResponse.put("message", "Not authorized to view this owner's fleet");
+                return ResponseEntity.status(403).body(errorResponse);
+            }
+
             // Use vehicleService to get properly mapped DTOs (consistent with other endpoints)
             List<VehicleDTOs.VehicleResponse> vehicles = vehicleService.getByOwner(ownerId);
 
@@ -276,7 +292,9 @@ public class VehicleController {
             @AuthenticationPrincipal com.luxeway.entity.User user,
             @RequestBody VehicleDTOs.CreateVehicleRequest request) {
         try {
-            VehicleDTOs.VehicleResponse vehicle = vehicleService.update(id, user.getId(), request);
+            boolean isAdmin = user.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+            VehicleDTOs.VehicleResponse vehicle = vehicleService.update(id, user.getId(), request, isAdmin);
             Map<String, Object> response = new HashMap<>();
             response.put("vehicle", vehicle);
             return ResponseEntity.ok(response);
