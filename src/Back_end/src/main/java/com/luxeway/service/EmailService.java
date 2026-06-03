@@ -65,6 +65,71 @@ public class EmailService {
         sendEmail(email, subject, htmlContent, null, null);
     }
 
+    public void sendPasswordResetSuccess(String email) {
+        log.info("[PASSWORD RESET SUCCESS LOGGER]: Sending confirmation to {}", email);
+        String subject = "LuxeWay - Password Reset Successfully";
+        String htmlContent = "<h2>Password Reset Success</h2>"
+                + "<p>Your LuxeWay account password has been successfully reset.</p>"
+                + "<p>If you did not initiate this request, please contact our support team immediately.</p>";
+        sendEmail(email, subject, htmlContent, null, null);
+    }
+
+    public void sendEmailVerification(String email, String firstName) {
+        log.info("[EMAIL VERIFICATION LOGGER]: Sending welcome/verification to {}", email);
+        String subject = "Welcome to LuxeWay - Email Verified Successfully";
+        String htmlContent = "<h2>Welcome to LuxeWay, " + firstName + "!</h2>"
+                + "<p>Thank you for registering. Your email address has been successfully verified, and your account is active.</p>"
+                + "<p>Log in to search premium vehicles or list your fleet.</p>";
+        sendEmail(email, subject, htmlContent, null, null);
+    }
+
+    public void sendBookingCancellation(String email, Booking booking) {
+        log.info("[BOOKING CANCELLATION LOGGER]: Sending cancellation for #{} to {}", booking.getId(), email);
+        String subject = "LuxeWay - Booking Cancelled #" + booking.getId().substring(0, 8).toUpperCase();
+        String htmlContent = "<h2>LuxeWay Booking Cancelled</h2>"
+                + "<p>Your booking <b>#" + booking.getId().substring(0, 8).toUpperCase() + "</b> has been cancelled.</p>"
+                + "<ul>"
+                + "<li><b>Vehicle:</b> " + booking.getVehicle().getBrand() + " " + booking.getVehicle().getModel() + "</li>"
+                + "<li><b>Dates:</b> " + booking.getStartDate() + " to " + booking.getEndDate() + "</li>"
+                + "<li><b>Total Days:</b> " + booking.getTotalDays() + "</li>"
+                + "<li><b>Refund Amount:</b> " + String.format("%,.0f VND", booking.getTotal()) + "</li>"
+                + "</ul>"
+                + "<p>If you have any questions, please contact our dispute resolution center.</p>";
+        sendEmail(email, subject, htmlContent, null, null);
+    }
+
+    public void sendKycStatus(String email, String docType, String status, String reason) {
+        log.info("[KYC STATUS LOGGER]: Sending KYC update ({}) to {}", status, email);
+        String subject = "LuxeWay - KYC Identity Verification Update";
+        String htmlContent = "<h2>Identity Verification Update</h2>"
+                + "<p>Your uploaded document (<b>" + docType.replace("_", " ") + "</b>) has been reviewed by our compliance team.</p>"
+                + "<p>Status: <b style='color: " + ("VERIFIED".equals(status) ? "#16A34A" : "#DC2626") + ";'>" + status + "</b></p>"
+                + ("REJECTED".equals(status) && reason != null ? "<p><b>Reason:</b> " + reason + "</p>" : "")
+                + "<p>Please view your dashboard for details.</p>";
+        sendEmail(email, subject, htmlContent, null, null);
+    }
+
+    public void sendVehicleApprovalStatus(String email, com.luxeway.entity.Vehicle vehicle, String status, String reason) {
+        log.info("[VEHICLE APPROVAL LOGGER]: Sending vehicle approval ({}) for {} to {}", status, vehicle.getLicensePlate(), email);
+        String subject = "LuxeWay - Vehicle Listing Moderation Update";
+        String htmlContent = "<h2>Vehicle Listing Moderation</h2>"
+                + "<p>Your listing for <b>" + vehicle.getBrand() + " " + vehicle.getModel() + " (" + vehicle.getLicensePlate() + ")</b> has been reviewed.</p>"
+                + "<p>Status: <b style='color: " + ("AVAILABLE".equals(status) ? "#16A34A" : "#DC2626") + ";'>" + ("AVAILABLE".equals(status) ? "APPROVED & LIVE" : "REJECTED") + "</b></p>"
+                + ("REJECTED".equals(status) && reason != null ? "<p><b>Reason for rejection:</b> " + reason + "</p>" : "")
+                + "<p>Thank you for partnering with LuxeWay.</p>";
+        sendEmail(email, subject, htmlContent, null, null);
+    }
+
+    public void sendAdminNotification(String subject, String message) {
+        log.info("[ADMIN ALERT LOGGER]: Sending notification to admin: {}", subject);
+        String adminEmail = "admin@luxeway.com";
+        String htmlContent = "<h2>LuxeWay Administrative Alert</h2>"
+                + "<p>The following administrative event requires attention:</p>"
+                + "<div style='background-color: #F8FAFC; padding: 12px; border-left: 4px solid #4F46E5; border-radius: 4px; font-family: monospace; white-space: pre-wrap;'>" + message + "</div>"
+                + "<p>Please access the platform operations console to verify details.</p>";
+        sendEmail(adminEmail, subject, htmlContent, null, null);
+    }
+
     private void sendEmail(String to, String subject, String htmlContent, String attachmentName, byte[] attachmentBytes) {
         try {
             MimeMessage message = mailSender.createMimeMessage();

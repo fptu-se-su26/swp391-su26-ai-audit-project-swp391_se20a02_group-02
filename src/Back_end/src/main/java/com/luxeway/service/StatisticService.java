@@ -3,23 +3,23 @@ package com.luxeway.service;
 import com.luxeway.repository.UserRepository;
 import com.luxeway.repository.VehicleRepository;
 import com.luxeway.repository.ReviewRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
 
+// BUG-16 FIX: Refactored to use @RequiredArgsConstructor (constructor injection) instead of @Autowired field injection.
+// Constructor injection is the recommended pattern used throughout the rest of the codebase.
+@Slf4j
 @Service
+@RequiredArgsConstructor
 public class StatisticService {
 
-    @Autowired
-    private VehicleRepository vehicleRepository;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private ReviewRepository reviewRepository;
+    private final VehicleRepository vehicleRepository;
+    private final UserRepository userRepository;
+    private final ReviewRepository reviewRepository;
 
     public Map<String, Object> getLandingPageStats() {
         Map<String, Object> stats = new HashMap<>();
@@ -31,7 +31,9 @@ public class StatisticService {
         long totalProvinces = 0;
         try {
             totalProvinces = vehicleRepository.countDistinctCity();
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            log.warn("Failed to count distinct cities: {}", e.getMessage());
+        }
 
         double averageRating = 0.0;
         try {
@@ -39,7 +41,9 @@ public class StatisticService {
             if (avg != null) {
                 averageRating = Math.round(avg * 100.0) / 100.0;
             }
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            log.warn("Failed to get average rating: {}", e.getMessage());
+        }
 
         stats.put("qualityVehicles", totalVehicles);
         stats.put("provinces", totalProvinces);

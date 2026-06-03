@@ -21,8 +21,12 @@ public class DigitalContractService {
     private BookingRepository bookingRepository;
 
     @Transactional
-    public DigitalContract createContract(String bookingId, String documentUrl) {
+    public DigitalContract createContract(String bookingId, String documentUrl, String requesterId, boolean isAdmin) {
         Booking booking = bookingRepository.findById(bookingId).orElseThrow(() -> new RuntimeException("Booking not found"));
+        
+        if (!isAdmin && !booking.getRenter().getId().equals(requesterId) && !booking.getOwner().getId().equals(requesterId)) {
+            throw new org.springframework.security.access.AccessDeniedException("Not authorized to create contract for this booking");
+        }
         
         Optional<DigitalContract> existing = contractRepository.findByBookingId(bookingId);
         if (existing.isPresent()) {
@@ -37,8 +41,17 @@ public class DigitalContractService {
         return contractRepository.save(contract);
     }
 
-    public DigitalContract getContractByBooking(String bookingId) {
-        return contractRepository.findByBookingId(bookingId).orElse(null);
+    public DigitalContract getContractByBooking(String bookingId, String requesterId, boolean isAdmin) {
+        Optional<DigitalContract> contractOpt = contractRepository.findByBookingId(bookingId);
+        if (contractOpt.isPresent()) {
+            DigitalContract contract = contractOpt.get();
+            Booking booking = contract.getBooking();
+            if (!isAdmin && !booking.getRenter().getId().equals(requesterId) && !booking.getOwner().getId().equals(requesterId)) {
+                throw new org.springframework.security.access.AccessDeniedException("Not authorized to view contract for this booking");
+            }
+            return contract;
+        }
+        return null;
     }
 
     @Transactional

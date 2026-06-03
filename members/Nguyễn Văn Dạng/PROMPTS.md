@@ -65,6 +65,7 @@ Sinh viên/nhóm cần ghi lại:
 | 11 | 2026-05-25 | Antigravity | Triển khai các API phụ và tích hợp i18n, adminService | Hỏi tạo các module backend nâng cao, cấu hình profiles, adminService.ts và LanguageSwitcher | Các controller/services backend mới, files config và component đa ngôn ngữ | Có | src/Back_end/, src/Front_end/ |
 | 12 | 2026-05-28 | Antigravity | Tích hợp ImageUploader & REST API vào form xe | Hỏi cách tích hợp kéo-thả ImageUploader vào VehicleFormPage và gọi API lưu xe | VehicleFormPage gọi REST API create/update xe, tích hợp ImageUploader | Có | src/pages/dashboard/OwnerDashboard.tsx |
 | 13 | 2026-05-28 | Antigravity | Khắc phục lỗi biên dịch TypeScript & whitelisting | Hỏi cách sửa lỗi Settings sidebar link, Loader2 import, null check vehicle và config SecurityConfig | Gợi ý code sửa Settings, import Loader2, vehicle null check và whitelist return redirect | Có | src/pages/dashboard/CustomerDashboard.tsx |
+| 14 | 2026-06-03 | Antigravity | Hệ thống Help Center & Sửa lỗi stats Landing Page | Hỏi về thiết kế entities và controller/service cho help categories/articles/tickets, debug JPA query, và sửa lỗi làm tròn stats card | Các entity và controller, API client, JPA fix, và stats card fix | Có | src/Back_end/, src/Front_end/ |
 
 ---
 
@@ -1126,6 +1127,79 @@ Chunk output:
 
 ---
 
+### Prompt số 14
+
+| Nội dung | Thông tin |
+|---|---|
+| Ngày sử dụng | 2026-06-03 đến 2026-06-04 |
+| Công cụ AI | Antigravity |
+| Mục đích | Xây dựng hệ thống Help Center doanh nghiệp và sửa lỗi thống kê Landing Page |
+| Phần việc liên quan | Fullstack / Coding & Bug Fix |
+| Mức độ sử dụng | Hỏi sinh code & debug |
+
+#### 5.1. Prompt nguyên văn
+
+```text
+Help me upgrade the LuxeWay Help Center:
+1. Create SQL Server DDL and seeds for tables: help_categories, help_articles, support_tickets, support_ticket_messages.
+2. Build Spring Boot Java entity classes for these tables.
+3. Build Repositories, Services, and REST Controllers to support help categories, articles, keyword search, support ticket creation, and ticket message threads. Whitelist /help/** public resources in SecurityConfig.java.
+4. I am getting a startup exception: "Could not resolve attribute 'userId' of 'com.luxeway.entity.SupportTicket'" in SupportTicketRepository.findByUserIdOrderByCreatedAtDesc. How can I resolve it?
+5. On React Frontend: Create helpService.ts to integrate these APIs. Rebuild HelpPage.tsx with an enterprise layout: categories grid, article browser, search suggestions, ticket forms, and thread reply panel.
+6. The hero statistics card shows '0+' vehicles even though the API returns 12 vehicles, because of a rounding logic: Math.floor(stats.totalVehicles / 100) * 100. How can I display the correct count when it is small?
+```
+
+#### 5.2. Bối cảnh khi viết prompt
+
+```text
+Chúng tôi muốn nâng cấp trang FAQ tĩnh cũ thành một hệ thống support doanh nghiệp đầy đủ, kết nối dữ liệu thật từ database. Đồng thời sửa lỗi làm tròn stats card khiến số lượng xe luôn hiển thị là 0+ khi chạy thử nghiệm local.
+```
+
+#### 5.3. Kết quả AI trả về
+
+```text
+AI cung cấp:
+- DDL SQL Server và seeds tạo dữ liệu cho các bảng của Help Center.
+- Các lớp entity, repository, service và REST controller Spring Boot.
+- Gợi ý đổi tên JPA query method thành findByUser_IdOrderByCreatedAtDesc để Hibernate phân tích chính xác mối quan hệ User.id.
+- Code apiClient helpService.ts và layout HelpPage.tsx redesign.
+- Giải pháp sửa đổi logic làm tròn vehicle count: check nếu nhỏ hơn 100 thì hiển thị trực tiếp.
+```
+
+#### 5.4. Kết quả đã áp dụng vào bài
+
+```text
+Áp dụng toàn bộ mô hình DDL, entities và controllers/services. Thêm logic whitelisting Spring Security, sửa đổi stats card rounding logic và tích hợp giao diện Help Center mới thành công.
+```
+
+#### 5.5. Phần sinh viên/nhóm đã chỉnh sửa hoặc cải tiến
+
+```text
+- Tạo script classpath launcher riêng để chạy compiler Maven nhằm tránh lỗi Unicode path của Windows.
+- Chỉnh sửa và format layout HelpPage categories cards phù hợp với design system.
+```
+
+#### 5.6. Đánh giá chất lượng prompt
+
+- [x] Prompt rõ ràng
+- [x] Prompt có đủ bối cảnh
+- [ ] Prompt còn thiếu thông tin
+- [x] Prompt tạo ra kết quả tốt
+- [ ] Prompt tạo ra kết quả chưa phù hợp
+- [ ] Cần hỏi lại AI nhiều lần
+- [x] Cần tự kiểm tra và chỉnh sửa nhiều
+- [ ] Kết quả AI có lỗi hoặc chưa chính xác
+
+#### 5.7. Minh chứng liên quan
+
+| Loại minh chứng | Nội dung |
+|---|---|
+| File liên quan | HelpController.java, HelpPage.tsx, LandingPage.tsx |
+| Kết quả chạy/test | APIs hoạt động, frontend hiển thị correct stats và help categories |
+| Link commit | [DE190324] feat: upgrade help center to enterprise marketplace support and fix landing page stats |
+
+---
+
 ## 11. Cam kết sử dụng prompt minh bạch
 
 Sinh viên/nhóm cam kết rằng:
@@ -1138,5 +1212,5 @@ Sinh viên/nhóm cam kết rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-05-31 |
+| Nguyễn Văn Dạng - DE190324 | 2026-06-04 |
 

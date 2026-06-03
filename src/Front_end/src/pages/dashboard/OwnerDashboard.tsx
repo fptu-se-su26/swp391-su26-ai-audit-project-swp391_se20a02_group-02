@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Link, Outlet, useNavigate, useParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { Link, Outlet, useNavigate, useParams, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import ImageUploader from '@/components/ui/ImageUploader';
 
 import {
   LayoutDashboard, Car, Calendar, TrendingUp, Users, Settings,
   Plus, Edit, Trash2, Eye, CheckCircle, Clock, DollarSign,
-  BarChart2, Shield, AlertTriangle
+  BarChart2, Shield, AlertTriangle, LogOut, Globe, Menu
 } from 'lucide-react';
 
 import { useAuthStore, useUIStore } from '@/store';
@@ -14,7 +14,7 @@ import { vehicleService } from '@/services/vehicleService';
 import { bookingService } from '@/services/bookingService';
 import apiClient from '@/services/api';
 import type { Vehicle, Booking } from '@/types';
-import { formatCurrency, formatDate, getStatusColor } from '@/utils';
+import { formatCurrency, formatDate, getStatusColor, convertCurrency } from '@/utils';
 import { staggerContainer, staggerItem, fadeUp } from '@/animations/variants';
 import { useToast } from '@/components/ui/Toast';
 import { useT } from '@/i18n/translations';
@@ -48,6 +48,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 // ====== OWNER OVERVIEW ======
 export const OwnerOverview: React.FC = () => {
   const { user } = useAuthStore();
+  const { currency } = useUIStore();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -180,7 +181,7 @@ export const OwnerOverview: React.FC = () => {
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(226,232,240,0.8)" />
             <XAxis dataKey="date" tick={{ fontSize: 11, fontWeight: 600, fill: '#94A3B8' }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: 11, fontWeight: 600, fill: '#94A3B8' }} axisLine={false} tickLine={false} tickFormatter={v => `${(v/1000).toFixed(0)}K`} />
+            <YAxis tick={{ fontSize: 11, fontWeight: 600, fill: '#94A3B8' }} axisLine={false} tickLine={false} tickFormatter={v => formatCurrency(v)} />
             <Tooltip content={<CustomTooltip />} />
             <Area type="monotone" dataKey="revenue" stroke="#F59E0B" fill="url(#ownerRevGradient)" strokeWidth={3} dot={false} />
           </AreaChart>
@@ -357,6 +358,7 @@ export const VehicleManagePage: React.FC = () => {
 // ====== VEHICLE FORM PAGE ======
 export const VehicleFormPage: React.FC = () => {
   const { user } = useAuthStore();
+  const { currency } = useUIStore();
   const navigate = useNavigate();
   const toast = useToast();
   const { id } = useParams();
@@ -370,12 +372,26 @@ export const VehicleFormPage: React.FC = () => {
 
   const [form, setForm] = useState({
     name: '', brand: '', category: 'supercar', year: new Date().getFullYear(),
-    pricePerDay: 500, description: '', seats: 2, doors: 2,
+    pricePerDay: Math.round(convertCurrency(5000000, 'VND', currency)), description: '', seats: 2, doors: 2,
     transmission: 'Automatic', fuelType: 'Gasoline',
     features: 'Bluetooth, Navigation, Backup Camera',
     address: '', city: '', state: '', zip: '', country: 'US',
     thumbnailUrl: 'https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=800&q=80',
   });
+
+  const getCurrencySymbol = (code: string) => {
+    return {
+      USD: '$',
+      VND: '₫',
+      EUR: '€',
+      GBP: '£',
+      JPY: '¥',
+      CAD: '$',
+      AUD: '$',
+      SGD: '$',
+      KRW: '₩'
+    }[code.toUpperCase()] || '$';
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -387,7 +403,7 @@ export const VehicleFormPage: React.FC = () => {
           brand: vehicle.brand || '',
           category: vehicle.category || 'supercar',
           year: vehicle.year || new Date().getFullYear(),
-          pricePerDay: vehicle.pricePerDay || 500,
+          pricePerDay: Math.round(convertCurrency(vehicle.pricePerDay || 5000000, 'VND', currency)),
           description: vehicle.description || '',
           seats: vehicle.specs?.seats || 2,
           doors: vehicle.specs?.doors || 2,
@@ -433,7 +449,7 @@ export const VehicleFormPage: React.FC = () => {
       brand: form.brand,
       category: form.category as any,
       year: Number(form.year),
-      pricePerDay: Number(form.pricePerDay),
+      pricePerDay: Math.round(convertCurrency(Number(form.pricePerDay), currency, 'VND')),
       description: form.description,
       status: 'available',
       rating: 5.0,
@@ -661,12 +677,12 @@ export const VehicleFormPage: React.FC = () => {
           <motion.div variants={fadeUp} initial="hidden" animate="visible" className="space-y-6">
             <h3 className="font-display text-xl font-bold text-slate-800 dark:text-white border-b border-slate-200/10 dark:border-white/5 pb-3">{isVi ? 'Giá Cả & Địa Điểm' : isJa ? '料金・所在地' : 'Pricing & Location'}</h3>
             <div>
-              <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? 'Giá Thuê Hàng Ngày (USD) *' : isJa ? '一日あたりの料金（USD） *' : 'Daily Rate (USD) *'}</label>
+              <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? `Giá Thuê Hàng Ngày (${currency}) *` : isJa ? `一日あたりの料金（${currency}） *` : `Daily Rate (${currency}) *`}</label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-extrabold">$</span>
-                <input type="number" value={form.pricePerDay} onChange={e => update('pricePerDay', e.target.value)} required min="50" className="lux-input w-full pl-9 pr-4 py-3 bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl text-slate-800 dark:text-white font-extrabold text-sm focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20" />
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-extrabold">{getCurrencySymbol(currency)}</span>
+                <input type="number" value={form.pricePerDay} onChange={e => update('pricePerDay', e.target.value)} required min="1" className="lux-input w-full pl-9 pr-4 py-3 bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl text-slate-800 dark:text-white font-extrabold text-sm focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20" />
               </div>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-2.5 font-medium">{isVi ? 'Trung bình trên LuxeWay: $450 - $800 dựa trên phân khúc siêu xe.' : `LuxeWay average: ${formatCurrency(450)} - ${formatCurrency(800)} based on supercars.`}</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-2.5 font-medium">{isVi ? `Trung bình trên LuxeWay: ${formatCurrency(450 * 25400)} - ${formatCurrency(800 * 25400)} dựa trên phân khúc siêu xe.` : `LuxeWay average: ${formatCurrency(450 * 25400)} - ${formatCurrency(800 * 25400)} based on supercars.`}</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="md:col-span-2">
@@ -1023,7 +1039,7 @@ export const OwnerRevenuePage: React.FC = () => {
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.05)" />
             <XAxis dataKey="date" tick={{ fontSize: 11, fontWeight: 600 }} stroke="#94A3B8" />
-            <YAxis tick={{ fontSize: 11, fontWeight: 600 }} stroke="#94A3B8" tickFormatter={v => `$${v}`} />
+            <YAxis tick={{ fontSize: 11, fontWeight: 600 }} stroke="#94A3B8" tickFormatter={v => formatCurrency(v)} />
             <Tooltip content={<CustomTooltip />} />
             <Area type="monotone" dataKey="revenue" stroke="#EAB308" fill="url(#ownerRevGrad)" strokeWidth={3} />
           </AreaChart>
@@ -1040,7 +1056,7 @@ export const OwnerRevenuePage: React.FC = () => {
           <BarChart data={monthlyData}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.05)" />
             <XAxis dataKey="date" tick={{ fontSize: 11, fontWeight: 600 }} stroke="#94A3B8" />
-            <YAxis tick={{ fontSize: 11, fontWeight: 600 }} stroke="#94A3B8" tickFormatter={v => `$${(v / 1000).toFixed(0)}K`} />
+            <YAxis tick={{ fontSize: 11, fontWeight: 600 }} stroke="#94A3B8" tickFormatter={v => formatCurrency(v)} />
             <Tooltip content={<CustomTooltip />} />
             <Bar dataKey="revenue" fill="#EAB308" radius={[8, 8, 0, 0]} className="shadow-lg shadow-gold/10" />
           </BarChart>
@@ -1437,6 +1453,281 @@ export const EmployeeManagementPage: React.FC = () => {
           </table>
         </div>
       </motion.div>
+    </div>
+  );
+};
+
+export const OwnerDashboardLayout: React.FC = () => {
+  const { user, logout, isAuthenticated } = useAuthStore();
+  const { theme, sidebarOpen, setSidebarOpen } = useUIStore();
+  const isDark = theme === 'dark';
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isAuthenticated) navigate('/auth/login');
+    setSidebarOpen(window.innerWidth >= 1024);
+  }, [isAuthenticated]);
+
+  const links = [
+    { href: '/', icon: Globe, label: 'Go to Home', exact: true },
+    { href: '/owner', icon: LayoutDashboard, label: 'Overview', exact: true },
+    { href: '/owner/vehicles', icon: Car, label: 'Vehicle Management' },
+    { href: '/owner/calendar', icon: Clock, label: 'Calendar' },
+    { href: '/owner/bookings', icon: Calendar, label: 'Booking Approval' },
+    { href: '/owner/revenue', icon: TrendingUp, label: 'Revenue Dashboard' },
+  ];
+
+  const getInitials = (name: string) => {
+    return name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : 'O';
+  };
+
+  const isActive = (href: string, exact?: boolean) =>
+    exact ? location.pathname === href : location.pathname.startsWith(href);
+
+  if (!user) return null;
+
+  return (
+    <div 
+      className={`min-h-screen relative overflow-hidden transition-colors duration-500 font-sans ${
+        isDark ? 'bg-[#080d16] text-slate-100' : 'bg-[#f4f7fa] text-slate-800'
+      }`}
+      style={{
+        backgroundImage: isDark
+          ? 'radial-gradient(circle at 1px 1px, rgba(234, 179, 8, 0.04) 1px, transparent 0)'
+          : 'radial-gradient(circle at 1px 1px, rgba(234, 179, 8, 0.02) 1px, transparent 0)',
+        backgroundSize: '24px 24px'
+      }}
+    >
+      <div className="absolute top-0 left-0 w-[500px] h-[500px] rounded-full opacity-10 blur-3xl pointer-events-none bg-amber-500" />
+      
+      {/* Mobile Sidebar Navigation Drawer (SRS REQ-RESP-001) */}
+      <AnimatePresence>
+        {sidebarOpen && (
+          <>
+            {/* Backdrop blur overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSidebarOpen(false)}
+              className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm"
+            />
+            {/* Sliding navigation drawer */}
+            <motion.aside
+              initial={{ x: -280 }}
+              animate={{ x: 0 }}
+              exit={{ x: -280 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed left-0 top-0 h-full w-66 z-50 flex flex-col justify-between p-6 lg:hidden shadow-2xl border-r border-slate-200/50 dark:border-slate-800/80"
+              style={{
+                background: isDark
+                  ? 'linear-gradient(180deg, #080d16 0%, #0c1524 60%, #080d16 100%)'
+                  : 'linear-gradient(180deg, #f4f7fa 0%, #e9edf3 60%, #f4f7fa 100%)',
+              }}
+            >
+              <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-amber-500/10 to-transparent pointer-events-none" />
+              
+              <div className="relative z-10 flex flex-col flex-1 min-h-0">
+                {/* Branding */}
+                <div className="logo-wrapper flex items-center gap-3 px-2 mb-5">
+                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-600 flex items-center justify-center text-slate-905 shadow-lg">
+                    <Car className="w-5.5 h-5.5 text-slate-900" />
+                  </div>
+                  <div>
+                    <h2 className="font-sans font-black text-base tracking-wider text-slate-800 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-white dark:to-slate-400">
+                      LuxeWay
+                    </h2>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-amber-500">
+                      Host Center
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mx-2 mb-6 px-3.5 py-1.5 rounded-xl border border-amber-500/20 bg-amber-500/5 text-[8px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-450 animate-ping" />
+                  Verified Host
+                </div>
+
+                <hr className="border-slate-200/50 dark:border-slate-800/80 mb-6" />
+
+                {/* Links */}
+                <nav className="space-y-1.5 flex-1 overflow-y-auto sidebar-scroll pr-1">
+                  {links.map(link => {
+                    const active = isActive(link.href, link.exact);
+                    return (
+                      <Link
+                        key={link.href}
+                        to={link.href}
+                        onClick={() => setSidebarOpen(false)}
+                        className={`w-full flex items-center gap-3 px-4.5 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all duration-305 relative group ${
+                          active 
+                            ? 'bg-gradient-to-r from-amber-550 to-yellow-500 text-slate-900 shadow-xl shadow-amber-500/25 font-black' 
+                            : isDark 
+                              ? 'text-slate-400 hover:text-white hover:bg-slate-900/50' 
+                              : 'text-slate-655 hover:text-slate-900 hover:bg-slate-100/50'
+                        }`}
+                      >
+                        {active && <span className="w-1 h-5 bg-slate-900 rounded-full absolute left-1" />}
+                        <link.icon className={`w-4.5 h-4.5 ${active ? 'text-slate-900' : 'text-slate-450 group-hover:text-slate-800 dark:group-hover:text-white'}`} />
+                        <span>{link.label}</span>
+                      </Link>
+                    );
+                  })}
+                </nav>
+              </div>
+
+              {/* Bottom user card */}
+              <div className="relative z-10 mt-6 pt-5 border-t border-slate-200/50 dark:border-slate-800/80">
+                <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-100/50 dark:bg-slate-950/40 border border-slate-200/40 dark:border-slate-800/55 shadow-inner">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-500 text-slate-900 text-xs font-black flex items-center justify-center shadow-inner">
+                    {getInitials(user.displayName)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-black truncate text-slate-800 dark:text-white">{user.displayName}</p>
+                    <p className="text-[9px] font-black uppercase tracking-wider text-amber-550 dark:text-amber-400 mt-0.5">Vehicle Host</p>
+                  </div>
+                  <button 
+                    onClick={() => { logout(); setSidebarOpen(false); navigate('/auth/login'); }}
+                    className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                    title="Logout"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+
+      <div className="max-w-[1600px] mx-auto px-4 lg:px-8 py-6 relative z-10 flex flex-col lg:flex-row gap-6">
+        
+        {/* Sticky Left Sidebar */}
+        <aside className="w-66 flex-shrink-0 sticky top-6 h-[calc(100vh-3rem)] rounded-[2.5rem] glass dark:glass-dark border border-slate-200/50 dark:border-slate-800/80 p-6 flex flex-col justify-between hidden lg:flex relative overflow-hidden shadow-2xl">
+          <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-amber-500/10 to-transparent pointer-events-none" />
+          
+          <div className="relative z-10 flex flex-col flex-1 min-h-0">
+            {/* Branding */}
+            <div className="logo-wrapper flex items-center gap-3 px-2 mb-5">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-600 flex items-center justify-center text-slate-905 shadow-lg">
+                <Car className="w-5.5 h-5.5 text-slate-900" />
+              </div>
+              <div>
+                <h2 className="font-sans font-black text-base tracking-wider text-slate-800 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-white dark:to-slate-400">
+                  LuxeWay
+                </h2>
+                <span className="text-[9px] font-black uppercase tracking-widest text-amber-500">
+                  Host Center
+                </span>
+              </div>
+            </div>
+
+            <div className="mx-2 mb-6 px-3.5 py-1.5 rounded-xl border border-amber-500/20 bg-amber-500/5 text-[8px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-450 animate-ping" />
+              Verified Host
+            </div>
+
+            <hr className="border-slate-200/50 dark:border-slate-800/80 mb-6" />
+
+            {/* Links */}
+            <nav className="space-y-1.5 flex-1 overflow-y-auto sidebar-scroll pr-1">
+              {links.map(link => {
+                const active = isActive(link.href, link.exact);
+                return (
+                  <Link
+                    key={link.href}
+                    to={link.href}
+                    className={`w-full flex items-center gap-3 px-4.5 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all duration-305 relative group ${
+                      active 
+                        ? 'bg-gradient-to-r from-amber-550 to-yellow-500 text-slate-900 shadow-xl shadow-amber-500/25 font-black' 
+                        : isDark 
+                          ? 'text-slate-400 hover:text-white hover:bg-slate-900/50' 
+                          : 'text-slate-655 hover:text-slate-900 hover:bg-slate-100/50'
+                    }`}
+                  >
+                    {active && <span className="w-1 h-5 bg-slate-900 rounded-full absolute left-1" />}
+                    <link.icon className={`w-4.5 h-4.5 ${active ? 'text-slate-900' : 'text-slate-450 group-hover:text-slate-800 dark:group-hover:text-white'}`} />
+                    <span>{link.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
+
+          {/* Bottom user card */}
+          <div className="relative z-10 mt-6 pt-5 border-t border-slate-200/50 dark:border-slate-800/80">
+            <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-100/50 dark:bg-slate-950/40 border border-slate-200/40 dark:border-slate-800/55 shadow-inner">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-500 text-slate-900 text-xs font-black flex items-center justify-center shadow-inner">
+                {getInitials(user.displayName)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-black truncate text-slate-800 dark:text-white">{user.displayName}</p>
+                <p className="text-[9px] font-black uppercase tracking-wider text-amber-550 dark:text-amber-400 mt-0.5">Vehicle Host</p>
+              </div>
+              <button 
+                onClick={() => { logout(); navigate('/auth/login'); }}
+                className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                title="Logout"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </aside>
+
+        {/* Content canvas */}
+        <div className="flex-1 min-w-0 flex flex-col gap-6">
+          <header className={`rounded-[2rem] border backdrop-blur-xl transition-all duration-500 ${
+            isDark 
+              ? 'bg-slate-900/60 border-slate-800/80 shadow-2xl shadow-slate-950/30' 
+              : 'bg-white/80 border-slate-200/60 shadow-xl shadow-slate-200/40'
+          } p-6 flex items-center justify-between`}>
+            
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="p-2 rounded-xl border border-slate-200/50 dark:border-white/10 hover:bg-slate-500/10 transition-all lg:hidden shadow-sm"
+                title="Toggle Menu"
+              >
+                <Menu className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+              </button>
+              <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-550">
+                <Car className="w-5.5 h-5.5" />
+              </div>
+              <div>
+                <h1 className="font-sans font-black text-lg tracking-tight text-slate-855 dark:text-white">
+                  Host Command
+                </h1>
+                <p className="text-[10px] text-amber-550 dark:text-amber-450 font-extrabold uppercase tracking-widest mt-0.5">
+                  Platform rental Room
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <div className={`hidden md:flex items-center gap-2.5 px-4.5 py-2.5 border rounded-2xl shadow-inner ${
+                isDark ? 'bg-slate-950/40 border-slate-800' : 'bg-slate-50 border-slate-200'
+              }`}>
+                <Clock className="w-4 h-4 text-amber-500" />
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                  {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                </span>
+              </div>
+              <button 
+                onClick={() => { logout(); navigate('/auth/login'); }}
+                className="text-[9px] font-black uppercase tracking-widest px-5 py-3.5 rounded-2xl border bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-red-500 hover:bg-red-500/10 transition-all hover-lift"
+              >
+                Logout
+              </button>
+            </div>
+          </header>
+
+          <main className="flex-1">
+            <Outlet />
+          </main>
+        </div>
+      </div>
     </div>
   );
 };

@@ -129,6 +129,9 @@ public class User implements UserDetails {
     private LocalDateTime updatedAt;
     
     // Relationships
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private OwnerProfile ownerProfile;
+
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
     private Set<Vehicle> vehicles;

@@ -106,4 +106,16 @@ public class AuthDTOs {
         @NotBlank(message = "Confirm password is required")
         private String confirmPassword;
     }
+
+    @Data
+    public static class TokenRefreshRequest {
+        @NotBlank(message = "Refresh token is required")
+        private String refreshToken;
+    }
+
+    @Data
+    public static class GoogleLoginRequest {
+        @NotBlank(message = "ID Token is required")
+        private String idToken;
+    }
 }

@@ -43,6 +43,10 @@ public class AuthController {
     @Operation(summary = "Get current authenticated user profile")
     public ResponseEntity<ApiResponse<AuthDTOs.AuthResponse.UserInfo>> me(
             @AuthenticationPrincipal User user) {
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("Authentication required"));
+        }
         AuthDTOs.AuthResponse.UserInfo info = new AuthDTOs.AuthResponse.UserInfo();
         info.setId(user.getId());
         info.setEmail(user.getEmail());
@@ -57,6 +61,7 @@ public class AuthController {
         info.setWalletBalance(user.getWalletBalance());
         return ResponseEntity.ok(ApiResponse.success(info));
     }
+
 
     @PutMapping("/change-password")
     @Operation(summary = "Change current user password")
@@ -89,5 +94,26 @@ public class AuthController {
             @Valid @RequestBody AuthDTOs.ResetPasswordRequest request) {
         authService.resetPassword(request);
         return ResponseEntity.ok(ApiResponse.success("Password has been reset successfully", null));
+    }
+
+    @PostMapping("/refresh")
+    @Operation(summary = "Refresh access token using refresh token")
+    public ResponseEntity<ApiResponse<AuthDTOs.AuthResponse>> refresh(
+            @Valid @RequestBody AuthDTOs.TokenRefreshRequest request) {
+        try {
+            AuthDTOs.AuthResponse response = authService.refreshAccessToken(request);
+            return ResponseEntity.ok(ApiResponse.success("Token refreshed successfully", response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    @PostMapping("/google")
+    @Operation(summary = "Login or Register with Google ID Token")
+    public ResponseEntity<ApiResponse<AuthDTOs.AuthResponse>> googleLogin(
+            @Valid @RequestBody AuthDTOs.GoogleLoginRequest request) {
+        AuthDTOs.AuthResponse response = authService.googleLogin(request);
+        return ResponseEntity.ok(ApiResponse.success("Google login successful", response));
     }
 }

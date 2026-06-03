@@ -38,9 +38,12 @@ public class EmployeeService {
     }
 
     @Transactional
-    public Employee updateEmployee(String id, Employee updated) {
+    public Employee updateEmployee(String id, Employee updated, String ownerId, boolean isAdmin) {
         Employee existing = employeeRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Employee not found: " + id));
+        if (!isAdmin && !existing.getOwner().getId().equals(ownerId)) {
+            throw new org.springframework.security.access.AccessDeniedException("Not authorized to update this employee");
+        }
         existing.setName(updated.getName());
         existing.setEmail(updated.getEmail());
         existing.setPhone(updated.getPhone());
@@ -50,25 +53,38 @@ public class EmployeeService {
     }
 
     @Transactional
-    public void deleteEmployee(String id) {
-        employeeRepository.deleteById(id);
+    public void deleteEmployee(String id, String ownerId, boolean isAdmin) {
+        Employee existing = employeeRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Employee not found: " + id));
+        if (!isAdmin && !existing.getOwner().getId().equals(ownerId)) {
+            throw new org.springframework.security.access.AccessDeniedException("Not authorized to delete this employee");
+        }
+        employeeRepository.delete(existing);
     }
 
     @Transactional
-    public Employee assignVehicle(String employeeId, String vehicleId) {
+    public Employee assignVehicle(String employeeId, String vehicleId, String ownerId, boolean isAdmin) {
         Employee employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new IllegalArgumentException("Employee not found: " + employeeId));
+        if (!isAdmin && !employee.getOwner().getId().equals(ownerId)) {
+            throw new org.springframework.security.access.AccessDeniedException("Not authorized to modify this employee");
+        }
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
                 .orElseThrow(() -> new IllegalArgumentException("Vehicle not found: " + vehicleId));
-        
+        if (!isAdmin && !vehicle.getOwner().getId().equals(ownerId)) {
+            throw new org.springframework.security.access.AccessDeniedException("Not authorized to assign this vehicle");
+        }
         employee.getAssignedVehicles().add(vehicle);
         return employeeRepository.save(employee);
     }
 
     @Transactional
-    public Employee unassignVehicle(String employeeId, String vehicleId) {
+    public Employee unassignVehicle(String employeeId, String vehicleId, String ownerId, boolean isAdmin) {
         Employee employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new IllegalArgumentException("Employee not found: " + employeeId));
+        if (!isAdmin && !employee.getOwner().getId().equals(ownerId)) {
+            throw new org.springframework.security.access.AccessDeniedException("Not authorized to modify this employee");
+        }
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
                 .orElseThrow(() -> new IllegalArgumentException("Vehicle not found: " + vehicleId));
         

@@ -36,6 +36,19 @@ public class ChatService {
         return messageRepository.findByConversationIdOrderByCreatedAtAsc(conversationId);
     }
 
+    @Transactional(readOnly = true)
+    public List<Message> getMessages(String conversationId, String userId) {
+        Conversation conv = conversationRepository.findById(conversationId)
+                .orElseThrow(() -> new RuntimeException("Conversation not found: " + conversationId));
+        boolean isParticipant = conv.getParticipants().stream().anyMatch(p -> p.getId().equals(userId));
+        if (!isParticipant) {
+            log.error("BOLA/IDOR attempt: User {} is not authorized to view conversation {}", userId, conversationId);
+            throw new org.springframework.security.access.AccessDeniedException("Not authorized to view messages in this conversation session");
+        }
+        return messageRepository.findByConversationIdOrderByCreatedAtAsc(conversationId);
+    }
+
+
     @Transactional
     public Conversation createConversation(String userId, String otherId, String vehicleId) {
         // Fetch users
@@ -81,7 +94,7 @@ public class ChatService {
         boolean senderInConv = conv.getParticipants().stream().anyMatch(p -> p.getId().equals(senderId));
         boolean receiverInConv = conv.getParticipants().stream().anyMatch(p -> p.getId().equals(receiverId));
         if (!senderInConv || !receiverInConv) {
-            throw new RuntimeException("Participants are not member of this conversation session");
+            throw new org.springframework.security.access.AccessDeniedException("Participants are not member of this conversation session");
         }
 
         Message msg = Message.builder()

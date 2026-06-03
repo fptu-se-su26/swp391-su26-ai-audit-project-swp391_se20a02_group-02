@@ -2,7 +2,7 @@
 import { useUIStore } from '@/store';
 
 
-export type Language = 'en' | 'vi' | 'ja';
+export type Language = 'en' | 'vi' | 'ja' | 'ko' | 'zh';
 
 export const translations = {
   en: {
@@ -1847,11 +1847,203 @@ export const jaTranslations = {
   },
 } as const;
 
+// ====== KOREAN TRANSLATIONS ======
+export const koTranslations = {
+  ...translations.en,
+  nav: {
+    ...translations.en.nav,
+    marketplace: '차량 찾기',
+    messages: '메시지',
+    signIn: '로그인',
+    signUp: '시작하기',
+    dashboard: '대시보드',
+    ownerDashboard: '파트너 패널',
+    ownerDashboardFull: '파트너 대시보드',
+    admin: '관리자',
+    adminPanel: '관리자 패널',
+    profile: '프로필',
+    settings: '설정',
+    logout: '로그아웃',
+    addVehicle: '차량 등록',
+    help: '도움말',
+    reviews: '리뷰',
+    wishlist: '위시리스트',
+    notifications: '알림',
+    wallet: '럭스월렛',
+    verified: '인증됨',
+    themeLight: '라이트 모드로 전환',
+    themeDark: '다크 모드로 전환',
+    changeLanguage: '언어 변경',
+    search: '검색'
+  },
+  hero: {
+    ...translations.en.hero,
+    badge: '프리미엄 차량 렌탈',
+    title1: '특별한',
+    title2: '여정을 시작하세요',
+    subtitle: '세계 최고 수준의 독점적인 프리미엄 차량을 만나보세요. 슈퍼카부터 럭셔리 SUV까지 집 앞까지 배송해 드립니다.',
+    search: '어디로 가고 싶으신가요?',
+    pickUp: '대여일',
+    returnDate: '반납일',
+    cta: '드림카 검색'
+  },
+  categories: {
+    ...translations.en.categories,
+    all: '전체',
+    motorbike: '오토바이',
+    economy: '이코노미',
+    family: '패밀리',
+    suv: 'SUV',
+    city_car: '시티카',
+    business: '비즈니스',
+    electric: '전기차',
+    tourism: '관광용'
+  },
+  auth: {
+    ...translations.en.auth,
+    login: '로그인',
+    register: '회원가입',
+    email: '이메일 주소',
+    password: '비밀번호',
+    forgotPassword: '비밀번호를 잊으셨나요?',
+    noAccount: '계정이 없으신가요?',
+    hasAccount: '이미 계정이 있으신가요?',
+    loginWithGoogle: 'Google로 로그인',
+    orWith: '또는 이메일로 계속하기',
+    welcome: '환영합니다',
+    firstName: '이름',
+    lastName: '성',
+    phone: '전화번호',
+    agreeTerms: '이용약관 및 개인정보처리방침에 동의합니다'
+  },
+  marketplace: {
+    ...translations.en.marketplace,
+    title: '럭셔리 차량 목록',
+    vehicles: '대의 차량 발견',
+    filters: '필터',
+    sort: '정렬 기준',
+    noResults: '검색 결과가 없습니다',
+    noResultsHint: '필터를 조정해 보세요',
+    clearFilters: '필터 초기화',
+    category: '카테고리',
+    price: '일일 대여 요금'
+  },
+  common: {
+    ...translations.en.common,
+    loading: '불러오는 중...',
+    save: '변경사항 저장',
+    cancel: '취소',
+    delete: '삭제',
+    edit: '수정',
+    view: '보기',
+    success: '성공!',
+    error: '오류가 발생했습니다',
+    confirm: '확인'
+  }
+} as unknown as TranslationKeys;
+
+// ====== CHINESE TRANSLATIONS ======
+export const zhTranslations = {
+  ...translations.en,
+  nav: {
+    ...translations.en.nav,
+    marketplace: '寻找车型',
+    messages: '消息',
+    signIn: '登录',
+    signUp: '立即开始',
+    dashboard: '控制台',
+    ownerDashboard: '车主管理',
+    ownerDashboardFull: '车主控制台',
+    admin: '管理员',
+    adminPanel: '管理后台',
+    profile: '个人中心',
+    settings: '设置',
+    logout: '退出登录',
+    addVehicle: '发布车辆',
+    help: '帮助中心',
+    reviews: '评价',
+    wishlist: '收藏夹',
+    notifications: '通知',
+    wallet: 'Luxe钱包',
+    verified: '已认证',
+    themeLight: '切换至亮色模式',
+    themeDark: '切换至暗色模式',
+    changeLanguage: '切换语言',
+    search: '搜索'
+  },
+  hero: {
+    ...translations.en.hero,
+    badge: '尊享高端租车服务',
+    title1: '探索非凡',
+    title2: '驾驭体验',
+    subtitle: '尊享全球独家高端奢华车型。从超级跑车到豪华SUV，尊享送车上门服务。',
+    search: '您想去哪里？',
+    pickUp: '取车日期',
+    returnDate: '还车日期',
+    cta: '搜索梦幻车型'
+  },
+  categories: {
+    ...translations.en.categories,
+    all: '全部车型',
+    motorbike: '摩托车',
+    economy: '经济型',
+    family: '舒适家用',
+    suv: '豪华SUV',
+    city_car: '都市代步',
+    business: '商务行政',
+    electric: '纯电动车',
+    tourism: '旅行车'
+  },
+  auth: {
+    ...translations.en.auth,
+    login: '登录',
+    register: '注册账号',
+    email: '电子邮箱',
+    password: '密码',
+    forgotPassword: '忘记密码？',
+    noAccount: '还没有账号？',
+    hasAccount: '已有账号？',
+    loginWithGoogle: '使用 Google 登录',
+    orWith: '或使用邮箱登录',
+    welcome: '欢迎回来',
+    firstName: '名字',
+    lastName: '姓氏',
+    phone: '手机号码',
+    agreeTerms: '我同意服务条款与隐私政策'
+  },
+  marketplace: {
+    ...translations.en.marketplace,
+    title: '豪华车队列表',
+    vehicles: '款车型已找到',
+    filters: '筛选条件',
+    sort: '排序方式',
+    noResults: '未找到相关车辆',
+    noResultsHint: '您可以调整筛选条件后重试',
+    clearFilters: '清除筛选',
+    category: '车型类别',
+    price: '每日租金'
+  },
+  common: {
+    ...translations.en.common,
+    loading: '加载中...',
+    save: '保存更改',
+    cancel: '取消',
+    delete: '删除',
+    edit: '编辑',
+    view: '查看',
+    success: '成功！',
+    error: '发生了一些错误',
+    confirm: '确定'
+  }
+} as unknown as TranslationKeys;
+
 export type TranslationKeys = typeof translations.en;
 
-// Hook to use translations - supports en, vi, ja
+// Hook to use translations - supports en, vi, ja, ko, zh
 export function useT() {
   const language = useUIStore((s: any) => s.language) as Language;
   if (language === 'ja') return jaTranslations as unknown as TranslationKeys;
+  if (language === 'ko') return koTranslations;
+  if (language === 'zh') return zhTranslations;
   return translations[language as 'en' | 'vi'] ?? translations.en;
 }

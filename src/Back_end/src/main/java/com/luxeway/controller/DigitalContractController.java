@@ -20,14 +20,21 @@ public class DigitalContractController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<DigitalContract>> createContract(
+            @AuthenticationPrincipal User user,
             @RequestBody Map<String, String> request) {
-        DigitalContract contract = contractService.createContract(request.get("bookingId"), request.get("documentUrl"));
+        boolean isAdmin = user.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        DigitalContract contract = contractService.createContract(request.get("bookingId"), request.get("documentUrl"), user.getId(), isAdmin);
         return ResponseEntity.ok(ApiResponse.success("Contract created", contract));
     }
 
     @GetMapping("/booking/{bookingId}")
-    public ResponseEntity<ApiResponse<DigitalContract>> getContract(@PathVariable String bookingId) {
-        DigitalContract contract = contractService.getContractByBooking(bookingId);
+    public ResponseEntity<ApiResponse<DigitalContract>> getContract(
+            @PathVariable String bookingId,
+            @AuthenticationPrincipal User user) {
+        boolean isAdmin = user.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        DigitalContract contract = contractService.getContractByBooking(bookingId, user.getId(), isAdmin);
         if (contract == null) {
             return ResponseEntity.notFound().build();
         }

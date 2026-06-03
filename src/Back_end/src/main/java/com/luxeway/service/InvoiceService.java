@@ -33,13 +33,27 @@ public class InvoiceService {
 
     @Transactional
     public Invoice generateInvoiceForBooking(String bookingId) {
+        return generateInvoiceForBooking(bookingId, null, true);
+    }
+
+    @Transactional
+    public Invoice generateInvoiceForBooking(String bookingId, String requesterId, boolean isAdmin) {
         Optional<Invoice> existing = invoiceRepository.findByBookingId(bookingId);
         if (existing.isPresent()) {
-            return existing.get();
+            Invoice invoice = existing.get();
+            Booking booking = invoice.getBooking();
+            if (!isAdmin && !booking.getRenter().getId().equals(requesterId) && !booking.getOwner().getId().equals(requesterId)) {
+                throw new org.springframework.security.access.AccessDeniedException("Not authorized to access invoice for this booking");
+            }
+            return invoice;
         }
 
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found: " + bookingId));
+
+        if (!isAdmin && !booking.getRenter().getId().equals(requesterId) && !booking.getOwner().getId().equals(requesterId)) {
+            throw new org.springframework.security.access.AccessDeniedException("Not authorized to generate invoice for this booking");
+        }
 
         BigDecimal taxAmount = booking.getTaxes() != null ? booking.getTaxes() : BigDecimal.ZERO;
         BigDecimal amount = booking.getTotal() != null ? booking.getTotal() : BigDecimal.ZERO;
@@ -74,11 +88,31 @@ public class InvoiceService {
         return invoiceRepository.findById(id);
     }
 
+    public Optional<Invoice> getInvoiceById(String id, String requesterId, boolean isAdmin) {
+        Optional<Invoice> invoiceOpt = invoiceRepository.findById(id);
+        if (invoiceOpt.isPresent()) {
+            Invoice invoice = invoiceOpt.get();
+            Booking booking = invoice.getBooking();
+            if (!isAdmin && !booking.getRenter().getId().equals(requesterId) && !booking.getOwner().getId().equals(requesterId)) {
+                throw new org.springframework.security.access.AccessDeniedException("Not authorized to view this invoice");
+            }
+        }
+        return invoiceOpt;
+    }
+
     public byte[] getInvoicePdfStream(String invoiceId) throws Exception {
+        return getInvoicePdfStream(invoiceId, null, true);
+    }
+
+    public byte[] getInvoicePdfStream(String invoiceId, String requesterId, boolean isAdmin) throws Exception {
         Invoice invoice = invoiceRepository.findById(invoiceId)
                 .orElseThrow(() -> new IllegalArgumentException("Invoice not found: " + invoiceId));
 
         Booking booking = invoice.getBooking();
+        if (!isAdmin && !booking.getRenter().getId().equals(requesterId) && !booking.getOwner().getId().equals(requesterId)) {
+            throw new org.springframework.security.access.AccessDeniedException("Not authorized to access this invoice");
+        }
+
         User renter = invoice.getUser();
         User owner = booking.getOwner();
 

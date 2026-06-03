@@ -6,26 +6,24 @@ import com.luxeway.entity.User;
 import com.luxeway.repository.BookingRepository;
 import com.luxeway.repository.DisputeRepository;
 import com.luxeway.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+// BUG-15 FIX: Refactored to use @RequiredArgsConstructor (constructor injection) instead of @Autowired field injection.
+// Constructor injection is the recommended pattern used throughout the rest of the codebase.
+@Slf4j
 @Service
+@RequiredArgsConstructor
 public class DisputeService {
 
-    @Autowired
-    private DisputeRepository disputeRepository;
-    
-    @Autowired
-    private BookingRepository bookingRepository;
-    
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private EmailService emailService;
+    private final DisputeRepository disputeRepository;
+    private final BookingRepository bookingRepository;
+    private final UserRepository userRepository;
+    private final EmailService emailService;
 
     @Transactional
     public Dispute createDispute(String bookingId, String reporterId, String reason, String description, String evidenceUrl) {
@@ -45,12 +43,31 @@ public class DisputeService {
                 .status("OPEN")
                 .build();
 
-        return disputeRepository.save(dispute);
+        Dispute saved = disputeRepository.save(dispute);
+        try {
+            emailService.sendAdminNotification(
+                "New Dispute Ticket Opened #" + saved.getId(),
+                "Dispute opened for Booking ID: " + booking.getId() + "\nReporter: " + reporter.getFullName() + "\nReason: " + reason + "\nDescription: " + description
+            );
+        } catch (Exception e) {
+            log.warn("Failed to send admin dispute notification: {}", e.getMessage());
+        }
+        return saved;
     }
 
     public List<Dispute> getDisputesByBooking(String bookingId) {
         return disputeRepository.findByBookingId(bookingId);
     }
+
+    public List<Dispute> getDisputesByBooking(String bookingId, String userId, boolean isAdmin) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Booking not found: " + bookingId));
+        if (!isAdmin && !booking.getRenter().getId().equals(userId) && !booking.getOwner().getId().equals(userId)) {
+            throw new org.springframework.security.access.AccessDeniedException("Not authorized to access dispute details for this booking");
+        }
+        return disputeRepository.findByBookingId(bookingId);
+    }
+
 
     public List<Dispute> getDisputesByUser(String userId) {
         return disputeRepository.findByReporterId(userId);
@@ -67,7 +84,7 @@ public class DisputeService {
         try {
             emailService.sendDisputeUpdate(saved.getReporter().getEmail(), saved);
         } catch (Exception e) {
-            // Log warning but don't crash
+            log.warn("Failed to send dispute update email: {}", e.getMessage());
         }
         return saved;
     }

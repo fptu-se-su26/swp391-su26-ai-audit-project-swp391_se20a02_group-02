@@ -64,7 +64,7 @@ public class PaymentController {
         return ResponseEntity.ok(ApiResponse.success(payments));
     }
 
-    @PostMapping("/vnpay/callback")
+    @RequestMapping(value = "/vnpay/callback", method = {RequestMethod.GET, RequestMethod.POST})
     @Operation(summary = "Handle VNPay payment callback (public endpoint)")
     public ResponseEntity<ApiResponse<PaymentDTOs.PaymentResponse>> vnpayCallback(
             @RequestParam Map<String, String> params) {

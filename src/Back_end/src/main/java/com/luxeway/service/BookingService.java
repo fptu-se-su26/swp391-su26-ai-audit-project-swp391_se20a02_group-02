@@ -7,9 +7,11 @@ import com.luxeway.enums.VehicleStatus;
 import com.luxeway.repository.BookingRepository;
 import com.luxeway.repository.UserRepository;
 import com.luxeway.repository.VehicleRepository;
+import com.luxeway.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -32,6 +34,11 @@ public class BookingService {
     private final UserRepository userRepository;
     private final NotificationService notificationService;
     private final EmailService emailService;
+    private final BookingDeliveryRepository bookingDeliveryRepository;
+    private final BookingCancellationRepository bookingCancellationRepository;
+    private final BookingStatusHistoryRepository bookingStatusHistoryRepository;
+    private final VehicleAvailabilityRepository vehicleAvailabilityRepository;
+    private final PricingEngine pricingEngine;
 
     @Value("${business.pricing.service-fee-rate:0.12}")
     private double serviceFeeRate;
@@ -44,12 +51,12 @@ public class BookingService {
     @Transactional
     public BookingDTOs.BookingResponse createBooking(String renterId, BookingDTOs.CreateBookingRequest req) {
 
-        // Validate dates
+        // Validate dates (BR-1: endDate must be >= startDate; BR-2: min 1 day = same-day allowed)
         if (req.getStartDate() == null || req.getEndDate() == null) {
             throw new RuntimeException("Start date and end date are required");
         }
-        if (!req.getStartDate().isBefore(req.getEndDate()) && !req.getStartDate().isEqual(req.getEndDate())) {
-            throw new RuntimeException("End date must be after start date");
+        if (req.getEndDate().isBefore(req.getStartDate())) {
+            throw new RuntimeException("End date must be on or after start date");
         }
         if (req.getStartDate().isBefore(LocalDate.now())) {
             throw new RuntimeException("Start date cannot be in the past");
@@ -75,9 +82,17 @@ public class BookingService {
         User renter = userRepository.findById(renterId)
                 .orElseThrow(() -> new RuntimeException("Renter not found"));
 
-        // Calculate pricing
+        // BUG-02 FIX: All non-admin renters (CUSTOMER and OWNER renting another owner's vehicle)
+        // must have KYC and driving license verified before creating a booking.
+        if (renter.getRole() != com.luxeway.enums.UserRole.ADMIN) {
+            if (!Boolean.TRUE.equals(renter.getKycVerified()) || !Boolean.TRUE.equals(renter.getDrivingLicenseVerified())) {
+                throw new RuntimeException("KYC identity and driving license verification are required before booking. Please complete verification in your profile.");
+            }
+        }
+
+        // Calculate pricing using Pricing Engine
         long totalDays = ChronoUnit.DAYS.between(req.getStartDate(), req.getEndDate()) + 1;
-        BigDecimal basePrice = vehicle.getPricePerDay().multiply(BigDecimal.valueOf(totalDays));
+        BigDecimal basePrice = pricingEngine.calculateBasePriceForPeriod(vehicle, req.getStartDate(), req.getEndDate());
         BigDecimal insuranceFee = req.isIncludeInsurance()
                 ? vehicle.getPricePerDay().multiply(BigDecimal.valueOf(0.15)).multiply(BigDecimal.valueOf(totalDays))
                 : BigDecimal.ZERO;
@@ -113,7 +128,33 @@ public class BookingService {
                 .build();
 
         booking = bookingRepository.save(booking);
-        
+
+        // Audit Logging: Status History
+        BookingStatusHistory history = BookingStatusHistory.builder()
+                .booking(booking)
+                .status(booking.getStatus().name())
+                .comment("Booking created successfully")
+                .changedBy(renterId)
+                .build();
+        bookingStatusHistoryRepository.save(history);
+
+        // Save Delivery Details if included
+        if (booking.getIncludeDelivery()) {
+            BookingDelivery delivery = BookingDelivery.builder()
+                    .booking(booking)
+                    .address(booking.getDeliveryAddress() != null ? booking.getDeliveryAddress() : "Default Address")
+                    .latitude(vehicle.getLatitude() != null ? vehicle.getLatitude() : BigDecimal.ZERO)
+                    .longitude(vehicle.getLongitude() != null ? vehicle.getLongitude() : BigDecimal.ZERO)
+                    .status("PENDING")
+                    .build();
+            bookingDeliveryRepository.save(delivery);
+        }
+
+        // Block Calendar if instantly confirmed
+        if (booking.getStatus() == BookingStatus.CONFIRMED) {
+            blockAvailabilityCalendar(booking);
+        }
+
         // Notify owner
         notificationService.createNotification(
             booking.getOwner().getId(),
@@ -140,14 +181,16 @@ public class BookingService {
     // ====== Get bookings for renter ======
 
     public Page<BookingDTOs.BookingResponse> getMyBookings(String renterId, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        // Do NOT add Sort here - 'OrderByCreatedAtDesc' in method name already handles ordering
+        Pageable pageable = PageRequest.of(page, size);
         return bookingRepository.findByRenterIdOrderByCreatedAtDesc(renterId, pageable).map(this::toResponse);
     }
 
     // ====== Get bookings for owner ======
 
     public Page<BookingDTOs.BookingResponse> getOwnerBookings(String ownerId, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        // Do NOT add Sort here - 'OrderByCreatedAtDesc' in method name already handles ordering
+        Pageable pageable = PageRequest.of(page, size);
         return bookingRepository.findByOwnerIdOrderByCreatedAtDesc(ownerId, pageable).map(this::toResponse);
     }
 
@@ -159,7 +202,7 @@ public class BookingService {
 
         if (!isAdmin && !booking.getRenter().getId().equals(requesterId)
                 && !booking.getOwner().getId().equals(requesterId)) {
-            throw new RuntimeException("Not authorized to view this booking");
+            throw new org.springframework.security.access.AccessDeniedException("Not authorized to view this booking");
         }
 
         return toResponse(booking);
@@ -174,7 +217,7 @@ public class BookingService {
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
 
         if (!booking.getRenter().getId().equals(requesterId) && !booking.getOwner().getId().equals(requesterId)) {
-            throw new RuntimeException("Not authorized to cancel this booking");
+            throw new org.springframework.security.access.AccessDeniedException("Not authorized to cancel this booking");
         }
 
         if (!booking.canBeCancelled()) {
@@ -186,6 +229,28 @@ public class BookingService {
         booking.setCancellationReason(req.getReason());
 
         booking = bookingRepository.save(booking);
+
+        // Save Cancellation Ledger Details
+        BookingCancellation cancellation = BookingCancellation.builder()
+                .booking(booking)
+                .cancelledBy(requesterId)
+                .reason(req.getReason())
+                .refundAmount(booking.getTotal())
+                .penaltyAmount(BigDecimal.ZERO)
+                .build();
+        bookingCancellationRepository.save(cancellation);
+
+        // Status History Logging
+        BookingStatusHistory history = BookingStatusHistory.builder()
+                .booking(booking)
+                .status(BookingStatus.CANCELLED.name())
+                .comment("Booking cancelled: " + req.getReason())
+                .changedBy(requesterId)
+                .build();
+        bookingStatusHistoryRepository.save(history);
+
+        // Free Calendar Days
+        freeAvailabilityCalendar(booking);
         
         // Notify the other party
         String notifyUserId = booking.getRenter().getId().equals(requesterId) ? 
@@ -198,6 +263,13 @@ public class BookingService {
             "Booking for " + booking.getVehicle().getName() + " has been cancelled.",
             "/bookings/" + booking.getId()
         );
+
+        try {
+            emailService.sendBookingCancellation(booking.getRenter().getEmail(), booking);
+            emailService.sendBookingCancellation(booking.getOwner().getEmail(), booking);
+        } catch (Exception e) {
+            log.warn("Failed to send booking cancellation email alerts: {}", e.getMessage());
+        }
 
         log.info("Booking cancelled: {} by {}", bookingId, requesterId);
         return toResponse(booking);
@@ -228,6 +300,22 @@ public class BookingService {
         }
 
         booking = bookingRepository.save(booking);
+
+        // Status History Audit Logging
+        BookingStatusHistory history = BookingStatusHistory.builder()
+                .booking(booking)
+                .status(newStatus.name())
+                .comment("Status transitioned to " + newStatus.name())
+                .changedBy(ownerId)
+                .build();
+        bookingStatusHistoryRepository.save(history);
+
+        // Dynamic Availability Calendar operations
+        if (newStatus == BookingStatus.CONFIRMED || newStatus == BookingStatus.ACTIVE) {
+            blockAvailabilityCalendar(booking);
+        } else if (newStatus == BookingStatus.CANCELLED) {
+            freeAvailabilityCalendar(booking);
+        }
         
         // Notify renter
         notificationService.createNotification(
@@ -250,6 +338,53 @@ public class BookingService {
         }
 
         return toResponse(booking);
+    }
+
+    // ====== Availability Calendar Helpers ======
+
+    private void blockAvailabilityCalendar(Booking booking) {
+        // BUG-06 FIX: Check if record already exists for this date before inserting.
+        // This prevents duplicate records on retry or re-confirmation calls.
+        LocalDate start = booking.getStartDate();
+        LocalDate end = booking.getEndDate();
+        for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
+            final LocalDate currentDate = date;
+            boolean alreadyBlocked = vehicleAvailabilityRepository
+                    .findByVehicleIdAndDateBetween(booking.getVehicle().getId(), currentDate, currentDate)
+                    .stream()
+                    .anyMatch(slot -> booking.getId().equals(slot.getBookingId()));
+            if (!alreadyBlocked) {
+                VehicleAvailability availability = VehicleAvailability.builder()
+                        .vehicle(booking.getVehicle())
+                        .date(currentDate)
+                        .isAvailable(false)
+                        .bookingId(booking.getId())
+                        .build();
+                vehicleAvailabilityRepository.save(availability);
+            }
+        }
+    }
+
+    /**
+     * Public entry point called by PaymentService after payment is confirmed.
+     * BUG-07 FIX: Ensures availability calendar is blocked when payment flow (not owner approval) confirms a booking.
+     */
+    @Transactional
+    public void blockAvailabilityCalendarPublic(Booking booking) {
+        blockAvailabilityCalendar(booking);
+    }
+
+    private void freeAvailabilityCalendar(Booking booking) {
+        List<VehicleAvailability> slots = vehicleAvailabilityRepository.findByVehicleIdAndDateBetween(
+                booking.getVehicle().getId(), booking.getStartDate(), booking.getEndDate()
+        );
+        for (VehicleAvailability slot : slots) {
+            if (booking.getId().equals(slot.getBookingId())) {
+                slot.setIsAvailable(true);
+                slot.setBookingId(null);
+                vehicleAvailabilityRepository.save(slot);
+            }
+        }
     }
 
     // ====== DTO Mapping ======

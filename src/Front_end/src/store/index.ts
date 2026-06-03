@@ -2,21 +2,24 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { User, RegisterData, Toast, BookingWizardState } from '@/types';
 import { authService } from '@/services/authService';
+import { apiClient } from '@/services/api';
 import { faker } from '@faker-js/faker';
 
 export type Theme = 'light' | 'dark';
-export type Language = 'en' | 'vi' | 'ja';
+export type Language = 'en' | 'vi' | 'ja' | 'ko' | 'zh';
 
 
 // ====== AUTH STORE ======
 interface AuthStore {
   user: User | null;
   isAuthenticated: boolean;
+  isInitialized: boolean;
   isLoading: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   register: (data: RegisterData) => Promise<boolean>;
+  loginWithGoogleToken: (idToken: string) => Promise<boolean>;
   updateUser: (data: Partial<User>) => Promise<void>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
   initAuth: () => Promise<void>;
@@ -27,6 +30,7 @@ interface AuthStore {
 export const useAuthStore = create<AuthStore>((set, get) => ({
   user: null,
   isAuthenticated: false,
+  isInitialized: false,
   isLoading: false,
   error: null,
 
@@ -47,6 +51,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         console.warn('Failed to refresh user data:', error);
       }
     }
+    set({ isInitialized: true });
   },
 
   login: async (email, password) => {
@@ -67,8 +72,39 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   },
 
   logout: () => {
+    // Clear other Zustand stores
+    useVehicleStore.setState({ wishlist: [], compareList: [], recentlyViewed: [] });
+    useBookingWizardStore.setState({
+      step: 1,
+      vehicleId: '',
+      startDate: '',
+      endDate: '',
+      selectedAddons: [],
+      includeInsurance: true,
+      includeDelivery: false,
+      deliveryAddress: '',
+      couponCode: '',
+      discount: 0,
+      notes: '',
+      paymentMethodId: '',
+    });
+    useNotificationStore.setState({ unreadCount: 0 });
+
+    // Call authService logout
     authService.logout();
+
+    // Clear browser storage
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch (e) {
+      console.error('Failed to clear local/session storage:', e);
+    }
+
     set({ user: null, isAuthenticated: false, error: null });
+
+    // Force hard redirect to home
+    window.location.href = '/';
   },
 
   register: async (data) => {
@@ -84,6 +120,22 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     } catch (error: any) {
       const errorMessage = error.message || 'Registration failed. Email may already exist.';
       set({ isLoading: false, error: errorMessage });
+      return false;
+    }
+  },
+
+  loginWithGoogleToken: async (idToken) => {
+    set({ isLoading: true, error: null });
+    try {
+      const user = await authService.loginWithGoogle(idToken);
+      if (user) {
+        set({ user, isAuthenticated: true, isLoading: false, error: null });
+        return true;
+      }
+      set({ isLoading: false, error: 'Google login failed' });
+      return false;
+    } catch (error: any) {
+      set({ isLoading: false, error: error.message || 'Google login failed' });
       return false;
     }
   },
@@ -127,6 +179,34 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   clearError: () => set({ error: null }),
 }));
 
+// Setup ApiClient onUnauthorized hook to clear session but only redirect on protected routes
+apiClient.onUnauthorized = () => {
+  useAuthStore.setState({ user: null, isAuthenticated: false });
+  useVehicleStore.setState({ wishlist: [], compareList: [], recentlyViewed: [] });
+  useBookingWizardStore.setState({
+    step: 1,
+    vehicleId: '',
+    startDate: '',
+    endDate: '',
+    selectedAddons: [],
+    includeInsurance: true,
+    includeDelivery: false,
+    deliveryAddress: '',
+    couponCode: '',
+    discount: 0,
+    notes: '',
+    paymentMethodId: '',
+  });
+  useNotificationStore.setState({ unreadCount: 0 });
+
+  const protectedPrefixes = ['/dashboard', '/admin', '/owner', '/booking', '/payment', '/messages', '/notifications'];
+  const path = window.location.pathname;
+  const isProtected = protectedPrefixes.some(prefix => path === prefix || path.startsWith(prefix + '/'));
+  if (isProtected) {
+    window.location.href = '/auth/login';
+  }
+};
+
 // ====== UI STORE ======
 interface UIStore {
   sidebarOpen: boolean;
@@ -136,6 +216,7 @@ interface UIStore {
   isScrolled: boolean;
   theme: Theme;
   language: Language;
+  currency: string;
   setSidebarOpen: (open: boolean) => void;
   setMobileMenuOpen: (open: boolean) => void;
   addToast: (toast: Omit<Toast, 'id'>) => void;
@@ -145,6 +226,7 @@ interface UIStore {
   setScrolled: (scrolled: boolean) => void;
   toggleTheme: () => void;
   setLanguage: (lang: Language) => void;
+  setCurrency: (curr: string) => void;
 }
 
 export const useUIStore = create<UIStore>()(
@@ -159,10 +241,17 @@ export const useUIStore = create<UIStore>()(
       language: (() => {
         try {
           const lang = localStorage.getItem('language');
-          if (lang && ['en', 'vi', 'ja'].includes(lang)) return lang as Language;
+          if (lang && ['en', 'vi', 'ja', 'ko', 'zh'].includes(lang)) return lang as Language;
         } catch {}
         return 'en';
       })() as Language,
+      currency: (() => {
+        try {
+          const curr = localStorage.getItem('currency');
+          if (curr && ['VND', 'USD', 'EUR', 'JPY', 'SGD', 'KRW'].includes(curr)) return curr;
+        } catch {}
+        return 'VND';
+      })(),
 
       setSidebarOpen: (open) => set({ sidebarOpen: open }),
       setMobileMenuOpen: (open) => set({ mobileMenuOpen: open }),
@@ -197,10 +286,15 @@ export const useUIStore = create<UIStore>()(
         try { localStorage.setItem('language', lang); } catch {}
         import('@/i18n/config').then(m => m.default.changeLanguage(lang));
       },
+
+      setCurrency: (curr) => {
+        set({ currency: curr });
+        try { localStorage.setItem('currency', curr); } catch {}
+      },
     }),
     {
       name: 'luxeway_ui_prefs',
-      partialize: (state) => ({ theme: state.theme, language: state.language }),
+      partialize: (state) => ({ theme: state.theme, language: state.language, currency: state.currency }),
     }
   )
 );

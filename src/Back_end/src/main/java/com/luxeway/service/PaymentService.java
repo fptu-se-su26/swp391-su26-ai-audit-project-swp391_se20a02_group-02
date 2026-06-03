@@ -8,6 +8,7 @@ import com.luxeway.enums.PaymentStatus;
 import com.luxeway.repository.BookingRepository;
 import com.luxeway.repository.PaymentRepository;
 import com.luxeway.repository.UserRepository;
+import com.luxeway.repository.VehicleAvailabilityRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,6 +33,11 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final BookingRepository bookingRepository;
     private final UserRepository userRepository;
+    private final VehicleAvailabilityRepository vehicleAvailabilityRepository;
+
+    // @Lazy to avoid circular dependency: PaymentService ↔ BookingService
+    @org.springframework.context.annotation.Lazy
+    private final BookingService bookingService;
 
     @Value("${payment.vnpay.url:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}")
     private String vnpayUrl;
@@ -50,7 +56,7 @@ public class PaymentService {
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
 
         if (!booking.getRenter().getId().equals(userId)) {
-            throw new RuntimeException("Not authorized to pay for this booking");
+            throw new org.springframework.security.access.AccessDeniedException("Not authorized to pay for this booking");
         }
 
         User user = userRepository.findById(userId)
@@ -87,9 +93,11 @@ public class PaymentService {
             payment.setProcessedAt(LocalDateTime.now());
             paymentRepository.save(payment);
 
-            // Confirm booking
+            // Confirm booking and block availability calendar
             booking.setStatus(com.luxeway.enums.BookingStatus.CONFIRMED);
             bookingRepository.save(booking);
+            // BUG-07 FIX: Block availability calendar so vehicle no longer appears as available
+            bookingService.blockAvailabilityCalendarPublic(booking);
 
             response = toResponse(payment);
             log.info("LuxeWallet payment successful: deducted {} from user {}", req.getAmount(), userId);
@@ -99,9 +107,11 @@ public class PaymentService {
             payment.setProcessedAt(LocalDateTime.now());
             paymentRepository.save(payment);
 
-            // Confirm booking
+            // Confirm booking and block availability calendar
             booking.setStatus(com.luxeway.enums.BookingStatus.CONFIRMED);
             bookingRepository.save(booking);
+            // BUG-07 FIX: Block availability calendar so vehicle no longer appears as available
+            bookingService.blockAvailabilityCalendarPublic(booking);
 
             response = toResponse(payment);
             log.info("Stripe/Card payment successful immediately: {}", transactionId);
@@ -162,10 +172,12 @@ public class PaymentService {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
 
-        boolean isAdmin = false; // simplified for now
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdmin = auth != null && auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         if (!booking.getRenter().getId().equals(userId) &&
             !booking.getOwner().getId().equals(userId) && !isAdmin) {
-            throw new RuntimeException("Not authorized to view payments for this booking");
+            throw new org.springframework.security.access.AccessDeniedException("Not authorized to view payments for this booking");
         }
 
         return paymentRepository.findByBookingId(bookingId).stream()
@@ -184,36 +196,39 @@ public class PaymentService {
 
     @Transactional
     public PaymentDTOs.PaymentResponse processVNPayCallback(Map<String, String> params) {
-        // Verify VNPay signature
+        // Verify VNPay signature (strictly mandatory)
         String secureHash = params.get("vnp_SecureHash");
-        if (secureHash != null) {
-            Map<String, String> sortedParams = new java.util.TreeMap<>();
-            for (Map.Entry<String, String> entry : params.entrySet()) {
-                if (entry.getKey().startsWith("vnp_") && !entry.getKey().equals("vnp_SecureHash") && !entry.getKey().equals("vnp_SecureHashType")) {
-                    sortedParams.put(entry.getKey(), entry.getValue());
-                }
-            }
+        if (secureHash == null || secureHash.trim().isEmpty()) {
+            log.error("VNPay payment secure hash signature is missing in callback");
+            throw new RuntimeException("VNPay payment secure hash signature is missing");
+        }
 
-            StringBuilder hashData = new StringBuilder();
-            java.util.Iterator<Map.Entry<String, String>> itr = sortedParams.entrySet().iterator();
-            while (itr.hasNext()) {
-                Map.Entry<String, String> entry = itr.next();
-                hashData.append(entry.getKey()).append('=');
-                try {
-                    hashData.append(java.net.URLEncoder.encode(entry.getValue(), java.nio.charset.StandardCharsets.US_ASCII.toString()));
-                } catch (Exception e) {
-                    log.error("Encoding error in callback verification", e);
-                }
-                if (itr.hasNext()) {
-                    hashData.append('&');
-                }
+        Map<String, String> sortedParams = new java.util.TreeMap<>();
+        for (Map.Entry<String, String> entry : params.entrySet()) {
+            if (entry.getKey().startsWith("vnp_") && !entry.getKey().equals("vnp_SecureHash") && !entry.getKey().equals("vnp_SecureHashType")) {
+                sortedParams.put(entry.getKey(), entry.getValue());
             }
+        }
 
-            String calculatedHash = hmacSHA512(vnpaySecretKey, hashData.toString());
-            if (!calculatedHash.equalsIgnoreCase(secureHash)) {
-                log.error("VNPay signature verification failed. Calculated: {}, Received: {}", calculatedHash, secureHash);
-                throw new RuntimeException("VNPay payment signature verification failed");
+        StringBuilder hashData = new StringBuilder();
+        java.util.Iterator<Map.Entry<String, String>> itr = sortedParams.entrySet().iterator();
+        while (itr.hasNext()) {
+            Map.Entry<String, String> entry = itr.next();
+            hashData.append(entry.getKey()).append('=');
+            try {
+                hashData.append(java.net.URLEncoder.encode(entry.getValue(), java.nio.charset.StandardCharsets.US_ASCII.toString()));
+            } catch (Exception e) {
+                log.error("Encoding error in callback verification", e);
             }
+            if (itr.hasNext()) {
+                hashData.append('&');
+            }
+        }
+
+        String calculatedHash = hmacSHA512(vnpaySecretKey, hashData.toString());
+        if (!calculatedHash.equalsIgnoreCase(secureHash)) {
+            log.error("VNPay signature verification failed. Calculated: {}, Received: {}", calculatedHash, secureHash);
+            throw new RuntimeException("VNPay payment signature verification failed");
         }
 
         String transactionId = params.get("vnp_TxnRef");
@@ -222,7 +237,14 @@ public class PaymentService {
         Payment payment = paymentRepository.findByTransactionId(transactionId)
                 .orElseThrow(() -> new RuntimeException("Payment not found for transaction: " + transactionId));
 
+        // Prevent double processing / replay attacks
+        if (payment.getStatus() == PaymentStatus.SUCCEEDED) {
+            log.warn("VNPay callback ignored: Transaction {} is already SUCCEEDED", transactionId);
+            throw new RuntimeException("Transaction already processed successfully");
+        }
+
         if ("00".equals(responseCode)) {
+
             payment.setStatus(PaymentStatus.SUCCEEDED);
             payment.setProcessedAt(LocalDateTime.now());
             
@@ -237,6 +259,8 @@ public class PaymentService {
                 Booking booking = payment.getBooking();
                 booking.setStatus(com.luxeway.enums.BookingStatus.CONFIRMED);
                 bookingRepository.save(booking);
+                // BUG-07 FIX: Block availability calendar on VNPay callback success
+                bookingService.blockAvailabilityCalendarPublic(booking);
                 log.info("VNPay booking payment callback completed and booking confirmed: {}", transactionId);
             }
         } else {

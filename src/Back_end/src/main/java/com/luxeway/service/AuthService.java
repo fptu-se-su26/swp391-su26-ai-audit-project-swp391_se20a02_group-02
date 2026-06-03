@@ -26,16 +26,38 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final EmailService emailService;
 
+    // Security Attempt Stores
+    private final java.util.Map<String, Integer> loginFailures = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.Map<String, java.time.LocalDateTime> blockTimes = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.Map<String, java.time.LocalDateTime> lastOtpRequestTime = new java.util.concurrent.ConcurrentHashMap<>();
+
     // ====== Login ======
 
     @Transactional
     public AuthDTOs.AuthResponse login(AuthDTOs.LoginRequest request) {
+        String email = request.getEmail().trim().toLowerCase();
+
+        // Brute force check: temporary lockout for 15 minutes if 5 successive failures
+        java.time.LocalDateTime blockUntil = blockTimes.get(email);
+        if (blockUntil != null) {
+            if (java.time.LocalDateTime.now().isBefore(blockUntil)) {
+                long minutesLeft = java.time.temporal.ChronoUnit.MINUTES.between(java.time.LocalDateTime.now(), blockUntil) + 1;
+                throw new RuntimeException("Account temporarily locked due to multiple login failures. Try again in " + minutesLeft + " minutes.");
+            } else {
+                blockTimes.remove(email);
+                loginFailures.remove(email);
+            }
+        }
+
         try {
             Authentication auth = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+                new UsernamePasswordAuthenticationToken(email, request.getPassword())
             );
 
             User user = (User) auth.getPrincipal();
+
+            // Clear login failure counts on success
+            loginFailures.remove(email);
 
             // Update last active
             user.setLastActive(java.time.LocalDateTime.now());
@@ -48,7 +70,14 @@ public class AuthService {
             return buildAuthResponse(user, accessToken, refreshToken);
 
         } catch (BadCredentialsException e) {
-            throw new RuntimeException("Invalid email or password");
+            int attempts = loginFailures.merge(email, 1, Integer::sum);
+            // BR-3: Lock account after 6 consecutive failed login attempts for 30 minutes
+            if (attempts >= 6) {
+                blockTimes.put(email, java.time.LocalDateTime.now().plusMinutes(30));
+                loginFailures.remove(email);
+                throw new RuntimeException("Invalid credentials. Maximum attempts exceeded: Account locked for 30 minutes.");
+            }
+            throw new RuntimeException("Invalid email or password. Attempt " + attempts + " of 6.");
         }
     }
 
@@ -91,6 +120,11 @@ public class AuthService {
         String refreshToken = jwtTokenProvider.generateRefreshToken(user);
 
         log.info("New user registered: {} (role={})", user.getEmail(), user.getRole());
+        try {
+            emailService.sendEmailVerification(user.getEmail(), user.getFirstName());
+        } catch (Exception e) {
+            log.warn("Failed to send welcome verification email: {}", e.getMessage());
+        }
         return buildAuthResponse(user, accessToken, refreshToken);
     }
 
@@ -143,11 +177,19 @@ public class AuthService {
     private final java.util.Map<String, ResetTokenData> resetTokenStore = new java.util.concurrent.ConcurrentHashMap<>();
     private final java.security.SecureRandom secureRandom = new java.security.SecureRandom();
 
-    @Transactional(readOnly = true)
+    @Transactional
     public void processForgotPassword(AuthDTOs.ForgotPasswordRequest req) {
         String email = req.getEmail().trim().toLowerCase();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Email is not registered"));
+
+        // OTP Rate Limiting: 1 request per minute per email
+        java.time.LocalDateTime lastRequest = lastOtpRequestTime.get(email);
+        if (lastRequest != null && java.time.LocalDateTime.now().isBefore(lastRequest.plusMinutes(1))) {
+            long secondsLeft = 60 - java.time.temporal.ChronoUnit.SECONDS.between(lastRequest, java.time.LocalDateTime.now());
+            throw new RuntimeException("Please wait " + secondsLeft + " seconds before requesting another OTP.");
+        }
+        lastOtpRequestTime.put(email, java.time.LocalDateTime.now());
 
         // Generate dynamic secure 6-digit OTP code
         int otpNum = 100000 + secureRandom.nextInt(900000);
@@ -226,6 +268,11 @@ public class AuthService {
         // Invalidate transient reset token immediately
         resetTokenStore.remove(token);
         log.info("Password successfully reset for account: {}", tokenData.email);
+        try {
+            emailService.sendPasswordResetSuccess(user.getEmail());
+        } catch (Exception e) {
+            log.warn("Failed to send password reset success email: {}", e.getMessage());
+        }
     }
 
     // ====== Private Helpers ======
@@ -250,5 +297,97 @@ public class AuthService {
         response.setExpiresIn(86400);
         response.setUser(userInfo);
         return response;
+    }
+
+    @Transactional
+    public AuthDTOs.AuthResponse refreshAccessToken(AuthDTOs.TokenRefreshRequest request) {
+        String refreshToken = request.getRefreshToken().trim();
+        if (!jwtTokenProvider.validateToken(refreshToken)) {
+            throw new RuntimeException("Invalid or expired refresh token");
+        }
+
+        String email = jwtTokenProvider.extractUsername(refreshToken);
+        User user = userRepository.findByEmailAndIsActiveTrue(email)
+                .orElseThrow(() -> new RuntimeException("User associated with this token not found or inactive"));
+
+        String newAccessToken = jwtTokenProvider.generateToken(user);
+        String newRefreshToken = jwtTokenProvider.generateRefreshToken(user);
+
+        log.info("Token refreshed successfully for user: {}", email);
+        return buildAuthResponse(user, newAccessToken, newRefreshToken);
+    }
+
+    @Transactional
+    public AuthDTOs.AuthResponse googleLogin(AuthDTOs.GoogleLoginRequest request) {
+        String idToken = request.getIdToken();
+        
+        java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
+        java.net.http.HttpRequest httpRequest = java.net.http.HttpRequest.newBuilder()
+                .uri(java.net.URI.create("https://oauth2.googleapis.com/tokeninfo?id_token=" + idToken))
+                .GET()
+                .build();
+        
+        try {
+            java.net.http.HttpResponse<String> httpResponse = client.send(httpRequest, java.net.http.HttpResponse.BodyHandlers.ofString());
+            if (httpResponse.statusCode() != 200) {
+                throw new RuntimeException("Google token verification failed: " + httpResponse.body());
+            }
+            
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            java.util.Map<String, Object> payload = mapper.readValue(httpResponse.body(), new com.fasterxml.jackson.core.type.TypeReference<java.util.Map<String, Object>>() {});
+            
+            String email = ((String) payload.get("email")).trim().toLowerCase();
+            String emailVerifiedStr = String.valueOf(payload.get("email_verified"));
+            boolean emailVerified = "true".equalsIgnoreCase(emailVerifiedStr);
+            
+            if (!emailVerified) {
+                throw new RuntimeException("Google email is not verified");
+            }
+            
+            String firstName = (String) payload.get("given_name");
+            String lastName = (String) payload.get("family_name");
+            if (firstName == null) firstName = (String) payload.get("name");
+            if (firstName == null) firstName = "Google";
+            if (lastName == null) lastName = "User";
+            
+            String picture = (String) payload.get("picture");
+            
+            java.util.Optional<User> existingUser = userRepository.findByEmail(email);
+            User user;
+            if (existingUser.isPresent()) {
+                user = existingUser.get();
+                if (user.getAvatar() == null || user.getAvatar().isBlank()) {
+                    user.setAvatar(picture);
+                }
+                user.setLastActive(java.time.LocalDateTime.now());
+                user = userRepository.save(user);
+                log.info("Google OAuth login: linked existing user {}", email);
+            } else {
+                user = User.builder()
+                        .email(email)
+                        .password(passwordEncoder.encode(java.util.UUID.randomUUID().toString()))
+                        .firstName(firstName)
+                        .lastName(lastName)
+                        .displayName(firstName + " " + lastName)
+                        .avatar(picture)
+                        .role(UserRole.CUSTOMER)
+                        .verified(true)
+                        .kycVerified(false)
+                        .drivingLicenseVerified(false)
+                        .isActive(true)
+                        .build();
+                user = userRepository.save(user);
+                log.info("Google OAuth registration: created new user {}", email);
+            }
+            
+            String accessToken = jwtTokenProvider.generateToken(user);
+            String refreshToken = jwtTokenProvider.generateRefreshToken(user);
+            
+            return buildAuthResponse(user, accessToken, refreshToken);
+            
+        } catch (Exception e) {
+            log.error("Google login failed", e);
+            throw new RuntimeException("Google Sign-In failed: " + e.getMessage());
+        }
     }
 }

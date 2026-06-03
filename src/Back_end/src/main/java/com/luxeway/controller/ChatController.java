@@ -43,9 +43,11 @@ public class ChatController {
 
     @GetMapping("/conversations/{id}/messages")
     public ResponseEntity<ApiResponse<List<Message>>> getMessages(
-            @PathVariable String id) {
-        return ResponseEntity.ok(ApiResponse.success(chatService.getMessages(id)));
+            @PathVariable String id,
+            @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(ApiResponse.success(chatService.getMessages(id, user.getId())));
     }
+
 
     @PostMapping("/messages")
     public ResponseEntity<ApiResponse<Message>> sendMessage(

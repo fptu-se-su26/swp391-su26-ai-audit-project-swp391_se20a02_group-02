@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Calendar, Heart, Bell, User, Shield, FileText,
   CreditCard, Settings, LogOut, ChevronRight, Car, Star, TrendingUp,
   Package, Clock, CheckCircle, AlertCircle, X, Menu, Eye, EyeOff, Users, Wallet,
-  Loader2
+  Loader2, Globe
 } from 'lucide-react';
 
 import { useAuthStore, useUIStore } from '@/store';
@@ -19,8 +19,8 @@ import { StatCardSkeleton, TableSkeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { useT } from '@/i18n/translations';
 
-// ====== DASHBOARD SIDEBAR ======
-const DashboardSidebar: React.FC<{ role: string }> = ({ role }) => {
+// ====== CUSTOMER SIDEBAR ======
+const CustomerSidebar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
@@ -28,44 +28,25 @@ const DashboardSidebar: React.FC<{ role: string }> = ({ role }) => {
   const t = useT();
 
   const customerLinks = [
+    { href: '/', icon: Globe, label: t.marketplace.home, exact: true },
     { href: '/dashboard', icon: LayoutDashboard, label: t.dashboard.overview, exact: true },
     { href: '/dashboard/bookings', icon: Calendar, label: t.dashboard.myBookings },
-    { href: '/dashboard/wishlist', icon: Heart, label: t.dashboard.wishlist },
-    { href: '/dashboard/notifications', icon: Bell, label: t.dashboard.notifications },
-    { href: '/dashboard/profile', icon: User, label: t.dashboard.profile },
-    { href: '/dashboard/security', icon: Shield, label: t.dashboard.security },
-    { href: '/dashboard/documents', icon: FileText, label: t.dashboard.documents },
     { href: '/dashboard/wallet', icon: Wallet, label: t.wallet.title },
     { href: '/dashboard/payments', icon: CreditCard, label: t.dashboard.payments },
-    { href: '/dashboard/settings', icon: Settings, label: t.dashboard.settings },
-  ];
-
-  const ownerLinks = [
-    { href: '/owner', icon: LayoutDashboard, label: t.ownerDashboard.overview, exact: true },
-    { href: '/owner/vehicles', icon: Car, label: t.ownerDashboard.myVehicles },
-    { href: '/owner/bookings', icon: Calendar, label: t.ownerDashboard.bookings },
-    { href: '/owner/calendar', icon: Clock, label: t.ownerDashboard.calendar },
-    { href: '/owner/fleet', icon: Package, label: t.ownerDashboard.fleet },
-    { href: '/owner/employees', icon: Users, label: t.ownerDashboard.team },
-    { href: '/owner/revenue', icon: TrendingUp, label: t.ownerDashboard.revenue },
-    { href: '/owner/analytics', icon: TrendingUp, label: t.ownerDashboard.analytics },
+    { href: '/dashboard/documents', icon: FileText, label: t.dashboard.documents },
+    { href: '/dashboard/reviews', icon: Star, label: t.dashboard.myReviews },
+    { href: '/messages', icon: Bell, label: 'Messages' },
+    { href: '/dashboard/notifications', icon: Heart, label: t.dashboard.notifications },
     { href: '/dashboard/profile', icon: User, label: t.dashboard.profile },
     { href: '/dashboard/settings', icon: Settings, label: t.dashboard.settings },
   ];
 
-  const links = (role === 'owner') ? ownerLinks : customerLinks;
+  const getInitials = (name: string) => {
+    return name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : 'C';
+  };
 
   const isActive = (href: string, exact?: boolean) =>
     exact ? location.pathname === href : location.pathname.startsWith(href);
-
-  // Role accent color
-  const accentGradient = role === 'owner'
-    ? 'linear-gradient(135deg, #F59E0B, #D97706)'
-    : 'linear-gradient(135deg, #6366F1, #8B5CF6)';
-  const accentGlow = role === 'owner'
-    ? 'rgba(245,158,11,0.15)'
-    : 'rgba(99,102,241,0.15)';
-  const accentTextColor = role === 'owner' ? '#F59E0B' : '#818CF8';
 
   return (
     <>
@@ -90,9 +71,8 @@ const DashboardSidebar: React.FC<{ role: string }> = ({ role }) => {
           borderRight: '1px solid rgba(255,255,255,0.06)',
         }}
       >
-        {/* Ambient glow top — role colored */}
         <div className="absolute top-0 left-0 w-full h-48 pointer-events-none"
-          style={{ background: `radial-gradient(ellipse at 50% 0%, ${accentGlow} 0%, transparent 70%)` }} />
+          style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.15) 0%, transparent 70%)' }} />
 
         {/* User Info */}
         <div className="p-5 border-b relative" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
@@ -100,25 +80,23 @@ const DashboardSidebar: React.FC<{ role: string }> = ({ role }) => {
             style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
             {user?.avatar ? (
               <img src={user.avatar} alt={user.displayName} className="w-10 h-10 rounded-xl object-cover"
-                style={{ boxShadow: `0 0 0 2px ${accentTextColor}40` }} />
+                style={{ boxShadow: '0 0 0 2px rgba(99,102,241,0.40)' }} />
             ) : (
-              <div className="w-10 h-10 rounded-xl text-sm font-bold flex items-center justify-center text-slate-900"
-                style={{ background: accentGradient }}>
-                {getInitials(user?.displayName || 'U')}
+              <div className="w-10 h-10 rounded-xl text-sm font-bold flex items-center justify-center text-slate-900 bg-gradient-to-br from-indigo-500 to-violet-600">
+                {getInitials(user?.displayName || '')}
               </div>
             )}
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-white text-sm truncate">{user?.displayName}</p>
-              <p className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.35)' }}>{user?.email}</p>
-              <span className="inline-flex items-center text-[10px] font-bold uppercase tracking-wider mt-0.5"
-                style={{ color: accentTextColor }}>✨ {user?.role}</span>
+              <p className="text-xs truncate text-slate-400" style={{ color: 'rgba(255,255,255,0.35)' }}>{user?.email}</p>
+              <span className="inline-flex items-center text-[10px] font-bold uppercase tracking-wider mt-0.5 text-indigo-400">✨ CUSTOMER</span>
             </div>
           </div>
         </div>
 
         {/* Nav Links */}
         <nav className="flex-1 overflow-y-auto p-3 space-y-0.5 relative z-10">
-          {links.map(link => {
+          {customerLinks.map(link => {
             const active = isActive(link.href, link.exact);
             return (
               <Link
@@ -128,18 +106,17 @@ const DashboardSidebar: React.FC<{ role: string }> = ({ role }) => {
                 className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative group"
                 style={{
                   color: active ? '#fff' : 'rgba(148,163,184,1)',
-                  background: active ? `linear-gradient(135deg, ${accentGlow}, rgba(139,92,246,0.08))` : undefined,
-                  border: active ? `1px solid ${accentTextColor}30` : '1px solid transparent',
+                  background: active ? 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.08))' : undefined,
+                  border: active ? '1px solid rgba(99,102,241,0.30)' : '1px solid transparent',
                 }}
               >
                 {active && (
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-6 rounded-r-full"
-                    style={{ background: accentGradient }} />
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-6 rounded-r-full bg-gradient-to-br from-indigo-500 to-violet-600" />
                 )}
                 <link.icon className="w-4 h-4 transition-colors flex-shrink-0"
-                  style={{ color: active ? accentTextColor : 'rgba(100,116,139,1)' }} />
+                  style={{ color: active ? '#818CF8' : 'rgba(100,116,139,1)' }} />
                 <span className="truncate">{link.label}</span>
-                {active && <ChevronRight className="w-3.5 h-3.5 ml-auto flex-shrink-0" style={{ color: accentTextColor }} />}
+                {active && <ChevronRight className="w-3.5 h-3.5 ml-auto flex-shrink-0 text-indigo-400" />}
               </Link>
             );
           })}
@@ -148,7 +125,7 @@ const DashboardSidebar: React.FC<{ role: string }> = ({ role }) => {
         {/* Logout */}
         <div className="p-3 relative z-10" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
           <button
-            onClick={() => { logout(); navigate('/'); }}
+            onClick={() => { logout(); navigate('/auth/login'); }}
             className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 w-full transition-all duration-200"
           >
             <LogOut className="w-4 h-4" />
@@ -160,8 +137,8 @@ const DashboardSidebar: React.FC<{ role: string }> = ({ role }) => {
   );
 };
 
-// ====== DASHBOARD LAYOUT ======
-export const DashboardLayout: React.FC = () => {
+// ====== CUSTOMER DASHBOARD LAYOUT ======
+export const CustomerDashboardLayout: React.FC = () => {
   const { user, isAuthenticated } = useAuthStore();
   const { sidebarOpen, setSidebarOpen, theme } = useUIStore();
   const navigate = useNavigate();
@@ -176,14 +153,13 @@ export const DashboardLayout: React.FC = () => {
   return (
     <div className="min-h-screen text-slate-800 dark:text-slate-100 pt-20 transition-colors duration-300 relative overflow-hidden"
       style={{ background: theme === 'dark' ? 'linear-gradient(135deg, #070B14 0%, #0B1221 50%, #070B14 100%)' : 'linear-gradient(135deg, #F8FAFF 0%, #F0F4FF 50%, #F8FAFF 100%)' }}>
-      {/* Premium background ambient glows */}
       <div className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full opacity-20 blur-3xl pointer-events-none"
         style={{ background: 'radial-gradient(circle, #6366F1 0%, transparent 70%)' }} />
       <div className="absolute bottom-0 left-1/4 w-96 h-96 rounded-full opacity-15 blur-3xl pointer-events-none"
         style={{ background: 'radial-gradient(circle, #8B5CF6 0%, transparent 70%)' }} />
 
       <div className="flex h-[calc(100vh-80px)] relative z-10">
-        <DashboardSidebar role={user.role} />
+        <CustomerSidebar />
         <main className="flex-1 overflow-y-auto">
           <div className="max-w-5xl mx-auto p-6 lg:p-8">
             <Outlet />

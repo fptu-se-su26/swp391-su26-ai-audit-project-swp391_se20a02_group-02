@@ -147,7 +147,16 @@ public class Booking {
 
     @Column(name = "coupon_code", length = 50)
     private String couponCode;
-    
+
+    @OneToOne(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private BookingDelivery delivery;
+
+    @OneToOne(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private BookingCancellation cancellation;
+
+    @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private java.util.Set<BookingStatusHistory> statusHistory;
+
     @Column(name = "created_at", nullable = false)
     @CreatedDate
     private LocalDateTime createdAt;

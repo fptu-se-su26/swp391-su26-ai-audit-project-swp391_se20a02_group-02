@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,6 +19,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/employees")
 @RequiredArgsConstructor
+@PreAuthorize("hasAnyRole('OWNER', 'ADMIN')")
 @Tag(name = "Employees", description = "Fleet and employee roster management")
 public class EmployeeController {
 
@@ -44,9 +46,17 @@ public class EmployeeController {
     @GetMapping("/{id}")
     @Operation(summary = "Get employee details by ID")
     public ResponseEntity<ApiResponse<Employee>> getEmployee(
-            @PathVariable String id) {
+            @PathVariable String id,
+            @AuthenticationPrincipal User user) {
+        boolean isAdmin = user.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         return employeeService.getEmployeeById(id)
-                .map(emp -> ResponseEntity.ok(ApiResponse.success("Employee details retrieved", emp)))
+                .map(emp -> {
+                    if (!isAdmin && !emp.getOwner().getId().equals(user.getId())) {
+                        throw new org.springframework.security.access.AccessDeniedException("Not authorized to view this employee");
+                    }
+                    return ResponseEntity.ok(ApiResponse.success("Employee details retrieved", emp));
+                })
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(ApiResponse.error("Employee not found")));
     }
@@ -55,10 +65,15 @@ public class EmployeeController {
     @Operation(summary = "Update employee details")
     public ResponseEntity<ApiResponse<Employee>> updateEmployee(
             @PathVariable String id,
+            @AuthenticationPrincipal User user,
             @RequestBody Employee employee) {
         try {
-            Employee updated = employeeService.updateEmployee(id, employee);
+            boolean isAdmin = user.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+            Employee updated = employeeService.updateEmployee(id, employee, user.getId(), isAdmin);
             return ResponseEntity.ok(ApiResponse.success("Employee updated successfully", updated));
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e;
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(ApiResponse.error(e.getMessage()));
@@ -68,8 +83,11 @@ public class EmployeeController {
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete an employee")
     public ResponseEntity<ApiResponse<Void>> deleteEmployee(
-            @PathVariable String id) {
-        employeeService.deleteEmployee(id);
+            @PathVariable String id,
+            @AuthenticationPrincipal User user) {
+        boolean isAdmin = user.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        employeeService.deleteEmployee(id, user.getId(), isAdmin);
         return ResponseEntity.ok(ApiResponse.success("Employee deleted successfully", null));
     }
 
@@ -77,6 +95,7 @@ public class EmployeeController {
     @Operation(summary = "Assign a vehicle to an employee")
     public ResponseEntity<ApiResponse<Employee>> assignVehicle(
             @PathVariable String id,
+            @AuthenticationPrincipal User user,
             @RequestBody Map<String, String> payload) {
         String vehicleId = payload.get("vehicleId");
         if (vehicleId == null) {
@@ -84,8 +103,12 @@ public class EmployeeController {
                     .body(ApiResponse.error("vehicleId is required"));
         }
         try {
-            Employee updated = employeeService.assignVehicle(id, vehicleId);
+            boolean isAdmin = user.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+            Employee updated = employeeService.assignVehicle(id, vehicleId, user.getId(), isAdmin);
             return ResponseEntity.ok(ApiResponse.success("Vehicle assigned successfully", updated));
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e;
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(ApiResponse.error(e.getMessage()));
@@ -96,10 +119,15 @@ public class EmployeeController {
     @Operation(summary = "Revoke vehicle assignment from an employee")
     public ResponseEntity<ApiResponse<Employee>> unassignVehicle(
             @PathVariable String id,
-            @PathVariable String vehicleId) {
+            @PathVariable String vehicleId,
+            @AuthenticationPrincipal User user) {
         try {
-            Employee updated = employeeService.unassignVehicle(id, vehicleId);
+            boolean isAdmin = user.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+            Employee updated = employeeService.unassignVehicle(id, vehicleId, user.getId(), isAdmin);
             return ResponseEntity.ok(ApiResponse.success("Vehicle assignment revoked successfully", updated));
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e;
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(ApiResponse.error(e.getMessage()));

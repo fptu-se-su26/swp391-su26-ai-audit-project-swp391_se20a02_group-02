@@ -1,17 +1,61 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { useUIStore } from '@/store';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatCurrency(amount: number, currency = 'VND'): string {
-  return new Intl.NumberFormat('vi-VN', {
+export function convertCurrency(amount: number, from = 'VND', to = 'VND'): number {
+  if (from === to) return amount;
+  
+  // Current approximate exchange rates relative to VND (base rates)
+  const ratesToVND: Record<string, number> = {
+    VND: 1,
+    USD: 25400,
+    EUR: 27500,
+    JPY: 162,
+    SGD: 18800,
+    CAD: 18500,
+    AUD: 16850,
+    GBP: 32300,
+    KRW: 18.5,
+  };
+  
+  const amountInVND = amount * (ratesToVND[from] || 1);
+  return amountInVND / (ratesToVND[to] || 1);
+}
+
+export function formatCurrency(amount: number, currency?: string): string {
+  let activeCurrency = 'VND';
+  try {
+    activeCurrency = useUIStore.getState().currency || 'VND';
+  } catch {}
+  
+  const targetCurrency = currency || activeCurrency;
+  
+  // Assumes database amount is always in VND base currency
+  const convertedAmount = convertCurrency(amount, 'VND', targetCurrency);
+  
+  const localeMap: Record<string, string> = {
+    VND: 'vi-VN',
+    USD: 'en-US',
+    EUR: 'de-DE',
+    JPY: 'ja-JP',
+    SGD: 'en-SG',
+    CAD: 'en-CA',
+    AUD: 'en-AU',
+    GBP: 'en-GB',
+    KRW: 'ko-KR',
+  };
+  const locale = localeMap[targetCurrency.toUpperCase()] || 'vi-VN';
+  const isZeroDecimal = ['VND', 'JPY', 'KRW'].includes(targetCurrency.toUpperCase());
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
-    currency,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
+    currency: targetCurrency,
+    minimumFractionDigits: isZeroDecimal ? 0 : 2,
+    maximumFractionDigits: isZeroDecimal ? 0 : 2,
+  }).format(convertedAmount);
 }
 
 export function formatDate(dateStr: string, format: 'short' | 'long' | 'relative' = 'short'): string {
