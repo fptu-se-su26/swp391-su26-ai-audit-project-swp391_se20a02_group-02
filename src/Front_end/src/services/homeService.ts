@@ -114,25 +114,63 @@ async function fetchWithDiagnostics<T>(endpoint: string): Promise<T | null> {
   }
 }
 
+const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8080/api/v1';
+
+const resolveImageUrl = (url: string | null | undefined): string => {
+  if (!url) return '';
+  if (url.startsWith('/uploads') || url.startsWith('uploads')) {
+    const cleanUrl = url.startsWith('/') ? url : '/' + url;
+    return `${API_BASE}${cleanUrl}`;
+  }
+  return url;
+};
+
 // ======= Service methods — return null on failure (no fake zeros) =======
 export const homeService = {
   getStats: (): Promise<HomeStats | null> =>
     fetchWithDiagnostics<HomeStats>(`${BASE}/stats`),
 
-  getPromotions: (): Promise<Promotion[] | null> =>
-    fetchWithDiagnostics<Promotion[]>(`${BASE}/promotions`),
+  getPromotions: async (): Promise<Promotion[] | null> => {
+    const data = await fetchWithDiagnostics<Promotion[]>(`${BASE}/promotions`);
+    if (!data) return null;
+    return data.map(p => ({
+      ...p,
+      imageUrl: resolveImageUrl(p.imageUrl)
+    }));
+  },
 
-  getTrending: (): Promise<TrendingVehicle[] | null> =>
-    fetchWithDiagnostics<TrendingVehicle[]>(`${BASE}/trending`),
+  getTrending: async (): Promise<TrendingVehicle[] | null> => {
+    const data = await fetchWithDiagnostics<TrendingVehicle[]>(`${BASE}/trending`);
+    if (!data) return null;
+    return data.map(v => ({
+      ...v,
+      thumbnailUrl: resolveImageUrl(v.thumbnailUrl)
+    }));
+  },
 
   getCategories: (): Promise<CategoryData | null> =>
     fetchWithDiagnostics<CategoryData>(`${BASE}/categories`),
 
-  getDestinations: (): Promise<Destination[] | null> =>
-    fetchWithDiagnostics<Destination[]>(`${BASE}/destinations`),
+  getDestinations: async (): Promise<Destination[] | null> => {
+    const data = await fetchWithDiagnostics<Destination[]>(`${BASE}/destinations`);
+    if (!data) return null;
+    return data.map(d => ({
+      ...d,
+      imageUrl: resolveImageUrl(d.imageUrl)
+    }));
+  },
 
-  getTestimonials: (): Promise<TestimonialsData | null> =>
-    fetchWithDiagnostics<TestimonialsData>(`${BASE}/testimonials`),
+  getTestimonials: async (): Promise<TestimonialsData | null> => {
+    const data = await fetchWithDiagnostics<TestimonialsData>(`${BASE}/testimonials`);
+    if (!data) return null;
+    return {
+      ...data,
+      reviews: (data.reviews || []).map(r => ({
+        ...r,
+        avatar: resolveImageUrl(r.avatar)
+      }))
+    };
+  },
 
   getOwnerStats: (): Promise<OwnerStats | null> =>
     fetchWithDiagnostics<OwnerStats>(`${BASE}/owner-stats`),
