@@ -39,18 +39,23 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     const token = authService.getAccessToken();
     
     if (user && token) {
+      // BUG-2/3 FIX: Immediately mark as authenticated with cached data.
+      // This ensures the UI shows the correct state even before the backend call completes.
       set({ user, isAuthenticated: true });
       
-      // Fetch fresh user data from backend
+      // Fetch fresh user data from backend (best-effort — NOT session-critical)
       try {
         const freshUser = await authService.fetchCurrentUser();
         if (freshUser) {
           set({ user: freshUser });
         }
+        // If freshUser is null (backend blip), we keep the cached user — user stays logged in
       } catch (error) {
-        console.warn('Failed to refresh user data:', error);
+        // BUG-3 FIX: Backend unavailable ≠ invalid session. Keep cached credentials.
+        console.warn('Backend refresh failed on init — using cached session:', error);
       }
     }
+    // BUG-20 FIX: Use unconditional finally-equivalent — always set isInitialized:true
     set({ isInitialized: true });
   },
 
@@ -103,8 +108,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
     set({ user: null, isAuthenticated: false, error: null });
 
-    // Force hard redirect to home
-    window.location.href = '/';
+    // Force redirect to login page (not landing page)
+    // BUG-13 FIX: Was redirecting to '/' — must redirect to '/auth/login'
+    window.location.href = '/auth/login';
   },
 
   register: async (data) => {

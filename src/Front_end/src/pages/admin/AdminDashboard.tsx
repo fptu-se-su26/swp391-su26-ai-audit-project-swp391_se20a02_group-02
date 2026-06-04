@@ -558,7 +558,7 @@ const AdminDashboard: React.FC = () => {
         )}>
           <div className="relative z-10 flex flex-col flex-1 min-h-0">
             {/* Platform Branding */}
-            <div className="flex items-center gap-3 px-2 mb-6">
+            <Link to="/" className="flex items-center gap-3 px-2 mb-6 hover:opacity-85 transition-opacity">
               <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-650 to-violet-650 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
                 <Shield className="w-5.5 h-5.5 text-white" />
               </div>
@@ -570,12 +570,24 @@ const AdminDashboard: React.FC = () => {
                   Operations Suite
                 </span>
               </div>
-            </div>
+            </Link>
 
             <hr className="border-slate-200/50 dark:border-slate-800/60 mb-4" />
 
             {/* Sidebar Navigation items */}
             <div className="space-y-1 overflow-y-auto sidebar-scroll pr-1 flex-1">
+              <Link
+                to="/"
+                className={cn(
+                  "w-full flex items-center gap-3 px-4.5 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest whitespace-nowrap transition-all duration-300 relative group",
+                  isDark 
+                    ? "text-slate-400 hover:text-white hover:bg-slate-900/40" 
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/50"
+                )}
+              >
+                <Globe className="w-4.5 h-4.5 text-slate-450 dark:text-slate-500 group-hover:text-slate-800 dark:group-hover:text-white" />
+                <span>Go to Home</span>
+              </Link>
               {menuItems.map(tab => {
                 const ActiveIcon = tab.icon;
                 const active = activeTab === tab.id;

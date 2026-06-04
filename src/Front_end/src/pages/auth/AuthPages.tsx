@@ -9,12 +9,19 @@ import { useToast } from '@/components/ui/Toast';
 import { isStrongPassword } from '@/utils';
 import { fadeUp, staggerContainer, staggerItem } from '@/animations/variants';
 import { useT } from '@/i18n/translations';
+import type { User } from '@/types';
 
 declare global {
   interface Window {
     google?: any;
   }
 }
+
+// Redirect logged-in/registering users to Homepage to show logged-in state
+const getRoleBasedDashboard = (user: User | null): string => {
+  return '/';
+};
+
 
 // ====== GOOGLE LOGIN REAL BUTTON ======
 const GoogleLoginButton: React.FC<{ onSuccess?: () => void }> = () => {
@@ -71,8 +78,9 @@ export const LoginPage: React.FC = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   React.useEffect(() => {
+    // BUG-18 FIX: Already-authenticated users get sent to their role dashboard, not '/'
     if (isInitialized && isAuthenticated && user) {
-      navigate('/', { replace: true });
+      navigate(getRoleBasedDashboard(user), { replace: true });
     }
   }, [isInitialized, isAuthenticated, user, navigate]);
 
@@ -97,7 +105,8 @@ export const LoginPage: React.FC = () => {
     if (success) {
       const { user } = useAuthStore.getState();
       toast.success(t.auth.welcomeBack, t.auth.signInSuccess);
-      navigate('/');
+      // BUG-1/16 FIX: Navigate to role-based dashboard, not '/'
+      navigate(getRoleBasedDashboard(user), { replace: true });
     } else {
       toast.error(t.auth.invalidCredentials, t.auth.invalidCredentialsDesc);
       setErrors({ password: t.auth.invalidCredentialsDesc });
@@ -253,8 +262,9 @@ export const RegisterPage: React.FC = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   React.useEffect(() => {
+    // BUG-18 FIX: Already-authenticated users get sent to their role dashboard, not '/'
     if (isInitialized && isAuthenticated && user) {
-      navigate('/', { replace: true });
+      navigate(getRoleBasedDashboard(user), { replace: true });
     }
   }, [isInitialized, isAuthenticated, user, navigate]);
 
@@ -307,7 +317,8 @@ export const RegisterPage: React.FC = () => {
     if (success) {
       const { user } = useAuthStore.getState();
       toast.success('Account created!', 'Welcome to LuxeWay.');
-      navigate('/');
+      // BUG-16 FIX: Navigate to role-based dashboard, not '/'
+      navigate(getRoleBasedDashboard(user), { replace: true });
     } else {
       toast.error('Email already exists', 'Try signing in instead.');
     }

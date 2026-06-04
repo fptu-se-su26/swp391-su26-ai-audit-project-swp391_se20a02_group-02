@@ -435,7 +435,7 @@ export const Navbar: React.FC = () => {
                                   { icon: LayoutDashboard, label: t.nav.ownerDashboardFull, href: '/owner' },
                                   { icon: User, label: t.nav.profile, href: '/dashboard/profile' },
                                 ];
-                              } else if (roleUpper === 'ADMIN') {
+                              } else if (roleUpper === 'ADMIN' || roleUpper === 'SUPER_ADMIN') {
                                 menuItems = [
                                   { icon: Shield, label: t.nav.adminPanel, href: '/admin' },
                                 ];

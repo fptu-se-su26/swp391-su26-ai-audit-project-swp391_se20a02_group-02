@@ -52,8 +52,77 @@ export const reviewService = {
     return response.data ? mapReview(response.data) : (payload as any as Review);
   },
 
-  async getAll(): Promise<Review[]> {
-    return [];
+  async getAll(page = 0, size = 10, rating?: number, search?: string): Promise<{ content: Review[]; totalElements: number; totalPages: number }> {
+    try {
+      let url = `/reviews?page=${page}&size=${size}`;
+      if (rating !== undefined && rating !== null) url += `&rating=${rating}`;
+      if (search) url += `&search=${encodeURIComponent(search)}`;
+      
+      const response = await apiClient.get<any>(url);
+      const data = response.data?.data || response.data;
+      const content = (data?.content || []).map(mapReview);
+      const totalElements = response.data?.meta?.totalElements || data?.totalElements || 0;
+      const totalPages = response.data?.meta?.totalPages || data?.totalPages || 0;
+      return { content, totalElements, totalPages };
+    } catch (error) {
+      console.error('Failed to fetch reviews', error);
+      return { content: [], totalElements: 0, totalPages: 0 };
+    }
+  },
+
+  async getStats(vehicleId?: string, ownerId?: string): Promise<{
+    averageRating: number;
+    totalReviews: number;
+    ratingDistribution: Record<number, number>;
+    cleanlinessAverage: number;
+    accuracyAverage: number;
+    communicationAverage: number;
+    valueAverage: number;
+  }> {
+    try {
+      let url = '/reviews/stats';
+      const params = [];
+      if (vehicleId) params.push(`vehicleId=${vehicleId}`);
+      if (ownerId) params.push(`ownerId=${ownerId}`);
+      if (params.length > 0) url += `?${params.join('&')}`;
+      
+      const response = await apiClient.get<any>(url);
+      const stats = response.data?.data || response.data;
+      return {
+        averageRating: stats?.averageRating || 0,
+        totalReviews: stats?.totalReviews || 0,
+        ratingDistribution: stats?.ratingDistribution || { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+        cleanlinessAverage: stats?.cleanlinessAverage || 0,
+        accuracyAverage: stats?.accuracyAverage || 0,
+        communicationAverage: stats?.communicationAverage || 0,
+        valueAverage: stats?.valueAverage || 0,
+      };
+    } catch (error) {
+      console.error('Failed to fetch review stats', error);
+      return {
+        averageRating: 0,
+        totalReviews: 0,
+        ratingDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+        cleanlinessAverage: 0,
+        accuracyAverage: 0,
+        communicationAverage: 0,
+        valueAverage: 0,
+      };
+    }
+  },
+
+  async getByOwner(ownerId: string, page = 0, size = 10): Promise<{ content: Review[]; totalElements: number; totalPages: number }> {
+    try {
+      const response = await apiClient.get<any>(`/reviews/owner/${ownerId}?page=${page}&size=${size}`);
+      const data = response.data?.data || response.data;
+      const content = (data?.content || []).map(mapReview);
+      const totalElements = response.data?.meta?.totalElements || data?.totalElements || 0;
+      const totalPages = response.data?.meta?.totalPages || data?.totalPages || 0;
+      return { content, totalElements, totalPages };
+    } catch (error) {
+      console.error('Failed to fetch owner reviews', error);
+      return { content: [], totalElements: 0, totalPages: 0 };
+    }
   },
 
   async getFeaturedReviews(): Promise<Review[]> {

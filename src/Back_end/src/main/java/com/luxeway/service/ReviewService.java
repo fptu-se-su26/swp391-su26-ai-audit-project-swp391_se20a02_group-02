@@ -86,6 +86,95 @@ public class ReviewService {
                 .map(this::toResponse);
     }
 
+    // ====== Get all reviews pageable with filters ======
+
+    public Page<ReviewDTOs.ReviewResponse> getAllReviews(int page, int size, Integer rating, String search) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Review> reviewsPage;
+
+        if (rating != null && search != null && !search.trim().isEmpty()) {
+            reviewsPage = reviewRepository.findByRatingAndCommentContainingIgnoreCaseOrderByCreatedAtDesc(rating, search.trim(), pageable);
+        } else if (rating != null) {
+            reviewsPage = reviewRepository.findByRatingOrderByCreatedAtDesc(rating, pageable);
+        } else if (search != null && !search.trim().isEmpty()) {
+            reviewsPage = reviewRepository.findByCommentContainingIgnoreCaseOrderByCreatedAtDesc(search.trim(), pageable);
+        } else {
+            reviewsPage = reviewRepository.findAllByOrderByCreatedAtDesc(pageable);
+        }
+
+        return reviewsPage.map(this::toResponse);
+    }
+
+    // ====== Get reviews for an owner ======
+
+    public Page<ReviewDTOs.ReviewResponse> getOwnerReviews(String ownerId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return reviewRepository.findByOwnerIdOrderByCreatedAtDesc(ownerId, pageable)
+                .map(this::toResponse);
+    }
+
+    // ====== Get review statistics (global or filtered) ======
+
+    public ReviewDTOs.ReviewStatsResponse getReviewStats(String vehicleId, String ownerId) {
+        java.util.List<Review> reviews;
+        if (vehicleId != null && !vehicleId.trim().isEmpty()) {
+            reviews = reviewRepository.findByVehicleId(vehicleId.trim());
+        } else if (ownerId != null && !ownerId.trim().isEmpty()) {
+            reviews = reviewRepository.findByOwnerId(ownerId.trim());
+        } else {
+            reviews = reviewRepository.findAll();
+        }
+
+        long total = reviews.size();
+        double avgRating = 0.0;
+        double avgCleanliness = 0.0;
+        double avgAccuracy = 0.0;
+        double avgCommunication = 0.0;
+        double avgValue = 0.0;
+
+        java.util.Map<Integer, Long> dist = new java.util.HashMap<>();
+        for (int i = 1; i <= 5; i++) {
+            dist.put(i, 0L);
+        }
+
+        if (total > 0) {
+            double sumRating = 0;
+            double sumClean = 0;
+            double sumAcc = 0;
+            double sumComm = 0;
+            double sumValue = 0;
+
+            for (Review r : reviews) {
+                sumRating += r.getRating();
+                sumClean += r.getCleanliness();
+                sumAcc += r.getAccuracy();
+                sumComm += r.getCommunication();
+                sumValue += r.getValueRating();
+
+                int ratingKey = r.getRating();
+                if (ratingKey >= 1 && ratingKey <= 5) {
+                    dist.put(ratingKey, dist.getOrDefault(ratingKey, 0L) + 1);
+                }
+            }
+
+            avgRating = sumRating / total;
+            avgCleanliness = sumClean / total;
+            avgAccuracy = sumAcc / total;
+            avgCommunication = sumComm / total;
+            avgValue = sumValue / total;
+        }
+
+        return ReviewDTOs.ReviewStatsResponse.builder()
+                .averageRating(java.math.BigDecimal.valueOf(avgRating).setScale(2, java.math.RoundingMode.HALF_UP).doubleValue())
+                .totalReviews(total)
+                .ratingDistribution(dist)
+                .cleanlinessAverage(java.math.BigDecimal.valueOf(avgCleanliness).setScale(2, java.math.RoundingMode.HALF_UP).doubleValue())
+                .accuracyAverage(java.math.BigDecimal.valueOf(avgAccuracy).setScale(2, java.math.RoundingMode.HALF_UP).doubleValue())
+                .communicationAverage(java.math.BigDecimal.valueOf(avgCommunication).setScale(2, java.math.RoundingMode.HALF_UP).doubleValue())
+                .valueAverage(java.math.BigDecimal.valueOf(avgValue).setScale(2, java.math.RoundingMode.HALF_UP).doubleValue())
+                .build();
+    }
+
     // ====== Owner responds to review ======
 
     @Transactional

@@ -98,7 +98,10 @@ public class AuthService {
         }
 
         // DEV MODE: Auto-verify user on registration (no email verification step).
-        // In production, set verified=false and send a confirmation email via JavaMailSender.
+        // PRODUCTION: Set verified=false and send a confirmation email via JavaMailSender.
+        // Check environment via Spring profiles to determine behavior
+        boolean isDevelopment = true; // TODO: Inject @Value("${spring.profiles.active}") to check profile
+        
         User user = User.builder()
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
@@ -108,7 +111,7 @@ public class AuthService {
                 .role(role)
                 .accountType(request.getAccountType() != null ? request.getAccountType() : "INDIVIDUAL")
                 .companyName(request.getCompanyName())
-                .verified(true)   // auto-verified in dev mode
+                .verified(isDevelopment)   // Auto-verify only in development
                 .kycVerified(false)
                 .drivingLicenseVerified(false)
                 .isActive(true)
@@ -199,13 +202,16 @@ public class AuthService {
         java.time.LocalDateTime expiry = java.time.LocalDateTime.now().plusMinutes(5);
         otpStore.put(email, new OtpData(otpCode, expiry));
 
-        // DEV / STAGING LOG EXPOSURE AS REQUESTED
-        log.info("==================================================");
-        log.info("LUXEWAY SECURE OTP DISPATCH SYSTEM");
-        log.info("RECIPIENT EMAIL: {}", email);
-        log.info("SECURITY OTP CODE: {}", otpCode);
-        log.info("VALID FOR: 5 MINUTES (Expires at {})", expiry);
-        log.info("==================================================");
+        // SECURITY: Only log OTP in DEBUG mode for development
+        // In production (INFO/WARN level), this will not be logged
+        log.debug("==================================================");
+        log.debug("LUXEWAY SECURE OTP DISPATCH SYSTEM");
+        log.debug("RECIPIENT EMAIL: {}", email);
+        log.debug("SECURITY OTP CODE: {}", otpCode);
+        log.debug("VALID FOR: 5 MINUTES (Expires at {})", expiry);
+        log.debug("==================================================");
+        
+        log.info("OTP sent to email: {}", email);
 
         // Dispatch real SMTP email via EmailService
         emailService.sendOtp(email, otpCode);

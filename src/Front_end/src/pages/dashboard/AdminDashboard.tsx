@@ -80,7 +80,7 @@ const AdminSidebar: React.FC = () => {
               <p className="font-semibold text-white text-sm truncate">{user?.displayName}</p>
               <p className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.35)' }}>{user?.email}</p>
               <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-amber-400 mt-0.5">
-                <Shield className="w-3 h-3" /> ADMIN
+                <Shield className="w-3 h-3" /> {user?.role?.toLowerCase() === 'super_admin' ? 'SUPER ADMIN' : 'ADMIN'}
               </span>
             </div>
           </div>
@@ -181,11 +181,13 @@ export const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isAuthenticated || user?.role !== 'admin') navigate('/auth/login');
+    const roleUpper = user?.role?.toUpperCase();
+    if (!isAuthenticated || (roleUpper !== 'ADMIN' && roleUpper !== 'SUPER_ADMIN')) navigate('/auth/login');
     setSidebarOpen(window.innerWidth >= 1024);
   }, [isAuthenticated, user]);
 
-  if (!user || user.role !== 'admin') return null;
+  const roleUpper = user?.role?.toUpperCase();
+  if (!user || (roleUpper !== 'ADMIN' && roleUpper !== 'SUPER_ADMIN')) return null;
 
   return (
     <div className="min-h-screen pt-20" style={{ background: '#F8FAFC' }}>

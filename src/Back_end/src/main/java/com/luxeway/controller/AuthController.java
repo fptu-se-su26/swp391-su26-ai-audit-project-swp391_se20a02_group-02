@@ -63,7 +63,8 @@ public class AuthController {
     }
 
 
-    @PutMapping("/change-password")
+    // BUG-6/21 FIX: Changed from @PutMapping to @PostMapping to match frontend authService.ts call
+    @PostMapping("/change-password")
     @Operation(summary = "Change current user password")
     public ResponseEntity<ApiResponse<Void>> changePassword(
             @AuthenticationPrincipal User user,

@@ -151,7 +151,13 @@ public class User implements UserDetails {
     // UserDetails implementation
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
+        if (role == com.luxeway.enums.UserRole.SUPER_ADMIN) {
+            return List.of(
+                new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_SUPER_ADMIN"),
+                new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN")
+            );
+        }
+        return List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + role.name()));
     }
     
     @Override

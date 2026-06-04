@@ -2,7 +2,7 @@
 // LUXEWAY — COMPLETE TYPE DEFINITIONS
 // ============================================================
 
-export type UserRole = 'customer' | 'owner' | 'admin';
+export type UserRole = 'customer' | 'owner' | 'admin' | 'super_admin';
 export type VehicleCategory = 'economy' | 'family' | 'business' | 'electric' | 'motorbike' | 'suv' | 'city_car' | 'tourism';
 export type BookingStatus = 'pending' | 'confirmed' | 'active' | 'completed' | 'cancelled' | 'disputed';
 export type PaymentStatus = 'pending' | 'processing' | 'succeeded' | 'failed' | 'refunded';

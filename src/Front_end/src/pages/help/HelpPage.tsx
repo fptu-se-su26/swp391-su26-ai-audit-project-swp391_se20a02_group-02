@@ -14,13 +14,13 @@ import { useAuthStore } from '@/store';
 // =====================================================
 // ICON MAP — maps backend icon string to Lucide component
 // =====================================================
-const ICON_MAP: Record<string, React.FC<any>> = {
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Calendar, CreditCard, Car, User, BadgeCheck, Shield, Key, AlertTriangle,
   BookOpen, Search, Phone, MessageSquare, CheckCircle2,
 };
 
 const CategoryIcon: React.FC<{ name?: string; className?: string }> = ({ name, className = 'w-6 h-6' }) => {
-  const Icon = (name && ICON_MAP[name]) ?? BookOpen;
+  const Icon: React.ComponentType<{ className?: string }> = (name && ICON_MAP[name]) || BookOpen;
   return <Icon className={className} />;
 };
 
