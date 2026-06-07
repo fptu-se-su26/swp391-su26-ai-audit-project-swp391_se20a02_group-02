@@ -37,6 +37,7 @@ public class JwtTokenProvider {
         if (userDetails instanceof com.luxeway.entity.User luxeUser) {
             extraClaims.put("role", luxeUser.getRole().name());
             extraClaims.put("userId", luxeUser.getId());
+            extraClaims.put("preferredLanguage", luxeUser.getPreferredLanguage());
         }
         return buildToken(extraClaims, userDetails, jwtExpiration);
     }

@@ -6,7 +6,7 @@ import { apiClient } from '@/services/api';
 import { faker } from '@faker-js/faker';
 
 export type Theme = 'light' | 'dark';
-export type Language = 'en' | 'vi' | 'ja' | 'ko' | 'zh';
+export type Language = 'en' | 'vi' | 'ja' | 'ko' | 'zh' | 'fr' | 'de';
 
 
 // ====== AUTH STORE ======
@@ -42,12 +42,18 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       // BUG-2/3 FIX: Immediately mark as authenticated with cached data.
       // This ensures the UI shows the correct state even before the backend call completes.
       set({ user, isAuthenticated: true });
+      if (user.preferredLanguage) {
+        useUIStore.getState().setLanguage(user.preferredLanguage as Language);
+      }
       
       // Fetch fresh user data from backend (best-effort — NOT session-critical)
       try {
         const freshUser = await authService.fetchCurrentUser();
         if (freshUser) {
           set({ user: freshUser });
+          if (freshUser.preferredLanguage) {
+            useUIStore.getState().setLanguage(freshUser.preferredLanguage as Language);
+          }
         }
         // If freshUser is null (backend blip), we keep the cached user — user stays logged in
       } catch (error) {
@@ -65,6 +71,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       const user = await authService.login(email, password);
       if (user) {
         set({ user, isAuthenticated: true, isLoading: false, error: null });
+        if (user.preferredLanguage) {
+          useUIStore.getState().setLanguage(user.preferredLanguage as Language);
+        }
         return true;
       }
       set({ isLoading: false, error: 'Login failed' });
@@ -119,6 +128,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       const user = await authService.register(data);
       if (user) {
         set({ user, isAuthenticated: true, isLoading: false, error: null });
+        if (user.preferredLanguage) {
+          useUIStore.getState().setLanguage(user.preferredLanguage as Language);
+        }
         return true;
       }
       set({ isLoading: false, error: 'Registration failed' });
@@ -136,6 +148,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       const user = await authService.loginWithGoogle(idToken);
       if (user) {
         set({ user, isAuthenticated: true, isLoading: false, error: null });
+        if (user.preferredLanguage) {
+          useUIStore.getState().setLanguage(user.preferredLanguage as Language);
+        }
         return true;
       }
       set({ isLoading: false, error: 'Google login failed' });
@@ -154,6 +169,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       const updated = await authService.updateProfile(current.id, data);
       if (updated) {
         set({ user: updated });
+        if (updated.preferredLanguage) {
+          useUIStore.getState().setLanguage(updated.preferredLanguage as Language);
+        }
       }
     } catch (error) {
       console.error('Failed to update user:', error);
@@ -176,6 +194,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       const user = await authService.fetchCurrentUser();
       if (user) {
         set({ user });
+        if (user.preferredLanguage) {
+          useUIStore.getState().setLanguage(user.preferredLanguage as Language);
+        }
       }
     } catch (error) {
       console.error('Failed to refresh user:', error);
@@ -247,7 +268,7 @@ export const useUIStore = create<UIStore>()(
       language: (() => {
         try {
           const lang = localStorage.getItem('language');
-          if (lang && ['en', 'vi', 'ja', 'ko', 'zh'].includes(lang)) return lang as Language;
+          if (lang && ['en', 'vi', 'ja', 'ko', 'zh', 'fr', 'de'].includes(lang)) return lang as Language;
         } catch {}
         return 'en';
       })() as Language,
@@ -291,6 +312,12 @@ export const useUIStore = create<UIStore>()(
         // Sync with i18n (uses 'language' key in localStorage)
         try { localStorage.setItem('language', lang); } catch {}
         import('@/i18n/config').then(m => m.default.changeLanguage(lang));
+
+        // Sync with database if logged in
+        const authUser = useAuthStore.getState().user;
+        if (authUser && authUser.preferredLanguage !== lang) {
+          useAuthStore.getState().updateUser({ preferredLanguage: lang });
+        }
       },
 
       setCurrency: (curr) => {

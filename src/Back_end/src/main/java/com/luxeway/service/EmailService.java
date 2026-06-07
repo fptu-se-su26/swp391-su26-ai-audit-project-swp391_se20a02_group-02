@@ -19,104 +19,125 @@ import java.nio.charset.StandardCharsets;
 public class EmailService {
 
     private final JavaMailSender mailSender;
+    private final com.luxeway.repository.UserRepository userRepository;
+    private final TranslationService translationService;
+
+    private String getLanguageForEmail(String email) {
+        return userRepository.findByEmail(email)
+                .map(com.luxeway.entity.User::getPreferredLanguage)
+                .orElse("en");
+    }
 
     public void sendOtp(String email, String otp) {
         log.info("[OTP FOR DEV/STAGING]: Send to email [{}] - Code [{}]", email, otp);
-        String subject = "LuxeWay - Forgot Password OTP Verification Code";
-        String htmlContent = "<h2>LuxeWay Account Recovery</h2>"
-                + "<p>You requested a password reset. Your OTP verification code is:</p>"
-                + "<h1 style='color: #4F46E5; font-size: 32px; letter-spacing: 5px;'>" + otp + "</h1>"
-                + "<p>This code will expire in 5 minutes. If you did not request this, please ignore this email.</p>";
+        String lang = getLanguageForEmail(email);
+        String subject = translationService.getMessage("email.otp.subject", lang);
+        String htmlContent = translationService.getMessage("email.otp.body", lang, otp);
+        sendEmail(email, subject, htmlContent, null, null);
+    }
+
+    public void sendPasswordResetLink(String email, String resetLink) {
+        log.info("[PASSWORD RESET LINK LOGGER]: Sending link to {}: {}", email, resetLink);
+        String lang = getLanguageForEmail(email);
+        String subject = translationService.getMessage("email.reset.subject", lang);
+        String htmlContent = translationService.getMessage("email.reset.body", lang, resetLink);
         sendEmail(email, subject, htmlContent, null, null);
     }
 
     public void sendBookingConfirmation(String email, Booking booking) {
         log.info("[BOOKING DEV LOGGER]: Sending booking confirmation for #{} to {}", booking.getId(), email);
-        String subject = "LuxeWay - Booking Confirmation #" + booking.getId().substring(0, 8).toUpperCase();
-        String htmlContent = "<h2>Thank you for your LuxeWay booking!</h2>"
-                + "<p>Your booking has been successfully confirmed. Below are the details:</p>"
-                + "<ul>"
-                + "<li><b>Vehicle:</b> " + booking.getVehicle().getBrand() + " " + booking.getVehicle().getModel() + "</li>"
-                + "<li><b>Period:</b> " + booking.getStartDate() + " to " + booking.getEndDate() + "</li>"
-                + "<li><b>Total Days:</b> " + booking.getTotalDays() + "</li>"
-                + "<li><b>Total Paid:</b> " + String.format("%,.0f VND", booking.getTotal()) + "</li>"
-                + "</ul>"
-                + "<p>Manage your booking from your customer dashboard anytime.</p>";
+        String lang = booking.getRenter() != null ? booking.getRenter().getPreferredLanguage() : "en";
+        String shortId = booking.getId().substring(0, 8).toUpperCase();
+        String subject = translationService.getMessage("email.booking.confirm.subject", lang, shortId);
+        
+        String vehicleBrand = booking.getVehicle().getBrand();
+        String vehicleModel = booking.getVehicle().getModel();
+        String startDate = booking.getStartDate().toString();
+        String endDate = booking.getEndDate().toString();
+        String totalDays = String.valueOf(booking.getTotalDays());
+        String totalPaid = String.format("%,.0f VND", booking.getTotal());
+        
+        String htmlContent = translationService.getMessage("email.booking.confirm.body", lang, 
+                vehicleBrand, vehicleModel, startDate, endDate, totalDays, totalPaid);
         sendEmail(email, subject, htmlContent, null, null);
     }
 
     public void sendInvoiceEmail(String email, Invoice invoice, byte[] pdfBytes) {
         log.info("[INVOICE DEV LOGGER]: Sending PDF invoice #{} to {}", invoice.getInvoiceNumber(), email);
-        String subject = "LuxeWay - Invoice " + invoice.getInvoiceNumber();
-        String htmlContent = "<h2>Your LuxeWay PDF Invoice is Ready</h2>"
-                + "<p>Thank you for choosing LuxeWay! Attached is your official invoice <b>" + invoice.getInvoiceNumber() + "</b> for booking <b>#" + invoice.getBooking().getId().substring(0, 8).toUpperCase() + "</b>.</p>"
-                + "<p>Total Amount: <b>" + String.format("%,.0f VND", invoice.getAmount()) + "</b></p>"
-                + "<p>Please view the attached PDF for a full daily pricing breakdown.</p>";
+        String lang = invoice.getUser() != null ? invoice.getUser().getPreferredLanguage() : "en";
+        String shortBookingId = invoice.getBooking().getId().substring(0, 8).toUpperCase();
+        String subject = translationService.getMessage("email.invoice.subject", lang, invoice.getInvoiceNumber());
+        String formattedAmount = String.format("%,.0f VND", invoice.getAmount());
+        
+        String htmlContent = translationService.getMessage("email.invoice.body", lang, 
+                invoice.getInvoiceNumber(), shortBookingId, formattedAmount);
         sendEmail(email, subject, htmlContent, "invoice-" + invoice.getInvoiceNumber() + ".pdf", pdfBytes);
     }
 
     public void sendDisputeUpdate(String email, Dispute dispute) {
         log.info("[DISPUTE DEV LOGGER]: Sending dispute update for #{} to {}", dispute.getId(), email);
-        String subject = "LuxeWay - Dispute Moderation Update #" + dispute.getId();
-        String htmlContent = "<h2>LuxeWay Dispute Resolution Center</h2>"
-                + "<p>Your dispute ticket <b>#" + dispute.getId() + "</b> status has been updated.</p>"
-                + "<p>New Status: <b style='color: #DC2626;'>" + dispute.getStatus() + "</b></p>"
-                + "<p>Current Resolution Notes: " + (dispute.getAdminDecision() != null ? dispute.getAdminDecision() : "Under review by support agent.") + "</p>";
+        String lang = getLanguageForEmail(email);
+        String subject = translationService.getMessage("email.dispute.subject", lang, String.valueOf(dispute.getId()));
+        String notes = dispute.getAdminDecision() != null ? dispute.getAdminDecision() : "Under review by support agent.";
+        String htmlContent = translationService.getMessage("email.dispute.body", lang, 
+                String.valueOf(dispute.getId()), dispute.getStatus(), notes);
         sendEmail(email, subject, htmlContent, null, null);
     }
 
     public void sendPasswordResetSuccess(String email) {
         log.info("[PASSWORD RESET SUCCESS LOGGER]: Sending confirmation to {}", email);
-        String subject = "LuxeWay - Password Reset Successfully";
-        String htmlContent = "<h2>Password Reset Success</h2>"
-                + "<p>Your LuxeWay account password has been successfully reset.</p>"
-                + "<p>If you did not initiate this request, please contact our support team immediately.</p>";
+        String lang = getLanguageForEmail(email);
+        String subject = translationService.getMessage("email.reset.success.subject", lang);
+        String htmlContent = translationService.getMessage("email.reset.success.body", lang);
         sendEmail(email, subject, htmlContent, null, null);
     }
 
     public void sendEmailVerification(String email, String firstName) {
         log.info("[EMAIL VERIFICATION LOGGER]: Sending welcome/verification to {}", email);
-        String subject = "Welcome to LuxeWay - Email Verified Successfully";
-        String htmlContent = "<h2>Welcome to LuxeWay, " + firstName + "!</h2>"
-                + "<p>Thank you for registering. Your email address has been successfully verified, and your account is active.</p>"
-                + "<p>Log in to search premium vehicles or list your fleet.</p>";
+        String lang = getLanguageForEmail(email);
+        String subject = translationService.getMessage("email.welcome.subject", lang);
+        String htmlContent = translationService.getMessage("email.welcome.body", lang, firstName);
         sendEmail(email, subject, htmlContent, null, null);
     }
 
     public void sendBookingCancellation(String email, Booking booking) {
         log.info("[BOOKING CANCELLATION LOGGER]: Sending cancellation for #{} to {}", booking.getId(), email);
-        String subject = "LuxeWay - Booking Cancelled #" + booking.getId().substring(0, 8).toUpperCase();
-        String htmlContent = "<h2>LuxeWay Booking Cancelled</h2>"
-                + "<p>Your booking <b>#" + booking.getId().substring(0, 8).toUpperCase() + "</b> has been cancelled.</p>"
-                + "<ul>"
-                + "<li><b>Vehicle:</b> " + booking.getVehicle().getBrand() + " " + booking.getVehicle().getModel() + "</li>"
-                + "<li><b>Dates:</b> " + booking.getStartDate() + " to " + booking.getEndDate() + "</li>"
-                + "<li><b>Total Days:</b> " + booking.getTotalDays() + "</li>"
-                + "<li><b>Refund Amount:</b> " + String.format("%,.0f VND", booking.getTotal()) + "</li>"
-                + "</ul>"
-                + "<p>If you have any questions, please contact our dispute resolution center.</p>";
+        String lang = getLanguageForEmail(email);
+        String shortId = booking.getId().substring(0, 8).toUpperCase();
+        String subject = translationService.getMessage("email.booking.cancel.subject", lang, shortId);
+        
+        String vehicleBrand = booking.getVehicle().getBrand();
+        String vehicleModel = booking.getVehicle().getModel();
+        String startDate = booking.getStartDate().toString();
+        String endDate = booking.getEndDate().toString();
+        String totalDays = String.valueOf(booking.getTotalDays());
+        String totalPaid = String.format("%,.0f VND", booking.getTotal());
+        
+        String htmlContent = translationService.getMessage("email.booking.cancel.body", lang, 
+                shortId, vehicleBrand, vehicleModel, startDate, endDate, totalDays, totalPaid);
         sendEmail(email, subject, htmlContent, null, null);
     }
 
     public void sendKycStatus(String email, String docType, String status, String reason) {
         log.info("[KYC STATUS LOGGER]: Sending KYC update ({}) to {}", status, email);
-        String subject = "LuxeWay - KYC Identity Verification Update";
-        String htmlContent = "<h2>Identity Verification Update</h2>"
-                + "<p>Your uploaded document (<b>" + docType.replace("_", " ") + "</b>) has been reviewed by our compliance team.</p>"
-                + "<p>Status: <b style='color: " + ("VERIFIED".equals(status) ? "#16A34A" : "#DC2626") + ";'>" + status + "</b></p>"
-                + ("REJECTED".equals(status) && reason != null ? "<p><b>Reason:</b> " + reason + "</p>" : "")
-                + "<p>Please view your dashboard for details.</p>";
+        String lang = getLanguageForEmail(email);
+        String subject = translationService.getMessage("email.kyc.subject", lang);
+        String docDisplay = docType.replace("_", " ");
+        String reasonHtml = "REJECTED".equals(status) && reason != null ? "<p><b>Reason:</b> " + reason + "</p>" : "";
+        String htmlContent = translationService.getMessage("email.kyc.body", lang, docDisplay, 
+                "VERIFIED".equals(status) ? "#16A34A" : "#DC2626", status, reasonHtml);
         sendEmail(email, subject, htmlContent, null, null);
     }
 
     public void sendVehicleApprovalStatus(String email, com.luxeway.entity.Vehicle vehicle, String status, String reason) {
         log.info("[VEHICLE APPROVAL LOGGER]: Sending vehicle approval ({}) for {} to {}", status, vehicle.getLicensePlate(), email);
-        String subject = "LuxeWay - Vehicle Listing Moderation Update";
-        String htmlContent = "<h2>Vehicle Listing Moderation</h2>"
-                + "<p>Your listing for <b>" + vehicle.getBrand() + " " + vehicle.getModel() + " (" + vehicle.getLicensePlate() + ")</b> has been reviewed.</p>"
-                + "<p>Status: <b style='color: " + ("AVAILABLE".equals(status) ? "#16A34A" : "#DC2626") + ";'>" + ("AVAILABLE".equals(status) ? "APPROVED & LIVE" : "REJECTED") + "</b></p>"
-                + ("REJECTED".equals(status) && reason != null ? "<p><b>Reason for rejection:</b> " + reason + "</p>" : "")
-                + "<p>Thank you for partnering with LuxeWay.</p>";
+        String lang = getLanguageForEmail(email);
+        String subject = translationService.getMessage("email.vehicle.subject", lang);
+        String statusLabel = "AVAILABLE".equals(status) ? "APPROVED & LIVE" : "REJECTED";
+        String reasonHtml = "REJECTED".equals(status) && reason != null ? "<p><b>Reason for rejection:</b> " + reason + "</p>" : "";
+        String htmlContent = translationService.getMessage("email.vehicle.body", lang, 
+                vehicle.getBrand(), vehicle.getModel(), vehicle.getLicensePlate(),
+                "AVAILABLE".equals(status) ? "#16A34A" : "#DC2626", statusLabel, reasonHtml);
         sendEmail(email, subject, htmlContent, null, null);
     }
 

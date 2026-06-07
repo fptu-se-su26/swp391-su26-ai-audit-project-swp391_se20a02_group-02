@@ -56,12 +56,21 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         String firstName = givenName != null ? givenName : (name != null ? name : "Google");
         String lastName = familyName != null ? familyName : "User";
 
+        String providerId = oAuth2User.getAttribute("sub");
+        if (providerId == null) {
+            providerId = oAuth2User.getName();
+        }
+
         Optional<User> existingUser = userRepository.findByEmail(email);
         User user;
         if (existingUser.isPresent()) {
             user = existingUser.get();
             if (user.getAvatar() == null || user.getAvatar().isBlank()) {
                 user.setAvatar(picture);
+            }
+            if ("LOCAL".equals(user.getProvider()) || user.getProvider() == null) {
+                user.setProvider("GOOGLE");
+                user.setProviderId(providerId);
             }
             user.setLastActive(java.time.LocalDateTime.now());
             user = userRepository.save(user);
@@ -79,6 +88,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                     .kycVerified(false)
                     .drivingLicenseVerified(false)
                     .isActive(true)
+                    .provider("GOOGLE")
+                    .providerId(providerId)
                     .build();
             user = userRepository.save(user);
             log.info("Google OAuth success handler: registered new user {}", email);

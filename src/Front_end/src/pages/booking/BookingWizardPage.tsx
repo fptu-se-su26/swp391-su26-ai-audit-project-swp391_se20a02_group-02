@@ -5,7 +5,8 @@ import {
   Calendar, Shield, CreditCard, CheckCircle, ChevronRight,
   ChevronLeft, Car, MapPin, Clock, Tag, Loader2, ArrowRight,
   Zap, Lock, Star, Package, Truck, X, Wallet, Building2,
-  AlertTriangle, Info, Sparkles
+  AlertTriangle, Info, Sparkles, UserCircle, Heart, Briefcase,
+  Check, CloudRain, Smartphone
 } from 'lucide-react';
 import { vehicleService } from '@/services/vehicleService';
 import { bookingService, paymentService, paymentMethodService } from '@/services/bookingService';
@@ -15,6 +16,16 @@ import { useToast } from '@/components/ui/Toast';
 import { formatCurrency, formatDate, calculateDays } from '@/utils';
 import { fadeUp, staggerContainer, staggerItem, scaleIn } from '@/animations/variants';
 import { useT } from '@/i18n/translations';
+
+// ====== VND PRICE FORMATTER ======
+const formatVND = (amount: number): string => {
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+};
 
 // ====== STEP INDICATOR ======
 const StepIndicator: React.FC<{ current: number }> = ({ current }) => {
@@ -84,7 +95,18 @@ const PriceSummary: React.FC<{
   vehicle: Vehicle;
   startDate: string;
   endDate: string;
-  extras: { insurance: boolean; delivery: boolean; addons: string[] };
+  extras: {
+    insurance: boolean;
+    delivery: boolean;
+    addons: string[];
+    hasChauffeur?: boolean;
+    weddingPackage?: boolean;
+    businessPackage?: boolean;
+    hasHelmet?: boolean;
+    hasRaincoat?: boolean;
+    hasPhoneHolder?: boolean;
+    hasTouringPackage?: boolean;
+  };
   couponDiscount: number;
 }> = ({ vehicle, startDate, endDate, extras, couponDiscount }) => {
   const t = useT();
@@ -92,10 +114,84 @@ const PriceSummary: React.FC<{
   const days = startDate && endDate ? calculateDays(startDate, endDate) : 1;
   const base = vehicle.pricePerDay * days;
   const insuranceFee = extras.insurance ? Math.round(vehicle.pricePerDay * 0.15 * days) : 0;
-  const deliveryFee = extras.delivery ? vehicle.deliveryFee : 0;
+  
+  let deliveryFee = 0;
+  let customFeesHtml = [];
+  let businessDiscount = 0;
+  let customFees = 0;
+
+  if (vehicle.vehicleType === 'car') {
+    deliveryFee = extras.delivery ? 200000 : 0;
+    if (extras.hasChauffeur) {
+      const chauffeurFee = 500000 * days;
+      customFees += chauffeurFee;
+      customFeesHtml.push(
+        <div key="chauffeur" className="flex justify-between text-blue-400">
+          <span>{isVi ? '👨‍✈️ Tài xế riêng' : '👨‍✈️ Chauffeur Service'}</span>
+          <span>+{formatVND(chauffeurFee)}</span>
+        </div>
+      );
+    }
+    if (extras.weddingPackage) {
+      const weddingFee = 1500000;
+      customFees += weddingFee;
+      customFeesHtml.push(
+        <div key="wedding" className="flex justify-between text-pink-400">
+          <span>{isVi ? '🌸 Gói xe hoa cưới' : '🌸 Wedding Package'}</span>
+          <span>+{formatVND(weddingFee)}</span>
+        </div>
+      );
+    }
+    if (extras.businessPackage) {
+      businessDiscount = Math.round(base * 0.1);
+    }
+  } else if (vehicle.vehicleType === 'motorbike') {
+    deliveryFee = 0;
+    if (extras.hasHelmet) {
+      const fee = 20000 * days;
+      customFees += fee;
+      customFeesHtml.push(
+        <div key="helmet" className="flex justify-between text-blue-400">
+          <span>🪖 {isVi ? 'Thuê mũ bảo hiểm' : 'Helmet rental'}</span>
+          <span>+{formatVND(fee)}</span>
+        </div>
+      );
+    }
+    if (extras.hasRaincoat) {
+      const fee = 10000 * days;
+      customFees += fee;
+      customFeesHtml.push(
+        <div key="raincoat" className="flex justify-between text-blue-400">
+          <span>🧥 {isVi ? 'Thuê áo mưa' : 'Raincoat rental'}</span>
+          <span>+{formatVND(fee)}</span>
+        </div>
+      );
+    }
+    if (extras.hasPhoneHolder) {
+      const fee = 10000 * days;
+      customFees += fee;
+      customFeesHtml.push(
+        <div key="phoneholder" className="flex justify-between text-blue-400">
+          <span>📱 {isVi ? 'Kẹp điện thoại' : 'Phone holder'}</span>
+          <span>+{formatVND(fee)}</span>
+        </div>
+      );
+    }
+    if (extras.hasTouringPackage) {
+      const fee = 100000 * days;
+      customFees += fee;
+      customFeesHtml.push(
+        <div key="touring" className="flex justify-between text-blue-400">
+          <span>📦 {isVi ? 'Baga & Thùng touring' : 'Touring Rack / Luggage'}</span>
+          <span>+{formatVND(fee)}</span>
+        </div>
+      );
+    }
+  }
+
   const serviceFee = Math.round(base * 0.12);
   const taxes = Math.round(base * 0.08);
-  const subtotal = base + insuranceFee + deliveryFee + serviceFee + taxes;
+  const subtotal = base + insuranceFee + deliveryFee + customFees + serviceFee + taxes - businessDiscount;
   const total = subtotal - couponDiscount;
 
   return (
@@ -138,43 +234,50 @@ const PriceSummary: React.FC<{
         {/* Price breakdown */}
         <div className="px-4 pb-4 space-y-2 text-sm">
           <div className="flex justify-between text-white/60">
-            <span>{formatCurrency(vehicle.pricePerDay)} × {days} {t.booking.totalDays}{days > 1 && !isVi ? 's' : ''}</span>
-            <span className="text-white/90 font-medium">{formatCurrency(base)}</span>
+            <span>{formatVND(vehicle.pricePerDay)} × {days} {t.booking.totalDays}{days > 1 && !isVi ? 's' : ''}</span>
+            <span className="text-white/90 font-medium">{formatVND(base)}</span>
           </div>
           {extras.insurance && (
             <div className="flex justify-between text-emerald-400">
               <span>{isVi ? '🛡️ Bảo hiểm Premium' : '🛡️ Insurance'}</span>
-              <span>+{formatCurrency(insuranceFee)}</span>
+              <span>+{formatVND(insuranceFee)}</span>
             </div>
           )}
-          {extras.delivery && (
+          {vehicle.vehicleType === 'car' && extras.delivery && (
             <div className="flex justify-between text-blue-400">
-              <span>{isVi ? '🚗 Giao xe tận nơi' : '🚗 Delivery'}</span>
-              <span>+{formatCurrency(deliveryFee)}</span>
+              <span>{isVi ? '🚗 Giao xe tận sân bay' : '🚗 Airport Delivery'}</span>
+              <span>+{formatVND(deliveryFee)}</span>
+            </div>
+          )}
+          {customFeesHtml}
+          {businessDiscount > 0 && (
+            <div className="flex justify-between text-emerald-400">
+              <span>💼 {isVi ? 'Chiết khấu doanh nghiệp' : 'Corporate Discount'}</span>
+              <span>-{formatVND(businessDiscount)}</span>
             </div>
           )}
           <div className="flex justify-between text-white/60">
             <span>{t.booking.serviceFee}</span>
-            <span className="text-white/90 font-medium">{formatCurrency(serviceFee)}</span>
+            <span className="text-white/90 font-medium">{formatVND(serviceFee)}</span>
           </div>
           <div className="flex justify-between text-white/60">
             <span>{t.booking.taxes}</span>
-            <span className="text-white/90 font-medium">{formatCurrency(taxes)}</span>
+            <span className="text-white/90 font-medium">{formatVND(taxes)}</span>
           </div>
           {couponDiscount > 0 && (
             <div className="flex justify-between text-emerald-400 font-bold">
               <span>🎉 {isVi ? 'Mã giảm giá' : 'Coupon'}</span>
-              <span>−{formatCurrency(couponDiscount)}</span>
+              <span>−{formatVND(couponDiscount)}</span>
             </div>
           )}
           <div className="h-px bg-white/10 my-2" />
           <div className="flex justify-between font-bold text-base">
             <span className="text-white">{t.booking.total}</span>
             <span style={{ background: 'linear-gradient(135deg, #A78BFA, #818CF8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              {formatCurrency(total)}
+              {formatVND(total)}
             </span>
           </div>
-          <p className="text-white/30 text-xs text-center">+ {formatCurrency(vehicle.deposit)} {t.booking.deposit}</p>
+          <p className="text-white/30 text-xs text-center">+ {formatVND(vehicle.deposit)} {t.booking.deposit}</p>
         </div>
 
         {/* Security badge */}
@@ -252,6 +355,17 @@ const BookingWizardPage: React.FC = () => {
   const [selectedCardId, setSelectedCardId] = useState<string>('');
   const [showNewCardForm, setShowNewCardForm] = useState(false);
 
+  // Extra options for car bookings
+  const [hasChauffeur, setHasChauffeur] = useState(false);
+  const [weddingPackage, setWeddingPackage] = useState(false);
+  const [businessPackage, setBusinessPackage] = useState(false);
+
+  // Extra options for motorbike bookings
+  const [hasHelmet, setHasHelmet] = useState(false);
+  const [hasRaincoat, setHasRaincoat] = useState(false);
+  const [hasPhoneHolder, setHasPhoneHolder] = useState(false);
+  const [hasTouringPackage, setHasTouringPackage] = useState(false);
+
   useEffect(() => {
     if (!vehicleId) return;
     vehicleService.getById(vehicleId).then(v => {
@@ -287,10 +401,27 @@ const BookingWizardPage: React.FC = () => {
   const days = wizard.startDate && wizard.endDate ? calculateDays(wizard.startDate, wizard.endDate) : 1;
   const basePrice = vehicle ? vehicle.pricePerDay * days : 0;
   const insuranceFee = (wizard.includeInsurance && vehicle) ? Math.round(vehicle.pricePerDay * 0.15 * days) : 0;
-  const deliveryFee = wizard.includeDelivery && vehicle ? vehicle.deliveryFee : 0;
+  
+  let deliveryFee = 0;
+  let customFees = 0;
+  let businessDiscount = 0;
+
+  if (vehicle?.vehicleType === 'car') {
+    deliveryFee = wizard.includeDelivery ? 200000 : 0;
+    if (hasChauffeur) customFees += 500000 * days;
+    if (weddingPackage) customFees += 1500000;
+    if (businessPackage) businessDiscount = Math.round(basePrice * 0.1);
+  } else if (vehicle?.vehicleType === 'motorbike') {
+    deliveryFee = 0;
+    if (hasHelmet) customFees += 20000 * days;
+    if (hasRaincoat) customFees += 10000 * days;
+    if (hasPhoneHolder) customFees += 10000 * days;
+    if (hasTouringPackage) customFees += 100000 * days;
+  }
+
   const serviceFee = Math.round(basePrice * 0.12);
   const taxes = Math.round(basePrice * 0.08);
-  const subtotal = basePrice + insuranceFee + deliveryFee + serviceFee + taxes;
+  const subtotal = basePrice + insuranceFee + deliveryFee + customFees + serviceFee + taxes - businessDiscount;
   const totalCost = subtotal - wizard.discount;
 
   const canProceed = () => {
@@ -324,7 +455,21 @@ const BookingWizardPage: React.FC = () => {
       try {
         // 1. Create booking
         const wizardState = wizard.toWizardState();
-        const booking = await bookingService.create(wizardState, user!.id);
+        const booking = await bookingService.create(
+          wizardState,
+          user!.id,
+          vehicle?.vehicleType,
+          {
+            hasChauffeur,
+            weddingPackage,
+            businessPackage,
+            hasHelmet,
+            hasRaincoat,
+            hasPhoneHolder,
+            hasTouringPackage,
+            insuranceTier: 'premium'
+          }
+        );
 
         // 2. Process payment
         const returnUrl = `${window.location.origin}/payment/vnpay/return`;
@@ -558,22 +703,12 @@ const BookingWizardPage: React.FC = () => {
                         <div className="flex items-center justify-between">
                           <h3 className="font-bold text-slate-800">{isVi ? 'Bảo hiểm Premium' : 'Premium Insurance'}</h3>
                           <div className="text-right">
-                            <p className="font-bold text-slate-800">{formatCurrency(45)}<span className="text-xs text-slate-400 font-normal">/{t.booking.totalDays}</span></p>
+                            <p className="font-bold text-slate-800">{formatVND(Math.round(vehicle.pricePerDay * 0.15))}<span className="text-xs text-slate-400 font-normal">/{isVi ? 'ngày' : 'day'}</span></p>
                           </div>
                         </div>
                         <p className="text-sm text-slate-500 mt-1">
                           {isVi ? 'Bảo vệ toàn diện, không tự thương, chống trộm & hư hỏng' : 'Zero excess, theft & comprehensive damage protection'}
                         </p>
-                        <div className="flex gap-2 mt-2 flex-wrap">
-                          {(isVi
-                            ? ['Bảo vệ 5M USD', 'Không phí phụ', 'Chống trộm', 'Hỗ trợ 24/7']
-                            : ['$5M Coverage', 'Zero Excess', 'Theft Protection', '24/7 Assist']
-                          ).map(f => (
-                            <span key={f} className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                              wizard.includeInsurance ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-500'
-                            }`}>{f}</span>
-                          ))}
-                        </div>
                       </div>
                       <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
                         wizard.includeInsurance ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300'
@@ -583,80 +718,294 @@ const BookingWizardPage: React.FC = () => {
                     </div>
                   </motion.div>
 
-                  {/* Delivery */}
-                  {vehicle.deliveryAvailable && (
-                    <motion.div
-                      onClick={() => wizard.setDelivery(!wizard.includeDelivery)}
-                      whileHover={{ scale: 1.01 }}
-                      whileTap={{ scale: 0.99 }}
-                      className={`bg-white rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
-                        wizard.includeDelivery ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 hover:border-slate-300'
-                      }`}
-                    >
-                      <div className="flex items-start gap-4">
-                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${
-                          wizard.includeDelivery ? 'bg-indigo-500' : 'bg-slate-100'
-                        }`}>
-                          <Truck className={`w-6 h-6 ${wizard.includeDelivery ? 'text-white' : 'text-slate-400'}`} />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <h3 className="font-bold text-slate-800">{isVi ? 'Giao xe tận nơi' : 'Door-to-Door Delivery'}</h3>
-                            <p className="font-bold text-slate-800">{formatCurrency(vehicle.deliveryFee)}</p>
+                  {/* Dynamic Render based on Vehicle Type */}
+                  {vehicle.vehicleType === 'car' ? (
+                    <>
+                      {/* Car: Airport Delivery */}
+                      {(vehicle.airportDelivery || vehicle.deliveryAvailable) && (
+                        <motion.div
+                          onClick={() => wizard.setDelivery(!wizard.includeDelivery)}
+                          whileHover={{ scale: 1.01 }}
+                          whileTap={{ scale: 0.99 }}
+                          className={`bg-white rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
+                            wizard.includeDelivery ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 hover:border-slate-300'
+                          }`}
+                        >
+                          <div className="flex items-start gap-4">
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${
+                              wizard.includeDelivery ? 'bg-indigo-500' : 'bg-slate-100'
+                            }`}>
+                              <Truck className={`w-6 h-6 ${wizard.includeDelivery ? 'text-white' : 'text-slate-400'}`} />
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between">
+                                <h3 className="font-bold text-slate-800">{isVi ? 'Giao xe tại sân bay' : 'Airport Delivery'}</h3>
+                                <p className="font-bold text-slate-800">{formatVND(200000)}</p>
+                              </div>
+                              <p className="text-sm text-slate-500 mt-1">
+                                {isVi ? 'Nhận và trả xe ngay tại ga đến sân bay' : 'Pick up and return vehicle directly at the airport terminal'}
+                              </p>
+                            </div>
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                              wizard.includeDelivery ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300'
+                            }`}>
+                              {wizard.includeDelivery && <CheckCircle className="w-4 h-4 text-white" />}
+                            </div>
                           </div>
-                          <p className="text-sm text-slate-500 mt-1">
-                            {isVi ? 'Giao xe đến khách sạn, sân bay hoặc địa chỉ yêu cầu' : 'Vehicle delivered to your hotel, airport, or any address'}
-                          </p>
-                        </div>
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                          wizard.includeDelivery ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300'
-                        }`}>
-                          {wizard.includeDelivery && <CheckCircle className="w-4 h-4 text-white" />}
-                        </div>
-                      </div>
-                      {wizard.includeDelivery && (
-                        <motion.div variants={fadeUp} initial="hidden" animate="visible" className="mt-4 pl-16">
-                          <input
-                            type="text"
-                            placeholder={isVi ? 'Nhập địa chỉ giao xe...' : 'Enter delivery address...'}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-400 transition-all"
-                            onClick={e => e.stopPropagation()}
-                            onChange={e => wizard.setDelivery(true, e.target.value)}
-                          />
+                          {wizard.includeDelivery && (
+                            <motion.div variants={fadeUp} initial="hidden" animate="visible" className="mt-4 pl-16">
+                              <input
+                                type="text"
+                                placeholder={isVi ? 'Nhập mã chuyến bay hoặc địa chỉ chi tiết...' : 'Enter flight number or details...'}
+                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-400 transition-all"
+                                onClick={e => e.stopPropagation()}
+                                onChange={e => wizard.setDelivery(true, e.target.value)}
+                              />
+                            </motion.div>
+                          )}
                         </motion.div>
                       )}
-                    </motion.div>
-                  )}
 
-                  {/* Add-ons */}
-                  {vehicle.addons.length > 0 && (
-                    <div className="bg-white rounded-3xl border border-slate-200 shadow-lg shadow-slate-900/5 p-5">
-                      <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                        <Package className="w-5 h-5 text-indigo-500" />
-                        {isVi ? 'Dịch vụ tùy chọn thêm' : 'Optional Add-ons'}
-                      </h3>
-                      <div className="space-y-3">
-                        {vehicle.addons.map(addon => (
-                          <div
-                            key={addon.id}
-                            onClick={() => wizard.toggleAddon(addon.id)}
-                            className={`flex items-center gap-3 p-3 rounded-2xl cursor-pointer border-2 transition-all ${
-                              wizard.selectedAddons.includes(addon.id) ? 'border-indigo-400 bg-indigo-50/50' : 'border-slate-100 hover:border-slate-200'
-                            }`}
-                          >
-                            <span className="text-xl">{addon.icon}</span>
-                            <div className="flex-1">
-                              <p className="text-sm font-bold text-slate-800">{addon.name}</p>
-                              <p className="text-xs text-slate-400">{addon.description}</p>
+                      {/* Car: Chauffeur Service */}
+                      {vehicle.hasChauffeur && (
+                        <motion.div
+                          onClick={() => setHasChauffeur(!hasChauffeur)}
+                          whileHover={{ scale: 1.01 }}
+                          whileTap={{ scale: 0.99 }}
+                          className={`bg-white rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
+                            hasChauffeur ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 hover:border-slate-300'
+                          }`}
+                        >
+                          <div className="flex items-start gap-4">
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${
+                              hasChauffeur ? 'bg-indigo-500' : 'bg-slate-100'
+                            }`}>
+                              <UserCircle className={`w-6 h-6 ${hasChauffeur ? 'text-white' : 'text-slate-400'}`} />
                             </div>
-                            <p className="text-sm font-bold text-slate-800">{formatCurrency(addon.pricePerDay)}/{t.booking.totalDays}</p>
-                            <div className={`w-5 h-5 rounded-full border-2 ${
-                              wizard.selectedAddons.includes(addon.id) ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300'
-                            }`} />
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between">
+                                <h3 className="font-bold text-slate-800">{isVi ? 'Thuê tài xế riêng' : 'Chauffeur Service'}</h3>
+                                <p className="font-bold text-slate-800">{formatVND(500000)}<span className="text-xs text-slate-400 font-normal">/{isVi ? 'ngày' : 'day'}</span></p>
+                              </div>
+                              <p className="text-sm text-slate-500 mt-1">
+                                {isVi ? 'Tài xế chuyên nghiệp, lịch sự, thông thạo đường phố' : 'Professional, polite driver who knows the city inside out'}
+                              </p>
+                            </div>
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                              hasChauffeur ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300'
+                            }`}>
+                              {hasChauffeur && <CheckCircle className="w-4 h-4 text-white" />}
+                            </div>
                           </div>
-                        ))}
-                      </div>
-                    </div>
+                        </motion.div>
+                      )}
+
+                      {/* Car: Wedding Package */}
+                      {vehicle.weddingRental && (
+                        <motion.div
+                          onClick={() => setWeddingPackage(!weddingPackage)}
+                          whileHover={{ scale: 1.01 }}
+                          whileTap={{ scale: 0.99 }}
+                          className={`bg-white rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
+                            weddingPackage ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 hover:border-slate-300'
+                          }`}
+                        >
+                          <div className="flex items-start gap-4">
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${
+                              weddingPackage ? 'bg-indigo-500' : 'bg-slate-100'
+                            }`}>
+                              <Heart className={`w-6 h-6 ${weddingPackage ? 'text-white' : 'text-slate-400'}`} />
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between">
+                                <h3 className="font-bold text-slate-800">{isVi ? 'Gói xe hoa đám cưới' : 'Wedding Package Decor'}</h3>
+                                <p className="font-bold text-slate-800">{formatVND(1500000)}</p>
+                              </div>
+                              <p className="text-sm text-slate-500 mt-1">
+                                {isVi ? 'Trang trí hoa cưới sang trọng theo yêu cầu' : 'Elegant floral wedding decoration styled to your preference'}
+                              </p>
+                            </div>
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                              weddingPackage ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300'
+                            }`}>
+                              {weddingPackage && <CheckCircle className="w-4 h-4 text-white" />}
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* Car: Business Package */}
+                      {vehicle.businessRental && (
+                        <motion.div
+                          onClick={() => setBusinessPackage(!businessPackage)}
+                          whileHover={{ scale: 1.01 }}
+                          whileTap={{ scale: 0.99 }}
+                          className={`bg-white rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
+                            businessPackage ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 hover:border-slate-300'
+                          }`}
+                        >
+                          <div className="flex items-start gap-4">
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${
+                              businessPackage ? 'bg-indigo-500' : 'bg-slate-100'
+                            }`}>
+                              <Briefcase className={`w-6 h-6 ${businessPackage ? 'text-white' : 'text-slate-400'}`} />
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between">
+                                <h3 className="font-bold text-slate-800">{isVi ? 'Gói thuê doanh nghiệp (VAT)' : 'Business Corporate Package'}</h3>
+                                <p className="font-bold text-slate-800">-{isVi ? 'Giảm 10%' : '10% Off'}</p>
+                              </div>
+                              <p className="text-sm text-slate-500 mt-1">
+                                {isVi ? 'Hỗ trợ xuất hóa đơn đỏ VAT đầy đủ, thủ tục nhanh' : 'Full VAT corporate tax invoice support and expedited processing'}
+                              </p>
+                            </div>
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                              businessPackage ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300'
+                            }`}>
+                              {businessPackage && <CheckCircle className="w-4 h-4 text-white" />}
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      {/* Motorbike: Helmet rental */}
+                      {vehicle.hasHelmet && (
+                        <motion.div
+                          onClick={() => setHasHelmet(!hasHelmet)}
+                          whileHover={{ scale: 1.01 }}
+                          whileTap={{ scale: 0.99 }}
+                          className={`bg-white rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
+                            hasHelmet ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 hover:border-slate-300'
+                          }`}
+                        >
+                          <div className="flex items-start gap-4">
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${
+                              hasHelmet ? 'bg-indigo-500' : 'bg-slate-100'
+                            }`}>
+                              <Check className={`w-6 h-6 ${hasHelmet ? 'text-white' : 'text-slate-400'}`} />
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between">
+                                <h3 className="font-bold text-slate-800">{isVi ? 'Thuê mũ bảo hiểm' : 'Premium Helmet Rental'}</h3>
+                                <p className="font-bold text-slate-800">{formatVND(20000)}<span className="text-xs text-slate-400 font-normal">/{isVi ? 'ngày' : 'day'}</span></p>
+                              </div>
+                              <p className="text-sm text-slate-500 mt-1">
+                                {isVi ? 'Mũ bảo hiểm đạt chuẩn chất lượng an toàn cao' : 'High quality safety certified helmet for maximum protection'}
+                              </p>
+                            </div>
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                              hasHelmet ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300'
+                            }`}>
+                              {hasHelmet && <CheckCircle className="w-4 h-4 text-white" />}
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* Motorbike: Raincoat */}
+                      {vehicle.hasRaincoat && (
+                        <motion.div
+                          onClick={() => setHasRaincoat(!hasRaincoat)}
+                          whileHover={{ scale: 1.01 }}
+                          whileTap={{ scale: 0.99 }}
+                          className={`bg-white rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
+                            hasRaincoat ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 hover:border-slate-300'
+                          }`}
+                        >
+                          <div className="flex items-start gap-4">
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${
+                              hasRaincoat ? 'bg-indigo-500' : 'bg-slate-100'
+                            }`}>
+                              <CloudRain className={`w-6 h-6 ${hasRaincoat ? 'text-white' : 'text-slate-400'}`} />
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between">
+                                <h3 className="font-bold text-slate-800">{isVi ? 'Thuê áo mưa' : 'Raincoat Included'}</h3>
+                                <p className="font-bold text-slate-800">{formatVND(10000)}<span className="text-xs text-slate-400 font-normal">/{isVi ? 'ngày' : 'day'}</span></p>
+                              </div>
+                              <p className="text-sm text-slate-500 mt-1">
+                                {isVi ? 'Áo mưa tiện lợi, chống thấm nước tốt' : 'Convenient, waterproof raincoat for rainy days'}
+                              </p>
+                            </div>
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                              hasRaincoat ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300'
+                            }`}>
+                              {hasRaincoat && <CheckCircle className="w-4 h-4 text-white" />}
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* Motorbike: Phone Holder */}
+                      {vehicle.hasPhoneHolder && (
+                        <motion.div
+                          onClick={() => setHasPhoneHolder(!hasPhoneHolder)}
+                          whileHover={{ scale: 1.01 }}
+                          whileTap={{ scale: 0.99 }}
+                          className={`bg-white rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
+                            hasPhoneHolder ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 hover:border-slate-300'
+                          }`}
+                        >
+                          <div className="flex items-start gap-4">
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${
+                              hasPhoneHolder ? 'bg-indigo-500' : 'bg-slate-100'
+                            }`}>
+                              <Smartphone className={`w-6 h-6 ${hasPhoneHolder ? 'text-white' : 'text-slate-400'}`} />
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between">
+                                <h3 className="font-bold text-slate-800">{isVi ? 'Kẹp điện thoại' : 'Phone Holder'}</h3>
+                                <p className="font-bold text-slate-800">{formatVND(10000)}<span className="text-xs text-slate-400 font-normal">/{isVi ? 'ngày' : 'day'}</span></p>
+                              </div>
+                              <p className="text-sm text-slate-500 mt-1">
+                                {isVi ? 'Kẹp điện thoại chắc chắn gắn ghi-đông để định vị' : 'Sturdy handlebar-mounted phone holder for navigation'}
+                              </p>
+                            </div>
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                              hasPhoneHolder ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300'
+                            }`}>
+                              {hasPhoneHolder && <CheckCircle className="w-4 h-4 text-white" />}
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* Motorbike: Touring Package */}
+                      {vehicle.hasTouringPackage && (
+                        <motion.div
+                          onClick={() => setHasTouringPackage(!hasTouringPackage)}
+                          whileHover={{ scale: 1.01 }}
+                          whileTap={{ scale: 0.99 }}
+                          className={`bg-white rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
+                            hasTouringPackage ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 hover:border-slate-300'
+                          }`}
+                        >
+                          <div className="flex items-start gap-4">
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${
+                              hasTouringPackage ? 'bg-indigo-500' : 'bg-slate-100'
+                            }`}>
+                              <Package className={`w-6 h-6 ${hasTouringPackage ? 'text-white' : 'text-slate-400'}`} />
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between">
+                                <h3 className="font-bold text-slate-800">{isVi ? 'Gói hành lý touring' : 'Touring Rack & Boxes'}</h3>
+                                <p className="font-bold text-slate-800">{formatVND(100000)}<span className="text-xs text-slate-400 font-normal">/{isVi ? 'ngày' : 'day'}</span></p>
+                              </div>
+                              <p className="text-sm text-slate-500 mt-1">
+                                {isVi ? 'Baga sau và thùng đựng đồ Givi tiện lợi đi phượt' : 'Heavy-duty rear luggage rack and side boxes for road trips'}
+                              </p>
+                            </div>
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                              hasTouringPackage ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300'
+                            }`}>
+                              {hasTouringPackage && <CheckCircle className="w-4 h-4 text-white" />}
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </>
                   )}
 
                   {/* Coupon */}
@@ -1037,7 +1386,7 @@ const BookingWizardPage: React.FC = () => {
                         { label: isVi ? 'Xe' : 'Vehicle', value: vehicle.name },
                         { label: t.booking.pickUp, value: formatDate(wizard.startDate, 'short') },
                         { label: t.booking.return, value: formatDate(wizard.endDate, 'short') },
-                        { label: isVi ? 'Tổng tiền' : 'Total', value: formatCurrency(totalCost) },
+                        { label: isVi ? 'Tổng tiền' : 'Total', value: formatVND(totalCost) },
                       ].map(item => (
                         <div key={item.label} className="flex justify-between">
                           <span className="text-slate-500">{item.label}</span>
@@ -1098,7 +1447,7 @@ const BookingWizardPage: React.FC = () => {
                   {processing ? (
                     <><Loader2 className="w-5 h-5 animate-spin" /> {isVi ? 'Đang xử lý...' : 'Processing...'}</>
                   ) : wizard.step === 4 ? (
-                    <><Lock className="w-4 h-4" /> {isVi ? 'Thanh toán' : 'Pay'} {formatCurrency(totalCost)}</>
+                    <><Lock className="w-4 h-4" /> {isVi ? 'Thanh toán' : 'Pay'} {formatVND(totalCost)}</>
                   ) : (
                     <>{isVi ? 'Tiếp Tục' : 'Continue'} <ChevronRight className="w-4 h-4" /></>
                   )}
@@ -1113,7 +1462,18 @@ const BookingWizardPage: React.FC = () => {
               vehicle={vehicle}
               startDate={wizard.startDate}
               endDate={wizard.endDate}
-              extras={{ insurance: wizard.includeInsurance, delivery: wizard.includeDelivery, addons: wizard.selectedAddons }}
+              extras={{
+                insurance: wizard.includeInsurance,
+                delivery: wizard.includeDelivery,
+                addons: wizard.selectedAddons,
+                hasChauffeur,
+                weddingPackage,
+                businessPackage,
+                hasHelmet,
+                hasRaincoat,
+                hasPhoneHolder,
+                hasTouringPackage
+              }}
               couponDiscount={wizard.discount}
             />
           </div>

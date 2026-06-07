@@ -46,6 +46,31 @@ public class DatabaseMigration implements CommandLineRunner {
             }
         }
 
+        // Add provider and provider_id columns to users table
+        try {
+            jdbcTemplate.execute("ALTER TABLE users ADD provider NVARCHAR(20) NOT NULL DEFAULT 'LOCAL'");
+            log.info("Successfully added provider column to users table (SQL Server)");
+        } catch (Exception e) {
+            try {
+                jdbcTemplate.execute("ALTER TABLE users ADD COLUMN provider VARCHAR(20) NOT NULL DEFAULT 'LOCAL'");
+                log.info("Successfully added provider column to users table (Standard)");
+            } catch (Exception ex) {
+                log.info("provider column already exists or alter failed: {}", ex.getMessage());
+            }
+        }
+
+        try {
+            jdbcTemplate.execute("ALTER TABLE users ADD provider_id NVARCHAR(200) NULL");
+            log.info("Successfully added provider_id column to users table (SQL Server)");
+        } catch (Exception e) {
+            try {
+                jdbcTemplate.execute("ALTER TABLE users ADD COLUMN provider_id VARCHAR(200) NULL");
+                log.info("Successfully added provider_id column to users table (Standard)");
+            } catch (Exception ex) {
+                log.info("provider_id column already exists or alter failed: {}", ex.getMessage());
+            }
+        }
+
         // CREATE TABLE: owners
         try {
             jdbcTemplate.execute("IF OBJECT_ID('owners', 'U') IS NULL " +
@@ -318,12 +343,23 @@ public class DatabaseMigration implements CommandLineRunner {
             if (count == null || count == 0) {
                 jdbcTemplate.execute("INSERT INTO destination_analytics (city, vehicle_count, average_price, top_category, image_url, display_order, active) VALUES " +
                         "('Ho Chi Minh', 240, 750000, 'suv', 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?q=80&w=800&auto=format&fit=crop', 1, 1), " +
-                        "('Ha Noi', 186, 650000, 'economy', 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?q=80&w=800&auto=format&fit=crop', 2, 1), " +
-                        "('Da Nang', 94, 700000, 'motorbike', 'https://images.unsplash.com/photo-1518684079-3c830dcef090?q=80&w=800&auto=format&fit=crop', 3, 1), " +
-                        "('Nha Trang', 120, 600000, 'family', 'https://images.unsplash.com/photo-1506966953602-c20cc11f75e3?q=80&w=800&auto=format&fit=crop', 4, 1), " +
-                        "('Da Lat', 158, 580000, 'motorbike', 'https://images.unsplash.com/photo-1580655653885-65763b2597d0?q=80&w=800&auto=format&fit=crop', 5, 1), " +
-                        "('Hue', 85, 520000, 'economy', 'https://images.unsplash.com/photo-1560969184-10fe8719e047?q=80&w=800&auto=format&fit=crop', 6, 1)");
+                        "('Ha Noi', 186, 650000, 'economy', 'https://images.unsplash.com/photo-1509060464153-44667396260f?q=80&w=800&auto=format&fit=crop', 2, 1), " +
+                        "('Da Nang', 94, 700000, 'motorbike', 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=800&auto=format&fit=crop', 3, 1), " +
+                        "('Nha Trang', 120, 600000, 'family', 'https://images.unsplash.com/photo-1571508601936-6ca847b47ae4?q=80&w=800&auto=format&fit=crop', 4, 1), " +
+                        "('Da Lat', 158, 580000, 'motorbike', 'https://images.unsplash.com/photo-1620121692029-d088224ddc74?q=80&w=800&auto=format&fit=crop', 5, 1), " +
+                        "('Hue', 85, 520000, 'economy', 'https://images.unsplash.com/photo-1571005471113-94993ec92454?q=80&w=800&auto=format&fit=crop', 6, 1)");
                 log.info("Successfully seeded default destination_analytics");
+            } else {
+                // Migrate existing records to correct URLs if they contain the old placeholder photos
+                try {
+                    jdbcTemplate.execute("UPDATE destination_analytics SET image_url = 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=800&auto=format&fit=crop' WHERE city = 'Da Nang' AND (image_url LIKE '%photo-1518684079%' OR image_url IS NULL)");
+                    jdbcTemplate.execute("UPDATE destination_analytics SET image_url = 'https://images.unsplash.com/photo-1571508601936-6ca847b47ae4?q=80&w=800&auto=format&fit=crop' WHERE city = 'Nha Trang' AND (image_url LIKE '%photo-1506966953%' OR image_url IS NULL)");
+                    jdbcTemplate.execute("UPDATE destination_analytics SET image_url = 'https://images.unsplash.com/photo-1620121692029-d088224ddc74?q=80&w=800&auto=format&fit=crop' WHERE city = 'Da Lat' AND (image_url LIKE '%photo-1580655653885%' OR image_url IS NULL)");
+                    jdbcTemplate.execute("UPDATE destination_analytics SET image_url = 'https://images.unsplash.com/photo-1571005471113-94993ec92454?q=80&w=800&auto=format&fit=crop' WHERE city = 'Hue' AND (image_url LIKE '%photo-1560969184%' OR image_url IS NULL)");
+                    log.info("Successfully updated destination image URLs to premium Vietnamese locations in DB");
+                } catch (Exception e) {
+                    log.warn("Migration of destination image URLs failed: {}", e.getMessage());
+                }
             }
         } catch (Exception e) {
             log.debug("destination_analytics table creation or seeding failed: {}", e.getMessage());
@@ -343,15 +379,77 @@ public class DatabaseMigration implements CommandLineRunner {
                 if (count == null || count == 0) {
                     jdbcTemplate.execute("INSERT INTO destination_analytics (city, vehicle_count, average_price, top_category, image_url, display_order, active) VALUES " +
                             "('Ho Chi Minh', 240, 750000, 'suv', 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?q=80&w=800&auto=format&fit=crop', 1, true), " +
-                            "('Ha Noi', 186, 650000, 'economy', 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?q=80&w=800&auto=format&fit=crop', 2, true), " +
-                            "('Da Nang', 94, 700000, 'motorbike', 'https://images.unsplash.com/photo-1518684079-3c830dcef090?q=80&w=800&auto=format&fit=crop', 3, true), " +
-                            "('Nha Trang', 120, 600000, 'family', 'https://images.unsplash.com/photo-1506966953602-c20cc11f75e3?q=80&w=800&auto=format&fit=crop', 4, true), " +
-                            "('Da Lat', 158, 580000, 'motorbike', 'https://images.unsplash.com/photo-1580655653885-65763b2597d0?q=80&w=800&auto=format&fit=crop', 5, true), " +
-                            "('Hue', 85, 520000, 'economy', 'https://images.unsplash.com/photo-1560969184-10fe8719e047?q=80&w=800&auto=format&fit=crop', 6, true)");
+                            "('Ha Noi', 186, 650000, 'economy', 'https://images.unsplash.com/photo-1509060464153-44667396260f?q=80&w=800&auto=format&fit=crop', 2, true), " +
+                            "('Da Nang', 94, 700000, 'motorbike', 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=800&auto=format&fit=crop', 3, true), " +
+                            "('Nha Trang', 120, 600000, 'family', 'https://images.unsplash.com/photo-1571508601936-6ca847b47ae4?q=80&w=800&auto=format&fit=crop', 4, true), " +
+                            "('Da Lat', 158, 580000, 'motorbike', 'https://images.unsplash.com/photo-1620121692029-d088224ddc74?q=80&w=800&auto=format&fit=crop', 5, true), " +
+                            "('Hue', 85, 520000, 'economy', 'https://images.unsplash.com/photo-1571005471113-94993ec92454?q=80&w=800&auto=format&fit=crop', 6, true)");
                     log.info("Successfully seeded default destination_analytics (Standard)");
                 }
             } catch (Exception ex) {
                 log.error("Failed to create destination_analytics table: {}", ex.getMessage());
+            }
+        }
+
+        // CREATE TABLE: promotions
+        try {
+            jdbcTemplate.execute("IF OBJECT_ID('promotions', 'U') IS NULL " +
+                    "BEGIN " +
+                    "    CREATE TABLE promotions (" +
+                    "        id NVARCHAR(36) PRIMARY KEY, " +
+                    "        title NVARCHAR(255) NOT NULL, " +
+                    "        description NVARCHAR(MAX) NULL, " +
+                    "        image_url NVARCHAR(500) NULL, " +
+                    "        discount_percent INT NOT NULL DEFAULT 0, " +
+                    "        badge_text NVARCHAR(100) NULL, " +
+                    "        cta_text NVARCHAR(100) NOT NULL DEFAULT 'Book Now', " +
+                    "        cta_url NVARCHAR(500) NOT NULL DEFAULT '/marketplace', " +
+                    "        start_date DATETIME2 NULL, " +
+                    "        end_date DATETIME2 NULL, " +
+                    "        active BIT NOT NULL DEFAULT 1, " +
+                    "        display_order INT NOT NULL DEFAULT 0, " +
+                    "        created_at DATETIME2 NOT NULL DEFAULT GETDATE()" +
+                    "    ); " +
+                    "END");
+            log.info("Successfully created table: promotions");
+
+            // Seed default promotions
+            Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM promotions", Integer.class);
+            if (count == null || count == 0) {
+                jdbcTemplate.execute("INSERT INTO promotions (id, title, description, image_url, discount_percent, badge_text, cta_text, cta_url, active, display_order) VALUES " +
+                        "('P1', 'Summer Getaway', 'Save up to 15% on all SUV bookings this summer!', 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?q=80&w=800&auto=format&fit=crop', 15, 'Summer Deal', 'Rent Now', '/marketplace?category=SUV', 1, 1), " +
+                        "('P2', 'Electric Revolution', 'Go green! Get 10% off on Tesla and other electric vehicles.', 'https://images.unsplash.com/photo-1563720223185-11003d516935?q=80&w=800&auto=format&fit=crop', 10, 'Eco Friendly', 'Explore', '/marketplace?category=ELECTRIC', 1, 2)");
+                log.info("Successfully seeded default promotions");
+            }
+        } catch (Exception e) {
+            log.debug("promotions table creation or seeding failed: {}", e.getMessage());
+            try {
+                // Standard SQL fallback for MySQL/H2
+                jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS promotions (" +
+                        "id VARCHAR(36) PRIMARY KEY, " +
+                        "title VARCHAR(255) NOT NULL, " +
+                        "description TEXT NULL, " +
+                        "image_url VARCHAR(500) NULL, " +
+                        "discount_percent INT NOT NULL DEFAULT 0, " +
+                        "badge_text VARCHAR(100) NULL, " +
+                        "cta_text VARCHAR(100) NOT NULL DEFAULT 'Book Now', " +
+                        "cta_url VARCHAR(500) NOT NULL DEFAULT '/marketplace', " +
+                        "start_date TIMESTAMP NULL, " +
+                        "end_date TIMESTAMP NULL, " +
+                        "active BOOLEAN NOT NULL DEFAULT TRUE, " +
+                        "display_order INT NOT NULL DEFAULT 0, " +
+                        "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+                        ")");
+                log.info("Successfully created table: promotions (Standard)");
+                Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM promotions", Integer.class);
+                if (count == null || count == 0) {
+                    jdbcTemplate.execute("INSERT INTO promotions (id, title, description, image_url, discount_percent, badge_text, cta_text, cta_url, active, display_order) VALUES " +
+                            "('P1', 'Summer Getaway', 'Save up to 15% on all SUV bookings this summer!', 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?q=80&w=800&auto=format&fit=crop', 15, 'Summer Deal', 'Rent Now', '/marketplace?category=SUV', true, 1), " +
+                            "('P2', 'Electric Revolution', 'Go green! Get 10% off on Tesla and other electric vehicles.', 'https://images.unsplash.com/photo-1563720223185-11003d516935?q=80&w=800&auto=format&fit=crop', 10, 'Eco Friendly', 'Explore', '/marketplace?category=ELECTRIC', true, 2)");
+                    log.info("Successfully seeded default promotions (Standard)");
+                }
+            } catch (Exception ex) {
+                log.error("Failed to create promotions table: {}", ex.getMessage());
             }
         }
     }

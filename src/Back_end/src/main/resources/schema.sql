@@ -30,6 +30,7 @@ CREATE TABLE users (
     account_type                NVARCHAR(20)    NOT NULL DEFAULT 'INDIVIDUAL' CONSTRAINT CHK_users_account_type CHECK (account_type IN ('INDIVIDUAL','BUSINESS')),
     company_name                NVARCHAR(200),
     stripe_customer_id          NVARCHAR(100),
+    preferred_language          NVARCHAR(10)    NULL DEFAULT 'en',
     is_active                   BIT             NOT NULL DEFAULT 1,
     joined_at                   DATETIME2       NOT NULL DEFAULT GETDATE(),
     last_active                 DATETIME2       NOT NULL DEFAULT GETDATE(),
@@ -875,4 +876,665 @@ END
 GO
 
 PRINT 'LuxeWay - All 35 tables created successfully on SQL Server.';
+GO
+
+-- ============================================================
+-- MIGRATION: Vietnam Market — Vehicle Type & Specs Columns
+-- Added: vehicle_type, engine_cc, motorbike accessories, car services
+-- Safe to re-run: all statements use IF COL_LENGTH guard
+-- ============================================================
+
+-- Add vehicle_type discriminator column (CAR | MOTORBIKE)
+IF COL_LENGTH('vehicles', 'vehicle_type') IS NULL
+BEGIN
+    ALTER TABLE vehicles ADD vehicle_type NVARCHAR(20) NOT NULL DEFAULT 'CAR'
+        CONSTRAINT CHK_vehicles_vehicle_type CHECK (vehicle_type IN ('CAR', 'MOTORBIKE'));
+    PRINT 'Added vehicle_type column to vehicles';
+END
+GO
+
+-- Add engine_cc for motorbikes (e.g., 110, 125, 150, 300, 400)
+IF COL_LENGTH('vehicles', 'engine_cc') IS NULL
+BEGIN
+    ALTER TABLE vehicles ADD engine_cc INT NULL;
+    PRINT 'Added engine_cc column to vehicles';
+END
+GO
+
+-- Motorbike-specific accessory columns
+IF COL_LENGTH('vehicles', 'has_helmet') IS NULL
+BEGIN
+    ALTER TABLE vehicles ADD has_helmet BIT NOT NULL DEFAULT 0;
+    PRINT 'Added has_helmet column to vehicles';
+END
+GO
+
+IF COL_LENGTH('vehicles', 'has_phone_holder') IS NULL
+BEGIN
+    ALTER TABLE vehicles ADD has_phone_holder BIT NOT NULL DEFAULT 0;
+    PRINT 'Added has_phone_holder column to vehicles';
+END
+GO
+
+IF COL_LENGTH('vehicles', 'has_raincoat') IS NULL
+BEGIN
+    ALTER TABLE vehicles ADD has_raincoat BIT NOT NULL DEFAULT 0;
+    PRINT 'Added has_raincoat column to vehicles';
+END
+GO
+
+IF COL_LENGTH('vehicles', 'has_touring_package') IS NULL
+BEGIN
+    ALTER TABLE vehicles ADD has_touring_package BIT NOT NULL DEFAULT 0;
+    PRINT 'Added has_touring_package column to vehicles';
+END
+GO
+
+-- Car-specific service columns
+IF COL_LENGTH('vehicles', 'has_chauffeur') IS NULL
+BEGIN
+    ALTER TABLE vehicles ADD has_chauffeur BIT NOT NULL DEFAULT 0;
+    PRINT 'Added has_chauffeur column to vehicles';
+END
+GO
+
+IF COL_LENGTH('vehicles', 'airport_delivery') IS NULL
+BEGIN
+    ALTER TABLE vehicles ADD airport_delivery BIT NOT NULL DEFAULT 0;
+    PRINT 'Added airport_delivery column to vehicles';
+END
+GO
+
+IF COL_LENGTH('vehicles', 'wedding_rental') IS NULL
+BEGIN
+    ALTER TABLE vehicles ADD wedding_rental BIT NOT NULL DEFAULT 0;
+    PRINT 'Added wedding_rental column to vehicles';
+END
+GO
+
+IF COL_LENGTH('vehicles', 'business_rental') IS NULL
+BEGIN
+    ALTER TABLE vehicles ADD business_rental BIT NOT NULL DEFAULT 0;
+    PRINT 'Added business_rental column to vehicles';
+END
+GO
+
+-- Update existing MOTORBIKE category vehicles to have vehicle_type = MOTORBIKE
+UPDATE vehicles SET vehicle_type = 'MOTORBIKE'
+WHERE category IN ('MOTORBIKE', 'SCOOTER', 'AUTOMATIC_SCOOTER', 'MANUAL_MOTORCYCLE',
+                   'SPORT_BIKE', 'TOURING_BIKE', 'ADVENTURE_BIKE', 'CLASSIC_BIKE', 'ELECTRIC_BIKE');
+GO
+
+-- Index on vehicle_type for fast marketplace filtering
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IDX_vehicles_vehicle_type')
+BEGIN
+    CREATE INDEX IDX_vehicles_vehicle_type ON vehicles(vehicle_type);
+    PRINT 'Created IDX_vehicles_vehicle_type index';
+END
+GO
+
+-- ============================================================
+-- 36. VEHICLE_BRANDS (Master Brand Catalog)
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'vehicle_brands')
+BEGIN
+CREATE TABLE vehicle_brands (
+    id              NVARCHAR(36)    NOT NULL PRIMARY KEY,
+    name            NVARCHAR(100)   NOT NULL UNIQUE,
+    country         NVARCHAR(100)   NOT NULL DEFAULT N'Japan',
+    vehicle_type    NVARCHAR(20)    NOT NULL CONSTRAINT CHK_brand_type CHECK (vehicle_type IN ('CAR', 'MOTORBIKE', 'BOTH')),
+    logo_url        NVARCHAR(500),
+    is_active       BIT             NOT NULL DEFAULT 1,
+    sort_order      INT             NOT NULL DEFAULT 0,
+    created_at      DATETIME2       NOT NULL DEFAULT GETDATE()
+);
+CREATE INDEX IDX_vehicle_brands_type ON vehicle_brands(vehicle_type);
+END
+GO
+
+-- ============================================================
+-- 37. VEHICLE_MODELS (Master Model Catalog with VND pricing)
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'vehicle_models')
+BEGIN
+CREATE TABLE vehicle_models (
+    id              NVARCHAR(36)    NOT NULL PRIMARY KEY,
+    brand_id        NVARCHAR(36)    NOT NULL,
+    model_name      NVARCHAR(200)   NOT NULL,
+    vehicle_type    NVARCHAR(20)    NOT NULL CONSTRAINT CHK_model_type CHECK (vehicle_type IN ('CAR', 'MOTORBIKE')),
+    category        NVARCHAR(50)    NOT NULL,
+    engine_cc       INT             NULL,       -- For motorbikes
+    seats           INT             NULL,       -- For cars
+    base_price_min  DECIMAL(12,0)   NOT NULL,   -- VND/day minimum
+    base_price_max  DECIMAL(12,0)   NOT NULL,   -- VND/day maximum
+    is_active       BIT             NOT NULL DEFAULT 1,
+    sort_order      INT             NOT NULL DEFAULT 0,
+    CONSTRAINT FK_vehicle_models_brand FOREIGN KEY (brand_id) REFERENCES vehicle_brands(id) ON DELETE NO ACTION
+);
+CREATE INDEX IDX_vehicle_models_brand ON vehicle_models(brand_id);
+CREATE INDEX IDX_vehicle_models_type  ON vehicle_models(vehicle_type);
+END
+GO
+
+
+PRINT 'LuxeWay - Vietnam market migration completed successfully.';
+GO
+
+-- ============================================================
+-- 38. CAR_BRANDS
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'car_brands')
+BEGIN
+CREATE TABLE car_brands (
+    id NVARCHAR(36) NOT NULL PRIMARY KEY,
+    name NVARCHAR(100) NOT NULL UNIQUE,
+    country NVARCHAR(100) NOT NULL,
+    logo_url NVARCHAR(500),
+    is_active BIT NOT NULL DEFAULT 1,
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE()
+);
+END
+GO
+
+-- ============================================================
+-- 39. CAR_MODELS
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'car_models')
+BEGIN
+CREATE TABLE car_models (
+    id NVARCHAR(36) NOT NULL PRIMARY KEY,
+    brand_id NVARCHAR(36) NOT NULL,
+    name NVARCHAR(100) NOT NULL,
+    category NVARCHAR(50) NOT NULL,
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    CONSTRAINT FK_car_models_brand FOREIGN KEY (brand_id) REFERENCES car_brands(id)
+);
+END
+GO
+
+-- ============================================================
+-- 40. CARS
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'cars')
+BEGIN
+CREATE TABLE cars (
+    id NVARCHAR(36) NOT NULL PRIMARY KEY,
+    model_id NVARCHAR(36) NOT NULL,
+    owner_id NVARCHAR(36) NOT NULL,
+    name NVARCHAR(200) NOT NULL,
+    license_plate NVARCHAR(20) NOT NULL UNIQUE,
+    price_per_day DECIMAL(12,0) NOT NULL,
+    deposit DECIMAL(12,0) NOT NULL,
+    status NVARCHAR(20) NOT NULL DEFAULT 'AVAILABLE',
+    rating DECIMAL(3,2) NOT NULL DEFAULT 0.00,
+    total_reviews INT NOT NULL DEFAULT 0,
+    total_bookings INT NOT NULL DEFAULT 0,
+    is_verified BIT NOT NULL DEFAULT 0,
+    is_featured BIT NOT NULL DEFAULT 0,
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    CONSTRAINT FK_cars_model FOREIGN KEY (model_id) REFERENCES car_models(id),
+    CONSTRAINT FK_cars_owner FOREIGN KEY (owner_id) REFERENCES users(id)
+);
+END
+GO
+
+-- ============================================================
+-- 41. CAR_SPECIFICATIONS
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'car_specifications')
+BEGIN
+CREATE TABLE car_specifications (
+    id NVARCHAR(36) NOT NULL PRIMARY KEY,
+    car_id NVARCHAR(36) NOT NULL UNIQUE,
+    seats INT NOT NULL,
+    doors INT NOT NULL,
+    transmission NVARCHAR(20) NOT NULL,
+    fuel_type NVARCHAR(20) NOT NULL,
+    has_chauffeur BIT NOT NULL DEFAULT 0,
+    airport_delivery BIT NOT NULL DEFAULT 0,
+    electric BIT NOT NULL DEFAULT 0,
+    hybrid BIT NOT NULL DEFAULT 0,
+    CONSTRAINT FK_car_specs_car FOREIGN KEY (car_id) REFERENCES cars(id) ON DELETE CASCADE
+);
+END
+GO
+
+-- ============================================================
+-- 42. CAR_IMAGES
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'car_images')
+BEGIN
+CREATE TABLE car_images (
+    id NVARCHAR(36) NOT NULL PRIMARY KEY,
+    car_id NVARCHAR(36) NOT NULL,
+    url NVARCHAR(500) NOT NULL,
+    is_primary BIT NOT NULL DEFAULT 0,
+    sort_order INT NOT NULL DEFAULT 0,
+    CONSTRAINT FK_car_images_car FOREIGN KEY (car_id) REFERENCES cars(id) ON DELETE CASCADE
+);
+END
+GO
+
+-- ============================================================
+-- 43. CAR_LOCATIONS
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'car_locations')
+BEGIN
+CREATE TABLE car_locations (
+    id NVARCHAR(36) NOT NULL PRIMARY KEY,
+    car_id NVARCHAR(36) NOT NULL UNIQUE,
+    city NVARCHAR(100) NOT NULL,
+    address NVARCHAR(MAX) NOT NULL,
+    latitude DECIMAL(10,8),
+    longitude DECIMAL(11,8),
+    CONSTRAINT FK_car_locations_car FOREIGN KEY (car_id) REFERENCES cars(id) ON DELETE CASCADE
+);
+END
+GO
+
+-- ============================================================
+-- 44. CAR_PRICING
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'car_pricing')
+BEGIN
+CREATE TABLE car_pricing (
+    id NVARCHAR(36) NOT NULL PRIMARY KEY,
+    car_id NVARCHAR(36) NOT NULL,
+    weekend_multiplier DECIMAL(3,2) NOT NULL DEFAULT 1.00,
+    holiday_multiplier DECIMAL(3,2) NOT NULL DEFAULT 1.00,
+    CONSTRAINT FK_car_pricing_car FOREIGN KEY (car_id) REFERENCES cars(id) ON DELETE CASCADE
+);
+END
+GO
+
+-- ============================================================
+-- 45. CAR_AVAILABILITY
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'car_availability')
+BEGIN
+CREATE TABLE car_availability (
+    id NVARCHAR(36) NOT NULL PRIMARY KEY,
+    car_id NVARCHAR(36) NOT NULL,
+    date DATE NOT NULL,
+    is_available BIT NOT NULL DEFAULT 1,
+    CONSTRAINT FK_car_avail_car FOREIGN KEY (car_id) REFERENCES cars(id) ON DELETE CASCADE
+);
+END
+GO
+
+-- ============================================================
+-- 46. CAR_BOOKINGS
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'car_bookings')
+BEGIN
+CREATE TABLE car_bookings (
+    id NVARCHAR(36) NOT NULL PRIMARY KEY,
+    car_id NVARCHAR(36) NOT NULL,
+    renter_id NVARCHAR(36) NOT NULL,
+    owner_id NVARCHAR(36) NOT NULL,
+    status NVARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    total_days INT NOT NULL,
+    price_per_day DECIMAL(12,0) NOT NULL,
+    base_price DECIMAL(12,0) NOT NULL,
+    service_fee DECIMAL(12,0) NOT NULL,
+    taxes DECIMAL(12,0) NOT NULL,
+    total DECIMAL(12,0) NOT NULL,
+    deposit DECIMAL(12,0) NOT NULL,
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    CONSTRAINT FK_car_bookings_car FOREIGN KEY (car_id) REFERENCES cars(id),
+    CONSTRAINT FK_car_bookings_renter FOREIGN KEY (renter_id) REFERENCES users(id),
+    CONSTRAINT FK_car_bookings_owner FOREIGN KEY (owner_id) REFERENCES users(id)
+);
+END
+GO
+
+-- ============================================================
+-- 47. CAR_BOOKING_HISTORY
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'car_booking_history')
+BEGIN
+CREATE TABLE car_booking_history (
+    id NVARCHAR(36) NOT NULL PRIMARY KEY,
+    booking_id NVARCHAR(36) NOT NULL,
+    status NVARCHAR(20) NOT NULL,
+    changed_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    CONSTRAINT FK_car_history_booking FOREIGN KEY (booking_id) REFERENCES car_bookings(id) ON DELETE CASCADE
+);
+END
+GO
+
+-- ============================================================
+-- 48. CAR_DELIVERY
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'car_delivery')
+BEGIN
+CREATE TABLE car_delivery (
+    id NVARCHAR(36) NOT NULL PRIMARY KEY,
+    booking_id NVARCHAR(36) NOT NULL UNIQUE,
+    delivery_address NVARCHAR(500) NOT NULL,
+    fee DECIMAL(12,0) NOT NULL DEFAULT 0,
+    CONSTRAINT FK_car_delivery_booking FOREIGN KEY (booking_id) REFERENCES car_bookings(id) ON DELETE CASCADE
+);
+END
+GO
+
+-- ============================================================
+-- 49. CHAUFFEUR_SERVICES
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'chauffeur_services')
+BEGIN
+CREATE TABLE chauffeur_services (
+    id NVARCHAR(36) NOT NULL PRIMARY KEY,
+    booking_id NVARCHAR(36) NOT NULL UNIQUE,
+    chauffeur_name NVARCHAR(100) NOT NULL,
+    price_per_day DECIMAL(12,0) NOT NULL DEFAULT 0,
+    CONSTRAINT FK_chauffeur_booking FOREIGN KEY (booking_id) REFERENCES car_bookings(id) ON DELETE CASCADE
+);
+END
+GO
+
+-- ============================================================
+-- 50. AIRPORT_TRANSFER_SERVICES
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'airport_transfer_services')
+BEGIN
+CREATE TABLE airport_transfer_services (
+    id NVARCHAR(36) NOT NULL PRIMARY KEY,
+    booking_id NVARCHAR(36) NOT NULL UNIQUE,
+    flight_number NVARCHAR(20) NOT NULL,
+    fee DECIMAL(12,0) NOT NULL DEFAULT 0,
+    CONSTRAINT FK_airport_booking FOREIGN KEY (booking_id) REFERENCES car_bookings(id) ON DELETE CASCADE
+);
+END
+GO
+
+-- ============================================================
+-- 51. BUSINESS_PACKAGES
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'business_packages')
+BEGIN
+CREATE TABLE business_packages (
+    id NVARCHAR(36) NOT NULL PRIMARY KEY,
+    car_id NVARCHAR(36) NOT NULL,
+    company_name NVARCHAR(200) NOT NULL,
+    discount_percent INT NOT NULL DEFAULT 0,
+    CONSTRAINT FK_business_car FOREIGN KEY (car_id) REFERENCES cars(id) ON DELETE CASCADE
+);
+END
+GO
+
+-- ============================================================
+-- 52. WEDDING_PACKAGES
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'wedding_packages')
+BEGIN
+CREATE TABLE wedding_packages (
+    id NVARCHAR(36) NOT NULL PRIMARY KEY,
+    car_id NVARCHAR(36) NOT NULL,
+    decoration_style NVARCHAR(100) NOT NULL,
+    price DECIMAL(12,0) NOT NULL DEFAULT 0,
+    CONSTRAINT FK_wedding_car FOREIGN KEY (car_id) REFERENCES cars(id) ON DELETE CASCADE
+);
+END
+GO
+
+-- ============================================================
+-- 53. CAR_ANALYTICS
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'car_analytics')
+BEGIN
+CREATE TABLE car_analytics (
+    id NVARCHAR(36) NOT NULL PRIMARY KEY,
+    date DATE NOT NULL UNIQUE,
+    revenue DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+    bookings_count INT NOT NULL DEFAULT 0
+);
+END
+GO
+
+-- ============================================================
+-- 54. MOTORBIKE_BRANDS
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'motorbike_brands')
+BEGIN
+CREATE TABLE motorbike_brands (
+    id NVARCHAR(36) NOT NULL PRIMARY KEY,
+    name NVARCHAR(100) NOT NULL UNIQUE,
+    country NVARCHAR(100) NOT NULL,
+    logo_url NVARCHAR(500),
+    is_active BIT NOT NULL DEFAULT 1,
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE()
+);
+END
+GO
+
+-- ============================================================
+-- 55. MOTORBIKE_MODELS
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'motorbike_models')
+BEGIN
+CREATE TABLE motorbike_models (
+    id NVARCHAR(36) NOT NULL PRIMARY KEY,
+    brand_id NVARCHAR(36) NOT NULL,
+    name NVARCHAR(100) NOT NULL,
+    category NVARCHAR(50) NOT NULL,
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    CONSTRAINT FK_motorbike_models_brand FOREIGN KEY (brand_id) REFERENCES motorbike_brands(id)
+);
+END
+GO
+
+-- ============================================================
+-- 56. MOTORBIKES
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'motorbikes')
+BEGIN
+CREATE TABLE motorbikes (
+    id NVARCHAR(36) NOT NULL PRIMARY KEY,
+    model_id NVARCHAR(36) NOT NULL,
+    owner_id NVARCHAR(36) NOT NULL,
+    name NVARCHAR(200) NOT NULL,
+    license_plate NVARCHAR(20) NOT NULL UNIQUE,
+    price_per_day DECIMAL(12,0) NOT NULL,
+    deposit DECIMAL(12,0) NOT NULL,
+    status NVARCHAR(20) NOT NULL DEFAULT 'AVAILABLE',
+    rating DECIMAL(3,2) NOT NULL DEFAULT 0.00,
+    total_reviews INT NOT NULL DEFAULT 0,
+    total_bookings INT NOT NULL DEFAULT 0,
+    is_verified BIT NOT NULL DEFAULT 0,
+    is_featured BIT NOT NULL DEFAULT 0,
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    CONSTRAINT FK_motorbikes_model FOREIGN KEY (model_id) REFERENCES motorbike_models(id),
+    CONSTRAINT FK_motorbikes_owner FOREIGN KEY (owner_id) REFERENCES users(id)
+);
+END
+GO
+
+-- ============================================================
+-- 57. MOTORBIKE_SPECIFICATIONS
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'motorbike_specifications')
+BEGIN
+CREATE TABLE motorbike_specifications (
+    id NVARCHAR(36) NOT NULL PRIMARY KEY,
+    motorbike_id NVARCHAR(36) NOT NULL UNIQUE,
+    engine_cc INT NOT NULL,
+    transmission NVARCHAR(20) NOT NULL,
+    helmet_included BIT NOT NULL DEFAULT 1,
+    raincoat_included BIT NOT NULL DEFAULT 1,
+    phone_holder BIT NOT NULL DEFAULT 0,
+    luggage_rack BIT NOT NULL DEFAULT 0,
+    CONSTRAINT FK_motorbike_specs_motorbike FOREIGN KEY (motorbike_id) REFERENCES motorbikes(id) ON DELETE CASCADE
+);
+END
+GO
+
+-- ============================================================
+-- 58. MOTORBIKE_IMAGES
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'motorbike_images')
+BEGIN
+CREATE TABLE motorbike_images (
+    id NVARCHAR(36) NOT NULL PRIMARY KEY,
+    motorbike_id NVARCHAR(36) NOT NULL,
+    url NVARCHAR(500) NOT NULL,
+    is_primary BIT NOT NULL DEFAULT 0,
+    sort_order INT NOT NULL DEFAULT 0,
+    CONSTRAINT FK_motorbike_images_motorbike FOREIGN KEY (motorbike_id) REFERENCES motorbikes(id) ON DELETE CASCADE
+);
+END
+GO
+
+-- ============================================================
+-- 59. MOTORBIKE_LOCATIONS
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'motorbike_locations')
+BEGIN
+CREATE TABLE motorbike_locations (
+    id NVARCHAR(36) NOT NULL PRIMARY KEY,
+    motorbike_id NVARCHAR(36) NOT NULL UNIQUE,
+    city NVARCHAR(100) NOT NULL,
+    address NVARCHAR(MAX) NOT NULL,
+    latitude DECIMAL(10,8),
+    longitude DECIMAL(11,8),
+    CONSTRAINT FK_motorbike_locations_motorbike FOREIGN KEY (motorbike_id) REFERENCES motorbikes(id) ON DELETE CASCADE
+);
+END
+GO
+
+-- ============================================================
+-- 60. MOTORBIKE_PRICING
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'motorbike_pricing')
+BEGIN
+CREATE TABLE motorbike_pricing (
+    id NVARCHAR(36) NOT NULL PRIMARY KEY,
+    motorbike_id NVARCHAR(36) NOT NULL,
+    weekend_multiplier DECIMAL(3,2) NOT NULL DEFAULT 1.00,
+    holiday_multiplier DECIMAL(3,2) NOT NULL DEFAULT 1.00,
+    CONSTRAINT FK_motorbike_pricing_motorbike FOREIGN KEY (motorbike_id) REFERENCES motorbikes(id) ON DELETE CASCADE
+);
+END
+GO
+
+-- ============================================================
+-- 61. MOTORBIKE_AVAILABILITY
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'motorbike_availability')
+BEGIN
+CREATE TABLE motorbike_availability (
+    id NVARCHAR(36) NOT NULL PRIMARY KEY,
+    motorbike_id NVARCHAR(36) NOT NULL,
+    date DATE NOT NULL,
+    is_available BIT NOT NULL DEFAULT 1,
+    CONSTRAINT FK_motorbike_avail_motorbike FOREIGN KEY (motorbike_id) REFERENCES motorbikes(id) ON DELETE CASCADE
+);
+END
+GO
+
+-- ============================================================
+-- 62. MOTORBIKE_BOOKINGS
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'motorbike_bookings')
+BEGIN
+CREATE TABLE motorbike_bookings (
+    id NVARCHAR(36) NOT NULL PRIMARY KEY,
+    motorbike_id NVARCHAR(36) NOT NULL,
+    renter_id NVARCHAR(36) NOT NULL,
+    owner_id NVARCHAR(36) NOT NULL,
+    status NVARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    total_days INT NOT NULL,
+    price_per_day DECIMAL(12,0) NOT NULL,
+    base_price DECIMAL(12,0) NOT NULL,
+    service_fee DECIMAL(12,0) NOT NULL,
+    taxes DECIMAL(12,0) NOT NULL,
+    total DECIMAL(12,0) NOT NULL,
+    deposit DECIMAL(12,0) NOT NULL,
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    CONSTRAINT FK_motorbike_bookings_motorbike FOREIGN KEY (motorbike_id) REFERENCES motorbikes(id),
+    CONSTRAINT FK_motorbike_bookings_renter FOREIGN KEY (renter_id) REFERENCES users(id),
+    CONSTRAINT FK_motorbike_bookings_owner FOREIGN KEY (owner_id) REFERENCES users(id)
+);
+END
+GO
+
+-- ============================================================
+-- 63. MOTORBIKE_BOOKING_HISTORY
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'motorbike_booking_history')
+BEGIN
+CREATE TABLE motorbike_booking_history (
+    id NVARCHAR(36) NOT NULL PRIMARY KEY,
+    booking_id NVARCHAR(36) NOT NULL,
+    status NVARCHAR(20) NOT NULL,
+    changed_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    CONSTRAINT FK_motorbike_history_booking FOREIGN KEY (booking_id) REFERENCES motorbike_bookings(id) ON DELETE CASCADE
+);
+END
+GO
+
+-- ============================================================
+-- 64. TOUR_PACKAGES
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'tour_packages')
+BEGIN
+CREATE TABLE tour_packages (
+    id NVARCHAR(36) NOT NULL PRIMARY KEY,
+    motorbike_id NVARCHAR(36) NOT NULL,
+    destination NVARCHAR(200) NOT NULL,
+    price DECIMAL(12,0) NOT NULL DEFAULT 0,
+    CONSTRAINT FK_tour_motorbike FOREIGN KEY (motorbike_id) REFERENCES motorbikes(id) ON DELETE CASCADE
+);
+END
+GO
+
+-- ============================================================
+-- 65. ADVENTURE_PACKAGES
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'adventure_packages')
+BEGIN
+CREATE TABLE adventure_packages (
+    id NVARCHAR(36) NOT NULL PRIMARY KEY,
+    motorbike_id NVARCHAR(36) NOT NULL,
+    level NVARCHAR(50) NOT NULL,
+    price DECIMAL(12,0) NOT NULL DEFAULT 0,
+    CONSTRAINT FK_adventure_motorbike FOREIGN KEY (motorbike_id) REFERENCES motorbikes(id) ON DELETE CASCADE
+);
+END
+GO
+
+-- ============================================================
+-- 66. EQUIPMENT_RENTALS
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'equipment_rentals')
+BEGIN
+CREATE TABLE equipment_rentals (
+    id NVARCHAR(36) NOT NULL PRIMARY KEY,
+    booking_id NVARCHAR(36) NOT NULL,
+    equipment_name NVARCHAR(100) NOT NULL,
+    price DECIMAL(12,0) NOT NULL DEFAULT 0,
+    CONSTRAINT FK_equipment_booking FOREIGN KEY (booking_id) REFERENCES motorbike_bookings(id) ON DELETE CASCADE
+);
+END
+GO
+
+-- ============================================================
+-- 67. MOTORBIKE_ANALYTICS
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'motorbike_analytics')
+BEGIN
+CREATE TABLE motorbike_analytics (
+    id NVARCHAR(36) NOT NULL PRIMARY KEY,
+    date DATE NOT NULL UNIQUE,
+    revenue DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+    bookings_count INT NOT NULL DEFAULT 0
+);
+END
+GO
+
+PRINT 'LuxeWay - Bounded contexts (Cars & Motorbikes) migration completed successfully.';
 GO
