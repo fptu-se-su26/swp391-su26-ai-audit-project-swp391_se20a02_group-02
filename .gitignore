@@ -3,6 +3,11 @@ node_modules/
 .vscode/
 build/
 target/
+build_alt/
+build_run/
+build_success/
+build_temp/
+.build_alt/
 *.class
 *.jar
 *.war
@@ -18,6 +23,7 @@ target/
 # Build outputs
 dist/
 dist-ssr/
+*.tsbuildinfo
 *.local
 
 # OS

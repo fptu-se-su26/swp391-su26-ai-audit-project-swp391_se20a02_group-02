@@ -64,7 +64,7 @@ payment:
 # Before
 mail:
   username: ${MAIL_USERNAME:yourgmail@gmail.com}
-  password: ${MAIL_PASSWORD:bqkx nhab jusa yswc}
+  password: ${MAIL_PASSWORD:your-gmail-app-password}
 
 # After
 mail:

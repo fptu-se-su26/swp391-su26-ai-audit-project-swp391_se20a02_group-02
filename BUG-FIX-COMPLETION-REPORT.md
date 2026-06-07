@@ -232,7 +232,7 @@ LOG_LEVEL=INFO
 ```
 ❌ JWT secret visible in Git: "LuxeWaySecretKeyFor..."
 ❌ VNPay credentials in Git: "B98SI22O", "BZ6G1H7..."
-❌ Email password in Git: "bqkx nhab jusa yswc"
+❌ Email password in Git: "your-gmail-app-password"
 ❌ No VNPay callback IP validation
 ❌ OTP codes logged in production (INFO level)
 ❌ CORS locked to localhost only
