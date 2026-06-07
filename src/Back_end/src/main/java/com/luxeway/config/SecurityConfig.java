@@ -36,17 +36,20 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final UserRepository userRepository;
     private final com.luxeway.security.OAuth2AuthenticationSuccessHandler oAuth2SuccessHandler;
+    private final com.luxeway.security.OAuth2AuthenticationFailureHandler oAuth2FailureHandler;
     private final com.luxeway.security.VNPayIPWhitelistFilter vnPayIPWhitelistFilter;
 
     public SecurityConfig(
             JwtAuthenticationFilter jwtAuthFilter,
             UserRepository userRepository,
             com.luxeway.security.VNPayIPWhitelistFilter vnPayIPWhitelistFilter,
-            @org.springframework.context.annotation.Lazy com.luxeway.security.OAuth2AuthenticationSuccessHandler oAuth2SuccessHandler) {
+            @org.springframework.context.annotation.Lazy com.luxeway.security.OAuth2AuthenticationSuccessHandler oAuth2SuccessHandler,
+            com.luxeway.security.OAuth2AuthenticationFailureHandler oAuth2FailureHandler) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.userRepository = userRepository;
         this.vnPayIPWhitelistFilter = vnPayIPWhitelistFilter;
         this.oAuth2SuccessHandler = oAuth2SuccessHandler;
+        this.oAuth2FailureHandler = oAuth2FailureHandler;
     }
 
     @Bean
@@ -131,6 +134,14 @@ public class SecurityConfig {
                     "/api/v1/vehicles/search",
                     "/api/v1/vehicles/featured",
                     "/api/v1/vehicles/{id}",
+                    "/cars",
+                    "/cars/{id}",
+                    "/api/v1/cars",
+                    "/api/v1/cars/{id}",
+                    "/motorbikes",
+                    "/motorbikes/{id}",
+                    "/api/v1/motorbikes",
+                    "/api/v1/motorbikes/{id}",
                     "/reviews",
                     "/reviews/**",
                     "/api/v1/reviews",
@@ -143,13 +154,19 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/users", "/api/v1/users").hasAnyRole("ADMIN", "SUPER_ADMIN")
                 // ======== Owner or Admin ========
                 .requestMatchers(HttpMethod.POST,
-                    "/vehicles", "/api/v1/vehicles"
+                    "/vehicles", "/api/v1/vehicles",
+                    "/cars", "/api/v1/cars",
+                    "/motorbikes", "/api/v1/motorbikes"
                 ).hasAnyRole("OWNER", "ADMIN")
                 .requestMatchers(HttpMethod.PUT,
-                    "/vehicles/**", "/api/v1/vehicles/**"
+                    "/vehicles/**", "/api/v1/vehicles/**",
+                    "/cars/**", "/api/v1/cars/**",
+                    "/motorbikes/**", "/api/v1/motorbikes/**"
                 ).hasAnyRole("OWNER", "ADMIN")
                 .requestMatchers(HttpMethod.DELETE,
-                    "/vehicles/**", "/api/v1/vehicles/**"
+                    "/vehicles/**", "/api/v1/vehicles/**",
+                    "/cars/**", "/api/v1/cars/**",
+                    "/motorbikes/**", "/api/v1/motorbikes/**"
                 ).hasAnyRole("OWNER", "ADMIN")
                 // Upload endpoint requires authentication
                 .requestMatchers(HttpMethod.POST, "/upload", "/upload/**", "/users/documents", "/api/v1/users/documents").authenticated()
@@ -158,6 +175,7 @@ public class SecurityConfig {
             )
             .oauth2Login(oauth2 -> oauth2
                 .successHandler(oAuth2SuccessHandler)
+                .failureHandler(oAuth2FailureHandler)
             )
             .authenticationProvider(authenticationProvider())
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)

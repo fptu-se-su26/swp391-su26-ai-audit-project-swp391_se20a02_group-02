@@ -9,7 +9,7 @@ import { notificationService, reviewService } from '@/services/otherServices';
 import { useToast } from '@/components/ui/Toast';
 import type { Vehicle, Notification, Review } from '@/types';
 import { formatDate } from '@/utils';
-import { useT } from '@/i18n/translations';
+import { useT, translateNotification } from '@/i18n/translations';
 
 // Layouts
 import RootLayout from '@/layouts/RootLayout';
@@ -21,6 +21,10 @@ import { LoginPage, RegisterPage, ForgotPasswordPage } from '@/pages/auth/AuthPa
 import OAuth2RedirectHandler from '@/pages/auth/OAuth2RedirectHandler';
 import MarketplacePage from '@/pages/marketplace/MarketplacePage';
 import VehicleDetailPage from '@/pages/marketplace/VehicleDetailPage';
+import CarsMarketplace from '@/pages/marketplace/CarsMarketplace';
+import MotorbikeMarketplace from '@/pages/marketplace/MotorbikeMarketplace';
+import CarDetails from '@/pages/marketplace/CarDetails';
+import MotorbikeDetails from '@/pages/marketplace/MotorbikeDetails';
 import BookingWizardPage from '@/pages/booking/BookingWizardPage';
 import VNPayReturnPage from '@/pages/booking/VNPayReturnPage';
 import HelpPage from '@/pages/help/HelpPage';
@@ -260,8 +264,8 @@ const NotificationsPage: React.FC = () => {
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className={`text-sm font-semibold ${!n.read ? 'text-accent' : isDark ? 'text-white' : 'text-[#0F172A]'}`}>{n.title}</p>
-                <p className="text-sm text-slate-500 mt-0.5">{n.body}</p>
+                <p className={`text-sm font-semibold ${!n.read ? 'text-accent' : isDark ? 'text-white' : 'text-[#0F172A]'}`}>{translateNotification(n.title)}</p>
+                <p className="text-sm text-slate-500 mt-0.5">{translateNotification(n.body)}</p>
               </div>
               {!n.read && <div className="w-2.5 h-2.5 bg-accent rounded-full flex-shrink-0 mt-1" />}
             </div>
@@ -288,12 +292,13 @@ const OTPPage: React.FC = () => {
   const isDark = theme === 'dark';
   
   const queryEmail = new URLSearchParams(location.search).get('email') || '';
+  const queryToken = new URLSearchParams(location.search).get('token') || '';
   const stateEmail = (location.state as any)?.email || '';
   const email = queryEmail || stateEmail;
 
-  const [step, setStep] = React.useState<'otp' | 'reset'>('otp');
+  const [step, setStep] = React.useState<'otp' | 'reset'>(queryToken ? 'reset' : 'otp');
   const [code, setCode] = React.useState(['', '', '', '', '', '']);
-  const [resetToken, setResetToken] = React.useState('');
+  const [resetToken, setResetToken] = React.useState(queryToken);
   const [newPassword, setNewPassword] = React.useState('');
   const [confirmPassword, setConfirmPassword] = React.useState('');
   
@@ -469,7 +474,7 @@ const NotificationsPageWrapper: React.FC = () => {
 // ====== MAIN APP ======
 const App: React.FC = () => {
   const { initAuth } = useAuthStore();
-  const { theme } = useUIStore();
+  const { theme, language } = useUIStore();
 
   useEffect(() => {
     initAuth();
@@ -479,6 +484,13 @@ const App: React.FC = () => {
       document.documentElement.classList.add('dark');
     }
   }, []);
+
+  // Sync language and document direction (LTR/RTL)
+  useEffect(() => {
+    const isRtl = ['ar', 'he'].includes(language);
+    document.documentElement.dir = isRtl ? 'rtl' : 'ltr';
+    document.documentElement.lang = language;
+  }, [language]);
 
   // Sync theme changes to DOM
   useEffect(() => {
@@ -496,6 +508,10 @@ const App: React.FC = () => {
             <Route path="vehicles" element={<MarketplacePage />} />
             <Route path="search" element={<MarketplacePage />} />
             <Route path="vehicles/:id" element={<VehicleDetailPage />} />
+            <Route path="cars" element={<CarsMarketplace />} />
+            <Route path="motorbikes" element={<MotorbikeMarketplace />} />
+            <Route path="cars/:id" element={<CarDetails />} />
+            <Route path="motorbikes/:id" element={<MotorbikeDetails />} />
             <Route path="booking/:vehicleId" element={
               <ProtectedRoute><BookingWizardPage /></ProtectedRoute>
             } />
