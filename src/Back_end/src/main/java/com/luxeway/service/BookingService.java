@@ -159,8 +159,8 @@ public class BookingService {
         notificationService.createNotification(
             booking.getOwner().getId(),
             "booking",
-            "New Booking Request",
-            renter.getDisplayName() + " has requested to book your " + vehicle.getName(),
+            "notification.booking.new.title",
+            "notification.booking.new.body|renter=" + renter.getDisplayName() + "|vehicle=" + vehicle.getName(),
             "/owner/bookings/" + booking.getId()
         );
 
@@ -227,6 +227,7 @@ public class BookingService {
         booking.setStatus(BookingStatus.CANCELLED);
         booking.setCancelledAt(java.time.LocalDateTime.now());
         booking.setCancellationReason(req.getReason());
+        
 
         booking = bookingRepository.save(booking);
 
@@ -259,8 +260,8 @@ public class BookingService {
         notificationService.createNotification(
             notifyUserId,
             "booking",
-            "Booking Cancelled",
-            "Booking for " + booking.getVehicle().getName() + " has been cancelled.",
+            "notification.booking.cancelled.title",
+            "notification.booking.cancelled.body|vehicle=" + booking.getVehicle().getName(),
             "/bookings/" + booking.getId()
         );
 
@@ -321,8 +322,8 @@ public class BookingService {
         notificationService.createNotification(
             booking.getRenter().getId(),
             "booking",
-            "Booking Status Updated",
-            "Your booking for " + booking.getVehicle().getName() + " is now " + newStatus.getDisplayName(),
+            "notification.booking.status.title",
+            "notification.booking.status.body|vehicle=" + booking.getVehicle().getName() + "|status=" + newStatus.name().toLowerCase(),
             "/bookings/" + booking.getId()
         );
 

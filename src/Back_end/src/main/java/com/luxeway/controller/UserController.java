@@ -213,4 +213,21 @@ public class UserController {
         java.util.List<com.luxeway.dto.user.UserDTOs.DocumentResponse> docs = userService.getMyDocuments(user.getId());
         return ResponseEntity.ok(docs);
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateProfile(
+            @PathVariable String id,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.luxeway.entity.User requester,
+            @jakarta.validation.Valid @RequestBody com.luxeway.dto.user.UserDTOs.UpdateProfileRequest request) {
+        if (requester == null) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Unauthorized");
+            return ResponseEntity.status(401).body(errorResponse);
+        }
+        if (!requester.isAdmin() && !requester.getId().equals(id)) {
+            throw new org.springframework.security.access.AccessDeniedException("Not authorized to update this profile");
+        }
+        com.luxeway.dto.user.UserDTOs.UserProfileResponse updated = userService.updateProfile(id, request);
+        return ResponseEntity.ok(updated);
+    }
 }

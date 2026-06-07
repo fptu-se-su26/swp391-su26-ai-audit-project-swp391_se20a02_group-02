@@ -63,8 +63,10 @@ class ApiClient {
     const url = `${this.baseURL}${endpoint}`;
     
     const token = localStorage.getItem(TOKEN_KEY);
+    const lang = localStorage.getItem('language') || 'en';
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
+      'Accept-Language': lang,
       ...(options.headers as Record<string, string>),
     };
 

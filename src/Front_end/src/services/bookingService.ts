@@ -40,9 +40,22 @@ const mapBooking = (b: any): Booking => {
 export const bookingService = {
   async getByUser(userId: string): Promise<Booking[]> {
     try {
-      const response = await apiClient.get<any>('/bookings?page=0&size=50');
-      const list = response.data?.content || response.content || [];
-      return list.map(mapBooking);
+      const [carRes, motoRes] = await Promise.all([
+        apiClient.get<any>('/cars/bookings').catch(() => ({ bookings: [] })),
+        apiClient.get<any>('/motorbikes/bookings').catch(() => ({ bookings: [] }))
+      ]);
+      
+      const carList = carRes.bookings || carRes.content || [];
+      const motoList = motoRes.bookings || motoRes.content || [];
+      
+      const combined = [...carList, ...motoList];
+      combined.sort((a: any, b: any) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
+      });
+      
+      return combined.map(mapBooking);
     } catch (error) {
       console.error('Failed to fetch user bookings', error);
       return [];
@@ -51,9 +64,22 @@ export const bookingService = {
 
   async getByOwner(ownerId: string): Promise<Booking[]> {
     try {
-      const response = await apiClient.get<any>('/bookings/owner?page=0&size=50');
-      const list = response.data?.content || response.content || [];
-      return list.map(mapBooking);
+      const [carRes, motoRes] = await Promise.all([
+        apiClient.get<any>('/cars/bookings/owner').catch(() => ({ bookings: [] })),
+        apiClient.get<any>('/motorbikes/bookings/owner').catch(() => ({ bookings: [] }))
+      ]);
+      
+      const carList = carRes.bookings || carRes.content || [];
+      const motoList = motoRes.bookings || motoRes.content || [];
+      
+      const combined = [...carList, ...motoList];
+      combined.sort((a: any, b: any) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
+      });
+      
+      return combined.map(mapBooking);
     } catch (error) {
       console.error('Failed to fetch owner bookings', error);
       return [];
@@ -62,6 +88,18 @@ export const bookingService = {
 
   async getById(id: string): Promise<Booking | null> {
     try {
+      try {
+        const carRes = await apiClient.get<any>(`/cars/bookings/${id}`);
+        const booking = carRes.booking || carRes.data || carRes || null;
+        if (booking && booking.id) return mapBooking(booking);
+      } catch (_) {}
+      
+      try {
+        const motoRes = await apiClient.get<any>(`/motorbikes/bookings/${id}`);
+        const booking = motoRes.booking || motoRes.data || motoRes || null;
+        if (booking && booking.id) return mapBooking(booking);
+      } catch (_) {}
+      
       const response = await apiClient.get<any>(`/bookings/${id}`);
       const booking = response.data || response || null;
       return booking ? mapBooking(booking) : null;
@@ -70,23 +108,60 @@ export const bookingService = {
     }
   },
 
-  async create(wizardState: BookingWizardState, renterId: string): Promise<Booking> {
-    const payload = {
-      vehicleId: wizardState.vehicleId,
-      startDate: wizardState.startDate,
-      endDate: wizardState.endDate,
-      includeInsurance: wizardState.includeInsurance,
-      includeDelivery: wizardState.includeDelivery,
-      deliveryAddress: wizardState.deliveryAddress,
-      couponCode: wizardState.couponCode,
-      notes: wizardState.notes,
-      selectedAddons: wizardState.selectedAddons,
-    };
-    
-    const response = await apiClient.post<any>('/bookings', payload);
-    const booking = response.data || response;
-    if (!booking || !booking.id) throw new Error(response.message || 'Failed to create booking');
-    return mapBooking(booking);
+  async create(wizardState: BookingWizardState, renterId: string, vehicleType?: 'car' | 'motorbike', extras?: any): Promise<Booking> {
+    if (vehicleType === 'car') {
+      const payload = {
+        carId: wizardState.vehicleId,
+        startDate: wizardState.startDate,
+        endDate: wizardState.endDate,
+        includeInsurance: wizardState.includeInsurance,
+        insuranceTier: extras?.insuranceTier || 'premium',
+        hasChauffeur: !!extras?.hasChauffeur,
+        airportDelivery: wizardState.includeDelivery,
+        weddingPackage: !!extras?.weddingPackage,
+        businessPackage: !!extras?.businessPackage,
+        deliveryAddress: wizardState.deliveryAddress,
+        notes: wizardState.notes,
+        couponCode: wizardState.couponCode,
+      };
+      const response = await apiClient.post<any>('/cars/bookings', payload);
+      const booking = response.booking || response.data || response;
+      if (!booking || !booking.id) throw new Error(response.message || 'Failed to create car booking');
+      return mapBooking(booking);
+    } else if (vehicleType === 'motorbike') {
+      const payload = {
+        motorbikeId: wizardState.vehicleId,
+        startDate: wizardState.startDate,
+        endDate: wizardState.endDate,
+        includeInsurance: wizardState.includeInsurance,
+        hasHelmet: !!extras?.hasHelmet,
+        hasRaincoat: !!extras?.hasRaincoat,
+        hasPhoneHolder: !!extras?.hasPhoneHolder,
+        hasTouringPackage: !!extras?.hasTouringPackage,
+        notes: wizardState.notes,
+        couponCode: wizardState.couponCode,
+      };
+      const response = await apiClient.post<any>('/motorbikes/bookings', payload);
+      const booking = response.booking || response.data || response;
+      if (!booking || !booking.id) throw new Error(response.message || 'Failed to create motorbike booking');
+      return mapBooking(booking);
+    } else {
+      const payload = {
+        vehicleId: wizardState.vehicleId,
+        startDate: wizardState.startDate,
+        endDate: wizardState.endDate,
+        includeInsurance: wizardState.includeInsurance,
+        includeDelivery: wizardState.includeDelivery,
+        deliveryAddress: wizardState.deliveryAddress,
+        couponCode: wizardState.couponCode,
+        notes: wizardState.notes,
+        selectedAddons: wizardState.selectedAddons,
+      };
+      const response = await apiClient.post<any>('/bookings', payload);
+      const booking = response.data || response;
+      if (!booking || !booking.id) throw new Error(response.message || 'Failed to create booking');
+      return mapBooking(booking);
+    }
   },
 
   async cancel(bookingId: string, reason: string): Promise<Booking | null> {
@@ -101,6 +176,18 @@ export const bookingService = {
 
   async updateStatus(bookingId: string, status: BookingStatus): Promise<Booking | null> {
     try {
+      try {
+        const response = await apiClient.put<any>(`/cars/bookings/${bookingId}/status?status=${status.toUpperCase()}`, {});
+        const booking = response.booking || response.data || response || null;
+        if (booking && booking.id) return mapBooking(booking);
+      } catch (_) {}
+
+      try {
+        const response = await apiClient.put<any>(`/motorbikes/bookings/${bookingId}/status?status=${status.toUpperCase()}`, {});
+        const booking = response.booking || response.data || response || null;
+        if (booking && booking.id) return mapBooking(booking);
+      } catch (_) {}
+
       const response = await apiClient.put<any>(`/bookings/${bookingId}/status`, { status: status.toUpperCase() });
       const booking = response.data || response || null;
       return booking ? mapBooking(booking) : null;

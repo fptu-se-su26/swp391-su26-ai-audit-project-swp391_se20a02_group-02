@@ -55,6 +55,7 @@ export const authService = {
           bio: userInfo.bio || '',
           badges: userInfo.badges || [],
           accountType: userInfo.accountType || 'INDIVIDUAL',
+          preferredLanguage: userInfo.preferredLanguage || 'en',
         } as unknown as User;
         
         localStorage.setItem(USER_KEY, JSON.stringify(user));
@@ -109,6 +110,7 @@ export const authService = {
           bio: '',
           badges: [],
           accountType: payload.accountType as any,
+          preferredLanguage: userInfo.preferredLanguage || 'en',
         } as unknown as User;
         
         localStorage.setItem(USER_KEY, JSON.stringify(user));
@@ -188,6 +190,7 @@ export const authService = {
         bio: userInfo.bio || '',
         badges: userInfo.badges || [],
         accountType: userInfo.accountType || 'INDIVIDUAL',
+        preferredLanguage: userInfo.preferredLanguage || 'en',
       } as unknown as User;
       
       localStorage.setItem(USER_KEY, JSON.stringify(user));
@@ -217,6 +220,7 @@ export const authService = {
           id: userInfo.id?.toString() || userId,
           displayName: userInfo.displayName || `${userInfo.firstName} ${userInfo.lastName}`,
           avatar: resolveImageUrl(userInfo.avatar || userInfo.profilePicture),
+          preferredLanguage: userInfo.preferredLanguage || 'en',
         } as User;
         
         localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
@@ -328,6 +332,7 @@ export const authService = {
           bio: userInfo.bio || '',
           badges: userInfo.badges || [],
           accountType: userInfo.accountType || 'INDIVIDUAL',
+          preferredLanguage: userInfo.preferredLanguage || 'en',
         } as unknown as User;
         
         localStorage.setItem(USER_KEY, JSON.stringify(user));

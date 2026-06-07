@@ -10,10 +10,10 @@ public class UserDTOs {
 
     @Data
     public static class UpdateProfileRequest {
-        @NotBlank(message = "First name is required")
+        @NotBlank(message = "{validation.firstname.required}")
         private String firstName;
 
-        @NotBlank(message = "Last name is required")
+        @NotBlank(message = "{validation.lastname.required}")
         private String lastName;
 
         @Size(max = 20)
@@ -30,6 +30,8 @@ public class UserDTOs {
 
         @Size(max = 200)
         private String companyName;
+
+        private String preferredLanguage;
     }
 
     @Data
@@ -55,14 +57,15 @@ public class UserDTOs {
         private Boolean isActive;
         private String joinedAt;
         private String lastActive;
+        private String preferredLanguage;
     }
 
     @Data
     public static class UploadDocumentRequest {
-        @NotBlank(message = "Document type is required")
+        @NotBlank(message = "{validation.document.type.required}")
         private String documentType; // PASSPORT, NATIONAL_ID, DRIVING_LICENSE
 
-        @NotBlank(message = "Document URL is required")
+        @NotBlank(message = "{validation.document.url.required}")
         private String url;
     }
 

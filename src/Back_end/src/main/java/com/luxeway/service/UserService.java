@@ -51,6 +51,7 @@ public class UserService {
         if (req.getLocation() != null) user.setLocation(req.getLocation());
         if (req.getAvatar() != null) user.setAvatar(req.getAvatar());
         if (req.getCompanyName() != null) user.setCompanyName(req.getCompanyName());
+        if (req.getPreferredLanguage() != null) user.setPreferredLanguage(req.getPreferredLanguage());
 
         user = userRepository.save(user);
         log.info("Profile updated for user: {}", userId);
@@ -145,6 +146,7 @@ public class UserService {
         resp.setIsActive(u.getIsActive());
         resp.setJoinedAt(u.getJoinedAt() != null ? u.getJoinedAt().toString() : null);
         resp.setLastActive(u.getLastActive() != null ? u.getLastActive().toString() : null);
+        resp.setPreferredLanguage(u.getPreferredLanguage());
         return resp;
     }
 

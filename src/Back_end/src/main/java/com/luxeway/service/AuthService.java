@@ -115,6 +115,7 @@ public class AuthService {
                 .kycVerified(false)
                 .drivingLicenseVerified(false)
                 .isActive(true)
+                .preferredLanguage(request.getPreferredLanguage() != null ? request.getPreferredLanguage() : "en")
                 .build();
 
         user = userRepository.save(user);
@@ -213,8 +214,17 @@ public class AuthService {
         
         log.info("OTP sent to email: {}", email);
 
-        // Dispatch real SMTP email via EmailService
+        // Generate transient secure reset token for direct link
+        String resetToken = java.util.UUID.randomUUID().toString();
+        // Reset token valid for 15 minutes
+        resetTokenStore.put(resetToken, new ResetTokenData(email, java.time.LocalDateTime.now().plusMinutes(15)));
+
+        String resetLink = "http://localhost:5173/auth/otp?token=" + resetToken + "&email=" 
+                + java.net.URLEncoder.encode(email, java.nio.charset.StandardCharsets.UTF_8);
+
+        // Dispatch real SMTP emails via EmailService
         emailService.sendOtp(email, otpCode);
+        emailService.sendPasswordResetLink(email, resetLink);
     }
 
     public String verifyOtp(AuthDTOs.VerifyOtpRequest req) {
@@ -240,8 +250,8 @@ public class AuthService {
 
         // Generate transient secure reset token
         String resetToken = java.util.UUID.randomUUID().toString();
-        // Reset token valid for 10 minutes
-        resetTokenStore.put(resetToken, new ResetTokenData(email, java.time.LocalDateTime.now().plusMinutes(10)));
+        // Reset token valid for 15 minutes
+        resetTokenStore.put(resetToken, new ResetTokenData(email, java.time.LocalDateTime.now().plusMinutes(15)));
 
         log.info("OTP verification successful for {}. Issued reset token: {}", email, resetToken);
         return resetToken;
@@ -296,6 +306,7 @@ public class AuthService {
         userInfo.setVerified(user.getVerified());
         userInfo.setKycVerified(user.getKycVerified());
         userInfo.setWalletBalance(user.getWalletBalance());
+        userInfo.setPreferredLanguage(user.getPreferredLanguage());
 
         AuthDTOs.AuthResponse response = new AuthDTOs.AuthResponse();
         response.setAccessToken(accessToken);
@@ -358,12 +369,18 @@ public class AuthService {
             
             String picture = (String) payload.get("picture");
             
+            String providerId = (String) payload.get("sub");
+
             java.util.Optional<User> existingUser = userRepository.findByEmail(email);
             User user;
             if (existingUser.isPresent()) {
                 user = existingUser.get();
                 if (user.getAvatar() == null || user.getAvatar().isBlank()) {
                     user.setAvatar(picture);
+                }
+                if ("LOCAL".equals(user.getProvider()) || user.getProvider() == null) {
+                    user.setProvider("GOOGLE");
+                    user.setProviderId(providerId);
                 }
                 user.setLastActive(java.time.LocalDateTime.now());
                 user = userRepository.save(user);
@@ -381,6 +398,8 @@ public class AuthService {
                         .kycVerified(false)
                         .drivingLicenseVerified(false)
                         .isActive(true)
+                        .provider("GOOGLE")
+                        .providerId(providerId)
                         .build();
                 user = userRepository.save(user);
                 log.info("Google OAuth registration: created new user {}", email);
