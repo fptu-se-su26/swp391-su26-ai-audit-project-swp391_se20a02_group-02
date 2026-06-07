@@ -3,6 +3,7 @@ package com.luxeway.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.luxeway.enums.VehicleCategory;
 import com.luxeway.enums.VehicleStatus;
+import com.luxeway.enums.VehicleType;
 import com.luxeway.enums.TransmissionType;
 import com.luxeway.enums.FuelType;
 import jakarta.persistence.*;
@@ -55,9 +56,54 @@ public class Vehicle {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private VehicleCategory category;
-    
+
     @Column(columnDefinition = "TEXT")
     private String description;
+
+    // ====== VEHICLE TYPE DISCRIMINATOR (CAR vs MOTORBIKE) ======
+    @Enumerated(EnumType.STRING)
+    @Column(name = "vehicle_type", nullable = false)
+    @Builder.Default
+    private VehicleType vehicleType = VehicleType.CAR;
+
+    // ====== MOTORBIKE-SPECIFIC FIELDS ======
+    @Column(name = "engine_cc")
+    private Integer engineCc;
+
+    @Column(name = "has_helmet")
+    @Builder.Default
+    private Boolean hasHelmet = false;
+
+    @Column(name = "has_phone_holder")
+    @Builder.Default
+    private Boolean hasPhoneHolder = false;
+
+    @Column(name = "has_raincoat")
+    @Builder.Default
+    private Boolean hasRaincoat = false;
+
+    @Column(name = "has_touring_package")
+    @Builder.Default
+    private Boolean hasTouringPackage = false;
+
+    // ====== CAR-SPECIFIC FIELDS ======
+    @Column(name = "has_chauffeur")
+    @Builder.Default
+    private Boolean hasChauffeur = false;
+
+    @Column(name = "airport_delivery")
+    @Builder.Default
+    private Boolean airportDelivery = false;
+
+    @Column(name = "wedding_rental")
+    @Builder.Default
+    private Boolean weddingRental = false;
+
+    @Column(name = "business_rental")
+    @Builder.Default
+    private Boolean businessRental = false;
+
+
     
     @Column(name = "thumbnail_url", length = 500)
     private String thumbnailUrl;

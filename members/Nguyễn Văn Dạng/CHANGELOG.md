@@ -811,11 +811,108 @@ Commit: [DE190324] feat: upgrade help center to enterprise marketplace support a
 
 ---
 
+# [Phase 05.0] Separation of Vehicle Entity into Car and Motorbike
+
+## Ngày thực hiện
+
+```text
+2026-06-06
+```
+
+## Đã hoàn thành
+
+- [x] Tách thực thể `Vehicle` chung thành 2 thực thể chuyên biệt `Car` và `Motorbike`.
+- [x] Tạo các class JPA Entity tương ứng: `Car.java`, `Motorbike.java`, `CarBrand.java`, `MotorbikeBrand.java`, `CarModel.java`, `MotorbikeModel.java`, `CarBooking.java`, `MotorbikeBooking.java`.
+- [x] Tạo các REST API Controllers, Services, và Repositories cho cả 2 module: `CarController.java`, `MotorbikeController.java`, `CarService.java`, `MotorbikeService.java`, `CarBookingService.java`, `MotorbikeBookingService.java`.
+- [x] whitelist public access cho các endpoint `/cars`, `/motorbikes` và các APIs tương ứng tại `SecurityConfig.java`.
+- [x] Cập nhật Frontend routing trong `App.tsx` hỗ trợ `/cars`, `/motorbikes`, `/cars/:id`, `/motorbikes/:id`.
+- [x] Xây dựng các trang marketplace và chi tiết xe mới: `CarsMarketplace.tsx`, `CarDetails.tsx`, `MotorbikeMarketplace.tsx`, `MotorbikeDetails.tsx`.
+- [x] Triển khai `carService.ts` và `motorbikeService.ts` gọi APIs thực tế từ Backend.
+
+## Thay đổi chi tiết - Nguyễn Văn Dạng (DE190324)
+
+| STT | Nội dung thay đổi | Người thực hiện | File/Module liên quan | Minh chứng |
+|---:|---|---|---|---|
+| 1 | Tạo Entities và DTOs cho Car & Motorbike | Nguyễn Văn Dạng | Car.java, Motorbike.java, DTOs | Backend Java classes |
+| 2 | Thiết lập Controllers và Services chuyên biệt | Nguyễn Văn Dạng | CarController.java, MotorbikeController.java, Services | Backend Java classes |
+| 3 | Cập nhật cấu hình bảo mật permitAll | Nguyễn Văn Dạng | SecurityConfig.java | Endpoint whitelisting |
+| 4 | Tạo Marketplaces & Details Pages ở Frontend | Nguyễn Văn Dạng | CarsMarketplace.tsx, MotorbikeMarketplace.tsx, Details | Frontend pages |
+| 5 | Tạo services gọi API car/motorbike | Nguyễn Văn Dạng | carService.ts, motorbikeService.ts | Frontend services |
+| 6 | Cấu hình router links & navigation | Nguyễn Văn Dạng | App.tsx | App routes config |
+
+## AI có hỗ trợ không?
+
+- [x] Có
+- [ ] Không
+
+Nếu có, mô tả AI đã hỗ trợ phần nào:
+
+```text
+AI (Antigravity) hỗ trợ sinh code boilerplate cho các thực thể Car/Motorbike mới, viết các repositories & controllers Spring Boot, và hỗ trợ thiết kế các component UI Marketplace tương ứng cho ô tô và xe máy ở Frontend.
+```
+
+## Commit/Screenshot minh chứng
+
+```text
+Branch: feature/de190324-vehicle-rental-platform
+Commit: [DE190324] feat: split Vehicle entity into specialized Car and Motorbike sub-modules
+```
+
+---
+
+# [Phase 05.1] Premium Landing Page Redesign, Promotions & Bilingual Notification Localisation
+
+## Ngày thực hiện
+
+```text
+2026-06-07
+```
+
+## Đã hoàn thành
+
+- [x] Thiết kế và lập trình lại trang Landing Page giao diện Premium:
+  - Thêm phần `VehicleTypeShowcase` trực quan và hiện đại.
+  - Tích hợp `RevenueCalculator` động giúp chủ xe tính toán lợi nhuận khi cho thuê.
+  - Thêm `LiveActivitySection` hiển thị các hoạt động thực tế trên sàn (đặt xe, đánh giá, đăng xe) cập nhật tự động mỗi 3.5 giây.
+- [x] Thiết kế Database Schema & DDL cho bảng `promotions`, hỗ trợ lưu trữ các chương trình khuyến mại trực tiếp từ SQL Server.
+- [x] Seed dữ liệu promotions trong file `DatabaseMigration.java` và `data-sqlserver.sql`.
+- [x] Bản địa hóa và quốc tế hóa (`i18n`) hệ thống dịch thuật song ngữ Anh-Việt cho toàn bộ thông báo (Bilingual Notification Localisation - `translateNotification`).
+- [x] Khắc phục toàn bộ các lỗi biên dịch TypeScript, chuẩn hóa hướng tài liệu (LTR/RTL) theo ngôn ngữ được chọn.
+
+## Thay đổi chi tiết - Nguyễn Văn Dạng (DE190324)
+
+| STT | Nội dung thay đổi | Người thực hiện | File/Module liên quan | Minh chứng |
+|---:|---|---|---|---|
+| 1 | Thêm bảng promotions & logic migrations | Nguyễn Văn Dạng | DatabaseMigration.java, schema.sql, data-sqlserver.sql | DB table promotions |
+| 2 | Redesign Landing Page với live updates và calculator | Nguyễn Văn Dạng | LandingPage.tsx | LiveActivitySection, RevenueCalculator |
+| 3 | Tích hợp hàm translateNotification | Nguyễn Văn Dạng | translations.ts, App.tsx | Bắn notification bằng tiếng Anh/Việt |
+| 4 | Fix lỗi TypeScript & sync document direction (LTR/RTL) | Nguyễn Văn Dạng | App.tsx, i18n/config.ts | `document.documentElement.dir` sync |
+
+## AI có hỗ trợ không?
+
+- [x] Có
+- [ ] Không
+
+Nếu có, mô tả AI đã hỗ trợ phần nào:
+
+```text
+AI (Antigravity) hỗ trợ viết logic cập nhật tự động cho LiveActivitySection, công thức tính toán cho RevenueCalculator, cấu hình bảng promotions trong DB migration, và xây dựng hàm translateNotification cho i18n translations.
+```
+
+## Commit/Screenshot minh chứng
+
+```text
+Branch: feature/de190324-vehicle-rental-platform
+Commit: [DE190324] feat: redesign premium Landing Page with live activity, revenue calculator and promotions seed
+```
+
+---
+
 # 5. Cam kết cập nhật Changelog
 
 Sinh viên/nhóm cam kết rằng nội dung changelog phản ánh đúng các thay đổi đã thực hiện trong quá trình làm bài tập/project.
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-06-04 |
+| Nguyễn Văn Dạng - DE190324 | 2026-06-07 |
 

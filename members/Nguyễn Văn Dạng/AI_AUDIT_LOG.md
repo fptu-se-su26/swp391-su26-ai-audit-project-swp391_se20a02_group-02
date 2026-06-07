@@ -662,6 +662,34 @@ Audit LuxeWay Car Rental Platform:
 
 ---
 
+## Log #14
+
+- **Date:** 2026-06-06
+- **Author:** Nguyễn Văn Dạng (DE190324)
+- **AI Tool:** Antigravity
+- **Purpose:** Tách thực thể Vehicle thành Car và Motorbike chuyên biệt (Entities, Services, Controllers, DTOs và Frontend Pages)
+- **Prompt Reference:** PROMPTS.md#prompt-15
+- **AI Output Summary:** Gợi ý các class Entity cho Car và Motorbike, DTOs, Repositories, REST Controllers Spring Boot, và các frontend pages (CarsMarketplace, CarDetails, MotorbikeMarketplace, MotorbikeDetails).
+- **Human Decision:** Áp dụng toàn bộ cấu trúc Entity và API Controllers. Tự cấu hình whitelisting trong SecurityConfig và liên kết routes trong App.tsx.
+- **Applied To:** `src/Back_end/` (Entities, DTOs, Controllers, Services, Repositories) và `src/Front_end/` (Marketplace pages, services).
+- **Verification:** Compile backend Maven thành công, npm run build thành công 0 warning.
+
+---
+
+## Log #15
+
+- **Date:** 2026-06-07
+- **Author:** Nguyễn Văn Dạng (DE190324)
+- **AI Tool:** Antigravity
+- **Purpose:** Redesign Landing Page Premium, thêm promotions DB table, và translate notifications song ngữ.
+- **Prompt Reference:** PROMPTS.md#prompt-16
+- **AI Output Summary:** Cung cấp code LiveActivitySection, RevenueCalculator và VehicleTypeShowcase cho LandingPage.tsx, DDL schema cho promotions table, và hàm translateNotification trong translations.ts.
+- **Human Decision:** Custom style calculator và LiveActivitySection khớp với Glassmorphism theme, update translations.ts với các label dịch chi tiết cho notification body và titles.
+- **Applied To:** `LandingPage.tsx`, `translations.ts`, `App.tsx`, `DatabaseMigration.java`, `schema.sql`.
+- **Verification:** Chạy runtime, Landing page hiển thị live activity và calculator tính toán chính xác, switch language dịch đúng notifications.
+
+---
+
 ## 10. Cam kết học thuật
 
 Sinh viên/nhóm cam kết rằng:
@@ -674,5 +702,5 @@ Sinh viên/nhóm cam kết rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-06-04 |
+| Nguyễn Văn Dạng - DE190324 | 2026-06-07 |
 

@@ -676,3 +676,52 @@ Trong giai đoạn này, mình đã cùng Antigravity triển khai hệ thống 
 | Ghi lại đầy đủ | 5 | Cập nhật đủ 4 file docs |
 | Sử dụng AI có trách nhiệm | 5 | Học cách custom build scripts, hiểu rõ query fix |
 
+---
+
+## Reflection — Phase 5.0: Separation of Vehicle Entity into Car and Motorbike (2026-06-06)
+
+### Tóm tắt
+
+Nhóm đã sử dụng Antigravity để thực hiện một cấu trúc dữ liệu tối ưu hơn cho hệ thống LuxeWay bằng cách phân tách thực thể `Vehicle` chung thành 2 thực thể chuyên biệt: `Car` và `Motorbike`. Sự phân chia này kéo theo sự thay đổi sâu sắc của cả 3 lớp: Entities, REST API Services/Controllers, và Frontend Marketplace Pages.
+
+### Những điều học được
+
+```text
+1. Thiết kế kế thừa và chia nhỏ thực thể trong ORM (Hibernate):
+   Khi xử lý các loại phương tiện khác nhau, thiết kế một thực thể Vehicle chung ban đầu rất nhanh nhưng sẽ gây khó khăn về sau do sự khác biệt lớn về thuộc tính (ô tô có số cửa, số túi khí, loại hộp số; xe máy có dung tích xi lanh, loại mũ bảo hiểm kèm theo). Việc tách hẳn thành Car và Motorbike thực thể riêng biệt giúp database schema chuẩn hóa hơn, tránh cột chứa giá trị NULL không cần thiết.
+
+2. Quản lý Route Frontend phức tạp:
+   Phân chia các routes cho ô tô (/cars, /cars/:id) và xe máy (/motorbikes, /motorbikes/:id) đòi hỏi phải cấu hình router thông minh và sử dụng các hook useParams một cách uyển chuyển để hiển thị chính xác các đặc trưng kỹ thuật cụ thể của từng loại xe.
+```
+
+---
+
+## Reflection — Phase 5.1: Premium Landing Page Redesign, Promotions & Bilingual Notification Localisation (2026-06-07)
+
+### Tóm tắt
+
+Trong giai đoạn này (Phase 5.1), mình đã cùng Antigravity hoàn thiện trang Landing Page giao diện Premium bằng cách tích hợp các tính năng tương tác trực tiếp bao gồm LiveActivitySection cập nhật liên tục các sự kiện thật, RevenueCalculator giúp chủ xe tính toán doanh thu dự kiến và VehicleTypeShowcase. Đồng thời, nhóm đã đưa khuyến mại promotions vào database và triển khai dịch thuật thông báo song ngữ (i18n).
+
+### Những điều học được
+
+```text
+1. Dynamic UI & Micro-interactions:
+   LiveActivitySection sử dụng setInterval và hook useEffect để thay đổi pointer sự kiện mỗi 3.5 giây tạo ra cảm giác nền tảng đang rất sôi động và hoạt động thời gian thực. Điều này cải thiện trải nghiệm người dùng rất nhiều so với UI tĩnh.
+
+2. Logic Internationalization nâng cao (i18n):
+   Thông báo hệ thống bắn từ backend thường chứa văn bản thô. Bằng cách định nghĩa hàm translateNotification trong translations.ts thực hiện tra cứu regex/mapping từ khóa, ta có thể dịch động các thông báo này sang ngôn ngữ của người dùng (English hoặc Tiếng Việt) ở Frontend mà không cần lưu trữ nhiều ngôn ngữ dưới DB.
+
+3. Đồng bộ hóa hướng hiển thị (LTR/RTL):
+   Để ứng dụng thực sự sẵn sàng cho quốc tế, việc đồng bộ hóa thuộc tính dir (direction: ltr/rtl) và lang của thẻ html theo ngôn ngữ được chọn là cần thiết để giao diện hiển thị đúng hướng đối với các ngôn ngữ đặc thù.
+```
+
+### Tự đánh giá Phase 5
+
+| Tiêu chí | Điểm | Ghi chú |
+|---|:---:|---|
+| Hiểu vấn đề trước khi fix | 5 | Hiểu rõ kiến trúc phân tách thực thể và logic i18n |
+| Fix đúng nguyên nhân gốc | 5 | Hoàn thiện code sạch, 0 warning khi build |
+| Kiểm chứng sau fix | 5 | Chạy verify build tĩnh và build java JAR thành công |
+| Ghi lại đầy đủ | 5 | Cập nhật đủ cả 4 file members |
+| Sử dụng AI có trách nhiệm | 5 | Tự làm chủ coding, dùng AI làm bệ phóng tăng tốc |
+

@@ -116,6 +116,17 @@ public interface VehicleRepository extends JpaRepository<Vehicle, String> {
            "(:isFeatured = false OR v.isFeatured = true) AND " +
            "(:instantBook = false OR v.instantBook = true) AND " +
            "(:deliveryAvailable = false OR v.deliveryAvailable = true) AND " +
+           "(:vehicleType IS NULL OR v.vehicleType = :vehicleType) AND " +
+           "(:minEngineCc IS NULL OR v.engineCc >= :minEngineCc) AND " +
+           "(:maxEngineCc IS NULL OR v.engineCc <= :maxEngineCc) AND " +
+           "(:hasHelmet = false OR v.hasHelmet = true) AND " +
+           "(:hasPhoneHolder = false OR v.hasPhoneHolder = true) AND " +
+           "(:hasRaincoat = false OR v.hasRaincoat = true) AND " +
+           "(:hasTouringPackage = false OR v.hasTouringPackage = true) AND " +
+           "(:hasChauffeur = false OR v.hasChauffeur = true) AND " +
+           "(:airportDelivery = false OR v.airportDelivery = true) AND " +
+           "(:weddingRental = false OR v.weddingRental = true) AND " +
+           "(:businessRental = false OR v.businessRental = true) AND " +
            "(:startDate IS NULL OR :endDate IS NULL OR NOT EXISTS (" +
            "  SELECT b FROM Booking b WHERE b.vehicle.id = v.id AND " +
            "  b.status IN (com.luxeway.enums.BookingStatus.PENDING, com.luxeway.enums.BookingStatus.CONFIRMED, com.luxeway.enums.BookingStatus.ACTIVE) AND " +
@@ -134,6 +145,17 @@ public interface VehicleRepository extends JpaRepository<Vehicle, String> {
                                       @Param("isFeatured") boolean isFeatured,
                                       @Param("instantBook") boolean instantBook,
                                       @Param("deliveryAvailable") boolean deliveryAvailable,
+                                      @Param("vehicleType") com.luxeway.enums.VehicleType vehicleType,
+                                      @Param("minEngineCc") Integer minEngineCc,
+                                      @Param("maxEngineCc") Integer maxEngineCc,
+                                      @Param("hasHelmet") boolean hasHelmet,
+                                      @Param("hasPhoneHolder") boolean hasPhoneHolder,
+                                      @Param("hasRaincoat") boolean hasRaincoat,
+                                      @Param("hasTouringPackage") boolean hasTouringPackage,
+                                      @Param("hasChauffeur") boolean hasChauffeur,
+                                      @Param("airportDelivery") boolean airportDelivery,
+                                      @Param("weddingRental") boolean weddingRental,
+                                      @Param("businessRental") boolean businessRental,
                                       @Param("startDate") java.time.LocalDate startDate,
                                       @Param("endDate") java.time.LocalDate endDate,
                                       Pageable pageable);
