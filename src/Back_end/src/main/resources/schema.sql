@@ -1538,3 +1538,18 @@ GO
 
 PRINT 'LuxeWay - Bounded contexts (Cars & Motorbikes) migration completed successfully.';
 GO
+
+-- ============================================================
+-- 68. FAQS
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'faqs')
+BEGIN
+CREATE TABLE faqs (
+    id BIGINT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    question NVARCHAR(500) NOT NULL,
+    answer NVARCHAR(MAX) NOT NULL,
+    is_active BIT NOT NULL DEFAULT 1,
+    display_order INT NOT NULL DEFAULT 0
+);
+END
+GO
