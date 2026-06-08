@@ -7,9 +7,10 @@ import {
   generateNotifications,
   generateMessages,
   generateConversations,
+  generateBusinesses,
   generateAnalytics,
 } from './data';
-import type { User, Vehicle, Booking, Payment, Review, Notification, Message, Conversation, AnalyticsData } from '@/types';
+import type { User, Vehicle, Booking, Payment, Review, Notification, Message, Conversation, Business, AnalyticsData } from '@/types';
 
 // ====== STORAGE KEYS ======
 export const STORAGE_KEYS = {
@@ -21,9 +22,9 @@ export const STORAGE_KEYS = {
   NOTIFICATIONS: 'luxeway_notifications',
   MESSAGES: 'luxeway_messages',
   CONVERSATIONS: 'luxeway_conversations',
-
+  BUSINESSES: 'luxeway_businesses',
   ANALYTICS: 'luxeway_analytics',
-  INITIALIZED: 'luxeway_db_initialized_vn',
+  INITIALIZED: 'luxeway_db_initialized',
   CURRENT_USER: 'luxeway_current_user',
 };
 
@@ -37,6 +38,7 @@ interface Database {
   notifications: Notification[];
   messages: Message[];
   conversations: Conversation[];
+  businesses: Business[];
   analytics: AnalyticsData[];
 }
 
@@ -78,6 +80,7 @@ export function initializeDatabase(): Database {
     const notifications = generateNotifications();
     const messages = generateMessages();
     const conversations = generateConversations();
+    const businesses = generateBusinesses();
     const analytics = generateAnalytics();
 
     saveToStorage(STORAGE_KEYS.USERS, users);
@@ -88,11 +91,12 @@ export function initializeDatabase(): Database {
     saveToStorage(STORAGE_KEYS.NOTIFICATIONS, notifications);
     saveToStorage(STORAGE_KEYS.MESSAGES, messages);
     saveToStorage(STORAGE_KEYS.CONVERSATIONS, conversations);
+    saveToStorage(STORAGE_KEYS.BUSINESSES, businesses);
     saveToStorage(STORAGE_KEYS.ANALYTICS, analytics);
 
     localStorage.setItem(STORAGE_KEYS.INITIALIZED, 'true');
 
-    db = { users, vehicles, bookings, payments, reviews, notifications, messages, conversations, analytics };
+    db = { users, vehicles, bookings, payments, reviews, notifications, messages, conversations, businesses, analytics };
 
     console.log(`✅ LuxeWay DB seeded: ${users.length} users, ${vehicles.length} vehicles, ${bookings.length} bookings`);
   } else {
@@ -105,6 +109,7 @@ export function initializeDatabase(): Database {
       notifications: loadFromStorage<Notification>(STORAGE_KEYS.NOTIFICATIONS),
       messages: loadFromStorage<Message>(STORAGE_KEYS.MESSAGES),
       conversations: loadFromStorage<Conversation>(STORAGE_KEYS.CONVERSATIONS),
+      businesses: loadFromStorage<Business>(STORAGE_KEYS.BUSINESSES),
       analytics: loadFromStorage<AnalyticsData>(STORAGE_KEYS.ANALYTICS),
     };
   }
@@ -129,6 +134,7 @@ export function resetDatabase(): void {
 export function dbFind<T extends { id: string }>(collection: T[], id: string): T | undefined {
   return collection.find(item => item.id === id);
 }
+
 export function dbFilter<T>(collection: T[], predicate: (item: T) => boolean): T[] {
   return collection.filter(predicate);
 }

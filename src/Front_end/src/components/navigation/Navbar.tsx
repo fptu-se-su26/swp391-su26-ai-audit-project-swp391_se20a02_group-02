@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Car, Search, Bell, MessageSquare, Menu, X,
   User, LogOut, LayoutDashboard, Heart, ChevronDown,
-  Sparkles, Shield, Star, Sun, Moon, Globe, Check, Wallet
+  Sparkles, Shield, Star, Sun, Moon, Globe, Check
 } from 'lucide-react';
 import { useAuthStore, useUIStore, useNotificationStore } from '@/store';
 import { cn, getInitials } from '@/utils';
@@ -12,22 +12,24 @@ import { notificationService } from '@/services/otherServices';
 import { useT } from '@/i18n/translations';
 import logoImage from '@/image/logo.png';
 
+// ====== DARK MODE INITIALIZER (run in App.tsx useEffect too) ======
+export function applyStoredTheme() {
+  try {
+    const stored = JSON.parse(localStorage.getItem('luxeway_ui_prefs') || '{}');
+    if (stored?.state?.theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    }
+  } catch {}
+}
 
+// ====== LANGUAGE LABELS ======
 const LANGS = [
   { code: 'en' as const, label: 'English', flag: '🇺🇸' },
   { code: 'vi' as const, label: 'Tiếng Việt', flag: '🇻🇳' },
-  { code: 'ja' as const, label: '日本語', flag: '🇯🇵' },
-  { code: 'ko' as const, label: '한국어', flag: '🇰🇷' },
-  { code: 'zh' as const, label: '中文', flag: '🇨🇳' },
-  { code: 'fr' as const, label: 'Français', flag: '🇫🇷' },
-  { code: 'de' as const, label: 'Deutsch', flag: '🇩🇪' },
-  { code: 'es' as const, label: 'Español', flag: '🇪🇸' },
 ];
-
 
 // ====== THEME TOGGLE BUTTON ======
 const ThemeToggle: React.FC = () => {
-  const t = useT();
   const { theme, toggleTheme } = useUIStore();
   const isDark = theme === 'dark';
 
@@ -36,7 +38,7 @@ const ThemeToggle: React.FC = () => {
       onClick={toggleTheme}
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
-      title={isDark ? t.nav.themeLight : t.nav.themeDark}
+      title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
       className={cn(
         'relative p-2.5 rounded-xl transition-all duration-300',
         isDark
@@ -73,7 +75,6 @@ const ThemeToggle: React.FC = () => {
 
 // ====== LANGUAGE SWITCHER ======
 const LanguageSwitcher: React.FC = () => {
-  const t = useT();
   const { language, setLanguage } = useUIStore();
   const [open, setOpen] = React.useState(false);
   const ref = React.useRef<HTMLDivElement>(null);
@@ -92,8 +93,8 @@ const LanguageSwitcher: React.FC = () => {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 p-2.5 rounded-xl text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700 hover:text-slate-900 transition-colors duration-200"
-        title={t.nav.changeLanguage}
+        className="flex items-center gap-1.5 p-2.5 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors duration-200"
+        title="Change Language"
       >
         <Globe className="w-4 h-4" />
         <span className="text-xs font-semibold uppercase hidden sm:block">{current.code}</span>
@@ -131,77 +132,6 @@ const LanguageSwitcher: React.FC = () => {
     </div>
   );
 };
-
-// ====== CURRENCY LABELS ======
-const CURRENCIES = [
-  { code: 'VND', label: 'VND', flag: '🇻🇳', symbol: '₫' },
-  { code: 'USD', label: 'USD', flag: '🇺🇸', symbol: '$' },
-  { code: 'EUR', label: 'EUR', flag: '🇪🇺', symbol: '€' },
-  { code: 'JPY', label: 'JPY', flag: '🇯🇵', symbol: '¥' },
-  { code: 'SGD', label: 'SGD', flag: '🇸🇬', symbol: 'S$' },
-  { code: 'KRW', label: 'KRW', flag: '🇰🇷', symbol: '₩' },
-];
-
-// ====== CURRENCY SWITCHER ======
-const CurrencySwitcher: React.FC = () => {
-  const { currency, setCurrency } = useUIStore();
-  const [open, setOpen] = React.useState(false);
-  const ref = React.useRef<HTMLDivElement>(null);
-
-  React.useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
-
-  const current = CURRENCIES.find(c => c.code === currency) || CURRENCIES[0];
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 p-2.5 rounded-xl text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700 hover:text-slate-900 transition-colors duration-200"
-        title="Change Currency"
-      >
-        <Globe className="w-4 h-4 text-slate-400" />
-        <span className="text-xs font-semibold uppercase">{current.code}</span>
-        <span className="text-xs">{current.symbol}</span>
-      </button>
-
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: 8, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 8, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
-            className="absolute right-0 mt-2 w-44 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-luxury overflow-hidden z-50"
-          >
-            {CURRENCIES.map(curr => (
-              <button
-                key={curr.code}
-                onClick={() => { setCurrency(curr.code); setOpen(false); }}
-                className={cn(
-                  'w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors',
-                  currency === curr.code
-                    ? 'bg-blue-50 text-accent font-semibold dark:bg-blue-900/30'
-                    : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-700'
-                )}
-              >
-                <span className="text-lg">{curr.flag}</span>
-                <span className="font-semibold">{curr.code} ({curr.symbol})</span>
-                {currency === curr.code && <Check className="w-3.5 h-3.5 ml-auto text-accent" />}
-              </button>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-};
-
 
 // ====== MAIN NAVBAR ======
 export const Navbar: React.FC = () => {
@@ -329,9 +259,6 @@ export const Navbar: React.FC = () => {
               {/* Language Switcher */}
               <LanguageSwitcher />
 
-              {/* Currency Switcher */}
-              <CurrencySwitcher />
-
               {isAuthenticated && user ? (
                 <>
                   {/* Notifications */}
@@ -404,7 +331,7 @@ export const Navbar: React.FC = () => {
                                 <p className="text-xs text-slate-400">{user.email}</p>
                                 {user.verified && (
                                   <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-blue-500 mt-0.5">
-                                    <Shield className="w-3 h-3" /> {t.nav.verified}
+                                    <Shield className="w-3 h-3" /> Verified
                                   </span>
                                 )}
                               </div>
@@ -413,51 +340,48 @@ export const Navbar: React.FC = () => {
 
                           {/* Menu Items */}
                           <div className="p-2">
-                            {(() => {
-                              const roleUpper = user.role?.toUpperCase();
-                              const accTypeUpper = user.accountType?.toUpperCase();
-                              const userIsBusiness = roleUpper === 'BUSINESS_OWNER' || (roleUpper === 'OWNER' && accTypeUpper === 'BUSINESS');
+                            {[
+                              { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
+                              { icon: Heart, label: 'Wishlist', href: '/dashboard/wishlist' },
+                              { icon: User, label: 'Profile', href: '/dashboard/profile' },
+                              { icon: Bell, label: 'Notifications', href: '/dashboard/notifications' },
+                            ].map(item => (
+                              <Link
+                                key={item.href}
+                                to={item.href}
+                                onClick={() => setUserMenuOpen(false)}
+                                className={cn(
+                                  'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors',
+                                  isDark ? 'text-slate-300 hover:bg-slate-700 hover:text-white' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                                )}
+                              >
+                                <item.icon className="w-4 h-4 text-slate-400" />
+                                {item.label}
+                              </Link>
+                            ))}
 
-                              let menuItems: Array<{ icon: any; label: string; href: string }> = [];
-                              if (roleUpper === 'CUSTOMER') {
-                                menuItems = [
-                                  { icon: LayoutDashboard, label: t.nav.dashboard, href: '/dashboard' },
-                                  { icon: Wallet, label: t.nav.wallet, href: '/dashboard/wallet' },
-                                  { icon: Heart, label: t.nav.wishlist, href: '/dashboard/wishlist' },
-                                  { icon: User, label: t.nav.profile, href: '/dashboard/profile' },
-                                  { icon: Bell, label: t.nav.notifications, href: '/dashboard/notifications' },
-                                ];
-                              } else if (userIsBusiness) {
-                                menuItems = [
-                                  { icon: LayoutDashboard, label: 'Business Panel', href: '/business' },
-                                  { icon: User, label: t.nav.profile, href: '/dashboard/profile' },
-                                ];
-                              } else if (roleUpper === 'OWNER') {
-                                menuItems = [
-                                  { icon: LayoutDashboard, label: t.nav.ownerDashboardFull, href: '/owner' },
-                                  { icon: User, label: t.nav.profile, href: '/dashboard/profile' },
-                                ];
-                              } else if (roleUpper === 'ADMIN' || roleUpper === 'SUPER_ADMIN') {
-                                menuItems = [
-                                  { icon: Shield, label: t.nav.adminPanel, href: '/admin' },
-                                ];
-                              }
+                            {(user.role === 'owner' || user.role === 'business') && (
+                              <Link
+                                to="/owner"
+                                onClick={() => setUserMenuOpen(false)}
+                                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-accent hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                              >
+                                <Sparkles className="w-4 h-4" />
+                                Owner Dashboard
+                              </Link>
+                            )}
 
-                              return menuItems.map(item => (
-                                <Link
-                                  key={item.href}
-                                  to={item.href}
-                                  onClick={() => setUserMenuOpen(false)}
-                                  className={cn(
-                                    'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors',
-                                    isDark ? 'text-slate-300 hover:bg-slate-700 hover:text-white' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                                  )}
-                                >
-                                  <item.icon className="w-4 h-4 text-slate-400" />
-                                  {item.label}
-                                </Link>
-                              ));
-                            })()}
+                            {user.role === 'admin' && (
+                              <Link
+                                to="/admin"
+                                onClick={() => setUserMenuOpen(false)}
+                                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm hover:bg-yellow-50 dark:hover:bg-yellow-900/20 transition-colors"
+                                style={{ color: '#EAB308' }}
+                              >
+                                <Shield className="w-4 h-4" />
+                                Admin Panel
+                              </Link>
+                            )}
                           </div>
 
                           <div className={cn('border-t p-2', isDark ? 'border-slate-700' : 'border-slate-100')}>
@@ -466,7 +390,7 @@ export const Navbar: React.FC = () => {
                               className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                             >
                               <LogOut className="w-4 h-4" />
-                              {t.nav.logout}
+                              Sign Out
                             </button>
                           </div>
                         </motion.div>
@@ -477,10 +401,10 @@ export const Navbar: React.FC = () => {
               ) : (
                 <div className="flex items-center gap-2">
                   <Link to="/auth/login" className={cn('hidden sm:block text-sm font-medium px-3 py-2 rounded-xl transition-colors', textColor, hoverBg)}>
-                    {t.nav.signIn}
+                    Sign In
                   </Link>
                   <Link to="/auth/register" className="btn-primary text-sm px-4 py-2">
-                    {t.nav.signUp}
+                    Get Started
                   </Link>
                 </div>
               )}
@@ -524,8 +448,8 @@ export const Navbar: React.FC = () => {
                 ))}
                 {!isAuthenticated && (
                   <div className="pt-3 border-t border-slate-100 dark:border-slate-700 flex flex-col gap-2">
-                    <Link to="/auth/login" onClick={() => setMobileMenuOpen(false)} className="btn-outline w-full justify-center py-2.5">{t.nav.signIn}</Link>
-                    <Link to="/auth/register" onClick={() => setMobileMenuOpen(false)} className="btn-primary w-full justify-center py-2.5">{t.nav.signUp}</Link>
+                    <Link to="/auth/login" onClick={() => setMobileMenuOpen(false)} className="btn-outline w-full justify-center py-2.5">Sign In</Link>
+                    <Link to="/auth/register" onClick={() => setMobileMenuOpen(false)} className="btn-primary w-full justify-center py-2.5">Get Started</Link>
                   </div>
                 )}
               </div>
