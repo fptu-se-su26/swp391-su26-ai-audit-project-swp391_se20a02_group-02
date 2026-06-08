@@ -1,0 +1,121 @@
+spring:
+  application:
+    name: luxeway-backend
+
+  main:
+    allow-circular-references: true
+
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:sqlserver}
+
+  # File Upload Configuration
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 50MB
+
+  # Mail Configuration (Gmail SMTP)
+  # SECURITY: Use environment variables - NEVER hardcode credentials
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope:
+              - email
+              - profile
+
+# Application Configuration
+app:
+  frontend-url: ${FRONTEND_URL:http://localhost:5173}
+
+# Server Configuration
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+# JWT Configuration
+# SECURITY: MUST set JWT_SECRET environment variable with 256-bit random key
+# Generate with: openssl rand -base64 32
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:86400000}       # 24 hours in milliseconds
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000} # 7 days in milliseconds
+
+# File Storage Configuration
+file:
+  upload-dir: uploads/
+  max-size: 10MB
+
+# Logging Configuration
+# SECURITY: Set to INFO or WARN in production (DEBUG exposes sensitive data)
+logging:
+  level:
+    com.luxeway: ${LOG_LEVEL:INFO}
+    org.springframework.security: ${LOG_LEVEL:INFO}
+    org.hibernate.SQL: ${LOG_LEVEL:INFO}
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+# Swagger/OpenAPI Configuration
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+
+# CORS Configuration
+# SECURITY: Update allowed-origins for production
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173,http://127.0.0.1:5173}
+  allowed-methods:
+    - GET
+    - POST
+    - PUT
+    - DELETE
+    - PATCH
+    - OPTIONS
+  allowed-headers: "*"
+  allow-credentials: true
+
+# Payment Configuration
+# SECURITY: MUST set payment gateway credentials via environment variables
+payment:
+  vnpay:
+    tmn-code: ${VNPAY_TMN_CODE}
+    secret-key: ${VNPAY_SECRET_KEY}
+    url: ${VNPAY_URL:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
+    return-url: ${FRONTEND_URL}/payment/vnpay/return
+    # VNPay callback IP whitelist for security (comma-separated)
+    allowed-ips: ${VNPAY_ALLOWED_IPS:203.171.19.146,203.171.19.147,203.171.19.148}
+  stripe:
+    public-key: ${STRIPE_PUBLIC_KEY}
+    secret-key: ${STRIPE_SECRET_KEY}
+
+# Business Rules
+business:
+  booking:
+    max-advance-days: 365
+    min-rental-days: 1
+    max-rental-days: 30
+    cancellation-hours: 24
+  pricing:
+    service-fee-rate: 0.12
+    tax-rate: 0.08
+    platform-commission: 0.15
