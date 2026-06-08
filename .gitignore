@@ -3,15 +3,61 @@ node_modules/
 .vscode/
 build/
 target/
+build_alt/
+build_run/
+build_success/
+build_temp/
+.build_alt/
 *.class
 *.jar
 *.war
+
+# Environment Variables (SECURITY: Never commit!)
 .env
 .env.local
+.env.production
 .env.*.local
+.env.development
+.env.test
+
+# Build outputs
 dist/
 dist-ssr/
+*.tsbuildinfo
 *.local
+
+# OS
 .DS_Store
 .gradle/
 
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# Secrets & Keys (SECURITY)
+secrets/
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore
+
+# Uploads (may contain user data)
+uploads/
+temp/
+
+# Database
+*.db
+*.sqlite
+*.sql.gz

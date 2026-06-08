@@ -8,6 +8,7 @@ import {
   ArrowUpRight, Zap, Globe, Database, Briefcase, Plus, Truck, Download
 } from 'lucide-react';
 import { useAuthStore, useUIStore } from '@/store';
+import { useT } from '@/i18n/translations';
 import { formatCurrency, formatDate, getInitials } from '@/utils';
 import { staggerContainer, staggerItem, fadeUp } from '@/animations/variants';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
@@ -19,6 +20,7 @@ export const BusinessOverview: React.FC = () => {
   const { theme } = useUIStore();
   const isDark = theme === 'dark';
   const toast = useToast();
+  const t = useT();
 
   const stats = {
     utilizationRate: '92.4%',
@@ -53,17 +55,17 @@ export const BusinessOverview: React.FC = () => {
       <motion.div variants={fadeUp} initial="hidden" animate="visible" className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
           <h1 className="font-sans font-black text-2.5xl tracking-tight text-slate-800 dark:text-white mb-1">
-            Corporate Operations Room
+            {t.businessDashboard.operationsRoom}
           </h1>
           <p className="text-xs text-indigo-650 dark:text-indigo-400 font-extrabold uppercase tracking-widest">
-            {user?.companyName || 'Saigon Fleet Rental Co.'} — Enterprise Dashboard
+            {user?.companyName || 'Saigon Fleet Rental Co.'} — {t.businessDashboard.enterpriseDashboard}
           </p>
         </div>
         <button 
           onClick={() => toast.success('Corporate Report Aggregation Triggered')}
-          className="btn-primary flex items-center gap-2 text-xs font-black uppercase tracking-widest px-6 py-3.5 rounded-2xl shadow-lg hover-lift bg-gradient-to-r from-indigo-600 to-violet-650 text-white"
+          className="btn-primary flex items-center gap-2 text-xs font-black uppercase tracking-widest px-6 py-3.5 rounded-2xl shadow-lg hover-lift bg-gradient-to-r from-indigo-650 to-violet-650 text-white"
         >
-          <Briefcase className="w-4 h-4" /> Run Fleet Audit
+          <Briefcase className="w-4 h-4" /> {t.businessDashboard.runAudit}
         </button>
       </motion.div>
 
@@ -303,19 +305,20 @@ export const BusinessOwnerDashboardLayout: React.FC = () => {
   const isDark = theme === 'dark';
   const location = useLocation();
   const navigate = useNavigate();
+  const t = useT();
 
   useEffect(() => {
     if (!isAuthenticated) navigate('/auth/login');
   }, [isAuthenticated]);
 
   const links = [
-    { href: '/', icon: Globe, label: 'Go to Home', exact: true },
-    { href: '/business', icon: LayoutDashboard, label: 'Overview', exact: true },
-    { href: '/business/fleet', icon: Truck, label: 'Fleet Management' },
-    { href: '/business/employees', icon: Users, label: 'Employee Management' },
-    { href: '/business/drivers', icon: Briefcase, label: 'Driver Management' },
-    { href: '/business/analytics', icon: BarChart3, label: 'Fleet Analytics' },
-    { href: '/business/reports', icon: FileText, label: 'Corporate Reports' },
+    { href: '/', icon: Globe, label: t.businessDashboard.goHome, exact: true },
+    { href: '/business', icon: LayoutDashboard, label: t.businessDashboard.overview, exact: true },
+    { href: '/business/fleet', icon: Truck, label: t.businessDashboard.fleet },
+    { href: '/business/employees', icon: Users, label: t.businessDashboard.employees },
+    { href: '/business/drivers', icon: Briefcase, label: t.businessDashboard.drivers },
+    { href: '/business/analytics', icon: BarChart3, label: t.businessDashboard.analytics },
+    { href: '/business/reports', icon: FileText, label: t.businessDashboard.reports },
   ];
 
   const isActive = (href: string, exact?: boolean) =>
@@ -426,10 +429,10 @@ export const BusinessOwnerDashboardLayout: React.FC = () => {
               </div>
               <div>
                 <h1 className="font-sans font-black text-lg tracking-tight text-slate-855 dark:text-white">
-                  Corporate Command
+                  {t.businessDashboard.title}
                 </h1>
                 <p className="text-[10px] text-fuchsia-500 dark:text-fuchsia-400 font-extrabold uppercase tracking-widest mt-0.5">
-                  Platform logistics Room
+                  {t.businessDashboard.subtitle}
                 </p>
               </div>
             </div>
@@ -447,7 +450,7 @@ export const BusinessOwnerDashboardLayout: React.FC = () => {
                 onClick={() => { logout(); navigate('/auth/login'); }}
                 className="text-[9px] font-black uppercase tracking-widest px-5 py-3.5 rounded-2xl border bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-red-500 hover:bg-red-500/10 transition-all hover-lift"
               >
-                Logout
+                {t.nav.logout}
               </button>
             </div>
           </header>

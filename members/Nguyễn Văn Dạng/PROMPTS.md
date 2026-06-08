@@ -1200,6 +1200,128 @@ AI cung cấp:
 
 ---
 
+### Prompt số 15
+
+| Nội dung | Thông tin |
+|---|---|
+| Ngày sử dụng | 2026-06-06 |
+| Công cụ AI | Antigravity |
+| Mục đích | Tách thực thể Vehicle thành Car và Motorbike chuyên biệt (Entities, Services, Controllers, DTOs và Frontend Pages) |
+| Phần việc liên quan | Fullstack / Refactoring |
+| Mức độ sử dụng | Hỏi sinh code |
+
+#### 5.1. Prompt nguyên văn
+
+```text
+Tách thực thể Vehicle hiện tại thành Car và Motorbike chuyên biệt. Tạo các class JPA Entity tương ứng: Car.java, Motorbike.java, CarBrand.java, MotorbikeBrand.java, CarModel.java, MotorbikeModel.java, CarBooking.java, MotorbikeBooking.java cùng các REST API Controllers, Services và Repositories cho cả hai thực thể. whitelist các endpoint này tại SecurityConfig.java. Ở Frontend, cấu hình router links tại App.tsx và tạo các trang marketplace, details pages cùng services tương ứng cho Car và Motorbike.
+```
+
+#### 5.2. Bối cảnh khi viết prompt
+
+```text
+Nền tảng cho thuê xe LuxeWay cần tách biệt cơ sở dữ liệu và API xử lý ô tô và xe máy do các đặc thù về thuộc tính, giá thuê, bảo hiểm và quy trình thuê khác nhau.
+```
+
+#### 5.3. Kết quả AI trả về
+
+```text
+AI cung cấp toàn bộ code cấu trúc backend Spring Boot (Entities, Repositories, Services, Controllers) cho cả Car và Motorbike, đồng thời tạo mới các React Pages (CarsMarketplace, CarDetails, MotorbikeMarketplace, MotorbikeDetails) cùng services API tương ứng.
+```
+
+#### 5.4. Kết quả đã áp dụng vào bài
+
+```text
+Áp dụng toàn bộ cấu trúc Java classes mới vào backend và các trang UI, API services mới vào frontend, thay thế các logic Vehicle chung cũ.
+```
+
+#### 5.5. Phần sinh viên/nhóm đã chỉnh sửa hoặc cải tiến
+
+```text
+Custom lại các filter logic của riêng Cars vs Motorbikes, đồng thời whitelisting an toàn trong SecurityConfig.
+```
+
+#### 5.6. Đánh giá chất lượng prompt
+
+- [x] Prompt rõ ràng
+- [x] Prompt có đủ bối cảnh
+- [ ] Prompt còn thiếu thông tin
+- [x] Prompt tạo ra kết quả tốt
+- [ ] Prompt tạo ra kết quả chưa phù hợp
+- [ ] Cần hỏi lại AI nhiều lần
+- [x] Cần tự kiểm tra và chỉnh sửa nhiều
+- [ ] Kết quả AI có lỗi hoặc chưa chính xác
+
+#### 5.7. Minh chứng liên quan
+
+| Loại minh chứng | Nội dung |
+|---|---|
+| File liên quan | Car.java, Motorbike.java, CarsMarketplace.tsx, MotorbikeMarketplace.tsx |
+| Kết quả chạy/test | APIs hoạt động, frontend hiển thị riêng biệt ô tô và xe máy |
+| Link commit | [DE190324] feat: split Vehicle entity into specialized Car and Motorbike sub-modules |
+
+---
+
+### Prompt số 16
+
+| Nội dung | Thông tin |
+|---|---|
+| Ngày sử dụng | 2026-06-07 |
+| Công cụ AI | Antigravity |
+| Mục đích | Redesign Landing Page Premium, thêm promotions DB table, và translate notifications song ngữ |
+| Phần việc liên quan | Fullstack / Coding |
+| Mức độ sử dụng | Hỏi sinh code |
+
+#### 5.1. Prompt nguyên văn
+
+```text
+Redesign Landing Page của LuxeWay theo phong cách cao cấp hơn. Thêm section VehicleTypeShowcase hiển thị các loại xe trực quan, section RevenueCalculator động tính toán lợi nhuận của chủ xe, section LiveActivitySection hiển thị các hoạt động thực tế trên sàn cập nhật tự động mỗi 3.5s. Thiết kế bảng promotions trong database, seed dữ liệu vào DatabaseMigration và data-sqlserver.sql. Cấu hình i18n để translate notifications tự động qua hàm translateNotification.
+```
+
+#### 5.2. Bối cảnh khi viết prompt
+
+```text
+Cần nâng cao chất lượng giao diện và UX của trang Landing Page để thu hút khách hàng. Đồng thời, cần bổ sung tính năng khuyến mại thực tế từ database và hỗ trợ dịch thuật song ngữ cho notifications.
+```
+
+#### 5.3. Kết quả AI trả về
+
+```text
+AI cung cấp code React hoàn chỉnh cho các section mới của LandingPage, cấu hình DDL migrations cho bảng promotions, và hàm translateNotification trong translations.ts.
+```
+
+#### 5.4. Kết quả đã áp dụng vào bài
+
+```text
+Tích hợp các component mới vào LandingPage.tsx, cập nhật migrations và file translations.ts để hỗ trợ dịch thuật thông báo.
+```
+
+#### 5.5. Phần sinh viên/nhóm đã chỉnh sửa hoặc cải tiến
+
+```text
+Tối ưu hóa giao diện LiveActivitySection và công thức tính toán lợi nhuận của RevenueCalculator để phản ánh chính xác thị trường Việt Nam.
+```
+
+#### 5.6. Đánh giá chất lượng prompt
+
+- [x] Prompt rõ ràng
+- [x] Prompt có đủ bối cảnh
+- [ ] Prompt còn thiếu thông tin
+- [x] Prompt tạo ra kết quả tốt
+- [ ] Prompt tạo ra kết quả chưa phù hợp
+- [ ] Cần hỏi lại AI nhiều lần
+- [x] Cần tự kiểm tra và chỉnh sửa nhiều
+- [ ] Kết quả AI có lỗi hoặc chưa chính xác
+
+#### 5.7. Minh chứng liên quan
+
+| Loại minh chứng | Nội dung |
+|---|---|
+| File liên quan | LandingPage.tsx, DatabaseMigration.java, translations.ts, App.tsx |
+| Kết quả chạy/test | Landing page hiển thị live activity và calculator chạy mượt mà, dịch thông báo chuẩn xác |
+| Link commit | [DE190324] feat: redesign premium Landing Page with live activity, revenue calculator and promotions seed |
+
+---
+
 ## 11. Cam kết sử dụng prompt minh bạch
 
 Sinh viên/nhóm cam kết rằng:
@@ -1212,5 +1334,5 @@ Sinh viên/nhóm cam kết rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-06-04 |
+| Nguyễn Văn Dạng - DE190324 | 2026-06-07 |
 

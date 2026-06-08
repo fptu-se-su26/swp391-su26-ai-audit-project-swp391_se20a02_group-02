@@ -36,20 +36,27 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final UserRepository userRepository;
     private final com.luxeway.security.OAuth2AuthenticationSuccessHandler oAuth2SuccessHandler;
+    private final com.luxeway.security.OAuth2AuthenticationFailureHandler oAuth2FailureHandler;
+    private final com.luxeway.security.VNPayIPWhitelistFilter vnPayIPWhitelistFilter;
 
     public SecurityConfig(
             JwtAuthenticationFilter jwtAuthFilter,
             UserRepository userRepository,
-            @org.springframework.context.annotation.Lazy com.luxeway.security.OAuth2AuthenticationSuccessHandler oAuth2SuccessHandler) {
+            com.luxeway.security.VNPayIPWhitelistFilter vnPayIPWhitelistFilter,
+            @org.springframework.context.annotation.Lazy com.luxeway.security.OAuth2AuthenticationSuccessHandler oAuth2SuccessHandler,
+            com.luxeway.security.OAuth2AuthenticationFailureHandler oAuth2FailureHandler) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.userRepository = userRepository;
+        this.vnPayIPWhitelistFilter = vnPayIPWhitelistFilter;
         this.oAuth2SuccessHandler = oAuth2SuccessHandler;
+        this.oAuth2FailureHandler = oAuth2FailureHandler;
     }
 
     @Bean
     public UserDetailsService userDetailsService() {
-        return email -> userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
+        // BUG-14 FIX: Use findByEmailAndIsActiveTrue so inactive/banned users cannot authenticate.
+        return email -> userRepository.findByEmailAndIsActiveTrue(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found or account is inactive: " + email));
     }
 
     @Bean
@@ -96,6 +103,7 @@ public class SecurityConfig {
                     "/api/v1/payments/vnpay/return",
                     // Static uploads
                     "/uploads/**",
+                    "/api/v1/uploads/**",
                     // Public pages
                     "/stats/**",
                     "/stats",
@@ -126,25 +134,39 @@ public class SecurityConfig {
                     "/api/v1/vehicles/search",
                     "/api/v1/vehicles/featured",
                     "/api/v1/vehicles/{id}",
-                    "/reviews/vehicle/**",
-                    "/reviews/featured",
-                    "/api/v1/reviews/vehicle/**",
-                    "/api/v1/reviews/featured"
+                    "/cars",
+                    "/cars/{id}",
+                    "/api/v1/cars",
+                    "/api/v1/cars/{id}",
+                    "/motorbikes",
+                    "/motorbikes/{id}",
+                    "/api/v1/motorbikes",
+                    "/api/v1/motorbikes/{id}",
+                    "/reviews",
+                    "/reviews/**",
+                    "/api/v1/reviews",
+                    "/api/v1/reviews/**"
                 ).permitAll()
-                // ======== Admin only ========
-                .requestMatchers("/admin/**").hasRole("ADMIN")
-                .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
-                .requestMatchers("/test/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.GET, "/users", "/api/v1/users").hasRole("ADMIN")
+                // ======== Admin only (ADMIN and SUPER_ADMIN both get access) ========
+                .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                .requestMatchers("/api/v1/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                .requestMatchers("/test/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                .requestMatchers(HttpMethod.GET, "/users", "/api/v1/users").hasAnyRole("ADMIN", "SUPER_ADMIN")
                 // ======== Owner or Admin ========
                 .requestMatchers(HttpMethod.POST,
-                    "/vehicles", "/api/v1/vehicles"
+                    "/vehicles", "/api/v1/vehicles",
+                    "/cars", "/api/v1/cars",
+                    "/motorbikes", "/api/v1/motorbikes"
                 ).hasAnyRole("OWNER", "ADMIN")
                 .requestMatchers(HttpMethod.PUT,
-                    "/vehicles/**", "/api/v1/vehicles/**"
+                    "/vehicles/**", "/api/v1/vehicles/**",
+                    "/cars/**", "/api/v1/cars/**",
+                    "/motorbikes/**", "/api/v1/motorbikes/**"
                 ).hasAnyRole("OWNER", "ADMIN")
                 .requestMatchers(HttpMethod.DELETE,
-                    "/vehicles/**", "/api/v1/vehicles/**"
+                    "/vehicles/**", "/api/v1/vehicles/**",
+                    "/cars/**", "/api/v1/cars/**",
+                    "/motorbikes/**", "/api/v1/motorbikes/**"
                 ).hasAnyRole("OWNER", "ADMIN")
                 // Upload endpoint requires authentication
                 .requestMatchers(HttpMethod.POST, "/upload", "/upload/**", "/users/documents", "/api/v1/users/documents").authenticated()
@@ -153,9 +175,11 @@ public class SecurityConfig {
             )
             .oauth2Login(oauth2 -> oauth2
                 .successHandler(oAuth2SuccessHandler)
+                .failureHandler(oAuth2FailureHandler)
             )
             .authenticationProvider(authenticationProvider())
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(vnPayIPWhitelistFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }
@@ -163,11 +187,22 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(Arrays.asList(
-            "http://localhost:3000",
-            "http://localhost:5173",
-            "http://127.0.0.1:5173"
-        ));
+        
+        // SECURITY: Read from environment variable for production
+        String allowedOriginsEnv = System.getenv("CORS_ALLOWED_ORIGINS");
+        List<String> allowedOrigins;
+        if (allowedOriginsEnv != null && !allowedOriginsEnv.isBlank()) {
+            allowedOrigins = Arrays.asList(allowedOriginsEnv.split(","));
+        } else {
+            // Default development origins
+            allowedOrigins = Arrays.asList(
+                "http://localhost:3000",
+                "http://localhost:5173",
+                "http://127.0.0.1:5173"
+            );
+        }
+        
+        config.setAllowedOrigins(allowedOrigins);
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);

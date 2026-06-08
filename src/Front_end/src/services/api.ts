@@ -1,13 +1,59 @@
 // API Configuration for LuxeWay Backend
-const API_BASE_URL = 'http://localhost:8080/api/v1';
+const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8080/api/v1';
 
-// API Client with error handling
+// Token storage keys (must match authService.ts)
+const TOKEN_KEY = 'luxeway_access_token';
+const REFRESH_TOKEN_KEY = 'luxeway_refresh_token';
+
+// API Client with error handling and automatic token refresh
 class ApiClient {
   private baseURL: string;
   public onUnauthorized?: () => void;
+  // Flag to prevent infinite refresh loops
+  private isRefreshing = false;
+  private refreshSubscribers: Array<(token: string) => void> = [];
 
   constructor(baseURL: string) {
     this.baseURL = baseURL;
+  }
+
+  private subscribeToRefresh(callback: (token: string) => void) {
+    this.refreshSubscribers.push(callback);
+  }
+
+  private notifyRefreshSubscribers(token: string) {
+    this.refreshSubscribers.forEach(cb => cb(token));
+    this.refreshSubscribers = [];
+  }
+
+  private async tryRefreshToken(): Promise<string | null> {
+    const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
+    if (!refreshToken) return null;
+
+    try {
+      const response = await fetch(`${this.baseURL}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken }),
+      });
+
+      if (!response.ok) return null;
+
+      const data = await response.json();
+      const newAccessToken = data?.data?.accessToken || data?.accessToken;
+      if (newAccessToken) {
+        localStorage.setItem(TOKEN_KEY, newAccessToken);
+        // Also store new refresh token if provided
+        const newRefreshToken = data?.data?.refreshToken || data?.refreshToken;
+        if (newRefreshToken) {
+          localStorage.setItem(REFRESH_TOKEN_KEY, newRefreshToken);
+        }
+        return newAccessToken;
+      }
+      return null;
+    } catch {
+      return null;
+    }
   }
 
   private async request<T = any>(
@@ -16,9 +62,11 @@ class ApiClient {
   ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
     
-    const token = localStorage.getItem('luxeway_access_token');
+    const token = localStorage.getItem(TOKEN_KEY);
+    const lang = localStorage.getItem('language') || 'en';
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
+      'Accept-Language': lang,
       ...(options.headers as Record<string, string>),
     };
 
@@ -36,23 +84,64 @@ class ApiClient {
       
       if (!response.ok) {
         if (response.status === 401) {
-          try {
-            localStorage.clear();
-            sessionStorage.clear();
-          } catch (e) {
-            console.error('Failed to clear storage on 401:', e);
-          }
-          if (this.onUnauthorized) {
-            this.onUnauthorized();
+          // BUG-12 FIX: Try to refresh the token before giving up
+          if (!this.isRefreshing) {
+            this.isRefreshing = true;
+            const newToken = await this.tryRefreshToken();
+            this.isRefreshing = false;
+
+            if (newToken) {
+              // Token refreshed — retry the original request with the new token
+              this.notifyRefreshSubscribers(newToken);
+              const retryHeaders = { ...headers, 'Authorization': `Bearer ${newToken}` };
+              const retryResponse = await fetch(url, { ...config, headers: retryHeaders });
+              if (retryResponse.ok) {
+                const retryContentType = retryResponse.headers.get('content-type');
+                if (retryContentType && retryContentType.includes('application/json')) {
+                  return await retryResponse.json();
+                }
+                return (await retryResponse.text()) as any;
+              }
+            }
+
+            // BUG-11 FIX: Do NOT clear localStorage here.
+            // Let the store's onUnauthorized handler decide what to do based on the route.
+            if (this.onUnauthorized) {
+              this.onUnauthorized();
+            } else {
+              // Only redirect if we're on a protected page and have no auth handler wired
+              const protectedPrefixes = ['/dashboard', '/admin', '/owner', '/business', '/booking', '/payment', '/messages', '/notifications'];
+              const path = window.location.pathname;
+              const isProtected = protectedPrefixes.some(p => path === p || path.startsWith(p + '/'));
+              if (isProtected) {
+                window.location.href = '/auth/login';
+              }
+            }
           } else {
-            window.location.href = '/auth/login';
+            // Already refreshing — queue this request
+            return new Promise((resolve, reject) => {
+              this.subscribeToRefresh(async (newToken) => {
+                try {
+                  const retryHeaders = { ...headers, 'Authorization': `Bearer ${newToken}` };
+                  const retryResponse = await fetch(url, { ...config, headers: retryHeaders });
+                  const ct = retryResponse.headers.get('content-type');
+                  if (ct && ct.includes('application/json')) {
+                    resolve(await retryResponse.json());
+                  } else {
+                    resolve((await retryResponse.text()) as any);
+                  }
+                } catch (e) {
+                  reject(e);
+                }
+              });
+            });
           }
         }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      const contentType = response.headers.get("content-type");
-      if (contentType && contentType.indexOf("application/json") !== -1) {
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
         return await response.json();
       } else {
         return (await response.text()) as any;
@@ -74,6 +163,10 @@ class ApiClient {
 
   async put<T>(endpoint: string, body: any, options?: RequestInit) {
     return this.request<T>(endpoint, { ...options, method: 'PUT', body: JSON.stringify(body) });
+  }
+
+  async patch<T>(endpoint: string, body: any, options?: RequestInit) {
+    return this.request<T>(endpoint, { ...options, method: 'PATCH', body: JSON.stringify(body) });
   }
 
   async delete<T>(endpoint: string, options?: RequestInit) {

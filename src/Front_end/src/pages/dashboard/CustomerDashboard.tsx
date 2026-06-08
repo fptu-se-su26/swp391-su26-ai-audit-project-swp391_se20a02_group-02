@@ -17,7 +17,7 @@ import { formatCurrency, formatDate, getStatusColor, getInitials } from '@/utils
 import { staggerContainer, staggerItem, fadeUp } from '@/animations/variants';
 import { StatCardSkeleton, TableSkeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
-import { useT } from '@/i18n/translations';
+import { useT, translateNotification } from '@/i18n/translations';
 
 // ====== CUSTOMER SIDEBAR ======
 const CustomerSidebar: React.FC = () => {
@@ -35,7 +35,7 @@ const CustomerSidebar: React.FC = () => {
     { href: '/dashboard/payments', icon: CreditCard, label: t.dashboard.payments },
     { href: '/dashboard/documents', icon: FileText, label: t.dashboard.documents },
     { href: '/dashboard/reviews', icon: Star, label: t.dashboard.myReviews },
-    { href: '/messages', icon: Bell, label: 'Messages' },
+    { href: '/messages', icon: Bell, label: t.nav.messages },
     { href: '/dashboard/notifications', icon: Heart, label: t.dashboard.notifications },
     { href: '/dashboard/profile', icon: User, label: t.dashboard.profile },
     { href: '/dashboard/settings', icon: Settings, label: t.dashboard.settings },
@@ -198,149 +198,239 @@ export const CustomerOverview: React.FC = () => {
     spent: bookings.filter(b => b.status === 'completed').reduce((sum, b) => sum + b.pricing.total, 0),
   };
 
-  return (
-    <div className="space-y-8 animate-fade-in">
-      <motion.div variants={fadeUp} initial="hidden" animate="visible">
-        <h1 className="font-display text-3.5xl font-extrabold text-slate-800 dark:text-white mb-1.5 tracking-tight">
-          {t.dashboard.welcome}, {user?.firstName}! 👋
-        </h1>
-        <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">
-          {t.dashboard.overviewDesc}
-        </p>
-      </motion.div>
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
 
-      {/* Stats */}
-      {loading ? (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
-          {Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)}
-        </div>
-      ) : (
+  const statCards = [
+    { label: t.dashboard.totalBookings, value: stats.total, icon: Calendar, color: '#6366F1', glow: 'rgba(99,102,241,0.3)', sub: t.dashboard.totalBookingsChange },
+    { label: t.dashboard.activeRentals, value: stats.active, icon: Car, color: '#10B981', glow: 'rgba(16,185,129,0.3)', sub: t.dashboard.activeRentalsDesc },
+    { label: t.dashboard.completedTrips, value: stats.completed, icon: CheckCircle, color: '#F59E0B', glow: 'rgba(245,158,11,0.3)', sub: t.dashboard.completedTripsDesc },
+    { label: t.dashboard.totalSpent, value: formatCurrency(stats.spent), icon: CreditCard, color: '#EC4899', glow: 'rgba(236,72,153,0.3)', sub: t.dashboard.totalSpentDesc, isStr: true },
+  ];
+
+  const statusStyle: Record<string, { bg: string; text: string }> = {
+    pending: { bg: 'rgba(245,158,11,0.15)', text: '#F59E0B' },
+    confirmed: { bg: 'rgba(99,102,241,0.15)', text: '#818CF8' },
+    active: { bg: 'rgba(16,185,129,0.15)', text: '#10B981' },
+    completed: { bg: 'rgba(16,185,129,0.15)', text: '#10B981' },
+    cancelled: { bg: 'rgba(239,68,68,0.15)', text: '#EF4444' },
+  };
+
+  return (
+    <div className="space-y-5">
+      {/* ---- TOP ROW: Hero + Stats ---- */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+        {/* Hero Featured Vehicle Card */}
         <motion.div
-          variants={staggerContainer}
-          initial="hidden"
-          animate="visible"
-          className="grid grid-cols-2 lg:grid-cols-4 gap-5"
+          variants={fadeUp} initial="hidden" animate="visible"
+          className="lg:col-span-3 relative rounded-3xl overflow-hidden min-h-[260px] shadow-2xl"
+          style={{ boxShadow: '0 25px 60px rgba(0,0,0,0.5)' }}
         >
-          {[
-            {
-              label: t.dashboard.totalBookings,
-              value: stats.total,
-              icon: Calendar,
-              gradient: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
-              bg: 'rgba(99,102,241,0.08)',
-              change: t.dashboard.totalBookingsChange
-            },
-            {
-              label: t.dashboard.activeRentals,
-              value: stats.active,
-              icon: Car,
-              gradient: 'linear-gradient(135deg, #10B981, #059669)',
-              bg: 'rgba(16,185,129,0.08)',
-              change: t.dashboard.activeRentalsDesc
-            },
-            {
-              label: t.dashboard.completedTrips,
-              value: stats.completed,
-              icon: CheckCircle,
-              gradient: 'linear-gradient(135deg, #F59E0B, #D97706)',
-              bg: 'rgba(245,158,11,0.08)',
-              change: t.dashboard.completedTripsDesc
-            },
-            {
-              label: t.dashboard.totalSpent,
-              value: formatCurrency(stats.spent),
-              icon: CreditCard,
-              gradient: 'linear-gradient(135deg, #EC4899, #DB2777)',
-              bg: 'rgba(236,72,153,0.08)',
-              change: t.dashboard.totalSpentDesc,
-              isString: true
-            },
-          ].map(stat => (
+          <img
+            src="https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=900&q=80"
+            alt="Featured luxury car"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(7,11,20,0.92) 0%, rgba(7,11,20,0.55) 55%, rgba(7,11,20,0.20) 100%)' }} />
+
+          <div className="absolute top-4 left-4">
+            <span className="text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg"
+              style={{ background: 'rgba(99,102,241,0.85)', color: '#fff' }}>✨ Recommended For You</span>
+          </div>
+
+          <div className="absolute top-4 right-4 flex gap-2">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl"
+              style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}>
+              <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+              <span className="text-[10px] font-bold text-white">Available</span>
+            </div>
+          </div>
+
+          <div className="absolute bottom-0 left-0 right-0 p-6">
+            <div className="flex items-end justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold mb-1 flex items-center gap-1.5" style={{ color: 'rgba(148,163,184,0.9)' }}>
+                  📍 Ho Chi Minh City, Vietnam
+                </p>
+                <h2 className="text-2xl font-extrabold text-white leading-tight tracking-tight">Ferrari F8 Tributo</h2>
+                <p className="text-xl font-extrabold mt-1" style={{ color: '#EAB308' }}>
+                  {formatCurrency(8500000)}
+                  <span className="text-sm font-semibold ml-1" style={{ color: 'rgba(255,255,255,0.4)' }}>/day</span>
+                </p>
+              </div>
+              <div className="flex flex-col gap-2 flex-shrink-0">
+                <Link to="/marketplace"
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-white transition-all"
+                  style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)', boxShadow: '0 4px 15px rgba(99,102,241,0.4)' }}
+                >
+                  Book Now
+                </Link>
+                <div className="flex items-center gap-1 justify-center">
+                  <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                  <span className="text-xs font-bold text-white">5.0</span>
+                  <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.4)' }}>(128)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Stat Cards */}
+        <motion.div
+          variants={staggerContainer} initial="hidden" animate="visible"
+          className="lg:col-span-2 grid grid-cols-2 gap-3"
+        >
+          {statCards.map(stat => (
             <motion.div
               key={stat.label}
               variants={staggerItem}
-              whileHover={{ y: -4, boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}
-              className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-5 cursor-default transition-all duration-300 shadow-sm relative overflow-hidden"
+              whileHover={{ y: -3, boxShadow: `0 15px 35px ${stat.glow}` }}
+              className="rounded-2xl p-4 cursor-default transition-all duration-300 relative overflow-hidden"
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
             >
-              {/* ambient bg glow */}
-              <div className="absolute top-0 right-0 w-24 h-24 rounded-full -translate-y-1/2 translate-x-1/2 opacity-70 blur-2xl pointer-events-none"
-                style={{ background: stat.gradient }} />
+              <div className="absolute top-0 right-0 w-14 h-14 rounded-full -translate-y-1/2 translate-x-1/2 opacity-40 blur-xl pointer-events-none"
+                style={{ background: stat.color }} />
               <div className="relative z-10">
-                <div className="w-11 h-11 rounded-2xl flex items-center justify-center mb-3 shadow-lg"
-                  style={{ background: stat.gradient }}>
-                  <stat.icon className="w-5 h-5 text-white" />
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3"
+                  style={{ background: `${stat.color}22`, border: `1px solid ${stat.color}33` }}>
+                  <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
                 </div>
-                <p className="text-2xl font-extrabold text-slate-800 dark:text-white tracking-tight">{stat.value}</p>
-                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-1">{stat.label}</p>
-                <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-2 font-medium">{stat.change}</p>
+                <p className="text-xl font-extrabold text-white tracking-tight leading-none">
+                  {loading ? '—' : stat.value}
+                </p>
+                <p className="text-[10px] font-semibold uppercase tracking-wider mt-1.5" style={{ color: 'rgba(148,163,184,0.7)' }}>{stat.label}</p>
+                <p className="text-[10px] mt-1 font-medium" style={{ color: 'rgba(148,163,184,0.5)' }}>{stat.sub}</p>
               </div>
             </motion.div>
           ))}
-        </motion.div>
-      )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Quick links card */}
+          <motion.div
+            variants={staggerItem}
+            className="col-span-2 rounded-2xl p-4"
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+          >
+            <p className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{ color: 'rgba(148,163,184,0.5)' }}>Quick Actions</p>
+            <div className="flex gap-2 flex-wrap">
+              {[
+                { label: 'Explore Cars', href: '/marketplace', color: '#6366F1' },
+                { label: 'Explore Motorbikes', href: '/motorbikes', color: '#8B5CF6' },
+                { label: 'My Bookings', href: '/dashboard/bookings', color: '#F59E0B' },
+                { label: 'My Profile', href: '/dashboard/profile', color: '#10B981' },
+              ].map(q => (
+                <Link key={q.label} to={q.href}
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all"
+                  style={{ background: `${q.color}18`, color: q.color, border: `1px solid ${q.color}30` }}
+                >
+                  {q.label}
+                </Link>
+              ))}
+            </div>
+          </motion.div>
+        </motion.div>
+      </div>
+
+      {/* ---- BOTTOM ROW: Recent Bookings + Notifications ---- */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Recent Bookings */}
-        <div className="lg:col-span-2 glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm">
-          <div className="flex items-center justify-between mb-5">
-            <h3 className="font-display text-lg font-bold text-slate-800 dark:text-white">{t.dashboard.recentBookings}</h3>
-            <Link to="/dashboard/bookings" className="text-sm font-bold text-accent hover:underline">{t.dashboard.viewAll}</Link>
+        <motion.div
+          variants={fadeUp} initial="hidden" animate="visible"
+          className="lg:col-span-2 rounded-3xl p-5"
+          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-white text-sm">{t.dashboard.recentBookings}</h3>
+            <Link to="/dashboard/bookings" className="text-xs font-bold" style={{ color: '#818CF8' }}>{t.dashboard.viewAll} →</Link>
           </div>
-          {loading ? <TableSkeleton rows={3} /> : bookings.length === 0 ? (
+
+          {loading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="h-16 rounded-2xl animate-pulse" style={{ background: 'rgba(255,255,255,0.04)' }} />
+              ))}
+            </div>
+          ) : bookings.length === 0 ? (
             <div className="text-center py-12">
-              <Calendar className="w-12 h-12 text-slate-300 dark:text-slate-700 mx-auto mb-3" />
-              <p className="text-slate-400 text-sm font-medium">{t.dashboard.noBookings}</p>
-              <Link to="/marketplace" className="btn-gold mt-4 text-xs font-bold px-5 py-2.5 rounded-xl">{t.dashboard.exploreVehicles}</Link>
+              <Calendar className="w-10 h-10 mx-auto mb-3" style={{ color: 'rgba(148,163,184,0.3)' }} />
+              <p className="text-sm font-medium mb-4" style={{ color: 'rgba(148,163,184,0.5)' }}>{t.dashboard.noBookings}</p>
+              <Link to="/marketplace"
+                className="px-5 py-2.5 rounded-xl text-xs font-bold text-white"
+                style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)' }}>
+                {t.dashboard.exploreVehicles}
+              </Link>
             </div>
           ) : (
             <div className="space-y-3">
-              {bookings.slice(0, 5).map(booking => (
-                <div key={booking.id} className="flex items-center gap-3 p-3.5 bg-slate-500/5 hover:bg-slate-500/10 border border-slate-200/30 dark:border-white/5 hover:border-slate-200/50 dark:hover:border-white/10 rounded-2xl transition-all duration-300">
-                  <div className="w-11 h-11 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/50 dark:border-white/10 flex items-center justify-center flex-shrink-0 shadow-sm">
-                    <Car className="w-5 h-5 text-slate-400 dark:text-slate-500" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">Booking #{booking.id.slice(-6).toUpperCase()}</p>
-                    <p className="text-xs text-slate-400 dark:text-slate-500 font-medium mt-0.5">{formatDate(booking.startDate)} → {formatDate(booking.endDate)}</p>
-                  </div>
-                  <div className="text-right">
-                    <span className={`badge text-[10px] font-bold tracking-wider uppercase ${getStatusColor(booking.status)}`}>
-                      {booking.status}
-                    </span>
-                    <p className="text-xs font-bold text-slate-800 dark:text-slate-100 mt-1">{formatCurrency(booking.pricing.total)}</p>
-                  </div>
-                </div>
-              ))}
+              {bookings.slice(0, 5).map(booking => {
+                const st = statusStyle[booking.status] || statusStyle['pending'];
+                return (
+                  <motion.div
+                    key={booking.id}
+                    whileHover={{ x: 3 }}
+                    className="flex items-center gap-3 p-3.5 rounded-2xl transition-all duration-200"
+                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+                  >
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                      style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                      <Car className="w-5 h-5" style={{ color: 'rgba(148,163,184,0.6)' }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-white truncate">Booking #{booking.id.slice(-6).toUpperCase()}</p>
+                      <p className="text-[11px] mt-0.5" style={{ color: 'rgba(148,163,184,0.6)' }}>
+                        {formatDate(booking.startDate)} → {formatDate(booking.endDate)}
+                      </p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg block mb-1"
+                        style={{ background: st.bg, color: st.text }}>{booking.status}</span>
+                      <p className="text-xs font-bold text-white">{formatCurrency(booking.pricing.total)}</p>
+                    </div>
+                  </motion.div>
+                );
+              })}
             </div>
           )}
-        </div>
+        </motion.div>
 
-        {/* Recent Notifications */}
-        <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm flex flex-col">
-          <div className="flex items-center justify-between mb-5">
-            <h3 className="font-display text-lg font-bold text-slate-800 dark:text-white">{t.dashboard.notifications}</h3>
-            <Link to="/dashboard/notifications" className="text-xs font-bold text-accent hover:underline">{t.dashboard.viewAll}</Link>
+        {/* Notifications */}
+        <motion.div
+          variants={fadeUp} initial="hidden" animate="visible"
+          className="rounded-3xl p-5 flex flex-col"
+          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-white text-sm">{t.dashboard.notifications}</h3>
+            <Link to="/dashboard/notifications" className="text-xs font-bold" style={{ color: '#818CF8' }}>{t.dashboard.viewAll}</Link>
           </div>
-          <div className="space-y-3 overflow-y-auto flex-1 max-h-[340px] pr-1">
+          <div className="space-y-3 overflow-y-auto flex-1 max-h-[340px] pr-1 sidebar-scroll">
             {notifications.length === 0 ? (
               <div className="text-center py-12 my-auto">
-                <Bell className="w-10 h-10 text-slate-300 dark:text-slate-700 mx-auto mb-3" />
-                <p className="text-slate-400 text-xs font-medium">{t.dashboard.noNotifications}</p>
+                <Bell className="w-10 h-10 mx-auto mb-3" style={{ color: 'rgba(148,163,184,0.2)' }} />
+                <p className="text-xs font-medium" style={{ color: 'rgba(148,163,184,0.4)' }}>{t.dashboard.noNotifications}</p>
               </div>
             ) : (
               notifications.map(notif => (
-                <div key={notif.id} className={`p-3.5 rounded-2xl border transition-all duration-300 ${!notif.read
-                    ? 'bg-blue-500/10 border-blue-500/20 text-slate-800 dark:text-white'
-                    : 'bg-slate-500/5 border-slate-200/20 dark:border-white/5 text-slate-600 dark:text-slate-300'
-                  }`}>
-                  <p className={`font-bold text-xs ${!notif.read ? 'text-accent dark:text-blue-400' : 'text-slate-800 dark:text-slate-100'}`}>{notif.title}</p>
-                  <p className="text-slate-500 dark:text-slate-400 text-[11px] mt-0.5 leading-relaxed line-clamp-2">{notif.body}</p>
-                  <p className="text-slate-400 dark:text-slate-500 text-[9px] mt-2 font-medium">{formatDate(notif.createdAt, 'relative')}</p>
+                <div key={notif.id}
+                  className="p-3.5 rounded-2xl transition-all duration-200"
+                  style={{
+                    background: !notif.read ? 'rgba(99,102,241,0.08)' : 'rgba(255,255,255,0.02)',
+                    border: `1px solid ${!notif.read ? 'rgba(99,102,241,0.20)' : 'rgba(255,255,255,0.05)'}`,
+                  }}
+                >
+                  {!notif.read && (
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <div className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-indigo-400">New</span>
+                    </div>
+                  )}
+                  <p className="font-bold text-xs text-white">{translateNotification(notif.title)}</p>
+                  <p className="text-[11px] mt-0.5 leading-relaxed line-clamp-2" style={{ color: 'rgba(148,163,184,0.7)' }}>{translateNotification(notif.body)}</p>
+                  <p className="text-[9px] mt-2" style={{ color: 'rgba(148,163,184,0.4)' }}>{formatDate(notif.createdAt, 'relative')}</p>
                 </div>
               ))
             )}
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   );
@@ -1061,11 +1151,17 @@ export const SettingsPage: React.FC = () => {
   const t = useT();
   const isVi = t.common.loading.includes('Đang');
   const isJa = t.common.loading.includes('読み込み');
-  const { theme } = useUIStore();
+  const { theme, language, setLanguage, currency, setCurrency } = useUIStore();
   const [prefs, setPrefs] = React.useState({
     emailBooking: true, emailMarketing: false, emailReview: true, pushNotif: true,
-    language: 'en', currency: 'USD',
+    language: language, currency: currency,
   });
+
+  const handleSave = () => {
+    setLanguage(prefs.language as any);
+    setCurrency(prefs.currency);
+    toast.success(t.dashboard.settingsSaved, t.dashboard.settingsSavedDesc);
+  };
 
   const Toggle: React.FC<{ value: boolean; onChange: () => void; label: string; desc?: string }> = ({ value, onChange, label, desc }) => (
     <div className="flex items-center justify-between py-4">
@@ -1106,7 +1202,7 @@ export const SettingsPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">{isVi ? 'Ngôn Ngữ' : isJa ? '言語' : 'Language'}</label>
-              <select value={prefs.language} onChange={e => setPrefs(p => ({ ...p, language: e.target.value }))} className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100">
+              <select value={prefs.language} onChange={e => setPrefs(p => ({ ...p, language: e.target.value as any }))} className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100">
                 <option value="en">English</option>
                 <option value="vi">Tiếng Việt</option>
                 <option value="ja">日本語</option>
@@ -1124,7 +1220,7 @@ export const SettingsPage: React.FC = () => {
           </div>
         </div>
 
-        <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} onClick={() => toast.success(t.dashboard.settingsSaved, t.dashboard.settingsSavedDesc)} className="btn-primary py-3 px-8 font-bold">
+        <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} onClick={handleSave} className="btn-primary py-3 px-8 font-bold">
           {t.dashboard.saveSettingsBtn}
         </motion.button>
       </div>

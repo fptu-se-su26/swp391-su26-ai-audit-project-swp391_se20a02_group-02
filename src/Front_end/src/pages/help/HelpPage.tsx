@@ -10,17 +10,18 @@ import { helpService, ticketService } from '@/services/helpService';
 import type { HelpCategory, HelpArticle, SupportTicket, CreateTicketPayload } from '@/services/helpService';
 import { homeService } from '@/services/homeService';
 import { useAuthStore } from '@/store';
+import { useT } from '@/i18n/translations';
 
 // =====================================================
 // ICON MAP — maps backend icon string to Lucide component
 // =====================================================
-const ICON_MAP: Record<string, React.FC<any>> = {
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Calendar, CreditCard, Car, User, BadgeCheck, Shield, Key, AlertTriangle,
   BookOpen, Search, Phone, MessageSquare, CheckCircle2,
 };
 
 const CategoryIcon: React.FC<{ name?: string; className?: string }> = ({ name, className = 'w-6 h-6' }) => {
-  const Icon = (name && ICON_MAP[name]) ?? BookOpen;
+  const Icon: React.ComponentType<{ className?: string }> = (name && ICON_MAP[name]) || BookOpen;
   return <Icon className={className} />;
 };
 
@@ -47,12 +48,13 @@ const Skeleton: React.FC<{ className?: string }> = ({ className = '' }) => (
 // STATUS BADGE
 // =====================================================
 const StatusBadge: React.FC<{ status: SupportTicket['status'] }> = ({ status }) => {
+  const t = useT();
   const map: Record<string, { label: string; cls: string }> = {
-    OPEN:          { label: 'Open',         cls: 'bg-blue-100 text-blue-700' },
-    IN_PROGRESS:   { label: 'In Progress',  cls: 'bg-amber-100 text-amber-700' },
-    WAITING_USER:  { label: 'Needs Reply',  cls: 'bg-orange-100 text-orange-700' },
-    RESOLVED:      { label: 'Resolved',     cls: 'bg-emerald-100 text-emerald-700' },
-    CLOSED:        { label: 'Closed',       cls: 'bg-slate-100 text-slate-600' },
+    OPEN:          { label: t.help.ticketStatusOpen,         cls: 'bg-blue-100 text-blue-700' },
+    IN_PROGRESS:   { label: t.help.ticketStatusInProgress,   cls: 'bg-amber-100 text-amber-700' },
+    WAITING_USER:  { label: t.help.ticketStatusWaitingUser,  cls: 'bg-orange-100 text-orange-700' },
+    RESOLVED:      { label: t.help.ticketStatusResolved,     cls: 'bg-emerald-100 text-emerald-700' },
+    CLOSED:        { label: t.help.ticketStatusClosed,       cls: 'bg-slate-100 text-slate-600' },
   };
   const { label, cls } = map[status] ?? { label: status, cls: 'bg-slate-100 text-slate-600' };
   return <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${cls}`}>{label}</span>;
@@ -65,6 +67,7 @@ const ArticleViewer: React.FC<{
   articleId: number | null;
   onClose: () => void;
 }> = ({ articleId, onClose }) => {
+  const t = useT();
   const [article, setArticle] = useState<HelpArticle | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -75,9 +78,9 @@ const ArticleViewer: React.FC<{
     setError(null);
     helpService.getArticle(articleId)
       .then(a => { setArticle(a); })
-      .catch(() => setError('Failed to load article. Please try again.'))
+      .catch(() => setError(t.help.failedLoadArticle))
       .finally(() => setLoading(false));
-  }, [articleId]);
+  }, [articleId, t.help.failedLoadArticle]);
 
   if (!articleId) return null;
 
@@ -101,7 +104,7 @@ const ArticleViewer: React.FC<{
           <div className="flex items-center justify-between px-7 py-5 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-2 text-sm text-slate-500">
               <BookOpen className="w-4 h-4" />
-              <span>{article?.categoryTitle ?? 'Help Article'}</span>
+              <span>{article?.categoryTitle ?? t.help.helpArticle}</span>
             </div>
             <button
               onClick={onClose}
@@ -135,7 +138,7 @@ const ArticleViewer: React.FC<{
                 </h1>
                 <div className="flex flex-wrap gap-2 mb-6">
                   <span className="flex items-center gap-1 text-xs text-slate-400">
-                    <Eye className="w-3.5 h-3.5" /> {article.viewCount} views
+                    <Eye className="w-3.5 h-3.5" /> {article.viewCount} {t.help.views}
                   </span>
                   {article.tags?.split(',').map(tag => tag.trim()).filter(Boolean).map(tag => (
                     <span key={tag} className="flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-600 text-xs rounded-full font-medium">

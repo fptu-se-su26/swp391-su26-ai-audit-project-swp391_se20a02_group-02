@@ -9,28 +9,28 @@ public class AuthDTOs {
 
     @Data
     public static class LoginRequest {
-        @NotBlank(message = "Email is required")
-        @Email(message = "Invalid email format")
+        @NotBlank(message = "{validation.email.required}")
+        @Email(message = "{validation.email.invalid}")
         private String email;
 
-        @NotBlank(message = "Password is required")
+        @NotBlank(message = "{validation.password.required}")
         private String password;
     }
 
     @Data
     public static class RegisterRequest {
-        @NotBlank(message = "First name is required")
+        @NotBlank(message = "{validation.firstname.required}")
         private String firstName;
 
-        @NotBlank(message = "Last name is required")
+        @NotBlank(message = "{validation.lastname.required}")
         private String lastName;
 
-        @NotBlank(message = "Email is required")
-        @Email(message = "Invalid email format")
+        @NotBlank(message = "{validation.email.required}")
+        @Email(message = "{validation.email.invalid}")
         private String email;
 
-        @NotBlank(message = "Password is required")
-        @Size(min = 8, message = "Password must be at least 8 characters")
+        @NotBlank(message = "{validation.password.required}")
+        @Size(min = 8, message = "{validation.password.size}")
         private String password;
 
         private String phone;
@@ -42,6 +42,8 @@ public class AuthDTOs {
         private String accountType = "INDIVIDUAL";
 
         private String companyName;
+
+        private String preferredLanguage = "en";
     }
 
     @Data
@@ -65,57 +67,58 @@ public class AuthDTOs {
             private boolean verified;
             private boolean kycVerified;
             private java.math.BigDecimal walletBalance;
+            private String preferredLanguage;
         }
     }
 
     @Data
     public static class ChangePasswordRequest {
-        @NotBlank
+        @NotBlank(message = "{validation.password.required}")
         private String currentPassword;
-        @NotBlank
-        @Size(min = 8)
+        @NotBlank(message = "{validation.password.required}")
+        @Size(min = 8, message = "{validation.password.size}")
         private String newPassword;
     }
 
     @Data
     public static class ForgotPasswordRequest {
-        @NotBlank
-        @Email
+        @NotBlank(message = "{validation.email.required}")
+        @Email(message = "{validation.email.invalid}")
         private String email;
     }
 
     @Data
     public static class VerifyOtpRequest {
-        @NotBlank
-        @Email
+        @NotBlank(message = "{validation.email.required}")
+        @Email(message = "{validation.email.invalid}")
         private String email;
-        @NotBlank
-        @Size(min = 6, max = 6)
+        @NotBlank(message = "{validation.otp.required}")
+        @Size(min = 6, max = 6, message = "{validation.otp.size}")
         private String otp;
     }
 
     @Data
     public static class ResetPasswordRequest {
-        @NotBlank(message = "Token is required")
+        @NotBlank(message = "{validation.token.required}")
         private String token;
 
-        @NotBlank(message = "New password is required")
-        @Size(min = 8, message = "Password must be at least 8 characters")
+        @NotBlank(message = "{validation.password.required}")
+        @Size(min = 8, message = "{validation.password.size}")
         private String newPassword;
 
-        @NotBlank(message = "Confirm password is required")
+        @NotBlank(message = "{validation.confirmPassword.required}")
         private String confirmPassword;
     }
 
     @Data
     public static class TokenRefreshRequest {
-        @NotBlank(message = "Refresh token is required")
+        @NotBlank(message = "{validation.token.required}")
         private String refreshToken;
     }
 
     @Data
     public static class GoogleLoginRequest {
-        @NotBlank(message = "ID Token is required")
+        @NotBlank(message = "{validation.idtoken.required}")
         private String idToken;
     }
 }

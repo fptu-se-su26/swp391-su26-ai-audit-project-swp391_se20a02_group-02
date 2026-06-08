@@ -18,6 +18,7 @@ import { adminService, AdminStats } from '@/services/adminService';
 import { paymentService } from '@/services/bookingService';
 import { useToast } from '@/components/ui/Toast';
 import { useUIStore, useAuthStore } from '@/store';
+import { useT } from '@/i18n/translations';
 
 const COLORS = ['#EAB308', '#6366F1', '#10B981', '#A855F7', '#06B6D4', '#EC4899'];
 
@@ -103,6 +104,7 @@ const AdminDashboard: React.FC = () => {
   const { theme, currency } = useUIStore();
   const { user, logout } = useAuthStore();
   const isDark = theme === 'dark';
+  const t = useT();
   
   // Dashboard states
   const [activeTab, setActiveTab] = useState<'overview' | 'marketplace' | 'vehicles' | 'kyc' | 'bookings' | 'payments' | 'disputes' | 'users' | 'fraud' | 'analytics' | 'notifications' | 'logs' | 'health' | 'settings'>('overview');
@@ -110,6 +112,7 @@ const AdminDashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString());
+  const [fleetSplitType, setFleetSplitType] = useState<'category' | 'ecosystem'>('ecosystem');
 
   // Search & Filter States
   const [userSearch, setUserSearch] = useState('');
@@ -480,20 +483,20 @@ const AdminDashboard: React.FC = () => {
   const activeFraudAlertsCount = fraudAlerts.filter(f => f.status === 'pending').length;
 
   const menuItems = [
-    { id: 'overview', label: 'Overview', icon: BarChart2, badge: 0 },
-    { id: 'marketplace', label: 'Marketplace Command', icon: Globe, badge: 0 },
-    { id: 'vehicles', label: 'Vehicle Approvals', icon: Car, badge: pendingApprovalsCount },
-    { id: 'kyc', label: 'KYC Reviews', icon: Shield, badge: pendingKycCount },
-    { id: 'bookings', label: 'Bookings Ledger', icon: Calendar, badge: 0 },
-    { id: 'payments', label: 'Financial Ops', icon: DollarSign, badge: failedPaymentsCount },
-    { id: 'disputes', label: 'Disputes Hub', icon: Scale, badge: openDisputesCount },
-    { id: 'users', label: 'Users & Roles', icon: Users, badge: 0 },
-    { id: 'fraud', label: 'Fraud Center', icon: ShieldAlert, badge: activeFraudAlertsCount },
-    { id: 'analytics', label: 'BI Analytics', icon: TrendingUp, badge: 0 },
-    { id: 'notifications', label: 'Notification Center', icon: Bell, badge: 0 },
-    { id: 'logs', label: 'Audit Logs', icon: FileText, badge: 0 },
-    { id: 'health', label: 'System Health', icon: Activity, badge: 0 },
-    { id: 'settings', label: 'System Control', icon: Settings, badge: 0 },
+    { id: 'overview', label: t.adminDashboard.overview, icon: BarChart2, badge: 0 },
+    { id: 'marketplace', label: t.adminDashboard.marketplace, icon: Globe, badge: 0 },
+    { id: 'vehicles', label: t.adminDashboard.vehicles, icon: Car, badge: pendingApprovalsCount },
+    { id: 'kyc', label: t.adminDashboard.kyc, icon: Shield, badge: pendingKycCount },
+    { id: 'bookings', label: t.adminDashboard.bookings, icon: Calendar, badge: 0 },
+    { id: 'payments', label: t.adminDashboard.payments, icon: DollarSign, badge: failedPaymentsCount },
+    { id: 'disputes', label: t.adminDashboard.disputes, icon: Scale, badge: openDisputesCount },
+    { id: 'users', label: t.adminDashboard.users, icon: Users, badge: 0 },
+    { id: 'fraud', label: t.adminDashboard.fraud, icon: ShieldAlert, badge: activeFraudAlertsCount },
+    { id: 'analytics', label: t.adminDashboard.analytics, icon: TrendingUp, badge: 0 },
+    { id: 'notifications', label: t.adminDashboard.notifications, icon: Bell, badge: 0 },
+    { id: 'logs', label: t.adminDashboard.logs, icon: FileText, badge: 0 },
+    { id: 'health', label: t.adminDashboard.health, icon: Activity, badge: 0 },
+    { id: 'settings', label: t.adminDashboard.settings, icon: Settings, badge: 0 },
   ] as const;
 
   // Search filter calculations
@@ -531,6 +534,11 @@ const AdminDashboard: React.FC = () => {
     { name: 'Electric', value: vehicles.filter(v => v.category?.toLowerCase() === 'electric').length || 12 },
   ];
 
+  const ecosystemDistributionData = [
+    { name: 'Ô Tô (Cars)', value: vehicles.filter(v => v.vehicleType === 'car' || v.vehicleType === 'CAR' || (!v.vehicleType && v.category?.toLowerCase() !== 'motorbike')).length || 20 },
+    { name: 'Xe Máy (Motorbikes)', value: vehicles.filter(v => v.vehicleType === 'motorbike' || v.vehicleType === 'MOTORBIKE').length || 15 }
+  ];
+
   return (
     <div 
       className={cn(
@@ -558,7 +566,7 @@ const AdminDashboard: React.FC = () => {
         )}>
           <div className="relative z-10 flex flex-col flex-1 min-h-0">
             {/* Platform Branding */}
-            <div className="flex items-center gap-3 px-2 mb-6">
+            <Link to="/" className="flex items-center gap-3 px-2 mb-6 hover:opacity-85 transition-opacity">
               <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-650 to-violet-650 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
                 <Shield className="w-5.5 h-5.5 text-white" />
               </div>
@@ -567,15 +575,27 @@ const AdminDashboard: React.FC = () => {
                   LuxeWay
                 </h2>
                 <span className="text-[9px] font-black uppercase tracking-widest text-indigo-500 dark:text-indigo-400">
-                  Operations Suite
+                  {t.adminDashboard.subtitle}
                 </span>
               </div>
-            </div>
+            </Link>
 
             <hr className="border-slate-200/50 dark:border-slate-800/60 mb-4" />
 
             {/* Sidebar Navigation items */}
             <div className="space-y-1 overflow-y-auto sidebar-scroll pr-1 flex-1">
+              <Link
+                to="/"
+                className={cn(
+                  "w-full flex items-center gap-3 px-4.5 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest whitespace-nowrap transition-all duration-300 relative group",
+                  isDark 
+                    ? "text-slate-400 hover:text-white hover:bg-slate-900/40" 
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/50"
+                )}
+              >
+                <Globe className="w-4.5 h-4.5 text-slate-450 dark:text-slate-500 group-hover:text-slate-800 dark:group-hover:text-white" />
+                <span>{t.adminDashboard.goHome}</span>
+              </Link>
               {menuItems.map(tab => {
                 const ActiveIcon = tab.icon;
                 const active = activeTab === tab.id;
@@ -612,10 +632,10 @@ const AdminDashboard: React.FC = () => {
                 {user?.firstName ? user.firstName[0].toUpperCase() : 'A'}
               </div>
               <div className="flex-1 min-w-0">
-                <p className={cn("text-xs font-black truncate", isDark ? "text-white" : "text-slate-850")}>{user?.displayName || 'Test Admin'}</p>
-                <p className="text-[8px] font-black uppercase tracking-wider text-amber-550 dark:text-amber-400 mt-0.5">Super Admin</p>
+                <p className={cn("text-xs font-black truncate", isDark ? "text-white" : "text-slate-855")}>{user?.displayName || 'Test Admin'}</p>
+                <p className="text-[8px] font-black uppercase tracking-wider text-amber-550 dark:text-amber-400 mt-0.5">{t.adminDashboard.superAdmin}</p>
               </div>
-              <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-red-500 transition-colors" title="Sign Out">
+              <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-red-500 transition-colors" title={t.adminDashboard.signOut}>
                 <LogOut className="w-4 h-4" />
               </button>
             </div>
@@ -637,17 +657,17 @@ const AdminDashboard: React.FC = () => {
               >
                 {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
-
+ 
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-500 dark:text-indigo-400">
                   <Activity className="w-5 h-5" />
                 </div>
                 <div>
                   <h1 className={cn("font-black text-lg tracking-tight", isDark ? "text-white" : "text-slate-855")}>
-                    Command Operations Center
+                    {t.adminDashboard.title}
                   </h1>
                   <p className="text-[10px] text-indigo-650 dark:text-indigo-400 font-bold uppercase tracking-widest mt-0.5">
-                    Platform Management Portal
+                    {t.adminDashboard.subtitle}
                   </p>
                 </div>
               </div>
@@ -667,7 +687,7 @@ const AdminDashboard: React.FC = () => {
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                 </span>
                 <span className="text-[8px] font-black uppercase tracking-widest text-emerald-650 dark:text-emerald-400">
-                  System Secure
+                  {t.adminDashboard.systemSecure}
                 </span>
               </div>
               <button 
@@ -676,7 +696,7 @@ const AdminDashboard: React.FC = () => {
                   "p-2.5 border rounded-2xl transition-all duration-300 hover:rotate-180 hover-lift shadow-sm",
                   isDark ? "bg-slate-800 border-slate-700 hover:bg-slate-750 text-slate-300" : "bg-white border-slate-200 hover:bg-slate-50 text-slate-600"
                 )}
-                title="Sync System Data"
+                title={t.adminDashboard.syncData}
               >
                 <RefreshCw className="w-4 h-4" />
               </button>
@@ -819,12 +839,48 @@ const AdminDashboard: React.FC = () => {
                       isDark ? "bg-slate-900/60 border-slate-800/80" : "bg-white border-slate-200/60"
                     )}>
                       <div>
-                        <h3 className="font-black text-xs uppercase tracking-widest text-slate-400 mb-5 border-b dark:border-slate-800 pb-4">Fleet Split</h3>
+                        <div className="flex justify-between items-center mb-5 border-b dark:border-slate-800 pb-4">
+                          <h3 className="font-black text-xs uppercase tracking-widest text-slate-400">Fleet Split</h3>
+                          <div className="flex gap-1 bg-slate-100 dark:bg-slate-800/80 p-0.5 rounded-xl border dark:border-slate-850">
+                            <button 
+                              onClick={() => setFleetSplitType('ecosystem')}
+                              className={cn(
+                                "px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all",
+                                fleetSplitType === 'ecosystem' 
+                                  ? "bg-white dark:bg-slate-700 shadow text-indigo-500" 
+                                  : "text-slate-450 hover:text-slate-200"
+                              )}
+                            >
+                              Phân Loại
+                            </button>
+                            <button 
+                              onClick={() => setFleetSplitType('category')}
+                              className={cn(
+                                "px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all",
+                                fleetSplitType === 'category' 
+                                  ? "bg-white dark:bg-slate-700 shadow text-indigo-500" 
+                                  : "text-slate-450 hover:text-slate-200"
+                              )}
+                            >
+                              Phân Khúc
+                            </button>
+                          </div>
+                        </div>
                         <div className="h-44 relative flex items-center justify-center">
                           <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
-                              <Pie data={categoryDistributionData} cx="50%" cy="50%" innerRadius={58} outerRadius={78} dataKey="value" paddingAngle={5}>
-                                {categoryDistributionData.map((_, index) => (<Cell key={index} fill={COLORS[index % COLORS.length]} />))}
+                              <Pie 
+                                data={fleetSplitType === 'ecosystem' ? ecosystemDistributionData : categoryDistributionData} 
+                                cx="50%" 
+                                cy="50%" 
+                                innerRadius={58} 
+                                outerRadius={78} 
+                                dataKey="value" 
+                                paddingAngle={5}
+                              >
+                                {(fleetSplitType === 'ecosystem' ? ecosystemDistributionData : categoryDistributionData).map((_, index) => (
+                                  <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                                ))}
                               </Pie>
                               <Tooltip />
                             </PieChart>
@@ -836,7 +892,7 @@ const AdminDashboard: React.FC = () => {
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-2 mt-2 px-2">
-                        {categoryDistributionData.slice(0,4).map((item, i) => (
+                        {(fleetSplitType === 'ecosystem' ? ecosystemDistributionData : categoryDistributionData.slice(0,4)).map((item, i) => (
                           <div key={item.name} className="flex items-center gap-2 text-[9px] font-black text-slate-500 uppercase tracking-wider">
                             <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: COLORS[i % COLORS.length] }} />
                             <span className="truncate">{item.name} ({item.value})</span>

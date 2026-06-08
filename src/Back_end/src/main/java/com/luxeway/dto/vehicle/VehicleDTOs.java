@@ -50,6 +50,22 @@ public class VehicleDTOs {
         private Boolean deliveryAvailable = false;
         private BigDecimal deliveryFee = BigDecimal.ZERO;
 
+        // Top-level discriminator
+        private String vehicleType;
+
+        // Motorbike fields
+        private Integer engineCc;
+        private Boolean hasHelmet;
+        private Boolean hasPhoneHolder;
+        private Boolean hasRaincoat;
+        private Boolean hasTouringPackage;
+
+        // Car fields
+        private Boolean hasChauffeur;
+        private Boolean airportDelivery;
+        private Boolean weddingRental;
+        private Boolean businessRental;
+
         private List<String> features;
         private List<String> imageUrls;
     }
@@ -94,6 +110,18 @@ public class VehicleDTOs {
         private String createdAt;
         private String updatedAt;
 
+        // Ecosystem Restructure additions
+        private String vehicleType;
+        private Integer engineCc;
+        private Boolean hasHelmet;
+        private Boolean hasPhoneHolder;
+        private Boolean hasRaincoat;
+        private Boolean hasTouringPackage;
+        private Boolean hasChauffeur;
+        private Boolean airportDelivery;
+        private Boolean weddingRental;
+        private Boolean businessRental;
+
         @Data
         public static class OwnerInfo {
             private String id;
@@ -131,5 +159,18 @@ public class VehicleDTOs {
         private int size = 12;
         private java.time.LocalDate startDate;
         private java.time.LocalDate endDate;
+
+        // Filters added for Car/Motorbike ecosystem
+        private String vehicleType;
+        private Integer minEngineCc;
+        private Integer maxEngineCc;
+        private Boolean hasHelmet;
+        private Boolean hasPhoneHolder;
+        private Boolean hasRaincoat;
+        private Boolean hasTouringPackage;
+        private Boolean hasChauffeur;
+        private Boolean airportDelivery;
+        private Boolean weddingRental;
+        private Boolean businessRental;
     }
 }

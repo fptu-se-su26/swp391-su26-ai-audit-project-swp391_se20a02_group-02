@@ -9,7 +9,7 @@ import { notificationService, reviewService } from '@/services/otherServices';
 import { useToast } from '@/components/ui/Toast';
 import type { Vehicle, Notification, Review } from '@/types';
 import { formatDate } from '@/utils';
-import { useT } from '@/i18n/translations';
+import { useT, translateNotification } from '@/i18n/translations';
 
 // Layouts
 import RootLayout from '@/layouts/RootLayout';
@@ -21,6 +21,10 @@ import { LoginPage, RegisterPage, ForgotPasswordPage } from '@/pages/auth/AuthPa
 import OAuth2RedirectHandler from '@/pages/auth/OAuth2RedirectHandler';
 import MarketplacePage from '@/pages/marketplace/MarketplacePage';
 import VehicleDetailPage from '@/pages/marketplace/VehicleDetailPage';
+import CarsMarketplace from '@/pages/marketplace/CarsMarketplace';
+import MotorbikeMarketplace from '@/pages/marketplace/MotorbikeMarketplace';
+import CarDetails from '@/pages/marketplace/CarDetails';
+import MotorbikeDetails from '@/pages/marketplace/MotorbikeDetails';
 import BookingWizardPage from '@/pages/booking/BookingWizardPage';
 import VNPayReturnPage from '@/pages/booking/VNPayReturnPage';
 import HelpPage from '@/pages/help/HelpPage';
@@ -60,6 +64,7 @@ const TermsPage = lazy(() => import('@/pages/static/StaticPages').then(m => ({ d
 const PrivacyPage = lazy(() => import('@/pages/static/StaticPages').then(m => ({ default: m.PrivacyPage })));
 const BusinessPage = lazy(() => import('@/pages/static/BusinessPage'));
 const ComparePage = lazy(() => import('@/pages/compare/ComparePage'));
+const ReviewsPage = lazy(() => import('@/pages/reviews/ReviewsPage').then(m => ({ default: m.ReviewsPage })));
 
 // ====== LOADING FALLBACK ======
 const PageLoader: React.FC = () => {
@@ -93,7 +98,8 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; requiredRole?: 'cust
     
     let authorized = false;
     if (requiredRole === 'admin') {
-      authorized = roleUpper === 'ADMIN';
+      // BUG-4/19 FIX: SUPER_ADMIN also gets admin access
+      authorized = roleUpper === 'ADMIN' || roleUpper === 'SUPER_ADMIN';
     } else if (requiredRole === 'business_owner') {
       authorized = userIsBusiness;
     } else if (requiredRole === 'owner') {
@@ -120,7 +126,8 @@ const ForbiddenPage: React.FC = () => {
     if (!user) return '/';
     const roleUpper = user.role?.toUpperCase();
     const accTypeUpper = user.accountType?.toUpperCase();
-    if (roleUpper === 'ADMIN') return '/admin';
+    // BUG-4 FIX: SUPER_ADMIN routes to /admin
+    if (roleUpper === 'ADMIN' || roleUpper === 'SUPER_ADMIN') return '/admin';
     if (roleUpper === 'BUSINESS_OWNER' || (roleUpper === 'OWNER' && accTypeUpper === 'BUSINESS')) return '/business';
     if (roleUpper === 'OWNER') return '/owner';
     return '/dashboard';
@@ -257,8 +264,8 @@ const NotificationsPage: React.FC = () => {
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className={`text-sm font-semibold ${!n.read ? 'text-accent' : isDark ? 'text-white' : 'text-[#0F172A]'}`}>{n.title}</p>
-                <p className="text-sm text-slate-500 mt-0.5">{n.body}</p>
+                <p className={`text-sm font-semibold ${!n.read ? 'text-accent' : isDark ? 'text-white' : 'text-[#0F172A]'}`}>{translateNotification(n.title)}</p>
+                <p className="text-sm text-slate-500 mt-0.5">{translateNotification(n.body)}</p>
               </div>
               {!n.read && <div className="w-2.5 h-2.5 bg-accent rounded-full flex-shrink-0 mt-1" />}
             </div>
@@ -275,70 +282,6 @@ const NotificationsPage: React.FC = () => {
   );
 };
 
-// ====== REVIEWS PUBLIC PAGE ======
-const ReviewsPage: React.FC = () => {
-  const { theme } = useUIStore();
-  const t = useT();
-  const isDark = theme === 'dark';
-  const [reviews, setReviews] = React.useState<Review[]>([]);
-  
-  React.useEffect(() => {
-    reviewService.getAll().then(setReviews);
-  }, []);
-
-  const avgRating = reviews.length ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1) : '0';
-
-  return (
-    <div className={`min-h-screen pt-24 pb-16 ${isDark ? 'bg-slate-900' : 'bg-[#F8FAFC]'}`}>
-      <div className="max-w-6xl mx-auto px-4">
-        <h1 className={`font-display text-4xl font-bold mb-2 ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>{t.marketplace.reviews}</h1>
-        <p className="text-slate-500 mb-8">{t.landing.testimonials.subtitle}</p>
-        
-        <div className={`flex items-center gap-6 mb-8 p-6 rounded-3xl shadow-sm border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}>
-          <div className="text-center">
-            <p className={`text-4xl font-display font-bold ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>{avgRating}</p>
-            <div className="flex text-yellow-400 mt-1">
-              {[...Array(5)].map((_, i) => <span key={i} className={i < Math.round(Number(avgRating)) ? 'text-yellow-400' : isDark ? 'text-slate-600' : 'text-slate-200'}>★</span>)}
-            </div>
-          </div>
-          <div className={`w-px h-12 ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`}></div>
-          <div>
-            <p className={`text-xl font-bold ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>{reviews.length}</p>
-            <p className="text-sm text-slate-500">{t.landing.testimonials.verified}</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {reviews.map(review => {
-            return (
-              <div key={review.id} className="luxury-card p-5">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold overflow-hidden ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-500'}`}>
-                    U
-                  </div>
-                  <div>
-                    <p className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
-                      User {(review.reviewerId || 'anon').substring(0, 4)}
-                    </p>
-                    <div className="flex items-center gap-1">
-                      {[...Array(5)].map((_, i) => <span key={i} className={`text-xs ${i < review.rating ? 'text-yellow-400' : isDark ? 'text-slate-700' : 'text-slate-200'}`}>★</span>)}
-                      <span className="text-xs text-slate-400 ml-1">{formatDate(review.createdAt, 'short')}</span>
-                    </div>
-                  </div>
-                </div>
-                <p className={`text-sm italic mb-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>&quot;{review.comment}&quot;</p>
-              </div>
-            );
-          })}
-          {reviews.length === 0 && (
-            <p className="text-slate-500 col-span-full">{t.landing.testimonials.empty}</p>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
 // ====== OTP PAGE ======
 const OTPPage: React.FC = () => {
   const navigate = useNavigate();
@@ -349,12 +292,13 @@ const OTPPage: React.FC = () => {
   const isDark = theme === 'dark';
   
   const queryEmail = new URLSearchParams(location.search).get('email') || '';
+  const queryToken = new URLSearchParams(location.search).get('token') || '';
   const stateEmail = (location.state as any)?.email || '';
   const email = queryEmail || stateEmail;
 
-  const [step, setStep] = React.useState<'otp' | 'reset'>('otp');
+  const [step, setStep] = React.useState<'otp' | 'reset'>(queryToken ? 'reset' : 'otp');
   const [code, setCode] = React.useState(['', '', '', '', '', '']);
-  const [resetToken, setResetToken] = React.useState('');
+  const [resetToken, setResetToken] = React.useState(queryToken);
   const [newPassword, setNewPassword] = React.useState('');
   const [confirmPassword, setConfirmPassword] = React.useState('');
   
@@ -530,7 +474,7 @@ const NotificationsPageWrapper: React.FC = () => {
 // ====== MAIN APP ======
 const App: React.FC = () => {
   const { initAuth } = useAuthStore();
-  const { theme } = useUIStore();
+  const { theme, language } = useUIStore();
 
   useEffect(() => {
     initAuth();
@@ -540,6 +484,13 @@ const App: React.FC = () => {
       document.documentElement.classList.add('dark');
     }
   }, []);
+
+  // Sync language and document direction (LTR/RTL)
+  useEffect(() => {
+    const isRtl = ['ar', 'he'].includes(language);
+    document.documentElement.dir = isRtl ? 'rtl' : 'ltr';
+    document.documentElement.lang = language;
+  }, [language]);
 
   // Sync theme changes to DOM
   useEffect(() => {
@@ -557,6 +508,10 @@ const App: React.FC = () => {
             <Route path="vehicles" element={<MarketplacePage />} />
             <Route path="search" element={<MarketplacePage />} />
             <Route path="vehicles/:id" element={<VehicleDetailPage />} />
+            <Route path="cars" element={<CarsMarketplace />} />
+            <Route path="motorbikes" element={<MotorbikeMarketplace />} />
+            <Route path="cars/:id" element={<CarDetails />} />
+            <Route path="motorbikes/:id" element={<MotorbikeDetails />} />
             <Route path="booking/:vehicleId" element={
               <ProtectedRoute><BookingWizardPage /></ProtectedRoute>
             } />

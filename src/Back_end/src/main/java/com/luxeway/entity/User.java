@@ -59,6 +59,13 @@ public class User implements UserDetails {
     
     @Column(length = 20)
     private String phone;
+
+    @Column(length = 20, nullable = false)
+    @Builder.Default
+    private String provider = "LOCAL";
+
+    @Column(name = "provider_id", length = 200)
+    private String providerId;
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -98,6 +105,11 @@ public class User implements UserDetails {
     @Column(name = "account_type", length = 20)
     @Builder.Default
     private String accountType = "INDIVIDUAL"; // INDIVIDUAL or BUSINESS
+
+    @Column(name = "preferred_language", length = 10)
+    @Builder.Default
+    private String preferredLanguage = "en";
+
     
     @Column(name = "company_name", length = 200)
     private String companyName;
@@ -151,7 +163,13 @@ public class User implements UserDetails {
     // UserDetails implementation
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
+        if (role == com.luxeway.enums.UserRole.SUPER_ADMIN) {
+            return List.of(
+                new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_SUPER_ADMIN"),
+                new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN")
+            );
+        }
+        return List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + role.name()));
     }
     
     @Override

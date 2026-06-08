@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -28,6 +29,9 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+
+    @Value("${app.frontend-url:http://localhost:5173}")
+    private String frontendUrl;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
@@ -52,12 +56,21 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         String firstName = givenName != null ? givenName : (name != null ? name : "Google");
         String lastName = familyName != null ? familyName : "User";
 
+        String providerId = oAuth2User.getAttribute("sub");
+        if (providerId == null) {
+            providerId = oAuth2User.getName();
+        }
+
         Optional<User> existingUser = userRepository.findByEmail(email);
         User user;
         if (existingUser.isPresent()) {
             user = existingUser.get();
             if (user.getAvatar() == null || user.getAvatar().isBlank()) {
                 user.setAvatar(picture);
+            }
+            if ("LOCAL".equals(user.getProvider()) || user.getProvider() == null) {
+                user.setProvider("GOOGLE");
+                user.setProviderId(providerId);
             }
             user.setLastActive(java.time.LocalDateTime.now());
             user = userRepository.save(user);
@@ -75,6 +88,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                     .kycVerified(false)
                     .drivingLicenseVerified(false)
                     .isActive(true)
+                    .provider("GOOGLE")
+                    .providerId(providerId)
                     .build();
             user = userRepository.save(user);
             log.info("Google OAuth success handler: registered new user {}", email);
@@ -83,7 +98,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         String accessToken = jwtTokenProvider.generateToken(user);
         String refreshToken = jwtTokenProvider.generateRefreshToken(user);
 
-        String targetUrl = UriComponentsBuilder.fromUriString("http://localhost:5173/oauth2/redirect")
+        String targetUrl = UriComponentsBuilder.fromUriString(frontendUrl + "/oauth2/redirect")
                 .queryParam("token", accessToken)
                 .queryParam("refresh_token", refreshToken)
                 .build().toUriString();

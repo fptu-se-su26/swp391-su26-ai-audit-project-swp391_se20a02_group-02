@@ -1,17 +1,33 @@
 // ============================================================
-// LUXEWAY — COMPLETE TYPE DEFINITIONS
+// LUXEWAY — COMPLETE TYPE DEFINITIONS (Vietnam Market Edition)
 // ============================================================
 
-export type UserRole = 'customer' | 'owner' | 'admin';
-export type VehicleCategory = 'economy' | 'family' | 'business' | 'electric' | 'motorbike' | 'suv' | 'city_car' | 'tourism';
+export type UserRole = 'customer' | 'owner' | 'admin' | 'super_admin';
+
+// Top-level vehicle type discriminator
+export type VehicleType = 'car' | 'motorbike';
+
+// Car categories
+export type CarCategory = 'economy' | 'sedan' | 'suv' | 'mpv' | 'luxury' | 'business' | 'electric_car' | 'sports' | 'pickup' | 'family' | 'electric' | 'city_car' | 'tourism';
+
+// Motorbike categories
+export type MotorbikeCategory = 'scooter' | 'automatic_scooter' | 'manual_motorcycle' | 'sport_bike' | 'touring_bike' | 'adventure_bike' | 'classic_bike' | 'electric_bike' | 'motorbike';
+
+// Combined (all categories in the system)
+export type VehicleCategory = CarCategory | MotorbikeCategory;
+
 export type BookingStatus = 'pending' | 'confirmed' | 'active' | 'completed' | 'cancelled' | 'disputed';
 export type PaymentStatus = 'pending' | 'processing' | 'succeeded' | 'failed' | 'refunded';
 export type VehicleStatus = 'available' | 'rented' | 'maintenance' | 'pending_approval';
 export type TransmissionType = 'automatic' | 'manual';
-export type FuelType = 'gasoline' | 'diesel' | 'electric' | 'hybrid';
+export type FuelType = 'gasoline' | 'petrol' | 'diesel' | 'electric' | 'hybrid';
 export type MessageType = 'text' | 'image' | 'booking_request' | 'system';
 export type NotificationType = 'booking' | 'payment' | 'message' | 'review' | 'system' | 'promotion';
 export type DisputeStatus = 'open' | 'investigating' | 'resolved' | 'closed';
+
+// Engine CC options for motorbikes
+export type EngineCc = 50 | 110 | 125 | 150 | 155 | 175 | 300 | 350 | 400 | 650 | 1000;
+
 
 // ====== USER ======
 export interface User {
@@ -40,6 +56,7 @@ export interface User {
     language: string;
     notifications: boolean;
   };
+  preferredLanguage?: string;
   paymentMethods: PaymentMethod[];
   documents: UserDocument[];
   stripeCustomerId: string;
@@ -59,9 +76,21 @@ export interface Vehicle {
   model: string;
   year: number;
   category: VehicleCategory;
+  vehicleType?: VehicleType;              // 'car' | 'motorbike'
   description: string;
   images: string[];
   thumbnailUrl: string;
+  // Motorbike-specific
+  engineCc?: number;                       // e.g. 125, 150, 300
+  hasHelmet?: boolean;
+  hasPhoneHolder?: boolean;
+  hasRaincoat?: boolean;
+  hasTouringPackage?: boolean;
+  // Car-specific
+  hasChauffeur?: boolean;
+  airportDelivery?: boolean;
+  weddingRental?: boolean;
+  businessRental?: boolean;
   pricePerDay: number;
   pricePerWeek?: number;
   deposit: number;
@@ -328,6 +357,7 @@ export interface VehicleFilters {
   location?: string;
   startDate?: string;
   endDate?: string;
+  vehicleType?: VehicleType;              // 'car' | 'motorbike' — top-level type filter
   category?: VehicleCategory[];
   brands?: string[];
   minPrice?: number;
@@ -344,6 +374,45 @@ export interface VehicleFilters {
   sortBy?: 'price_asc' | 'price_desc' | 'rating' | 'newest' | 'popular';
   status?: VehicleStatus;
   isFeatured?: boolean;
+  // Motorbike-specific
+  minEngineCc?: number;
+  maxEngineCc?: number;
+  hasHelmet?: boolean;
+  hasPhoneHolder?: boolean;
+  hasRaincoat?: boolean;
+  hasTouringPackage?: boolean;
+  // Car-specific
+  hasChauffeur?: boolean;
+  airportDelivery?: boolean;
+  weddingRental?: boolean;
+  businessRental?: boolean;
+  electric?: boolean;
+  hybrid?: boolean;
+}
+
+// ====== VEHICLE BRAND ======
+export interface VehicleBrand {
+  id: string;
+  name: string;
+  country: string;
+  vehicleType: 'car' | 'motorbike' | 'both';
+  logoUrl?: string;
+  isActive: boolean;
+}
+
+// ====== VEHICLE MODEL ======
+export interface VehicleModel {
+  id: string;
+  brandId: string;
+  brandName: string;
+  modelName: string;
+  vehicleType: VehicleType;
+  category: VehicleCategory;
+  engineCc?: number;           // motorbikes
+  seats?: number;              // cars
+  basePriceMin: number;        // VND/day
+  basePriceMax: number;        // VND/day
+  isActive: boolean;
 }
 
 // ====== STORE AUTH STATE ======

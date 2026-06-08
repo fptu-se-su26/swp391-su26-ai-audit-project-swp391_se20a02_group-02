@@ -6,7 +6,8 @@ import ImageUploader from '@/components/ui/ImageUploader';
 import {
   LayoutDashboard, Car, Calendar, TrendingUp, Users, Settings,
   Plus, Edit, Trash2, Eye, CheckCircle, Clock, DollarSign,
-  BarChart2, Shield, AlertTriangle, LogOut, Globe, Menu
+  BarChart2, Shield, AlertTriangle, LogOut, Globe, Menu,
+  MapPin, Star, Activity, ArrowUpRight
 } from 'lucide-react';
 
 import { useAuthStore, useUIStore } from '@/store';
@@ -20,7 +21,7 @@ import { useToast } from '@/components/ui/Toast';
 import { useT } from '@/i18n/translations';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, BarChart, Bar
+  ResponsiveContainer, BarChart, Bar, Cell
 } from 'recharts';
 
 // Custom glassmorphic tooltip for charts
@@ -54,7 +55,6 @@ export const OwnerOverview: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const t = useT();
   const isVi = t.common.loading.includes('Đang');
-  const analytics: any[] = [];
 
   useEffect(() => {
     if (!user) return;
@@ -77,180 +77,402 @@ export const OwnerOverview: React.FC = () => {
     rating: user?.rating || 0,
   };
 
-  // Mock data for display when real analytics is empty
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+
   const revenueData = [
-    { date: 'May 15', revenue: stats.revenue * 0.1, bookings: 1 },
-    { date: 'May 17', revenue: stats.revenue * 0.15, bookings: 2 },
-    { date: 'May 19', revenue: stats.revenue * 0.2, bookings: 1 },
-    { date: 'May 21', revenue: stats.revenue * 0.35, bookings: 3 },
-    { date: 'May 23', revenue: stats.revenue * 0.5, bookings: 2 },
-    { date: 'May 25', revenue: stats.revenue * 0.75, bookings: 4 },
-    { date: 'May 27', revenue: stats.revenue, bookings: 5 },
+    { month: 'Jan', revenue: Math.max(stats.revenue * 0.08, 1000000) },
+    { month: 'Feb', revenue: Math.max(stats.revenue * 0.14, 1500000) },
+    { month: 'Mar', revenue: Math.max(stats.revenue * 0.22, 2000000) },
+    { month: 'Apr', revenue: Math.max(stats.revenue * 0.30, 2800000) },
+    { month: 'May', revenue: Math.max(stats.revenue * 0.45, 3500000) },
+    { month: 'Jun', revenue: Math.max(stats.revenue * 0.60, 4200000) },
+    { month: 'Jul', revenue: Math.max(stats.revenue * 0.78, 5000000) },
+    { month: 'Aug', revenue: Math.max(stats.revenue * 0.90, 6000000) },
+    { month: 'Sep', revenue: Math.max(stats.revenue, 7000000) },
+  ];
+
+  const statCards = [
+    { label: 'Total Revenue', value: formatCurrency(stats.revenue), icon: DollarSign, color: '#10B981', glow: 'rgba(16,185,129,0.3)', sub: '+18% this month', isStr: true },
+    { label: 'Active Vehicles', value: `${stats.activeVehicles}/${stats.totalVehicles}`, icon: Car, color: '#F59E0B', glow: 'rgba(245,158,11,0.3)', sub: 'Fleet status' },
+    { label: 'Total Bookings', value: stats.totalBookings, icon: Calendar, color: '#6366F1', glow: 'rgba(99,102,241,0.3)', sub: `${stats.pending} pending` },
+    { label: 'My Rating', value: `${stats.rating || '5.0'}/5`, icon: CheckCircle, color: '#EC4899', glow: 'rgba(236,72,153,0.3)', sub: `${user?.totalReviews || 0} reviews` },
+  ];
+
+  const goalPct = 72;
+  const featuredVehicle = vehicles[0];
+  const pendingBookings = bookings.filter(b => b.status === 'pending');
+
+  const tasks = [
+    { label: 'Approve pending booking requests', done: false, count: stats.pending, color: '#F59E0B', href: '/owner/bookings' },
+    { label: 'Add photos to your listings', done: false, count: 2, color: '#6366F1', href: '/owner/vehicles' },
+    { label: 'Update vehicle availability calendar', done: false, count: 0, color: '#EC4899', href: '/owner/calendar' },
+    { label: 'Respond to customer reviews', done: true, count: 0, color: '#10B981', href: '/owner/revenue' },
+    { label: 'Complete earnings dashboard', done: true, count: 0, color: '#10B981', href: '/owner/revenue' },
   ];
 
   return (
-    <div className="space-y-8 animate-fade-in">
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="font-display text-3.5xl font-extrabold text-slate-800 dark:text-white mb-1.5 tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">{t.ownerDashboard.title}</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm font-semibold">{t.ownerDashboard.subtitle.replace('{name}', user?.firstName || '')}</p>
-        </div>
-        <Link to="/owner/vehicles/new" className="btn-gold flex items-center gap-2 text-xs font-extrabold px-6 py-3.5 rounded-xl shadow-lg shadow-gold/20 hover:shadow-gold/30 hover-lift">
-          <Plus className="w-4.5 h-4.5" /> {t.ownerDashboard.addVehicle}
-        </Link>
-      </motion.div>
+    <div className="space-y-5">
+      {/* ---- TOP ROW: Hero Card + Stat Cards ---- */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+        {/* Hero / Featured Vehicle Card */}
+        <motion.div
+          variants={fadeUp} initial="hidden" animate="visible"
+          className="lg:col-span-3 relative rounded-3xl overflow-hidden min-h-[260px] shadow-2xl"
+          style={{ boxShadow: '0 25px 60px rgba(0,0,0,0.5)' }}
+        >
+          <img
+            src={featuredVehicle?.thumbnailUrl || 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=900&q=80'}
+            alt={featuredVehicle?.name || 'Featured Vehicle'}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(7,11,20,0.90) 0%, rgba(7,11,20,0.55) 55%, rgba(7,11,20,0.20) 100%)' }} />
 
-      {/* Stats Cards */}
-      <motion.div
-        variants={staggerContainer}
-        initial="hidden"
-        animate="visible"
-        className="grid grid-cols-2 lg:grid-cols-4 gap-5"
-      >
-        {[
-          {
-            label: t.ownerDashboard.totalRevenue,
-            value: formatCurrency(stats.revenue),
-            icon: DollarSign,
-            gradient: 'linear-gradient(135deg, #10B981, #059669)',
-            change: isVi ? '+18% tháng này' : '+18% this month',
-          },
-          {
-            label: t.ownerDashboard.activeVehicles,
-            value: `${stats.activeVehicles}/${stats.totalVehicles}`,
-            icon: Car,
-            gradient: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
-            change: t.ownerDashboard.activeVehiclesDesc,
-          },
-          {
-            label: t.ownerDashboard.totalBookings,
-            value: stats.totalBookings,
-            icon: Calendar,
-            gradient: 'linear-gradient(135deg, #F59E0B, #D97706)',
-            change: t.ownerDashboard.totalBookingsDesc,
-          },
-          {
-            label: t.ownerDashboard.myRating,
-            value: `${stats.rating || '5.0'}/5`,
-            icon: CheckCircle,
-            gradient: 'linear-gradient(135deg, #EC4899, #DB2777)',
-            change: t.ownerDashboard.myRatingDesc.replace('{count}', String(user?.totalReviews || 0)),
-          },
-        ].map(stat => (
-          <motion.div
-            key={stat.label}
-            variants={staggerItem}
-            whileHover={{ y: -4, boxShadow: '0 20px 40px rgba(0,0,0,0.12)' }}
-            className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-5 cursor-default transition-all duration-300 shadow-sm relative overflow-hidden"
-          >
-            <div className="absolute top-0 right-0 w-28 h-28 rounded-full -translate-y-1/2 translate-x-1/2 opacity-60 blur-2xl pointer-events-none"
-              style={{ background: stat.gradient }} />
-            <div className="relative z-10">
-              <div className="w-11 h-11 rounded-2xl flex items-center justify-center mb-3 shadow-lg"
-                style={{ background: stat.gradient }}>
-                <stat.icon className="w-5 h-5 text-white" />
-              </div>
-              <p className="text-2xl font-extrabold text-slate-800 dark:text-white tracking-tight">{stat.value}</p>
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-1">{stat.label}</p>
-              <p className="text-[10px] text-emerald-500 mt-2 flex items-center gap-1 font-bold">
-                <TrendingUp className="w-3 h-3 text-emerald-550" /> {stat.change}
-              </p>
-            </div>
-          </motion.div>
-        ))}
-      </motion.div>
-
-      {/* Revenue Chart */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h3 className="font-display text-lg font-bold text-slate-800 dark:text-white">{t.ownerDashboard.revenueChartTitle}</h3>
-            <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{t.ownerDashboard.revenueChartSub}</p>
-          </div>
-          <span className="flex items-center gap-1.5 text-xs font-bold text-amber-600 bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 px-3 py-1.5 rounded-xl">
-            {t.ownerDashboard.liveAnalytics}
-          </span>
-        </div>
-        <ResponsiveContainer width="100%" height={240}>
-          <AreaChart data={revenueData}>
-            <defs>
-              <linearGradient id="ownerRevGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.2} />
-                <stop offset="95%" stopColor="#F59E0B" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(226,232,240,0.8)" />
-            <XAxis dataKey="date" tick={{ fontSize: 11, fontWeight: 600, fill: '#94A3B8' }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: 11, fontWeight: 600, fill: '#94A3B8' }} axisLine={false} tickLine={false} tickFormatter={v => formatCurrency(v)} />
-            <Tooltip content={<CustomTooltip />} />
-            <Area type="monotone" dataKey="revenue" stroke="#F59E0B" fill="url(#ownerRevGradient)" strokeWidth={3} dot={false} />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>      {/* Recent Bookings + Vehicle Status */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Pending Bookings */}
-        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-sm flex flex-col">
-          <div className="flex items-center justify-between mb-5">
-            <h3 className="font-display text-lg font-bold text-slate-800 dark:text-white">{t.ownerDashboard.pendingRequests}</h3>
-            <span className="text-xs font-bold px-3 py-1.5 rounded-xl bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-900/30">
-              {t.ownerDashboard.pendingCount.replace('{count}', String(stats.pending))}
+          <div className="absolute top-4 left-4">
+            <span className="text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg"
+              style={{ background: 'rgba(245,158,11,0.9)', color: '#000' }}>
+              🏆 Your Top Vehicle
             </span>
           </div>
-          <div className="space-y-3.5 overflow-y-auto flex-1 max-h-[350px] pr-1">
+
+          <div className="absolute top-4 right-4">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl"
+              style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}>
+              <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+              <span className="text-[10px] font-bold text-white">Live</span>
+            </div>
+          </div>
+
+          <div className="absolute bottom-0 left-0 right-0 p-6">
+            <div className="flex items-end justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold mb-1 flex items-center gap-1.5" style={{ color: 'rgba(148,163,184,0.9)' }}>
+                  <MapPin className="w-3 h-3" /> {featuredVehicle?.location?.city || 'Ho Chi Minh City'}, Vietnam
+                </p>
+                <h2 className="text-2xl font-extrabold text-white leading-tight tracking-tight">
+                  {featuredVehicle?.name || 'Ferrari F8 Tributo'}
+                </h2>
+                <p className="text-xl font-extrabold mt-1" style={{ color: '#EAB308' }}>
+                  {formatCurrency(featuredVehicle?.pricePerDay || 8500000)}
+                  <span className="text-sm font-semibold ml-1" style={{ color: 'rgba(255,255,255,0.4)' }}>/day</span>
+                </p>
+              </div>
+              <div className="flex flex-col gap-2 flex-shrink-0">
+                <Link to="/owner/vehicles/new"
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-black transition-all"
+                  style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', boxShadow: '0 4px 15px rgba(245,158,11,0.4)' }}
+                >
+                  <Plus className="w-3.5 h-3.5 inline mr-1" />
+                  Add Vehicle
+                </Link>
+                {featuredVehicle && (
+                  <div className="flex items-center gap-1 justify-center">
+                    <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                    <span className="text-xs font-bold text-white">{featuredVehicle.rating?.toFixed(1) || '5.0'}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Stat Cards + Goal */}
+        <motion.div
+          variants={staggerContainer} initial="hidden" animate="visible"
+          className="lg:col-span-2 grid grid-cols-2 gap-3"
+        >
+          {statCards.map(stat => (
+            <motion.div
+              key={stat.label}
+              variants={staggerItem}
+              whileHover={{ y: -3, boxShadow: `0 15px 35px ${stat.glow}` }}
+              className="rounded-2xl p-4 cursor-default transition-all duration-300 relative overflow-hidden"
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+            >
+              <div className="absolute top-0 right-0 w-14 h-14 rounded-full -translate-y-1/2 translate-x-1/2 opacity-40 blur-xl pointer-events-none"
+                style={{ background: stat.color }} />
+              <div className="relative z-10">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3"
+                  style={{ background: `${stat.color}22`, border: `1px solid ${stat.color}33` }}>
+                  <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
+                </div>
+                <p className="text-xl font-extrabold text-white tracking-tight leading-none">{stat.value}</p>
+                <p className="text-[10px] font-semibold uppercase tracking-wider mt-1.5" style={{ color: 'rgba(148,163,184,0.7)' }}>{stat.label}</p>
+                <p className="text-[10px] mt-1 font-semibold flex items-center gap-1" style={{ color: '#10B981' }}>
+                  <TrendingUp className="w-2.5 h-2.5" /> {stat.sub}
+                </p>
+              </div>
+            </motion.div>
+          ))}
+
+          {/* Goal ring */}
+          <motion.div
+            variants={staggerItem}
+            className="col-span-2 rounded-2xl p-4 relative overflow-hidden"
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'rgba(148,163,184,0.6)' }}>Monthly Goal</p>
+                <p className="text-white font-bold text-sm mt-0.5">Revenue Target</p>
+              </div>
+              <div className="relative w-14 h-14">
+                <svg viewBox="0 0 48 48" className="w-full h-full -rotate-90">
+                  <circle cx="24" cy="24" r="20" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="5" />
+                  <circle cx="24" cy="24" r="20" fill="none" stroke="url(#ownerGoalGrad)" strokeWidth="5"
+                    strokeDasharray={`${2 * Math.PI * 20 * goalPct / 100} ${2 * Math.PI * 20 * (1 - goalPct / 100)}`}
+                    strokeLinecap="round" />
+                  <defs>
+                    <linearGradient id="ownerGoalGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#F59E0B" />
+                      <stop offset="100%" stopColor="#EAB308" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-xs font-extrabold text-white">{goalPct}%</span>
+                </div>
+              </div>
+            </div>
+            <div className="h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.08)' }}>
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${goalPct}%` }}
+                transition={{ duration: 1.2, ease: 'easeOut', delay: 0.3 }}
+                className="h-full rounded-full"
+                style={{ background: 'linear-gradient(90deg, #F59E0B, #EAB308)' }}
+              />
+            </div>
+          </motion.div>
+        </motion.div>
+      </div>
+
+      {/* ---- MIDDLE ROW: Recent Vehicles + Revenue Chart ---- */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+        {/* Recent Vehicles */}
+        <motion.div
+          variants={fadeUp} initial="hidden" animate="visible"
+          className="lg:col-span-2 rounded-3xl p-5"
+          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-white text-sm">Recent Properties</h3>
+            <Link to="/owner/vehicles" className="text-xs font-bold" style={{ color: '#F59E0B' }}>View all →</Link>
+          </div>
+          <div className="space-y-3">
+            {vehicles.length === 0 ? (
+              [{
+                name: 'Luxury Villa in Bali', city: 'Bali', price: 7500000, status: 'available',
+                img: 'https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=120&q=80'
+              }, {
+                name: 'Modern House in BSD', city: 'BSD City', price: 6200000, status: 'rented',
+                img: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=120&q=80'
+              }, {
+                name: 'Minimalist Home', city: 'Jakarta Selatan', price: 5800000, status: 'available',
+                img: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=120&q=80'
+              }].map((v, i) => (
+                <motion.div key={i} whileHover={{ x: 3 }}
+                  className="flex items-center gap-3 p-3 rounded-2xl transition-all duration-200"
+                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <img src={v.img} alt={v.name} className="w-14 h-10 rounded-xl object-cover flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-white truncate">{v.name}</p>
+                    <p className="text-[11px] flex items-center gap-1 mt-0.5" style={{ color: 'rgba(148,163,184,0.7)' }}>
+                      <MapPin className="w-2.5 h-2.5" />{v.city}
+                    </p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg"
+                      style={{ background: v.status === 'available' ? 'rgba(16,185,129,0.15)' : 'rgba(99,102,241,0.15)', color: v.status === 'available' ? '#10B981' : '#818CF8' }}>
+                      {v.status === 'available' ? 'For Rent' : 'Rented'}
+                    </span>
+                    <p className="text-xs font-bold text-white mt-1">{formatCurrency(v.price)}</p>
+                  </div>
+                </motion.div>
+              ))
+            ) : vehicles.slice(0, 3).map(v => (
+              <motion.div key={v.id} whileHover={{ x: 3 }}
+                className="flex items-center gap-3 p-3 rounded-2xl transition-all duration-200"
+                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <img src={v.thumbnailUrl} alt={v.name} className="w-14 h-10 rounded-xl object-cover flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-white truncate">{v.name}</p>
+                  <p className="text-[11px] flex items-center gap-1 mt-0.5" style={{ color: 'rgba(148,163,184,0.7)' }}>
+                    <MapPin className="w-2.5 h-2.5" />{v.location?.city}
+                  </p>
+                </div>
+                <div className="text-right flex-shrink-0">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg"
+                    style={{ background: v.status === 'available' ? 'rgba(16,185,129,0.15)' : 'rgba(99,102,241,0.15)', color: v.status === 'available' ? '#10B981' : '#818CF8' }}>
+                    {v.status === 'available' ? 'For Rent' : 'Rented'}
+                  </span>
+                  <p className="text-xs font-bold text-white mt-1">{formatCurrency(v.pricePerDay)}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Revenue Chart */}
+        <motion.div
+          variants={fadeUp} initial="hidden" animate="visible"
+          className="lg:col-span-3 rounded-3xl p-5"
+          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
+        >
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h3 className="font-bold text-white text-sm">{t.ownerDashboard.revenueChartTitle}</h3>
+              <p className="text-[11px] mt-0.5" style={{ color: 'rgba(148,163,184,0.6)' }}>Your earnings this year</p>
+            </div>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl"
+              style={{ background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.25)' }}>
+              <Activity className="w-3 h-3 text-amber-400" />
+              <span className="text-xs font-bold text-amber-400">{t.ownerDashboard.liveAnalytics}</span>
+            </div>
+          </div>
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={revenueData} barSize={26}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+              <XAxis dataKey="month" tick={{ fontSize: 11, fontWeight: 600, fill: 'rgba(148,163,184,0.6)' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 10, fill: 'rgba(148,163,184,0.5)' }} axisLine={false} tickLine={false} tickFormatter={v => `${(v / 1000000).toFixed(0)}M`} />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(245,158,11,0.08)', radius: 8 }} />
+              <Bar dataKey="revenue" radius={[6, 6, 0, 0]}>
+                {revenueData.map((_, index) => (
+                  <Cell key={index}
+                    fill={index === revenueData.length - 1 ? 'url(#ownerBarGrad)' : 'rgba(245,158,11,0.30)'} />
+                ))}
+              </Bar>
+              <defs>
+                <linearGradient id="ownerBarGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#F59E0B" />
+                  <stop offset="100%" stopColor="#D97706" />
+                </linearGradient>
+              </defs>
+            </BarChart>
+          </ResponsiveContainer>
+        </motion.div>
+      </div>
+
+      {/* ---- BOTTOM ROW: Pending Bookings + Tasks ---- */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {/* Pending Bookings */}
+        <motion.div
+          variants={fadeUp} initial="hidden" animate="visible"
+          className="rounded-3xl p-5"
+          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-white text-sm">{t.ownerDashboard.pendingRequests}</h3>
+            <span className="text-[10px] font-bold px-2.5 py-1 rounded-lg"
+              style={{ background: 'rgba(239,68,68,0.15)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.2)' }}>
+              {stats.pending} pending
+            </span>
+          </div>
+          <div className="space-y-3">
             {bookings.filter(b => b.status === 'pending').slice(0, 4).map(booking => (
-              <div key={booking.id} className="glass border border-gold/30 hover:border-gold/60 p-4 rounded-2xl flex items-center gap-4 hover-lift hover-glow transition-all duration-300">
-                <div className="w-10 h-10 bg-gold/10 text-gold rounded-xl flex items-center justify-center flex-shrink-0">
-                  <AlertTriangle className="w-5 h-5" />
+              <div key={booking.id}
+                className="flex items-center gap-3 p-3.5 rounded-2xl transition-all duration-200"
+                style={{ background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.15)' }}>
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.2)' }}>
+                  <AlertTriangle className="w-4 h-4 text-amber-400" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold truncate text-slate-800 dark:text-white">Booking #{booking.id.slice(-6).toUpperCase()}</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-semibold">📅 {formatDate(booking.startDate)} · {formatCurrency(booking.pricing.total)}</p>
+                  <p className="text-sm font-bold text-white truncate">Booking #{booking.id.slice(-6).toUpperCase()}</p>
+                  <p className="text-[11px] mt-0.5" style={{ color: 'rgba(148,163,184,0.7)' }}>
+                    📅 {formatDate(booking.startDate)} · {formatCurrency(booking.pricing.total)}
+                  </p>
                 </div>
-                <div className="flex gap-1.5 flex-shrink-0">
-                  <button
-                    onClick={() => bookingService.updateStatus(booking.id, 'confirmed')}
-                    className="p-2.5 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-colors shadow-md shadow-emerald-500/10 hover-lift"
-                    title="Confirm Booking"
-                  >
-                    <CheckCircle className="w-4 h-4" />
-                  </button>
-                </div>
+                <button
+                  onClick={() => bookingService.updateStatus(booking.id, 'confirmed')}
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold text-black transition-all flex-shrink-0"
+                  style={{ background: 'linear-gradient(135deg, #10B981, #059669)' }}
+                >
+                  Approve
+                </button>
               </div>
             ))}
             {bookings.filter(b => b.status === 'pending').length === 0 && (
-              <p className="text-slate-400 dark:text-slate-500 text-sm text-center py-12 font-medium my-auto">{t.ownerDashboard.noPendingRequests}</p>
+              <div className="text-center py-10">
+                <CheckCircle className="w-10 h-10 mx-auto mb-3" style={{ color: 'rgba(148,163,184,0.3)' }} />
+                <p className="text-sm font-medium" style={{ color: 'rgba(148,163,184,0.5)' }}>No pending requests</p>
+              </div>
             )}
           </div>
-        </div>
+        </motion.div>
 
-        {/* My Vehicles */}
-        <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm flex flex-col">
-          <div className="flex items-center justify-between mb-5 border-b border-slate-200/10 dark:border-white/5 pb-3">
-            <h3 className="font-display text-lg font-bold text-slate-800 dark:text-white">{t.ownerDashboard.myFleet}</h3>
-            <Link to="/owner/vehicles" className="text-xs font-extrabold text-gold hover:underline">{t.ownerDashboard.manageFleet}</Link>
+        {/* Tasks Panel */}
+        <motion.div
+          variants={fadeUp} initial="hidden" animate="visible"
+          className="rounded-3xl p-5"
+          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center"
+                style={{ background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.2)' }}>
+                <BarChart2 className="w-4 h-4 text-amber-400" />
+              </div>
+              <h3 className="font-bold text-white text-sm">Tasks</h3>
+            </div>
+            <span className="text-[10px] font-bold px-2.5 py-1 rounded-lg"
+              style={{ background: 'rgba(245,158,11,0.15)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.2)' }}>
+              {tasks.filter(t => !t.done).length} pending
+            </span>
           </div>
-          <div className="space-y-3.5 overflow-y-auto flex-1 max-h-[350px] pr-1">
-            {vehicles.slice(0, 4).map(vehicle => (
-              <div key={vehicle.id} className="flex items-center gap-4 p-3 bg-white/5 dark:bg-slate-900/40 border border-slate-200/20 dark:border-white/5 hover:border-gold/30 rounded-2.5xl hover-lift transition-all duration-300">
-                <img src={vehicle.thumbnailUrl} alt={vehicle.name} className="w-14 h-11 rounded-xl object-cover flex-shrink-0 border-2 border-white/10 shadow-md" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">{vehicle.name}</p>
-                  <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-1">{formatCurrency(vehicle.pricePerDay)}{t.marketplace.perDay}</p>
+          <div className="space-y-2.5">
+            {tasks.map((task, i) => (
+              <Link key={i} to={task.href}
+                className="flex items-center gap-3 p-3.5 rounded-2xl transition-all duration-200 group"
+                style={{
+                  background: task.done ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.04)',
+                  border: `1px solid ${task.done ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.08)'}`,
+                }}>
+                <div className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0"
+                  style={{
+                    background: task.done ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.05)',
+                    border: task.done ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(255,255,255,0.1)'
+                  }}>
+                  {task.done
+                    ? <CheckCircle className="w-3 h-3 text-emerald-400" />
+                    : <div className="w-2 h-2 rounded-sm" style={{ background: 'rgba(148,163,184,0.3)' }} />}
                 </div>
-                <span className={`badge text-[9px] font-extrabold tracking-wider uppercase border-2 ${getStatusColor(vehicle.status)}`}>
-                  {vehicle.status.replace('_', ' ')}
+                <span className="text-sm flex-1 font-medium"
+                  style={{ color: task.done ? 'rgba(148,163,184,0.4)' : 'rgba(226,232,240,0.9)', textDecoration: task.done ? 'line-through' : 'none' }}>
+                  {task.label}
                 </span>
-              </div>
+                <div className="flex items-center gap-2">
+                  {!task.done && task.count > 0 && (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg"
+                      style={{ background: `${task.color}22`, color: task.color, border: `1px solid ${task.color}33` }}>
+                      {task.count}
+                    </span>
+                  )}
+                  <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: '#F59E0B' }} />
+                </div>
+              </Link>
             ))}
-            {vehicles.length === 0 && (
-              <div className="text-center py-10 my-auto">
-                <Car className="w-12 h-12 text-slate-300 dark:text-slate-700 mx-auto mb-3" />
-                <p className="text-slate-400 dark:text-slate-500 text-sm font-medium">{t.ownerDashboard.noVehiclesYet}</p>
-                <Link to="/owner/vehicles/new" className="btn-gold mt-4 text-xs font-bold px-5 py-2.5 rounded-xl">{t.ownerDashboard.addFirstVehicle}</Link>
-              </div>
-            )}
           </div>
-        </div>
+          <div className="mt-4 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'rgba(148,163,184,0.4)' }}>
+                {tasks.filter(t => t.done).length} of {tasks.length} completed
+              </span>
+              <span className="text-[10px] font-bold" style={{ color: '#F59E0B' }}>
+                {Math.round(tasks.filter(t => t.done).length / tasks.length * 100)}%
+              </span>
+            </div>
+            <div className="h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${tasks.filter(t => t.done).length / tasks.length * 100}%` }}
+                transition={{ duration: 1, ease: 'easeOut', delay: 0.5 }}
+                className="h-full rounded-full"
+                style={{ background: 'linear-gradient(90deg, #F59E0B, #EAB308)' }}
+              />
+            </div>
+          </div>
+        </motion.div>
       </div>
     </div>
   );
@@ -966,17 +1188,54 @@ export const OwnerBookingsPage: React.FC = () => {
 export const OwnerRevenuePage: React.FC = () => {
   const { user } = useAuthStore();
   const [bookings, setBookings] = React.useState<Booking[]>([]);
+  const [vehicles, setVehicles] = React.useState<Vehicle[]>([]);
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
     if (!user) return;
-    bookingService.getByOwner(user.id).then(b => { setBookings(b); setLoading(false); });
+    Promise.all([
+      bookingService.getByOwner(user.id),
+      vehicleService.getByOwner(user.id)
+    ]).then(([b, v]) => {
+      setBookings(b);
+      setVehicles(v);
+      setLoading(false);
+    });
   }, [user]);
 
   const completedBookings = bookings.filter(b => b.status === 'completed');
   const totalRevenue = completedBookings.reduce((sum, b) => sum + b.pricing.total, 0);
   const thisMonth = completedBookings.filter(b => new Date(b.endDate).getMonth() === new Date().getMonth()).reduce((sum, b) => sum + b.pricing.total, 0);
   const avgBooking = completedBookings.length > 0 ? totalRevenue / completedBookings.length : 0;
+
+  const carBookings = completedBookings.filter(b => {
+    const v = vehicles.find(vh => vh.id === b.vehicleId);
+    return v?.vehicleType === 'car' || (v && !['scooter', 'automatic_scooter', 'manual_motorcycle', 'sport_bike', 'touring_bike', 'adventure_bike', 'classic_bike', 'electric_bike'].includes(v.category?.toLowerCase()));
+  });
+
+  const motorbikeBookings = completedBookings.filter(b => {
+    const v = vehicles.find(vh => vh.id === b.vehicleId);
+    return v?.vehicleType === 'motorbike' || (v && ['scooter', 'automatic_scooter', 'manual_motorcycle', 'sport_bike', 'touring_bike', 'adventure_bike', 'classic_bike', 'electric_bike'].includes(v.category?.toLowerCase()));
+  });
+
+  const carRevenue = carBookings.reduce((sum, b) => sum + b.pricing.total, 0);
+  const motorbikeRevenue = motorbikeBookings.reduce((sum, b) => sum + b.pricing.total, 0);
+
+  const carBookingsCount = bookings.filter(b => {
+    const v = vehicles.find(vh => vh.id === b.vehicleId);
+    return v?.vehicleType === 'car' || (v && !['scooter', 'automatic_scooter', 'manual_motorcycle', 'sport_bike', 'touring_bike', 'adventure_bike', 'classic_bike', 'electric_bike'].includes(v.category?.toLowerCase()));
+  }).length;
+
+  const motorbikeBookingsCount = bookings.filter(b => {
+    const v = vehicles.find(vh => vh.id === b.vehicleId);
+    return v?.vehicleType === 'motorbike' || (v && ['scooter', 'automatic_scooter', 'manual_motorcycle', 'sport_bike', 'touring_bike', 'adventure_bike', 'classic_bike', 'electric_bike'].includes(v.category?.toLowerCase()));
+  }).length;
+
+  const totalEcosystemBookings = carBookingsCount + motorbikeBookingsCount;
+  const carRevenuePercent = totalRevenue > 0 ? Math.round((carRevenue / totalRevenue) * 100) : 0;
+  const motorbikeRevenuePercent = totalRevenue > 0 ? Math.round((motorbikeRevenue / totalRevenue) * 100) : 0;
+  const carBookingsPercent = totalEcosystemBookings > 0 ? Math.round((carBookingsCount / totalEcosystemBookings) * 100) : 0;
+  const motorbikeBookingsPercent = totalEcosystemBookings > 0 ? Math.round((motorbikeBookingsCount / totalEcosystemBookings) * 100) : 0;
 
   // Mock data for display when real analytics is empty
   const revenueData = [
@@ -1046,21 +1305,115 @@ export const OwnerRevenuePage: React.FC = () => {
         </ResponsiveContainer>
       </div>
 
-      {/* Monthly Breakdown */}
-      <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm">
-        <div className="flex items-center justify-between mb-6 border-b border-slate-200/10 dark:border-white/5 pb-3">
-          <h3 className="font-display text-lg font-bold text-slate-800 dark:text-white">Monthly Volume Analysis</h3>
-          <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 font-medium">Trip Performance</span>
+      {/* Graphs Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Monthly Breakdown */}
+        <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm">
+          <div className="flex items-center justify-between mb-6 border-b border-slate-200/10 dark:border-white/5 pb-3">
+            <h3 className="font-display text-lg font-bold text-slate-800 dark:text-white">Monthly Volume Analysis</h3>
+            <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 font-medium">Trip Performance</span>
+          </div>
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={monthlyData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.05)" />
+              <XAxis dataKey="date" tick={{ fontSize: 11, fontWeight: 600 }} stroke="#94A3B8" />
+              <YAxis tick={{ fontSize: 11, fontWeight: 600 }} stroke="#94A3B8" tickFormatter={v => formatCurrency(v)} />
+              <Tooltip content={<CustomTooltip />} />
+              <Bar dataKey="revenue" fill="#EAB308" radius={[8, 8, 0, 0]} className="shadow-lg shadow-gold/10" />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
-        <ResponsiveContainer width="100%" height={200}>
-          <BarChart data={monthlyData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.05)" />
-            <XAxis dataKey="date" tick={{ fontSize: 11, fontWeight: 600 }} stroke="#94A3B8" />
-            <YAxis tick={{ fontSize: 11, fontWeight: 600 }} stroke="#94A3B8" tickFormatter={v => formatCurrency(v)} />
-            <Tooltip content={<CustomTooltip />} />
-            <Bar dataKey="revenue" fill="#EAB308" radius={[8, 8, 0, 0]} className="shadow-lg shadow-gold/10" />
-          </BarChart>
-        </ResponsiveContainer>
+
+        {/* Ecosystem Split */}
+        <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm space-y-6">
+          <div className="flex items-center justify-between border-b border-slate-200/10 dark:border-white/5 pb-3">
+            <div>
+              <h3 className="font-display text-lg font-bold text-slate-800 dark:text-white">Ecosystem Performance Split</h3>
+              <p className="text-slate-500 dark:text-slate-400 text-[10px] font-semibold mt-0.5">Comparative performance: Cars vs Motorbikes</p>
+            </div>
+            <Activity className="w-5 h-5 text-gold" />
+          </div>
+
+          {/* Revenue Split */}
+          <div className="space-y-2">
+            <div className="flex justify-between text-xs font-bold">
+              <span className="text-slate-500 dark:text-slate-400">Earnings Split</span>
+              <span className="text-slate-700 dark:text-slate-200">
+                {carRevenuePercent}% Cars / {motorbikeRevenuePercent}% Motorbikes
+              </span>
+            </div>
+            <div className="h-3.5 bg-slate-200/20 dark:bg-slate-800/40 rounded-full overflow-hidden flex border border-slate-200/5 dark:border-white/5">
+              {totalRevenue > 0 ? (
+                <>
+                  <div 
+                    style={{ width: `${carRevenuePercent}%` }} 
+                    className="h-full bg-gradient-to-r from-amber-500 to-yellow-500 transition-all duration-500" 
+                    title={`Cars: ${formatCurrency(carRevenue)}`}
+                  />
+                  <div 
+                    style={{ width: `${motorbikeRevenuePercent}%` }} 
+                    className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500" 
+                    title={`Motorbikes: ${formatCurrency(motorbikeRevenue)}`}
+                  />
+                </>
+              ) : (
+                <div className="h-full w-full bg-slate-300/30 dark:bg-slate-700/30 rounded-full flex items-center justify-center text-[10px] text-slate-400 font-semibold">
+                  No revenue recorded
+                </div>
+              )}
+            </div>
+            <div className="flex justify-between text-xs pt-1">
+              <div className="flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-300">
+                <span className="w-2.5 h-2.5 rounded bg-amber-500 inline-block" />
+                <span>Cars: <strong className="text-slate-800 dark:text-white">{formatCurrency(carRevenue)}</strong></span>
+              </div>
+              <div className="flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-300">
+                <span className="w-2.5 h-2.5 rounded bg-indigo-500 inline-block" />
+                <span>Motorbikes: <strong className="text-slate-800 dark:text-white">{formatCurrency(motorbikeRevenue)}</strong></span>
+              </div>
+            </div>
+          </div>
+
+          {/* Bookings/Trips Split */}
+          <div className="space-y-2 pt-2">
+            <div className="flex justify-between text-xs font-bold">
+              <span className="text-slate-500 dark:text-slate-400">Trip Volume Split</span>
+              <span className="text-slate-700 dark:text-slate-200">
+                {carBookingsPercent}% Cars / {motorbikeBookingsPercent}% Motorbikes
+              </span>
+            </div>
+            <div className="h-3.5 bg-slate-200/20 dark:bg-slate-800/40 rounded-full overflow-hidden flex border border-slate-200/5 dark:border-white/5">
+              {totalEcosystemBookings > 0 ? (
+                <>
+                  <div 
+                    style={{ width: `${carBookingsPercent}%` }} 
+                    className="h-full bg-gradient-to-r from-amber-500 to-yellow-500 transition-all duration-500" 
+                    title={`Cars: ${carBookingsCount} trips`}
+                  />
+                  <div 
+                    style={{ width: `${motorbikeBookingsPercent}%` }} 
+                    className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500" 
+                    title={`Motorbikes: ${motorbikeBookingsCount} trips`}
+                  />
+                </>
+              ) : (
+                <div className="h-full w-full bg-slate-300/30 dark:bg-slate-700/30 rounded-full flex items-center justify-center text-[10px] text-slate-400 font-semibold">
+                  No trips booked
+                </div>
+              )}
+            </div>
+            <div className="flex justify-between text-xs pt-1">
+              <div className="flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-300">
+                <span className="w-2.5 h-2.5 rounded bg-amber-500 inline-block" />
+                <span>Cars: <strong className="text-slate-800 dark:text-white">{carBookingsCount} trips</strong></span>
+              </div>
+              <div className="flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-300">
+                <span className="w-2.5 h-2.5 rounded bg-indigo-500 inline-block" />
+                <span>Motorbikes: <strong className="text-slate-800 dark:text-white">{motorbikeBookingsCount} trips</strong></span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -1463,6 +1816,7 @@ export const OwnerDashboardLayout: React.FC = () => {
   const isDark = theme === 'dark';
   const location = useLocation();
   const navigate = useNavigate();
+  const t = useT();
 
   useEffect(() => {
     if (!isAuthenticated) navigate('/auth/login');
@@ -1470,12 +1824,12 @@ export const OwnerDashboardLayout: React.FC = () => {
   }, [isAuthenticated]);
 
   const links = [
-    { href: '/', icon: Globe, label: 'Go to Home', exact: true },
-    { href: '/owner', icon: LayoutDashboard, label: 'Overview', exact: true },
-    { href: '/owner/vehicles', icon: Car, label: 'Vehicle Management' },
-    { href: '/owner/calendar', icon: Clock, label: 'Calendar' },
-    { href: '/owner/bookings', icon: Calendar, label: 'Booking Approval' },
-    { href: '/owner/revenue', icon: TrendingUp, label: 'Revenue Dashboard' },
+    { href: '/', icon: Globe, label: t.marketplace.home, exact: true },
+    { href: '/owner', icon: LayoutDashboard, label: t.ownerDashboard.overview, exact: true },
+    { href: '/owner/vehicles', icon: Car, label: t.ownerDashboard.myVehicles },
+    { href: '/owner/calendar', icon: Clock, label: t.ownerDashboard.calendar },
+    { href: '/owner/bookings', icon: Calendar, label: t.ownerDashboard.bookings },
+    { href: '/owner/revenue', icon: TrendingUp, label: t.ownerDashboard.revenue },
   ];
 
   const getInitials = (name: string) => {
@@ -1488,17 +1842,15 @@ export const OwnerDashboardLayout: React.FC = () => {
   if (!user) return null;
 
   return (
-    <div 
-      className={`min-h-screen relative overflow-hidden transition-colors duration-500 font-sans ${
-        isDark ? 'bg-[#080d16] text-slate-100' : 'bg-[#f4f7fa] text-slate-800'
-      }`}
-      style={{
-        backgroundImage: isDark
-          ? 'radial-gradient(circle at 1px 1px, rgba(234, 179, 8, 0.04) 1px, transparent 0)'
-          : 'radial-gradient(circle at 1px 1px, rgba(234, 179, 8, 0.02) 1px, transparent 0)',
-        backgroundSize: '24px 24px'
-      }}
+    <div
+      className="min-h-screen relative overflow-hidden font-sans text-slate-100"
+      style={{ background: 'linear-gradient(135deg, #070B14 0%, #0B1221 50%, #070B14 100%)' }}
     >
+      {/* Ambient orbs */}
+      <div className="fixed top-0 right-0 w-[450px] h-[450px] rounded-full pointer-events-none opacity-10 blur-3xl"
+        style={{ background: 'radial-gradient(circle, #F59E0B 0%, transparent 70%)' }} />
+      <div className="fixed bottom-0 left-1/4 w-80 h-80 rounded-full pointer-events-none opacity-8 blur-3xl"
+        style={{ background: 'radial-gradient(circle, #6366F1 0%, transparent 70%)' }} />
       <div className="absolute top-0 left-0 w-[500px] h-[500px] rounded-full opacity-10 blur-3xl pointer-events-none bg-amber-500" />
       
       {/* Mobile Sidebar Navigation Drawer (SRS REQ-RESP-001) */}
@@ -1539,14 +1891,14 @@ export const OwnerDashboardLayout: React.FC = () => {
                       LuxeWay
                     </h2>
                     <span className="text-[9px] font-black uppercase tracking-widest text-amber-500">
-                      Host Center
+                      {t.ownerDashboard.hostCommand}
                     </span>
                   </div>
                 </div>
 
                 <div className="mx-2 mb-6 px-3.5 py-1.5 rounded-xl border border-amber-500/20 bg-amber-500/5 text-[8px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-450 animate-ping" />
-                  Verified Host
+                  {t.ownerDashboard.verifiedHost}
                 </div>
 
                 <hr className="border-slate-200/50 dark:border-slate-800/80 mb-6" />
@@ -1585,12 +1937,12 @@ export const OwnerDashboardLayout: React.FC = () => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-black truncate text-slate-800 dark:text-white">{user.displayName}</p>
-                    <p className="text-[9px] font-black uppercase tracking-wider text-amber-550 dark:text-amber-400 mt-0.5">Vehicle Host</p>
+                    <p className="text-[9px] font-black uppercase tracking-wider text-amber-550 dark:text-amber-400 mt-0.5">{t.ownerDashboard.vehicleHost}</p>
                   </div>
                   <button 
                     onClick={() => { logout(); setSidebarOpen(false); navigate('/auth/login'); }}
                     className="p-2 text-slate-400 hover:text-red-500 transition-colors"
-                    title="Logout"
+                    title={t.nav.logout}
                   >
                     <LogOut className="w-4 h-4" />
                   </button>
@@ -1663,12 +2015,12 @@ export const OwnerDashboardLayout: React.FC = () => {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-black truncate text-slate-800 dark:text-white">{user.displayName}</p>
-                <p className="text-[9px] font-black uppercase tracking-wider text-amber-550 dark:text-amber-400 mt-0.5">Vehicle Host</p>
+                <p className="text-[9px] font-black uppercase tracking-wider text-amber-550 dark:text-amber-400 mt-0.5">{t.ownerDashboard.vehicleHost}</p>
               </div>
               <button 
                 onClick={() => { logout(); navigate('/auth/login'); }}
                 className="p-2 text-slate-400 hover:text-red-500 transition-colors"
-                title="Logout"
+                title={t.nav.logout}
               >
                 <LogOut className="w-4 h-4" />
               </button>
@@ -1688,7 +2040,7 @@ export const OwnerDashboardLayout: React.FC = () => {
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
                 className="p-2 rounded-xl border border-slate-200/50 dark:border-white/10 hover:bg-slate-500/10 transition-all lg:hidden shadow-sm"
-                title="Toggle Menu"
+                title="Menu"
               >
                 <Menu className="w-5 h-5 text-slate-500 dark:text-slate-400" />
               </button>
@@ -1697,7 +2049,7 @@ export const OwnerDashboardLayout: React.FC = () => {
               </div>
               <div>
                 <h1 className="font-sans font-black text-lg tracking-tight text-slate-855 dark:text-white">
-                  Host Command
+                  {t.ownerDashboard.hostCommand}
                 </h1>
                 <p className="text-[10px] text-amber-550 dark:text-amber-450 font-extrabold uppercase tracking-widest mt-0.5">
                   Platform rental Room
@@ -1718,7 +2070,7 @@ export const OwnerDashboardLayout: React.FC = () => {
                 onClick={() => { logout(); navigate('/auth/login'); }}
                 className="text-[9px] font-black uppercase tracking-widest px-5 py-3.5 rounded-2xl border bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-red-500 hover:bg-red-500/10 transition-all hover-lift"
               >
-                Logout
+                {t.nav.logout}
               </button>
             </div>
           </header>

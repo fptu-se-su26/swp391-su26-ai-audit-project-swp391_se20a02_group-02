@@ -24,7 +24,7 @@
 | 5 |DE190264  | Nguyễn Bùi Quang Vinh | quangvinh7115 | Member |  |
 
 ---
-
+  
 ## 3. Project Structure
 
 ```text
@@ -100,6 +100,33 @@ Common types:
 ```text
 feat, fix, docs, test, refactor, style, chore
 ```
+
+---
+
+## 🔐 SECURITY UPDATE (June 4, 2026)
+
+**⚠️ CRITICAL: Environment Variables Required**
+
+This project now uses environment variables for security. Before starting:
+
+1. **Copy environment template:**
+   ```bash
+   copy .env.example .env
+   ```
+
+2. **Generate JWT secret:**
+   ```bash
+   openssl rand -base64 32
+   ```
+   
+3. **Edit `.env` with your credentials**
+
+4. **Read security guides:**
+   - Quick Start: `QUICK-SECURITY-FIX-REFERENCE.md`
+   - Full Guide: `SECURITY-SETUP-GUIDE.md`
+   - Bug Fixes: `BUG-FIXES-SUMMARY.md`
+
+**Never commit `.env` file to Git!** (Already in `.gitignore`)
 
 ---
 

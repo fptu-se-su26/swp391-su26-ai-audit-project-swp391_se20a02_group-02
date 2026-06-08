@@ -63,4 +63,18 @@ public class ReviewDTOs {
             private String avatar;
         }
     }
+
+    @Data
+    @lombok.Builder
+    @lombok.NoArgsConstructor
+    @lombok.AllArgsConstructor
+    public static class ReviewStatsResponse {
+        private Double averageRating;
+        private Long totalReviews;
+        private java.util.Map<Integer, Long> ratingDistribution; // Star ratings 1 to 5
+        private Double cleanlinessAverage;
+        private Double accuracyAverage;
+        private Double communicationAverage;
+        private Double valueAverage;
+    }
 }

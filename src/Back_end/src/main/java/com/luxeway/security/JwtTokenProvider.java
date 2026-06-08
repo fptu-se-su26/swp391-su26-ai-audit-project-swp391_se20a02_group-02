@@ -1,16 +1,15 @@
 package com.luxeway.security;
 
 import io.jsonwebtoken.*;
-import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -33,7 +32,14 @@ public class JwtTokenProvider {
     // ====== Token Generation ======
 
     public String generateToken(UserDetails userDetails) {
-        return buildToken(new HashMap<>(), userDetails, jwtExpiration);
+        Map<String, Object> extraClaims = new HashMap<>();
+        // BUG-7 bonus: Embed role + userId in access token so frontend can decode without /me
+        if (userDetails instanceof com.luxeway.entity.User luxeUser) {
+            extraClaims.put("role", luxeUser.getRole().name());
+            extraClaims.put("userId", luxeUser.getId());
+            extraClaims.put("preferredLanguage", luxeUser.getPreferredLanguage());
+        }
+        return buildToken(extraClaims, userDetails, jwtExpiration);
     }
 
     public String generateRefreshToken(UserDetails userDetails) {
@@ -112,10 +118,12 @@ public class JwtTokenProvider {
         return extractExpiration(token).before(new Date());
     }
 
+    /**
+     * BUG-7 FIX: Use raw UTF-8 bytes directly — no double-encoding.
+     * The old code did Base64.encode(secret.getBytes()) then BASE64.decode() which
+     * was a confusing no-op round-trip. Using raw bytes is correct and explicit.
+     */
     private SecretKey getSigningKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(
-            java.util.Base64.getEncoder().encodeToString(jwtSecret.getBytes())
-        );
-        return Keys.hmacShaKeyFor(keyBytes);
+        return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
     }
 }

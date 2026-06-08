@@ -47,7 +47,19 @@ public class VehicleController {
             @RequestParam(defaultValue = "12") int size,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate startDate,
-            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate endDate) {
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate endDate,
+            // Ecosystem specific params
+            @RequestParam(required = false) String vehicleType,
+            @RequestParam(required = false) Integer minEngineCc,
+            @RequestParam(required = false) Integer maxEngineCc,
+            @RequestParam(required = false) Boolean hasHelmet,
+            @RequestParam(required = false) Boolean hasPhoneHolder,
+            @RequestParam(required = false) Boolean hasRaincoat,
+            @RequestParam(required = false) Boolean hasTouringPackage,
+            @RequestParam(required = false) Boolean hasChauffeur,
+            @RequestParam(required = false) Boolean airportDelivery,
+            @RequestParam(required = false) Boolean weddingRental,
+            @RequestParam(required = false) Boolean businessRental) {
         
         try {
             // Keep compatibility with specific non-AVAILABLE status queries (like Admin or list status queries)
@@ -95,6 +107,19 @@ public class VehicleController {
             filter.setSize(size);
             filter.setStartDate(startDate);
             filter.setEndDate(endDate);
+            
+            // Map ecosystem params
+            filter.setVehicleType(vehicleType);
+            filter.setMinEngineCc(minEngineCc);
+            filter.setMaxEngineCc(maxEngineCc);
+            filter.setHasHelmet(hasHelmet);
+            filter.setHasPhoneHolder(hasPhoneHolder);
+            filter.setHasRaincoat(hasRaincoat);
+            filter.setHasTouringPackage(hasTouringPackage);
+            filter.setHasChauffeur(hasChauffeur);
+            filter.setAirportDelivery(airportDelivery);
+            filter.setWeddingRental(weddingRental);
+            filter.setBusinessRental(businessRental);
             
             Page<com.luxeway.dto.vehicle.VehicleDTOs.VehicleResponse> vehiclesPage = vehicleService.getVehicles(filter);
             

@@ -55,6 +55,7 @@ export const authService = {
           bio: userInfo.bio || '',
           badges: userInfo.badges || [],
           accountType: userInfo.accountType || 'INDIVIDUAL',
+          preferredLanguage: userInfo.preferredLanguage || 'en',
         } as unknown as User;
         
         localStorage.setItem(USER_KEY, JSON.stringify(user));
@@ -109,6 +110,7 @@ export const authService = {
           bio: '',
           badges: [],
           accountType: payload.accountType as any,
+          preferredLanguage: userInfo.preferredLanguage || 'en',
         } as unknown as User;
         
         localStorage.setItem(USER_KEY, JSON.stringify(user));
@@ -165,36 +167,39 @@ export const authService = {
   async fetchCurrentUser(): Promise<User | null> {
     try {
       const res = await apiClient.get<any>('/auth/me');
-      const response = res.data || res;
+      // BUG-15 FIX: /auth/me returns ApiResponse<UserInfo> = { success, data: { id, email, role, ... } }
+      // The data field contains the user info directly (not nested under 'user')
+      const userInfo = res?.data || res;
+
+      if (!userInfo?.id && !userInfo?.email) return null;
+
+      const user = {
+        id: userInfo.id?.toString() || userInfo.userId?.toString(),
+        email: userInfo.email,
+        firstName: userInfo.firstName,
+        lastName: userInfo.lastName,
+        displayName: userInfo.displayName || `${userInfo.firstName} ${userInfo.lastName}`,
+        role: userInfo.role?.toLowerCase() || 'customer',
+        phone: userInfo.phone || '',
+        avatar: resolveImageUrl(userInfo.avatar || userInfo.profilePicture),
+        verified: userInfo.verified || userInfo.isVerified || false,
+        rating: userInfo.rating || 0,
+        totalReviews: userInfo.totalReviews || 0,
+        joinedAt: userInfo.joinedAt || userInfo.createdAt,
+        location: userInfo.location || userInfo.city || '',
+        bio: userInfo.bio || '',
+        badges: userInfo.badges || [],
+        accountType: userInfo.accountType || 'INDIVIDUAL',
+        preferredLanguage: userInfo.preferredLanguage || 'en',
+      } as unknown as User;
       
-      if (response.user || response) {
-        const userInfo = response.user || response;
-        const user = {
-          id: userInfo.id?.toString() || userInfo.userId?.toString(),
-          email: userInfo.email,
-          firstName: userInfo.firstName,
-          lastName: userInfo.lastName,
-          displayName: userInfo.displayName || `${userInfo.firstName} ${userInfo.lastName}`,
-          role: userInfo.role?.toLowerCase() || 'customer',
-          phone: userInfo.phone || '',
-          avatar: resolveImageUrl(userInfo.avatar || userInfo.profilePicture),
-          verified: userInfo.verified || userInfo.isVerified || false,
-          rating: userInfo.rating || 0,
-          totalReviews: userInfo.totalReviews || 0,
-          joinedAt: userInfo.joinedAt || userInfo.createdAt,
-          location: userInfo.location || userInfo.city || '',
-          bio: userInfo.bio || '',
-          badges: userInfo.badges || [],
-          accountType: userInfo.accountType || 'INDIVIDUAL',
-        } as unknown as User;
-        
-        localStorage.setItem(USER_KEY, JSON.stringify(user));
-        return user;
-      }
-      return null;
+      localStorage.setItem(USER_KEY, JSON.stringify(user));
+      return user;
     } catch (error) {
-      console.error('Failed to fetch current user:', error);
-      this.logout();
+      // BUG-10 FIX: Do NOT call this.logout() here.
+      // A backend blip or network error should NOT log the user out.
+      // Return null and let the store decide what to do with cached credentials.
+      console.warn('Failed to fetch current user from backend (keeping cached session):', error);
       return null;
     }
   },
@@ -215,6 +220,7 @@ export const authService = {
           id: userInfo.id?.toString() || userId,
           displayName: userInfo.displayName || `${userInfo.firstName} ${userInfo.lastName}`,
           avatar: resolveImageUrl(userInfo.avatar || userInfo.profilePicture),
+          preferredLanguage: userInfo.preferredLanguage || 'en',
         } as User;
         
         localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
@@ -326,6 +332,7 @@ export const authService = {
           bio: userInfo.bio || '',
           badges: userInfo.badges || [],
           accountType: userInfo.accountType || 'INDIVIDUAL',
+          preferredLanguage: userInfo.preferredLanguage || 'en',
         } as unknown as User;
         
         localStorage.setItem(USER_KEY, JSON.stringify(user));

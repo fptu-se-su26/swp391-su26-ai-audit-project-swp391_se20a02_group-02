@@ -79,7 +79,8 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
   const handleCardClick = (e: React.MouseEvent) => {
     // If user clicks anywhere on the card, navigate to detail page
     if ((e.target as HTMLElement).closest('button')) return;
-    navigate(`/vehicles/${vehicle.id}`);
+    const detailPath = vehicle.vehicleType === 'motorbike' ? `/motorbikes/${vehicle.id}` : `/cars/${vehicle.id}`;
+    navigate(detailPath);
   };
 
   const categoryColors: Record<string, string> = {

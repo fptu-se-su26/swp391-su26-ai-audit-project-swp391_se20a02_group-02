@@ -72,6 +72,12 @@ public class VehicleService {
             catch (IllegalArgumentException ignored) {}
         }
 
+        com.luxeway.enums.VehicleType vehicleType = null;
+        if (filter.getVehicleType() != null && !filter.getVehicleType().isBlank()) {
+            try { vehicleType = com.luxeway.enums.VehicleType.valueOf(filter.getVehicleType().toUpperCase()); }
+            catch (IllegalArgumentException ignored) {}
+        }
+
         Page<Vehicle> page = vehicleRepository.filterVehiclesMulti(
             resolvedLocation,
             categoryList,
@@ -85,6 +91,17 @@ public class VehicleService {
             filter.isFeatured(),
             filter.isInstantBook(),
             filter.isDeliveryAvailable(),
+            vehicleType,
+            filter.getMinEngineCc(),
+            filter.getMaxEngineCc(),
+            filter.getHasHelmet() != null ? filter.getHasHelmet() : false,
+            filter.getHasPhoneHolder() != null ? filter.getHasPhoneHolder() : false,
+            filter.getHasRaincoat() != null ? filter.getHasRaincoat() : false,
+            filter.getHasTouringPackage() != null ? filter.getHasTouringPackage() : false,
+            filter.getHasChauffeur() != null ? filter.getHasChauffeur() : false,
+            filter.getAirportDelivery() != null ? filter.getAirportDelivery() : false,
+            filter.getWeddingRental() != null ? filter.getWeddingRental() : false,
+            filter.getBusinessRental() != null ? filter.getBusinessRental() : false,
             filter.getStartDate(),
             filter.getEndDate(),
             pageable
@@ -168,6 +185,13 @@ public class VehicleService {
         User owner = userRepository.findById(ownerId)
                 .orElseThrow(() -> new RuntimeException("Owner not found"));
 
+        com.luxeway.enums.VehicleType vehicleType = com.luxeway.enums.VehicleType.CAR;
+        if (req.getVehicleType() != null) {
+            try {
+                vehicleType = com.luxeway.enums.VehicleType.valueOf(req.getVehicleType().toUpperCase());
+            } catch (IllegalArgumentException ignored) {}
+        }
+
         Vehicle vehicle = Vehicle.builder()
                 .owner(owner)
                 .name(req.getName())
@@ -175,6 +199,16 @@ public class VehicleService {
                 .model(req.getModel())
                 .year(req.getYear())
                 .category(req.getCategory())
+                .vehicleType(vehicleType)
+                .engineCc(req.getEngineCc())
+                .hasHelmet(req.getHasHelmet() != null ? req.getHasHelmet() : false)
+                .hasPhoneHolder(req.getHasPhoneHolder() != null ? req.getHasPhoneHolder() : false)
+                .hasRaincoat(req.getHasRaincoat() != null ? req.getHasRaincoat() : false)
+                .hasTouringPackage(req.getHasTouringPackage() != null ? req.getHasTouringPackage() : false)
+                .hasChauffeur(req.getHasChauffeur() != null ? req.getHasChauffeur() : false)
+                .airportDelivery(req.getAirportDelivery() != null ? req.getAirportDelivery() : false)
+                .weddingRental(req.getWeddingRental() != null ? req.getWeddingRental() : false)
+                .businessRental(req.getBusinessRental() != null ? req.getBusinessRental() : false)
                 .description(req.getDescription())
                 .pricePerDay(req.getPricePerDay())
                 .pricePerWeek(req.getPricePerWeek())
@@ -261,6 +295,20 @@ public class VehicleService {
         vehicle.setName(req.getName());
         vehicle.setBrand(req.getBrand());
         vehicle.setModel(req.getModel());
+        if (req.getVehicleType() != null) {
+            try {
+                vehicle.setVehicleType(com.luxeway.enums.VehicleType.valueOf(req.getVehicleType().toUpperCase()));
+            } catch (IllegalArgumentException ignored) {}
+        }
+        vehicle.setEngineCc(req.getEngineCc());
+        if (req.getHasHelmet() != null) vehicle.setHasHelmet(req.getHasHelmet());
+        if (req.getHasPhoneHolder() != null) vehicle.setHasPhoneHolder(req.getHasPhoneHolder());
+        if (req.getHasRaincoat() != null) vehicle.setHasRaincoat(req.getHasRaincoat());
+        if (req.getHasTouringPackage() != null) vehicle.setHasTouringPackage(req.getHasTouringPackage());
+        if (req.getHasChauffeur() != null) vehicle.setHasChauffeur(req.getHasChauffeur());
+        if (req.getAirportDelivery() != null) vehicle.setAirportDelivery(req.getAirportDelivery());
+        if (req.getWeddingRental() != null) vehicle.setWeddingRental(req.getWeddingRental());
+        if (req.getBusinessRental() != null) vehicle.setBusinessRental(req.getBusinessRental());
         vehicle.setDescription(req.getDescription());
         vehicle.setPricePerDay(req.getPricePerDay());
         vehicle.setDeposit(req.getDeposit());
@@ -326,6 +374,18 @@ public class VehicleService {
         r.setDeliveryFee(v.getDeliveryFee());
         r.setCreatedAt(v.getCreatedAt() != null ? v.getCreatedAt().toString() : null);
         r.setUpdatedAt(v.getUpdatedAt() != null ? v.getUpdatedAt().toString() : null);
+
+        // Ecosystem additions
+        r.setVehicleType(v.getVehicleType() != null ? v.getVehicleType().name().toLowerCase() : null);
+        r.setEngineCc(v.getEngineCc());
+        r.setHasHelmet(v.getHasHelmet());
+        r.setHasPhoneHolder(v.getHasPhoneHolder());
+        r.setHasRaincoat(v.getHasRaincoat());
+        r.setHasTouringPackage(v.getHasTouringPackage());
+        r.setHasChauffeur(v.getHasChauffeur());
+        r.setAirportDelivery(v.getAirportDelivery());
+        r.setWeddingRental(v.getWeddingRental());
+        r.setBusinessRental(v.getBusinessRental());
 
         // Images
         if (v.getImages() != null) {

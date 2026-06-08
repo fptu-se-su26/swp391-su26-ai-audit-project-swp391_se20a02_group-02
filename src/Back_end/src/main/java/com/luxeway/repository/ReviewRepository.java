@@ -30,4 +30,18 @@ public interface ReviewRepository extends JpaRepository<Review, String> {
     Double getAverageRating();
 
     Page<Review> findByRatingGreaterThanEqualOrderByCreatedAtDesc(Integer rating, Pageable pageable);
+
+    // Queries for public reviews feed with search and filters
+    Page<Review> findByRatingAndCommentContainingIgnoreCaseOrderByCreatedAtDesc(Integer rating, String comment, Pageable pageable);
+    
+    Page<Review> findByRatingOrderByCreatedAtDesc(Integer rating, Pageable pageable);
+    
+    Page<Review> findByCommentContainingIgnoreCaseOrderByCreatedAtDesc(String comment, Pageable pageable);
+    
+    Page<Review> findAllByOrderByCreatedAtDesc(Pageable pageable);
+
+    // Lists for aggregating statistics
+    java.util.List<Review> findByVehicleId(String vehicleId);
+
+    java.util.List<Review> findByOwnerId(String ownerId);
 }

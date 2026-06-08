@@ -19,18 +19,18 @@ const staggerItem = {
 };
 
 const WHY_FEATURES = [
-  { icon: BadgeCheck, title: 'KYC Verification', desc: 'All owners complete rigorous identity verification before listing.', color: 'bg-emerald-50 text-emerald-600' },
-  { icon: FileText, title: 'Digital Contracts', desc: 'Legally-binding e-contracts signed in under 2 minutes.', color: 'bg-blue-50 text-blue-600' },
-  { icon: MessageCircle, title: 'Real-time Chat', desc: 'Direct messaging between renters and owners at any time.', color: 'bg-violet-50 text-violet-600' },
-  { icon: Lock, title: 'Secure VNPay', desc: 'Bank-grade encrypted payments via VNPay gateway.', color: 'bg-amber-50 text-amber-600' },
-  { icon: Shield, title: 'Insurance Coverage', desc: 'Every rental covered up to ₫500M by our partner insurers.', color: 'bg-rose-50 text-rose-600' },
-  { icon: AlertTriangle, title: 'Dispute Resolution', desc: 'Dedicated mediators handle any disputes fairly and quickly.', color: 'bg-orange-50 text-orange-600' },
-  { icon: BarChart3, title: 'Analytics Dashboard', desc: 'Owners get real-time fleet analytics and revenue insights.', color: 'bg-indigo-50 text-indigo-600' },
-  { icon: Truck, title: 'Door-to-Door Delivery', desc: 'Select owners offer vehicle delivery to your address.', color: 'bg-teal-50 text-teal-600' },
+  { icon: BadgeCheck, title: 'KYC Verification', desc: 'All owners complete rigorous identity verification before listing.', color: 'bg-emerald-500/10 text-emerald-450 border border-emerald-550/20' },
+  { icon: FileText, title: 'Digital Contracts', desc: 'Legally-binding e-contracts signed in under 2 minutes.', color: 'bg-blue-500/10 text-blue-450 border border-blue-550/20' },
+  { icon: MessageCircle, title: 'Real-time Chat', desc: 'Direct messaging between renters and owners at any time.', color: 'bg-violet-500/10 text-violet-450 border border-violet-550/20' },
+  { icon: Lock, title: 'Secure VNPay', desc: 'Bank-grade encrypted payments via VNPay gateway.', color: 'bg-amber-500/10 text-amber-455 border border-amber-550/20' },
+  { icon: Shield, title: 'Insurance Coverage', desc: 'Every rental covered up to ₫500M by our partner insurers.', color: 'bg-rose-500/10 text-rose-450 border border-rose-550/20' },
+  { icon: AlertTriangle, title: 'Dispute Resolution', desc: 'Dedicated mediators handle any disputes fairly and quickly.', color: 'bg-orange-500/10 text-orange-450 border border-orange-550/20' },
+  { icon: BarChart3, title: 'Analytics Dashboard', desc: 'Owners get real-time fleet analytics and revenue insights.', color: 'bg-indigo-500/10 text-indigo-450 border border-indigo-550/20' },
+  { icon: Truck, title: 'Door-to-Door Delivery', desc: 'Select owners offer vehicle delivery to your address.', color: 'bg-teal-500/10 text-teal-450 border border-teal-550/20' },
 ];
 
 export const WhyLuxeWaySection: React.FC = () => (
-  <section className="py-20 bg-[#0F172A]">
+  <section className="py-20 bg-gradient-to-b from-[#0F172A] to-slate-950">
     <div className="max-w-7xl mx-auto px-6">
       <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-14">
         <span className="text-xs font-bold tracking-widest uppercase text-amber-400 mb-3 block">Platform Advantages</span>

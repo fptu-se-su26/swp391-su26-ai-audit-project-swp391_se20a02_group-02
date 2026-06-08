@@ -8,6 +8,171 @@ SET ANSI_WARNINGS ON;
 SET ARITHABORT ON;
 SET CONCAT_NULL_YIELDS_NULL ON;
 SET NUMERIC_ROUNDABORT OFF;
+-- Ensure preferred_language column exists
+IF COL_LENGTH('users', 'preferred_language') IS NULL
+BEGIN
+    ALTER TABLE users ADD preferred_language NVARCHAR(10) DEFAULT 'en'
+END;
+
+-- ============================================================
+-- ECOSYSTEM SCHEMA UPDATES & NEW TABLES
+-- ============================================================
+
+-- Ensure new vehicle columns exist
+IF COL_LENGTH('vehicles', 'vehicle_type') IS NULL
+BEGIN
+    ALTER TABLE vehicles ADD vehicle_type NVARCHAR(20) NOT NULL DEFAULT 'CAR'
+END;
+
+IF COL_LENGTH('vehicles', 'engine_cc') IS NULL
+BEGIN
+    ALTER TABLE vehicles ADD engine_cc INT NULL
+END;
+
+IF COL_LENGTH('vehicles', 'has_helmet') IS NULL
+BEGIN
+    ALTER TABLE vehicles ADD has_helmet BIT NOT NULL DEFAULT 0
+END;
+
+IF COL_LENGTH('vehicles', 'has_phone_holder') IS NULL
+BEGIN
+    ALTER TABLE vehicles ADD has_phone_holder BIT NOT NULL DEFAULT 0
+END;
+
+IF COL_LENGTH('vehicles', 'has_raincoat') IS NULL
+BEGIN
+    ALTER TABLE vehicles ADD has_raincoat BIT NOT NULL DEFAULT 0
+END;
+
+IF COL_LENGTH('vehicles', 'has_touring_package') IS NULL
+BEGIN
+    ALTER TABLE vehicles ADD has_touring_package BIT NOT NULL DEFAULT 0
+END;
+
+IF COL_LENGTH('vehicles', 'has_chauffeur') IS NULL
+BEGIN
+    ALTER TABLE vehicles ADD has_chauffeur BIT NOT NULL DEFAULT 0
+END;
+
+IF COL_LENGTH('vehicles', 'airport_delivery') IS NULL
+BEGIN
+    ALTER TABLE vehicles ADD airport_delivery BIT NOT NULL DEFAULT 0
+END;
+
+IF COL_LENGTH('vehicles', 'wedding_rental') IS NULL
+BEGIN
+    ALTER TABLE vehicles ADD wedding_rental BIT NOT NULL DEFAULT 0
+END;
+
+IF COL_LENGTH('vehicles', 'business_rental') IS NULL
+BEGIN
+    ALTER TABLE vehicles ADD business_rental BIT NOT NULL DEFAULT 0
+END;
+
+IF COL_LENGTH('vehicles', 'description') IS NULL
+BEGIN
+    ALTER TABLE vehicles ADD description NVARCHAR(MAX) NULL
+END;
+
+-- Update vehicles category check constraint to allow new Car & Motorbike categories
+IF EXISTS (SELECT * FROM sys.objects WHERE name = 'CHK_vehicles_category' AND parent_object_id = OBJECT_ID('vehicles'))
+BEGIN
+    ALTER TABLE vehicles DROP CONSTRAINT CHK_vehicles_category
+END;
+
+ALTER TABLE vehicles ADD CONSTRAINT CHK_vehicles_category CHECK (category IN (
+    'ECONOMY','FAMILY','BUSINESS','ELECTRIC','MOTORBIKE','SUV','CITY_CAR','TOURISM',
+    'SEDAN','MPV','LUXURY','ELECTRIC_CAR','SPORTS','PICKUP',
+    'SCOOTER','AUTOMATIC_SCOOTER','MANUAL_MOTORCYCLE','SPORT_BIKE','TOURING_BIKE','ADVENTURE_BIKE','CLASSIC_BIKE','ELECTRIC_BIKE'
+));
+
+-- Ensure vehicle_brands table exists
+IF OBJECT_ID('vehicle_brands', 'U') IS NULL
+BEGIN
+    CREATE TABLE vehicle_brands (
+        id              NVARCHAR(36)    NOT NULL PRIMARY KEY,
+        name            NVARCHAR(100)   NOT NULL UNIQUE,
+        country         NVARCHAR(100)   NOT NULL DEFAULT N'Japan',
+        vehicle_type    NVARCHAR(20)    NOT NULL CONSTRAINT CHK_brand_type CHECK (vehicle_type IN ('CAR', 'MOTORBIKE', 'BOTH')),
+        logo_url        NVARCHAR(500),
+        is_active       BIT             NOT NULL DEFAULT 1,
+        sort_order      INT             NOT NULL DEFAULT 0,
+        created_at      DATETIME2       NOT NULL DEFAULT GETDATE()
+    )
+END;
+
+-- Ensure vehicle_models table exists
+IF OBJECT_ID('vehicle_models', 'U') IS NULL
+BEGIN
+    CREATE TABLE vehicle_models (
+        id              NVARCHAR(36)    NOT NULL PRIMARY KEY,
+        brand_id        NVARCHAR(36)    NOT NULL,
+        model_name      NVARCHAR(200)   NOT NULL,
+        vehicle_type    NVARCHAR(20)    NOT NULL CONSTRAINT CHK_model_type CHECK (vehicle_type IN ('CAR', 'MOTORBIKE')),
+        category        NVARCHAR(50)    NOT NULL,
+        engine_cc       INT             NULL,       -- For motorbikes
+        seats           INT             NULL,       -- For cars
+        base_price_min  DECIMAL(12,0)   NOT NULL,   -- VND/day minimum
+        base_price_max  DECIMAL(12,0)   NOT NULL,   -- VND/day maximum
+        is_active       BIT             NOT NULL DEFAULT 1,
+        sort_order      INT             NOT NULL DEFAULT 0,
+        CONSTRAINT FK_vehicle_models_brand FOREIGN KEY (brand_id) REFERENCES vehicle_brands(id) ON DELETE NO ACTION
+    )
+END;
+
+-- Clear tables (respecting foreign keys)
+DELETE FROM vehicle_models;
+DELETE FROM vehicle_brands;
+
+-- Seed brand catalog
+INSERT INTO vehicle_brands (id, name, country, vehicle_type, is_active) VALUES
+('B1', N'Honda', N'Japan', 'BOTH', 1),
+('B2', N'Yamaha', N'Japan', 'MOTORBIKE', 1),
+('B3', N'Suzuki', N'Japan', 'BOTH', 1),
+('B4', N'VinFast', N'Vietnam', 'BOTH', 1),
+('B5', N'Kawasaki', N'Japan', 'MOTORBIKE', 1),
+('B6', N'Toyota', N'Japan', 'CAR', 1),
+('B7', N'Mazda', N'Japan', 'CAR', 1),
+('B8', N'Hyundai', N'South Korea', 'CAR', 1),
+('B9', N'Kia', N'South Korea', 'CAR', 1),
+('B10', N'Ford', N'USA', 'CAR', 1),
+('B11', N'Mitsubishi', N'Japan', 'CAR', 1),
+('B12', N'Mercedes-Benz', N'Germany', 'CAR', 1),
+('B13', N'BMW', N'Germany', 'CAR', 1),
+('B14', N'Audi', N'Germany', 'CAR', 1),
+('B15', N'Porsche', N'Germany', 'CAR', 1);
+
+-- Seed model catalog
+INSERT INTO vehicle_models (id, brand_id, model_name, vehicle_type, category, engine_cc, seats, base_price_min, base_price_max, is_active) VALUES
+('M1', 'B1', N'Vision', 'MOTORBIKE', 'SCOOTER', 110, NULL, 120000, 180000, 1),
+('M2', 'B1', N'Air Blade', 'MOTORBIKE', 'AUTOMATIC_SCOOTER', 125, NULL, 150000, 250000, 1),
+('M3', 'B1', N'Lead', 'MOTORBIKE', 'SCOOTER', 125, NULL, 150000, 220000, 1),
+('M4', 'B1', N'SH125i', 'MOTORBIKE', 'SCOOTER', 125, NULL, 250000, 400000, 1),
+('M5', 'B1', N'SH160i', 'MOTORBIKE', 'SCOOTER', 156, NULL, 350000, 550000, 1),
+('M6', 'B1', N'SH350i', 'MOTORBIKE', 'SCOOTER', 330, NULL, 600000, 900000, 1),
+('M7', 'B1', N'Winner X', 'MOTORBIKE', 'MANUAL_MOTORCYCLE', 150, NULL, 150000, 250000, 1),
+('M8', 'B2', N'Sirius', 'MOTORBIKE', 'MANUAL_MOTORCYCLE', 110, NULL, 100000, 150000, 1),
+('M9', 'B2', N'Exciter 155', 'MOTORBIKE', 'MANUAL_MOTORCYCLE', 155, NULL, 180000, 280000, 1),
+('M10', 'B2', N'Grande', 'MOTORBIKE', 'SCOOTER', 125, NULL, 150000, 250000, 1),
+('M11', 'B4', N'Evo200', 'MOTORBIKE', 'ELECTRIC_BIKE', NULL, NULL, 120000, 180000, 1),
+('M12', 'B4', N'Feliz S', 'MOTORBIKE', 'ELECTRIC_BIKE', NULL, NULL, 150000, 220000, 1),
+('M13', 'B4', N'Klara S', 'MOTORBIKE', 'ELECTRIC_BIKE', NULL, NULL, 180000, 280000, 1),
+('M14', 'B1', N'CB150R', 'MOTORBIKE', 'SPORT_BIKE', 150, NULL, 300000, 450000, 1),
+('M15', 'B2', N'MT15', 'MOTORBIKE', 'SPORT_BIKE', 155, NULL, 350000, 500000, 1),
+('M16', 'B5', N'Versys X300', 'MOTORBIKE', 'ADVENTURE_BIKE', 296, NULL, 600000, 900000, 1),
+('M17', 'B6', N'Vios', 'CAR', 'SEDAN', NULL, 5, 600000, 900000, 1),
+('M18', 'B6', N'Innova', 'CAR', 'MPV', NULL, 7, 900000, 140000, 1),
+('M19', 'B6', N'Fortuner', 'CAR', 'SUV', NULL, 7, 1200000, 1800000, 1),
+('M20', 'B7', N'Mazda 3', 'CAR', 'SEDAN', NULL, 5, 700000, 1000000, 1),
+('M21', 'B7', N'CX-5', 'CAR', 'SUV', NULL, 5, 900000, 1300000, 1),
+('M22', 'B8', N'Accent', 'CAR', 'SEDAN', NULL, 5, 600000, 850000, 1),
+('M23', 'B8', N'Santa Fe', 'CAR', 'SUV', NULL, 7, 1300000, 2000000, 1),
+('M24', 'B10', N'Ranger Wildtrak', 'CAR', 'PICKUP', NULL, 5, 1000000, 1500000, 1),
+('M25', 'B4', N'VF8', 'CAR', 'ELECTRIC_CAR', NULL, 5, 1200000, 1800000, 1),
+('M26', 'B4', N'VF9', 'CAR', 'ELECTRIC_CAR', NULL, 7, 1800000, 2800000, 1),
+('M27', 'B12', N'C200', 'CAR', 'LUXURY', NULL, 5, 1800000, 2500000, 1),
+('M28', 'B13', N'BMW 320i', 'CAR', 'LUXURY', NULL, 5, 2000000, 3000000, 1);
+
 -- Clear existing data (in reverse order of dependencies)
 DELETE FROM dispute_evidence;
 DELETE FROM disputes;
@@ -18,6 +183,38 @@ DELETE FROM faqs;
 DELETE FROM vehicle_features;
 DELETE FROM vehicle_images;
 DELETE FROM vehicles;
+
+-- Clear new ecosystem data
+DELETE FROM car_delivery;
+DELETE FROM chauffeur_services;
+DELETE FROM airport_transfer_services;
+DELETE FROM car_booking_history;
+DELETE FROM car_bookings;
+DELETE FROM car_specifications;
+DELETE FROM car_images;
+DELETE FROM car_locations;
+DELETE FROM car_pricing;
+DELETE FROM car_availability;
+DELETE FROM business_packages;
+DELETE FROM wedding_packages;
+DELETE FROM cars;
+DELETE FROM car_models;
+DELETE FROM car_brands;
+
+DELETE FROM equipment_rentals;
+DELETE FROM motorbike_booking_history;
+DELETE FROM motorbike_bookings;
+DELETE FROM motorbike_specifications;
+DELETE FROM motorbike_images;
+DELETE FROM motorbike_locations;
+DELETE FROM motorbike_pricing;
+DELETE FROM motorbike_availability;
+DELETE FROM tour_packages;
+DELETE FROM adventure_packages;
+DELETE FROM motorbikes;
+DELETE FROM motorbike_models;
+DELETE FROM motorbike_brands;
+
 DELETE FROM users;
 -- ======-- ====== USERS DATA (SQL Server UUID Format) ======
 -- Admin User
@@ -1856,6 +2053,70 @@ INSERT INTO dbo.help_articles (category_id, title, content, tags, display_order,
   1, 1
 );
 
+
+-- ============================================================
+-- ECOSYSTEM SEED DATA - 15 MOTORBIKES & 20 CARS
+-- ============================================================
+
+-- Seed additional 15+ Motorbikes
+INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, description, thumbnail_url, price_per_day, price_per_week, deposit, city, country, address, latitude, longitude, horsepower, top_speed, acceleration, seats, doors, transmission, fuel_type, range_km, engine_size, color, license_plate, min_rental_days, max_rental_days, advance_booking_days, status, rating, total_reviews, total_bookings, is_verified, is_featured, instant_book, delivery_available, delivery_fee, created_at, updated_at) VALUES
+('VM-01', 'E5F6G7H8-I9J0-1234-EFGH-567890123456', N'Honda Vision 2022 - Xe Đẹp Tiết Kiệm', N'Honda', N'Vision', 2022, 'SCOOTER', N'Xe Vision đời mới màu đỏ đô sạch sẽ, máy êm thích hợp lượn phố.', 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=800', 130000, 850000, 1000000, N'Hồ Chí Minh', N'Vietnam', N'Phú Nhuận, TP.HCM', 10.7994, 106.6803, 9, 95, 12.0, 2, 0, 'AUTOMATIC', 'GASOLINE', 250, '110cc', N'Đỏ', '59F1-99901', 1, 30, 365, 'AVAILABLE', 4.8, 12, 18, 1, 1, 1, 1, 20000, GETDATE(), GETDATE()),
+('VM-02', 'E5F6G7H8-I9J0-1234-EFGH-567890123456', N'Honda Vision 2023 - Bản Cao Cấp', N'Honda', N'Vision', 2023, 'SCOOTER', N'Xe ga Honda Vision bản đặc biệt đen nhám cực ngầu, chạy đầm máy.', 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=800', 150000, 950000, 1000000, N'Hồ Chí Minh', N'Vietnam', N'Quận 1, TP.HCM', 10.7769, 106.7009, 9, 95, 12.0, 2, 0, 'AUTOMATIC', 'GASOLINE', 250, '110cc', N'Đen Nhám', '59F1-99902', 1, 30, 365, 'AVAILABLE', 4.9, 8, 15, 1, 1, 1, 1, 20000, GETDATE(), GETDATE()),
+('VM-03', 'E5F6G7H8-I9J0-1234-EFGH-567890123456', N'Honda Vision 2021 - Đi Học Đi Làm', N'Honda', N'Vision', 2021, 'SCOOTER', N'Xe Vision trắng gia đình đi giữ gìn kỹ, xăng cộ cực tốt.', 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=800', 120000, 800000, 1000000, N'Hồ Chí Minh', N'Vietnam', N'Quận 3, TP.HCM', 10.7756, 106.6917, 9, 95, 12.0, 2, 0, 'AUTOMATIC', 'GASOLINE', 250, '110cc', N'Trắng', '59F1-99903', 1, 30, 365, 'AVAILABLE', 4.7, 20, 30, 1, 0, 1, 1, 20000, GETDATE(), GETDATE()),
+('VM-04', 'F6G7H8I9-J0K1-2345-FGHI-678901234567', N'Honda Air Blade 125i - Đỏ Đen Thể Thao', N'Honda', N'Air Blade', 2022, 'AUTOMATIC_SCOOTER', N'Air Blade 125cc chạy êm, phanh cơ an toàn, có sạc điện thoại tiện lợi.', 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=800', 180000, 1100000, 1500000, N'Hà Nội', N'Vietnam', N'Cầu Giấy, Hà Nội', 21.0313, 105.7981, 11, 105, 10.5, 2, 0, 'AUTOMATIC', 'GASOLINE', 220, '125cc', N'Đỏ Đen', '29F1-99904', 1, 30, 365, 'AVAILABLE', 4.85, 15, 22, 1, 1, 1, 1, 30000, GETDATE(), GETDATE()),
+('VM-05', 'F6G7H8I9-J0K1-2345-FGHI-678901234567', N'Honda Air Blade 160i - Phanh ABS Siêu Khỏe', N'Honda', N'Air Blade', 2023, 'AUTOMATIC_SCOOTER', N'Xe AB 160cc mạnh mẽ phanh ABS an toàn tuyệt đối, máy siêu bốc.', 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=800', 250000, 1500000, 2000000, N'Hà Nội', N'Vietnam', N'Hai Bà Trưng, Hà Nội', 21.0245, 105.8525, 15, 115, 8.5, 2, 0, 'AUTOMATIC', 'GASOLINE', 210, '160cc', N'Xanh Xám', '29F1-99905', 1, 30, 365, 'AVAILABLE', 4.95, 5, 12, 1, 1, 1, 1, 30000, GETDATE(), GETDATE()),
+('VM-06', 'F6G7H8I9-J0K1-2345-FGHI-678901234567', N'Yamaha Exciter 155 VVA - Cam Đen Cực Chất', N'Yamaha', N'Exciter 155', 2022, 'MANUAL_MOTORCYCLE', N'Xe côn tay Exciter 155 VVA máy bốc, ga mượt, hoàn hảo cho phượt thủ.', 'https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=800', 200000, 1300000, 2000000, N'Đà Nẵng', N'Vietnam', N'Hải Châu, Đà Nẵng', 16.0678, 108.2208, 17, 125, 7.5, 2, 0, 'MANUAL', 'GASOLINE', 200, '155cc', N'Cam Đen', '43F1-99906', 1, 30, 365, 'AVAILABLE', 4.88, 18, 25, 1, 1, 1, 1, 25000, GETDATE(), GETDATE()),
+('VM-07', 'F6G7H8I9-J0K1-2345-FGHI-678901234567', N'VinFast Evo200 - Xe Điện Thời Trang', N'VinFast', N'Evo200', 2023, 'ELECTRIC_BIKE', N'Evo200 đi êm ái thích hợp dạo biển phố Đà Nẵng, sạc đầy đi được 150km.', 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=800', 130000, 800000, 1500000, N'Đà Nẵng', N'Vietnam', N'Ngũ Hành Sơn, Đà Nẵng', 16.0583, 108.2608, 3, 70, 15.0, 2, 0, 'AUTOMATIC', 'ELECTRIC', 150, 'Electric', N'Vàng', '43F1-99907', 1, 30, 365, 'AVAILABLE', 4.76, 10, 14, 1, 0, 1, 1, 20000, GETDATE(), GETDATE()),
+('VM-08', 'E5F6G7H8-I9J0-1234-EFGH-567890123456', N'Honda Lead 2022 - Cốp Siêu Rộng Rãi', N'Honda', N'Lead', 2022, 'SCOOTER', N'Xe Lead cốp rộng mênh mông đựng cả thế giới, thích hợp mua sắm du lịch.', 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=800', 160000, 1000000, 1500000, N'Hồ Chí Minh', N'Vietnam', N'Tân Bình, TP.HCM', 10.8014, 106.6525, 11, 100, 11.0, 2, 0, 'AUTOMATIC', 'GASOLINE', 230, '125cc', N'Đỏ Đô', '59F1-99908', 1, 30, 365, 'AVAILABLE', 4.82, 22, 28, 1, 1, 1, 1, 20000, GETDATE(), GETDATE()),
+('VM-09', 'E5F6G7H8-I9J0-1234-EFGH-567890123456', N'Honda SH125i 2023 - Sang Chảnh Đẳng Cấp', N'Honda', N'SH125i', 2023, 'SCOOTER', N'SH 125i xám xi măng sang chảnh thời thượng, xe chạy cực kỳ êm ái.', 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=800', 350000, 2200000, 3000000, N'Hồ Chí Minh', N'Vietnam', N'Quận 7, TP.HCM', 10.7416, 106.7214, 12, 110, 10.0, 2, 0, 'AUTOMATIC', 'GASOLINE', 210, '125cc', N'Xám Xi Măng', '59F1-99909', 1, 30, 365, 'AVAILABLE', 4.96, 14, 20, 1, 1, 1, 1, 40000, GETDATE(), GETDATE()),
+('VM-10', 'E5F6G7H8-I9J0-1234-EFGH-567890123456', N'Honda SH160i 2023 - ABS Cao Cấp', N'Honda', N'SH160i', 2023, 'SCOOTER', N'Honda SH160i ABS cực kỳ mạnh mẽ sang trọng, thu hút mọi ánh nhìn.', 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=800', 450000, 2800000, 4000000, N'Hồ Chí Minh', N'Vietnam', N'Quận 2, TP.HCM', 10.7872, 106.7490, 16, 120, 8.0, 2, 0, 'AUTOMATIC', 'GASOLINE', 200, '156cc', N'Trắng', '59F1-99910', 1, 30, 365, 'AVAILABLE', 4.98, 9, 14, 1, 1, 1, 1, 40000, GETDATE(), GETDATE()),
+('VM-11', 'F6G7H8I9-J0K1-2345-FGHI-678901234567', N'Yamaha Sirius 2021 - Tiết Kiệm Bền Bỉ', N'Yamaha', N'Sirius', 2021, 'MANUAL_MOTORCYCLE', N'Sirius số tròn bền bỉ, thích hợp đi phượt ngắn dã ngoại giá cực rẻ.', 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=800', 100000, 600000, 1000000, N'Đà Nẵng', N'Vietnam', N'Liên Chiểu, Đà Nẵng', 16.0624, 108.1513, 8, 90, 13.0, 2, 0, 'MANUAL', 'GASOLINE', 260, '110cc', N'Đen Bạc', '43F1-99911', 1, 30, 365, 'AVAILABLE', 4.65, 34, 45, 1, 0, 1, 1, 20000, GETDATE(), GETDATE()),
+('VM-12', 'F6G7H8I9-J0K1-2345-FGHI-678901234567', N'Yamaha Grande 2023 - Dành Cho Phái Đẹp', N'Yamaha', N'Grande', 2023, 'SCOOTER', N'Xe máy Grande trắng thời trang sang trọng, cốp to và máy cực kỳ êm.', 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=800', 180000, 1100000, 1500000, N'Hà Nội', N'Vietnam', N'Ba Đình, Hà Nội', 21.0361, 105.8275, 8, 95, 12.5, 2, 0, 'AUTOMATIC', 'GASOLINE', 250, '125cc', N'Trắng Ngọc Trai', '29F1-99912', 1, 30, 365, 'AVAILABLE', 4.88, 11, 16, 1, 1, 1, 1, 30000, GETDATE(), GETDATE()),
+('VM-13', 'E5F6G7H8-I9J0-1234-EFGH-567890123456', N'VinFast Feliz S - Xe Máy Điện Tiện Lợi', N'VinFast', N'Feliz S', 2023, 'ELECTRIC_BIKE', N'Feliz S xe điện chất lượng cao của VinFast chạy êm ái, pin LFP cao cấp.', 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=800', 160000, 1000000, 1500000, N'Hồ Chí Minh', N'Vietnam', N'Gò Vấp, TP.HCM', 10.8388, 106.6669, 4, 80, 14.0, 2, 0, 'AUTOMATIC', 'ELECTRIC', 120, 'Electric', N'Xanh Dương', '59F1-99913', 1, 30, 365, 'AVAILABLE', 4.78, 7, 11, 1, 1, 1, 1, 20000, GETDATE(), GETDATE()),
+('VM-14', 'E5F6G7H8-I9J0-1234-EFGH-567890123456', N'VinFast Klara S - Phong Cách Châu Âu', N'VinFast', N'Klara S', 2022, 'ELECTRIC_BIKE', N'Klara S mang đậm thiết kế Ý lịch lãm, đi mượt mà tiết kiệm.', 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=800', 180000, 1200000, 1500000, N'Hồ Chí Minh', N'Vietnam', N'Bình Thạnh, TP.HCM', 10.8030, 106.6974, 4, 80, 13.5, 2, 0, 'AUTOMATIC', 'ELECTRIC', 120, 'Electric', N'Trắng', '59F1-99914', 1, 30, 365, 'AVAILABLE', 4.85, 12, 19, 1, 1, 1, 1, 20000, GETDATE(), GETDATE()),
+('VM-15', 'F6G7H8I9-J0K1-2345-FGHI-678901234567', N'Kawasaki Versys X300 - Phượt Tour Chuyên Nghiệp', N'Kawasaki', N'Versys X300', 2022, 'ADVENTURE_BIKE', N'Versys X300 dòng Adventure chuyên tour đi êm ái đầm chắc, thích hợp đi đèo.', 'https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=800', 650000, 4000000, 5000000, N'Hà Nội', N'Vietnam', N'Tây Hồ, Hà Nội', 21.0584, 105.8242, 40, 140, 6.0, 2, 0, 'MANUAL', 'GASOLINE', 350, '300cc', N'Xám Xanh', '29F1-99915', 1, 30, 365, 'AVAILABLE', 4.95, 21, 28, 1, 1, 1, 1, 50000, GETDATE(), GETDATE());
+
+-- Seed additional 20+ Cars
+INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, description, thumbnail_url, price_per_day, price_per_week, deposit, city, country, address, latitude, longitude, horsepower, top_speed, acceleration, seats, doors, transmission, fuel_type, range_km, engine_size, color, license_plate, min_rental_days, max_rental_days, advance_booking_days, status, rating, total_reviews, total_bookings, is_verified, is_featured, instant_book, delivery_available, delivery_fee, created_at, updated_at) VALUES
+('VC-01', 'G7H8I9J0-K1L2-3456-GHIJ-789012345678', N'Toyota Vios 2023 - Đầm Chắc Tiết Kiệm', N'Toyota', N'Vios', 2023, 'SEDAN', N'Vios G 2023 số tự động mới tinh chạy êm, siêu tiết kiệm nhiên liệu.', 'https://images.unsplash.com/photo-1590362891991-f776e747a588?w=800', 800000, 5000000, 3000000, N'Hồ Chí Minh', N'Vietnam', N'Tân Bình, TP.HCM', 10.8014, 106.6525, 107, 175, 12.0, 5, 4, 'AUTOMATIC', 'GASOLINE', 600, '1.5L', N'Trắng', '51G-99901', 1, 30, 365, 'AVAILABLE', 4.9, 14, 20, 1, 1, 1, 1, 50000, GETDATE(), GETDATE()),
+('VC-02', 'G7H8I9J0-K1L2-3456-GHIJ-789012345678', N'Toyota Fortuner 2022 - SUV 7 Chỗ Mạnh Mẽ', N'Toyota', N'Fortuner', 2022, 'SUV', N'Fortuner máy dầu số tự động 7 chỗ gầm cao, đi đèo dốc cực tốt.', 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=800', 1400000, 9000000, 5000000, N'Hồ Chí Minh', N'Vietnam', N'Quận 7, TP.HCM', 10.7416, 106.7214, 150, 180, 11.5, 7, 5, 'AUTOMATIC', 'DIESEL', 650, '2.4L Diesel', N'Đen', '51G-99902', 1, 30, 365, 'AVAILABLE', 4.88, 22, 30, 1, 1, 1, 1, 80000, GETDATE(), GETDATE()),
+('VC-03', 'G7H8I9J0-K1L2-3456-GHIJ-789012345678', N'Mazda CX-5 2022 - Crossover Trẻ Trung', N'Mazda', N'CX-5', 2022, 'SUV', N'CX5 Premium 2.0 màu đỏ đô, hệ thống loa Bose nghe nhạc cực hay.', 'https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=800', 1000000, 6500000, 4000000, N'Hồ Chí Minh', N'Vietnam', N'Quận 1, TP.HCM', 10.7769, 106.7009, 154, 190, 9.5, 5, 5, 'AUTOMATIC', 'GASOLINE', 580, '2.0L', N'Đỏ Pha Lê', '51G-99903', 1, 30, 365, 'AVAILABLE', 4.95, 31, 42, 1, 1, 1, 1, 60000, GETDATE(), GETDATE()),
+('VC-04', 'H8I9J0K1-L2M3-4567-HIJK-890123456789', N'VinFast VF8 Plus 2023 - Xe Điện VIP', N'VinFast', N'VF8', 2023, 'ELECTRIC_CAR', N'VF8 Plus 2 cầu mạnh mẽ, có ADAS tự lái thông minh, da Nappa cao cấp.', 'https://images.unsplash.com/photo-1563720223185-11003d516935?w=800', 1300000, 8500000, 5000000, N'Hà Nội', N'Vietnam', N'Cầu Giấy, Hà Nội', 21.0313, 105.7981, 402, 200, 5.5, 5, 5, 'AUTOMATIC', 'ELECTRIC', 400, 'Electric', N'Xám Titan', '30H-99904', 1, 30, 365, 'AVAILABLE', 4.92, 18, 25, 1, 1, 1, 1, 80000, GETDATE(), GETDATE()),
+('VC-05', 'H8I9J0K1-L2M3-4567-HIJK-890123456789', N'VinFast VF9 Plus - SUV Điện 7 Chỗ Siêu Rộng', N'VinFast', N'VF9', 2023, 'ELECTRIC_CAR', N'VF9 bản 6 ghế thương gia có massage hàng ghế sau, cực rộng rãi đẳng cấp.', 'https://images.unsplash.com/photo-1563720223185-11003d516935?w=800', 2000000, 13000000, 10000000, N'Hà Nội', N'Vietnam', N'Hai Bà Trưng, Hà Nội', 21.0245, 105.8525, 402, 200, 6.5, 6, 5, 'AUTOMATIC', 'ELECTRIC', 420, 'Electric', N'Đen', '30H-99905', 1, 30, 365, 'AVAILABLE', 4.97, 8, 14, 1, 1, 1, 1, 100000, GETDATE(), GETDATE()),
+('VC-06', 'G7H8I9J0-K1L2-3456-GHIJ-789012345678', N'Kia Accent 2022 - Giá Tốt Gia Đình', N'Kia', N'Accent', 2022, 'SEDAN', N'Accent số tự động giá rẻ cực tiết kiệm xăng thích hợp chạy gia đình đô thị.', 'https://images.unsplash.com/photo-1590362891991-f776e747a588?w=800', 650000, 4200000, 3000000, N'Hồ Chí Minh', N'Vietnam', N'Gò Vấp, TP.HCM', 10.8388, 106.6669, 100, 170, 13.0, 5, 4, 'AUTOMATIC', 'GASOLINE', 600, '1.4L', N'Trắng', '51G-99906', 1, 30, 365, 'AVAILABLE', 4.75, 29, 36, 1, 0, 1, 1, 50000, GETDATE(), GETDATE()),
+('VC-07', 'G7H8I9J0-K1L2-3456-GHIJ-789012345678', N'Toyota Innova 2021 - 8 Chỗ Gia Đình Du Lịch', N'Toyota', N'Innova', 2021, 'MPV', N'Innova thần thánh 8 chỗ ngồi siêu rộng rãi đi du lịch cực bền bỉ đầm chắc.', 'https://images.unsplash.com/photo-1590362891991-f776e747a588?w=800', 900000, 5800000, 4000000, N'Hồ Chí Minh', N'Vietnam', N'Bình Thạnh, TP.HCM', 10.8030, 106.6974, 137, 160, 14.0, 8, 5, 'MANUAL', 'GASOLINE', 550, '2.0L', N'Bạc', '51G-99907', 1, 30, 365, 'AVAILABLE', 4.8, 45, 60, 1, 1, 1, 1, 60000, GETDATE(), GETDATE()),
+('VC-08', 'H8I9J0K1-L2M3-4567-HIJK-890123456789', N'Hyundai Accent 2023 - Đài Mới Trẻ Trung', N'Hyundai', N'Accent', 2023, 'SEDAN', N'Accent 2023 thiết kế cá tính sang trọng, đi êm ái máy 1.4 bốc vừa phải.', 'https://images.unsplash.com/photo-1590362891991-f776e747a588?w=800', 700000, 4500000, 3000000, N'Hà Nội', N'Vietnam', N'Tây Hồ, Hà Nội', 21.0584, 105.8242, 100, 172, 12.5, 5, 4, 'AUTOMATIC', 'GASOLINE', 620, '1.4L', N'Đỏ', '30H-99908', 1, 30, 365, 'AVAILABLE', 4.88, 12, 18, 1, 1, 1, 1, 50000, GETDATE(), GETDATE()),
+('VC-09', 'H8I9J0K1-L2M3-4567-HIJK-890123456789', N'Hyundai Santa Fe 2022 - SUV Máy Dầu Đỉnh Cao', N'Hyundai', N'Santa Fe', 2022, 'SUV', N'Santa Fe Premium máy dầu chạy cực êm không mùi, full cửa sổ trời cảnh báo va chạm.', 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=800', 1500000, 9500000, 5000000, N'Hà Nội', N'Vietnam', N'Đống Đa, Hà Nội', 21.0285, 105.8542, 202, 195, 9.0, 7, 5, 'AUTOMATIC', 'DIESEL', 700, '2.2L SmartStream', N'Xanh Đá', '30H-99909', 1, 30, 365, 'AVAILABLE', 4.96, 32, 45, 1, 1, 1, 1, 80000, GETDATE(), GETDATE()),
+('VC-10', 'H8I9J0K1-L2M3-4567-HIJK-890123456789', N'Ford Ranger Wildtrak 2022 - Bán Tải Hầm Hố', N'Ford', N'Ranger Wildtrak', 2022, 'PICKUP', N'Bán tải Ranger Wildtrak 2.0 Bi-Turbo kéo khỏe, phượt Tây Bắc tuyệt cú mèo.', 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=800', 1100000, 7000000, 5000000, N'Hà Nội', N'Vietnam', N'Nam Từ Liêm, Hà Nội', 21.0378, 105.7804, 213, 180, 10.0, 5, 4, 'AUTOMATIC', 'DIESEL', 600, '2.0L Bi-Turbo', N'Cam', '30H-99910', 1, 30, 365, 'AVAILABLE', 4.9, 19, 28, 1, 1, 1, 1, 70000, GETDATE(), GETDATE()),
+('VC-11', 'G7H8I9J0-K1L2-3456-GHIJ-789012345678', N'Mazda 3 2023 - Sedan Đẹp Nhất Phân Khúc', N'Mazda', N'Mazda 3', 2023, 'SEDAN', N'Mazda 3 thế hệ mới màu trắng, thiết kế Kodo cực sang trọng đẳng cấp thanh lịch.', 'https://images.unsplash.com/photo-1590362891991-f776e747a588?w=800', 800000, 5200000, 3000000, N'Hồ Chí Minh', N'Vietnam', N'Phú Nhuận, TP.HCM', 10.7994, 106.6803, 110, 185, 10.8, 5, 4, 'AUTOMATIC', 'GASOLINE', 580, '1.5L', N'Trắng', '51G-99911', 1, 30, 365, 'AVAILABLE', 4.86, 15, 21, 1, 1, 1, 1, 50000, GETDATE(), GETDATE()),
+('VC-12', 'G7H8I9J0-K1L2-3456-GHIJ-789012345678', N'Mitsubishi Xpander 2023 - 7 Chỗ Quốc Dân', N'Mitsubishi', N'Innova', 2023, 'MPV', N'Xpander đời mới rộng rãi cực tiết kiệm nhiên liệu, lựa chọn số 1 cho gia đình.', 'https://images.unsplash.com/photo-1590362891991-f776e747a588?w=800', 850000, 5500000, 3000000, N'Hồ Chí Minh', N'Vietnam', N'Quận 12, TP.HCM', 10.8672, 106.6783, 104, 160, 13.5, 7, 5, 'AUTOMATIC', 'GASOLINE', 600, '1.5L MIVEC', N'Bạc', '51G-99912', 1, 30, 365, 'AVAILABLE', 4.83, 38, 50, 1, 1, 1, 1, 60000, GETDATE(), GETDATE()),
+('VC-13', 'H8I9J0K1-L2M3-4567-HIJK-890123456789', N'Mercedes C200 2022 - Xe Đức Sang Trọng', N'Mercedes-Benz', N'C200', 2022, 'LUXURY', N'Mercedes C200 Avantgarde sang trọng lịch lãm, thích hợp cưới hỏi công tác.', 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800', 2000000, 13000000, 10000000, N'Hà Nội', N'Vietnam', N'Hoàn Kiếm, Hà Nội', 21.0285, 105.8542, 204, 240, 7.3, 5, 4, 'AUTOMATIC', 'GASOLINE', 500, '1.5L EQ Boost', N'Đen', '30H-99913', 1, 30, 365, 'AVAILABLE', 4.97, 11, 16, 1, 1, 1, 1, 100000, GETDATE(), GETDATE()),
+('VC-14', 'H8I9J0K1-L2M3-4567-HIJK-890123456789', N'BMW 320i Sport Line - Trải Nghiệm Thể Thao', N'BMW', N'BMW 320i', 2022, 'LUXURY', N'BMW 3-Series dẫn động cầu sau lái cực bốc, đầm chắc chuẩn chất Đức.', 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800', 2200000, 14000000, 10000000, N'Hà Nội', N'Vietnam', N'Ba Đình, Hà Nội', 21.0361, 105.8275, 184, 235, 7.1, 5, 4, 'AUTOMATIC', 'GASOLINE', 520, '2.0L TwinPower', N'Trắng', '30H-99914', 1, 30, 365, 'AVAILABLE', 4.99, 7, 10, 1, 1, 1, 1, 100000, GETDATE(), GETDATE()),
+('VC-15', 'G7H8I9J0-K1L2-3456-GHIJ-789012345678', N'Kia Morning 2022 - Xe Đô Thị Nhỏ Gọn', N'Kia', N'Morning', 2022, 'CITY_CAR', N'Kia Morning số tự động nhỏ nhắn dễ luồn lách ngõ hẻm Sài Gòn, rất tiết kiệm xăng.', 'https://images.unsplash.com/photo-1590362891991-f776e747a588?w=800', 500000, 3200000, 2000000, N'Hồ Chí Minh', N'Vietnam', N'Bình Thạnh, TP.HCM', 10.8030, 106.6974, 83, 150, 14.5, 5, 4, 'AUTOMATIC', 'GASOLINE', 500, '1.25L', N'Đỏ', '51G-99915', 1, 30, 365, 'AVAILABLE', 4.7, 15, 23, 1, 0, 1, 0, 30000, GETDATE(), GETDATE()),
+('VC-16', 'G7H8I9J0-K1L2-3456-GHIJ-789012345678', N'Hyundai Grand i10 2023 - Đời Mới Linh Hoạt', N'Hyundai', N'Accent', 2023, 'CITY_CAR', N'Grand i10 hatchback đời mới chạy đầm chắc, cabin rộng hơn Morning.', 'https://images.unsplash.com/photo-1590362891991-f776e747a588?w=800', 600000, 3800000, 2000000, N'Hồ Chí Minh', N'Vietnam', N'Quận 10, TP.HCM', 10.7762, 106.6702, 83, 155, 14.0, 5, 5, 'AUTOMATIC', 'GASOLINE', 520, '1.2L', N'Trắng', '51G-99916', 1, 30, 365, 'AVAILABLE', 4.8, 11, 19, 1, 1, 1, 1, 40000, GETDATE(), GETDATE()),
+('VC-17', 'H8I9J0K1-L2M3-4567-HIJK-890123456789', N'Hyundai Tucson 2023 - Xe Nhật Đầm Ấm', N'Hyundai', N'Tucson', 2023, 'SUV', N'Hyundai Tucson 2023 bản xăng đặc biệt nội thất siêu rộng, cốp điện tiện lợi.', 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=800', 1100000, 7200000, 4000000, N'Hà Nội', N'Vietnam', N'Cầu Giấy, Hà Nội', 21.0313, 105.7981, 156, 185, 10.5, 5, 5, 'AUTOMATIC', 'GASOLINE', 550, '2.0L', N'Đen', '30H-99917', 1, 30, 365, 'AVAILABLE', 4.89, 9, 13, 1, 1, 1, 1, 60000, GETDATE(), GETDATE()),
+('VC-18', 'H8I9J0K1-L2M3-4567-HIJK-890123456789', N'Toyota Innova Cross 2024 - Hybrid Đời Mới', N'Toyota', N'Innova', 2024, 'MPV', N'Innova Cross Hybrid siêu êm ái rộng rãi, tiết kiệm xăng đáng kinh ngạc chỉ 5L/100km.', 'https://images.unsplash.com/photo-1590362891991-f776e747a588?w=800', 130000, 850000, 5000000, N'Hà Nội', N'Vietnam', N'Thanh Xuân, Hà Nội', 21.0058, 105.8086, 186, 180, 9.8, 7, 5, 'AUTOMATIC', 'HYBRID', 800, '2.0L Hybrid', N'Xám Bạc', '30H-99918', 1, 30, 365, 'AVAILABLE', 4.95, 4, 8, 1, 1, 1, 1, 80000, GETDATE(), GETDATE()),
+('VC-19', 'G7H8I9J0-K1L2-3456-GHIJ-789012345678', N'Porsche Macan 2021 - Siêu Xe Thể Thao SUV', N'Porsche', N'Fortuner', 2021, 'LUXURY', N'Trải nghiệm đẳng cấp với Porsche Macan màu trắng tinh tế, phong cách quý tộc.', 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800', 8000000, 50000000, 50000000, N'Hồ Chí Minh', N'Vietnam', N'Quận 2, TP.HCM', 10.7872, 106.7490, 252, 225, 6.7, 5, 5, 'AUTOMATIC', 'GASOLINE', 480, '2.0L Turbo', N'Trắng', '51G-99919', 1, 30, 365, 'AVAILABLE', 4.98, 2, 4, 1, 1, 1, 1, 300000, GETDATE(), GETDATE()),
+('VC-20', 'G7H8I9J0-K1L2-3456-GHIJ-789012345678', N'VinFast VF8 Eco 2023 - Điện Tiện Lợi', N'VinFast', N'VF8', 2023, 'ELECTRIC_CAR', N'VinFast VF8 Eco màu đỏ tươi tắn, tiết kiệm, sạc nhanh pin LFP bền bỉ.', 'https://images.unsplash.com/photo-1563720223185-11003d516935?w=800', 1100000, 7200000, 4000000, N'Hồ Chí Minh', N'Vietnam', N'Quận 1, TP.HCM', 10.7769, 106.7009, 348, 200, 5.9, 5, 5, 'AUTOMATIC', 'ELECTRIC', 400, 'Electric', N'Đỏ', '51G-99920', 1, 30, 365, 'AVAILABLE', 4.85, 9, 15, 1, 1, 1, 1, 70000, GETDATE(), GETDATE());
+
+-- Update details for existing data
+UPDATE vehicles SET vehicle_type = 'CAR', engine_cc = NULL, has_chauffeur = 0, airport_delivery = 1, wedding_rental = 0, business_rental = 1 WHERE category <> 'MOTORBIKE';
+UPDATE vehicles SET vehicle_type = 'MOTORBIKE', engine_cc = 150, has_helmet = 1, has_phone_holder = 1, has_raincoat = 1 WHERE category = 'MOTORBIKE';
+
+-- Update details for newly seeded motorbikes
+UPDATE vehicles SET vehicle_type = 'MOTORBIKE', engine_cc = 110, has_helmet = 1, has_phone_holder = 1, has_raincoat = 1 WHERE id IN ('VM-01', 'VM-02', 'VM-03');
+UPDATE vehicles SET vehicle_type = 'MOTORBIKE', engine_cc = 125, has_helmet = 1, has_phone_holder = 1, has_raincoat = 1 WHERE id IN ('VM-04', 'VM-08', 'VM-09', 'VM-10', 'VM-12');
+UPDATE vehicles SET vehicle_type = 'MOTORBIKE', engine_cc = 160, has_helmet = 1, has_phone_holder = 1, has_raincoat = 1 WHERE id IN ('VM-05');
+UPDATE vehicles SET vehicle_type = 'MOTORBIKE', engine_cc = 155, has_helmet = 1, has_phone_holder = 1, has_raincoat = 1 WHERE id IN ('VM-06');
+UPDATE vehicles SET vehicle_type = 'MOTORBIKE', engine_cc = NULL, has_helmet = 1, has_phone_holder = 1, has_raincoat = 1, has_touring_package = 0 WHERE id IN ('VM-07', 'VM-13', 'VM-14');
+UPDATE vehicles SET vehicle_type = 'MOTORBIKE', engine_cc = 110, has_helmet = 1, has_phone_holder = 0, has_raincoat = 1 WHERE id IN ('VM-11');
+UPDATE vehicles SET vehicle_type = 'MOTORBIKE', engine_cc = 300, has_helmet = 1, has_phone_holder = 1, has_raincoat = 1, has_touring_package = 1 WHERE id IN ('VM-15');
+
+-- Update details for newly seeded cars
+UPDATE vehicles SET vehicle_type = 'CAR', engine_cc = NULL, has_chauffeur = 0, airport_delivery = 1, wedding_rental = 0, business_rental = 0 WHERE id IN ('VC-01', 'VC-02', 'VC-03', 'VC-06', 'VC-07', 'VC-08', 'VC-09', 'VC-10', 'VC-11', 'VC-12', 'VC-15', 'VC-16', 'VC-17', 'VC-18', 'VC-20');
+UPDATE vehicles SET vehicle_type = 'CAR', engine_cc = NULL, has_chauffeur = 0, airport_delivery = 1, wedding_rental = 0, business_rental = 1 WHERE id IN ('VC-04', 'VC-05');
+UPDATE vehicles SET vehicle_type = 'CAR', engine_cc = NULL, has_chauffeur = 1, airport_delivery = 1, wedding_rental = 1, business_rental = 1 WHERE id IN ('VC-13', 'VC-14', 'VC-19');
+
 -- Update article counts in categories
 UPDATE dbo.help_categories SET article_count = (
     SELECT COUNT(*) FROM dbo.help_articles ha WHERE ha.category_id = help_categories.id AND ha.is_published = 1
@@ -1882,3 +2143,87 @@ PRINT 'Owner: pham.minh.d@gmail.com / password';
 PRINT 'Business: contact@saigoncarrental.vn / password';
 PRINT '';
 PRINT 'Ready to start LuxeWay backend development! 🚗✨';
+
+-- ============================================================
+-- LUXEWAY ECOSYSTEM SEED DATA (Bounded Contexts)
+-- ============================================================
+
+-- Car Brands
+INSERT INTO car_brands (id, name, country, logo_url, is_active) VALUES
+('CB-1', 'Toyota', 'Japan', 'https://www.toyota.com.vn/logo.png', 1),
+('CB-2', 'Honda', 'Japan', 'https://www.honda.com.vn/logo.png', 1),
+('CB-3', 'Ford', 'USA', 'https://www.ford.com.vn/logo.png', 1),
+('CB-4', 'Mercedes-Benz', 'Germany', 'https://www.mercedes-benz.com.vn/logo.png', 1),
+('CB-5', 'VinFast', 'Vietnam', 'https://vinfastauto.com/logo.png', 1);
+
+-- Car Models
+INSERT INTO car_models (id, brand_id, name, category) VALUES
+('CM-1', 'CB-1', 'Camry', 'SEDAN'),
+('CM-2', 'CB-2', 'Civic', 'SEDAN'),
+('CM-3', 'CB-3', 'Ranger', 'PICKUP'),
+('CM-4', 'CB-4', 'C200', 'LUXURY'),
+('CM-5', 'CB-5', 'VF8', 'ELECTRIC_CAR');
+
+-- Cars
+INSERT INTO cars (id, model_id, owner_id, name, license_plate, price_per_day, deposit, status, rating, total_reviews, total_bookings, is_verified, is_featured) VALUES
+('CAR-1', 'CM-1', 'E5F6G7H8-I9J0-1234-EFGH-567890123456', 'Toyota Camry 2.5Q 2023', '30F-999.99', 1200000, 10000000, 'AVAILABLE', 5.0, 0, 0, 1, 1),
+('CAR-2', 'CM-2', 'E5F6G7H8-I9J0-1234-EFGH-567890123456', 'Honda Civic RS 2022', '30G-888.88', 900000, 5000000, 'AVAILABLE', 4.8, 0, 0, 1, 0),
+('CAR-3', 'CM-5', 'E5F6G7H8-I9J0-1234-EFGH-567890123456', 'VinFast VF8 Plus 2023', '30H-777.77', 1500000, 15000000, 'AVAILABLE', 4.9, 0, 0, 1, 1);
+
+-- Car Specs
+INSERT INTO car_specifications (id, car_id, seats, doors, transmission, fuel_type, has_chauffeur, airport_delivery, electric, hybrid) VALUES
+('CS-1', 'CAR-1', 5, 4, 'AUTOMATIC', 'GASOLINE', 0, 1, 0, 0),
+('CS-2', 'CAR-2', 5, 4, 'AUTOMATIC', 'GASOLINE', 0, 0, 0, 0),
+('CS-3', 'CAR-3', 5, 4, 'AUTOMATIC', 'ELECTRIC', 0, 1, 1, 0);
+
+-- Car Locations
+INSERT INTO car_locations (id, car_id, city, address, latitude, longitude) VALUES
+('CL-1', 'CAR-1', 'Ha Noi', 'My Dinh, Nam Tu Liem', 21.0285, 105.8542),
+('CL-2', 'CAR-2', 'Ha Noi', 'Tay Ho, Ha Noi', 21.0585, 105.8042),
+('CL-3', 'CAR-3', 'Ha Noi', 'Cau Giay, Ha Noi', 21.0385, 105.7842);
+
+-- Car Images
+INSERT INTO car_images (id, car_id, url, is_primary, sort_order) VALUES
+('CI-1', 'CAR-1', 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?q=80&w=800&auto=format&fit=crop', 1, 0),
+('CI-2', 'CAR-2', 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?q=80&w=800&auto=format&fit=crop', 1, 0),
+('CI-3', 'CAR-3', 'https://images.unsplash.com/photo-1563720223185-11003d516935?q=80&w=800&auto=format&fit=crop', 1, 0);
+
+-- Motorbike Brands
+INSERT INTO motorbike_brands (id, name, country, logo_url, is_active) VALUES
+('MB-1', 'Honda', 'Japan', 'https://www.honda.com.vn/logo-bike.png', 1),
+('MB-2', 'Yamaha', 'Japan', 'https://www.yamaha.com.vn/logo-bike.png', 1),
+('MB-3', 'VinFast', 'Vietnam', 'https://vinfastauto.com/logo-bike.png', 1);
+
+-- Motorbike Models
+INSERT INTO motorbike_models (id, brand_id, name, category) VALUES
+('MM-1', 'MB-1', 'Vision', 'SCOOTER'),
+('MM-2', 'MB-1', 'Air Blade', 'SCOOTER'),
+('MM-3', 'MB-2', 'Exciter 155', 'MANUAL_MOTORCYCLE'),
+('MM-4', 'MB-3', 'Evo200', 'ELECTRIC_BIKE');
+
+-- Motorbikes
+INSERT INTO motorbikes (id, model_id, owner_id, name, license_plate, price_per_day, deposit, status, rating, total_reviews, total_bookings, is_verified, is_featured) VALUES
+('BIKE-1', 'MM-1', 'E5F6G7H8-I9J0-1234-EFGH-567890123456', 'Honda Vision 2023 Standard', '29Y-123.45', 150000, 2000000, 'AVAILABLE', 4.7, 0, 0, 1, 1),
+('BIKE-2', 'MM-2', 'E5F6G7H8-I9J0-1234-EFGH-567890123456', 'Honda Air Blade 125cc Special', '29Y-678.90', 200000, 2000000, 'AVAILABLE', 4.9, 0, 0, 1, 1),
+('BIKE-3', 'MM-4', 'E5F6G7H8-I9J0-1234-EFGH-567890123456', 'VinFast Evo200 Lite Electric', '29E-555.55', 120000, 1500000, 'AVAILABLE', 4.5, 0, 0, 1, 0);
+
+-- Motorbike Specs
+INSERT INTO motorbike_specifications (id, motorbike_id, engine_cc, transmission, helmet_included, raincoat_included, phone_holder, luggage_rack) VALUES
+('MBS-1', 'BIKE-1', 110, 'AUTOMATIC', 1, 1, 1, 0),
+('MBS-2', 'BIKE-2', 125, 'AUTOMATIC', 1, 1, 1, 1),
+('MBS-3', 'BIKE-3', 0, 'AUTOMATIC', 1, 1, 0, 0);
+
+-- Motorbike Locations
+INSERT INTO motorbike_locations (id, motorbike_id, city, address, latitude, longitude) VALUES
+('MBL-1', 'BIKE-1', 'Ha Noi', 'Hoan Kiem, Ha Noi', 21.0285, 105.8542),
+('MBL-2', 'BIKE-2', 'Ha Noi', 'Dong Da, Ha Noi', 21.0185, 105.8242),
+('MBL-3', 'BIKE-3', 'Ha Noi', 'Ba Dinh, Ha Noi', 21.0385, 105.8342);
+
+-- Motorbike Images
+INSERT INTO motorbike_images (id, motorbike_id, url, is_primary, sort_order) VALUES
+('MBI-1', 'BIKE-1', 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?q=80&w=800&auto=format&fit=crop', 1, 0),
+('MBI-2', 'BIKE-2', 'https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?q=80&w=800&auto=format&fit=crop', 1, 0),
+('MBI-3', 'BIKE-3', 'https://images.unsplash.com/photo-1485965120184-e220f721d03e?q=80&w=800&auto=format&fit=crop', 1, 0);
+
+PRINT 'LuxeWay separate ecosystems seed data successfully inserted!';
+

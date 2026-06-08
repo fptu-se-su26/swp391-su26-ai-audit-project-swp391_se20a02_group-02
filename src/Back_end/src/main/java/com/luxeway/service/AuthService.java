@@ -98,7 +98,10 @@ public class AuthService {
         }
 
         // DEV MODE: Auto-verify user on registration (no email verification step).
-        // In production, set verified=false and send a confirmation email via JavaMailSender.
+        // PRODUCTION: Set verified=false and send a confirmation email via JavaMailSender.
+        // Check environment via Spring profiles to determine behavior
+        boolean isDevelopment = true; // TODO: Inject @Value("${spring.profiles.active}") to check profile
+        
         User user = User.builder()
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
@@ -108,10 +111,11 @@ public class AuthService {
                 .role(role)
                 .accountType(request.getAccountType() != null ? request.getAccountType() : "INDIVIDUAL")
                 .companyName(request.getCompanyName())
-                .verified(true)   // auto-verified in dev mode
+                .verified(isDevelopment)   // Auto-verify only in development
                 .kycVerified(false)
                 .drivingLicenseVerified(false)
                 .isActive(true)
+                .preferredLanguage(request.getPreferredLanguage() != null ? request.getPreferredLanguage() : "en")
                 .build();
 
         user = userRepository.save(user);
@@ -199,16 +203,28 @@ public class AuthService {
         java.time.LocalDateTime expiry = java.time.LocalDateTime.now().plusMinutes(5);
         otpStore.put(email, new OtpData(otpCode, expiry));
 
-        // DEV / STAGING LOG EXPOSURE AS REQUESTED
-        log.info("==================================================");
-        log.info("LUXEWAY SECURE OTP DISPATCH SYSTEM");
-        log.info("RECIPIENT EMAIL: {}", email);
-        log.info("SECURITY OTP CODE: {}", otpCode);
-        log.info("VALID FOR: 5 MINUTES (Expires at {})", expiry);
-        log.info("==================================================");
+        // SECURITY: Only log OTP in DEBUG mode for development
+        // In production (INFO/WARN level), this will not be logged
+        log.debug("==================================================");
+        log.debug("LUXEWAY SECURE OTP DISPATCH SYSTEM");
+        log.debug("RECIPIENT EMAIL: {}", email);
+        log.debug("SECURITY OTP CODE: {}", otpCode);
+        log.debug("VALID FOR: 5 MINUTES (Expires at {})", expiry);
+        log.debug("==================================================");
+        
+        log.info("OTP sent to email: {}", email);
 
-        // Dispatch real SMTP email via EmailService
+        // Generate transient secure reset token for direct link
+        String resetToken = java.util.UUID.randomUUID().toString();
+        // Reset token valid for 15 minutes
+        resetTokenStore.put(resetToken, new ResetTokenData(email, java.time.LocalDateTime.now().plusMinutes(15)));
+
+        String resetLink = "http://localhost:5173/auth/otp?token=" + resetToken + "&email=" 
+                + java.net.URLEncoder.encode(email, java.nio.charset.StandardCharsets.UTF_8);
+
+        // Dispatch real SMTP emails via EmailService
         emailService.sendOtp(email, otpCode);
+        emailService.sendPasswordResetLink(email, resetLink);
     }
 
     public String verifyOtp(AuthDTOs.VerifyOtpRequest req) {
@@ -234,8 +250,8 @@ public class AuthService {
 
         // Generate transient secure reset token
         String resetToken = java.util.UUID.randomUUID().toString();
-        // Reset token valid for 10 minutes
-        resetTokenStore.put(resetToken, new ResetTokenData(email, java.time.LocalDateTime.now().plusMinutes(10)));
+        // Reset token valid for 15 minutes
+        resetTokenStore.put(resetToken, new ResetTokenData(email, java.time.LocalDateTime.now().plusMinutes(15)));
 
         log.info("OTP verification successful for {}. Issued reset token: {}", email, resetToken);
         return resetToken;
@@ -290,6 +306,7 @@ public class AuthService {
         userInfo.setVerified(user.getVerified());
         userInfo.setKycVerified(user.getKycVerified());
         userInfo.setWalletBalance(user.getWalletBalance());
+        userInfo.setPreferredLanguage(user.getPreferredLanguage());
 
         AuthDTOs.AuthResponse response = new AuthDTOs.AuthResponse();
         response.setAccessToken(accessToken);
@@ -352,12 +369,18 @@ public class AuthService {
             
             String picture = (String) payload.get("picture");
             
+            String providerId = (String) payload.get("sub");
+
             java.util.Optional<User> existingUser = userRepository.findByEmail(email);
             User user;
             if (existingUser.isPresent()) {
                 user = existingUser.get();
                 if (user.getAvatar() == null || user.getAvatar().isBlank()) {
                     user.setAvatar(picture);
+                }
+                if ("LOCAL".equals(user.getProvider()) || user.getProvider() == null) {
+                    user.setProvider("GOOGLE");
+                    user.setProviderId(providerId);
                 }
                 user.setLastActive(java.time.LocalDateTime.now());
                 user = userRepository.save(user);
@@ -375,6 +398,8 @@ public class AuthService {
                         .kycVerified(false)
                         .drivingLicenseVerified(false)
                         .isActive(true)
+                        .provider("GOOGLE")
+                        .providerId(providerId)
                         .build();
                 user = userRepository.save(user);
                 log.info("Google OAuth registration: created new user {}", email);

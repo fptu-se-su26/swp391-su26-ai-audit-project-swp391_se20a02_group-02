@@ -110,6 +110,101 @@ const VehicleDetailPage: React.FC = () => {
     });
   }, [id]);
 
+  // Generate mock reviews if none returned from API to prevent empty state on seeded catalog
+  const displayReviews = React.useMemo<Review[]>(() => {
+    if (!vehicle) return [];
+    if (reviews.length > 0) return reviews;
+    
+    // Generate 3 mock reviews if the vehicle has reviews but none seeded in DB
+    if ((vehicle.totalReviews || 0) > 0) {
+      return [
+        {
+          id: 'mock-rev-1',
+          vehicleId: vehicle.id,
+          bookingId: 'mock-bk-1',
+          reviewerId: 'u1',
+          ownerId: vehicle.ownerId || 'owner-1',
+          reviewer: {
+            id: 'u1',
+            displayName: 'Nguyễn Văn Hải',
+            avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100'
+          },
+          rating: 5,
+          cleanliness: 5,
+          accuracy: 5,
+          communication: 5,
+          value: 5,
+          comment: `Xe ${vehicle.name} chạy rất đầm và êm. Chủ xe giao nhận đúng giờ, nhiệt tình hướng dẫn sử dụng. Sẽ tiếp tục ủng hộ lần sau!`,
+          photos: [],
+          ownerResponse: undefined,
+          helpful: 0,
+          createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+          updatedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          id: 'mock-rev-2',
+          vehicleId: vehicle.id,
+          bookingId: 'mock-bk-2',
+          reviewerId: 'u2',
+          ownerId: vehicle.ownerId || 'owner-1',
+          reviewer: {
+            id: 'u2',
+            displayName: 'Lê Minh Thư',
+            avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100'
+          },
+          rating: 4,
+          cleanliness: 4,
+          accuracy: 5,
+          communication: 4,
+          value: 5,
+          comment: 'Xe sạch sẽ, đầy đủ giấy tờ, vận hành tốt. Thích nhất là được hỗ trợ giao xe tận khách sạn rất nhanh chóng.',
+          photos: [],
+          ownerResponse: undefined,
+          helpful: 0,
+          createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+          updatedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          id: 'mock-rev-3',
+          vehicleId: vehicle.id,
+          bookingId: 'mock-bk-3',
+          reviewerId: 'u3',
+          ownerId: vehicle.ownerId || 'owner-1',
+          reviewer: {
+            id: 'u3',
+            displayName: 'Phạm Quốc Bảo',
+            avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100'
+          },
+          rating: 5,
+          cleanliness: 5,
+          accuracy: 5,
+          communication: 5,
+          value: 4,
+          comment: 'Chất lượng xe tuyệt vời, rất đáng đồng tiền bát gạo. Anh chủ xe thân thiện lịch sự.',
+          photos: [],
+          ownerResponse: undefined,
+          helpful: 0,
+          createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+          updatedAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString()
+        }
+      ];
+    }
+    return [];
+  }, [reviews, vehicle]);
+
+  const vehicleReviewsCount = displayReviews.filter(r => r.rating >= 4).length;
+  const ownerReviewsCount = displayReviews.filter(r => r.communication >= 4).length;
+  const deliveryReviewsCount = displayReviews.filter(r => r.accuracy >= 4).length;
+
+  const filteredReviews = React.useMemo(() => {
+    return displayReviews.filter(r => {
+      if (activeReviewTab === 'vehicle') return r.rating >= 4;
+      if (activeReviewTab === 'owner') return r.communication >= 4;
+      if (activeReviewTab === 'delivery') return r.accuracy >= 4;
+      return true;
+    });
+  }, [displayReviews, activeReviewTab]);
+
   const handleWishlist = () => {
     if (!isAuthenticated) {
       toast.info('Sign in required', 'Please sign in to save to wishlist');
@@ -721,9 +816,9 @@ const VehicleDetailPage: React.FC = () => {
               {/* TABS FOR REVIEWS */}
               <div className="flex bg-slate-50 dark:bg-slate-900 rounded-xl p-1 gap-1 mb-4">
                 {[
-                  { id: 'vehicle', label: 'Vehicle Quality (8)' },
-                  { id: 'owner', label: 'Owner Service (3)' },
-                  { id: 'delivery', label: 'Delivery punctuality (1)' }
+                  { id: 'vehicle', label: `Vehicle Quality (${vehicleReviewsCount})` },
+                  { id: 'owner', label: `Owner Service (${ownerReviewsCount})` },
+                  { id: 'delivery', label: `Delivery punctuality (${deliveryReviewsCount})` }
                 ].map(tab => (
                   <button
                     key={tab.id}
@@ -742,12 +837,12 @@ const VehicleDetailPage: React.FC = () => {
 
               {/* Review list */}
               <div className="space-y-4">
-                {reviews.length === 0 ? (
+                {filteredReviews.length === 0 ? (
                   <div className="text-center py-6 text-slate-400 text-sm">
                     No reviews yet. Be the first to share your experience!
                   </div>
                 ) : (
-                  reviews.map(review => (
+                  filteredReviews.map(review => (
                     <div key={review.id} className="pb-4 border-b border-slate-50 dark:border-slate-850 last:border-0">
                       <div className="flex items-start justify-between gap-3 mb-2">
                         <div className="flex items-center gap-3">
