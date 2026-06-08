@@ -1,14 +1,12 @@
 spring:
   datasource:
     url: jdbc:sqlserver://localhost:1433;databaseName=car_rental_platform;encrypt=false;trustServerCertificate=true
-    username: sa
+    username: hau
     password: 123456
     driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
   sql:
     init:
-      schema-locations: []
-      data-locations: classpath:data-sqlserver.sql
-      mode: always
+      mode: never
   jpa:
     hibernate:
       ddl-auto: none
@@ -18,3 +16,12 @@ spring:
         dialect: org.hibernate.dialect.SQLServerDialect
         format_sql: true
     defer-datasource-initialization: true
+
+  # Google OAuth - uncomment và điền credentials thật để bật Google Login
+  # security:
+  #   oauth2:
+  #     client:
+  #       registration:
+  #         google:
+  #           client-id: YOUR_GOOGLE_CLIENT_ID
+  #           client-secret: YOUR_GOOGLE_CLIENT_SECRET
