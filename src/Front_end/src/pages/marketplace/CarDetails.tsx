@@ -38,6 +38,7 @@ export const CarDetails: React.FC = () => {
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [activeImageTab, setActiveImageTab] = useState<'all' | 'exterior' | 'interior' | '360' | 'video'>('all');
   const [activeImage, setActiveImage] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -70,6 +71,7 @@ export const CarDetails: React.FC = () => {
   useEffect(() => {
     if (!id) return;
     setLoading(true);
+    setLoadError(false);
     Promise.all([
       carService.getById(id),
       reviewService.getByVehicle(id),
@@ -112,7 +114,12 @@ export const CarDetails: React.FC = () => {
         } else {
           setReviews(r);
         }
+      } else {
+        setLoadError(true);
       }
+      setLoading(false);
+    }).catch(() => {
+      setLoadError(true);
       setLoading(false);
     });
   }, [id]);
@@ -160,12 +167,30 @@ export const CarDetails: React.FC = () => {
     }
   };
 
-  if (loading || !vehicle) {
+  if (loading) {
     return (
       <div className="min-h-screen pt-20 px-4 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-10 h-10 animate-spin text-blue-500 mx-auto mb-4" />
           <p className="text-slate-500 font-semibold">Đang tải thông tin xe...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError || !vehicle) {
+    return (
+      <div className="min-h-screen pt-20 px-4 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-slate-700 dark:text-slate-200 mb-2">Không tìm thấy xe</h2>
+          <p className="text-slate-500 mb-6">Xe này không tồn tại hoặc không thể kết nối đến máy chủ.</p>
+          <button
+            onClick={() => navigate('/cars')}
+            className="px-6 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-semibold transition-colors"
+          >
+            Quay lại danh sách xe
+          </button>
         </div>
       </div>
     );

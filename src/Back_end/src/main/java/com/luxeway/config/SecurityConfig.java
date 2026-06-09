@@ -80,12 +80,11 @@ public class SecurityConfig {
             )
             .authorizeHttpRequests(auth -> auth
                 // ======== Public endpoints ========
-                // BUG-11 FIX: Controllers map to /auth/**, /vehicles/**, etc. (no /api/v1/ prefix).
-                // Keeping /api/v1/** variants for forward compatibility, but also adding unprefixed paths.
+                // With context-path /api/v1, Spring Security receives paths WITHOUT the prefix.
+                // e.g. request to /api/v1/cars is seen by Security as /cars
                 .requestMatchers(
                     // Auth flows
                     "/auth/**",
-                    "/api/v1/auth/**",
                     // OAuth2
                     "/oauth2/**",
                     "/login/oauth2/**",
@@ -99,77 +98,56 @@ public class SecurityConfig {
                     // VNPay callbacks (must be public since VNPay server calls them)
                     "/payments/vnpay/callback",
                     "/payments/vnpay/return",
-                    "/api/v1/payments/vnpay/callback",
-                    "/api/v1/payments/vnpay/return",
                     // Static uploads
                     "/uploads/**",
-                    "/api/v1/uploads/**",
                     // Public pages
                     "/stats/**",
                     "/stats",
-                    "/api/v1/stats/**",
-                    "/api/v1/stats",
                     "/home/**",
-                    "/api/v1/home/**",
                     "/locations/**",
-                    "/api/v1/locations/**",
                     "/faqs/**",
                     "/faqs",
-                    "/api/v1/faqs/**",
-                    "/api/v1/faqs",
                     // Help Center Knowledge Base (public — no auth needed)
                     "/help/**",
-                    "/api/v1/help/**",
                     "/error"
                 ).permitAll()
                 // Support ticket endpoints — must be authenticated
-                .requestMatchers("/support/**", "/api/v1/support/**").authenticated()
+                .requestMatchers("/support/**").authenticated()
                 // Public vehicle browsing (no auth needed)
                 .requestMatchers(HttpMethod.GET,
                     "/vehicles",
                     "/vehicles/search",
                     "/vehicles/featured",
                     "/vehicles/{id}",
-                    "/api/v1/vehicles",
-                    "/api/v1/vehicles/search",
-                    "/api/v1/vehicles/featured",
-                    "/api/v1/vehicles/{id}",
                     "/cars",
                     "/cars/{id}",
-                    "/api/v1/cars",
-                    "/api/v1/cars/{id}",
                     "/motorbikes",
                     "/motorbikes/{id}",
-                    "/api/v1/motorbikes",
-                    "/api/v1/motorbikes/{id}",
                     "/reviews",
-                    "/reviews/**",
-                    "/api/v1/reviews",
-                    "/api/v1/reviews/**"
+                    "/reviews/**"
                 ).permitAll()
                 // ======== Admin only (ADMIN and SUPER_ADMIN both get access) ========
                 .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                .requestMatchers("/api/v1/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                 .requestMatchers("/test/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                .requestMatchers(HttpMethod.GET, "/users", "/api/v1/users").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                .requestMatchers(HttpMethod.GET, "/users").hasAnyRole("ADMIN", "SUPER_ADMIN")
                 // ======== Owner or Admin ========
                 .requestMatchers(HttpMethod.POST,
-                    "/vehicles", "/api/v1/vehicles",
-                    "/cars", "/api/v1/cars",
-                    "/motorbikes", "/api/v1/motorbikes"
+                    "/vehicles",
+                    "/cars",
+                    "/motorbikes"
                 ).hasAnyRole("OWNER", "ADMIN")
                 .requestMatchers(HttpMethod.PUT,
-                    "/vehicles/**", "/api/v1/vehicles/**",
-                    "/cars/**", "/api/v1/cars/**",
-                    "/motorbikes/**", "/api/v1/motorbikes/**"
+                    "/vehicles/**",
+                    "/cars/**",
+                    "/motorbikes/**"
                 ).hasAnyRole("OWNER", "ADMIN")
                 .requestMatchers(HttpMethod.DELETE,
-                    "/vehicles/**", "/api/v1/vehicles/**",
-                    "/cars/**", "/api/v1/cars/**",
-                    "/motorbikes/**", "/api/v1/motorbikes/**"
+                    "/vehicles/**",
+                    "/cars/**",
+                    "/motorbikes/**"
                 ).hasAnyRole("OWNER", "ADMIN")
                 // Upload endpoint requires authentication
-                .requestMatchers(HttpMethod.POST, "/upload", "/upload/**", "/users/documents", "/api/v1/users/documents").authenticated()
+                .requestMatchers(HttpMethod.POST, "/upload", "/upload/**", "/users/documents").authenticated()
                 // All other requests must be authenticated
                 .anyRequest().authenticated()
             )
