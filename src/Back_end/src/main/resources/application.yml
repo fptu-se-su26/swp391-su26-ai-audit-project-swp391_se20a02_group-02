@@ -47,7 +47,7 @@ app:
 server:
   port: 8080
   servlet:
-    context-path: /
+    context-path: /api/v1
 
 # JWT Configuration
 # SECURITY: MUST set JWT_SECRET environment variable with 256-bit random key

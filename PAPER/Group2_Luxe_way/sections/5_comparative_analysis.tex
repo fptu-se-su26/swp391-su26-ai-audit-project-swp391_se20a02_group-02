@@ -1,0 +1,86 @@
+\section{Comparative Analysis of Related Research}
+
+\subsection{Comparative Table of Related Research Studies}
+
+Table~\ref{tab:lit_matrix} synthesizes the core literature evaluated
+during the LuxeWay design phase, mapping each work's contribution,
+limitations, and specific relevance to architectural and business
+decisions embedded in the platform.
+
+% table* spans both columns in IEEEtran two-column layout
+\begin{table*}[ht]
+\centering
+\caption{Comparative Matrix of Related Work}
+\label{tab:lit_matrix}
+\begin{tabular}{p{2.2cm} p{3.8cm} p{3cm} p{3cm} p{3.5cm}}
+\toprule
+\textbf{Research Paper} &
+\textbf{Main Contribution} &
+\textbf{Strengths} &
+\textbf{Limitations} &
+\textbf{Relation to LuxeWay} \\
+\midrule
+Gupta et al.\ \cite{gupta2025double} &
+Modern vehicle rental platform using MERN stack. &
+Structured UI/UX workflows and admin dashboards. &
+Centralized MongoDB creates single points of failure. &
+Foundational reference for RESTful API and role-based UI design. \\
+\midrule
+Madhusudan \cite{madhusudan2019applying} &
+Decentralized booking/payment on Ethereum with ECIES encryption. &
+High-integrity transactions and automated penalties. &
+Prohibitive gas fees and confirmation latency. &
+Informs escrow-based deposit logic and digital contract design. \\
+\midrule
+El~Hog et al.\ \cite{elhog2025decentralized} &
+Hybrid CarChain architecture (BSC + Firebase). &
+Optimized throughput and reduced intermediary costs. &
+Residual dependency on centralized storage. &
+Paradigm for minimizing transaction overhead. \\
+\midrule
+Soppert et al.\ \cite{soppert2024benefit} &
+Economic optimization model unifying CR and CS fleet usage. &
+Quantified 23\%--120\% revenue increase from hybrid models. &
+Scoped to B2C fleets; P2P legal dimensions unaddressed. &
+Validates the CR+CS hybrid listing strategy in LuxeWay. \\
+\midrule
+Neifer et al.\ \cite{neifer2024trust} &
+OBD telematics-driven reputation scoring for P2P rentals. &
+Objective, manipulation-resistant trust signals. &
+Requires physical OBD hardware per vehicle. &
+Conceptual basis for LuxeWay's multi-dimensional review model. \\
+\midrule
+Kauffman \& Naldi \cite{kauffman2020research} &
+Regulatory and economic landscape of sharing mobility. &
+Systematic mapping of sustainable growth boundaries. &
+Theoretical; no concrete system design. &
+Informs platform compliance posture and market positioning. \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\subsection{Synthesis and Design Implications}
+
+Three cross-cutting observations emerge from this analysis and directly
+shape LuxeWay's design:
+
+\textbf{Technology.} The contrast between blockchain-native
+solutions~\cite{madhusudan2019applying, elhog2025decentralized} and
+conventional web stacks~\cite{gupta2025double} reveals a trade-off
+between decentralization integrity and deployment pragmatism. LuxeWay
+adopts a conventional full-stack architecture (React~18 + Spring
+Boot~3 + SQL Server) while incorporating the \textit{behavioral
+principles} of blockchain design---immutable records, transparent audit
+trails, automated contracts---without on-chain execution overhead.
+
+\textbf{Business model.} Soppert et al.'s~\cite{soppert2024benefit}
+finding that hybrid CR+CS fleet management yields 23--120\% revenue
+improvement justifies LuxeWay's dual-ecosystem architecture supporting
+both daily car rental and shorter-duration motorbike sharing under one
+owner dashboard.
+
+\textbf{Trust infrastructure.} The spectrum from subjective reviews to
+telematics-driven scoring~\cite{neifer2024trust} identifies a practical
+middle ground: a structured multi-dimensional review protocol that
+increases signal richness without requiring per-vehicle hardware,
+preserving accessibility for individual private owners.

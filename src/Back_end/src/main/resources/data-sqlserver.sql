@@ -216,6 +216,51 @@ DELETE FROM motorbike_models;
 DELETE FROM motorbike_brands;
 
 DELETE FROM users;
+
+-- ============================================================
+-- CAR ECOSYSTEM SEED DATA
+-- car_brands → car_models → users (owners) → cars →
+-- car_specifications → car_locations → car_images
+-- ============================================================
+
+-- ====== CAR BRANDS ======
+INSERT INTO car_brands (id, name, country, logo_url, is_active, created_at) VALUES
+('CB01', N'Toyota',        N'Japan',       'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Toyota_carlogo.svg/320px-Toyota_carlogo.svg.png', 1, GETDATE()),
+('CB02', N'Honda',         N'Japan',       'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Honda_Logo.svg/320px-Honda_Logo.svg.png',  1, GETDATE()),
+('CB03', N'Mazda',         N'Japan',       'https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Mazda_logo.svg/320px-Mazda_logo.svg.png',  1, GETDATE()),
+('CB04', N'Hyundai',       N'South Korea', 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/27/Hyundai_Motor_Company_logo.svg/320px-Hyundai_Motor_Company_logo.svg.png', 1, GETDATE()),
+('CB05', N'Mercedes-Benz', N'Germany',     'https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Mercedes-Logo.svg/320px-Mercedes-Logo.svg.png', 1, GETDATE()),
+('CB06', N'BMW',           N'Germany',     'https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/BMW.svg/320px-BMW.svg.png',                 1, GETDATE()),
+('CB07', N'VinFast',       N'Vietnam',     'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/VinFast_logo.svg/320px-VinFast_logo.svg.png', 1, GETDATE()),
+('CB08', N'Ford',          N'USA',         'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Ford_logo_flat.svg/320px-Ford_logo_flat.svg.png', 1, GETDATE()),
+('CB09', N'Kia',           N'South Korea', 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/Kia-logo.svg/320px-Kia-logo.svg.png',     1, GETDATE()),
+('CB10', N'Mitsubishi',    N'Japan',       'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Mitsubishi_logo.svg/320px-Mitsubishi_logo.svg.png', 1, GETDATE());
+
+-- ====== CAR MODELS ======
+INSERT INTO car_models (id, brand_id, name, category, created_at) VALUES
+('CM01', 'CB01', N'Vios',      'sedan',   GETDATE()),
+('CM02', 'CB01', N'Camry',     'sedan',   GETDATE()),
+('CM03', 'CB01', N'Fortuner',  'suv',     GETDATE()),
+('CM04', 'CB01', N'Innova',    'mpv',     GETDATE()),
+('CM05', 'CB02', N'City',      'sedan',   GETDATE()),
+('CM06', 'CB02', N'CR-V',      'suv',     GETDATE()),
+('CM07', 'CB03', N'Mazda 3',   'sedan',   GETDATE()),
+('CM08', 'CB03', N'CX-5',      'suv',     GETDATE()),
+('CM09', 'CB04', N'Accent',    'economy', GETDATE()),
+('CM10', 'CB04', N'Tucson',    'suv',     GETDATE()),
+('CM11', 'CB04', N'Santa Fe',  'suv',     GETDATE()),
+('CM12', 'CB05', N'C200',      'luxury',  GETDATE()),
+('CM13', 'CB05', N'E300',      'luxury',  GETDATE()),
+('CM14', 'CB06', N'BMW 320i',  'luxury',  GETDATE()),
+('CM15', 'CB06', N'BMW X5',    'suv',     GETDATE()),
+('CM16', 'CB07', N'VF8',       'electric', GETDATE()),
+('CM17', 'CB07', N'VF9',       'electric', GETDATE()),
+('CM18', 'CB08', N'Ranger',    'pickup',  GETDATE()),
+('CM19', 'CB08', N'Everest',   'suv',     GETDATE()),
+('CM20', 'CB09', N'Morning',   'economy', GETDATE()),
+('CM21', 'CB10', N'Xpander',   'mpv',     GETDATE()),
+('CM22', 'CB10', N'Outlander', 'suv',     GETDATE());
+
 -- ======-- ====== USERS DATA (SQL Server UUID Format) ======
 -- Admin User
 INSERT INTO users (
@@ -533,8 +578,147 @@ VALUES (
         '2024-01-15 10:20:00',
         '2024-05-23 04:15:00'
     );
+-- ====== CARS DATA (New Ecosystem) ======
+-- Owners: E5F6 = Phạm Minh D (Hà Nội), F6G7 = Hoàng Thị E (HCM), G7H8 = Saigon Car Rental, H8I9 = Hanoi Auto Rental
+INSERT INTO cars (id, model_id, owner_id, name, license_plate, price_per_day, deposit, status, rating, total_reviews, total_bookings, is_verified, is_featured, created_at) VALUES
+('CAR-001', 'CM05', 'E5F6G7H8-I9J0-1234-EFGH-567890123456', N'Honda City 2023 - Sedan Tiết Kiệm',    '30H-11111', 800000,  3000000, 'AVAILABLE', 4.80, 25, 18, 1, 1, GETDATE()),
+('CAR-002', 'CM01', 'E5F6G7H8-I9J0-1234-EFGH-567890123456', N'Toyota Vios 2022 - Đi Phố Thần Thánh', '30H-22222', 750000,  2800000, 'AVAILABLE', 4.90, 31, 22, 1, 0, GETDATE()),
+('CAR-003', 'CM07', 'E5F6G7H8-I9J0-1234-EFGH-567890123456', N'Mazda 3 2023 - Sedan Thể Thao',         '30H-33333', 950000,  3500000, 'AVAILABLE', 4.85, 19, 14, 1, 1, GETDATE()),
+('CAR-004', 'CM12', 'F6G7H8I9-J0K1-2345-FGHI-678901234567', N'Mercedes C200 2021 - Hạng Sang VIP',    '51A-99999', 2500000, 8000000, 'AVAILABLE', 4.95, 42, 28, 1, 1, GETDATE()),
+('CAR-005', 'CM14', 'F6G7H8I9-J0K1-2345-FGHI-678901234567', N'BMW 320i 2022 - Luxury Sedan',          '51A-88888', 2200000, 7500000, 'AVAILABLE', 4.88, 33, 21, 1, 1, GETDATE()),
+('CAR-006', 'CM15', 'F6G7H8I9-J0K1-2345-FGHI-678901234567', N'BMW X5 2022 - SUV Hạng Sang',           '51A-77777', 3500000,11000000, 'AVAILABLE', 4.92, 27, 16, 1, 1, GETDATE()),
+('CAR-007', 'CM02', 'G7H8I9J0-K1L2-3456-GHIJ-789012345678', N'Toyota Camry 2023 - Business Class',    '51C-77777', 1800000, 6000000, 'AVAILABLE', 4.92, 67, 45, 1, 1, GETDATE()),
+('CAR-008', 'CM06', 'G7H8I9J0-K1L2-3456-GHIJ-789012345678', N'Honda CR-V 2023 - SUV Gia Đình 7 Chỗ', '51D-66666', 1500000, 5000000, 'AVAILABLE', 4.88, 52, 38, 1, 0, GETDATE()),
+('CAR-009', 'CM16', 'G7H8I9J0-K1L2-3456-GHIJ-789012345678', N'VinFast VF8 2023 - Xe Điện Thông Minh','51E-55555', 2200000, 7000000, 'AVAILABLE', 4.75, 28, 15, 1, 1, GETDATE()),
+('CAR-010', 'CM08', 'H8I9J0K1-L2M3-4567-HIJK-890123456789', N'Mazda CX-5 2023 - SUV Nhật Cao Cấp',   '30C-44444', 1600000, 5500000, 'AVAILABLE', 4.90, 41, 29, 1, 1, GETDATE()),
+('CAR-011', 'CM10', 'H8I9J0K1-L2M3-4567-HIJK-890123456789', N'Hyundai Tucson 2022 - Crossover Hiện Đại','30D-33333',1400000, 4800000, 'AVAILABLE', 4.82, 36, 24, 1, 0, GETDATE()),
+('CAR-012', 'CM03', 'H8I9J0K1-L2M3-4567-HIJK-890123456789', N'Toyota Fortuner 2022 - SUV Địa Hình',  '30E-22222', 2000000, 6500000, 'AVAILABLE', 4.78, 29, 18, 1, 0, GETDATE()),
+('CAR-013', 'CM17', 'G7H8I9J0-K1L2-3456-GHIJ-789012345678', N'VinFast VF9 2023 - SUV Điện 7 Chỗ',   '51F-44444', 2800000, 9000000, 'AVAILABLE', 4.70, 18, 11, 1, 1, GETDATE()),
+('CAR-014', 'CM13', 'F6G7H8I9-J0K1-2345-FGHI-678901234567', N'Mercedes E300 2022 - Executive Sedan',  '51B-33333', 3200000,10000000, 'AVAILABLE', 4.96, 15, 9,  1, 1, GETDATE()),
+('CAR-015', 'CM11', 'G7H8I9J0-K1L2-3456-GHIJ-789012345678', N'Hyundai Santa Fe 2023 - SUV 7 Chỗ',   '51G-22222', 1700000, 5800000, 'AVAILABLE', 4.84, 23, 17, 1, 0, GETDATE()),
+('CAR-016', 'CM19', 'H8I9J0K1-L2M3-4567-HIJK-890123456789', N'Ford Everest 2022 - SUV Du Lịch 7 Chỗ','30F-11111', 2000000, 6500000, 'AVAILABLE', 4.78, 33, 18, 1, 0, GETDATE()),
+('CAR-017', 'CM09', 'E5F6G7H8-I9J0-1234-EFGH-567890123456', N'Hyundai Accent 2023 - Giá Tốt Hà Nội', '30G-99999', 680000,  2500000, 'AVAILABLE', 4.65, 14, 10, 1, 0, GETDATE()),
+('CAR-018', 'CM21', 'G7H8I9J0-K1L2-3456-GHIJ-789012345678', N'Mitsubishi Xpander 2023 - MPV 7 Chỗ', '51H-88888', 1200000, 4000000, 'AVAILABLE', 4.80, 31, 22, 1, 0, GETDATE());
+
+-- ====== CAR SPECIFICATIONS ======
+INSERT INTO car_specifications (id, car_id, seats, doors, transmission, fuel_type, has_chauffeur, airport_delivery, electric, hybrid) VALUES
+('CS-001', 'CAR-001', 5, 4, 'AUTOMATIC', 'GASOLINE', 0, 0, 0, 0),
+('CS-002', 'CAR-002', 5, 4, 'AUTOMATIC', 'GASOLINE', 0, 1, 0, 0),
+('CS-003', 'CAR-003', 5, 4, 'AUTOMATIC', 'GASOLINE', 0, 0, 0, 0),
+('CS-004', 'CAR-004', 5, 4, 'AUTOMATIC', 'GASOLINE', 1, 1, 0, 0),
+('CS-005', 'CAR-005', 5, 4, 'AUTOMATIC', 'GASOLINE', 0, 1, 0, 0),
+('CS-006', 'CAR-006', 5, 4, 'AUTOMATIC', 'GASOLINE', 1, 1, 0, 0),
+('CS-007', 'CAR-007', 5, 4, 'AUTOMATIC', 'GASOLINE', 1, 1, 0, 0),
+('CS-008', 'CAR-008', 7, 4, 'AUTOMATIC', 'GASOLINE', 0, 1, 0, 0),
+('CS-009', 'CAR-009', 5, 4, 'AUTOMATIC', 'ELECTRIC',  0, 1, 1, 0),
+('CS-010', 'CAR-010', 5, 4, 'AUTOMATIC', 'GASOLINE', 0, 0, 0, 0),
+('CS-011', 'CAR-011', 5, 4, 'AUTOMATIC', 'GASOLINE', 0, 0, 0, 0),
+('CS-012', 'CAR-012', 7, 4, 'AUTOMATIC', 'DIESEL',   0, 1, 0, 0),
+('CS-013', 'CAR-013', 7, 4, 'AUTOMATIC', 'ELECTRIC',  0, 1, 1, 0),
+('CS-014', 'CAR-014', 5, 4, 'AUTOMATIC', 'GASOLINE', 1, 1, 0, 0),
+('CS-015', 'CAR-015', 7, 4, 'AUTOMATIC', 'GASOLINE', 0, 1, 0, 0),
+('CS-016', 'CAR-016', 7, 4, 'AUTOMATIC', 'DIESEL',   0, 1, 0, 0),
+('CS-017', 'CAR-017', 5, 4, 'AUTOMATIC', 'GASOLINE', 0, 0, 0, 0),
+('CS-018', 'CAR-018', 7, 4, 'AUTOMATIC', 'GASOLINE', 0, 0, 0, 0);
+
+-- ====== CAR LOCATIONS ======
+INSERT INTO car_locations (id, car_id, city, address, latitude, longitude) VALUES
+('CL-001', 'CAR-001', N'Hà Nội',       N'123 Đường Láng, Đống Đa, Hà Nội',               21.02850000, 105.85420000),
+('CL-002', 'CAR-002', N'Hà Nội',       N'456 Phố Huế, Hai Bà Trưng, Hà Nội',             21.02450000, 105.85250000),
+('CL-003', 'CAR-003', N'Hà Nội',       N'789 Trần Duy Hưng, Cầu Giấy, Hà Nội',           21.03130000, 105.79810000),
+('CL-004', 'CAR-004', N'Hồ Chí Minh',  N'123 Nguyễn Huệ, Quận 1, TP.HCM',               10.77690000, 106.70090000),
+('CL-005', 'CAR-005', N'Hồ Chí Minh',  N'456 Lê Lợi, Quận 1, TP.HCM',                   10.77560000, 106.70190000),
+('CL-006', 'CAR-006', N'Hồ Chí Minh',  N'789 Nguyễn Văn Cừ, Quận 5, TP.HCM',            10.75890000, 106.67890000),
+('CL-007', 'CAR-007', N'Hồ Chí Minh',  N'321 Võ Văn Tần, Quận 3, TP.HCM',               10.77560000, 106.69170000),
+('CL-008', 'CAR-008', N'Hồ Chí Minh',  N'654 Lê Văn Sỹ, Quận 3, TP.HCM',               10.78690000, 106.68310000),
+('CL-009', 'CAR-009', N'Hồ Chí Minh',  N'987 Điện Biên Phủ, Bình Thạnh, TP.HCM',        10.80140000, 106.71220000),
+('CL-010', 'CAR-010', N'Hà Nội',       N'987 Phạm Hùng, Nam Từ Liêm, Hà Nội',            21.03780000, 105.78040000),
+('CL-011', 'CAR-011', N'Hà Nội',       N'147 Trần Duy Hưng, Cầu Giấy, Hà Nội',           21.03130000, 105.79810000),
+('CL-012', 'CAR-012', N'Hà Nội',       N'369 Nguyễn Trãi, Thanh Xuân, Hà Nội',            21.00580000, 105.80860000),
+('CL-013', 'CAR-013', N'Hồ Chí Minh',  N'258 Phan Xích Long, Phú Nhuận, TP.HCM',         10.80560000, 106.69220000),
+('CL-014', 'CAR-014', N'Hồ Chí Minh',  N'36 Tôn Đức Thắng, Quận 1, TP.HCM',             10.77230000, 106.70450000),
+('CL-015', 'CAR-015', N'Hồ Chí Minh',  N'12 Lý Thường Kiệt, Quận 10, TP.HCM',           10.77010000, 106.67950000),
+('CL-016', 'CAR-016', N'Hà Nội',       N'258 Tô Hiệu, Lê Chân, Hải Phòng',              20.84490000, 106.68810000),
+('CL-017', 'CAR-017', N'Hà Nội',       N'91 Kim Mã, Ba Đình, Hà Nội',                    21.03200000, 105.83610000),
+('CL-018', 'CAR-018', N'Hồ Chí Minh',  N'168 Hoàng Hoa Thám, Bình Thạnh, TP.HCM',       10.80720000, 106.70180000);
+
+-- ====== CAR IMAGES ======
+-- Mỗi xe có 3 ảnh (1 primary + 2 phụ) lấy từ Unsplash
+INSERT INTO car_images (id, car_id, url, is_primary, sort_order) VALUES
+-- CAR-001: Honda City (sedan trắng)
+('CI-001-1','CAR-001','https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=900&auto=format&fit=crop',1,1),
+('CI-001-2','CAR-001','https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=900&auto=format&fit=crop',0,2),
+('CI-001-3','CAR-001','https://images.unsplash.com/photo-1590362891991-f776e747a588?w=900&auto=format&fit=crop',0,3),
+-- CAR-002: Toyota Vios (sedan bạc)
+('CI-002-1','CAR-002','https://images.unsplash.com/photo-1590362891991-f776e747a588?w=900&auto=format&fit=crop',1,1),
+('CI-002-2','CAR-002','https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=900&auto=format&fit=crop',0,2),
+('CI-002-3','CAR-002','https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=900&auto=format&fit=crop',0,3),
+-- CAR-003: Mazda 3 (sedan đỏ)
+('CI-003-1','CAR-003','https://images.unsplash.com/photo-1617788138017-80ad40651399?w=900&auto=format&fit=crop',1,1),
+('CI-003-2','CAR-003','https://images.unsplash.com/photo-1532581140115-3e355d1ed1de?w=900&auto=format&fit=crop',0,2),
+('CI-003-3','CAR-003','https://images.unsplash.com/photo-1543796076-c8c6fe34e4be?w=900&auto=format&fit=crop',0,3),
+-- CAR-004: Mercedes C200 (đen sang trọng)
+('CI-004-1','CAR-004','https://images.unsplash.com/photo-1549924231-f129b911e442?w=900&auto=format&fit=crop',1,1),
+('CI-004-2','CAR-004','https://images.unsplash.com/photo-1606152421802-db97b9c7a11b?w=900&auto=format&fit=crop',0,2),
+('CI-004-3','CAR-004','https://images.unsplash.com/photo-1555215695-3004980ad54e?w=900&auto=format&fit=crop',0,3),
+-- CAR-005: BMW 320i (luxury sedan)
+('CI-005-1','CAR-005','https://images.unsplash.com/photo-1556189250-72ba954cfc2b?w=900&auto=format&fit=crop',1,1),
+('CI-005-2','CAR-005','https://images.unsplash.com/photo-1603584173870-7f23fdae1b7a?w=900&auto=format&fit=crop',0,2),
+('CI-005-3','CAR-005','https://images.unsplash.com/photo-1617786668987-0fe1e22c44c4?w=900&auto=format&fit=crop',0,3),
+-- CAR-006: BMW X5 (SUV xanh dương)
+('CI-006-1','CAR-006','https://images.unsplash.com/photo-1519245659620-e859806a8d3b?w=900&auto=format&fit=crop',1,1),
+('CI-006-2','CAR-006','https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?w=900&auto=format&fit=crop',0,2),
+('CI-006-3','CAR-006','https://images.unsplash.com/photo-1502877338535-766e1452684a?w=900&auto=format&fit=crop',0,3),
+-- CAR-007: Toyota Camry (đen business)
+('CI-007-1','CAR-007','https://images.unsplash.com/photo-1508974239320-0a029497e820?w=900&auto=format&fit=crop',1,1),
+('CI-007-2','CAR-007','https://images.unsplash.com/photo-1609521263047-f8f205293f24?w=900&auto=format&fit=crop',0,2),
+('CI-007-3','CAR-007','https://images.unsplash.com/photo-1471444928139-48c5bf5173f8?w=900&auto=format&fit=crop',0,3),
+-- CAR-008: Honda CR-V (SUV trắng 7 chỗ)
+('CI-008-1','CAR-008','https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=900&auto=format&fit=crop',1,1),
+('CI-008-2','CAR-008','https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=900&auto=format&fit=crop',0,2),
+('CI-008-3','CAR-008','https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=900&auto=format&fit=crop',0,3),
+-- CAR-009: VinFast VF8 (điện xanh lá)
+('CI-009-1','CAR-009','https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=900&auto=format&fit=crop',1,1),
+('CI-009-2','CAR-009','https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=900&auto=format&fit=crop',0,2),
+('CI-009-3','CAR-009','https://images.unsplash.com/photo-1617788138017-80ad40651399?w=900&auto=format&fit=crop',0,3),
+-- CAR-010: Mazda CX-5 (SUV đỏ)
+('CI-010-1','CAR-010','https://images.unsplash.com/photo-1614025072397-c81fc03ac5b2?w=900&auto=format&fit=crop',1,1),
+('CI-010-2','CAR-010','https://images.unsplash.com/photo-1543465077-db45d34b88a5?w=900&auto=format&fit=crop',0,2),
+('CI-010-3','CAR-010','https://images.unsplash.com/photo-1491921125492-f0b9c835b699?w=900&auto=format&fit=crop',0,3),
+-- CAR-011: Hyundai Tucson (crossover xám)
+('CI-011-1','CAR-011','https://images.unsplash.com/photo-1546614042-7df3c24c9e5d?w=900&auto=format&fit=crop',1,1),
+('CI-011-2','CAR-011','https://images.unsplash.com/photo-1502161254066-6c74afbf07aa?w=900&auto=format&fit=crop',0,2),
+('CI-011-3','CAR-011','https://images.unsplash.com/photo-1493238792000-8113da705763?w=900&auto=format&fit=crop',0,3),
+-- CAR-012: Toyota Fortuner (SUV 7 chỗ nâu)
+('CI-012-1','CAR-012','https://images.unsplash.com/photo-1519245659620-e859806a8d3b?w=900&auto=format&fit=crop',1,1),
+('CI-012-2','CAR-012','https://images.unsplash.com/photo-1502877338535-766e1452684a?w=900&auto=format&fit=crop',0,2),
+('CI-012-3','CAR-012','https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=900&auto=format&fit=crop',0,3),
+-- CAR-013: VinFast VF9 (SUV điện 7 chỗ)
+('CI-013-1','CAR-013','https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=900&auto=format&fit=crop',1,1),
+('CI-013-2','CAR-013','https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=900&auto=format&fit=crop',0,2),
+('CI-013-3','CAR-013','https://images.unsplash.com/photo-1468818419534-f9f9e2310f4e?w=900&auto=format&fit=crop',0,3),
+-- CAR-014: Mercedes E300 (executive đen)
+('CI-014-1','CAR-014','https://images.unsplash.com/photo-1606152421802-db97b9c7a11b?w=900&auto=format&fit=crop',1,1),
+('CI-014-2','CAR-014','https://images.unsplash.com/photo-1549924231-f129b911e442?w=900&auto=format&fit=crop',0,2),
+('CI-014-3','CAR-014','https://images.unsplash.com/photo-1508974239320-0a029497e820?w=900&auto=format&fit=crop',0,3),
+-- CAR-015: Hyundai Santa Fe (SUV 7 chỗ)
+('CI-015-1','CAR-015','https://images.unsplash.com/photo-1546614042-7df3c24c9e5d?w=900&auto=format&fit=crop',1,1),
+('CI-015-2','CAR-015','https://images.unsplash.com/photo-1493238792000-8113da705763?w=900&auto=format&fit=crop',0,2),
+('CI-015-3','CAR-015','https://images.unsplash.com/photo-1502161254066-6c74afbf07aa?w=900&auto=format&fit=crop',0,3),
+-- CAR-016: Ford Everest (SUV 7 chỗ nâu)
+('CI-016-1','CAR-016','https://images.unsplash.com/photo-1502877338535-766e1452684a?w=900&auto=format&fit=crop',1,1),
+('CI-016-2','CAR-016','https://images.unsplash.com/photo-1519245659620-e859806a8d3b?w=900&auto=format&fit=crop',0,2),
+('CI-016-3','CAR-016','https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?w=900&auto=format&fit=crop',0,3),
+-- CAR-017: Hyundai Accent (economy đỏ)
+('CI-017-1','CAR-017','https://images.unsplash.com/photo-1617788138017-80ad40651399?w=900&auto=format&fit=crop',1,1),
+('CI-017-2','CAR-017','https://images.unsplash.com/photo-1543796076-c8c6fe34e4be?w=900&auto=format&fit=crop',0,2),
+('CI-017-3','CAR-017','https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=900&auto=format&fit=crop',0,3),
+-- CAR-018: Mitsubishi Xpander (MPV 7 chỗ)
+('CI-018-1','CAR-018','https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=900&auto=format&fit=crop',1,1),
+('CI-018-2','CAR-018','https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=900&auto=format&fit=crop',0,2),
+('CI-018-3','CAR-018','https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=900&auto=format&fit=crop',0,3);
+
 -- ====== VEHICLES DATA ======
--- Individual Owner Vehicles
 INSERT INTO vehicles (
         id,
         owner_id,
@@ -2147,46 +2331,6 @@ PRINT 'Ready to start LuxeWay backend development! 🚗✨';
 -- ============================================================
 -- LUXEWAY ECOSYSTEM SEED DATA (Bounded Contexts)
 -- ============================================================
-
--- Car Brands
-INSERT INTO car_brands (id, name, country, logo_url, is_active) VALUES
-('CB-1', 'Toyota', 'Japan', 'https://www.toyota.com.vn/logo.png', 1),
-('CB-2', 'Honda', 'Japan', 'https://www.honda.com.vn/logo.png', 1),
-('CB-3', 'Ford', 'USA', 'https://www.ford.com.vn/logo.png', 1),
-('CB-4', 'Mercedes-Benz', 'Germany', 'https://www.mercedes-benz.com.vn/logo.png', 1),
-('CB-5', 'VinFast', 'Vietnam', 'https://vinfastauto.com/logo.png', 1);
-
--- Car Models
-INSERT INTO car_models (id, brand_id, name, category) VALUES
-('CM-1', 'CB-1', 'Camry', 'SEDAN'),
-('CM-2', 'CB-2', 'Civic', 'SEDAN'),
-('CM-3', 'CB-3', 'Ranger', 'PICKUP'),
-('CM-4', 'CB-4', 'C200', 'LUXURY'),
-('CM-5', 'CB-5', 'VF8', 'ELECTRIC_CAR');
-
--- Cars
-INSERT INTO cars (id, model_id, owner_id, name, license_plate, price_per_day, deposit, status, rating, total_reviews, total_bookings, is_verified, is_featured) VALUES
-('CAR-1', 'CM-1', 'E5F6G7H8-I9J0-1234-EFGH-567890123456', 'Toyota Camry 2.5Q 2023', '30F-999.99', 1200000, 10000000, 'AVAILABLE', 5.0, 0, 0, 1, 1),
-('CAR-2', 'CM-2', 'E5F6G7H8-I9J0-1234-EFGH-567890123456', 'Honda Civic RS 2022', '30G-888.88', 900000, 5000000, 'AVAILABLE', 4.8, 0, 0, 1, 0),
-('CAR-3', 'CM-5', 'E5F6G7H8-I9J0-1234-EFGH-567890123456', 'VinFast VF8 Plus 2023', '30H-777.77', 1500000, 15000000, 'AVAILABLE', 4.9, 0, 0, 1, 1);
-
--- Car Specs
-INSERT INTO car_specifications (id, car_id, seats, doors, transmission, fuel_type, has_chauffeur, airport_delivery, electric, hybrid) VALUES
-('CS-1', 'CAR-1', 5, 4, 'AUTOMATIC', 'GASOLINE', 0, 1, 0, 0),
-('CS-2', 'CAR-2', 5, 4, 'AUTOMATIC', 'GASOLINE', 0, 0, 0, 0),
-('CS-3', 'CAR-3', 5, 4, 'AUTOMATIC', 'ELECTRIC', 0, 1, 1, 0);
-
--- Car Locations
-INSERT INTO car_locations (id, car_id, city, address, latitude, longitude) VALUES
-('CL-1', 'CAR-1', 'Ha Noi', 'My Dinh, Nam Tu Liem', 21.0285, 105.8542),
-('CL-2', 'CAR-2', 'Ha Noi', 'Tay Ho, Ha Noi', 21.0585, 105.8042),
-('CL-3', 'CAR-3', 'Ha Noi', 'Cau Giay, Ha Noi', 21.0385, 105.7842);
-
--- Car Images
-INSERT INTO car_images (id, car_id, url, is_primary, sort_order) VALUES
-('CI-1', 'CAR-1', 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?q=80&w=800&auto=format&fit=crop', 1, 0),
-('CI-2', 'CAR-2', 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?q=80&w=800&auto=format&fit=crop', 1, 0),
-('CI-3', 'CAR-3', 'https://images.unsplash.com/photo-1563720223185-11003d516935?q=80&w=800&auto=format&fit=crop', 1, 0);
 
 -- Motorbike Brands
 INSERT INTO motorbike_brands (id, name, country, logo_url, is_active) VALUES
