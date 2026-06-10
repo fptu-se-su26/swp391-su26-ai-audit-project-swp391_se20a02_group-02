@@ -68,7 +68,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
       }, 200);
 
       const token = localStorage.getItem('luxeway_access_token');
-      const response = await fetch('http://localhost:8080/api/v1/upload/vehicle-image', {
+      const response = await fetch('http://localhost:8080/upload/vehicle-image', {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,

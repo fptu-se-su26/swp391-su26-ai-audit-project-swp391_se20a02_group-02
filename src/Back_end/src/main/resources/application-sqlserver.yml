@@ -8,10 +8,10 @@ spring:
     init:
       schema-locations: []
       data-locations: classpath:data-sqlserver.sql
-      mode: always
+      mode: never
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: update
     show-sql: true
     properties:
       hibernate:

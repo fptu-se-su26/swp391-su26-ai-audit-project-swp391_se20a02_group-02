@@ -11,16 +11,18 @@ spring:
   # File Upload Configuration
   servlet:
     multipart:
-      max-file-size: 10MB
+      enabled: true
+      max-file-size: 20MB
       max-request-size: 50MB
+      file-size-threshold: 2KB
 
   # Mail Configuration (Gmail SMTP)
   # SECURITY: Use environment variables - NEVER hardcode credentials
   mail:
     host: smtp.gmail.com
     port: 587
-    username: ${MAIL_USERNAME}
-    password: ${MAIL_PASSWORD}
+    username: ${MAIL_USERNAME:default_mail_username}
+    password: ${MAIL_PASSWORD:default_mail_password}
     properties:
       mail:
         smtp:
@@ -33,8 +35,8 @@ spring:
       client:
         registration:
           google:
-            client-id: ${GOOGLE_CLIENT_ID}
-            client-secret: ${GOOGLE_CLIENT_SECRET}
+            client-id: ${GOOGLE_CLIENT_ID:default_client_id}
+            client-secret: ${GOOGLE_CLIENT_SECRET:default_client_secret}
             scope:
               - email
               - profile
@@ -48,12 +50,14 @@ server:
   port: 8080
   servlet:
     context-path: /
+  tomcat:
+    max-swallow-size: -1    # -1 = unlimited; prevents "Failed to parse multipart" for large images
 
 # JWT Configuration
 # SECURITY: MUST set JWT_SECRET environment variable with 256-bit random key
 # Generate with: openssl rand -base64 32
 jwt:
-  secret: ${JWT_SECRET}
+  secret: ${JWT_SECRET:your_very_long_secure_secret_key_for_jwt_signing_must_be_256_bits_12345}
   expiration: ${JWT_EXPIRATION:86400000}       # 24 hours in milliseconds
   refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000} # 7 days in milliseconds
 
@@ -98,15 +102,15 @@ cors:
 # SECURITY: MUST set payment gateway credentials via environment variables
 payment:
   vnpay:
-    tmn-code: ${VNPAY_TMN_CODE}
-    secret-key: ${VNPAY_SECRET_KEY}
+    tmn-code: ${VNPAY_TMN_CODE:default_tmn_code}
+    secret-key: ${VNPAY_SECRET_KEY:default_secret_key}
     url: ${VNPAY_URL:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
     return-url: ${FRONTEND_URL}/payment/vnpay/return
     # VNPay callback IP whitelist for security (comma-separated)
     allowed-ips: ${VNPAY_ALLOWED_IPS:203.171.19.146,203.171.19.147,203.171.19.148}
   stripe:
-    public-key: ${STRIPE_PUBLIC_KEY}
-    secret-key: ${STRIPE_SECRET_KEY}
+    public-key: ${STRIPE_PUBLIC_KEY:default_stripe_public_key}
+    secret-key: ${STRIPE_SECRET_KEY:default_stripe_secret_key}
 
 # Business Rules
 business:
@@ -119,3 +123,12 @@ business:
     service-fee-rate: 0.12
     tax-rate: 0.08
     platform-commission: 0.15
+
+# VNPT eKYC Configuration
+vnpt:
+  ekyc:
+    base-url: ${VNPT_EKYC_BASE_URL:https://ekyc.vnpt.vn}
+    token-id: ${VNPT_TOKEN_ID:52db9aed-8763-3d8e-e063-62199f0a3e08}
+    token-key: ${VNPT_TOKEN_KEY:MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBALVuekwVJJjkMIVKS35atgsg9tFrA44jYGc/G0t3TWYnH6P8S/J/XzEBd3vmosuYwQDlUj0mshfgcLlm+WHtJfsCAwEAAQ==}
+    access-token: ${VNPT_ACCESS_TOKEN:eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0cmFuc2FjdGlvbl9pZCI6IjFjMmFjOWVjLTA5ODYtNDRmZi1hNDg5LWNiOTc0ZTUwMGY3NSIsInN1YiI6IjIwOTlkN2E2LTVhNWMtMTFmMS05ZGQzLWE5NDJiMGQ0ODE5ZCIsImF1ZCI6WyJyZXN0c2VydmljZSJdLCJ1c2VyX25hbWUiOiJ0cnVuZ2hvMjAwNTBAZ21haWwuY29tIiwic2NvcGUiOlsicmVhZCJdLCJpc3MiOiJodHRwczovL2xvY2FsaG9zdCIsIm5hbWUiOiJ0cnVuZ2hvMjAwNTBAZ21haWwuY29tIiwiZXhwIjoxNzgxMTU4MjY4LCJ1dWlkX2FjY291bnQiOiIyMDk5ZDdhNi01YTVjLTExZjEtOWRkMy1hOTQyYjBkNDgxOWQiLCJhdXRob3JpdGllcyI6WyJVU0VSIl0sImp0aSI6IjRlODYwOWExLTMxNDctNDg5MC04ZWIwLWE4NjA4NGE4NTlhYiIsImNsaWVudF9pZCI6ImNsaWVudGFwcCJ9.3IuLddaIQihUqOXouvUgVo6r0dFFIw4yUGRR6XLj8HGeJx1TTC2QSFGtcjmblddDU4MrRuYfnnLjfncOf8BdlwqS0JcE5OitQibj0znVDZlOC2p4ZevGTB_97NugaV1eq9LxcNJQzS1teKC6ipubFoWJQ3X4uaTKS9QnhvCfFpIQSuj9I5wLNEcglAvYJwYH1WXKOS4nnZ0XsKFLCDhnAJuSKBTVIa8rWWkBSWY7VPudtokExuRKAdO6NywG6yyHMT1RwQil_SXBdo6wz5BHy0l4na9Xi95p4VD25e4dz4BEoLt4V3ZLTC7SFddbEYJW7Eweb1OHIfRrw8TcAC-6IA}
+    public-key-ca: ${VNPT_PUBLIC_KEY_CA:MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBANjYb9TM3EYMtP+hyED7G3se+64uuyPPnShYTJ5VsNa9LOEaF7a/2ZBIdnR+GjYjKWfbEyc+cFwT2GOAMaEjgP0CAwEAAQ==}
