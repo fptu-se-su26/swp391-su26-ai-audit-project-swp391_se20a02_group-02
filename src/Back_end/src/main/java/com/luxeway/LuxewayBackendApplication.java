@@ -14,8 +14,8 @@ public class LuxewayBackendApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(LuxewayBackendApplication.class, args);
-        System.out.println("🚗 LuxeWay Backend is running on http://localhost:8080/api/v1");
-        System.out.println("📚 Swagger UI: http://localhost:8080/api/v1/swagger-ui.html");
-        System.out.println("🔧 API Docs: http://localhost:8080/api/v1/api-docs");
+        System.out.println("🚗 LuxeWay Backend is running on http://localhost:8080");
+        System.out.println("📚 Swagger UI: http://localhost:8080/swagger-ui.html");
+        System.out.println("🔧 API Docs: http://localhost:8080/api-docs");
     }
 }

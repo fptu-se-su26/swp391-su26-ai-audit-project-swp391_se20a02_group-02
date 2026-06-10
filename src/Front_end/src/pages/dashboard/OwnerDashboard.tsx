@@ -859,7 +859,7 @@ export const VehicleFormPage: React.FC = () => {
                     formData.append('file', file);
                     try {
                       const token = localStorage.getItem('luxeway_access_token');
-                      const res = await fetch('http://localhost:8080/api/v1/upload/vehicle-image', {
+                      const res = await fetch('http://localhost:8080/upload/vehicle-image', {
                         method: 'POST',
                         headers: token ? { Authorization: `Bearer ${token}` } : {},
                         body: formData,

@@ -45,7 +45,7 @@ const GoogleLoginButton: React.FC<{ onSuccess?: () => void }> = () => {
     }
     // Redirect directly to the Spring Security OAuth2 authorization endpoint
     const backendUrl = (import.meta as any).env?.VITE_API_URL 
-      ? (import.meta as any).env.VITE_API_URL.replace('/api/v1', '') 
+      ? (import.meta as any).env.VITE_API_URL.replace('', '') 
       : 'http://localhost:8080';
     window.location.href = `${backendUrl}/oauth2/authorization/google`;
   };

@@ -55,6 +55,20 @@ public class UserDocument {
     @Column(name = "rejection_reason", columnDefinition = "TEXT")
     private String rejectionReason;
 
+    // ===== eKYC fields =====
+
+    @Column(name = "ekyc_raw_data", columnDefinition = "TEXT")
+    private String ekycRawData;
+
+    @Column(name = "ekyc_id_number", length = 20)
+    private String ekycIdNumber;
+
+    @Column(name = "ekyc_full_name", length = 200)
+    private String ekycFullName;
+
+    @Column(name = "ekyc_dob", length = 20)
+    private String ekycDob;
+
     @PrePersist
     private void prePersist() {
         if (id == null) {

@@ -43,7 +43,7 @@ const MessengerPage: React.FC = () => {
     });
 
     // Establish WebSocket Connection via STOMP/SockJS
-    const socket = new SockJS('http://localhost:8080/api/v1/ws');
+    const socket = new SockJS('http://localhost:8080/ws');
     const stompClient = Stomp.over(socket);
     stompClient.debug = () => {}; // Mute debug logs for visual neatness
 

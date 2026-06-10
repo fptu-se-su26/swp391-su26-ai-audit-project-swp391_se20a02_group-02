@@ -1,5 +1,5 @@
 // API Configuration for LuxeWay Backend
-const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8080/api/v1';
+const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8080';
 
 // Token storage keys (must match authService.ts)
 const TOKEN_KEY = 'luxeway_access_token';
@@ -64,8 +64,10 @@ class ApiClient {
     
     const token = localStorage.getItem(TOKEN_KEY);
     const lang = localStorage.getItem('language') || 'en';
+    // Determine if body is FormData; if so, let the browser set appropriate Content-Type with boundary
+    const isFormData = options.body instanceof FormData;
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       'Accept-Language': lang,
       ...(options.headers as Record<string, string>),
     };
@@ -158,7 +160,14 @@ class ApiClient {
   }
 
   async post<T>(endpoint: string, body: any, options?: RequestInit) {
-    return this.request<T>(endpoint, { ...options, method: 'POST', body: JSON.stringify(body) });
+    // Default POST for JSON payloads
+    const jsonBody = typeof body === 'object' && !(body instanceof FormData) ? JSON.stringify(body) : body;
+    return this.request<T>(endpoint, { ...options, method: 'POST', body: jsonBody });
+  }
+
+  // Helper for multipart/form-data uploads (e.g., eKYC scans)
+  async postForm<T>(endpoint: string, formData: FormData, options?: RequestInit) {
+    return this.request<T>(endpoint, { ...options, method: 'POST', body: formData });
   }
 
   async put<T>(endpoint: string, body: any, options?: RequestInit) {

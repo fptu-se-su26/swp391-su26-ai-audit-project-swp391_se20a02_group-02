@@ -168,8 +168,10 @@ public class SecurityConfig {
                     "/cars/**", "/api/v1/cars/**",
                     "/motorbikes/**", "/api/v1/motorbikes/**"
                 ).hasAnyRole("OWNER", "ADMIN")
-                // Upload endpoint requires authentication
-                .requestMatchers(HttpMethod.POST, "/upload", "/upload/**", "/users/documents", "/api/v1/users/documents").authenticated()
+                // Upload and eKYC endpoints require authentication
+                .requestMatchers(HttpMethod.POST, "/upload", "/upload/**", "/users/documents", "/api/v1/users/documents",
+                        "/ekyc/**", "/api/v1/ekyc/**").authenticated()
+                .requestMatchers(HttpMethod.GET, "/ekyc/**", "/api/v1/ekyc/**").authenticated()
                 // All other requests must be authenticated
                 .anyRequest().authenticated()
             )

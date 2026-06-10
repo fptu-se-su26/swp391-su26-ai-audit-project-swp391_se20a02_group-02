@@ -6,7 +6,7 @@ import { motorbikeService } from './motorbikeService';
 // Storage key for wishlist fallback since backend may not have a dedicated endpoint yet
 const WISHLIST_KEY = 'luxeway_wishlist';
 
-const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8080/api/v1';
+const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8080';
 
 const resolveImageUrl = (url: string | null | undefined): string => {
   if (!url) return '';

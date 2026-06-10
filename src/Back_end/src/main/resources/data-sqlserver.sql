@@ -174,7 +174,7 @@ INSERT INTO vehicle_models (id, brand_id, model_name, vehicle_type, category, en
 ('M28', 'B13', N'BMW 320i', 'CAR', 'LUXURY', NULL, 5, 2000000, 3000000, 1);
 
 -- Clear existing data (in reverse order of dependencies)
-DELETE FROM dispute_evidence;
+-- DELETE FROM dispute_evidence;
 DELETE FROM disputes;
 DELETE FROM reviews;
 DELETE FROM payments;

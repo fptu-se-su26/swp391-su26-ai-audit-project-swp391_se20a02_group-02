@@ -23,8 +23,8 @@ public class WebConfig implements WebMvcConfigurer {
                 .addResourceLocations(uploadUri);
     }
 
-    @Override
-    public void configurePathMatch(org.springframework.web.servlet.config.annotation.PathMatchConfigurer configurer) {
-        configurer.addPathPrefix("/api/v1", org.springframework.web.method.HandlerTypePredicate.forAnnotation(org.springframework.web.bind.annotation.RestController.class));
-    }
+    // @Override
+    // public void configurePathMatch(org.springframework.web.servlet.config.annotation.PathMatchConfigurer configurer) {
+    //     configurer.addPathPrefix("/api/v1", org.springframework.web.method.HandlerTypePredicate.forAnnotation(org.springframework.web.bind.annotation.RestController.class));
+    // }
 }

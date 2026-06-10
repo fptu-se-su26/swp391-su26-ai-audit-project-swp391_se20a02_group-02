@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Calendar, Heart, Bell, User, Shield, FileText,
   CreditCard, Settings, LogOut, ChevronRight, Car, Star, TrendingUp,
   Package, Clock, CheckCircle, AlertCircle, X, Menu, Eye, EyeOff, Users, Wallet,
-  Loader2, Globe
+  Loader2, Globe, RefreshCw
 } from 'lucide-react';
 
 import { useAuthStore, useUIStore } from '@/store';
@@ -18,6 +18,8 @@ import { staggerContainer, staggerItem, fadeUp } from '@/animations/variants';
 import { StatCardSkeleton, TableSkeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { useT, translateNotification } from '@/i18n/translations';
+import { EkycScanner } from '@/components/EkycScanner';
+import { DrivingLicenseScanner } from '@/components/DrivingLicenseScanner';
 
 // ====== CUSTOMER SIDEBAR ======
 const CustomerSidebar: React.FC = () => {
@@ -819,6 +821,8 @@ export const DocumentsPage: React.FC = () => {
   const [uploading, setUploading] = React.useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [selectedDocId, setSelectedDocId] = React.useState<string | null>(null);
+  const [showEkycScanner, setShowEkycScanner] = React.useState(false);
+  const [showLicenseScanner, setShowLicenseScanner] = React.useState(false);
 
   const fetchDocuments = React.useCallback(async () => {
     if (!user) return;
@@ -839,9 +843,17 @@ export const DocumentsPage: React.FC = () => {
   const getDocInfo = (docId: string) => {
     let matched: any = null;
     if (docId === 'license') {
-      matched = backendDocs.find(d => d.documentType === 'DRIVING_LICENSE');
+      matched = backendDocs.find(d =>
+        d.documentType === 'DRIVING_LICENSE' ||
+        d.documentType === 'DRIVING_LICENSE_FRONT' ||
+        d.documentType === 'DRIVING_LICENSE_BACK'
+      );
     } else if (docId === 'id_card') {
-      matched = backendDocs.find(d => d.documentType === 'PASSPORT' || d.documentType === 'NATIONAL_ID');
+      matched = backendDocs.find(d =>
+        d.documentType === 'PASSPORT' ||
+        d.documentType === 'NATIONAL_ID' ||
+        d.documentType === 'EKYC_CCCD_FRONT'
+      );
     } else if (docId === 'selfie') {
       matched = backendDocs.find(d => d.documentType === 'SELFIE');
     } else if (docId === 'insurance') {
@@ -868,6 +880,14 @@ export const DocumentsPage: React.FC = () => {
   };
 
   const triggerFileInput = (docId: string) => {
+    if (docId === 'id_card') {
+      setShowEkycScanner(true);
+      return;
+    }
+    if (docId === 'license') {
+      setShowLicenseScanner(true);
+      return;
+    }
     setSelectedDocId(docId);
     if (fileInputRef.current) {
       fileInputRef.current.click();
@@ -957,7 +977,23 @@ export const DocumentsPage: React.FC = () => {
         )}
       </div>
 
-      {loadingDocs ? (
+      {showEkycScanner ? (
+        <EkycScanner 
+          onComplete={() => {
+            setShowEkycScanner(false);
+            fetchDocuments();
+          }} 
+          onCancel={() => setShowEkycScanner(false)} 
+        />
+      ) : showLicenseScanner ? (
+        <DrivingLicenseScanner
+          onComplete={() => {
+            setShowLicenseScanner(false);
+            fetchDocuments();
+          }}
+          onCancel={() => setShowLicenseScanner(false)}
+        />
+      ) : loadingDocs ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="w-8 h-8 animate-spin text-accent" />
         </div>
@@ -972,30 +1008,42 @@ export const DocumentsPage: React.FC = () => {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 flex-wrap mb-1">
                       <h3 className="font-bold text-slate-800 dark:text-white text-sm">{doc.title}</h3>
-                      {doc.required && <span className="text-[9px] font-bold text-red-500 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-md uppercase tracking-wider">{t.dashboard.requiredDoc}</span>}
+                      {doc.required && docInfo.status !== 'verified' && <span className="text-[9px] font-bold text-red-500 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-md uppercase tracking-wider">{t.dashboard.requiredDoc}</span>}
+                      {doc.required && docInfo.status === 'verified' && <span className="text-[9px] font-bold text-green-600 bg-green-500/10 border border-green-500/20 px-2 py-0.5 rounded-md uppercase tracking-wider">✓ Completed</span>}
                       {statusBadge(docInfo.status, docInfo.reason)}
                     </div>
                     <p className="text-slate-400 dark:text-slate-500 text-xs font-semibold mb-3">{doc.desc}</p>
-                    {docInfo.status !== 'verified' && docInfo.status !== 'pending' && (
-                      <motion.button
-                        whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
-                        onClick={() => triggerFileInput(doc.id)}
-                        disabled={uploading === doc.id}
-                        className="btn-ghost border border-slate-200 dark:border-white/10 text-xs px-4 py-2.5 rounded-xl flex items-center gap-2 disabled:opacity-60 font-bold"
-                      >
-                        {uploading === doc.id ? (<><Clock className="w-3.5 h-3.5 animate-spin" /> {t.dashboard.uploading}</>) : (<><FileText className="w-3.5 h-3.5" /> {t.dashboard.uploadFile}</>)}
-                      </motion.button>
-                    )}
-                    {docInfo.url && (
-                      <a 
-                        href={`${(import.meta as any).env?.VITE_API_URL || 'http://localhost:8080/api/v1'}${docInfo.url}`} 
-                        target="_blank" 
-                        rel="noreferrer"
-                        className="text-xs text-accent hover:underline mt-2 inline-flex items-center gap-1 font-bold"
-                      >
-                        <Eye className="w-3.5 h-3.5" /> {t.dashboard.viewVehicle || 'View Document'}
-                      </a>
-                    )}
+                    <div className="flex gap-2 mt-2">
+                      {docInfo.status !== 'verified' && docInfo.status !== 'pending' ? (
+                        <motion.button
+                          whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
+                          onClick={() => triggerFileInput(doc.id)}
+                          disabled={uploading === doc.id}
+                          className="btn-ghost border border-slate-200 dark:border-white/10 text-xs px-4 py-2.5 rounded-xl flex items-center gap-2 disabled:opacity-60 font-bold"
+                        >
+                          {uploading === doc.id ? (<><Clock className="w-3.5 h-3.5 animate-spin" /> {t.dashboard.uploading}</>) : (<><FileText className="w-3.5 h-3.5" /> {t.dashboard.uploadFile}</>)}
+                        </motion.button>
+                      ) : (doc.id === 'license' || doc.id === 'id_card') ? (
+                        <motion.button
+                          whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
+                          onClick={() => triggerFileInput(doc.id)}
+                          className="btn-ghost border border-slate-200 dark:border-white/10 text-xs px-4 py-2.5 rounded-xl flex items-center gap-2 font-bold opacity-80 hover:opacity-100"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5" /> Quét lại
+                        </motion.button>
+                      ) : null}
+
+                      {docInfo.url && (
+                        <a 
+                          href={`${(import.meta as any).env?.VITE_API_URL || 'http://localhost:8080'}${docInfo.url}`} 
+                          target="_blank" 
+                          rel="noreferrer"
+                          className="btn-ghost border border-slate-200 dark:border-white/10 text-xs px-4 py-2.5 rounded-xl flex items-center gap-2 font-bold text-accent hover:bg-accent/5"
+                        >
+                          <Eye className="w-3.5 h-3.5" /> {t.dashboard.viewVehicle || 'View Document'}
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
               </motion.div>
@@ -1040,7 +1088,7 @@ export const PaymentHistoryPage: React.FC = () => {
       const invoiceId = invoice?.id;
       if (invoiceId) {
         const token = localStorage.getItem('luxeway_access_token');
-        const fileRes = await fetch(`http://localhost:8080/api/v1/invoices/download/${invoiceId}`, {
+        const fileRes = await fetch(`http://localhost:8080/invoices/download/${invoiceId}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
