@@ -121,6 +121,9 @@ public class UserController {
     @Autowired
     private com.luxeway.service.UserService userService;
 
+    @Autowired
+    private com.luxeway.service.FptAiOcrService fptAiOcrService;
+
     @org.springframework.beans.factory.annotation.Value("${file.upload-dir:uploads/}")
     private String uploadDir;
 
@@ -186,13 +189,34 @@ public class UserController {
 
             String fileUrl = "/" + uploadDir + uniqueName;
 
-            com.luxeway.dto.user.UserDTOs.UploadDocumentRequest req = new com.luxeway.dto.user.UserDTOs.UploadDocumentRequest();
-            req.setDocumentType(documentType);
-            req.setUrl(fileUrl);
+            if ("DRIVING_LICENSE".equalsIgnoreCase(documentType)) {
+                try {
+                    com.luxeway.service.FptAiOcrService.OcrResult ocrResult = fptAiOcrService.scanDrivingLicense(filePath);
+                    java.nio.file.Files.deleteIfExists(filePath);
 
-            com.luxeway.dto.user.UserDTOs.DocumentResponse docResp = userService.uploadDocument(user.getId(), req);
+                    com.luxeway.dto.user.UserDTOs.DocumentResponse docResp = userService.uploadDrivingLicense(
+                            user.getId(), ocrResult);
+                    return ResponseEntity.status(201).body(docResp);
+                } catch (Exception e) {
+                    try {
+                        java.nio.file.Files.deleteIfExists(filePath);
+                    } catch (Exception ex) {
+                        // ignore
+                    }
+                    Map<String, String> errorResponse = new HashMap<>();
+                    errorResponse.put("error", "Driving license verification failed");
+                    errorResponse.put("message", e.getMessage());
+                    return ResponseEntity.badRequest().body(errorResponse);
+                }
+            } else {
+                com.luxeway.dto.user.UserDTOs.UploadDocumentRequest req = new com.luxeway.dto.user.UserDTOs.UploadDocumentRequest();
+                req.setDocumentType(documentType);
+                req.setUrl(fileUrl);
 
-            return ResponseEntity.status(201).body(docResp);
+                com.luxeway.dto.user.UserDTOs.DocumentResponse docResp = userService.uploadDocument(user.getId(), req);
+
+                return ResponseEntity.status(201).body(docResp);
+            }
 
         } catch (java.io.IOException e) {
             Map<String, String> errorResponse = new HashMap<>();
@@ -212,6 +236,20 @@ public class UserController {
         }
         java.util.List<com.luxeway.dto.user.UserDTOs.DocumentResponse> docs = userService.getMyDocuments(user.getId());
         return ResponseEntity.ok(docs);
+    }
+
+    @DeleteMapping("/documents/{documentId}")
+    public ResponseEntity<?> deleteUserDocument(
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.luxeway.entity.User user,
+            @PathVariable String documentId) {
+        if (user == null) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Unauthorized");
+            return ResponseEntity.status(401).body(errorResponse);
+        }
+
+        userService.deleteDocument(user.getId(), documentId);
+        return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/{id}")

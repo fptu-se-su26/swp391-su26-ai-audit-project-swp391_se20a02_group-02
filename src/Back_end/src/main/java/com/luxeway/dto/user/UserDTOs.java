@@ -54,6 +54,8 @@ public class UserDTOs {
         private Boolean verified;
         private Boolean kycVerified;
         private Boolean drivingLicenseVerified;
+        private String licenseClass;
+        private String licenseNumber;
         private Boolean isActive;
         private String joinedAt;
         private String lastActive;
@@ -78,6 +80,12 @@ public class UserDTOs {
         private String uploadedAt;
         private String verifiedAt;
         private String rejectionReason;
+        private String licenseClass;
+        private String licenseNumber;
+        private String licenseFullName;
+        private String licenseDateOfBirth;
+        private String licenseResidence;
+        private String licenseNationality;
     }
 
     @Data

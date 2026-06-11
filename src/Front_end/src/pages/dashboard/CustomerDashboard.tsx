@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Calendar, Heart, Bell, User, Shield, FileText,
   CreditCard, Settings, LogOut, ChevronRight, Car, Star, TrendingUp,
   Package, Clock, CheckCircle, AlertCircle, X, Menu, Eye, EyeOff, Users, Wallet,
-  Loader2, Globe, Gift, Building2
+  Loader2, Globe, Gift, Building2, Trash2
 } from 'lucide-react';
 
 import { useAuthStore, useUIStore } from '@/store';
@@ -844,12 +844,30 @@ export const DocumentsPage: React.FC = () => {
   const [uploading, setUploading] = React.useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [selectedDocId, setSelectedDocId] = React.useState<string | null>(null);
+  const [localPreviews, setLocalPreviews] = React.useState<Record<string, string>>({});
+  const localPreviewsRef = React.useRef<Record<string, string>>({});
+  const [deletingDocId, setDeletingDocId] = React.useState<string | null>(null);
+  const [deletedDrivingLicense, setDeletedDrivingLicense] = React.useState(false);
+
+  const apiBaseUrl = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8080/api/v1';
+  const resolveDocumentUrl = (url?: string) => {
+    if (!url) return '';
+    if (url.startsWith('blob:') || url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+      return url;
+    }
+    return `${apiBaseUrl}${url}`;
+  };
+
+  const isPdfDocument = (url?: string) => Boolean(url && !url.startsWith('blob:') && url.toLowerCase().endsWith('.pdf'));
 
   const fetchDocuments = React.useCallback(async () => {
     if (!user) return;
     try {
       const data = await apiClient.get<any[]>('/users/documents');
       setBackendDocs(data || []);
+      if ((data || []).some(doc => doc.documentType === 'DRIVING_LICENSE')) {
+        setDeletedDrivingLicense(false);
+      }
     } catch (err) {
       console.error('Failed to fetch documents', err);
     } finally {
@@ -860,6 +878,14 @@ export const DocumentsPage: React.FC = () => {
   React.useEffect(() => {
     fetchDocuments();
   }, [fetchDocuments]);
+
+  React.useEffect(() => {
+    localPreviewsRef.current = localPreviews;
+  }, [localPreviews]);
+
+  React.useEffect(() => () => {
+    Object.values(localPreviewsRef.current).forEach(url => URL.revokeObjectURL(url));
+  }, []);
 
   const getDocInfo = (docId: string) => {
     let matched: any = null;
@@ -875,21 +901,73 @@ export const DocumentsPage: React.FC = () => {
 
     if (matched) {
       return {
+        id: matched.id,
         status: matched.status.toLowerCase(),
         reason: matched.rejectionReason,
-        url: matched.url
+        url: localPreviews[docId] || matched.url,
+        savedUrl: matched.url,
+        licenseClass: matched.licenseClass,
+        licenseNumber: matched.licenseNumber,
+        licenseFullName: matched.licenseFullName,
+        licenseDateOfBirth: matched.licenseDateOfBirth,
+        licenseResidence: matched.licenseResidence,
+        licenseNationality: matched.licenseNationality,
+        isLocalPreview: Boolean(localPreviews[docId])
+      };
+    }
+
+    if (localPreviews[docId]) {
+      return {
+        id: undefined,
+        status: 'pending',
+        reason: undefined,
+        url: localPreviews[docId],
+        savedUrl: undefined,
+        licenseClass: undefined,
+        licenseNumber: undefined,
+        licenseFullName: undefined,
+        licenseDateOfBirth: undefined,
+        licenseResidence: undefined,
+        licenseNationality: undefined,
+        isLocalPreview: true
       };
     }
 
     // Fallback using user attributes
-    if (docId === 'license' && user?.drivingLicenseVerified) {
-      return { status: 'verified', reason: undefined };
+    if (docId === 'license' && user?.drivingLicenseVerified && !deletedDrivingLicense) {
+      return {
+        id: undefined,
+        status: 'verified',
+        reason: undefined,
+        url: undefined,
+        savedUrl: undefined,
+        licenseClass: user?.licenseClass,
+        licenseNumber: user?.licenseNumber,
+        licenseFullName: undefined,
+        licenseDateOfBirth: undefined,
+        licenseResidence: undefined,
+        licenseNationality: undefined,
+        isLocalPreview: false
+      };
     }
     if (docId === 'id_card' && user?.kycVerified) {
-      return { status: 'verified', reason: undefined };
+      return { id: undefined, status: 'verified', reason: undefined, url: undefined, savedUrl: undefined, isLocalPreview: false };
     }
 
-    return { status: 'not_uploaded', reason: undefined };
+    return {
+      id: undefined,
+      status: 'not_uploaded',
+      reason: undefined,
+      url: undefined,
+      savedUrl: undefined,
+      licenseClass: undefined,
+      licenseNumber: undefined,
+      licenseFullName: undefined,
+      licenseDateOfBirth: undefined,
+      licenseResidence: undefined,
+      licenseNationality: undefined,
+      isLocalPreview: false
+    };
   };
 
   const triggerFileInput = (docId: string) => {
@@ -912,6 +990,13 @@ export const DocumentsPage: React.FC = () => {
     formData.append('file', file);
     formData.append('documentType', documentType);
 
+    if (selectedDocId !== 'license') {
+      const previewUrl = URL.createObjectURL(file);
+      setLocalPreviews(prev => {
+        if (prev[selectedDocId]) URL.revokeObjectURL(prev[selectedDocId]);
+        return { ...prev, [selectedDocId]: previewUrl };
+      });
+    }
     setUploading(selectedDocId);
     try {
       await apiClient.post<any>('/users/documents', formData, {
@@ -919,17 +1004,65 @@ export const DocumentsPage: React.FC = () => {
           'Content-Type': 'multipart/form-data',
         },
       });
+      if (selectedDocId === 'license') {
+        setDeletedDrivingLicense(false);
+      }
       toast.success('Document uploaded!', 'Our team will review it within 24 hours.');
       await fetchDocuments();
+      setLocalPreviews(prev => {
+        const current = prev[selectedDocId];
+        if (current) URL.revokeObjectURL(current);
+        const next = { ...prev };
+        delete next[selectedDocId];
+        return next;
+      });
     } catch (err: any) {
       console.error(err);
-      toast.error('Upload failed', err.response?.data?.error || 'Failed to upload document.');
+      setLocalPreviews(prev => {
+        const current = prev[selectedDocId];
+        if (current) URL.revokeObjectURL(current);
+        const next = { ...prev };
+        delete next[selectedDocId];
+        return next;
+      });
+      toast.error('Upload failed', err.response?.data?.error || err.message || 'Failed to upload document.');
     } finally {
       setUploading(null);
       setSelectedDocId(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
+    }
+  };
+
+  const handleDeleteDrivingLicense = async (documentId?: string) => {
+    if (!documentId) {
+      toast.error('Cannot delete document', 'No saved driving license document was found.');
+      return;
+    }
+
+    const previousDocs = backendDocs;
+    setDeletingDocId(documentId);
+    setBackendDocs(prev => prev.filter(doc => doc.id !== documentId));
+    setDeletedDrivingLicense(true);
+    setLocalPreviews(prev => {
+      const current = prev.license;
+      if (current) URL.revokeObjectURL(current);
+      const next = { ...prev };
+      delete next.license;
+      return next;
+    });
+
+    try {
+      await apiClient.delete(`/users/documents/${documentId}`);
+      toast.success('Driving license deleted', 'You can upload a new driving license anytime.');
+    } catch (err: any) {
+      console.error(err);
+      setBackendDocs(previousDocs);
+      setDeletedDrivingLicense(false);
+      toast.error('Delete failed', err.message || 'Failed to delete driving license.');
+    } finally {
+      setDeletingDocId(null);
     }
   };
 
@@ -1011,15 +1144,83 @@ export const DocumentsPage: React.FC = () => {
                         {uploading === doc.id ? (<><Clock className="w-3.5 h-3.5 animate-spin" /> {t.dashboard.uploading}</>) : (<><FileText className="w-3.5 h-3.5" /> {t.dashboard.uploadFile}</>)}
                       </motion.button>
                     )}
-                    {docInfo.url && (
-                      <a 
-                        href={`${(import.meta as any).env?.VITE_API_URL || 'http://localhost:8080/api/v1'}${docInfo.url}`} 
-                        target="_blank" 
-                        rel="noreferrer"
-                        className="text-xs text-accent hover:underline mt-2 inline-flex items-center gap-1 font-bold"
-                      >
-                        <Eye className="w-3.5 h-3.5" /> {t.dashboard.viewVehicle || 'View Document'}
-                      </a>
+                    <div className="flex flex-col gap-3 mt-2">
+                      {doc.id !== 'license' && docInfo.url && (
+                        <>
+                          {!docInfo.isLocalPreview && (
+                            <a
+                              href={resolveDocumentUrl(docInfo.url)}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-xs text-accent hover:underline inline-flex items-center gap-1 font-bold"
+                            >
+                              <Eye className="w-3.5 h-3.5" /> {t.dashboard.viewVehicle || 'View Document'}
+                            </a>
+                          )}
+                          
+                          <div className="mt-1 relative rounded-2xl overflow-hidden border border-slate-200/50 dark:border-white/10 max-w-sm shadow-sm bg-slate-500/5 max-h-56">
+                            {!isPdfDocument(docInfo.url) ? (
+                              <img 
+                                src={resolveDocumentUrl(docInfo.url)}
+                                alt={doc.title} 
+                                className="w-full h-auto object-cover max-h-56 rounded-2xl transition-all duration-300 hover:scale-105"
+                              />
+                            ) : (
+                              <div className="p-4 flex items-center gap-3">
+                                <span className="text-2xl">📄</span>
+                                <div className="min-w-0">
+                                  <p className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">{docInfo.url.split('/').pop()}</p>
+                                  <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">PDF Document</span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </>
+                      )}
+                      {doc.id === 'license' && docInfo.id && (
+                        <motion.button
+                          whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
+                          onClick={() => handleDeleteDrivingLicense(docInfo.id)}
+                          disabled={deletingDocId === docInfo.id || uploading === doc.id}
+                          className="w-fit border border-red-200/40 bg-red-500/5 text-red-600 dark:text-red-400 text-xs px-4 py-2.5 rounded-xl flex items-center gap-2 disabled:opacity-60 font-bold hover:bg-red-500/10 transition-colors"
+                        >
+                          {deletingDocId === docInfo.id ? (
+                            <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Deleting...</>
+                          ) : (
+                            <><Trash2 className="w-3.5 h-3.5" /> Delete driving license</>
+                          )}
+                        </motion.button>
+                      )}
+                    </div>
+                    {doc.id === 'license' && docInfo.status === 'verified' && (
+                      <div className="mt-3 p-3 bg-slate-500/5 dark:bg-white/5 border border-slate-200/10 dark:border-white/5 rounded-2xl max-w-2xl">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Tên trên bằng lái</span>
+                            <p className="text-sm font-bold text-slate-800 dark:text-slate-100 mt-0.5 break-words">{docInfo.licenseFullName || 'N/A'}</p>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Ngày sinh</span>
+                            <p className="text-sm font-bold text-slate-800 dark:text-slate-100 mt-0.5 break-words">{docInfo.licenseDateOfBirth || 'N/A'}</p>
+                          </div>
+                          <div className="sm:col-span-2">
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Nơi cư trú</span>
+                            <p className="text-sm font-bold text-slate-800 dark:text-slate-100 mt-0.5 break-words">{docInfo.licenseResidence || 'N/A'}</p>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Quốc tịch</span>
+                            <p className="text-sm font-bold text-slate-800 dark:text-slate-100 mt-0.5 break-words">{docInfo.licenseNationality || 'N/A'}</p>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Hạng bằng lái (Class)</span>
+                            <p className="text-sm font-extrabold text-amber-500 dark:text-gold mt-0.5">{docInfo.licenseClass || user?.licenseClass || 'N/A'}</p>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Số bằng lái (No.)</span>
+                            <p className="text-sm font-bold text-slate-800 dark:text-slate-100 mt-0.5">{docInfo.licenseNumber || user?.licenseNumber || 'N/A'}</p>
+                          </div>
+                        </div>
+                      </div>
                     )}
                   </div>
                 </div>

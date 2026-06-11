@@ -71,6 +71,13 @@ public class DatabaseMigration implements CommandLineRunner {
             }
         }
 
+        addNullableColumn("user_documents", "license_class", "NVARCHAR(10)", "VARCHAR(10)");
+        addNullableColumn("user_documents", "license_number", "NVARCHAR(50)", "VARCHAR(50)");
+        addNullableColumn("user_documents", "license_full_name", "NVARCHAR(200)", "VARCHAR(200)");
+        addNullableColumn("user_documents", "license_date_of_birth", "NVARCHAR(50)", "VARCHAR(50)");
+        addNullableColumn("user_documents", "license_residence", "NVARCHAR(500)", "VARCHAR(500)");
+        addNullableColumn("user_documents", "license_nationality", "NVARCHAR(100)", "VARCHAR(100)");
+
         // CREATE TABLE: owners
         try {
             jdbcTemplate.execute("IF OBJECT_ID('owners', 'U') IS NULL " +
@@ -688,6 +695,21 @@ public class DatabaseMigration implements CommandLineRunner {
             }
         } catch (Exception e) {
             log.error("Error running schema-enterprise.sql: {}", e.getMessage(), e);
+        }
+    }
+
+    private void addNullableColumn(String tableName, String columnName, String sqlServerType, String standardType) {
+        try {
+            jdbcTemplate.execute("IF COL_LENGTH('" + tableName + "', '" + columnName + "') IS NULL " +
+                    "ALTER TABLE " + tableName + " ADD " + columnName + " " + sqlServerType + " NULL");
+            log.info("Checked/added column {}.{} (SQL Server)", tableName, columnName);
+        } catch (Exception e) {
+            try {
+                jdbcTemplate.execute("ALTER TABLE " + tableName + " ADD COLUMN " + columnName + " " + standardType + " NULL");
+                log.info("Added column {}.{} (Standard)", tableName, columnName);
+            } catch (Exception ex) {
+                log.debug("Column {}.{} already exists or alter failed: {}", tableName, columnName, ex.getMessage());
+            }
         }
     }
 }

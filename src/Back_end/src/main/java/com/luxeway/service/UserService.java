@@ -28,15 +28,11 @@ public class UserService {
     private final VehicleRepository vehicleRepository;
     private final BookingRepository bookingRepository;
 
-    // ====== Get own profile ======
-
     public UserDTOs.UserProfileResponse getProfile(String userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         return toProfileResponse(user);
     }
-
-    // ====== Update own profile ======
 
     @Transactional
     public UserDTOs.UserProfileResponse updateProfile(String userId, UserDTOs.UpdateProfileRequest req) {
@@ -58,16 +54,11 @@ public class UserService {
         return toProfileResponse(user);
     }
 
-    // ====== Get public profile of another user ======
-
     public UserDTOs.UserProfileResponse getPublicProfile(String userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        // Same response but could be trimmed for public view
         return toProfileResponse(user);
     }
-
-    // ====== Upload document ======
 
     @Transactional
     public UserDTOs.DocumentResponse uploadDocument(String userId, UserDTOs.UploadDocumentRequest req) {
@@ -86,14 +77,10 @@ public class UserService {
         return toDocumentResponse(doc);
     }
 
-    // ====== Get my documents ======
-
     public List<UserDTOs.DocumentResponse> getMyDocuments(String userId) {
         return userDocumentRepository.findByUserIdOrderByUploadedAtDesc(userId)
                 .stream().map(this::toDocumentResponse).collect(Collectors.toList());
     }
-
-    // ====== Owner dashboard stats ======
 
     public UserDTOs.OwnerStatsResponse getDashboardStats(String userId) {
         UserDTOs.OwnerStatsResponse stats = new UserDTOs.OwnerStatsResponse();
@@ -121,8 +108,6 @@ public class UserService {
         return stats;
     }
 
-    // ====== DTO Mappings ======
-
     public UserDTOs.UserProfileResponse toProfileResponse(User u) {
         UserDTOs.UserProfileResponse resp = new UserDTOs.UserProfileResponse();
         resp.setId(u.getId());
@@ -143,6 +128,8 @@ public class UserService {
         resp.setVerified(u.getVerified());
         resp.setKycVerified(u.getKycVerified());
         resp.setDrivingLicenseVerified(u.getDrivingLicenseVerified());
+        resp.setLicenseClass(u.getLicenseClass());
+        resp.setLicenseNumber(u.getLicenseNumber());
         resp.setIsActive(u.getIsActive());
         resp.setJoinedAt(u.getJoinedAt() != null ? u.getJoinedAt().toString() : null);
         resp.setLastActive(u.getLastActive() != null ? u.getLastActive().toString() : null);
@@ -159,6 +146,78 @@ public class UserService {
         resp.setUploadedAt(doc.getUploadedAt() != null ? doc.getUploadedAt().toString() : null);
         resp.setVerifiedAt(doc.getVerifiedAt() != null ? doc.getVerifiedAt().toString() : null);
         resp.setRejectionReason(doc.getRejectionReason());
+        resp.setLicenseClass(doc.getLicenseClass());
+        resp.setLicenseNumber(doc.getLicenseNumber());
+        resp.setLicenseFullName(doc.getLicenseFullName());
+        resp.setLicenseDateOfBirth(doc.getLicenseDateOfBirth());
+        resp.setLicenseResidence(doc.getLicenseResidence());
+        resp.setLicenseNationality(doc.getLicenseNationality());
         return resp;
+    }
+
+    @Transactional
+    public UserDTOs.DocumentResponse uploadDrivingLicense(String userId, FptAiOcrService.OcrResult ocrResult) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        String licenseClass = ocrResult.getLicenseClass();
+        String licenseNumber = ocrResult.getLicenseNumber();
+        user.setDrivingLicenseVerified(true);
+        user.setLicenseClass(licenseClass);
+        user.setLicenseNumber(licenseNumber);
+        userRepository.save(user);
+
+        UserDocument doc = UserDocument.builder()
+                .user(user)
+                .documentType("DRIVING_LICENSE")
+                .url("OCR_EXTRACTED")
+                .status("VERIFIED")
+                .licenseClass(licenseClass)
+                .licenseNumber(licenseNumber)
+                .licenseFullName(ocrResult.getFullName())
+                .licenseDateOfBirth(ocrResult.getDateOfBirth())
+                .licenseResidence(ocrResult.getResidence())
+                .licenseNationality(ocrResult.getNationality())
+                .build();
+
+        doc = userDocumentRepository.save(doc);
+        log.info("Driving license verified and uploaded: class={}, number={} for user {}", licenseClass, licenseNumber, userId);
+        return toDocumentResponse(doc);
+    }
+
+    @Transactional
+    public void deleteDocument(String userId, String documentId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        UserDocument doc = userDocumentRepository.findById(documentId)
+                .orElseThrow(() -> new RuntimeException("Document not found"));
+
+        if (!doc.getUser().getId().equals(userId)) {
+            throw new org.springframework.security.access.AccessDeniedException("Not authorized to delete this document");
+        }
+
+        if ("DRIVING_LICENSE".equalsIgnoreCase(doc.getDocumentType())) {
+            user.setDrivingLicenseVerified(false);
+            user.setLicenseClass(null);
+            user.setLicenseNumber(null);
+            userRepository.save(user);
+            log.info("Driving license fields reset for user: {}", userId);
+        }
+
+        String url = doc.getUrl();
+        if (url != null && url.startsWith("/uploads/")) {
+            try {
+                String relativePath = url.substring(1);
+                java.nio.file.Path filePath = java.nio.file.Paths.get(relativePath);
+                java.nio.file.Files.deleteIfExists(filePath);
+                log.info("Physical file deleted: {}", filePath);
+            } catch (Exception e) {
+                log.warn("Failed to delete physical file: {}", url, e);
+            }
+        }
+
+        userDocumentRepository.delete(doc);
+        log.info("Document {} deleted for user {}", documentId, userId);
     }
 }

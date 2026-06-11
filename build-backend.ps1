@@ -3,11 +3,10 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $Root      = (New-Object -ComObject Scripting.FileSystemObject).GetFolder($ScriptDir).ShortPath
 
 $BackendDir = "$Root\src\Back_end"
-$MavenBin   = "$Root\src\Back_end\maven\apache-maven-3.9.6\bin"
 
 # Set environment
-$env:JAVA_HOME = "C:\Program Files\Java\jdk-21.0.10"
-$env:PATH = "$env:JAVA_HOME\bin;$MavenBin;$env:PATH"
+$env:JAVA_HOME = "C:\Program Files\Java\jdk-22"
+$env:PATH = "$env:JAVA_HOME\bin;$env:PATH"
 
 Write-Host "Java Version check:"
 java -version

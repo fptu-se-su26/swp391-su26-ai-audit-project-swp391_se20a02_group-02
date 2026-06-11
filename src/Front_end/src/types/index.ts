@@ -43,6 +43,8 @@ export interface User {
   verified: boolean;
   kycVerified: boolean;
   drivingLicenseVerified: boolean;
+  licenseClass?: string;
+  licenseNumber?: string;
   rating: number;
   totalReviews: number;
   totalRentals: number;
@@ -232,6 +234,12 @@ export interface UserDocument {
   uploadedAt: string;
   verifiedAt?: string;
   url: string;
+  licenseClass?: string;
+  licenseNumber?: string;
+  licenseFullName?: string;
+  licenseDateOfBirth?: string;
+  licenseResidence?: string;
+  licenseNationality?: string;
 }
 
 // ====== MESSAGE ======
