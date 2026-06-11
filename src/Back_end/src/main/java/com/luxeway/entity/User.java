@@ -82,6 +82,12 @@ public class User implements UserDetails {
     @Column(name = "driving_license_verified", nullable = false)
     @Builder.Default
     private Boolean drivingLicenseVerified = false;
+
+    @Column(name = "license_class", length = 10)
+    private String licenseClass;
+
+    @Column(name = "license_number", length = 50)
+    private String licenseNumber;
     
     @Column(precision = 3, scale = 2)
     @Builder.Default

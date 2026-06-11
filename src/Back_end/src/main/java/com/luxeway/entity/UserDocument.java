@@ -55,6 +55,24 @@ public class UserDocument {
     @Column(name = "rejection_reason", columnDefinition = "TEXT")
     private String rejectionReason;
 
+    @Column(name = "license_class", length = 10)
+    private String licenseClass;
+
+    @Column(name = "license_number", length = 50)
+    private String licenseNumber;
+
+    @Column(name = "license_full_name", length = 200)
+    private String licenseFullName;
+
+    @Column(name = "license_date_of_birth", length = 50)
+    private String licenseDateOfBirth;
+
+    @Column(name = "license_residence", length = 500)
+    private String licenseResidence;
+
+    @Column(name = "license_nationality", length = 100)
+    private String licenseNationality;
+
     @PrePersist
     private void prePersist() {
         if (id == null) {

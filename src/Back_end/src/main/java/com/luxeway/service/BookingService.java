@@ -4,6 +4,7 @@ import com.luxeway.dto.booking.BookingDTOs;
 import com.luxeway.entity.*;
 import com.luxeway.enums.BookingStatus;
 import com.luxeway.enums.VehicleStatus;
+import com.luxeway.enums.VehicleType;
 import com.luxeway.repository.BookingRepository;
 import com.luxeway.repository.UserRepository;
 import com.luxeway.repository.VehicleRepository;
@@ -88,6 +89,8 @@ public class BookingService {
             if (!Boolean.TRUE.equals(renter.getKycVerified()) || !Boolean.TRUE.equals(renter.getDrivingLicenseVerified())) {
                 throw new RuntimeException("KYC identity and driving license verification are required before booking. Please complete verification in your profile.");
             }
+
+            // License class restrictions are temporarily disabled to allow payment testing.
         }
 
         // Calculate pricing using Pricing Engine

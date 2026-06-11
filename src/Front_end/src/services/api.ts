@@ -65,10 +65,18 @@ class ApiClient {
     const token = localStorage.getItem(TOKEN_KEY);
     const lang = localStorage.getItem('language') || 'en';
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
       'Accept-Language': lang,
       ...(options.headers as Record<string, string>),
     };
+
+    if (!(options.body instanceof FormData)) {
+      if (!headers['Content-Type']) {
+        headers['Content-Type'] = 'application/json';
+      }
+    } else {
+      // Let browser set Content-Type and boundary automatically for FormData
+      delete headers['Content-Type'];
+    }
 
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
@@ -158,15 +166,18 @@ class ApiClient {
   }
 
   async post<T>(endpoint: string, body: any, options?: RequestInit) {
-    return this.request<T>(endpoint, { ...options, method: 'POST', body: JSON.stringify(body) });
+    const isFormData = body instanceof FormData;
+    return this.request<T>(endpoint, { ...options, method: 'POST', body: isFormData ? body : JSON.stringify(body) });
   }
 
   async put<T>(endpoint: string, body: any, options?: RequestInit) {
-    return this.request<T>(endpoint, { ...options, method: 'PUT', body: JSON.stringify(body) });
+    const isFormData = body instanceof FormData;
+    return this.request<T>(endpoint, { ...options, method: 'PUT', body: isFormData ? body : JSON.stringify(body) });
   }
 
   async patch<T>(endpoint: string, body: any, options?: RequestInit) {
-    return this.request<T>(endpoint, { ...options, method: 'PATCH', body: JSON.stringify(body) });
+    const isFormData = body instanceof FormData;
+    return this.request<T>(endpoint, { ...options, method: 'PATCH', body: isFormData ? body : JSON.stringify(body) });
   }
 
   async delete<T>(endpoint: string, options?: RequestInit) {

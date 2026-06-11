@@ -52,6 +52,12 @@ CREATE TABLE user_documents (
     status          NVARCHAR(20)    NOT NULL DEFAULT 'PENDING' CONSTRAINT CHK_user_docs_status CHECK (status IN ('PENDING','VERIFIED','REJECTED')),
     url             NVARCHAR(500)   NOT NULL,
     rejection_reason NVARCHAR(MAX),
+    license_class   NVARCHAR(10),
+    license_number  NVARCHAR(50),
+    license_full_name NVARCHAR(200),
+    license_date_of_birth NVARCHAR(50),
+    license_residence NVARCHAR(500),
+    license_nationality NVARCHAR(100),
     uploaded_at     DATETIME2       NOT NULL DEFAULT GETDATE(),
     verified_at     DATETIME2,
     CONSTRAINT FK_user_documents_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
