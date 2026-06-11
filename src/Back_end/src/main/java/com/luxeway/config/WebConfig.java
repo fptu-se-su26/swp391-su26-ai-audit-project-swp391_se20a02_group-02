@@ -19,12 +19,17 @@ public class WebConfig implements WebMvcConfigurer {
         Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
         String uploadUri = uploadPath.toUri().toString();
 
-        registry.addResourceHandler("/uploads/**", "/api/v1/uploads/**")
+        // BUG-09 FIX: With context-path /api/v1, Spring MVC receives paths AFTER the prefix is stripped.
+        // Register only /uploads/** — the context-path is already handled by Tomcat.
+        // The /api/v1/uploads/** variant would create a double-prefix path.
+        registry.addResourceHandler("/uploads/**")
                 .addResourceLocations(uploadUri);
     }
 
-    @Override
-    public void configurePathMatch(org.springframework.web.servlet.config.annotation.PathMatchConfigurer configurer) {
-        configurer.addPathPrefix("/api/v1", org.springframework.web.method.HandlerTypePredicate.forAnnotation(org.springframework.web.bind.annotation.RestController.class));
-    }
+    // BUG-01 FIX: REMOVED configurePathMatch override.
+    // application.yml already sets server.servlet.context-path=/api/v1, which makes Tomcat
+    // strip the /api/v1 prefix before handing the request to Spring MVC.
+    // The old addPathPrefix("/api/v1", ...) caused ALL controller routes to be registered at
+    // /api/v1/... from Spring MVC's perspective, but requests arrived at / (already stripped),
+    // so zero routes were matched and every endpoint returned 404.
 }

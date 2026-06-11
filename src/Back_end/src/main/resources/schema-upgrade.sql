@@ -14,6 +14,7 @@ BEGIN
         stripe_account_id NVARCHAR(100) NULL,
         wallet_balance DECIMAL(18,2) NOT NULL DEFAULT 0.00,
         is_active BIT NOT NULL DEFAULT 1,
+        is_verified BIT NOT NULL DEFAULT 0,
         created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
         updated_at DATETIME2 NULL,
         FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE

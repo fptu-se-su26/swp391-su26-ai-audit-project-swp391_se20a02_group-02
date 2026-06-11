@@ -28,11 +28,14 @@ public class OwnerAnalytics {
     private OwnerProfile owner;
 
     @Column(name = "monthly_revenue", precision = 18, scale = 2, nullable = false)
+    @Builder.Default
     private BigDecimal monthlyRevenue = BigDecimal.ZERO;
 
     @Column(name = "completed_bookings", nullable = false)
+    @Builder.Default
     private Integer completedBookings = 0;
 
     @Column(name = "utilization_rate", precision = 5, scale = 2, nullable = false)
+    @Builder.Default
     private BigDecimal utilizationRate = BigDecimal.ZERO;
 }

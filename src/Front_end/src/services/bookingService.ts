@@ -40,22 +40,11 @@ const mapBooking = (b: any): Booking => {
 export const bookingService = {
   async getByUser(userId: string): Promise<Booking[]> {
     try {
-      const [carRes, motoRes] = await Promise.all([
-        apiClient.get<any>('/cars/bookings').catch(() => ({ bookings: [] })),
-        apiClient.get<any>('/motorbikes/bookings').catch(() => ({ bookings: [] }))
-      ]);
-      
-      const carList = carRes.bookings || carRes.content || [];
-      const motoList = motoRes.bookings || motoRes.content || [];
-      
-      const combined = [...carList, ...motoList];
-      combined.sort((a: any, b: any) => {
-        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-        return dateB - dateA;
-      });
-      
-      return combined.map(mapBooking);
+      // BUG-05 FIX: /cars/bookings and /motorbikes/bookings don't exist.
+      // The correct endpoint is GET /bookings (BookingController.getMyBookings)
+      const res = await apiClient.get<any>('/bookings?page=0&size=100');
+      const list = res.data?.content || res.content || [];
+      return list.map(mapBooking);
     } catch (error) {
       console.error('Failed to fetch user bookings', error);
       return [];
@@ -64,22 +53,11 @@ export const bookingService = {
 
   async getByOwner(ownerId: string): Promise<Booking[]> {
     try {
-      const [carRes, motoRes] = await Promise.all([
-        apiClient.get<any>('/cars/bookings/owner').catch(() => ({ bookings: [] })),
-        apiClient.get<any>('/motorbikes/bookings/owner').catch(() => ({ bookings: [] }))
-      ]);
-      
-      const carList = carRes.bookings || carRes.content || [];
-      const motoList = motoRes.bookings || motoRes.content || [];
-      
-      const combined = [...carList, ...motoList];
-      combined.sort((a: any, b: any) => {
-        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-        return dateB - dateA;
-      });
-      
-      return combined.map(mapBooking);
+      // BUG-05 FIX: /cars/bookings/owner and /motorbikes/bookings/owner don't exist.
+      // The correct endpoint is GET /bookings/owner (BookingController.getOwnerBookings)
+      const res = await apiClient.get<any>('/bookings/owner?page=0&size=100');
+      const list = res.data?.content || res.content || [];
+      return list.map(mapBooking);
     } catch (error) {
       console.error('Failed to fetch owner bookings', error);
       return [];
@@ -176,18 +154,8 @@ export const bookingService = {
 
   async updateStatus(bookingId: string, status: BookingStatus): Promise<Booking | null> {
     try {
-      try {
-        const response = await apiClient.put<any>(`/cars/bookings/${bookingId}/status?status=${status.toUpperCase()}`, {});
-        const booking = response.booking || response.data || response || null;
-        if (booking && booking.id) return mapBooking(booking);
-      } catch (_) {}
-
-      try {
-        const response = await apiClient.put<any>(`/motorbikes/bookings/${bookingId}/status?status=${status.toUpperCase()}`, {});
-        const booking = response.booking || response.data || response || null;
-        if (booking && booking.id) return mapBooking(booking);
-      } catch (_) {}
-
+      // BUG-06 FIX: /cars/bookings/{id}/status and /motorbikes/bookings/{id}/status don't exist.
+      // Call /bookings/{id}/status directly (BookingController.updateStatus).
       const response = await apiClient.put<any>(`/bookings/${bookingId}/status`, { status: status.toUpperCase() });
       const booking = response.data || response || null;
       return booking ? mapBooking(booking) : null;
@@ -308,7 +276,8 @@ export const paymentService = {
 
   async refund(paymentId: string, amount: number): Promise<boolean> {
     try {
-      await apiClient.post<any>(`/admin/payments/${paymentId}/refund`, { amount });
+      // BUG-07 FIX: Backend uses @PutMapping for /admin/payments/{id}/refund, not POST.
+      await apiClient.put<any>(`/admin/payments/${paymentId}/refund`, { amount });
       return true;
     } catch (error) {
       return false;

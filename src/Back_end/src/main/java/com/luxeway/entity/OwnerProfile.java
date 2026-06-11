@@ -40,11 +40,17 @@ public class OwnerProfile {
     @Column(name = "stripe_account_id", length = 100)
     private String stripeAccountId;
 
+    @Builder.Default
     @Column(name = "wallet_balance", precision = 18, scale = 2, nullable = false)
     private BigDecimal walletBalance = BigDecimal.ZERO;
 
+    @Builder.Default
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
+
+    @Builder.Default
+    @Column(name = "is_verified", nullable = false)
+    private Boolean isVerified = false;
 
     @OneToOne(mappedBy = "owner", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private OwnerRating rating;
