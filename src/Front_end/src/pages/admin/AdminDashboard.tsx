@@ -6,7 +6,7 @@ import {
   CheckCircle, XCircle, Eye, Search, BarChart2, Globe, Loader2,
   Settings, HelpCircle, Edit2, Plus, Trash2, Activity, LogOut, Clock, Menu, X,
   ArrowUpRight, ArrowDownRight, Scale, Ban, RefreshCw, Download, FileText, Check, Lock,
-  Cpu, HardDrive, Bell, ShieldAlert, Wifi, Terminal, Mail, Send, Share2, FileSpreadsheet
+  Cpu, HardDrive, Bell, ShieldAlert, Wifi, Terminal, Mail, Send, Share2, FileSpreadsheet, Brain
 } from 'lucide-react';
 import { formatCurrency, formatDate, cn, convertCurrency } from '@/utils';
 import { staggerContainer, staggerItem, fadeUp } from '@/animations/variants';
@@ -15,6 +15,7 @@ import {
   ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, LineChart, Line
 } from 'recharts';
 import { adminService, AdminStats } from '@/services/adminService';
+import { AIPredictivePanel } from '@/components/admin/AIPredictivePanel';
 import { paymentService } from '@/services/bookingService';
 import { useToast } from '@/components/ui/Toast';
 import { useUIStore, useAuthStore } from '@/store';
@@ -493,6 +494,7 @@ const AdminDashboard: React.FC = () => {
     { id: 'users', label: t.adminDashboard.users, icon: Users, badge: 0 },
     { id: 'fraud', label: t.adminDashboard.fraud, icon: ShieldAlert, badge: activeFraudAlertsCount },
     { id: 'analytics', label: t.adminDashboard.analytics, icon: TrendingUp, badge: 0 },
+    { id: 'ai-predictive', label: 'AI Predictive Analytics', icon: Brain, badge: 0 },
     { id: 'notifications', label: t.adminDashboard.notifications, icon: Bell, badge: 0 },
     { id: 'logs', label: t.adminDashboard.logs, icon: FileText, badge: 0 },
     { id: 'health', label: t.adminDashboard.health, icon: Activity, badge: 0 },
@@ -1748,6 +1750,19 @@ const AdminDashboard: React.FC = () => {
                       </div>
                     </div>
                   </div>
+
+                  {/* Removed AIPredictivePanel from overview */}
+                </div>
+              )}
+
+              {/* ============ TABS: AI PREDICTIVE ANALYTICS ============ */}
+              {activeTab === 'ai-predictive' && (
+                <div className="space-y-6">
+                  <div>
+                    <h2 className={cn("font-black text-xl tracking-tight", isDark ? "text-white" : "text-slate-855")}>AI Predictive Analytics</h2>
+                    <p className="text-[9px] font-black text-slate-450 dark:text-slate-500 uppercase tracking-widest mt-1">Machine Learning Forecasts, Churn Risks, and Anomaly Detection</p>
+                  </div>
+                  <AIPredictivePanel isDark={isDark} currency={currency} />
                 </div>
               )}
 

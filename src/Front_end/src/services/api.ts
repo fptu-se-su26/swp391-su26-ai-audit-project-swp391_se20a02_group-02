@@ -173,9 +173,10 @@ class ApiClient {
     return this.request<T>(endpoint, { ...options, method: 'DELETE' });
   }
 
-  // Health Check
+  // BUG-14 FIX: /test/health requires ROLE_ADMIN and @Profile("dev") — always fails for
+  // unauthenticated connectivity checks. Use the public /home/stats endpoint instead.
   async healthCheck() {
-    return this.request('/test/health');
+    return this.request('/home/stats');
   }
 
   // Database Info

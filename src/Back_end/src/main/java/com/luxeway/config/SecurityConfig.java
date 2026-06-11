@@ -166,8 +166,11 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         
-        // SECURITY: Read from environment variable for production
-        String allowedOriginsEnv = System.getenv("CORS_ALLOWED_ORIGINS");
+        // BUG-10 FIX: System.getenv() only reads OS-level environment variables.
+        // The .env file is loaded via System.setProperty() in LuxewayBackendApplication,
+        // so we must check System.getProperty() first, then fall back to getenv().
+        String allowedOriginsEnv = System.getProperty("CORS_ALLOWED_ORIGINS",
+                System.getenv("CORS_ALLOWED_ORIGINS"));
         List<String> allowedOrigins;
         if (allowedOriginsEnv != null && !allowedOriginsEnv.isBlank()) {
             allowedOrigins = Arrays.asList(allowedOriginsEnv.split(","));

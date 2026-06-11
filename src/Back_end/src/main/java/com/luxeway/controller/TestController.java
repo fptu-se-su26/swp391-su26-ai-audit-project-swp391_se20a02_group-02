@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.context.annotation.Profile;
+// import org.springframework.context.annotation.Profile; // BUG-03 FIX: removed @Profile("dev")
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -17,7 +17,9 @@ import java.util.Map;
 @RestController
 @RequestMapping("/test")
 @PreAuthorize("hasRole('ADMIN')")
-@Profile("dev")
+// BUG-03 FIX: Removed @Profile("dev") — this controller is protected by ADMIN role already.
+// The dev profile is never active (default is "sqlserver"), so the controller was never loaded,
+// causing all /test/** health check calls from the frontend to fail with 404.
 public class TestController {
     
     @Autowired
