@@ -74,33 +74,52 @@ export const getCoordinates = (v: Vehicle, index: number): [number, number] => {
 const MapController: React.FC<{ vehicles: Vehicle[]; selectedVehicleId?: string }> = ({ vehicles, selectedVehicleId }) => {
   const map = useMap();
 
+  const vehicleIdsStr = useMemo(() => vehicles.map(v => v.id).join(','), [vehicles]);
+  const vehiclesRef = React.useRef(vehicles);
+  
   useEffect(() => {
-    if (vehicles.length === 0) return;
+    vehiclesRef.current = vehicles;
+  }, [vehicles]);
+
+  useEffect(() => {
+    // Fix leaflet gray tiles loading issue on container mount / transition at multiple scheduled offsets
+    const timers = [
+      setTimeout(() => map.invalidateSize({ animate: false }), 50),
+      setTimeout(() => map.invalidateSize({ animate: true }), 250),
+      setTimeout(() => map.invalidateSize({ animate: true }), 800),
+      setTimeout(() => map.invalidateSize({ animate: true }), 1500),
+    ];
+    return () => timers.forEach(clearTimeout);
+  }, [map, vehicleIdsStr]);
+
+  useEffect(() => {
+    const currentVehicles = vehiclesRef.current;
+    if (currentVehicles.length === 0) return;
 
     // Single vehicle mode or selected vehicle prioritization
-    if (vehicles.length === 1) {
-      const coords = getCoordinates(vehicles[0], 0);
-      map.setView(coords, 16); // Detail page zoom level (15-17)
+    if (currentVehicles.length === 1) {
+      const coords = getCoordinates(currentVehicles[0], 0);
+      map.flyTo(coords, 16, { animate: true, duration: 1.5 });
       return;
     }
 
     if (selectedVehicleId) {
-      const selectedVehicle = vehicles.find(v => v.id === selectedVehicleId);
+      const selectedVehicle = currentVehicles.find(v => v.id === selectedVehicleId);
       if (selectedVehicle) {
-        const coords = getCoordinates(selectedVehicle, vehicles.indexOf(selectedVehicle));
-        map.setView(coords, 14);
+        const coords = getCoordinates(selectedVehicle, currentVehicles.indexOf(selectedVehicle));
+        map.flyTo(coords, 15, { animate: true, duration: 1.5 });
         return;
       }
     }
 
     try {
-      const coordsList = vehicles.map((v, idx) => getCoordinates(v, idx));
+      const coordsList = currentVehicles.map((v, idx) => getCoordinates(v, idx));
       const bounds = L.latLngBounds(coordsList);
       map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
     } catch (e) {
       console.error('Failed to fit bounds', e);
     }
-  }, [vehicles, selectedVehicleId, map]);
+  }, [vehicleIdsStr, selectedVehicleId, map]);
 
   return null;
 };

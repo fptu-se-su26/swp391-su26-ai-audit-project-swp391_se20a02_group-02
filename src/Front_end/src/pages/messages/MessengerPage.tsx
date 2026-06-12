@@ -8,7 +8,6 @@ import type { Conversation, Message } from '@/types';
 import { formatDate, getInitials } from '@/utils';
 import { cn } from '@/utils';
 import SockJS from 'sockjs-client';
-import Stomp from 'stompjs';
 
 const MessengerPage: React.FC = () => {
   const { user } = useAuthStore();
@@ -23,7 +22,7 @@ const MessengerPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const stompClientRef = useRef<Stomp.Client | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -42,29 +41,54 @@ const MessengerPage: React.FC = () => {
       setMessages(msgs);
     });
 
-    // Establish WebSocket Connection via STOMP/SockJS
-    const socket = new SockJS('http://localhost:8080/api/v1/ws');
-    const stompClient = Stomp.over(socket);
-    stompClient.debug = () => {}; // Mute debug logs for visual neatness
+    // Establish WebSocket Connection via native SockJS + STOMP frames (no stompjs)
+    let ws: WebSocket | null = null;
+    let subscribed = false;
+    try {
+      ws = new SockJS('http://localhost:8080/ws') as unknown as WebSocket;
+      wsRef.current = ws;
 
-    stompClient.connect({}, () => {
-      stompClient.subscribe(`/topic/chat/${activeConv.id}`, (payload) => {
-        const msg: Message = JSON.parse(payload.body);
-        setMessages(prev => {
-          if (prev.some(m => m.id === msg.id)) return prev;
-          return [...prev, msg];
-        });
-      });
-    }, (error) => {
-      console.error('WebSocket connection error:', error);
-    });
+      ws.onopen = () => {
+        ws!.send('CONNECT\naccept-version:1.1,1.0\nheart-beat:0,0\n\n\0');
+      };
 
-    stompClientRef.current = stompClient;
+      ws.onmessage = (event: MessageEvent) => {
+        const data: string = typeof event.data === 'string' ? event.data : '';
+        if (!data) return;
+        if (data.startsWith('CONNECTED') && !subscribed) {
+          subscribed = true;
+          ws!.send(`SUBSCRIBE\nid:sub-chat\ndestination:/topic/chat/${activeConv.id}\n\n\0`);
+        }
+        if (data.startsWith('MESSAGE')) {
+          try {
+            const bodyStart = data.indexOf('\n\n');
+            if (bodyStart !== -1) {
+              const body = data.substring(bodyStart + 2).replace(/\0$/, '');
+              const msg: Message = JSON.parse(body);
+              setMessages(prev => {
+                if (prev.some(m => m.id === msg.id)) return prev;
+                return [...prev, msg];
+              });
+            }
+          } catch (parseErr) {
+            console.warn('Failed to parse STOMP message body:', parseErr);
+          }
+        }
+      };
+
+      ws.onerror = (error) => {
+        console.error('WebSocket connection error:', error);
+      };
+    } catch (wsErr) {
+      console.warn('Failed to instantiate WebSocket client:', wsErr);
+    }
 
     return () => {
-      if (stompClientRef.current) {
-        stompClientRef.current.disconnect(() => {});
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        try { wsRef.current.send('DISCONNECT\n\n\0'); } catch {}
+        wsRef.current.close();
       }
+      wsRef.current = null;
     };
   }, [activeConv]);
 

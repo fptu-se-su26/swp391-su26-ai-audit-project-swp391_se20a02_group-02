@@ -1,5 +1,5 @@
 // API Configuration for LuxeWay Backend
-const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8080/api/v1';
+const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8080';
 
 // Token storage keys (must match authService.ts)
 const TOKEN_KEY = 'luxeway_access_token';
@@ -31,11 +31,15 @@ class ApiClient {
     if (!refreshToken) return null;
 
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
       const response = await fetch(`${this.baseURL}/auth/refresh`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refreshToken }),
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
 
       if (!response.ok) return null;
 
@@ -43,7 +47,6 @@ class ApiClient {
       const newAccessToken = data?.data?.accessToken || data?.accessToken;
       if (newAccessToken) {
         localStorage.setItem(TOKEN_KEY, newAccessToken);
-        // Also store new refresh token if provided
         const newRefreshToken = data?.data?.refreshToken || data?.refreshToken;
         if (newRefreshToken) {
           localStorage.setItem(REFRESH_TOKEN_KEY, newRefreshToken);
@@ -88,7 +91,10 @@ class ApiClient {
     };
 
     try {
-      const response = await fetch(url, config);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      const response = await fetch(url, { ...config, signal: controller.signal });
+      clearTimeout(timeoutId);
       
       if (!response.ok) {
         if (response.status === 401) {

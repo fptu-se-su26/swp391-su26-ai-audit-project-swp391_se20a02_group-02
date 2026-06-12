@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   Phone, Mail, MapPin, Globe, Facebook, Instagram, Twitter, Youtube
 } from 'lucide-react';
-import logoImage from '@/image/logo.png';
+import logoImage from '../../../image/logo.png';
 
 export const Footer: React.FC = () => {
   const [email, setEmail] = useState('');

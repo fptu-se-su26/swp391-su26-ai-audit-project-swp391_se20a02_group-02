@@ -14,6 +14,7 @@ import type { Vehicle, VehicleFilters, VehicleCategory, VehicleType } from '@/ty
 import { formatCurrency, debounce, cn } from '@/utils';
 import { fadeUp, staggerContainer, staggerItem } from '@/animations/variants';
 import { useT } from '@/i18n/translations';
+import { useUIStore } from '@/store';
 
 // ====== VND PRICE FORMATTER ======
 const formatVND = (amount: number): string => {
@@ -361,6 +362,7 @@ export const CarsMarketplace: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const t = useT();
+  const { language } = useUIStore();
 
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -407,7 +409,7 @@ export const CarsMarketplace: React.FC = () => {
   useEffect(() => {
     if (searchQuery) debouncedSearch(searchQuery);
     else loadVehicles(filters, page);
-  }, [filters, page, searchQuery]);
+  }, [filters, page, searchQuery, language]);
 
   const handleFilterChange = (newFilters: VehicleFilters) => {
     setFilters({ ...newFilters, vehicleType: 'car' });

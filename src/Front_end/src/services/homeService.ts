@@ -114,7 +114,7 @@ async function fetchWithDiagnostics<T>(endpoint: string): Promise<T | null> {
   }
 }
 
-const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8080/api/v1';
+const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8080';
 
 const resolveImageUrl = (url: string | null | undefined): string => {
   if (!url) return '';

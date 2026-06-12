@@ -3,6 +3,8 @@ import { Link, Outlet, useNavigate, useParams, useLocation } from 'react-router-
 import { motion, AnimatePresence } from 'framer-motion';
 import ImageUploader from '@/components/ui/ImageUploader';
 import { OwnerAnalyticsDashboard } from '@/components/enterprise/OwnerAnalyticsDashboard';
+import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import L from 'leaflet';
 
 import {
   LayoutDashboard, Car, Calendar, TrendingUp, Users, Settings,
@@ -16,28 +18,31 @@ import { vehicleService } from '@/services/vehicleService';
 import { bookingService } from '@/services/bookingService';
 import apiClient from '@/services/api';
 import type { Vehicle, Booking } from '@/types';
-import { formatCurrency, formatDate, getStatusColor, convertCurrency } from '@/utils';
+import { formatCurrency, formatDate, getStatusColor, convertCurrency, cn } from '@/utils';
 import { staggerContainer, staggerItem, fadeUp } from '@/animations/variants';
 import { useToast } from '@/components/ui/Toast';
 import { useT } from '@/i18n/translations';
+import Avatar from '@/components/ui/Avatar';
+import StatusBadge from '@/components/ui/StatusBadge';
+import Breadcrumbs from '@/components/ui/Breadcrumbs';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, BarChart, Bar, Cell
 } from 'recharts';
 
-// Custom glassmorphic tooltip for charts
+// Custom glassmorphic tooltip for charts (styled as a premium white card with shadow)
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="glass-strong border border-slate-200/50 dark:border-white/10 p-3.5 rounded-2xl shadow-xl backdrop-blur-md text-xs font-semibold">
-        <p className="text-slate-400 dark:text-slate-500 font-bold mb-1">{label}</p>
-        <p className="text-slate-800 dark:text-white font-extrabold flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-gold inline-block" />
-          Revenue: <span className="text-gold">{formatCurrency(payload[0].value)}</span>
+      <div className="bg-white border border-slate-200 p-3.5 rounded-lg shadow-xl text-xs font-semibold text-slate-800">
+        <p className="text-slate-555 font-bold mb-1">{label}</p>
+        <p className="text-slate-800 font-extrabold flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" />
+          Revenue: <span className="text-amber-600">{formatCurrency(payload[0].value)}</span>
         </p>
         {payload[0].payload.bookings !== undefined && (
-          <p className="text-slate-600 dark:text-slate-300 font-medium mt-0.5 flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-blue-500 inline-block" />
+          <p className="text-slate-600 font-medium mt-0.5 flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block" />
             Bookings: {payload[0].payload.bookings}
           </p>
         )}
@@ -333,11 +338,11 @@ export const OwnerOverview: React.FC = () => {
           </div>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={revenueData} barSize={26}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" strokeWidth={0.5} opacity={0.3} vertical={false} />
               <XAxis dataKey="month" tick={{ fontSize: 11, fontWeight: 600, fill: 'rgba(148,163,184,0.6)' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 10, fill: 'rgba(148,163,184,0.5)' }} axisLine={false} tickLine={false} tickFormatter={v => `${(v / 1000000).toFixed(0)}M`} />
+              <YAxis tick={{ fontSize: 11, fill: 'rgba(148,163,184,0.5)' }} axisLine={false} tickLine={false} tickFormatter={v => `${(v / 1000000).toFixed(0)}M`} />
               <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(245,158,11,0.08)', radius: 8 }} />
-              <Bar dataKey="revenue" radius={[6, 6, 0, 0]}>
+              <Bar dataKey="revenue" radius={[6, 6, 0, 0]} cursor="pointer" activeBar={{ fillOpacity: 0.8 }}>
                 {revenueData.map((_, index) => (
                   <Cell key={index}
                     fill={index === revenueData.length - 1 ? 'url(#ownerBarGrad)' : 'rgba(245,158,11,0.30)'} />
@@ -504,14 +509,17 @@ export const VehicleManagePage: React.FC = () => {
     }
   };
 
+  const breadcrumbItems = [
+    { label: t.marketplace.home, href: '/' },
+    { label: 'Host Portal', href: '/owner' },
+    { label: t.ownerDashboard.myVehicles }
+  ];
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
-        <div>
-          <h1 className="font-display text-2.5xl font-extrabold text-slate-800 dark:text-white tracking-tight">{t.ownerDashboard.myVehicles}</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-xs font-semibold mt-0.5">{t.ownerDashboard.fleetSubtitle}</p>
-        </div>
-        <Link to="/owner/vehicles/new" className="btn-gold flex items-center gap-2 text-xs font-extrabold px-5 py-3 rounded-xl shadow-lg shadow-gold/20 hover:shadow-gold/30 hover-lift">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--lw-border)] pb-5">
+        <Breadcrumbs title={t.ownerDashboard.myVehicles} items={breadcrumbItems} backHref="/owner" backText="Back to Overview" className="mb-0 flex-1" />
+        <Link to="/owner/vehicles/new" className="btn-gold flex items-center gap-2 text-xs font-extrabold px-5 py-3 rounded-xl shadow-lg shadow-gold/20 hover:shadow-gold/30 hover-lift lw-btn-interactive">
           <Plus className="w-4 h-4" /> {t.ownerDashboard.addVehicle}
         </Link>
       </div>
@@ -578,6 +586,33 @@ export const VehicleManagePage: React.FC = () => {
   );
 };
 
+const pickerIcon = L.divIcon({
+  className: 'custom-picker-marker',
+  html: `
+    <div class="flex items-center justify-center" style="transform: translate(0, -14px);">
+      <svg class="w-8 h-8 text-amber-500 fill-amber-500 drop-shadow-lg" viewBox="0 0 24 24" fill="currentColor" style="filter: drop-shadow(0px 3px 3px rgba(0,0,0,0.3));">
+        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+      </svg>
+    </div>
+  `,
+  iconSize: [32, 32],
+  iconAnchor: [16, 32]
+});
+
+const MapClickSelector: React.FC<{ lat: number; lng: number; onChange: (lat: number, lng: number) => void }> = ({ lat, lng, onChange }) => {
+  const map = useMapEvents({
+    click(e) {
+      onChange(e.latlng.lat, e.latlng.lng);
+    },
+  });
+
+  useEffect(() => {
+    map.flyTo([lat, lng], map.getZoom());
+  }, [lat, lng, map]);
+
+  return <Marker position={[lat, lng]} icon={pickerIcon} />;
+};
+
 // ====== VEHICLE FORM PAGE ======
 export const VehicleFormPage: React.FC = () => {
   const { user } = useAuthStore();
@@ -592,6 +627,7 @@ export const VehicleFormPage: React.FC = () => {
   const [fetching, setFetching] = useState(false);
   const [step, setStep] = useState(1);
   const [images, setImages] = useState<string[]>([]);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [form, setForm] = useState({
     name: '', brand: '', category: 'supercar', year: new Date().getFullYear(),
@@ -600,6 +636,8 @@ export const VehicleFormPage: React.FC = () => {
     features: 'Bluetooth, Navigation, Backup Camera',
     address: '', city: '', state: '', zip: '', country: 'US',
     thumbnailUrl: 'https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=800&q=80',
+    lat: 10.762,
+    lng: 106.660,
   });
 
   const getCurrencySymbol = (code: string) => {
@@ -639,6 +677,8 @@ export const VehicleFormPage: React.FC = () => {
           zip: (vehicle.location as any)?.zip || '',
           country: vehicle.location?.country || 'US',
           thumbnailUrl: vehicle.thumbnailUrl || 'https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=800&q=80',
+          lat: vehicle.location?.lat !== undefined ? vehicle.location.lat : ((vehicle as any).latitude || 10.762),
+          lng: vehicle.location?.lng !== undefined ? vehicle.location.lng : ((vehicle as any).longitude || 106.660),
         });
         setImages(vehicle.images || (vehicle.thumbnailUrl ? [vehicle.thumbnailUrl] : []));
       } else {
@@ -653,10 +693,50 @@ export const VehicleFormPage: React.FC = () => {
     });
   }, [id]);
 
-  const update = (k: string, v: string | number) => setForm(f => ({ ...f, [k]: v }));
+  const update = (k: string, v: string | number) => {
+    setForm(f => ({ ...f, [k]: v }));
+    if (errors[k]) {
+      setErrors(errs => {
+        const next = { ...errs };
+        delete next[k];
+        return next;
+      });
+    }
+  };
+
+  const validateStep = (currentStep: number): boolean => {
+    const newErrors: Record<string, string> = {};
+    if (currentStep === 1) {
+      if (!form.name.trim()) newErrors.name = isVi ? 'Tên xe không được để trống' : 'Vehicle name is required';
+      if (!form.brand.trim()) newErrors.brand = isVi ? 'Thương hiệu không được để trống' : 'Brand is required';
+      if (!form.year) newErrors.year = isVi ? 'Năm sản xuất không được để trống' : 'Year is required';
+      else if (form.year < 1950 || form.year > new Date().getFullYear() + 1) {
+        newErrors.year = isVi ? 'Năm sản xuất không hợp lệ' : 'Invalid manufacturing year';
+      }
+      if (!form.description.trim()) newErrors.description = isVi ? 'Mô tả không được để trống' : 'Description is required';
+    } else if (currentStep === 2) {
+      if (images.length === 0 && !form.thumbnailUrl) {
+        newErrors.images = isVi ? 'Vui lòng tải lên ít nhất một hình ảnh' : 'At least one image is required';
+      }
+    } else if (currentStep === 3) {
+      if (!form.pricePerDay || Number(form.pricePerDay) <= 0) {
+        newErrors.pricePerDay = isVi ? 'Giá thuê phải lớn hơn 0' : 'Daily rate must be greater than 0';
+      }
+      if (!form.city.trim()) newErrors.city = isVi ? 'Thành phố không được để trống' : 'City is required';
+      if (!form.state.trim()) newErrors.state = isVi ? 'Tỉnh/Bang không được để trống' : 'State/Province is required';
+      if (form.lat === undefined || isNaN(Number(form.lat))) newErrors.lat = isVi ? 'Vĩ độ không được để trống' : 'Latitude is required';
+      if (form.lng === undefined || isNaN(Number(form.lng))) newErrors.lng = isVi ? 'Kinh độ không được để trống' : 'Longitude is required';
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateStep(step)) {
+      toast.error(isVi ? 'Vui lòng kiểm tra lại thông tin nhập vào' : 'Please check your inputs');
+      return;
+    }
     if (step < 3) {
       setStep(s => s + 1);
       window.scrollTo(0, 0);
@@ -697,9 +777,9 @@ export const VehicleFormPage: React.FC = () => {
         address: form.address,
         city: form.city,
         country: form.country,
-        lat: 34.0522,
-        lng: -118.2437,
-        timezone: 'America/Los_Angeles'
+        lat: Number(form.lat) || 10.762,
+        lng: Number(form.lng) || 106.660,
+        timezone: 'Asia/Ho_Chi_Minh'
       },
       model: 'Custom',
       deposit: 0,
@@ -753,19 +833,21 @@ export const VehicleFormPage: React.FC = () => {
     { num: 3, label: isVi ? 'Giá Cả & Địa Điểm' : isJa ? '料金・所在地' : 'Rates & Location' }
   ];
 
+  const breadcrumbItems = [
+    { label: t.marketplace.home, href: '/' },
+    { label: 'Host Portal', href: '/owner' },
+    { label: t.ownerDashboard.myVehicles, href: '/owner/vehicles' },
+    { label: id ? (isVi ? 'Chỉnh sửa' : 'Edit') : (isVi ? 'Thêm mới' : 'Add New') }
+  ];
+
   return (
     <div className="max-w-3xl mx-auto animate-fade-in">
-      <div className="flex items-center gap-4 mb-8">
-        <Link to="/owner/vehicles" className="p-3 rounded-xl border border-slate-200/50 dark:border-white/10 hover:bg-slate-500/5 transition-colors text-slate-500 dark:text-slate-400 font-extrabold hover:text-[#EAB308]">
-          ← {isVi ? 'Quay Lại' : isJa ? '戻る' : 'Back'}
-        </Link>
-        <div>
-          <h1 className="font-display text-2.5xl font-extrabold text-slate-800 dark:text-white tracking-tight">
-            {id ? (isVi ? 'Chỉnh Sửa Phương Tiện' : isJa ? '車両情報を編集' : 'Edit Your Vehicle') : (isVi ? 'Đăng Xe Cao Cấp Mới' : isJa ? '高級車を掲載' : 'List a Luxury Vehicle')}
-          </h1>
-          <p className="text-slate-500 dark:text-slate-400 text-xs font-semibold mt-0.5">{isVi ? 'Định nghĩa trải nghiệm đẳng cấp của bạn' : 'Define your high-end experience'}</p>
-        </div>
-      </div>
+      <Breadcrumbs 
+        title={id ? (isVi ? 'Chỉnh Sửa Phương Tiện' : 'Edit Your Vehicle') : (isVi ? 'Đăng Xe Cao Cấp Mới' : 'List a Luxury Vehicle')} 
+        items={breadcrumbItems} 
+        backHref="/owner/vehicles" 
+        backText={isVi ? 'Quay lại danh sách' : 'Back to list'} 
+      />
 
       {/* Modern Capsule Step Indicators with labels */}
       <div className="mb-8">
@@ -786,17 +868,19 @@ export const VehicleFormPage: React.FC = () => {
           <motion.div variants={fadeUp} initial="hidden" animate="visible" className="space-y-6">
             <h3 className="font-display text-xl font-bold text-slate-800 dark:text-white border-b border-slate-200/10 dark:border-white/5 pb-3">{isVi ? 'Thông Tin Cơ Bản' : isJa ? '基本情報' : 'Basic Information'}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div>
-                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? 'Tên Xe *' : isJa ? '車両名 *' : 'Vehicle Name *'}</label>
-                <input value={form.name} onChange={e => update('name', e.target.value)} required placeholder="e.g. Ferrari F8 Tributo" className="lux-input w-full bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl px-4 py-3 text-sm focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20" />
+              <div className="lw-form-group">
+                <label className="lw-form-label">{isVi ? 'Tên Xe *' : isJa ? '車両名 *' : 'Vehicle Name *'}</label>
+                <input value={form.name} onChange={e => update('name', e.target.value)} required placeholder="e.g. Ferrari F8 Tributo" className={`lw-input-interactive ${errors.name ? 'error' : ''}`} />
+                {errors.name && <p className="lw-form-error-text">{errors.name}</p>}
               </div>
-              <div>
-                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? 'Thương Hiệu *' : isJa ? 'ブランド *' : 'Brand *'}</label>
-                <input value={form.brand} onChange={e => update('brand', e.target.value)} required placeholder="e.g. Ferrari" className="lux-input w-full bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl px-4 py-3 text-sm focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20" />
+              <div className="lw-form-group">
+                <label className="lw-form-label">{isVi ? 'Thương Hiệu *' : isJa ? 'ブランド *' : 'Brand *'}</label>
+                <input value={form.brand} onChange={e => update('brand', e.target.value)} required placeholder="e.g. Ferrari" className={`lw-input-interactive ${errors.brand ? 'error' : ''}`} />
+                {errors.brand && <p className="lw-form-error-text">{errors.brand}</p>}
               </div>
-              <div>
-                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? 'Phân Khúc *' : isJa ? 'カテゴリー *' : 'Category *'}</label>
-                <select value={form.category} onChange={e => update('category', e.target.value)} className="lux-input w-full bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl px-4 py-3 text-sm text-slate-800 dark:text-slate-100 focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20">
+              <div className="lw-form-group">
+                <label className="lw-form-label">{isVi ? 'Phân Khúc *' : isJa ? 'カテゴリー *' : 'Category *'}</label>
+                <select value={form.category} onChange={e => update('category', e.target.value)} className="lw-input-interactive text-slate-800 dark:text-slate-100">
                   <option value="supercar">Supercar</option>
                   <option value="suv">Luxury SUV</option>
                   <option value="convertible">Convertible</option>
@@ -805,49 +889,51 @@ export const VehicleFormPage: React.FC = () => {
                   <option value="classic">Classic</option>
                 </select>
               </div>
-              <div>
-                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? 'Năm Sản Xuất *' : isJa ? '製造年 *' : 'Year *'}</label>
-                <input type="number" value={form.year} onChange={e => update('year', e.target.value)} required min="1950" max={new Date().getFullYear() + 1} className="lux-input w-full bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl px-4 py-3 text-sm focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20" />
+              <div className="lw-form-group">
+                <label className="lw-form-label">{isVi ? 'Năm Sản Xuất *' : isJa ? '製造年 *' : 'Year *'}</label>
+                <input type="number" value={form.year} onChange={e => update('year', e.target.value)} required min="1950" max={new Date().getFullYear() + 1} className={`lw-input-interactive ${errors.year ? 'error' : ''}`} />
+                {errors.year && <p className="lw-form-error-text">{errors.year}</p>}
               </div>
-              <div className="md:col-span-2">
-                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? 'Mô Tả Chi Tiết *' : isJa ? '詳細説明 *' : 'Description *'}</label>
-                <textarea value={form.description} onChange={e => update('description', e.target.value)} required rows={4} className="lux-input w-full bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl px-4 py-3 text-sm resize-none focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20" placeholder={isVi ? 'Mô tả chi tiết về tình trạng xe, cảm giác lái và các trang bị độc đáo...' : 'Describe your vehicle\'s condition, drive feeling, and unique amenities...'} />
+              <div className="md:col-span-2 lw-form-group">
+                <label className="lw-form-label">{isVi ? 'Mô Tả Chi Tiết *' : isJa ? '詳細説明 *' : 'Description *'}</label>
+                <textarea value={form.description} onChange={e => update('description', e.target.value)} required rows={4} className={`lw-input-interactive resize-none ${errors.description ? 'error' : ''}`} placeholder={isVi ? 'Mô tả chi tiết về tình trạng xe, cảm giác lái và các trang bị độc đáo...' : 'Describe your vehicle\'s condition, drive feeling, and unique amenities...'} />
+                {errors.description && <p className="lw-form-error-text">{errors.description}</p>}
               </div>
             </div>
           </motion.div>
         )}
-
+ 
         {step === 2 && (
           <motion.div variants={fadeUp} initial="hidden" animate="visible" className="space-y-6">
             <h3 className="font-display text-xl font-bold text-slate-800 dark:text-white border-b border-slate-200/10 dark:border-white/5 pb-3">{isVi ? 'Thông Số & Tiện Nghi' : isJa ? 'スペック・装備' : 'Specs & Features'}</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? 'Số Chỗ' : isJa ? '座席数' : 'Seats'}</label>
-                <input type="number" value={form.seats} onChange={e => update('seats', e.target.value)} min="1" className="lux-input w-full bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl px-4 py-3 text-sm focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20" />
+              <div className="lw-form-group">
+                <label className="lw-form-label">{isVi ? 'Số Chỗ' : isJa ? '座席数' : 'Seats'}</label>
+                <input type="number" value={form.seats} onChange={e => update('seats', e.target.value)} min="1" className="lw-input-interactive" />
               </div>
-              <div>
-                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? 'Số Cửa' : isJa ? 'ドア数' : 'Doors'}</label>
-                <input type="number" value={form.doors} onChange={e => update('doors', e.target.value)} min="2" className="lux-input w-full bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl px-4 py-3 text-sm focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20" />
+              <div className="lw-form-group">
+                <label className="lw-form-label">{isVi ? 'Số Cửa' : isJa ? 'ドア数' : 'Doors'}</label>
+                <input type="number" value={form.doors} onChange={e => update('doors', e.target.value)} min="2" className="lw-input-interactive" />
               </div>
-              <div>
-                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? 'Hộp Số' : isJa ? 'ギア' : 'Transmission'}</label>
-                <select value={form.transmission} onChange={e => update('transmission', e.target.value)} className="lux-input w-full bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl px-4 py-3 text-sm text-slate-800 dark:text-slate-100 focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20">
+              <div className="lw-form-group">
+                <label className="lw-form-label">{isVi ? 'Hộp Số' : isJa ? 'ギア' : 'Transmission'}</label>
+                <select value={form.transmission} onChange={e => update('transmission', e.target.value)} className="lw-input-interactive text-slate-800 dark:text-slate-100">
                   <option>Automatic</option><option>Manual</option><option>Dual-Clutch</option>
                 </select>
               </div>
-              <div>
-                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? 'Nhiên Liệu' : isJa ? '燃料' : 'Fuel Type'}</label>
-                <select value={form.fuelType} onChange={e => update('fuelType', e.target.value)} className="lux-input w-full bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl px-4 py-3 text-sm text-slate-800 dark:text-slate-100 focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20">
+              <div className="lw-form-group">
+                <label className="lw-form-label">{isVi ? 'Nhiên Liệu' : isJa ? '燃料' : 'Fuel Type'}</label>
+                <select value={form.fuelType} onChange={e => update('fuelType', e.target.value)} className="lw-input-interactive text-slate-800 dark:text-slate-100">
                   <option>Gasoline</option><option>Electric</option><option>Hybrid</option><option>Diesel</option>
                 </select>
               </div>
             </div>
-            <div>
-              <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? 'Tiện Nghi (Ngăn Cách Bởi Dấu Phẩy)' : isJa ? '装備（カンマ区切り）' : 'Features (comma separated)'}</label>
-              <input value={form.features} onChange={e => update('features', e.target.value)} className="lux-input w-full bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl px-4 py-3 text-sm focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20" placeholder="Bluetooth, Apple CarPlay, Heated Seats..." />
+            <div className="lw-form-group">
+              <label className="lw-form-label">{isVi ? 'Tiện Nghi (Ngăn Cách Bởi Dấu Phẩy)' : isJa ? '装備（カンマ区切り）' : 'Features (comma separated)'}</label>
+              <input value={form.features} onChange={e => update('features', e.target.value)} className="lw-input-interactive" placeholder="Bluetooth, Apple CarPlay, Heated Seats..." />
             </div>
             <div className="mt-4">
-              <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">{isVi ? 'Hình Ảnh Xe' : isJa ? '車両画像' : 'Vehicle Image'}</label>
+              <label className="lw-form-label mb-3">{isVi ? 'Hình Ảnh Xe' : isJa ? '車両画像' : 'Vehicle Image'}</label>
               <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-gold rounded-3xl p-7 text-center transition-colors cursor-pointer relative bg-slate-500/5 hover:bg-slate-500/10 group animate-fade-in">
                 <input
                   type="file"
@@ -860,7 +946,7 @@ export const VehicleFormPage: React.FC = () => {
                     formData.append('file', file);
                     try {
                       const token = localStorage.getItem('luxeway_access_token');
-                      const res = await fetch('http://localhost:8080/api/v1/upload/vehicle-image', {
+                      const res = await fetch('http://localhost:8080/upload/vehicle-image', {
                         method: 'POST',
                         headers: token ? { Authorization: `Bearer ${token}` } : {},
                         body: formData,
@@ -892,33 +978,67 @@ export const VehicleFormPage: React.FC = () => {
                   </div>
                 )}
               </div>
+              {errors.images && <p className="lw-form-error-text mt-2">{errors.images}</p>}
             </div>
           </motion.div>
         )}
-
+ 
         {step === 3 && (
           <motion.div variants={fadeUp} initial="hidden" animate="visible" className="space-y-6">
             <h3 className="font-display text-xl font-bold text-slate-800 dark:text-white border-b border-slate-200/10 dark:border-white/5 pb-3">{isVi ? 'Giá Cả & Địa Điểm' : isJa ? '料金・所在地' : 'Pricing & Location'}</h3>
-            <div>
-              <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? `Giá Thuê Hàng Ngày (${currency}) *` : isJa ? `一日あたりの料金（${currency}） *` : `Daily Rate (${currency}) *`}</label>
+            <div className="lw-form-group">
+              <label className="lw-form-label">{isVi ? `Giá Thuê Hàng Ngày (${currency}) *` : isJa ? `一日あたりの料金（${currency}） *` : `Daily Rate (${currency}) *`}</label>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-extrabold">{getCurrencySymbol(currency)}</span>
-                <input type="number" value={form.pricePerDay} onChange={e => update('pricePerDay', e.target.value)} required min="1" className="lux-input w-full pl-9 pr-4 py-3 bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl text-slate-800 dark:text-white font-extrabold text-sm focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20" />
+                <input type="number" value={form.pricePerDay} onChange={e => update('pricePerDay', e.target.value)} required min="1" className={`lw-input-interactive pl-9 ${errors.pricePerDay ? 'error' : ''}`} />
               </div>
+              {errors.pricePerDay && <p className="lw-form-error-text">{errors.pricePerDay}</p>}
               <p className="text-xs text-slate-400 dark:text-slate-500 mt-2.5 font-medium">{isVi ? `Trung bình trên LuxeWay: ${formatCurrency(450 * 25400)} - ${formatCurrency(800 * 25400)} dựa trên phân khúc siêu xe.` : `LuxeWay average: ${formatCurrency(450 * 25400)} - ${formatCurrency(800 * 25400)} based on supercars.`}</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div className="md:col-span-2">
-                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? 'Địa Chỉ Cụ Thể' : isJa ? '所在地（住所）' : 'Street Address'}</label>
-                <input value={form.address} onChange={e => update('address', e.target.value)} className="lux-input w-full bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl px-4 py-3 text-sm focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20" />
+              <div className="md:col-span-2 lw-form-group">
+                <label className="lw-form-label">{isVi ? 'Địa Chỉ Cụ Thể' : isJa ? '所在地（住所）' : 'Street Address'}</label>
+                <input value={form.address} onChange={e => update('address', e.target.value)} className="lw-input-interactive" />
               </div>
-              <div>
-                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? 'Thành Phố *' : isJa ? '市区町村 *' : 'City *'}</label>
-                <input value={form.city} onChange={e => update('city', e.target.value)} required className="lux-input w-full bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl px-4 py-3 text-sm focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20" />
+              <div className="lw-form-group">
+                <label className="lw-form-label">{isVi ? 'Thành Phố *' : isJa ? '市区町村 *' : 'City *'}</label>
+                <input value={form.city} onChange={e => update('city', e.target.value)} required className={`lw-input-interactive ${errors.city ? 'error' : ''}`} />
+                {errors.city && <p className="lw-form-error-text">{errors.city}</p>}
               </div>
-              <div>
-                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? 'Tỉnh/Bang *' : isJa ? '都道府県 *' : 'State/Province *'}</label>
-                <input value={form.state} onChange={e => update('state', e.target.value)} required className="lux-input w-full bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl px-4 py-3 text-sm focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20" />
+              <div className="lw-form-group">
+                <label className="lw-form-label">{isVi ? 'Tỉnh/Bang *' : isJa ? '都道府県 *' : 'State/Province *'}</label>
+                <input value={form.state} onChange={e => update('state', e.target.value)} required className={`lw-input-interactive ${errors.state ? 'error' : ''}`} />
+                {errors.state && <p className="lw-form-error-text">{errors.state}</p>}
+              </div>
+              
+              <div className="md:col-span-2 grid grid-cols-2 gap-4">
+                <div className="lw-form-group">
+                  <label className="lw-form-label">Latitude *</label>
+                  <input type="number" step="any" value={form.lat} onChange={e => update('lat', parseFloat(e.target.value) || 0)} required className={`lw-input-interactive font-mono ${errors.lat ? 'error' : ''}`} />
+                  {errors.lat && <p className="lw-form-error-text">{errors.lat}</p>}
+                </div>
+                <div className="lw-form-group">
+                  <label className="lw-form-label">Longitude *</label>
+                  <input type="number" step="any" value={form.lng} onChange={e => update('lng', parseFloat(e.target.value) || 0)} required className={`lw-input-interactive font-mono ${errors.lng ? 'error' : ''}`} />
+                  {errors.lng && <p className="lw-form-error-text">{errors.lng}</p>}
+                </div>
+              </div>
+ 
+              <div className="md:col-span-2 space-y-2.5">
+                <label className="lw-form-label">
+                  {isVi ? 'Vị Trí Trên Bản Đồ (Click để chọn tọa độ mới)' : 'Location on Map (Click to select new coordinates)'}
+                </label>
+                <div className="h-64 w-full rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md relative z-10">
+                  <MapContainer center={[form.lat || 10.762, form.lng || 106.660]} zoom={13} className="w-full h-full">
+                    <TileLayer
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                      url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                    />
+                    <MapClickSelector lat={form.lat || 10.762} lng={form.lng || 106.660} onChange={(lat, lng) => {
+                      setForm(f => ({ ...f, lat, lng }));
+                    }} />
+                  </MapContainer>
+                </div>
               </div>
             </div>
           </motion.div>
@@ -942,6 +1062,7 @@ export const VehicleFormPage: React.FC = () => {
 // ====== OWNER CALENDAR PAGE ======
 export const OwnerCalendarPage: React.FC = () => {
   const { user } = useAuthStore();
+  const t = useT();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -988,13 +1109,16 @@ export const OwnerCalendarPage: React.FC = () => {
     });
   };
 
+  const breadcrumbItems = [
+    { label: t.marketplace.home, href: '/' },
+    { label: 'Host Portal', href: '/owner' },
+    { label: t.ownerDashboard.calendar }
+  ];
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
-        <div>
-          <h1 className="font-display text-2.5xl font-extrabold text-slate-800 dark:text-white tracking-tight">Fleet Calendar</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-xs font-semibold mt-0.5">Manage your vehicle availability, blocked dates, and timelines</p>
-        </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--lw-border)] pb-5">
+        <Breadcrumbs title="Fleet Calendar" items={breadcrumbItems} backHref="/owner" backText="Back to Overview" className="mb-0 flex-1" />
         <div className="flex items-center gap-3">
           <select 
             value={selectedVehicle} 
@@ -1076,6 +1200,7 @@ export const OwnerBookingsPage: React.FC = () => {
   const [loading, setLoading] = React.useState(true);
   const [filter, setFilter] = React.useState('all');
   const toast = useToast();
+  const t = useT();
 
   React.useEffect(() => {
     if (!user) return;
@@ -1099,12 +1224,15 @@ export const OwnerBookingsPage: React.FC = () => {
     toast.success('Booking rejected', 'The renter has been notified.');
   };
 
+  const breadcrumbItems = [
+    { label: t.marketplace.home, href: '/' },
+    { label: 'Host Portal', href: '/owner' },
+    { label: 'Bookings' }
+  ];
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" className="mb-2">
-        <h1 className="font-display text-2.5xl font-extrabold text-slate-800 dark:text-white tracking-tight">Booking Requests</h1>
-        <p className="text-slate-500 dark:text-slate-400 text-xs font-semibold mt-0.5">Manage and respond to all bookings for your vehicles</p>
-      </motion.div>
+      <Breadcrumbs title="Booking Requests" items={breadcrumbItems} backHref="/owner" backText="Back to Overview" />
 
       {/* Filter Tabs - Premium Capsule Pills */}
       <div className="flex gap-2 overflow-x-auto pb-2 max-w-full scrollbar-none">
@@ -1187,7 +1315,19 @@ export const OwnerBookingsPage: React.FC = () => {
 };
 
 export const OwnerRevenuePage: React.FC = () => {
-  return <OwnerAnalyticsDashboard />;
+  const t = useT();
+  const breadcrumbItems = [
+    { label: t.marketplace.home, href: '/' },
+    { label: 'Host Portal', href: '/owner' },
+    { label: t.ownerDashboard.revenue }
+  ];
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <Breadcrumbs title={t.ownerDashboard.revenue} items={breadcrumbItems} backHref="/owner" backText="Back to Overview" />
+      <OwnerAnalyticsDashboard />
+    </div>
+  );
 };
 
 // ====== FLEET MANAGEMENT PAGE (SRS REQ-FLEET-001) ======
@@ -1196,6 +1336,7 @@ export const FleetManagementPage: React.FC = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedStatus, setSelectedStatus] = useState('all');
+  const t = useT();
 
   useEffect(() => {
     if (!user) return;
@@ -1216,17 +1357,20 @@ export const FleetManagementPage: React.FC = () => {
 
   const utilizationRate = stats.total > 0 ? Math.round((stats.rented / stats.total) * 100) : 0;
 
+  const breadcrumbItems = [
+    { label: t.marketplace.home, href: '/' },
+    { label: 'Host Portal', href: '/owner' },
+    { label: 'Fleet Management' }
+  ];
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
-        <div>
-          <h1 className="font-display text-2.5xl font-extrabold text-slate-800 dark:text-white tracking-tight">Fleet Management</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-xs font-semibold mt-0.5">Oversee and manage your entire luxury vehicle fleet</p>
-        </div>
-        <Link to="/owner/vehicles/new" className="btn-gold flex items-center gap-2 text-xs font-extrabold px-5 py-3 rounded-xl shadow-lg shadow-gold/20 hover:shadow-gold/30 hover-lift">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--lw-border)] pb-5">
+        <Breadcrumbs title="Fleet Management" items={breadcrumbItems} backHref="/owner" backText="Back to Overview" className="mb-0 flex-1" />
+        <Link to="/owner/vehicles/new" className="btn-gold flex items-center gap-2 text-xs font-extrabold px-5 py-3 rounded-xl shadow-lg shadow-gold/20 hover:shadow-gold/30 hover-lift lw-btn-interactive">
           <Plus className="w-4 h-4" /> Add to Fleet
         </Link>
-      </motion.div>
+      </div>
 
       {/* Fleet Stats Grid */}
       <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid grid-cols-2 lg:grid-cols-4 gap-5">
@@ -1365,6 +1509,7 @@ export const EmployeeManagementPage: React.FC = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [newEmployee, setNewEmployee] = useState({ name: '', email: '', phone: '', role: 'driver' });
   const toast = useToast();
+  const t = useT();
 
   useEffect(() => {
     apiClient.get<any>('/employees')
@@ -1426,17 +1571,20 @@ export const EmployeeManagementPage: React.FC = () => {
     return 'bg-slate-500/5 text-slate-500 border-slate-200/20';
   };
 
+  const breadcrumbItems = [
+    { label: t.marketplace.home, href: '/' },
+    { label: 'Host Portal', href: '/owner' },
+    { label: 'Team Management' }
+  ];
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
-        <div>
-          <h1 className="font-display text-2.5xl font-extrabold text-slate-800 dark:text-white tracking-tight">Team & Operations</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-xs font-semibold mt-0.5">Manage and assign roles for your fleet drivers, support staff, and managers</p>
-        </div>
-        <button onClick={() => setShowAddForm(true)} className="btn-gold flex items-center gap-2 text-xs font-extrabold px-5 py-3 rounded-xl shadow-lg shadow-gold/20 hover:shadow-gold/30 hover-lift">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--lw-border)] pb-5">
+        <Breadcrumbs title="Team & Operations" items={breadcrumbItems} backHref="/owner" backText="Back to Overview" className="mb-0 flex-1" />
+        <button onClick={() => setShowAddForm(true)} className="btn-gold flex items-center gap-2 text-xs font-extrabold px-5 py-3 rounded-xl shadow-lg shadow-gold/20 hover:shadow-gold/30 hover-lift lw-btn-interactive">
           <Plus className="w-4 h-4" /> Add Employee
         </button>
-      </motion.div>
+      </div>
 
       {/* Stats Row */}
       <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid grid-cols-3 gap-5 mb-6">
@@ -1683,16 +1831,12 @@ export const OwnerDashboardLayout: React.FC = () => {
                         key={link.href}
                         to={link.href}
                         onClick={() => setSidebarOpen(false)}
-                        className={`w-full flex items-center gap-3 px-4.5 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all duration-305 relative group ${
-                          active 
-                            ? 'bg-gradient-to-r from-amber-550 to-yellow-500 text-slate-900 shadow-xl shadow-amber-500/25 font-black' 
-                            : isDark 
-                              ? 'text-slate-400 hover:text-white hover:bg-slate-900/50' 
-                              : 'text-slate-655 hover:text-slate-900 hover:bg-slate-100/50'
-                        }`}
+                        className={cn(
+                          "lw-sidebar-nav-item flex items-center gap-3 px-4.5 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap group",
+                          active ? "active text-white animate-fade-in" : "text-slate-400 hover:text-white"
+                        )}
                       >
-                        {active && <span className="w-1 h-5 bg-slate-900 rounded-full absolute left-1" />}
-                        <link.icon className={`w-4.5 h-4.5 ${active ? 'text-slate-900' : 'text-slate-450 group-hover:text-slate-800 dark:group-hover:text-white'}`} />
+                        <link.icon className="w-4.5 h-4.5 flex-shrink-0" />
                         <span>{link.label}</span>
                       </Link>
                     );
@@ -1703,9 +1847,7 @@ export const OwnerDashboardLayout: React.FC = () => {
               {/* Bottom user card */}
               <div className="relative z-10 mt-6 pt-5 border-t border-slate-200/50 dark:border-slate-800/80">
                 <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-100/50 dark:bg-slate-950/40 border border-slate-200/40 dark:border-slate-800/55 shadow-inner">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-500 text-slate-900 text-xs font-black flex items-center justify-center shadow-inner">
-                    {getInitials(user.displayName)}
-                  </div>
+                  <Avatar src={user.avatar} name={user.displayName} size="md" className="ring-2 ring-amber-500/20" />
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-black truncate text-slate-800 dark:text-white">{user.displayName}</p>
                     <p className="text-[9px] font-black uppercase tracking-wider text-amber-550 dark:text-amber-400 mt-0.5">{t.ownerDashboard.vehicleHost}</p>
@@ -1761,16 +1903,12 @@ export const OwnerDashboardLayout: React.FC = () => {
                   <Link
                     key={link.href}
                     to={link.href}
-                    className={`w-full flex items-center gap-3 px-4.5 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all duration-305 relative group ${
-                      active 
-                        ? 'bg-gradient-to-r from-amber-550 to-yellow-500 text-slate-900 shadow-xl shadow-amber-500/25 font-black' 
-                        : isDark 
-                          ? 'text-slate-400 hover:text-white hover:bg-slate-900/50' 
-                          : 'text-slate-655 hover:text-slate-900 hover:bg-slate-100/50'
-                    }`}
+                    className={cn(
+                      "lw-sidebar-nav-item flex items-center gap-3 px-4.5 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap group",
+                      active ? "active text-white animate-fade-in" : "text-slate-400 hover:text-white"
+                    )}
                   >
-                    {active && <span className="w-1 h-5 bg-slate-900 rounded-full absolute left-1" />}
-                    <link.icon className={`w-4.5 h-4.5 ${active ? 'text-slate-900' : 'text-slate-450 group-hover:text-slate-800 dark:group-hover:text-white'}`} />
+                    <link.icon className="w-4.5 h-4.5 flex-shrink-0" />
                     <span>{link.label}</span>
                   </Link>
                 );
@@ -1781,9 +1919,7 @@ export const OwnerDashboardLayout: React.FC = () => {
           {/* Bottom user card */}
           <div className="relative z-10 mt-6 pt-5 border-t border-slate-200/50 dark:border-slate-800/80">
             <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-100/50 dark:bg-slate-950/40 border border-slate-200/40 dark:border-slate-800/55 shadow-inner">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-500 text-slate-900 text-xs font-black flex items-center justify-center shadow-inner">
-                {getInitials(user.displayName)}
-              </div>
+              <Avatar src={user.avatar} name={user.displayName} size="md" className="ring-2 ring-amber-500/20" />
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-black truncate text-slate-800 dark:text-white">{user.displayName}</p>
                 <p className="text-[9px] font-black uppercase tracking-wider text-amber-550 dark:text-amber-400 mt-0.5">{t.ownerDashboard.vehicleHost}</p>

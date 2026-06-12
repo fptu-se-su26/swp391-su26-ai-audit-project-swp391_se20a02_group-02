@@ -13,11 +13,14 @@ import { bookingService, paymentService } from '@/services/bookingService';
 import { notificationService, reviewService } from '@/services/otherServices';
 import apiClient from '@/services/api';
 import type { Booking, Notification } from '@/types';
-import { formatCurrency, formatDate, getStatusColor, getInitials } from '@/utils';
+import { formatCurrency, formatDate, getStatusColor, getInitials, cn } from '@/utils';
 import { staggerContainer, staggerItem, fadeUp } from '@/animations/variants';
 import { StatCardSkeleton, TableSkeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { useT, translateNotification } from '@/i18n/translations';
+import Avatar from '@/components/ui/Avatar';
+import StatusBadge from '@/components/ui/StatusBadge';
+import Breadcrumbs from '@/components/ui/Breadcrumbs';
 
 // ====== CUSTOMER SIDEBAR ======
 const CustomerSidebar: React.FC = () => {
@@ -90,37 +93,33 @@ const CustomerSidebar: React.FC = () => {
       <motion.aside
         animate={{ x: sidebarOpen ? 0 : -280 }}
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-        className="fixed left-0 top-0 h-full w-64 z-40 flex flex-col lg:relative lg:translate-x-0 pt-20 lg:pt-0"
-        style={{
-          background: 'linear-gradient(180deg, #0a0f1e 0%, #111827 60%, #0d1527 100%)',
-          borderRight: '1px solid rgba(255,255,255,0.06)',
-        }}
+        className="lw-sidebar fixed left-0 top-0 h-full z-40 lg:relative lg:translate-x-0 lg:top-auto lg:h-auto"
       >
         <div className="absolute top-0 left-0 w-full h-48 pointer-events-none"
           style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.15) 0%, transparent 70%)' }} />
 
+        {/* LuxeWay Sidebar Logo */}
+        <div className="lw-sidebar-logo">
+          <img src="/logo.svg" alt="LuxeWay" style={{ height: '36px', width: 'auto', display: 'block' }} />
+          <span className="lw-sidebar-logo-text font-black text-white">LuxeWay</span>
+        </div>
+
         {/* User Info */}
-        <div className="p-5 border-b relative" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-          <div className="flex items-center gap-3 p-3 rounded-2xl"
-            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
-            {user?.avatar ? (
-              <img src={user.avatar} alt={user.displayName} className="w-10 h-10 rounded-xl object-cover"
-                style={{ boxShadow: '0 0 0 2px rgba(99,102,241,0.40)' }} />
-            ) : (
-              <div className="w-10 h-10 rounded-xl text-sm font-bold flex items-center justify-center text-slate-900 bg-gradient-to-br from-indigo-500 to-violet-600">
-                {getInitials(user?.displayName || '')}
-              </div>
-            )}
+        <div className="p-5 border-b relative border-[var(--lw-border)]">
+          <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/5">
+            <Avatar src={user?.avatar} name={user?.displayName || 'Customer'} size="md" className="ring-2 ring-indigo-500/30" />
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-white text-sm truncate">{user?.displayName}</p>
-              <p className="text-xs truncate text-slate-400" style={{ color: 'rgba(255,255,255,0.35)' }}>{user?.email}</p>
-              <span className="inline-flex items-center text-[10px] font-bold uppercase tracking-wider mt-0.5 text-indigo-400">✨ CUSTOMER</span>
+              <p className="text-xs truncate text-slate-400">{user?.email}</p>
             </div>
+          </div>
+          <div className="lw-sidebar-role-badge bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+            ✨ CUSTOMER
           </div>
         </div>
 
         {/* Nav Links */}
-        <nav className="flex-1 overflow-y-auto p-3 space-y-0.5 relative z-10">
+        <nav className="lw-sidebar-nav space-y-0.5">
           {customerLinks.map(link => {
             const active = isActive(link.href, link.exact);
             return (
@@ -128,27 +127,21 @@ const CustomerSidebar: React.FC = () => {
                 key={link.href}
                 to={link.href}
                 onClick={() => window.innerWidth < 1024 && setSidebarOpen(false)}
-                className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative group"
-                style={{
-                  color: active ? '#fff' : 'rgba(148,163,184,1)',
-                  background: active ? 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.08))' : undefined,
-                  border: active ? '1px solid rgba(99,102,241,0.30)' : '1px solid transparent',
-                }}
-              >
-                {active && (
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-6 rounded-r-full bg-gradient-to-br from-indigo-500 to-violet-600" />
+                className={cn(
+                  "lw-sidebar-nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium relative group",
+                  active ? "active text-white" : "text-slate-400 hover:text-white"
                 )}
-                <link.icon className="w-4 h-4 transition-colors flex-shrink-0"
-                  style={{ color: active ? '#818CF8' : 'rgba(100,116,139,1)' }} />
+              >
+                <link.icon className="w-4 h-4 flex-shrink-0" />
                 <span className="truncate">{link.label}</span>
-                {active && <ChevronRight className="w-3.5 h-3.5 ml-auto flex-shrink-0 text-indigo-400" />}
+                {active && <ChevronRight className="w-3.5 h-3.5 ml-auto flex-shrink-0" />}
               </Link>
             );
           })}
         </nav>
 
         {/* Logout */}
-        <div className="p-3 relative z-10" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="lw-sidebar-footer">
           <button
             onClick={() => { logout(); navigate('/auth/login'); }}
             className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 w-full transition-all duration-200"
@@ -165,7 +158,7 @@ const CustomerSidebar: React.FC = () => {
 // ====== CUSTOMER DASHBOARD LAYOUT ======
 export const CustomerDashboardLayout: React.FC = () => {
   const { user, isAuthenticated } = useAuthStore();
-  const { sidebarOpen, setSidebarOpen, theme } = useUIStore();
+  const { sidebarOpen, setSidebarOpen } = useUIStore();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -176,19 +169,16 @@ export const CustomerDashboardLayout: React.FC = () => {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen text-slate-800 dark:text-slate-100 pt-20 transition-colors duration-300 relative overflow-hidden"
-      style={{ background: theme === 'dark' ? 'linear-gradient(135deg, #070B14 0%, #0B1221 50%, #070B14 100%)' : 'linear-gradient(135deg, #F8FAFF 0%, #F0F4FF 50%, #F8FAFF 100%)' }}>
+    <div className="theme-customer min-h-screen pt-16 transition-colors duration-300 relative overflow-hidden bg-[var(--lw-bg-primary)]">
       <div className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full opacity-20 blur-3xl pointer-events-none"
-        style={{ background: 'radial-gradient(circle, #6366F1 0%, transparent 70%)' }} />
+        style={{ background: 'radial-gradient(circle, var(--lw-accent) 0%, transparent 70%)' }} />
       <div className="absolute bottom-0 left-1/4 w-96 h-96 rounded-full opacity-15 blur-3xl pointer-events-none"
         style={{ background: 'radial-gradient(circle, #8B5CF6 0%, transparent 70%)' }} />
 
-      <div className="flex h-[calc(100vh-80px)] relative z-10">
+      <div className="lw-dashboard-grid">
         <CustomerSidebar />
-        <main className="flex-1 overflow-y-auto">
-          <div className="max-w-5xl mx-auto p-6 lg:p-8">
-            <Outlet />
-          </div>
+        <main className="lw-main-content">
+          <Outlet />
         </main>
       </div>
     </div>
@@ -488,40 +478,53 @@ export const MyBookingsPage: React.FC = () => {
     }
   };
 
+  const breadcrumbItems = [
+    { label: t.marketplace.home, href: '/' },
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: t.dashboard.myBookings }
+  ];
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="font-display text-2.5xl font-extrabold text-slate-800 dark:text-white">{t.dashboard.myBookings}</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-xs font-medium mt-0.5">{t.dashboard.myBookingsDesc}</p>
-        </div>
-
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[var(--lw-border)] pb-5">
+        <Breadcrumbs title={t.dashboard.myBookings} items={breadcrumbItems} backHref="/dashboard" backText="Back to Dashboard" className="mb-0 flex-1" />
+        
         {/* Sleek Horizontal Filter Pills */}
         <div className="flex gap-2 overflow-x-auto pb-1 max-w-full">
           {['all', 'pending', 'confirmed', 'active', 'completed', 'cancelled'].map(status => (
             <button
               key={status}
               onClick={() => setFilter(status)}
-              className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap border transition-all duration-300 ${filter === status
+              className={cn(
+                "lw-btn-interactive px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap border transition-all duration-300",
+                filter === status
                   ? 'border-accent bg-blue-500/10 text-accent shadow-sm'
                   : 'border-slate-200/50 dark:border-white/5 text-slate-500 dark:text-slate-400 bg-slate-500/5 hover:border-slate-300 dark:hover:border-white/10'
-                }`}
+              )}
             >
               {status.charAt(0).toUpperCase() + status.slice(1)}
               {status === 'all' && ` (${bookings.length})`}
             </button>
           ))}
         </div>
-      </motion.div>
+      </div>
 
       {loading ? (
         <TableSkeleton rows={5} />
       ) : filtered.length === 0 ? (
-        <div className="glass border border-slate-200/50 dark:border-white/5 text-center py-16 rounded-[2rem]">
-          <Package className="w-12 h-12 text-slate-300 dark:text-slate-700 mx-auto mb-3" />
-          <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-1">{t.dashboard.noBookingsStatus}</h3>
-          <p className="text-slate-400 text-xs font-medium mb-5">{t.dashboard.noBookingsDesc}</p>
-          <Link to="/marketplace" className="btn-gold text-xs font-bold px-6 py-3 rounded-xl">{t.dashboard.exploreVehicles}</Link>
+        <div className="flex flex-col items-center justify-center text-center py-16 px-4 rounded-[2rem] bg-[var(--lw-bg-card)] border border-[var(--lw-border)] shadow-xl max-w-lg mx-auto">
+          <div className="w-16 h-16 rounded-full bg-indigo-500/10 flex items-center justify-center mb-6 border border-indigo-500/20">
+            <Calendar className="w-8 h-8 text-[var(--lw-accent)]" />
+          </div>
+          <h3 className="text-base font-semibold text-[var(--lw-text-primary)] mb-2 select-none">
+            {t.dashboard.noBookingsStatus}
+          </h3>
+          <p className="text-sm text-[var(--lw-text-secondary)] mb-6 max-w-[280px] text-center">
+            {t.dashboard.noBookingsDesc}
+          </p>
+          <Link to="/marketplace" className="btn-primary bg-[var(--lw-accent)] hover:bg-[var(--lw-accent-alt)] text-white shadow-lg font-bold transition-all px-6 py-3 rounded-xl lw-btn-interactive">
+            {t.dashboard.exploreVehicles}
+          </Link>
         </div>
       ) : (
         <motion.div
@@ -621,21 +624,21 @@ export const ProfilePage: React.FC = () => {
     toast.success(t.dashboard.profileUpdated, t.dashboard.profileUpdatedDesc);
   };
 
+  const breadcrumbItems = [
+    { label: t.marketplace.home, href: '/' },
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: t.dashboard.profile }
+  ];
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <motion.h1 variants={fadeUp} initial="hidden" animate="visible" className="font-display text-2.5xl font-extrabold text-slate-800 dark:text-white">
-        {t.dashboard.myProfile}
-      </motion.h1>
+      <Breadcrumbs title={t.dashboard.myProfile} items={breadcrumbItems} backHref="/dashboard" backText="Back to Dashboard" />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Avatar Card */}
         <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] text-center shadow-sm flex flex-col items-center">
           <div className="relative inline-block mb-4">
-            {user?.avatar ? (
-              <img src={user.avatar} alt="" className="w-24 h-24 rounded-3xl object-cover mx-auto ring-4 ring-gold/20" />
-            ) : (
-              <div className="avatar w-24 h-24 rounded-3xl text-2xl mx-auto font-bold bg-gradient-to-br from-gold to-yellow-500 text-slate-900">{getInitials(user?.displayName || '')}</div>
-            )}
+            <Avatar src={user?.avatar} name={user?.displayName || ''} size="xl" className="mx-auto ring-4 ring-gold/20" />
             <button className="absolute -bottom-1 -right-1 w-8 h-8 bg-accent text-white rounded-xl flex items-center justify-center text-xs shadow-md shadow-blue-500/30">✏️</button>
           </div>
           <h3 className="font-display text-xl font-bold text-slate-800 dark:text-white mt-2">{user?.displayName}</h3>
@@ -735,11 +738,15 @@ export const SecurityPage: React.FC = () => {
     toast.success(t.dashboard.passwordSuccess, t.dashboard.passwordSuccessDesc);
   };
 
+  const breadcrumbItems = [
+    { label: t.marketplace.home, href: '/' },
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: t.dashboard.security }
+  ];
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <motion.h1 variants={fadeUp} initial="hidden" animate="visible" className="font-display text-2.5xl font-extrabold text-slate-800 dark:text-white">
-        {t.dashboard.securitySettings}
-      </motion.h1>
+      <Breadcrumbs title={t.dashboard.securitySettings} items={breadcrumbItems} backHref="/dashboard" backText="Back to Dashboard" />
       <div className="space-y-6">
         {/* Change Password */}
         <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm">
@@ -1089,6 +1096,12 @@ export const DocumentsPage: React.FC = () => {
     return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-slate-200/30 text-slate-500 bg-slate-500/5">{t.dashboard.notUploadedDoc}</span>;
   };
 
+  const breadcrumbItems = [
+    { label: t.marketplace.home, href: '/' },
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: t.dashboard.documents }
+  ];
+
   return (
     <div className="space-y-6 animate-fade-in">
       <input
@@ -1099,10 +1112,7 @@ export const DocumentsPage: React.FC = () => {
         accept="image/*,application/pdf"
       />
 
-      <motion.div variants={fadeUp} initial="hidden" animate="visible">
-        <h1 className="font-display text-2.5xl font-extrabold text-slate-800 dark:text-white mb-1">{t.dashboard.myDocuments}</h1>
-        <p className="text-slate-500 dark:text-slate-400 text-xs font-semibold">{t.dashboard.myDocumentsDesc}</p>
-      </motion.div>
+      <Breadcrumbs title={t.dashboard.myDocuments} items={breadcrumbItems} backHref="/dashboard" backText="Back to Dashboard" />
 
       <div className={`p-4 rounded-[1.5rem] flex items-center gap-3 border ${user?.verified
           ? 'bg-green-500/10 border-green-500/20 text-green-800 dark:text-green-300'
@@ -1266,7 +1276,7 @@ export const PaymentHistoryPage: React.FC = () => {
       const invoiceId = invoice?.id;
       if (invoiceId) {
         const token = localStorage.getItem('luxeway_access_token');
-        const fileRes = await fetch(`http://localhost:8080/api/v1/invoices/download/${invoiceId}`, {
+        const fileRes = await fetch(`http://localhost:8080/invoices/download/${invoiceId}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -1300,14 +1310,15 @@ export const PaymentHistoryPage: React.FC = () => {
     return ['Transaction ID', 'Booking', 'Method', 'Date', 'Amount', 'Status', 'Invoice'];
   };
 
+  const breadcrumbItems = [
+    { label: t.marketplace.home, href: '/' },
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: t.dashboard.payments }
+  ];
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" className="flex items-center justify-between mb-2">
-        <div>
-          <h1 className="font-display text-2.5xl font-extrabold text-slate-800 dark:text-white">{t.dashboard.payments}</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-xs font-semibold mt-0.5">{t.dashboard.paymentHistoryDesc}</p>
-        </div>
-      </motion.div>
+      <Breadcrumbs title={t.dashboard.payments} items={breadcrumbItems} backHref="/dashboard" backText="Back to Dashboard" />
 
       {!loading && paymentData.length > 0 && (
         <div className="grid grid-cols-3 gap-4">
@@ -1401,9 +1412,15 @@ export const SettingsPage: React.FC = () => {
     </div>
   );
 
+  const breadcrumbItems = [
+    { label: t.marketplace.home, href: '/' },
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: t.dashboard.settings }
+  ];
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <motion.h1 variants={fadeUp} initial="hidden" animate="visible" className="font-display text-2.5xl font-extrabold text-slate-800 dark:text-white">{t.dashboard.settings}</motion.h1>
+      <Breadcrumbs title={t.dashboard.settings} items={breadcrumbItems} backHref="/dashboard" backText="Back to Dashboard" />
       <div className="space-y-6">
         <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm">
           <h3 className="font-display text-lg font-bold text-slate-800 dark:text-white mb-1">{t.dashboard.emailNotifications}</h3>
@@ -1432,6 +1449,11 @@ export const SettingsPage: React.FC = () => {
                 <option value="en">English</option>
                 <option value="vi">Tiếng Việt</option>
                 <option value="ja">日本語</option>
+                <option value="ko">한국어</option>
+                <option value="zh">中文</option>
+                <option value="fr">Français</option>
+                <option value="de">Deutsch</option>
+                <option value="es">Español</option>
               </select>
             </div>
             <div>
@@ -1469,15 +1491,29 @@ export const MyReviewsPage: React.FC = () => {
     });
   }, [user]);
 
+  const breadcrumbItems = [
+    { label: t.marketplace.home, href: '/' },
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: t.dashboard.myReviews }
+  ];
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <motion.h1 variants={fadeUp} initial="hidden" animate="visible" className="font-display text-2.5xl font-extrabold text-slate-800 dark:text-white">{t.dashboard.myReviews}</motion.h1>
+      <Breadcrumbs title={t.dashboard.myReviews} items={breadcrumbItems} backHref="/dashboard" backText="Back to Dashboard" />
       {loading ? <TableSkeleton rows={4} /> : reviews.length === 0 ? (
-        <div className="glass border border-slate-200/50 dark:border-white/5 text-center py-16 rounded-[2rem]">
-          <Star className="w-12 h-12 text-slate-300 dark:text-slate-700 mx-auto mb-3" />
-          <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-1">{t.dashboard.noReviewsYet}</h3>
-          <p className="text-slate-400 text-xs font-medium mb-5">{t.dashboard.noReviewsYetDesc}</p>
-          <a href="/marketplace" className="btn-gold text-xs font-bold px-6 py-3 rounded-xl">{t.dashboard.exploreVehicles}</a>
+        <div className="flex flex-col items-center justify-center text-center py-16 px-4 rounded-[2rem] bg-[var(--lw-bg-card)] border border-[var(--lw-border)] shadow-xl max-w-lg mx-auto">
+          <div className="w-16 h-16 rounded-full bg-indigo-500/10 flex items-center justify-center mb-6 border border-indigo-500/20">
+            <Star className="w-8 h-8 text-[var(--lw-accent)]" />
+          </div>
+          <h3 className="text-base font-semibold text-[var(--lw-text-primary)] mb-2 select-none">
+            {t.dashboard.noReviewsYet}
+          </h3>
+          <p className="text-sm text-[var(--lw-text-secondary)] mb-6 max-w-[280px] text-center">
+            {t.dashboard.noReviewsYetDesc}
+          </p>
+          <a href="/marketplace" className="btn-primary bg-[var(--lw-accent)] hover:bg-[var(--lw-accent-alt)] text-white shadow-lg font-bold transition-all px-6 py-3 rounded-xl lw-btn-interactive">
+            {t.dashboard.exploreVehicles}
+          </a>
         </div>
       ) : (
         <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-4">
@@ -1580,13 +1616,15 @@ export const LuxeWalletPage: React.FC = () => {
 
   const balance = user?.walletBalance || 0;
 
+  const breadcrumbItems = [
+    { label: t.marketplace.home, href: '/' },
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: t.wallet.title }
+  ];
+
   return (
     <div className="space-y-8 animate-fade-in">
-      {/* Header */}
-      <motion.div variants={fadeUp} initial="hidden" animate="visible">
-        <h1 className="font-display text-3.5xl font-extrabold text-slate-800 dark:text-white tracking-tight">{t.wallet.title}</h1>
-        <p className="text-slate-500 dark:text-slate-400 text-sm font-semibold mt-1">{t.wallet.subtitle}</p>
-      </motion.div>
+      <Breadcrumbs title={t.wallet.title} items={breadcrumbItems} backHref="/dashboard" backText="Back to Dashboard" />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Columns - Card & Top Up Form */}

@@ -1,6 +1,7 @@
-import React, { useEffect, Suspense, lazy } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import React, { useEffect, Suspense, lazy, Component } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { Heart } from 'lucide-react';
 import { useAuthStore, useUIStore } from '@/store';
 import { VehicleCard } from '@/components/vehicle/VehicleCard';
 import { vehicleService } from '@/services/vehicleService';
@@ -10,9 +11,10 @@ import { useToast } from '@/components/ui/Toast';
 import type { Vehicle, Notification, Review } from '@/types';
 import { formatDate } from '@/utils';
 import { useT, translateNotification } from '@/i18n/translations';
+const FloatingAIConcierge = lazy(() => import('@/components/help/FloatingAIConcierge').then(m => ({ default: m.FloatingAIConcierge })));
 
 // Layouts
-import RootLayout from '@/layouts/RootLayout';
+import MainLayout from '@/layouts/MainLayout';
 import { RewardsDashboard } from '@/components/enterprise/RewardsDashboard';
 import { CorporateDashboard } from '@/components/enterprise/CorporateDashboard';
 
@@ -30,6 +32,9 @@ import MotorbikeDetails from '@/pages/marketplace/MotorbikeDetails';
 import BookingWizardPage from '@/pages/booking/BookingWizardPage';
 import VNPayReturnPage from '@/pages/booking/VNPayReturnPage';
 import HelpPage from '@/pages/help/HelpPage';
+import { OwnerSuccessHub } from '@/pages/help/OwnerSuccessHub';
+import { PlatformStatus } from '@/pages/help/PlatformStatus';
+import { SupportAnalyticsDash } from '@/pages/admin/SupportAnalyticsDash';
 
 // Lazy loaded pages
 
@@ -67,6 +72,17 @@ const PrivacyPage = lazy(() => import('@/pages/static/StaticPages').then(m => ({
 const BusinessPage = lazy(() => import('@/pages/static/BusinessPage'));
 const ComparePage = lazy(() => import('@/pages/compare/ComparePage'));
 const ReviewsPage = lazy(() => import('@/pages/reviews/ReviewsPage').then(m => ({ default: m.ReviewsPage })));
+
+// ====== AI CONCIERGE ERROR BOUNDARY ======
+class ConciergeErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean }> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() { return { hasError: true }; }
+  componentDidCatch(error: Error) { console.warn('[AI Concierge] Suppressed error:', error.message); }
+  render() { return this.state.hasError ? null : this.props.children; }
+}
 
 // ====== LOADING FALLBACK ======
 const PageLoader: React.FC = () => {
@@ -204,11 +220,19 @@ const WishlistPage: React.FC = () => {
           {[...Array(3)].map((_, i) => <div key={i} className="skeleton h-64 rounded-3xl" />)}
         </div>
       ) : vehicles.length === 0 ? (
-        <div className="text-center py-20">
-          <div className="text-5xl mb-4">❤️</div>
-          <h3 className={`font-semibold mb-2 ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>{t.dashboard.noBookings}</h3>
-          <p className="text-slate-400 text-sm mb-6">{t.dashboard.noBookingsDesc}</p>
-          <a href="/marketplace" className="btn-primary">{t.dashboard.exploreVehicles}</a>
+        <div className="flex flex-col items-center justify-center text-center py-16 px-4 rounded-[2rem] bg-[var(--lw-bg-card)] border border-[var(--lw-border)] shadow-xl max-w-lg mx-auto">
+          <div className="w-16 h-16 rounded-full bg-indigo-500/10 flex items-center justify-center mb-6 border border-indigo-500/20">
+            <Heart className="w-8 h-8 text-[var(--lw-accent)] fill-[var(--lw-accent)]" />
+          </div>
+          <h3 className="text-xl font-bold text-[var(--lw-text-primary)] mb-2">
+            Your Wishlist is Empty
+          </h3>
+          <p className="text-sm text-[var(--lw-text-secondary)] mb-6 max-w-sm">
+            Save your favorite luxury vehicles to view them later and easily book them when you are ready.
+          </p>
+          <Link to="/marketplace" className="btn-primary bg-[var(--lw-accent)] hover:bg-[var(--lw-accent-alt)] text-white shadow-lg shadow-[var(--lw-accent-glow)] font-bold transition-all px-6 py-3 rounded-xl">
+            {t.dashboard.exploreVehicles}
+          </Link>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -503,8 +527,8 @@ const App: React.FC = () => {
     <BrowserRouter>
       <Suspense fallback={<PageLoader />}>
         <Routes>
-          {/* Public routes with Navbar */}
-          <Route element={<RootLayout />}>
+          <Route element={<MainLayout />}>
+            {/* Public routes */}
             <Route index element={<LandingPage />} />
             <Route path="marketplace" element={<MarketplacePage />} />
             <Route path="vehicles" element={<MarketplacePage />} />
@@ -539,6 +563,13 @@ const App: React.FC = () => {
               </ProtectedRoute>
             } />
             <Route path="help" element={<HelpPage />} />
+            <Route path="help/status" element={<PlatformStatus />} />
+            <Route path="help/owner-success" element={
+              <ProtectedRoute><OwnerSuccessHub /></ProtectedRoute>
+            } />
+            <Route path="admin/support-analytics" element={
+              <ProtectedRoute requiredRole="admin"><SupportAnalyticsDash /></ProtectedRoute>
+            } />
             <Route path="compare" element={<ComparePage />} />
             <Route path="business" element={<BusinessPage />} />
 
@@ -546,9 +577,53 @@ const App: React.FC = () => {
             <Route path="about" element={<AboutPage />} />
             <Route path="terms" element={<TermsPage />} />
             <Route path="privacy" element={<PrivacyPage />} />
+
+            {/* Customer Dashboard */}
+            <Route path="dashboard" element={<ProtectedRoute requiredRole="customer"><CustomerDashboardLayout /></ProtectedRoute>}>
+              <Route index element={<CustomerOverview />} />
+              <Route path="bookings" element={<MyBookingsPage />} />
+              <Route path="profile" element={<ProfilePage />} />
+              <Route path="wishlist" element={<WishlistPage />} />
+              <Route path="notifications" element={<NotificationsPage />} />
+              <Route path="reviews" element={<MyReviewsPage />} />
+              <Route path="security" element={<SecurityPage />} />
+              <Route path="documents" element={<DocumentsPage />} />
+              <Route path="wallet" element={<LuxeWalletPage />} />
+              <Route path="payments" element={<PaymentHistoryPage />} />
+              <Route path="settings" element={<SettingsPage />} />
+              <Route path="rewards" element={<RewardsDashboard />} />
+              <Route path="corporate" element={<CorporateDashboard />} />
+            </Route>
+
+            {/* Owner Dashboard */}
+            <Route path="owner" element={<ProtectedRoute requiredRole="owner"><OwnerDashboardLayout /></ProtectedRoute>}>
+              <Route index element={<OwnerOverview />} />
+              <Route path="vehicles" element={<VehicleManagePage />} />
+              <Route path="vehicles/new" element={<VehicleFormPage />} />
+              <Route path="vehicles/:id/edit" element={<VehicleFormPage />} />
+              <Route path="analytics" element={<OwnerRevenuePage />} />
+              <Route path="calendar" element={<OwnerCalendarPage />} />
+              <Route path="bookings" element={<OwnerBookingsPage />} />
+              <Route path="revenue" element={<OwnerRevenuePage />} />
+              <Route path="fleet" element={<FleetManagementPage />} />
+              <Route path="employees" element={<EmployeeManagementPage />} />
+            </Route>
+
+            {/* Business Owner Dashboard */}
+            <Route path="business" element={<ProtectedRoute requiredRole="business_owner"><BusinessOwnerDashboardLayout /></ProtectedRoute>}>
+              <Route index element={<BusinessOverview />} />
+              <Route path="fleet" element={<FleetManagementPage />} />
+              <Route path="employees" element={<EmployeeManagementPage />} />
+              <Route path="drivers" element={<DriverManagementPage />} />
+              <Route path="analytics" element={<FleetAnalyticsPage />} />
+              <Route path="reports" element={<CorporateReportsPage />} />
+            </Route>
+
+            {/* Admin */}
+            <Route path="admin" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
           </Route>
 
-          {/* Auth pages */}
+          {/* Auth pages (separate - no navbar) */}
           <Route path="auth">
             <Route path="login" element={<LoginPage />} />
             <Route path="register" element={<RegisterPage />} />
@@ -558,56 +633,17 @@ const App: React.FC = () => {
 
           <Route path="oauth2/redirect" element={<OAuth2RedirectHandler />} />
 
-          {/* Customer Dashboard */}
-          <Route path="dashboard" element={<ProtectedRoute requiredRole="customer"><CustomerDashboardLayout /></ProtectedRoute>}>
-            <Route index element={<CustomerOverview />} />
-            <Route path="bookings" element={<MyBookingsPage />} />
-            <Route path="profile" element={<ProfilePage />} />
-            <Route path="wishlist" element={<WishlistPage />} />
-            <Route path="notifications" element={<NotificationsPage />} />
-            <Route path="reviews" element={<MyReviewsPage />} />
-            <Route path="security" element={<SecurityPage />} />
-            <Route path="documents" element={<DocumentsPage />} />
-            <Route path="wallet" element={<LuxeWalletPage />} />
-            <Route path="payments" element={<PaymentHistoryPage />} />
-            <Route path="settings" element={<SettingsPage />} />
-            <Route path="rewards" element={<RewardsDashboard />} />
-            <Route path="corporate" element={<CorporateDashboard />} />
-          </Route>
-
-          {/* Owner Dashboard */}
-          <Route path="owner" element={<ProtectedRoute requiredRole="owner"><OwnerDashboardLayout /></ProtectedRoute>}>
-            <Route index element={<OwnerOverview />} />
-            <Route path="vehicles" element={<VehicleManagePage />} />
-            <Route path="vehicles/new" element={<VehicleFormPage />} />
-            <Route path="vehicles/:id/edit" element={<VehicleFormPage />} />
-            <Route path="analytics" element={<OwnerRevenuePage />} />
-            <Route path="calendar" element={<OwnerCalendarPage />} />
-            <Route path="bookings" element={<OwnerBookingsPage />} />
-            <Route path="revenue" element={<OwnerRevenuePage />} />
-            <Route path="fleet" element={<FleetManagementPage />} />
-            <Route path="employees" element={<EmployeeManagementPage />} />
-          </Route>
-
-          {/* Business Owner Dashboard */}
-          <Route path="business" element={<ProtectedRoute requiredRole="business_owner"><BusinessOwnerDashboardLayout /></ProtectedRoute>}>
-            <Route index element={<BusinessOverview />} />
-            <Route path="fleet" element={<FleetManagementPage />} />
-            <Route path="employees" element={<EmployeeManagementPage />} />
-            <Route path="drivers" element={<DriverManagementPage />} />
-            <Route path="analytics" element={<FleetAnalyticsPage />} />
-            <Route path="reports" element={<CorporateReportsPage />} />
-          </Route>
-
-          {/* Admin */}
-          <Route path="admin" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
-
           {/* Forbidden 403 */}
           <Route path="403" element={<ForbiddenPage />} />
 
           {/* 404 */}
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
+        <ConciergeErrorBoundary>
+          <Suspense fallback={null}>
+            <FloatingAIConcierge />
+          </Suspense>
+        </ConciergeErrorBoundary>
       </Suspense>
     </BrowserRouter>
   );

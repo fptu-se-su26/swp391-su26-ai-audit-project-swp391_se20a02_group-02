@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Car, ArrowRight, CheckCircle, Shield, Loader2 } from 'lucide-react';
-import logoImage from '@/image/logo.png';
+import logoImage from '../../image/logo.png';
 import { useAuthStore } from '@/store';
 import { authService } from '@/services/authService';
 import { useToast } from '@/components/ui/Toast';

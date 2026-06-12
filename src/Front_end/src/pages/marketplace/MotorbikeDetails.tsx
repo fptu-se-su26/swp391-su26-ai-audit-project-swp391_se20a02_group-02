@@ -679,7 +679,7 @@ export const MotorbikeDetails: React.FC = () => {
       }
       setLoading(false);
     });
-  }, [id]);
+  }, [id, language]);
 
   const days = startDate && endDate ? Math.max(1, Math.round((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1) : 1;
 

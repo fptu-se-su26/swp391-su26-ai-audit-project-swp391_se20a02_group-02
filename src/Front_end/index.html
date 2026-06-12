@@ -13,6 +13,20 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <title>LuxeWay — Drive the Unattainable</title>
     <script>
+      // Polyfill cho sockjs-client và các thư viện Node.js chạy trong browser
+      // Phải đặt TRƯỚC mọi script khác
+      if (typeof window !== 'undefined' && typeof window.global === 'undefined') {
+        window.global = window;
+      }
+      if (typeof global === 'undefined') {
+        var global = globalThis;
+      }
+      if (typeof process === 'undefined') {
+        var process = { env: {}, version: 'v18.0.0', platform: 'browser', browser: true };
+      }
+    </script>
+    <script>
+
       try {
         var prefs = localStorage.getItem('luxeway_ui_prefs');
         if (prefs) {

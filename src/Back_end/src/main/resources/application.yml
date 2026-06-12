@@ -119,3 +119,10 @@ business:
     service-fee-rate: 0.12
     tax-rate: 0.08
     platform-commission: 0.15
+
+gemini:
+  api-key: ${GEMINI_API_KEY:mock_key}
+  model: ${GEMINI_MODEL:gemini-1.5-flash}
+
+goong:
+  api-key: ${GOONG_MAPS_KEY:mock_goong_key}

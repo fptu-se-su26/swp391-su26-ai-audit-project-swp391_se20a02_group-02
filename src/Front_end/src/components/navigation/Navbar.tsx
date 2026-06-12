@@ -10,7 +10,7 @@ import { useAuthStore, useUIStore, useNotificationStore } from '@/store';
 import { cn, getInitials } from '@/utils';
 import { notificationService } from '@/services/otherServices';
 import { useT } from '@/i18n/translations';
-import logoImage from '@/image/logo.png';
+import logoImage from '../../image/logo.png';
 
 
 const LANGS = [

@@ -19,6 +19,27 @@ const formatVND = (val: number) => {
   }).format(val);
 };
 
+const CustomAnalyticsTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white border border-slate-200 p-3.5 rounded-lg shadow-xl text-xs font-semibold text-slate-800">
+        <p className="text-slate-550 font-bold mb-1">{label}</p>
+        <p className="text-slate-800 font-extrabold flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 bg-indigo-500 rounded-full inline-block" />
+          Revenue: <span className="text-indigo-600">{formatVND(payload[0].value)}</span>
+        </p>
+        {payload[0].payload.bookings !== undefined && (
+          <p className="text-slate-655 font-medium mt-0.5 flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 bg-blue-500 rounded-full inline-block" />
+            Bookings: {payload[0].payload.bookings}
+          </p>
+        )}
+      </div>
+    );
+  }
+  return null;
+};
+
 export const OwnerAnalyticsDashboard: React.FC = () => {
   const { user } = useAuthStore();
   const toast = useToast();
@@ -229,13 +250,10 @@ export const OwnerAnalyticsDashboard: React.FC = () => {
                     <stop offset="95%" stopColor="#6366F1" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                <XAxis dataKey="month" tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `${(v/1000000).toFixed(0)}M`} />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#0F172A', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '12px' }}
-                  labelStyle={{ color: '#94A3B8', fontWeight: 'bold' }}
-                />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" strokeWidth={0.5} opacity={0.3} vertical={false} />
+                <XAxis dataKey="month" tick={{ fill: 'rgba(148, 163, 184, 0.6)', fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: 'rgba(148, 163, 184, 0.6)', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => `${(v/1000000).toFixed(0)}M`} />
+                <Tooltip content={<CustomAnalyticsTooltip />} />
                 <Area type="monotone" dataKey="revenue" stroke="#6366F1" strokeWidth={2} fillOpacity={1} fill="url(#colorRevenue)" name="Revenue (VND)" />
               </AreaChart>
             </ResponsiveContainer>

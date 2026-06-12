@@ -268,7 +268,7 @@ export const useUIStore = create<UIStore>()(
       language: (() => {
         try {
           const lang = localStorage.getItem('language');
-          if (lang && ['en', 'vi', 'ja', 'ko', 'zh', 'fr', 'de'].includes(lang)) return lang as Language;
+          if (lang && ['en', 'vi', 'ja', 'ko', 'zh', 'fr', 'de', 'es'].includes(lang)) return lang as Language;
         } catch {}
         return 'en';
       })() as Language,

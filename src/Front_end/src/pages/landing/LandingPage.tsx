@@ -15,7 +15,7 @@ import type {
   Destination, TestimonialsData, OwnerStats, FAQ
 } from '@/services/homeService';
 import { formatCurrency } from '@/utils';
-import logoImage from '@/image/logo.png';
+import logoImage from '../../image/logo.png';
 import { useT } from '@/i18n/translations';
 import { useUIStore } from '@/store';
 
@@ -1366,10 +1366,22 @@ const FEATURED_MOTORBIKES = [
   { brand: 'VinFast', model: 'Klara S', price: 180000, rating: 4.6, city: 'Đà Lạt', img: 'https://images.unsplash.com/photo-1571008887538-b36bb32f4571?q=80&w=800&auto=format&fit=crop', badge: 'Electric' },
 ];
 
-const formatVNDPrice = (n: number) => new Intl.NumberFormat('vi-VN').format(n) + '₫';
+const getCityName = (city: string, lang: string) => {
+  if (lang === 'vi') return city;
+  const map: Record<string, string> = {
+    'TP.HCM': 'Ho Chi Minh City',
+    'Hà Nội': 'Hanoi',
+    'Đà Nẵng': 'Da Nang',
+    'Đà Lạt': 'Da Lat',
+    'Nha Trang': 'Nha Trang'
+  };
+  return map[city] || city;
+};
 
 const VehicleTypeShowcase: React.FC = () => {
   const navigate = useNavigate();
+  const t = useT();
+  const language = useUIStore((s: any) => s.language);
   const [activeTab, setActiveTab] = useState<'cars' | 'motorbikes'>('cars');
 
   const list = activeTab === 'cars' ? FEATURED_CARS : FEATURED_MOTORBIKES;
@@ -1378,9 +1390,9 @@ const VehicleTypeShowcase: React.FC = () => {
     <section className="py-20 bg-white dark:bg-slate-900">
       <div className="max-w-7xl mx-auto px-6">
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-10">
-          <span className="text-sm font-bold tracking-widest uppercase text-amber-500 mb-2 block">Xe Nổi Bật</span>
-          <h2 className="font-bold text-3xl md:text-4xl text-[#0F172A] dark:text-white mb-3">Xe Được Yêu Thích Nhất</h2>
-          <p className="text-slate-500 max-w-xl mx-auto text-base">Hàng nghìn xe ô tô và xe máy chất lượng cao đang chờ bạn khám phá.</p>
+          <span className="text-sm font-bold tracking-widest uppercase text-amber-500 mb-2 block">{t.landingPage.showcase.label}</span>
+          <h2 className="font-bold text-3xl md:text-4xl text-[#0F172A] dark:text-white mb-3">{t.landingPage.showcase.title}</h2>
+          <p className="text-slate-500 max-w-xl mx-auto text-base">{t.landingPage.showcase.desc}</p>
         </motion.div>
 
         {/* Type Tabs */}
@@ -1390,13 +1402,13 @@ const VehicleTypeShowcase: React.FC = () => {
               onClick={() => setActiveTab('cars')}
               className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'cars' ? 'bg-white dark:bg-slate-700 shadow text-blue-600 dark:text-blue-400' : 'text-slate-500 hover:text-foreground'}`}
             >
-              <Car className="w-4 h-4" /> Ô Tô
+              <Car className="w-4 h-4" /> {t.landingPage.showcase.cars}
             </button>
             <button
               onClick={() => setActiveTab('motorbikes')}
               className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'motorbikes' ? 'bg-white dark:bg-slate-700 shadow text-orange-600 dark:text-orange-400' : 'text-slate-500 hover:text-foreground'}`}
             >
-              <Bike className="w-4 h-4" /> Xe Máy
+              <Bike className="w-4 h-4" /> {t.landingPage.showcase.motorbikes}
             </button>
           </div>
         </div>
@@ -1425,7 +1437,7 @@ const VehicleTypeShowcase: React.FC = () => {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                   <span className={`absolute top-2.5 left-2.5 text-[10px] font-black px-2 py-0.5 rounded-full ${activeTab === 'cars' ? 'bg-blue-500 text-white' : 'bg-orange-500 text-white'}`}>{v.badge}</span>
                   <div className="absolute bottom-2 right-2.5 bg-black/70 backdrop-blur-sm rounded-lg px-2 py-1">
-                    <p className="text-white text-xs font-extrabold">{formatVNDPrice(v.price)}<span className="text-white/60 font-normal">/ngày</span></p>
+                    <p className="text-white text-xs font-extrabold">{formatCurrency(v.price)}<span className="text-white/60 font-normal">{language === 'vi' ? '/ngày' : '/day'}</span></p>
                   </div>
                 </div>
                 <div className="p-4">
@@ -1436,7 +1448,7 @@ const VehicleTypeShowcase: React.FC = () => {
                       <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                       <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{v.rating}</span>
                     </div>
-                    <span className="text-xs text-slate-400 flex items-center gap-1"><MapPin className="w-3 h-3" />{v.city}</span>
+                    <span className="text-xs text-slate-400 flex items-center gap-1"><MapPin className="w-3 h-3" />{getCityName(v.city, language)}</span>
                   </div>
                 </div>
               </motion.div>
@@ -1450,7 +1462,7 @@ const VehicleTypeShowcase: React.FC = () => {
             className="inline-flex items-center gap-2 px-8 py-3.5 rounded-2xl font-bold text-white transition-all hover:scale-105 active:scale-95"
             style={{ background: activeTab === 'cars' ? 'linear-gradient(135deg,#2563eb,#1d4ed8)' : 'linear-gradient(135deg,#f97316,#ea580c)' }}
           >
-            Xem Tất Cả {activeTab === 'cars' ? 'Ô Tô' : 'Xe Máy'} <ArrowRight className="w-4 h-4" />
+            {activeTab === 'cars' ? t.landingPage.showcase.viewAllCars : t.landingPage.showcase.viewAllMotorbikes} <ArrowRight className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -1462,6 +1474,8 @@ const VehicleTypeShowcase: React.FC = () => {
 // REVENUE CALCULATOR — Owner Earning Estimator
 // =====================================================
 const RevenueCalculator: React.FC = () => {
+  const t = useT();
+  const language = useUIStore((s: any) => s.language);
   const [vehicleType, setVehicleType] = useState<'car' | 'motorbike'>('car');
   const [daysPerMonth, setDaysPerMonth] = useState(15);
   const [pricePerDay, setPricePerDay] = useState(1000000);
@@ -1490,14 +1504,16 @@ const RevenueCalculator: React.FC = () => {
   const netRevenue = grossRevenue - platformFee;
   const annualRevenue = netRevenue * 12;
 
+  const perDayLabel = language === 'vi' ? '/ngày' : '/day';
+
   return (
     <section className="py-20 bg-[#0F172A] overflow-hidden relative">
       <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, #3b82f6 0%, transparent 50%), radial-gradient(circle at 80% 20%, #f97316 0%, transparent 50%)' }} />
       <div className="max-w-5xl mx-auto px-6 relative">
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-10">
-          <span className="text-sm font-bold tracking-widest uppercase text-amber-400 mb-2 block">Tính Thu Nhập</span>
-          <h2 className="font-bold text-3xl md:text-4xl text-white mb-3">Bạn Có Thể Kiếm Bao Nhiêu?</h2>
-          <p className="text-slate-400 max-w-xl mx-auto">Ước tính doanh thu từ cho thuê xe của bạn trên LuxeWay</p>
+          <span className="text-sm font-bold tracking-widest uppercase text-amber-400 mb-2 block">{t.landingPage.calculator.label}</span>
+          <h2 className="font-bold text-3xl md:text-4xl text-white mb-3">{t.landingPage.calculator.title}</h2>
+          <p className="text-slate-400 max-w-xl mx-auto">{t.landingPage.calculator.desc}</p>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
@@ -1506,28 +1522,28 @@ const RevenueCalculator: React.FC = () => {
             className="bg-white/5 border border-white/10 rounded-3xl p-8 space-y-6">
             {/* Vehicle type toggle */}
             <div>
-              <p className="text-white/70 text-xs font-bold uppercase tracking-wider mb-3">Loại Xe</p>
+              <p className="text-white/70 text-xs font-bold uppercase tracking-wider mb-3">{t.landingPage.calculator.vehicleType}</p>
               <div className="flex gap-2">
                 <button onClick={() => setVehicleType('car')}
                   className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold border-2 transition-all ${vehicleType === 'car' ? 'border-blue-500 bg-blue-500/20 text-blue-400' : 'border-white/10 text-white/50 hover:border-white/30'}`}>
-                  <Car className="w-4 h-4" /> Ô Tô
+                  <Car className="w-4 h-4" /> {t.landingPage.calculator.cars}
                 </button>
                 <button onClick={() => setVehicleType('motorbike')}
                   className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold border-2 transition-all ${vehicleType === 'motorbike' ? 'border-orange-500 bg-orange-500/20 text-orange-400' : 'border-white/10 text-white/50 hover:border-white/30'}`}>
-                  <Bike className="w-4 h-4" /> Xe Máy
+                  <Bike className="w-4 h-4" /> {t.landingPage.calculator.motorbikes}
                 </button>
               </div>
             </div>
 
             {/* Preset models */}
             <div>
-              <p className="text-white/70 text-xs font-bold uppercase tracking-wider mb-3">Chọn Mẫu Xe</p>
+              <p className="text-white/70 text-xs font-bold uppercase tracking-wider mb-3">{t.landingPage.calculator.selectModel}</p>
               <div className="grid grid-cols-2 gap-2">
                 {presets.map(p => (
                   <button key={p.label} onClick={() => setPricePerDay(p.price)}
                     className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all text-left ${pricePerDay === p.price ? (vehicleType === 'car' ? 'border-blue-500 bg-blue-500/20 text-blue-400' : 'border-orange-500 bg-orange-500/20 text-orange-400') : 'border-white/10 text-white/60 hover:border-white/30'}`}>
                     {p.label}
-                    <span className="block text-[10px] opacity-60 mt-0.5">{formatVNDPrice(p.price)}/ngày</span>
+                    <span className="block text-[10px] opacity-60 mt-0.5">{formatCurrency(p.price)}{perDayLabel}</span>
                   </button>
                 ))}
               </div>
@@ -1536,8 +1552,8 @@ const RevenueCalculator: React.FC = () => {
             {/* Price slider */}
             <div>
               <div className="flex justify-between mb-2">
-                <p className="text-white/70 text-xs font-bold uppercase tracking-wider">Giá / Ngày</p>
-                <span className="text-white font-extrabold text-sm">{formatVNDPrice(pricePerDay)}</span>
+                <p className="text-white/70 text-xs font-bold uppercase tracking-wider">{t.landingPage.calculator.priceDay}</p>
+                <span className="text-white font-extrabold text-sm">{formatCurrency(pricePerDay)}</span>
               </div>
               <input type="range"
                 min={vehicleType === 'car' ? 500000 : 100000}
@@ -1552,14 +1568,14 @@ const RevenueCalculator: React.FC = () => {
             {/* Days slider */}
             <div>
               <div className="flex justify-between mb-2">
-                <p className="text-white/70 text-xs font-bold uppercase tracking-wider">Ngày Cho Thuê / Tháng</p>
-                <span className="text-white font-extrabold text-sm">{daysPerMonth} ngày</span>
+                <p className="text-white/70 text-xs font-bold uppercase tracking-wider">{t.landingPage.calculator.daysMonth}</p>
+                <span className="text-white font-extrabold text-sm">{daysPerMonth} {t.landingPage.calculator.daysUnit}</span>
               </div>
               <input type="range" min={5} max={30} step={1} value={daysPerMonth}
                 onChange={e => setDaysPerMonth(Number(e.target.value))}
                 className="w-full h-2 rounded-lg appearance-none cursor-pointer accent-amber-400" />
               <div className="flex justify-between text-[10px] text-white/30 mt-1">
-                <span>5 ngày</span><span>15 ngày</span><span>30 ngày</span>
+                <span>5 {t.landingPage.calculator.daysUnit}</span><span>15 {t.landingPage.calculator.daysUnit}</span><span>30 {t.landingPage.calculator.daysUnit}</span>
               </div>
             </div>
           </motion.div>
@@ -1568,45 +1584,45 @@ const RevenueCalculator: React.FC = () => {
           <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }}
             className="space-y-4">
             <div className="bg-gradient-to-br from-amber-400/10 to-amber-600/5 border border-amber-400/20 rounded-3xl p-8 text-center">
-              <p className="text-amber-400/80 text-sm font-bold uppercase tracking-wider mb-2">Thu Nhập Ròng / Tháng</p>
+              <p className="text-amber-400/80 text-sm font-bold uppercase tracking-wider mb-2">{t.landingPage.calculator.netRevenueMonth}</p>
               <motion.p
                 key={netRevenue}
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 className="text-4xl md:text-5xl font-extrabold text-white tabular-nums"
               >
-                {formatVNDPrice(netRevenue)}
+                {formatCurrency(netRevenue)}
               </motion.p>
-              <p className="text-white/40 text-xs mt-2">Sau phí nền tảng 8%</p>
+              <p className="text-white/40 text-xs mt-2">{t.landingPage.calculator.afterFee}</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-white/5 border border-white/10 rounded-2xl p-5 text-center">
-                <p className="text-white/50 text-xs font-bold uppercase tracking-wider mb-2">Doanh Thu Thô</p>
-                <p className="text-2xl font-extrabold text-white">{formatVNDPrice(grossRevenue)}</p>
+                <p className="text-white/50 text-xs font-bold uppercase tracking-wider mb-2">{t.landingPage.calculator.grossRevenue}</p>
+                <p className="text-2xl font-extrabold text-white">{formatCurrency(grossRevenue)}</p>
               </div>
               <div className="bg-white/5 border border-white/10 rounded-2xl p-5 text-center">
-                <p className="text-white/50 text-xs font-bold uppercase tracking-wider mb-2">Thu Nhập / Năm</p>
-                <p className="text-2xl font-extrabold text-emerald-400">{formatVNDPrice(annualRevenue)}</p>
+                <p className="text-white/50 text-xs font-bold uppercase tracking-wider mb-2">{t.landingPage.calculator.annualRevenue}</p>
+                <p className="text-2xl font-extrabold text-emerald-400">{formatCurrency(annualRevenue)}</p>
               </div>
             </div>
 
             <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
               <div className="flex justify-between items-center py-2 border-b border-white/10">
-                <span className="text-white/60 text-sm">Giá / ngày</span>
-                <span className="text-white font-bold text-sm">{formatVNDPrice(pricePerDay)}</span>
+                <span className="text-white/60 text-sm">{t.landingPage.calculator.priceDay}</span>
+                <span className="text-white font-bold text-sm">{formatCurrency(pricePerDay)}</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-white/10">
-                <span className="text-white/60 text-sm">Ngày cho thuê</span>
-                <span className="text-white font-bold text-sm">{daysPerMonth} ngày/tháng</span>
+                <span className="text-white/60 text-sm">{t.landingPage.calculator.daysMonth.split(' / ')[0]}</span>
+                <span className="text-white font-bold text-sm">{daysPerMonth} {t.landingPage.calculator.daysUnit}/{language === 'vi' ? 'tháng' : 'month'}</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-white/10">
-                <span className="text-white/60 text-sm">Phí nền tảng (8%)</span>
-                <span className="text-amber-400 font-bold text-sm">-{formatVNDPrice(platformFee)}</span>
+                <span className="text-white/60 text-sm">{t.landingPage.calculator.feeLabel}</span>
+                <span className="text-amber-400 font-bold text-sm">-{formatCurrency(platformFee)}</span>
               </div>
               <div className="flex justify-between items-center pt-3">
-                <span className="text-white font-bold">Thu Nhập Ròng</span>
-                <span className="text-emerald-400 font-extrabold text-lg">{formatVNDPrice(netRevenue)}</span>
+                <span className="text-white font-bold">{t.landingPage.calculator.netRevenueLabel}</span>
+                <span className="text-emerald-400 font-extrabold text-lg">{formatCurrency(netRevenue)}</span>
               </div>
             </div>
 
@@ -1614,7 +1630,7 @@ const RevenueCalculator: React.FC = () => {
               className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-bold text-white text-base transition-all hover:scale-105 active:scale-95"
               style={{ background: 'linear-gradient(135deg,#D4AF37,#F5D547,#B8860B)' }}>
               <TrendingUp className="w-5 h-5" style={{ color: '#0F172A' }} />
-              <span style={{ color: '#0F172A' }}>Đăng Ký Làm Chủ Xe Ngay</span>
+              <span style={{ color: '#0F172A' }}>{t.landingPage.calculator.cta}</span>
             </Link>
           </motion.div>
         </div>
@@ -1626,27 +1642,43 @@ const RevenueCalculator: React.FC = () => {
 // =====================================================
 // LIVE MARKETPLACE ACTIVITY
 // =====================================================
-const LIVE_EVENTS = [
-  { icon: '🚗', text: 'Toyota Camry vừa được đặt tại TP.HCM', time: '2 phút trước', type: 'booking' },
-  { icon: '🏍️', text: 'Honda SH350i nhận đánh giá 5⭐ tại Hà Nội', time: '5 phút trước', type: 'review' },
-  { icon: '🚙', text: 'Mazda CX5 mới được đăng ký tại Đà Nẵng', time: '8 phút trước', type: 'listing' },
-  { icon: '⚡', text: 'VinFast VF8 vừa được đặt online tức thì', time: '12 phút trước', type: 'instant' },
-  { icon: '🛵', text: 'Yamaha Exciter 155 bắt đầu chuyến đi tại Nha Trang', time: '15 phút trước', type: 'active' },
-  { icon: '💰', text: 'Chủ xe ở TP.HCM vừa nhận 3.600.000₫ doanh thu hôm nay', time: '18 phút trước', type: 'revenue' },
-  { icon: '✅', text: 'Honda CR-V hoàn thành chuyến đi 5 ngày tại Đà Lạt', time: '22 phút trước', type: 'completed' },
-  { icon: '🏆', text: 'Hyundai Santa Fe được xếp hạng #1 tuần này tại Hà Nội', time: '30 phút trước', type: 'ranking' },
-];
-
 const LiveActivitySection: React.FC = () => {
-  const [events, setEvents] = useState(LIVE_EVENTS);
+  const t = useT();
+  const language = useUIStore((s: any) => s.language);
   const [pointer, setPointer] = useState(0);
+
+  const eventsList = React.useMemo(() => {
+    if (language === 'vi') {
+      return [
+        { icon: '🚗', text: 'Toyota Camry vừa được đặt tại TP.HCM', time: '2 phút trước', type: 'booking' },
+        { icon: '🏍️', text: 'Honda SH350i nhận đánh giá 5⭐ tại Hà Nội', time: '5 phút trước', type: 'review' },
+        { icon: '🚙', text: 'Mazda CX5 mới được đăng ký tại Đà Nẵng', time: '8 phút trước', type: 'listing' },
+        { icon: '⚡', text: 'VinFast VF8 vừa được đặt online tức thì', time: '12 phút trước', type: 'instant' },
+        { icon: '🛵', text: 'Yamaha Exciter 155 bắt đầu chuyến đi tại Nha Trang', time: '15 phút trước', type: 'active' },
+        { icon: '💰', text: 'Chủ xe ở TP.HCM vừa nhận 3.600.000₫ doanh thu hôm nay', time: '18 phút trước', type: 'revenue' },
+        { icon: '✅', text: 'Honda CR-V hoàn thành chuyến đi 5 ngày tại Đà Lạt', time: '22 phút trước', type: 'completed' },
+        { icon: '🏆', text: 'Hyundai Santa Fe được xếp hạng #1 tuần này tại Hà Nội', time: '30 phút trước', type: 'ranking' },
+      ];
+    } else {
+      return [
+        { icon: '🚗', text: 'Toyota Camry has just been booked in Ho Chi Minh City', time: '2 mins ago', type: 'booking' },
+        { icon: '🏍️', text: 'Honda SH350i received a 5⭐ review in Hanoi', time: '5 mins ago', type: 'review' },
+        { icon: '🚙', text: 'Mazda CX5 newly listed in Da Nang', time: '8 mins ago', type: 'listing' },
+        { icon: '⚡', text: 'VinFast VF8 just booked instantly online', time: '12 mins ago', type: 'instant' },
+        { icon: '🛵', text: 'Yamaha Exciter 155 started a trip in Nha Trang', time: '15 mins ago', type: 'active' },
+        { icon: '💰', text: 'A host in Ho Chi Minh City just earned 3,600,000₫ today', time: '18 mins ago', type: 'revenue' },
+        { icon: '✅', text: 'Honda CR-V completed a 5-day trip in Da Lat', time: '22 mins ago', type: 'completed' },
+        { icon: '🏆', text: 'Hyundai Santa Fe ranked #1 this week in Hanoi', time: '30 mins ago', type: 'ranking' },
+      ];
+    }
+  }, [language]);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setPointer(p => (p + 1) % LIVE_EVENTS.length);
+      setPointer(p => (p + 1) % eventsList.length);
     }, 3500);
     return () => clearInterval(interval);
-  }, []);
+  }, [eventsList]);
 
   const colorMap: Record<string, string> = {
     booking: 'bg-blue-500/10 border-blue-500/30 text-blue-400',
@@ -1664,24 +1696,24 @@ const LiveActivitySection: React.FC = () => {
       <div className="max-w-5xl mx-auto px-6">
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="flex justify-between items-end mb-8">
           <div>
-            <span className="text-sm font-bold tracking-widest uppercase text-amber-500 mb-2 block">Hoạt Động Trực Tiếp</span>
+            <span className="text-sm font-bold tracking-widest uppercase text-amber-500 mb-2 block">{t.landingPage.liveActivity.label}</span>
             <h2 className="font-bold text-2xl md:text-3xl text-[#0F172A] dark:text-white flex items-center gap-3">
               <span className="inline-flex items-center gap-2">
                 <span className="relative flex h-3 w-3">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
                 </span>
-                Nền Tảng Đang Hoạt Động
+                {t.landingPage.liveActivity.title}
               </span>
             </h2>
           </div>
           <div className="text-xs font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl">
-            Cập nhật mỗi 3.5 giây
+            {t.landingPage.liveActivity.updateNotice}
           </div>
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {LIVE_EVENTS.map((ev, i) => {
+          {eventsList.map((ev, i) => {
             const isActive = i === pointer;
             return (
               <motion.div
@@ -1753,7 +1785,7 @@ const LandingPage: React.FC = () => {
     homeService.getDestinations().then(d => { setDestinations(d ?? []); setLoadingDests(false); });
     homeService.getTestimonials().then(d => { setTestimonials(d ?? null); setLoadingTestimonials(false); });
     homeService.getFaqs().then(d => { setFaqs(d ?? []); setLoadingFaqs(false); });
-  }, []);
+  }, [language]);
 
   const statsErrorMessage = statsError;
   const retryLabel = language === 'vi' ? 'Thử lại' : 'Retry';

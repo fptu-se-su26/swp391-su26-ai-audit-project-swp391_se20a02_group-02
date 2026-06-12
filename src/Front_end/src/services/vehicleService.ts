@@ -6,7 +6,7 @@ import { motorbikeService } from './motorbikeService';
 // Storage key for wishlist fallback since backend may not have a dedicated endpoint yet
 const WISHLIST_KEY = 'luxeway_wishlist';
 
-const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8080/api/v1';
+const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8080';
 
 const resolveImageUrl = (url: string | null | undefined): string => {
   if (!url) return '';
@@ -113,6 +113,107 @@ const mapVehicle = (v: any): Vehicle => {
     weddingRental: v.weddingRental || false,
     businessRental: v.businessRental || false,
   };
+};
+
+// Helper function to map nested frontend Vehicle/updates to flat backend CreateVehicleRequest DTO
+const transformToBackendPayload = (data: Partial<Vehicle>): any => {
+  const payload: any = {
+    name: data.name,
+    brand: data.brand,
+    model: data.model,
+    year: data.year ? parseInt(data.year as any, 10) : undefined,
+    category: data.category ? data.category.toUpperCase() : undefined,
+    description: data.description,
+    pricePerDay: data.pricePerDay,
+    pricePerWeek: data.pricePerWeek,
+    deposit: data.deposit,
+    vehicleType: data.vehicleType ? data.vehicleType.toUpperCase() : undefined,
+    instantBook: data.instantBook,
+    deliveryAvailable: data.deliveryAvailable,
+    deliveryFee: data.deliveryFee,
+  };
+
+  // Hoist location
+  if (data.location) {
+    payload.city = data.location.city;
+    payload.country = data.location.country || 'Vietnam';
+    payload.address = data.location.address;
+    payload.latitude = data.location.lat !== undefined ? data.location.lat : (data as any).latitude;
+    payload.longitude = data.location.lng !== undefined ? data.location.lng : (data as any).longitude;
+  } else {
+    payload.city = (data as any).city;
+    payload.country = (data as any).country || 'Vietnam';
+    payload.address = (data as any).address;
+    payload.latitude = (data as any).latitude;
+    payload.longitude = (data as any).longitude;
+  }
+
+  // Hoist specs
+  if (data.specs) {
+    payload.seats = data.specs.seats !== undefined ? parseInt(data.specs.seats as any, 10) : undefined;
+    payload.doors = data.specs.doors !== undefined ? parseInt(data.specs.doors as any, 10) : undefined;
+    payload.horsepower = data.specs.horsepower !== undefined ? parseInt(data.specs.horsepower as any, 10) : undefined;
+    payload.topSpeed = data.specs.topSpeed !== undefined ? parseInt(data.specs.topSpeed as any, 10) : undefined;
+    payload.transmission = data.specs.transmission ? data.specs.transmission.toUpperCase() : undefined;
+    payload.fuelType = data.specs.fuelType ? data.specs.fuelType.toUpperCase() : undefined;
+    payload.rangeKm = data.specs.range !== undefined ? parseInt(data.specs.range as any, 10) : (data as any).rangeKm;
+    payload.engineSize = data.specs.engineSize;
+    payload.color = data.specs.color;
+    payload.licensePlate = data.specs.licensePlate;
+  } else {
+    payload.seats = (data as any).seats;
+    payload.doors = (data as any).doors;
+    payload.horsepower = (data as any).horsepower;
+    payload.topSpeed = (data as any).topSpeed;
+    payload.transmission = (data as any).transmission ? (data as any).transmission.toUpperCase() : undefined;
+    payload.fuelType = (data as any).fuelType ? (data as any).fuelType.toUpperCase() : undefined;
+    payload.rangeKm = (data as any).rangeKm;
+    payload.engineSize = (data as any).engineSize;
+    payload.color = (data as any).color;
+    payload.licensePlate = (data as any).licensePlate;
+  }
+
+  // Hoist availability
+  if (data.availability) {
+    payload.minRentalDays = data.availability.minRentalDays !== undefined ? parseInt(data.availability.minRentalDays as any, 10) : undefined;
+    payload.maxRentalDays = data.availability.maxRentalDays !== undefined ? parseInt(data.availability.maxRentalDays as any, 10) : undefined;
+  }
+
+  // Hoist motorbike/car fields
+  payload.engineCc = data.engineCc;
+  payload.hasHelmet = data.hasHelmet;
+  payload.hasPhoneHolder = data.hasPhoneHolder;
+  payload.hasRaincoat = data.hasRaincoat;
+  payload.hasTouringPackage = data.hasTouringPackage;
+
+  payload.hasChauffeur = data.hasChauffeur;
+  payload.airportDelivery = data.airportDelivery;
+  payload.weddingRental = data.weddingRental;
+  payload.businessRental = data.businessRental;
+
+  payload.features = data.features;
+  
+  if (data.images && data.images.length > 0) {
+    payload.imageUrls = data.images;
+  } else if ((data as any).imageUrls) {
+    payload.imageUrls = (data as any).imageUrls;
+  }
+
+  // Ensure default fallback values for non-null required fields
+  if (payload.transmission === undefined) {
+    payload.transmission = 'AUTOMATIC';
+  }
+  if (payload.fuelType === undefined) {
+    payload.fuelType = 'GASOLINE';
+  }
+  if (payload.seats === undefined) {
+    payload.seats = 4;
+  }
+  if (payload.deposit === undefined) {
+    payload.deposit = 0;
+  }
+
+  return payload;
 };
 
 export const vehicleService = {
@@ -266,14 +367,16 @@ export const vehicleService = {
   },
 
   async create(ownerId: string, data: Partial<Vehicle>): Promise<Vehicle> {
-    const payload = { ...data, ownerId };
+    const transformed = transformToBackendPayload(data);
+    const payload = { ...transformed, ownerId };
     const response = await apiClient.post<any>('/vehicles', payload);
     return response.vehicle ? mapVehicle(response.vehicle) : (payload as Vehicle); 
   },
 
   async update(id: string, updates: Partial<Vehicle>): Promise<Vehicle | null> {
     try {
-      const response = await apiClient.put<any>(`/vehicles/${id}`, updates);
+      const transformed = transformToBackendPayload(updates);
+      const response = await apiClient.put<any>(`/vehicles/${id}`, transformed);
       return response.vehicle ? mapVehicle(response.vehicle) : null;
     } catch (error) {
       return null;
