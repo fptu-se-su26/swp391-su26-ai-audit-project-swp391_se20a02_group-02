@@ -1,0 +1,165 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agent-service
+  namespace: luxeway
+  labels:
+    app: agent-service
+    version: "1.0.0"
+    tier: agentic-ai
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: agent-service
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0  # Zero-downtime rolling updates
+  template:
+    metadata:
+      labels:
+        app: agent-service
+        version: "1.0.0"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8001"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: agent-service-sa
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: agent-service
+          image: ghcr.io/fptu-se-su26/agent-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8001
+              name: http
+          env:
+            - name: ENVIRONMENT
+              value: "production"
+            - name: ML_SERVICE_URL
+              value: "http://ml-sidecar:8000"
+            - name: BACKEND_URL
+              value: "http://spring-backend:8080"
+            - name: JWT_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: luxeway-secrets
+                  key: jwt-secret-key
+            - name: AGENT_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: luxeway-secrets
+                  key: agent-api-key
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: luxeway-secrets
+                  key: redis-url
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: luxeway-secrets
+                  key: database-url
+            - name: MLFLOW_TRACKING_URI
+              value: "http://mlflow:5000"
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "2Gi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 8001
+            initialDelaySeconds: 15
+            periodSeconds: 5
+            failureThreshold: 3
+          volumeMounts:
+            - name: tmp-volume
+              mountPath: /tmp
+      volumes:
+        - name: tmp-volume
+          emptyDir: {}
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: agent-service
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: agent-service
+  namespace: luxeway
+  labels:
+    app: agent-service
+spec:
+  selector:
+    app: agent-service
+  ports:
+    - name: http
+      port: 8001
+      targetPort: 8001
+      protocol: TCP
+  type: ClusterIP
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: agent-service-hpa
+  namespace: luxeway
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: agent-service
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: agent-service-config
+  namespace: luxeway
+data:
+  ENVIRONMENT: "production"
+  WORKERS: "4"
+  ML_TIMEOUT_SECONDS: "10"
+  ORCHESTRATOR_TIMEOUT_SECONDS: "30"
+  MAX_CONCURRENT_AGENTS: "6"
+  RATE_LIMIT_REQUESTS: "1000"
+  RATE_LIMIT_WINDOW_SECONDS: "60"
+  ENABLE_HUMAN_IN_LOOP: "true"
