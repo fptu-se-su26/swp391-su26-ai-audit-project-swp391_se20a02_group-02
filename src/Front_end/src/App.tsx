@@ -21,10 +21,6 @@ import { LoginPage, RegisterPage, ForgotPasswordPage } from '@/pages/auth/AuthPa
 import OAuth2RedirectHandler from '@/pages/auth/OAuth2RedirectHandler';
 import MarketplacePage from '@/pages/marketplace/MarketplacePage';
 import VehicleDetailPage from '@/pages/marketplace/VehicleDetailPage';
-import CarsMarketplace from '@/pages/marketplace/CarsMarketplace';
-import MotorbikeMarketplace from '@/pages/marketplace/MotorbikeMarketplace';
-import CarDetails from '@/pages/marketplace/CarDetails';
-import MotorbikeDetails from '@/pages/marketplace/MotorbikeDetails';
 import BookingWizardPage from '@/pages/booking/BookingWizardPage';
 import VNPayReturnPage from '@/pages/booking/VNPayReturnPage';
 import HelpPage from '@/pages/help/HelpPage';
@@ -508,10 +504,10 @@ const App: React.FC = () => {
             <Route path="vehicles" element={<MarketplacePage />} />
             <Route path="search" element={<MarketplacePage />} />
             <Route path="vehicles/:id" element={<VehicleDetailPage />} />
-            <Route path="cars" element={<CarsMarketplace />} />
-            <Route path="motorbikes" element={<MotorbikeMarketplace />} />
-            <Route path="cars/:id" element={<CarDetails />} />
-            <Route path="motorbikes/:id" element={<MotorbikeDetails />} />
+            <Route path="cars" element={<Navigate to="/marketplace?type=car" replace />} />
+            <Route path="motorbikes" element={<Navigate to="/marketplace?type=motorbike" replace />} />
+            <Route path="cars/:id" element={<VehicleDetailPage />} />
+            <Route path="motorbikes/:id" element={<VehicleDetailPage />} />
             <Route path="booking/:vehicleId" element={
               <ProtectedRoute><BookingWizardPage /></ProtectedRoute>
             } />

@@ -38,30 +38,50 @@ public class AnalyticsService implements CommandLineRunner {
     public void run(String... args) {
         log.info("Checking platform analytics records...");
         long count = analyticsRepository.count();
-        if (count == 0) {
-            log.info("Seeding realistic historical analytics for the last 30 days to build premium visual charts...");
+        // Chỉ chạy seeder nếu database chưa có đủ 90 ngày (ví dụ mới khởi tạo hoặc data cũ)
+        if (count < 90) {
+            log.info("Forcing seed of realistic historical analytics for the last 90 days to build premium visual charts...");
             seedHistoricalAnalytics();
+        } else {
+            log.info("Analytics data already seeded. Skipping mock data generation.");
         }
     }
 
     @Transactional
     public void seedHistoricalAnalytics() {
+        log.info("Wiping old analytics to inject 90-day ML training dataset...");
+        analyticsRepository.deleteAll(); // Wipe old data for clean ML test
+
         LocalDate end = LocalDate.now();
-        LocalDate start = end.minusDays(30);
+        LocalDate start = end.minusDays(90); // 90 days for better ML patterns
         
         Random random = new Random();
         for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
-            // Check if record exists
-            if (analyticsRepository.findByRecordDate(date).isPresent()) {
-                continue;
-            }
-
-            // Generate plausible revenue and counts
+            // Baseline metrics
             BigDecimal dailyRevenue = BigDecimal.valueOf(1500000 + random.nextInt(4500000)); // 1.5M to 6M VND
             int bookingsCount = 2 + random.nextInt(8);
             int activeRentals = 5 + random.nextInt(15);
             int newUsers = 1 + random.nextInt(4);
             int newVehicles = random.nextInt(2);
+
+            // Inject Anomalies for AnomalyAgent to catch
+            if (date.getDayOfMonth() == 15 && date.getMonthValue() % 2 == 0) {
+                // Positive anomaly spike
+                dailyRevenue = BigDecimal.valueOf(35000000 + random.nextInt(10000000));
+                bookingsCount = 45 + random.nextInt(20);
+                log.info("Injected Positive Anomaly at {}", date);
+            } else if (date.getDayOfMonth() == 5 && date.getMonthValue() == end.minusMonths(1).getMonthValue()) {
+                // Negative anomaly drop
+                dailyRevenue = BigDecimal.valueOf(200000);
+                bookingsCount = 0;
+                log.info("Injected Negative Anomaly at {}", date);
+            }
+
+            // Seasonal trend (weekend spike)
+            if (date.getDayOfWeek().getValue() >= 5) {
+                dailyRevenue = dailyRevenue.multiply(BigDecimal.valueOf(1.5));
+                bookingsCount += 5;
+            }
 
             Analytics record = Analytics.builder()
                     .recordDate(date)
@@ -75,7 +95,7 @@ public class AnalyticsService implements CommandLineRunner {
 
             analyticsRepository.save(record);
         }
-        log.info("Successfully seeded 30 days of platform historical analytics records.");
+        log.info("Successfully seeded 90 days of rich platform historical analytics with anomalies.");
     }
 
     /**

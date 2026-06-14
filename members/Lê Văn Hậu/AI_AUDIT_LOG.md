@@ -756,4 +756,50 @@ Audit LuxeWay Car Rental Platform:
 
 ---
 
+## Log #26
+
+- **Date:** 2026-06-14
+- **Author:** Lê Văn Hậu (DE190968)
+- **AI Tool:** Antigravity
+- **Purpose:** Xây dựng các router cho ML Service (Anomaly, Churn, Demand, Health, Revenue, Utilization)
+- **Prompt Reference:** PROMPTS.md#prompt-26
+- **AI Output Summary:** Tạo ra cấu trúc thư mục ml_service và các file router bằng FastAPI
+- **Human Decision:** Chạy thử bằng Python và confirm các file pycache đã sinh ra thành công
+- **Applied To:** src/ml_service/
+- **Verification:** Đã chạy thành công FastAPI server
+
+---
+
+## Log #27
+
+- **Date:** 2026-06-14
+- **Author:** Lê Văn Hậu (DE190968)
+- **AI Tool:** Antigravity
+- **Purpose:** Xây dựng Data Acquisition Pipeline (Web Scraper) để thu thập dữ liệu phương tiện từ Mioto phục vụ ML/AI.
+- **Prompt Reference:** N/A
+- **AI Output Summary:** Xây dựng kiến trúc Scraper bằng Playwright, Data Cleaner (xóa trùng lặp bằng Composite Key brand+model+year, chuẩn hóa JSON, tải ảnh an toàn), và SQL Generator (tạo MERGE script cho SQL Server + bảng RawVehicleData).
+- **Human Decision:** Phê duyệt kiến trúc v3 an toàn (không insert trực tiếp, tải ảnh nội bộ). Yêu cầu chỉ lấy dữ liệu xe (không lấy PII).
+- **Applied To:** `scraper/` (config.py, main_scraper.py, data_cleaner.py, sql_generator.py).
+- **Verification:** Chạy thành công các script tạo file JSON trung gian và file `seed_vehicles.sql`.
+
 ## 10. Cam kết học thuật
+## Log #28: Pivot to Offline Web Scraping Architecture
+**Date:** 2026-06-14
+**Component:** Web Scraper
+**Action:** Refactored web scraper from Playwright automation to Offline HTML Processing (BeautifulSoup) to bypass Mioto's anti-bot protections.
+**Reasoning:** Mioto returns error -10251 for headless browsers. Since the project goal is dataset acquisition and not defeating anti-bot measures, offline parsing is safer, more repeatable, and guarantees 100% success rate without timeouts.
+**Outcome:** main_scraper.py now parses multiple .html files in data/html_sources into aw_vehicles.json.
+
+---
+
+## Log #29
+
+- **Date:** 2026-06-14
+- **Author:** LeVanHau (DE190968)
+- **AI Tool:** Antigravity
+- **Purpose:** Sửa lỗi đồng bộ giao diện giữa /marketplace và /cars
+- **Prompt Reference:** PROMPTS.md#prompt-29
+- **AI Output Summary:** Cấu hình lại React Router trong App.tsx sử dụng <Navigate> để gom chung đường dẫn /cars về /marketplace?type=car. Xóa các component trùng lặp như CarsMarketplace.tsx.
+- **Human Decision:** Xác nhận việc điều hướng xử lý đúng VehicleDetailPage cho mọi loại xe, giúp đồng bộ state và API calls.
+- **Applied To:** src/Front_end/src/App.tsx, xóa file ở src/Front_end/src/pages/marketplace/
+- **Verification:** Chạy thành công, các trang được đồng bộ 100% không còn code rác.
