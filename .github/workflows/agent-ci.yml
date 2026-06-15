@@ -1,0 +1,156 @@
+name: LuxeWay Agent Layer — CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'agent-layer/**'
+      - '.github/workflows/agent-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'agent-layer/**'
+
+env:
+  PYTHON_VERSION: "3.11"
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/agent-service
+
+jobs:
+  # ── Lint & Type Check ───────────────────────────────────────────────────────
+  lint:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: agent-layer
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Install dev dependencies
+        run: pip install ruff mypy types-requests
+      - name: Ruff lint
+        run: ruff check .
+      - name: Type check
+        run: mypy . --ignore-missing-imports --no-strict-optional
+
+  # ── Unit Tests ──────────────────────────────────────────────────────────────
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: lint
+    defaults:
+      run:
+        working-directory: agent-layer
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run tests with coverage
+        run: pytest tests/ -v --cov=. --cov-report=xml --cov-report=term-missing
+        env:
+          ENVIRONMENT: test
+          ML_SERVICE_URL: http://mock-ml-service
+          BACKEND_URL: http://mock-backend
+          JWT_SECRET_KEY: test-secret-key
+          AGENT_API_KEY: test-api-key
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: agent-layer/coverage.xml
+          flags: agent-layer
+
+  # ── Build & Push Docker Image ───────────────────────────────────────────────
+  build:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: agent-layer
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ── MLflow Model Registry Check ─────────────────────────────────────────────
+  model-registry-check:
+    name: Verify MLflow Model Registry
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install MLflow
+        run: pip install mlflow>=2.13.0
+      - name: Check model registry connectivity
+        run: |
+          python -c "
+          import mlflow
+          # In production, set MLFLOW_TRACKING_URI secret
+          print('MLflow version:', mlflow.__version__)
+          print('Model registry check: SKIPPED (requires live MLflow server)')
+          "
+
+  # ── Deploy to Staging ────────────────────────────────────────────────────────
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/develop'
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to staging Kubernetes
+        run: |
+          echo "Deploying agent-service to staging..."
+          # kubectl set image deployment/agent-service agent-service=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
+          echo "Deploy command would run here with kubectl configured."
+
+  # ── Deploy to Production ─────────────────────────────────────────────────────
+  deploy-prod:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to production Kubernetes
+        run: |
+          echo "Deploying agent-service to production..."
+          # kubectl set image deployment/agent-service agent-service=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          echo "Production deploy command would run here."

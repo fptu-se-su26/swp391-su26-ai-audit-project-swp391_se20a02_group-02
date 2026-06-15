@@ -292,16 +292,40 @@ http://localhost:5173/auth/login
 
 ---
 
-## ✨ SUCCESS!
+## 🤖 PYTHON ML SIDECAR (AI Predictive Analytics)
 
-Khi backend chạy thành công, bạn sẽ thấy:
-- ✅ Console log: "Started LuxewayBackendApplication"
-- ✅ Health check returns JSON
-- ✅ Frontend shows "Backend Connected"
-- ✅ Login works
-- ✅ Dashboard loads
+Để sử dụng tính năng **AI Predictive Analytics** trong admin panel, cần khởi động thêm Python ML sidecar service:
 
-**Chúc mừng! Backend đã chạy! 🎉**
+### Prerequisites
+- Python 3.11+
+- pip
+
+### Start Sidecar
+
+```bash
+# Navigate to ml_service directory
+cd src/ml_service
+
+# Install dependencies (first time only)
+pip install -r requirements.txt
+
+# Start the sidecar (port 8000)
+uvicorn main:app --reload --port 8000
+```
+
+### Verify Sidecar
+
+```
+http://localhost:8000/ml/health
+```
+
+Expected response: `{"status":"ok","version":"1.0.0"}`
+
+### Notes
+- Sidecar must be running **before** the Spring Boot backend starts (or within the first 15 minutes).
+- If sidecar is unavailable, Spring Boot uses a **Java fallback** (7-day SMA) automatically.
+- Admin panel will show a yellow badge: *"Using simplified forecast model"* when fallback is active.
+- See `src/ml_service/README.md` for full documentation.
 
 ---
 
