@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @RestController
-@RequestMapping({"/users", "/api/v1/users"})
+@RequestMapping("/users")
 @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173"})
 public class UserController {
     
@@ -267,60 +267,5 @@ public class UserController {
         }
         com.luxeway.dto.user.UserDTOs.UserProfileResponse updated = userService.updateProfile(id, request);
         return ResponseEntity.ok(updated);
-    }
-
-    @GetMapping("/me")
-    public ResponseEntity<?> getMe(@AuthenticationPrincipal User user) {
-        if (user == null) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Unauthorized");
-            return ResponseEntity.status(401).body(errorResponse);
-        }
-        Map<String, Object> response = new HashMap<>();
-        response.put("id", user.getId());
-        response.put("name", user.getDisplayName());
-        response.put("avatar", user.getAvatar());
-        response.put("role", user.getRole().name().toLowerCase());
-        response.put("language", user.getPreferredLanguage() != null ? user.getPreferredLanguage() : "en");
-        response.put("currency", "VND");
-        return ResponseEntity.ok(response);
-    }
-
-    @PostMapping("/language")
-    public ResponseEntity<?> saveLanguage(
-            @AuthenticationPrincipal User user,
-            @RequestBody(required = false) Map<String, String> body,
-            @RequestParam(required = false) String language) {
-        if (user == null) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Unauthorized");
-            return ResponseEntity.status(401).body(errorResponse);
-        }
-
-        String lang = null;
-        if (body != null && body.containsKey("language")) {
-            lang = body.get("language");
-        }
-        if (lang == null || lang.isEmpty()) {
-            lang = language;
-        }
-
-        if (lang == null || lang.isEmpty()) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Language is required");
-            return ResponseEntity.badRequest().body(errorResponse);
-        }
-
-        Optional<User> dbUserOpt = userRepository.findById(user.getId());
-        if (dbUserOpt.isPresent()) {
-            User dbUser = dbUserOpt.get();
-            dbUser.setPreferredLanguage(lang);
-            userRepository.save(dbUser);
-        }
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("success", true);
-        response.put("language", lang);
-        return ResponseEntity.ok(response);
     }
 }

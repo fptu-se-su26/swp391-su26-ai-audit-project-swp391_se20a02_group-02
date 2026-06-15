@@ -71,9 +71,6 @@ public class DatabaseMigration implements CommandLineRunner {
             }
         }
 
-        addNullableColumn("users", "license_class", "NVARCHAR(10)", "VARCHAR(10)");
-        addNullableColumn("users", "license_number", "NVARCHAR(50)", "VARCHAR(50)");
-
         addNullableColumn("user_documents", "license_class", "NVARCHAR(10)", "VARCHAR(10)");
         addNullableColumn("user_documents", "license_number", "NVARCHAR(50)", "VARCHAR(50)");
         addNullableColumn("user_documents", "license_full_name", "NVARCHAR(200)", "VARCHAR(200)");
@@ -195,7 +192,7 @@ public class DatabaseMigration implements CommandLineRunner {
 
         // CREATE TABLE: conversations
         try {
-            jdbcTemplate.execute("IF OBJECT_ID('conversations', 'U') IS NULL CREATE TABLE conversations (" +
+            jdbcTemplate.execute("CREATE TABLE conversations (" +
                     "id NVARCHAR(36) NOT NULL PRIMARY KEY, " +
                     "vehicle_id NVARCHAR(36) NULL, " +
                     "last_activity DATETIME2 NOT NULL, " +
@@ -207,7 +204,7 @@ public class DatabaseMigration implements CommandLineRunner {
 
         // CREATE TABLE: conversation_participants
         try {
-            jdbcTemplate.execute("IF OBJECT_ID('conversation_participants', 'U') IS NULL CREATE TABLE conversation_participants (" +
+            jdbcTemplate.execute("CREATE TABLE conversation_participants (" +
                     "conversation_id NVARCHAR(36) NOT NULL, " +
                     "user_id NVARCHAR(36) NOT NULL, " +
                     "PRIMARY KEY (conversation_id, user_id))");
@@ -218,7 +215,7 @@ public class DatabaseMigration implements CommandLineRunner {
 
         // CREATE TABLE: messages
         try {
-            jdbcTemplate.execute("IF OBJECT_ID('messages', 'U') IS NULL CREATE TABLE messages (" +
+            jdbcTemplate.execute("CREATE TABLE messages (" +
                     "id NVARCHAR(36) NOT NULL PRIMARY KEY, " +
                     "conversation_id NVARCHAR(36) NOT NULL, " +
                     "sender_id NVARCHAR(36) NOT NULL, " +
@@ -234,7 +231,7 @@ public class DatabaseMigration implements CommandLineRunner {
 
         // CREATE TABLE: invoices
         try {
-            jdbcTemplate.execute("IF OBJECT_ID('invoices', 'U') IS NULL CREATE TABLE invoices (" +
+            jdbcTemplate.execute("CREATE TABLE invoices (" +
                     "id NVARCHAR(36) NOT NULL PRIMARY KEY, " +
                     "booking_id NVARCHAR(36) NOT NULL UNIQUE, " +
                     "user_id NVARCHAR(36) NOT NULL, " +
@@ -251,7 +248,7 @@ public class DatabaseMigration implements CommandLineRunner {
 
         // CREATE TABLE: employees
         try {
-            jdbcTemplate.execute("IF OBJECT_ID('employees', 'U') IS NULL CREATE TABLE employees (" +
+            jdbcTemplate.execute("CREATE TABLE employees (" +
                     "id NVARCHAR(36) NOT NULL PRIMARY KEY, " +
                     "owner_id NVARCHAR(36) NOT NULL, " +
                     "name NVARCHAR(200) NOT NULL, " +
@@ -267,7 +264,7 @@ public class DatabaseMigration implements CommandLineRunner {
 
         // CREATE TABLE: employee_vehicle_assignments
         try {
-            jdbcTemplate.execute("IF OBJECT_ID('employee_vehicle_assignments', 'U') IS NULL CREATE TABLE employee_vehicle_assignments (" +
+            jdbcTemplate.execute("CREATE TABLE employee_vehicle_assignments (" +
                     "employee_id NVARCHAR(36) NOT NULL, " +
                     "vehicle_id NVARCHAR(36) NOT NULL, " +
                     "assigned_at DATETIME2 NOT NULL DEFAULT GETDATE(), " +
@@ -294,7 +291,7 @@ public class DatabaseMigration implements CommandLineRunner {
         }
 
         try {
-            jdbcTemplate.execute("IF OBJECT_ID('analytics', 'U') IS NULL CREATE TABLE analytics (" +
+            jdbcTemplate.execute("CREATE TABLE analytics (" +
                     "id NVARCHAR(36) NOT NULL PRIMARY KEY, " +
                     "record_date DATE NOT NULL UNIQUE, " +
                     "revenue DECIMAL(18,2) NOT NULL DEFAULT 0.00, " +
@@ -699,133 +696,6 @@ public class DatabaseMigration implements CommandLineRunner {
         } catch (Exception e) {
             log.error("Error running schema-enterprise.sql: {}", e.getMessage(), e);
         }
-
-        // Seed Help Center support categories, priorities, service status, and FAQs
-        seedSupportEcosystem();
-    }
-
-    private void seedSupportEcosystem() {
-        log.info("Seeding Help Center Support Ecosystem...");
-
-        // 1. Support Categories
-        try {
-            Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM support_categories", Integer.class);
-            if (count == null || count == 0) {
-                jdbcTemplate.execute("INSERT INTO support_categories (name, display_name, description) VALUES " +
-                        "('BOOKING', 'Booking Support', 'Assistance with making, modifying, or cancelling bookings'), " +
-                        "('PAYMENT', 'Payments & Payouts', 'Help with transactions, wallets, commission, and payouts'), " +
-                        "('VEHICLE', 'Vehicle Issues', 'Reporting mechanical issues, vehicle delivery, or specifications'), " +
-                        "('ACCOUNT', 'Account Settings & KYC', 'Login issues, user profile, and driving license verification'), " +
-                        "('DISPUTE', 'Disputes & Claims', 'Opening disputes, security deposit claims, or insurance reports'), " +
-                        "('OTHER', 'General Inquiries', 'General platform questions and other miscellaneous inquiries')");
-                log.info("Seeded support_categories");
-            }
-        } catch (Exception e) {
-            log.warn("Failed to seed support_categories: {}", e.getMessage());
-        }
-
-        // 2. Support Priorities
-        try {
-            Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM support_priorities", Integer.class);
-            if (count == null || count == 0) {
-                jdbcTemplate.execute("INSERT INTO support_priorities (name, priority_value, response_time_hours, resolution_time_hours) VALUES " +
-                        "('LOW', 1, 24, 72), " +
-                        "('NORMAL', 2, 12, 48), " +
-                        "('HIGH', 3, 4, 24), " +
-                        "('URGENT', 4, 2, 12), " +
-                        "('EMERGENCY', 5, 1, 4)");
-                log.info("Seeded support_priorities");
-            }
-        } catch (Exception e) {
-            log.warn("Failed to seed support_priorities: {}", e.getMessage());
-        }
-
-        // 3. Service Status
-        try {
-            Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM service_status", Integer.class);
-            if (count == null || count == 0) {
-                jdbcTemplate.execute("INSERT INTO service_status (service_name, status, description) VALUES " +
-                        "('BOOKING', 'OPERATIONAL', 'Booking processing and calendar scheduling is operational'), " +
-                        "('PAYMENT', 'OPERATIONAL', 'Wallet top-ups and Stripe/VNPay payment processing is operational'), " +
-                        "('MAPS', 'OPERATIONAL', 'Goong Maps API and tracking services are operational'), " +
-                        "('NOTIFICATIONS', 'OPERATIONAL', 'Push notifications and system alerts are operational'), " +
-                        "('MESSAGING', 'OPERATIONAL', 'Real-time WebSocket and STOMP messaging is operational'), " +
-                        "('EMAIL', 'OPERATIONAL', 'SMTP email services and automatic receipts are operational')");
-                log.info("Seeded service_status");
-            }
-        } catch (Exception e) {
-            log.warn("Failed to seed service_status: {}", e.getMessage());
-        }
-
-        // 4. FAQ Categories
-        try {
-            Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM faq_categories", Integer.class);
-            if (count == null || count == 0) {
-                jdbcTemplate.execute("INSERT INTO faq_categories (name, slug, description, display_order) VALUES " +
-                        "('Getting Started', 'getting-started', 'Guides for new customers and hosts', 1), " +
-                        "('Bookings & Cancellations', 'bookings', 'Polices on booking and cancellation', 2), " +
-                        "('Payments & Insurance', 'payments', 'Stripe, VNPay, LuxeWallet, and protection plans', 3), " +
-                        "('Trust & Safety', 'safety', 'KYC, disputes, and roadside assistance', 4)");
-                log.info("Seeded faq_categories");
-            }
-        } catch (Exception e) {
-            log.warn("Failed to seed faq_categories: {}", e.getMessage());
-        }
-
-        // 5. FAQ Items
-        try {
-            Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM faq_items", Integer.class);
-            if (count == null || count == 0) {
-                // Get general category IDs
-                Integer cat1 = jdbcTemplate.queryForObject("SELECT id FROM faq_categories WHERE slug='getting-started'", Integer.class);
-                Integer cat2 = jdbcTemplate.queryForObject("SELECT id FROM faq_categories WHERE slug='bookings'", Integer.class);
-                Integer cat3 = jdbcTemplate.queryForObject("SELECT id FROM faq_categories WHERE slug='payments'", Integer.class);
-                Integer cat4 = jdbcTemplate.queryForObject("SELECT id FROM faq_categories WHERE slug='safety'", Integer.class);
-
-                if (cat1 != null && cat2 != null && cat3 != null && cat4 != null) {
-                    jdbcTemplate.execute("INSERT INTO faq_items (id, category_id, question, answer, display_order, is_active) VALUES " +
-                            "('F1', " + cat1 + ", 'How do I sign up and verify my profile?', 'Click \"Get Started\" on the home screen. Enter your details and verify your email. Then, go to your profile to upload your driver''s license and ID card for verification.', 1, 1), " +
-                            "('F2', " + cat2 + ", 'What is the cancellation policy?', 'You can cancel free of charge up to 48 hours before the trip start time. Cancellations within 48 hours are subject to a fee according to the host''s policy.', 1, 1), " +
-                            "('F3', " + cat3 + ", 'How are security deposits refunded?', 'Security deposits are automatically returned to your LuxeWallet or original payment method within 3 to 5 business days after the host inspects and completes the trip.', 1, 1), " +
-                            "('F4', " + cat4 + ", 'What do I do in case of an accident or breakdown?', 'Go to the Emergency Support Center in the Help page, select \"Accident\" or \"Breakdown\", fill in your contact information and details. Our emergency agents will immediately call and dispatch roadside assistance.', 1, 1)");
-                    log.info("Seeded faq_items");
-                }
-            }
-        } catch (Exception e) {
-            log.warn("Failed to seed faq_items: {}", e.getMessage());
-        }
-
-        // 6. Knowledge Base Categories
-        try {
-            Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM knowledge_categories", Integer.class);
-            if (count == null || count == 0) {
-                jdbcTemplate.execute("INSERT INTO knowledge_categories (name, slug, icon, description, display_order) VALUES " +
-                        "('Getting Started', 'get-started', 'BookOpen', 'Platform registration and account creation instructions', 1), " +
-                        "('Booking Policies', 'booking-policy', 'Calendar', 'Rules for modifying, starting, and ending rentals', 2), " +
-                        "('Payments & Refunds', 'payments-refunds', 'CreditCard', 'LuxeWallet top-ups and invoice downloads', 3), " +
-                        "('Insurance Coverage', 'insurance', 'Shield', 'Protection plan tiers and collision damage waivers', 4), " +
-                        "('Emergency Support', 'emergency', 'AlertTriangle', 'Roadside assistance and lost keys guides', 5), " +
-                        "('Owner Portal Help', 'owner-help', 'User', 'For hosts listing cars or motorbikes', 6)");
-                log.info("Seeded knowledge_categories");
-            }
-        } catch (Exception e) {
-            log.warn("Failed to seed knowledge_categories: {}", e.getMessage());
-        }
-
-        // 7. Knowledge Base Articles
-        try {
-            Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM knowledge_articles", Integer.class);
-            if (count == null || count == 0) {
-                Integer cat = jdbcTemplate.queryForObject("SELECT id FROM knowledge_categories WHERE slug='get-started'", Integer.class);
-                if (cat != null) {
-                    jdbcTemplate.execute("INSERT INTO knowledge_articles (id, category_id, slug, title, content, excerpt, is_published, view_count, is_featured, is_popular) VALUES " +
-                            "('A1', " + cat + ", 'how-to-verify-kyc', 'How to Complete KYC and Driver License Verification', 'To verify your account on LuxeWay, please navigate to Dashboard > Documents. Upload a clear photograph of your National ID card / Passport, and a clean picture of your Driver''s License. The system runs automatic OCR checks and manual validation. Processing takes up to 24 hours. Renting vehicles is only possible once verification shows a green checkmark.', 'Step-by-step instructions for KYC validation.', 1, 152, 1, 1)");
-                    log.info("Seeded knowledge_articles");
-                }
-            }
-        } catch (Exception e) {
-            log.warn("Failed to seed knowledge_articles: {}", e.getMessage());
-        }
     }
 
     private void addNullableColumn(String tableName, String columnName, String sqlServerType, String standardType) {
@@ -843,4 +713,3 @@ public class DatabaseMigration implements CommandLineRunner {
         }
     }
 }
-
