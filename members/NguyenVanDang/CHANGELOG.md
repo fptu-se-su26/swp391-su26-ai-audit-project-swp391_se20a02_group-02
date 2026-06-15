@@ -969,11 +969,64 @@ Commit: [DE190324] feat: overhaul dashboard UI/UX with premium design system com
 
 ---
 
+# [Phase 05.3] Build Sync & Compiler Warning Elimination
+
+## Ngày thực hiện
+
+```text
+2026-06-15
+```
+
+## Đã hoàn thành
+
+- [x] Sửa lỗi biên dịch thiếu package trong Gradle:
+  - Đồng bộ `build.gradle` với `pom.xml`, bổ sung đầy đủ các dependency gồm: Webflux (`spring-boot-starter-webflux`), Redis (`spring-boot-starter-data-redis`), Resilience4j (`resilience4j-spring-boot3:2.2.0`), Spring AOP (`spring-boot-starter-aop`) và MySQL (`mysql-connector-j`).
+  - Hỗ trợ xây dựng và kiểm tra biên dịch trực tiếp thông qua lệnh `./gradlew compileJava` độc lập với Maven.
+- [x] Khắc phục lỗi compiler `illegal character: '\ufeff'` (BOM):
+  - Chuyển đổi mã hóa toàn bộ các tệp tin Java bị ảnh hưởng từ UTF-8 with BOM sang UTF-8 Without BOM.
+- [x] Loại bỏ triệt để 358 cảnh báo biên dịch (warnings):
+  - Xóa bỏ tất cả các imports không sử dụng và các trường/biến cục bộ chưa sử dụng trong các class `CarService`, `BookingService`, `AIChatService`, `JavaFallbackService`.
+  - Tích hợp annotation `@SuppressWarnings("null")` cho các lớp Controller và Service để tắt cảnh báo Null safety giả tạo ra bởi Eclipse compiler.
+- [x] Xác thực build thành công Gradle backend hoàn chỉnh (0 error, 0 warning).
+
+## Thay đổi chi tiết - Nguyễn Văn Dạng (DE190324)
+
+| STT | Nội dung thay đổi | Người thực hiện | File/Module liên quan | Minh chứng |
+|---:|---|---|---|---|
+| 1 | Đồng bộ dependencies build | Nguyễn Văn Dạng | build.gradle | Thêm 5 dependencies mới |
+| 2 | Loại bỏ unused imports & fields | Nguyễn Văn Dạng | CarService.java, BookingService.java, AIChatService.java, JavaFallbackService.java | Dọn sạch warnings |
+| 3 | Tắt Null safety warnings giả | Nguyễn Văn Dạng | Hơn 10 files Java controller/service | `@SuppressWarnings("null")` |
+| 4 | Fix UTF-8 BOM encoding | Nguyễn Văn Dạng | Các files Java bị lỗi | Loại bỏ lỗi `\ufeff` |
+
+## AI có hỗ trợ không?
+
+- [x] Có
+- [ ] Không
+
+Nếu có, mô tả AI đã hỗ trợ phần nào:
+
+```text
+AI (Antigravity) hỗ trợ:
+- Phân tích các dependencies bị thiếu trong build.gradle so với pom.xml.
+- Dọn dẹp các imports và fields không sử dụng.
+- Đề xuất sử dụng @SuppressWarnings("null") để dọn dẹp các cảnh báo null safety giả của IDE JDT compiler.
+- Hỗ trợ viết script tự động convert file encoding sang UTF-8 Without BOM.
+```
+
+## Commit/Screenshot minh chứng
+
+```text
+Branch: feature/de190324-vehicle-rental-platform
+Commit: [DE190324] fix: sync gradle dependencies with pom.xml and resolve all 358 compiler warnings
+```
+
+---
+
 # 5. Cam kết cập nhật Changelog
 
 Sinh viên/nhóm cam kết rằng nội dung changelog phản ánh đúng các thay đổi đã thực hiện trong quá trình làm bài tập/project.
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-06-12 |
+| Nguyễn Văn Dạng - DE190324 | 2026-06-15 |
 

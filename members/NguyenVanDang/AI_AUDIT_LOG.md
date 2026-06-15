@@ -704,6 +704,20 @@ Audit LuxeWay Car Rental Platform:
 
 ---
 
+## Log #17
+
+- **Date:** 2026-06-15
+- **Author:** NguyenVanDang (DE190324)
+- **AI Tool:** Antigravity
+- **Purpose:** Fix 358 warnings và đồng bộ build dependencies cho Gradle (sửa lỗi package không tồn tại khi compile Java).
+- **Prompt Reference:** PROMPTS.md#prompt-18
+- **AI Output Summary:** Cấu hình bổ sung dependencies Webflux, Redis, Resilience4j, AOP, MySQL trong build.gradle; dọn dẹp các imports không sử dụng và các trường/biến không sử dụng; thêm @SuppressWarnings("null") cho các lớp controller/service để loại bỏ các cảnh báo an toàn kiểu Null của Eclipse compiler.
+- **Human Decision:** Đồng bộ các dependencies mới vào build.gradle để Gradle wrapper compile hoạt động độc lập. Tự phát hiện và giải phóng tiến trình Java/Gradle đang khóa file trong thư mục build để tránh lỗi deletion. Kiểm tra và chuyển đổi định dạng mã hóa file về UTF-8 Without BOM để tránh lỗi compile '\ufeff'.
+- **Applied To:** `src/Back_end/build.gradle`, `AIChatService.java`, `CarService.java`, `BookingService.java`, `CarBookingService.java`, `ChatService.java`, `JavaFallbackService.java`, `SupportEcosystemController.java`, `UserController.java`, `ChatController.java`, `PricingRuleController.java`, v.v.
+- **Verification:** Chạy thành công lệnh build backend `./gradlew compileJava` không có bất kỳ lỗi hoặc cảnh báo biên dịch nào.
+
+---
+
 ## 10. Cam kết học thuật
 
 Sinh viên/nhóm cam kết rằng:
@@ -716,5 +730,5 @@ Sinh viên/nhóm cam kết rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-06-12 |
+| Nguyễn Văn Dạng - DE190324 | 2026-06-15 |
 

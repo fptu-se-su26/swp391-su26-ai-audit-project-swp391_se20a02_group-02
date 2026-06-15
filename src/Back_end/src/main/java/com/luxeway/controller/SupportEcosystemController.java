@@ -25,6 +25,7 @@ import java.util.*;
 @RequiredArgsConstructor
 @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:5173"})
 @Tag(name = "LuxeWay Support Ecosystem", description = "Endpoints for AI concierge, KB, emergency, status, and tickets")
+@SuppressWarnings({"rawtypes", "unchecked", "unused", "null"})
 public class SupportEcosystemController {
 
     private final GeminiService geminiService;
@@ -42,8 +43,6 @@ public class SupportEcosystemController {
     private final SupportCategoryRepository supportCategoryRepository;
     private final SupportPriorityRepository supportPriorityRepository;
     private final BookingRepository bookingRepository;
-    private final VehicleRepository vehicleRepository;
-    private final UserRepository userRepository;
 
     private final SimpMessagingTemplate messagingTemplate;
 

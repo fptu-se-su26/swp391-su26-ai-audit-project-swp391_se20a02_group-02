@@ -4,7 +4,6 @@ import com.luxeway.dto.booking.BookingDTOs;
 import com.luxeway.entity.*;
 import com.luxeway.enums.BookingStatus;
 import com.luxeway.enums.VehicleStatus;
-import com.luxeway.enums.VehicleType;
 import com.luxeway.repository.BookingRepository;
 import com.luxeway.repository.UserRepository;
 import com.luxeway.repository.VehicleRepository;
@@ -16,7 +15,6 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +26,7 @@ import java.time.temporal.ChronoUnit;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("null")
 public class BookingService {
 
     private final BookingRepository bookingRepository;

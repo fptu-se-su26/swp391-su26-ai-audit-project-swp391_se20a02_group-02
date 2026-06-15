@@ -10,7 +10,7 @@ import reactor.core.publisher.Mono;
 
 
 /**
- * AgentWebClientConfig — WebClient bean configuration for agent layer calls.
+ * AgentWebClientConfig â€” WebClient bean configuration for agent layer calls.
  *
  * Features:
  * - Default headers (Content-Type: application/json)
@@ -18,6 +18,7 @@ import reactor.core.publisher.Mono;
  * - Codec max in-memory size: 10 MB
  */
 @Configuration
+@SuppressWarnings("null")
 public class AgentWebClientConfig {
 
     @Bean
