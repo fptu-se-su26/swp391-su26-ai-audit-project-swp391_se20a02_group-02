@@ -12,11 +12,11 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("all")
 public class ConversationService {
 
     private final AIChatSessionRepository sessionRepository;

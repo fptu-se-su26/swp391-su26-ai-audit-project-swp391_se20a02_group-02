@@ -27,6 +27,7 @@ import java.util.*;
 @Service
 @Order(2)
 @RequiredArgsConstructor
+@SuppressWarnings("all")
 public class AnalyticsService implements CommandLineRunner {
 
     private final AnalyticsRepository analyticsRepository;

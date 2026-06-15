@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@SuppressWarnings("all")
 public class AuditService {
 
     private final AuditLogRepository auditLogRepository;

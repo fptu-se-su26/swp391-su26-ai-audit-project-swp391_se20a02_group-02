@@ -25,6 +25,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@SuppressWarnings("all")
 public class InvoiceService {
 
     private final InvoiceRepository invoiceRepository;

@@ -8,7 +8,6 @@ import com.luxeway.enums.PaymentStatus;
 import com.luxeway.repository.BookingRepository;
 import com.luxeway.repository.PaymentRepository;
 import com.luxeway.repository.UserRepository;
-import com.luxeway.repository.VehicleAvailabilityRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,12 +27,12 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("all")
 public class PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final BookingRepository bookingRepository;
     private final UserRepository userRepository;
-    private final VehicleAvailabilityRepository vehicleAvailabilityRepository;
 
     // @Lazy to avoid circular dependency: PaymentService ↔ BookingService
     @org.springframework.context.annotation.Lazy

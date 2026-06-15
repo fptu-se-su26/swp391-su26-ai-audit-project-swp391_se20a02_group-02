@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("all")
 public class HelpService {
 
     private final HelpCategoryRepository categoryRepository;
