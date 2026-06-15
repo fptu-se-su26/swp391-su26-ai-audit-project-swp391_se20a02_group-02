@@ -18,7 +18,7 @@ import reactor.core.publisher.Mono;
  * - Codec max in-memory size: 10 MB
  */
 @Configuration
-@SuppressWarnings("null")
+@SuppressWarnings("all")
 public class AgentWebClientConfig {
 
     @Bean

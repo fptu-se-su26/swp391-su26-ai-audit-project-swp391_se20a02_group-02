@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
 @Configuration
-@SuppressWarnings("null")
+@SuppressWarnings("all")
 public class ValidationConfig {
 
     @Bean

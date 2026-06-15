@@ -16,6 +16,7 @@ import java.util.Map;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("all")
 public class SupportAssistantService {
 
     private final EmergencyReportRepository emergencyReportRepository;

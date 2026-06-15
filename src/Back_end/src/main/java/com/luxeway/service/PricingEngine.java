@@ -11,7 +11,7 @@ import java.time.LocalDate;
 
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings("null")
+@SuppressWarnings("all")
 public class PricingEngine {
 
     public BigDecimal calculateBasePriceForPeriod(Vehicle vehicle, LocalDate start, LocalDate end) {

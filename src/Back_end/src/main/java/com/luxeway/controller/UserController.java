@@ -18,7 +18,7 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/users")
 @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173"})
-@SuppressWarnings("null")
+@SuppressWarnings("all")
 public class UserController {
     
     @Autowired

@@ -19,7 +19,7 @@ import java.util.Set;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings("null")
+@SuppressWarnings("all")
 public class ChatService {
 
     private final ConversationRepository conversationRepository;

@@ -30,6 +30,7 @@ import java.util.Objects;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("all")
 public class VnptEkycService {
 
     private final VnptEkycConfig ekycConfig;

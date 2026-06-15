@@ -12,6 +12,7 @@ import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("all")
 public class TranslationService {
 
     private final MessageSource messageSource;
@@ -34,13 +35,13 @@ public class TranslationService {
     public Locale getLocale(String langCode) {
         if (langCode == null) return Locale.ENGLISH;
         switch (langCode.toLowerCase()) {
-            case "vi": return new Locale("vi");
+            case "vi": return Locale.forLanguageTag("vi");
             case "ja": return Locale.JAPANESE;
             case "ko": return Locale.KOREAN;
             case "zh": return Locale.SIMPLIFIED_CHINESE;
             case "fr": return Locale.FRENCH;
             case "de": return Locale.GERMAN;
-            case "es": return new Locale("es");
+            case "es": return Locale.forLanguageTag("es");
             default: return Locale.ENGLISH;
         }
     }

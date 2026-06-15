@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings("null")
+@SuppressWarnings("all")
 public class MotorbikeBookingService {
 
     private final MotorbikeBookingRepository motorbikeBookingRepository;

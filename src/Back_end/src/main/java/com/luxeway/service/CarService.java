@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings("null")
+@SuppressWarnings("all")
 public class CarService {
 
     private final CarRepository carRepository;

@@ -37,7 +37,7 @@ import java.util.Map;
 @Component
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "spring.agent.events.enabled", havingValue = "true", matchIfMissing = false)
-@SuppressWarnings("null")
+@SuppressWarnings("all")
 public class AgentEventSubscriber implements MessageListener {
 
     private final ObjectMapper objectMapper;

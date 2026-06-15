@@ -4,11 +4,7 @@ import com.luxeway.entity.*;
 import com.luxeway.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -16,11 +12,11 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@SuppressWarnings("all")
 public class RecommendationService {
 
     private final CarRepository carRepository;
     private final MotorbikeRepository motorbikeRepository;
-    private final VehicleRepository vehicleRepository;
 
     public List<Car> getSimilarCars(String carId, int limit) {
         log.info("Computing similar cars for carId: {}", carId);

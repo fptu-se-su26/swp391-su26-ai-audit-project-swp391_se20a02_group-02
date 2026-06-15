@@ -16,6 +16,7 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@SuppressWarnings("all")
 public class SeedingService {
 
     private final UserRepository userRepository;

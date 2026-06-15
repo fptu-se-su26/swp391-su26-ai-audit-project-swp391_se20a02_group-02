@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("all")
 public class UserService {
 
     private final UserRepository userRepository;

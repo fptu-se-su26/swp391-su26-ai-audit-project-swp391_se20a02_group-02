@@ -21,7 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -33,6 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles({"h2", "dev"})
 @Transactional
+@SuppressWarnings("all")
 public class SecurityIntegrationTest {
 
     @Autowired
@@ -52,9 +52,6 @@ public class SecurityIntegrationTest {
 
     @Autowired
     private InvoiceRepository invoiceRepository;
-
-    @Autowired
-    private DigitalContractRepository contractRepository;
 
     @Autowired
     private JwtTokenProvider jwtTokenProvider;

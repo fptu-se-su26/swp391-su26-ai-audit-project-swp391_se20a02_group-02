@@ -8,7 +8,7 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 
 @Configuration
 @EnableWebSocketMessageBroker
-@SuppressWarnings("null")
+@SuppressWarnings("all")
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override

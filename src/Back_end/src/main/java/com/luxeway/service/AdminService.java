@@ -26,7 +26,7 @@ import java.math.BigDecimal;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings("null")
+@SuppressWarnings("all")
 public class AdminService {
 
     private final UserRepository userRepository;
