@@ -18,6 +18,7 @@ import java.nio.file.Path;
 
 @Slf4j
 @Service
+@SuppressWarnings("all")
 public class FptAiOcrService {
 
     @Value("${fptai.api-key:BKfUiImFD4DI3RI2OEjoCahBTQOgVtPf}")

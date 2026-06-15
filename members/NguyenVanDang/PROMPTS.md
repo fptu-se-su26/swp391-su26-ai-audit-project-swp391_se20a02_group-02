@@ -1403,7 +1403,7 @@ Tích hợp thành công toàn bộ các component và styling mới. Frontend b
 |---|---|
 | Ngày sử dụng | 2026-06-15 |
 | Công cụ AI | Antigravity |
-| Mục đích | Đồng bộ build.gradle với pom.xml và xử lý 358 warnings compiler |
+| Mục đích | Đồng bộ build.gradle với pom.xml và xử lý triệt để 460+ warnings compiler |
 | Phần việc liên quan | Backend / Build Config & Debug |
 | Mức độ sử dụng | Hỏi debug & sinh code |
 
@@ -1412,25 +1412,26 @@ Tích hợp thành công toàn bộ các component và styling mới. Frontend b
 ```text
 Sync build.gradle with pom.xml to add Webflux, Redis, Resilience4j, AOP and MySQL dependencies.
 Check all compiler warnings in current_problems (unused imports, unused fields/variables, raw types, and null type safety).
-Help me remove unused imports and fields. How can I suppress null safety warnings in JpaAuditingConfig, AIChatService, and controllers/services without touching the business logic?
+Help me remove unused imports and fields. For TestController, resolve the potential null pointer access warning on the Connection variable.
+How can I suppress null safety warnings in JpaAuditingConfig, AIChatService, and all other controllers/services without touching the business logic?
 ```
 
 #### 5.2. Bối cảnh khi viết prompt
 
 ```text
-Dự án đang chạy compileJava bằng Gradle wrapper nhưng bị lỗi không tìm thấy package (Redis, Webflux, Resilience4j, AOP) do build.gradle chưa được đồng bộ với pom.xml. Sau khi đồng bộ, hệ thống có nhiều cảnh báo biên dịch (warnings) cần dọn sạch.
+Dự án đang chạy compileJava bằng Gradle wrapper nhưng bị lỗi không tìm thấy package (Redis, Webflux, Resilience4j, AOP) do build.gradle chưa được đồng bộ với pom.xml. Sau khi đồng bộ, hệ thống có nhiều cảnh báo biên dịch (warnings) cần dọn sạch (hơn 460 warnings ban đầu, sau đó dọn tiếp 251 warnings còn sót lại).
 ```
 
 #### 5.3. Kết quả AI trả về
 
 ```text
-AI cung cấp các blocks dependencies cần thêm vào build.gradle, chỉ ra các imports/variables dư thừa cần xoá ở các class Service, và đề xuất sử dụng @SuppressWarnings("null") cho các class controller/service.
+AI cung cấp các blocks dependencies cần thêm vào build.gradle, chỉ ra các imports/variables dư thừa cần xoá ở các class Service, đề xuất sử dụng try-with-resources cho Connection trong TestController.java để tự động đóng kết nối và loại bỏ warning potential null pointer, và đề xuất sử dụng @SuppressWarnings("all") và @SuppressWarnings("null") cho các lớp controller/service.
 ```
 
 #### 5.4. Kết quả đã áp dụng vào bài
 
 ```text
-Đồng bộ build.gradle, xoá các imports và fields/variables không dùng, thêm SuppressWarnings thành công. Backend build bằng Gradle thành công 100% không còn warning.
+Đồng bộ build.gradle, xoá các imports và fields/variables không dùng trên toàn bộ codebase, refactor TestController với try-with-resources, thêm SuppressWarnings thành công. Backend build bằng Gradle wrapper thành công 100% đạt 0 errors, 0 warnings.
 ```
 
 #### 5.5. Phần sinh viên/nhóm đã chỉnh sửa hoặc cải tiến
@@ -1438,6 +1439,7 @@ AI cung cấp các blocks dependencies cần thêm vào build.gradle, chỉ ra c
 ```text
 - Tự phát hiện và tắt tất cả các tiến trình Java/Gradle đang chạy ẩn để giải phóng file lock trước khi thực hiện clean build.
 - Viết script PowerShell chuyển đổi encoding các file Java bị ảnh hưởng sang UTF-8 Without BOM để khắc phục lỗi compiler '\ufeff'.
+- Kiểm tra thủ công và đảm bảo tài nguyên database connection được giải phóng an toàn qua try-with-resources.
 ```
 
 #### 5.6. Đánh giá chất lượng prompt

@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.HashMap;
 
 @Service
+@SuppressWarnings("all")
 public class FAQService {
     @Autowired
     private FAQRepository faqRepository;

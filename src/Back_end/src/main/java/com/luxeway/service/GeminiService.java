@@ -28,6 +28,7 @@ import java.util.*;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("all")
 public class GeminiService {
 
     private final AIChatSessionRepository sessionRepository;

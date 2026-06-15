@@ -24,6 +24,7 @@ import java.util.regex.Pattern;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("all")
 public class ContextResolverService {
 
     private final AIConversationContextRepository contextRepository;

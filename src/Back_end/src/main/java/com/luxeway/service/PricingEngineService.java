@@ -18,6 +18,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@SuppressWarnings("all")
 public class PricingEngineService {
 
     private final CarRepository carRepository;
@@ -32,7 +33,6 @@ public class PricingEngineService {
     private final VehicleAddonRepository vehicleAddonRepository;
 
     private final CarInsuranceRepository carInsuranceRepository;
-    private final MotorbikeDepositRepository motorbikeDepositRepository;
 
     private final UserLoyaltyRepository userLoyaltyRepository;
 

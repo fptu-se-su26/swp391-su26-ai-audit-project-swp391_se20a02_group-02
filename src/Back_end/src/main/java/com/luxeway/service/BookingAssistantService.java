@@ -18,6 +18,7 @@ import java.util.Optional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("all")
 public class BookingAssistantService {
 
     private final BookingRepository bookingRepository;

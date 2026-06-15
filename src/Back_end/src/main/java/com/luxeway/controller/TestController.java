@@ -30,11 +30,8 @@ public class TestController {
     public ResponseEntity<Map<String, Object>> healthCheck() {
         Map<String, Object> response = new HashMap<>();
         
-        try {
-            // Test database connection
-            Connection connection = dataSource.getConnection();
+        try (Connection connection = dataSource.getConnection()) {
             boolean isConnected = connection != null && !connection.isClosed();
-            connection.close();
             
             // Test repository
             long userCount = userRepository.count();
@@ -61,15 +58,13 @@ public class TestController {
     public ResponseEntity<Map<String, Object>> getDatabaseInfo() {
         Map<String, Object> response = new HashMap<>();
         
-        try {
-            Connection connection = dataSource.getConnection();
-            
-            response.put("database_product_name", connection.getMetaData().getDatabaseProductName());
-            response.put("database_product_version", connection.getMetaData().getDatabaseProductVersion());
-            response.put("driver_name", connection.getMetaData().getDriverName());
-            response.put("driver_version", connection.getMetaData().getDriverVersion());
-            
-            connection.close();
+        try (Connection connection = dataSource.getConnection()) {
+            if (connection != null) {
+                response.put("database_product_name", connection.getMetaData().getDatabaseProductName());
+                response.put("database_product_version", connection.getMetaData().getDatabaseProductVersion());
+                response.put("driver_name", connection.getMetaData().getDriverName());
+                response.put("driver_version", connection.getMetaData().getDriverVersion());
+            }
             
             return ResponseEntity.ok(response);
             

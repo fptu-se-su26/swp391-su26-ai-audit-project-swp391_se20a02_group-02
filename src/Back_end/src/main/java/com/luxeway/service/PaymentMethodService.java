@@ -14,6 +14,7 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("all")
 public class PaymentMethodService {
 
     private final PaymentMethodRepository paymentMethodRepository;

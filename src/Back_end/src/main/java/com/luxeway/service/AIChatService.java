@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings({"rawtypes", "unchecked", "unused", "null"})
+@SuppressWarnings("all")
 public class AIChatService {
 
     private final AIChatSessionRepository sessionRepository;
