@@ -18,6 +18,18 @@ public class DatabaseMigration implements CommandLineRunner {
     @Override
     public void run(String... args) {
         log.info("Running custom database migrations...");
+        
+        try {
+            Integer tablesCount = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME IN ('notification_translations', 'disputes')", Integer.class);
+            if (tablesCount != null && tablesCount >= 2) {
+                log.info("Database is already fully migrated (found notification_translations and disputes tables). Skipping DDL migration scripts to boot faster.");
+                return;
+            }
+        } catch (Exception e) {
+            log.debug("Database check failed or tables do not exist yet. Running full DDL migrations.");
+        }
+
         try {
             // Alter payments table: booking_id should be NULL (for wallet top-ups)
             jdbcTemplate.execute("ALTER TABLE payments ALTER COLUMN booking_id NVARCHAR(36) NULL");

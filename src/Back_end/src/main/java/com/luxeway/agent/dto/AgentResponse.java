@@ -3,8 +3,6 @@ package com.luxeway.agent.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
-import java.time.Instant;
-import java.util.List;
 import java.util.Map;
 
 /**

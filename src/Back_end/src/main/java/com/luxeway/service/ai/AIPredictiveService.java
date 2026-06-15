@@ -5,7 +5,6 @@ import com.luxeway.entity.Analytics;
 import com.luxeway.entity.Booking;
 import com.luxeway.entity.User;
 import com.luxeway.entity.Vehicle;
-import com.luxeway.enums.BookingStatus;
 import com.luxeway.enums.VehicleStatus;
 import com.luxeway.repository.AnalyticsRepository;
 import com.luxeway.repository.BookingRepository;

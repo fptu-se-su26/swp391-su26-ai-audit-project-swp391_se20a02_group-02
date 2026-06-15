@@ -42,6 +42,7 @@ export interface TrendingVehicle {
   instantBook: boolean;
   city: string;
   isOwnerVerified: boolean;
+  vehicleType?: string;
 }
 
 export interface CategoryData {
@@ -116,8 +117,28 @@ async function fetchWithDiagnostics<T>(endpoint: string): Promise<T | null> {
 
 const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8080';
 
+const getVehicleFallbackImage = (url: string | null | undefined): string => {
+  if (!url) return '';
+  const lower = url.toLowerCase();
+  if (lower.includes('honda_city')) return 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=800&auto=format&fit=crop&q=80';
+  if (lower.includes('toyota_vios')) return 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?w=800&auto=format&fit=crop&q=80';
+  if (lower.includes('honda_airblade')) return 'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=800&auto=format&fit=crop&q=80';
+  if (lower.includes('mercedes_c200')) return 'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=800&auto=format&fit=crop&q=80';
+  if (lower.includes('bmw_x3')) return 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&auto=format&fit=crop&q=80';
+  if (lower.includes('toyota_camry')) return 'https://images.unsplash.com/photo-1621007947382-cc34aa864ee3?w=800&auto=format&fit=crop&q=80';
+  if (lower.includes('honda_crv')) return 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=800&auto=format&fit=crop&q=80';
+  if (lower.includes('vinfast_vf8')) return 'https://images.unsplash.com/photo-1563720223185-11003d516935?w=800&auto=format&fit=crop&q=80';
+  if (lower.includes('mazda_cx5')) return 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=800&auto=format&fit=crop&q=80';
+  if (lower.includes('hyundai_tucson')) return 'https://images.unsplash.com/photo-1567818735868-e71b99932e29?w=800&auto=format&fit=crop&q=80';
+  if (lower.includes('kia_morning')) return 'https://images.unsplash.com/photo-1590362891991-f776e747a588?w=800&auto=format&fit=crop&q=80';
+  if (lower.includes('ford_everest')) return 'https://images.unsplash.com/photo-1533513780-f38b4d4f0f00?w=800&auto=format&fit=crop&q=80';
+  return '';
+};
+
 const resolveImageUrl = (url: string | null | undefined): string => {
   if (!url) return '';
+  const fallback = getVehicleFallbackImage(url);
+  if (fallback) return fallback;
   if (url.startsWith('/uploads') || url.startsWith('uploads')) {
     const cleanUrl = url.startsWith('/') ? url : '/' + url;
     return `${API_BASE}${cleanUrl}`;
@@ -142,10 +163,21 @@ export const homeService = {
   getTrending: async (): Promise<TrendingVehicle[] | null> => {
     const data = await fetchWithDiagnostics<TrendingVehicle[]>(`${BASE}/trending`);
     if (!data) return null;
-    return data.map(v => ({
-      ...v,
-      thumbnailUrl: resolveImageUrl(v.thumbnailUrl)
-    }));
+    const motorbikeCategories = [
+      'MOTORBIKE', 'SCOOTER', 'AUTOMATIC_SCOOTER', 'MANUAL_MOTORCYCLE',
+      'SPORT_BIKE', 'TOURING_BIKE', 'ADVENTURE_BIKE', 'CLASSIC_BIKE', 'ELECTRIC_BIKE',
+      'motorbike', 'scooter', 'automatic_scooter', 'manual_motorcycle',
+      'sport_bike', 'touring_bike', 'adventure_bike', 'classic_bike', 'electric_bike'
+    ];
+    return data.map(v => {
+      const inferredType = v.vehicleType?.toLowerCase() ||
+        (motorbikeCategories.includes(v.category) ? 'motorbike' : 'car');
+      return {
+        ...v,
+        vehicleType: inferredType,
+        thumbnailUrl: resolveImageUrl(v.thumbnailUrl)
+      };
+    });
   },
 
   getCategories: (): Promise<CategoryData | null> =>

@@ -113,5 +113,5 @@ public class UploadController {
     public ResponseEntity<Map<String, Object>> uploadVehicleImage(
             @RequestParam("file") MultipartFile file) {
         return uploadFile(file);
-    }
+    } 
 }

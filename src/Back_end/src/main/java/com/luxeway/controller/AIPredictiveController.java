@@ -1,11 +1,9 @@
 package com.luxeway.controller;
 
 import com.luxeway.dto.ai.*;
-import com.luxeway.entity.Analytics;
 import com.luxeway.entity.Booking;
 import com.luxeway.entity.User;
 import com.luxeway.entity.Vehicle;
-import com.luxeway.enums.BookingStatus;
 import com.luxeway.repository.AnalyticsRepository;
 import com.luxeway.repository.BookingRepository;
 import com.luxeway.repository.UserRepository;
@@ -21,7 +19,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;

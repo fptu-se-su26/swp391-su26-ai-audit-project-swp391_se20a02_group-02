@@ -36,6 +36,7 @@ public class OwnerVerification {
     private String documentImageUrl;
 
     @Column(nullable = false, length = 20)
+    @Builder.Default
     private String status = "PENDING"; // PENDING, APPROVED, REJECTED
 
     @Column(name = "reviewer_comment", length = 500)

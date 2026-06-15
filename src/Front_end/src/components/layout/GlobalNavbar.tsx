@@ -295,14 +295,11 @@ export const GlobalNavbar: React.FC = () => {
           className="flex items-center gap-3 group transition-all duration-200"
         >
           <img
-            src="/logo.svg"
+            src={logoImage}
             alt="LuxeWay"
-            style={{ height: '36px', width: 'auto', display: 'block' }}
+            style={{ height: '60px', width: 'auto', display: 'block' }}
             className="transition-transform duration-300 group-hover:scale-105"
           />
-          <span className="font-black text-xl sm:text-2xl tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent hidden xs:block">
-            LuxeWay
-          </span>
         </Link>
 
         {/* Center Side: Navigation Links (Desktop/Tablet) */}
@@ -516,21 +513,12 @@ export const GlobalNavbar: React.FC = () => {
               <NavbarDropdown isOpen={userDropdownOpen} onClose={() => setUserDropdownOpen(false)} />
             </div>
           ) : (
-            <div className="hidden xs:flex items-center gap-2.5">
+            <div className="hidden sm:flex items-center">
               <Link
                 to="/auth/login"
-                className={cn(
-                  'text-sm font-bold px-4 py-2.5 rounded-2xl transition-all hover-lift',
-                  isDark ? 'text-slate-355 hover:text-white hover:bg-slate-800/40' : 'text-slate-655 hover:bg-slate-955 hover:bg-slate-50'
-                )}
+                className="btn-primary text-sm px-6 py-2.5 shadow-lg shadow-indigo-550/10 hover-lift bg-indigo-600 text-white hover:bg-indigo-700 font-bold rounded-2xl"
               >
                 {l.signIn}
-              </Link>
-              <Link
-                to="/auth/register"
-                className="btn-primary text-sm px-5.5 py-3 shadow-lg shadow-indigo-550/10 hover-lift bg-indigo-600 text-white hover:bg-indigo-700 font-bold"
-              >
-                {l.getStarted}
               </Link>
             </div>
           )}
@@ -647,16 +635,9 @@ export const GlobalNavbar: React.FC = () => {
                     <Link
                       to="/auth/login"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="btn-outline w-full justify-center py-3 text-sm font-bold border rounded-2xl"
-                    >
-                      {l.signIn}
-                    </Link>
-                    <Link
-                      to="/auth/register"
-                      onClick={() => setMobileMenuOpen(false)}
                       className="btn-primary w-full justify-center py-3 text-sm font-bold bg-indigo-600 text-white rounded-2xl flex items-center"
                     >
-                      {l.getStarted}
+                      {l.signIn}
                     </Link>
                   </div>
                 )}

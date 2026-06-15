@@ -3,7 +3,6 @@ package com.luxeway.dto.vehicle;
 import com.luxeway.enums.FuelType;
 import com.luxeway.enums.TransmissionType;
 import com.luxeway.enums.VehicleCategory;
-import com.luxeway.enums.VehicleStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
