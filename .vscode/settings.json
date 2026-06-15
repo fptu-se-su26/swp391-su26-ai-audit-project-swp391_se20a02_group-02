@@ -19,5 +19,6 @@
             "username": "sa",
             "password": "123456"
         }
-    ]
+    ],
+    "java.configuration.updateBuildConfiguration": "interactive"
 }
