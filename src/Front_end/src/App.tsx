@@ -12,6 +12,7 @@ import type { Vehicle, Notification, Review } from '@/types';
 import { formatDate } from '@/utils';
 import { useT, translateNotification } from '@/i18n/translations';
 const FloatingAIConcierge = lazy(() => import('@/components/help/FloatingAIConcierge').then(m => ({ default: m.FloatingAIConcierge })));
+const ChatbotWidget = lazy(() => import('@/components/ui/ChatbotWidget').then(m => ({ default: m.ChatbotWidget })));
 
 // Layouts
 import MainLayout from '@/layouts/MainLayout';
@@ -642,6 +643,12 @@ const App: React.FC = () => {
         <ConciergeErrorBoundary>
           <Suspense fallback={null}>
             <FloatingAIConcierge />
+          </Suspense>
+        </ConciergeErrorBoundary>
+        {/* LuxeWay AI Chatbot Widget (RAG + Gemini) */}
+        <ConciergeErrorBoundary>
+          <Suspense fallback={null}>
+            <ChatbotWidget />
           </Suspense>
         </ConciergeErrorBoundary>
       </Suspense>
