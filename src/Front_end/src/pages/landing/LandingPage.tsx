@@ -156,7 +156,7 @@ const HeroSection: React.FC<{ stats: HomeStats | null }> = ({ stats }) => {
   const handleSearch = () => {
     const p = new URLSearchParams();
     if (location) p.set('location', location);
-    if (vehicleType) p.set('category', vehicleType);
+    if (vehicleType) p.set('type', vehicleType);
     if (startDate) p.set('startDate', startDate);
     if (endDate) p.set('endDate', endDate);
     navigate(`/marketplace?${p.toString()}`);
@@ -209,6 +209,8 @@ const HeroSection: React.FC<{ stats: HomeStats | null }> = ({ stats }) => {
             variants={staggerItem}
             className="inline-flex items-center gap-2 px-5 py-2.5 border border-white/25 rounded-full bg-white/15 backdrop-blur-sm text-white text-sm font-bold tracking-wider uppercase mb-6"
           >
+            <span className="text-base">🇻🇳</span>
+            <span className="text-white/20">•</span>
             <Sparkles className="w-4 h-4 text-amber-400" />
             {t.landing.hero.badge}
           </motion.div>
@@ -239,9 +241,9 @@ const HeroSection: React.FC<{ stats: HomeStats | null }> = ({ stats }) => {
           {/* Search card */}
           <motion.div
             variants={staggerItem}
-            className="w-full max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl p-2"
+            className="w-full max-w-5xl mx-auto bg-white rounded-2xl shadow-2xl p-2"
           >
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 p-1.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2 p-1.5">
               {/* Location */}
               <div className="lg:col-span-2 flex items-center gap-2.5 px-4 py-3.5 hover:bg-slate-50 rounded-xl transition-colors">
                 <MapPin className="w-5 h-5 text-amber-500 flex-shrink-0" />
@@ -255,6 +257,26 @@ const HeroSection: React.FC<{ stats: HomeStats | null }> = ({ stats }) => {
                     className="w-full text-base font-semibold text-slate-800 placeholder:text-slate-300 outline-none bg-transparent"
                     onKeyDown={e => e.key === 'Enter' && handleSearch()}
                   />
+                </div>
+              </div>
+
+              {/* Vehicle Type */}
+              <div className="flex items-center gap-2.5 px-4 py-3.5 border-l border-slate-100 hover:bg-slate-50 rounded-xl transition-colors">
+                <Car className="w-5 h-5 text-amber-500 flex-shrink-0" />
+                <div className="flex-1 text-left min-w-0">
+                  <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-0.5">{t.landing.hero.category}</p>
+                  <div className="relative flex items-center">
+                    <select
+                      value={vehicleType}
+                      onChange={e => setVehicleType(e.target.value)}
+                      className="w-full text-base font-semibold text-slate-800 outline-none bg-transparent cursor-pointer appearance-none pr-5 truncate"
+                    >
+                      <option value="">{t.landing.hero.allTypes}</option>
+                      <option value="car">🚗 {language === 'vi' ? 'Ô tô' : 'Cars'}</option>
+                      <option value="motorbike">🏍️ {language === 'vi' ? 'Xe máy' : 'Motorbikes'}</option>
+                    </select>
+                    <ChevronDown className="w-4 h-4 text-slate-400 absolute right-0 pointer-events-none" />
+                  </div>
                 </div>
               </div>
 
@@ -484,8 +506,9 @@ const PromotionSection: React.FC<{ promotions: Promotion[]; loading: boolean }> 
 const TrendingSection: React.FC<{ vehicles: TrendingVehicle[]; loading: boolean }> = ({ vehicles, loading }) => {
   const navigate = useNavigate();
   const t = useT();
+  const language = useUIStore((s: any) => s.language);
   const ref = useRef<HTMLDivElement>(null);
-  const scroll = (dir: number) => ref.current?.scrollBy({ left: dir * 300, behavior: 'smooth' });
+  const scroll = (dir: number) => ref.current?.scrollBy({ left: dir * 340, behavior: 'smooth' });
 
   return (
     <section className="py-16 bg-white overflow-hidden">
@@ -506,60 +529,72 @@ const TrendingSection: React.FC<{ vehicles: TrendingVehicle[]; loading: boolean 
           </div>
         </motion.div>
 
-        <div ref={ref} className="flex gap-4 overflow-x-auto pb-4 scroll-smooth" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        <div ref={ref} className="flex gap-5 overflow-x-auto pb-6 scroll-smooth" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           {loading
-            ? Array(5).fill(0).map((_, i) => <Skeleton key={i} className="flex-shrink-0 w-64 h-80 rounded-2xl" />)
+            ? Array(5).fill(0).map((_, i) => <Skeleton key={i} className="flex-shrink-0 w-80 h-[410px] rounded-3xl" />)
             : vehicles.map((v) => (
               <motion.div
                 key={v.id}
-                whileHover={{ y: -6 }}
-                transition={{ type: 'spring', damping: 15 }}
-                className="flex-shrink-0 w-64 bg-white border border-slate-100 rounded-2xl overflow-hidden cursor-pointer group shadow-sm hover:shadow-xl transition-shadow duration-300"
-                onClick={() => navigate(`/marketplace/${v.id}`)}
+                whileHover={{ y: -8, scale: 1.015 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                className="flex-shrink-0 w-80 bg-white border border-slate-100 rounded-3xl overflow-hidden cursor-pointer group shadow-luxury hover:shadow-luxury-lg transition-all duration-300"
+                onClick={() => navigate(`/vehicles/${v.id}`)}
               >
-                <div className="relative h-44 overflow-hidden">
+                <div className="relative h-52 overflow-hidden bg-slate-100">
                   {v.thumbnailUrl ? (
                     <img src={v.thumbnailUrl} alt={v.name} loading="lazy"
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                      className="w-full h-full object-cover transition-transform duration-750 group-hover:scale-105" />
                   ) : (
-                    <div className="w-full h-full bg-slate-100 flex items-center justify-center">
-                      <Car className="w-10 h-10 text-slate-300" />
+                    <div className="w-full h-full flex items-center justify-center">
+                      {v.vehicleType === 'motorbike' ? (
+                        <Bike className="w-12 h-12 text-slate-300" />
+                      ) : (
+                        <Car className="w-12 h-12 text-slate-300" />
+                      )}
                     </div>
                   )}
                   {/* Badges */}
-                  <div className="absolute top-2.5 left-2.5 flex flex-col gap-1.5">
+                  <div className="absolute top-3 left-3 flex flex-col gap-1.5">
                     {v.isOwnerVerified && (
-                      <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500 text-white text-xs font-bold">
+                      <span className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500 text-white text-[10px] font-extrabold uppercase tracking-wider shadow-sm">
                         <BadgeCheck className="w-3.5 h-3.5" /> KYC
                       </span>
                     )}
                     {v.instantBook && (
-                      <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-400 text-black text-xs font-bold">
-                        <Zap className="w-3.5 h-3.5" /> Instant
+                      <span className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-400 text-black text-[10px] font-extrabold uppercase tracking-wider shadow-sm">
+                        <Zap className="w-3.5 h-3.5" /> {language === 'vi' ? 'Đặt Nhanh' : 'Instant'}
                       </span>
                     )}
                   </div>
-                  <div className="absolute top-2.5 right-2.5 px-2.5 py-1.5 bg-black/60 backdrop-blur-sm rounded-lg">
-                    <p className="text-white text-sm font-bold">{formatCurrency(v.pricePerDay)}<span className="text-white/60">/{t.landingPage.destinations.perDay}</span></p>
+                  <div className="absolute top-3 right-3 px-3 py-1.5 bg-slate-900/90 backdrop-blur-md rounded-xl border border-white/10 shadow-lg">
+                    <p className="text-white text-sm font-extrabold flex items-baseline gap-0.5">
+                      <span className="text-amber-400 font-mono text-base">{formatCurrency(v.pricePerDay)}</span>
+                      <span className="text-white/60 text-[10px] font-medium">/{t.landingPage.destinations.perDay}</span>
+                    </p>
                   </div>
                 </div>
-                <div className="p-4">
-                  <p className="text-sm text-slate-400 mb-1 font-bold uppercase tracking-wider">{v.brand}</p>
-                  <h3 className="font-extrabold text-[#0F172A] text-base leading-tight mb-2 truncate">{v.name}</h3>
-                  <div className="flex items-center justify-between">
+                <div className="p-5">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-xs text-slate-400 font-extrabold uppercase tracking-widest">{v.brand}</p>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-50 border border-slate-100 text-[10px] font-bold text-slate-500">
+                      {v.vehicleType === 'motorbike' ? (language === 'vi' ? '🏍️ Xe máy' : '🏍️ Motorbike') : (language === 'vi' ? '🚗 Ô tô' : '🚗 Car')}
+                    </span>
+                  </div>
+                  <h3 className="font-extrabold text-[#0F172A] text-lg leading-tight mb-2 truncate group-hover:text-amber-500 transition-colors">{v.name}</h3>
+                  <p className="text-xs text-slate-500 mb-4 flex items-center gap-1.5 font-medium">
+                    <MapPin className="w-3.5 h-3.5 text-slate-400" /> {v.city}
+                  </p>
+                  <div className="flex items-center justify-between pt-3.5 border-t border-slate-100">
                     <div className="flex items-center gap-1">
                       <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                      <span className="text-sm font-semibold text-slate-700">{Number(v.rating).toFixed(1)}</span>
-                      <span className="text-sm text-slate-400">({v.totalReviews})</span>
+                      <span className="text-sm font-bold text-slate-700">{Number(v.rating).toFixed(1)}</span>
+                      <span className="text-xs text-slate-400">({v.totalReviews})</span>
                     </div>
-                    <div className="flex items-center gap-1.5 text-slate-500 text-sm">
-                      <TrendingUp className="w-4 h-4" />
+                    <div className="flex items-center gap-1.5 text-slate-500 text-xs font-semibold">
+                      <TrendingUp className="w-3.5 h-3.5 text-amber-500" />
                       <span>{v.totalBookings} {t.landingPage.trending.bookings}</span>
                     </div>
                   </div>
-                  <p className="text-sm text-slate-500 mt-2 flex items-center gap-1.5">
-                    <MapPin className="w-4 h-4" /> {v.city}
-                  </p>
                 </div>
               </motion.div>
             ))

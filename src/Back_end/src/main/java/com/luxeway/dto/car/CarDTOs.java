@@ -2,7 +2,6 @@ package com.luxeway.dto.car;
 
 import com.luxeway.enums.FuelType;
 import com.luxeway.enums.TransmissionType;
-import com.luxeway.enums.VehicleStatus;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.util.List;

@@ -209,6 +209,12 @@
   --lw-sidebar-width: 260px;
   --lw-sidebar-collapsed-width: 48px;
   --lw-navbar-height: 64px;
+  
+  /* Glass overrides for dark customer dashboard */
+  --glass-bg: rgba(26, 32, 53, 0.65);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+
   background-color: var(--lw-bg-primary);
   color: var(--lw-text-primary);
   min-height: 100vh;

@@ -43,25 +43,25 @@ const CustomerSidebar: React.FC = () => {
       href: '/dashboard/rewards',
       icon: Gift,
       label: language === 'vi' ? 'Đổi Thưởng' :
-             language === 'ja' ? 'ロイヤルティ特典' :
-             language === 'ko' ? '로열티 리워드' :
-             language === 'zh' ? '会员积分奖励' :
-             language === 'fr' ? 'Récompenses' :
-             language === 'de' ? 'Treueprämien' :
-             language === 'es' ? 'Premios' :
-             'Loyalty Rewards'
+        language === 'ja' ? 'ロイヤルティ特典' :
+          language === 'ko' ? '로열티 리워드' :
+            language === 'zh' ? '会员积分奖励' :
+              language === 'fr' ? 'Récompenses' :
+                language === 'de' ? 'Treueprämien' :
+                  language === 'es' ? 'Premios' :
+                    'Loyalty Rewards'
     },
     {
       href: '/dashboard/corporate',
       icon: Building2,
       label: language === 'vi' ? 'Cổng Doanh Nghiệp' :
-             language === 'ja' ? '企業ポータル' :
-             language === 'ko' ? '기업 포탈' :
-             language === 'zh' ? '企业门户' :
-             language === 'fr' ? 'Portail Entreprise' :
-             language === 'de' ? 'Unternehmensportal' :
-             language === 'es' ? 'Portal Corporativo' :
-             'Corporate Portal'
+        language === 'ja' ? '企業ポータル' :
+          language === 'ko' ? '기업 포탈' :
+            language === 'zh' ? '企业门户' :
+              language === 'fr' ? 'Portail Entreprise' :
+                language === 'de' ? 'Unternehmensportal' :
+                  language === 'es' ? 'Portal Corporativo' :
+                    'Corporate Portal'
     },
     { href: '/messages', icon: Bell, label: t.nav.messages },
     { href: '/dashboard/notifications', icon: Heart, label: t.dashboard.notifications },
@@ -483,111 +483,212 @@ export const MyBookingsPage: React.FC = () => {
     { label: 'Dashboard', href: '/dashboard' },
     { label: t.dashboard.myBookings }
   ];
+  const statusConfig: Record<string, { bg: string; color: string; border: string; label: string }> = {
+    pending: { bg: 'rgba(245,158,11,0.12)', color: '#F59E0B', border: 'rgba(245,158,11,0.3)', label: 'PENDING' },
+    confirmed: { bg: 'rgba(99,102,241,0.12)', color: '#818CF8', border: 'rgba(99,102,241,0.3)', label: 'CONFIRMED' },
+    active: { bg: 'rgba(16,185,129,0.12)', color: '#10B981', border: 'rgba(16,185,129,0.3)', label: 'ACTIVE' },
+    completed: { bg: 'rgba(16,185,129,0.12)', color: '#10B981', border: 'rgba(16,185,129,0.3)', label: 'COMPLETED' },
+    cancelled: { bg: 'rgba(239,68,68,0.12)', color: '#EF4444', border: 'rgba(239,68,68,0.3)', label: 'CANCELLED' },
+  };
+
+  const filterDefs = [
+    { key: 'all', label: 'All' },
+    { key: 'pending', label: 'Pending' },
+    { key: 'confirmed', label: 'Confirmed' },
+    { key: 'active', label: 'Active' },
+    { key: 'completed', label: 'Completed' },
+    { key: 'cancelled', label: 'Cancelled' },
+  ];
+
+  const countFor = (key: string) => key === 'all' ? bookings.length : bookings.filter(b => b.status === key).length;
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[var(--lw-border)] pb-5">
-        <Breadcrumbs title={t.dashboard.myBookings} items={breadcrumbItems} backHref="/dashboard" backText="Back to Dashboard" className="mb-0 flex-1" />
-        
-        {/* Sleek Horizontal Filter Pills */}
-        <div className="flex gap-2 overflow-x-auto pb-1 max-w-full">
-          {['all', 'pending', 'confirmed', 'active', 'completed', 'cancelled'].map(status => (
-            <button
-              key={status}
-              onClick={() => setFilter(status)}
-              className={cn(
-                "lw-btn-interactive px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap border transition-all duration-300",
-                filter === status
-                  ? 'border-accent bg-blue-500/10 text-accent shadow-sm'
-                  : 'border-slate-200/50 dark:border-white/5 text-slate-500 dark:text-slate-400 bg-slate-500/5 hover:border-slate-300 dark:hover:border-white/10'
-              )}
-            >
-              {status.charAt(0).toUpperCase() + status.slice(1)}
-              {status === 'all' && ` (${bookings.length})`}
-            </button>
-          ))}
+    <div className="space-y-6">
+      {/* ── Header row ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <Breadcrumbs title={t.dashboard.myBookings} items={breadcrumbItems} backHref="/dashboard" backText="Dashboard" className="mb-1" />
         </div>
+        {/* Book a New Car CTA */}
+        <Link
+          to="/marketplace"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-all duration-200 flex-shrink-0"
+          style={{
+            background: 'linear-gradient(135deg, #F59E0B, #FBBF24)',
+            color: '#0B0E17',
+            boxShadow: '0 4px 20px rgba(245,158,11,0.35)',
+          }}
+        >
+          <Car className="w-4 h-4" />
+          Book a New Car
+        </Link>
       </div>
 
+      {/* ── Filter pills ── */}
+      <div className="flex gap-2 overflow-x-auto p-2 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', scrollbarWidth: 'none' }}>
+        {filterDefs.map(f => {
+          const active = filter === f.key;
+          const count = countFor(f.key);
+          return (
+            <button
+              key={f.key}
+              onClick={() => setFilter(f.key)}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200 flex-shrink-0"
+              style={active ? {
+                background: 'rgba(6, 182, 212, 0.15)',
+                color: '#fff',
+                border: '1px solid rgba(6, 182, 212, 0.5)',
+                boxShadow: '0 0 10px rgba(6, 182, 212, 0.25)',
+              } : {
+                background: 'rgba(255,255,255,0.05)',
+                color: 'rgba(148,163,184,0.85)',
+                border: '1px solid rgba(255,255,255,0.08)',
+              }}
+            >
+              {f.label}
+              <span
+                className="text-[10px] font-black px-1.5 py-0.5 rounded-full"
+                style={active ? { background: 'rgba(6, 182, 212, 0.25)', color: '#06B6D4' } : { background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)' }}
+              >
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── Content ── */}
       {loading ? (
-        <TableSkeleton rows={5} />
+        <TableSkeleton rows={4} />
       ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center text-center py-16 px-4 rounded-[2rem] bg-[var(--lw-bg-card)] border border-[var(--lw-border)] shadow-xl max-w-lg mx-auto">
-          <div className="w-16 h-16 rounded-full bg-indigo-500/10 flex items-center justify-center mb-6 border border-indigo-500/20">
-            <Calendar className="w-8 h-8 text-[var(--lw-accent)]" />
+        <div className="flex flex-col items-center justify-center text-center py-20 rounded-3xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5" style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.2)' }}>
+            <Calendar className="w-8 h-8" style={{ color: '#818CF8' }} />
           </div>
-          <h3 className="text-base font-semibold text-[var(--lw-text-primary)] mb-2 select-none">
-            {t.dashboard.noBookingsStatus}
-          </h3>
-          <p className="text-sm text-[var(--lw-text-secondary)] mb-6 max-w-[280px] text-center">
-            {t.dashboard.noBookingsDesc}
-          </p>
-          <Link to="/marketplace" className="btn-primary bg-[var(--lw-accent)] hover:bg-[var(--lw-accent-alt)] text-white shadow-lg font-bold transition-all px-6 py-3 rounded-xl lw-btn-interactive">
+          <h3 className="text-base font-bold text-white mb-2">{t.dashboard.noBookingsStatus}</h3>
+          <p className="text-sm mb-6 max-w-xs" style={{ color: 'rgba(148,163,184,0.6)' }}>{t.dashboard.noBookingsDesc}</p>
+          <Link to="/marketplace"
+            className="px-6 py-3 rounded-xl text-sm font-bold text-white transition-all"
+            style={{ background: 'linear-gradient(135deg, #6366F1, #818CF8)', boxShadow: '0 6px 20px rgba(99,102,241,0.4)' }}>
             {t.dashboard.exploreVehicles}
           </Link>
         </div>
       ) : (
-        <motion.div
-          variants={staggerContainer}
-          initial="hidden"
-          animate="visible"
-          className="space-y-4"
-        >
-          {filtered.map(booking => (
-            <motion.div key={booking.id} variants={staggerItem} className="glass border border-slate-200/50 dark:border-white/5 p-5 rounded-[2rem] hover-lift hover-glow transition-all duration-300 shadow-sm relative overflow-hidden">
-              <div className="flex flex-col sm:flex-row sm:items-start gap-4 justify-between">
-                <div className="flex items-start gap-4">
-                  <div className="w-14 h-14 bg-slate-500/10 dark:bg-white/5 rounded-2xl flex items-center justify-center flex-shrink-0 border border-slate-200/20 dark:border-white/5">
-                    <Car className="w-7 h-7 text-slate-400 dark:text-slate-300" />
+        <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filtered.map(booking => {
+            const sc = statusConfig[booking.status] || statusConfig['pending'];
+            return (
+              <motion.div
+                key={booking.id}
+                variants={staggerItem}
+                className="rounded-[2rem] p-6 transition-all duration-300 group flex flex-col justify-between relative overflow-hidden"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  border: '1px solid rgba(255, 255, 255, 0.06)',
+                  backdropFilter: 'blur(20px)',
+                  boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)'
+                }}
+                whileHover={{ y: -6, boxShadow: '0 30px 60px rgba(0, 0, 0, 0.45)', borderColor: 'rgba(99,102,241,0.2)' }}
+              >
+                <div>
+                  {/* Status & Booking ID */}
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-base font-extrabold text-white tracking-tight">Booking #{booking.id.slice(-6).toUpperCase()}</h4>
+                    <span className="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full"
+                      style={{ background: sc.bg, color: sc.color, border: `1px solid ${sc.border}` }}>
+                      {sc.label}
+                    </span>
                   </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-3.5 mb-1.5 flex-wrap">
-                      <p className="font-bold text-slate-800 dark:text-white text-sm">Booking #{booking.id.slice(-6).toUpperCase()}</p>
-                      <span className={`badge text-[10px] font-bold uppercase tracking-wider ${getStatusColor(booking.status)}`}>
-                        {booking.status}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold mb-3">
-                      📅 {formatDate(booking.startDate)} → {formatDate(booking.endDate)} · {booking.totalDays} {t.booking.totalDays}
-                    </p>
 
-                    {/* Small stats badges */}
-                    <div className="flex items-center gap-5 flex-wrap">
-                      <div>
-                        <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">{t.dashboard.bookingAmount}</span>
-                        <p className="text-sm font-bold text-slate-800 dark:text-slate-100 mt-0.5">{formatCurrency(booking.pricing.total)}</p>
-                      </div>
-                      <div className="h-6 w-px bg-slate-200/50 dark:bg-white/10" />
-                      <div>
-                        <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">{t.dashboard.refundableDeposit}</span>
-                        <p className="text-sm font-semibold text-slate-600 dark:text-slate-300 mt-0.5">{formatCurrency(booking.pricing.deposit)}</p>
-                      </div>
+                  {/* Dates & Duration */}
+                  <div className="flex items-center gap-2 text-xs font-semibold mb-6" style={{ color: 'rgba(148,163,184,0.7)' }}>
+                    <Car className="w-3.5 h-3.5" />
+                    <Calendar className="w-3.5 h-3.5" />
+                    <span>{formatDate(booking.startDate)} – {formatDate(booking.endDate)} · {booking.totalDays} {t.booking.totalDays}</span>
+                  </div>
+
+                  {/* Amounts 2 Columns */}
+                  <div className="grid grid-cols-2 gap-4 py-4 mb-6" style={{ borderTop: '1px solid rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: 'rgba(148,163,184,0.5)' }}>{t.dashboard.bookingAmount}</p>
+                      <p className="text-base font-extrabold text-white">{formatCurrency(booking.pricing.total)}</p>
+                    </div>
+                    <div className="pl-4" style={{ borderLeft: '1px solid rgba(255,255,255,0.06)' }}>
+                      <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: 'rgba(148,163,184,0.5)' }}>{t.dashboard.refundableDeposit}</p>
+                      <p className="text-base font-extrabold text-white">{formatCurrency(booking.pricing.deposit)}</p>
                     </div>
                   </div>
                 </div>
 
-                {/* Actions Panel */}
-                <div className="flex flex-row sm:flex-col gap-2 mt-4 sm:mt-0 flex-wrap justify-end">
-                  <Link to={`/vehicles/${booking.vehicleId}`} className="btn-ghost text-xs px-4 py-2.5 border border-slate-200 dark:border-white/10 rounded-xl hover:bg-slate-500/5 transition-all text-slate-600 dark:text-slate-300 font-bold">
+                {/* Action buttons */}
+                <div className="grid grid-cols-2 gap-3 mt-auto">
+                  <Link
+                    to={`/vehicles/${booking.vehicleId}`}
+                    className={cn(
+                      "py-2.5 rounded-xl text-xs font-bold text-center transition-all duration-200 flex items-center justify-center",
+                      ((booking.status !== 'completed' && booking.status !== 'pending' && booking.status !== 'confirmed') || (booking.status === 'completed' && booking.reviewId))
+                        ? "col-span-2"
+                        : ""
+                    )}
+                    style={{
+                      background: 'rgba(255,255,255,0.03)',
+                      color: '#818CF8',
+                      border: '1px solid rgba(129, 140, 248, 0.2)',
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.background = 'rgba(129, 140, 248, 0.1)';
+                      e.currentTarget.style.borderColor = 'rgba(129, 140, 248, 0.4)';
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
+                      e.currentTarget.style.borderColor = 'rgba(129, 140, 248, 0.2)';
+                    }}
+                  >
                     {t.dashboard.viewVehicle}
                   </Link>
+
+                  {booking.status === 'completed' && !booking.reviewId && (
+                    <button
+                      className="py-2.5 rounded-xl text-xs font-bold text-center transition-all duration-200"
+                      style={{
+                        background: 'linear-gradient(135deg, #F59E0B, #FBBF24)',
+                        color: '#0B0E17',
+                        boxShadow: '0 4px 15px rgba(245,158,11,0.3)',
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.filter = 'brightness(1.1)';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.filter = 'none';
+                      }}
+                    >
+                      {t.dashboard.leaveReview}
+                    </button>
+                  )}
+
                   {(booking.status === 'pending' || booking.status === 'confirmed') && (
                     <button
                       onClick={() => handleCancel(booking.id)}
-                      className="text-xs font-bold px-4 py-2.5 text-red-500 hover:bg-red-500/10 rounded-xl border border-red-200/50 dark:border-red-500/20 transition-all"
+                      className="py-2.5 rounded-xl text-xs font-bold text-center transition-all duration-200"
+                      style={{
+                        background: 'rgba(239,68,68,0.1)',
+                        color: '#EF4444',
+                        border: '1px solid rgba(239,68,68,0.2)',
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.background = 'rgba(239,68,68,0.2)';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.background = 'rgba(239,68,68,0.1)';
+                      }}
                     >
                       {t.dashboard.cancelBooking}
                     </button>
                   )}
-                  {booking.status === 'completed' && !booking.reviewId && (
-                    <button className="btn-gold text-xs font-bold px-4 py-2.5 rounded-xl">
-                      {t.dashboard.leaveReview}
-                    </button>
-                  )}
                 </div>
-              </div>
-            </motion.div>
-          ))}`
+              </motion.div>
+            );
+          })}
         </motion.div>
       )}
     </div>
@@ -845,7 +946,7 @@ export const DocumentsPage: React.FC = () => {
   const { user } = useAuthStore();
   const toast = useToast();
   const t = useT();
-  
+
   const [backendDocs, setBackendDocs] = React.useState<any[]>([]);
   const [loadingDocs, setLoadingDocs] = React.useState(true);
   const [uploading, setUploading] = React.useState<string | null>(null);
@@ -1085,8 +1186,8 @@ export const DocumentsPage: React.FC = () => {
     if (status === 'pending') return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-yellow-200/20 text-yellow-600 bg-yellow-500/10">{t.dashboard.underReviewDoc}</span>;
     if (status === 'rejected') {
       return (
-        <span 
-          title={reason || 'Rejected'} 
+        <span
+          title={reason || 'Rejected'}
           className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-red-200/20 text-red-600 bg-red-500/10 cursor-help"
         >
           ❌ Rejected {reason ? `: ${reason}` : ''}
@@ -1115,8 +1216,8 @@ export const DocumentsPage: React.FC = () => {
       <Breadcrumbs title={t.dashboard.myDocuments} items={breadcrumbItems} backHref="/dashboard" backText="Back to Dashboard" />
 
       <div className={`p-4 rounded-[1.5rem] flex items-center gap-3 border ${user?.verified
-          ? 'bg-green-500/10 border-green-500/20 text-green-800 dark:text-green-300'
-          : 'bg-yellow-500/10 border-yellow-500/20 text-yellow-800 dark:text-yellow-300'
+        ? 'bg-green-500/10 border-green-500/20 text-green-800 dark:text-green-300'
+        : 'bg-yellow-500/10 border-yellow-500/20 text-yellow-800 dark:text-yellow-300'
         }`}>
         {user?.verified ? (
           <><Shield className="w-6 h-6 text-success flex-shrink-0" /><div><p className="font-bold text-sm">{t.dashboard.identityVerified}</p><p className="text-xs opacity-80 mt-0.5">{t.common.success}</p></div></>
@@ -1167,12 +1268,12 @@ export const DocumentsPage: React.FC = () => {
                               <Eye className="w-3.5 h-3.5" /> {t.dashboard.viewVehicle || 'View Document'}
                             </a>
                           )}
-                          
+
                           <div className="mt-1 relative rounded-2xl overflow-hidden border border-slate-200/50 dark:border-white/10 max-w-sm shadow-sm bg-slate-500/5 max-h-56">
                             {!isPdfDocument(docInfo.url) ? (
-                              <img 
+                              <img
                                 src={resolveDocumentUrl(docInfo.url)}
-                                alt={doc.title} 
+                                alt={doc.title}
                                 className="w-full h-auto object-cover max-h-56 rounded-2xl transition-all duration-300 hover:scale-105"
                               />
                             ) : (
@@ -1364,7 +1465,7 @@ export const PaymentHistoryPage: React.FC = () => {
                     <td className="px-4 py-3.5 text-sm font-extrabold text-slate-800 dark:text-white">{formatCurrency(p.amount)}</td>
                     <td className="px-4 py-3.5"><span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border uppercase tracking-wider ${statusStyle(p.status)}`}>{p.status}</span></td>
                     <td className="px-4 py-3.5">
-                      <button 
+                      <button
                         onClick={() => handleDownloadInvoice(p.bookingId)}
                         className="text-xs text-accent hover:underline font-bold"
                       >
@@ -1701,8 +1802,8 @@ export const LuxeWalletPage: React.FC = () => {
                       type="button"
                       onClick={() => handlePresetSelect(amt)}
                       className={`py-2.5 px-1 text-xs rounded-xl border-2 font-bold transition-all duration-300 text-center ${topUpAmount === amt
-                          ? 'border-accent bg-blue-500/10 text-accent font-extrabold shadow-sm'
-                          : 'border-slate-200/50 dark:border-white/5 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-white/15'
+                        ? 'border-accent bg-blue-500/10 text-accent font-extrabold shadow-sm'
+                        : 'border-slate-200/50 dark:border-white/5 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-white/15'
                         }`}
                     >
                       {formatCurrency(amt).replace('₫', '').trim()} ₫
@@ -1749,8 +1850,8 @@ export const LuxeWalletPage: React.FC = () => {
                       type="button"
                       onClick={() => setMethod(m.id as any)}
                       className={`p-4 rounded-[1.5rem] border-2 text-left transition-all duration-300 ${method === m.id
-                          ? 'border-accent bg-blue-500/10'
-                          : 'border-slate-200/50 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/10 bg-slate-500/5'
+                        ? 'border-accent bg-blue-500/10'
+                        : 'border-slate-200/50 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/10 bg-slate-500/5'
                         }`}
                     >
                       <div className="text-2xl mb-1.5">{m.icon}</div>
@@ -1815,10 +1916,10 @@ export const LuxeWalletPage: React.FC = () => {
                 return (
                   <div key={tx.id || idx} className="flex items-start gap-3 pt-4 first:pt-0">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold ${isFailed
-                        ? 'bg-red-500/10 text-danger'
-                        : isTopUp
-                          ? 'bg-green-500/10 text-green-600'
-                          : 'bg-blue-500/10 text-accent'
+                      ? 'bg-red-500/10 text-danger'
+                      : isTopUp
+                        ? 'bg-green-500/10 text-green-600'
+                        : 'bg-blue-500/10 text-accent'
                       }`}>
                       {isFailed ? '✕' : isTopUp ? '↓' : '↑'}
                     </div>
@@ -1832,18 +1933,18 @@ export const LuxeWalletPage: React.FC = () => {
                     </div>
                     <div className="text-right flex-shrink-0">
                       <p className={`text-xs font-extrabold ${isFailed
-                          ? 'text-slate-400 line-through'
-                          : isTopUp
-                            ? 'text-green-600'
-                            : 'text-red-500'
+                        ? 'text-slate-400 line-through'
+                        : isTopUp
+                          ? 'text-green-600'
+                          : 'text-red-500'
                         }`}>
                         {isTopUp ? '+' : '-'}{formatCurrency(tx.amount)}
                       </p>
                       <span className={`text-[8px] font-extrabold uppercase tracking-widest px-1.5 py-0.2 rounded border mt-1 inline-block ${isSuccess
-                          ? 'bg-green-500/10 text-green-600 border-green-200/20'
-                          : isFailed
-                            ? 'bg-red-500/10 text-red-600 border-red-200/20'
-                            : 'bg-yellow-500/10 text-yellow-600 border-yellow-200/20'
+                        ? 'bg-green-500/10 text-green-600 border-green-200/20'
+                        : isFailed
+                          ? 'bg-red-500/10 text-red-600 border-red-200/20'
+                          : 'bg-yellow-500/10 text-yellow-600 border-yellow-200/20'
                         }`}>
                         {tx.status}
                       </span>

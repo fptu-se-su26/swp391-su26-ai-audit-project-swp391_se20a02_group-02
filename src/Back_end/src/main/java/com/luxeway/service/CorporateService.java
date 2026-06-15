@@ -49,7 +49,7 @@ public class CorporateService {
                 .corporateRole(role.toUpperCase())
                 .createdAt(LocalDateTime.now())
                 .build();
-        
+
         log.info("Adding employee {} to department: {}", user.getFullName(), dept.getName());
         return corporateEmployeeRepository.save(emp);
     }
@@ -65,13 +65,13 @@ public class CorporateService {
         // Check budget limits
         BigDecimal newDeptSpent = dept.getBudgetSpent().add(totalCost);
         if (newDeptSpent.compareTo(dept.getBudgetLimit()) > 0) {
-            throw new IllegalStateException("Department budget exceeded! Cost: " + totalCost + ", Available: " + 
+            throw new IllegalStateException("Department budget exceeded! Cost: " + totalCost + ", Available: " +
                     dept.getBudgetLimit().subtract(dept.getBudgetSpent()));
         }
 
         BigDecimal newCompSpent = comp.getBudgetSpent().add(totalCost);
         if (newCompSpent.compareTo(comp.getBudgetLimit()) > 0) {
-            throw new IllegalStateException("Company budget exceeded! Cost: " + totalCost + ", Available: " + 
+            throw new IllegalStateException("Company budget exceeded! Cost: " + totalCost + ", Available: " +
                     comp.getBudgetLimit().subtract(comp.getBudgetSpent()));
         }
 
@@ -96,10 +96,14 @@ public class CorporateService {
             req.setApprovedBy(reviewerUserId);
             req.setApprovedAt(LocalDateTime.now());
 
-            // Deduct from budgets - since it's just budget authorizations, we increment budgetSpent
-            // Real money handles can go through Stripe/Wallet, but here we track allocations
-            // In a real database we would lock the rows, but since it's inside @Transactional it is safe.
-            // Let's assume booking total is passed or calculated. We retrieve it dynamically.
+            // Deduct from budgets - since it's just budget authorizations, we increment
+            // budgetSpent
+            // Real money handles can go through Stripe/Wallet, but here we track
+            // allocations
+            // In a real database we would lock the rows, but since it's inside
+            // @Transactional it is safe.
+            // Let's assume booking total is passed or calculated. We retrieve it
+            // dynamically.
             // (In our simplified system, we will just authorize it).
             Department dept = req.getDepartment();
             Company comp = req.getCompany();

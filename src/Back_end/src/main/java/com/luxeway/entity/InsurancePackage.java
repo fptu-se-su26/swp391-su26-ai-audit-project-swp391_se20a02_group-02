@@ -29,6 +29,7 @@ public class InsurancePackage {
 
     @NotNull
     @Column(name = "cost_per_day", precision = 18, scale = 2)
+    @Builder.Default
     private BigDecimal costPerDay = BigDecimal.ZERO;
 
     @NotNull
@@ -39,6 +40,7 @@ public class InsurancePackage {
     private String description;
 
     @Column(name = "is_active", nullable = false)
+    @Builder.Default
     private Boolean isActive = true;
 
     @PrePersist

@@ -27,6 +27,7 @@ public class VehicleAvailability {
     private LocalDate date;
 
     @Column(name = "is_available", nullable = false)
+    @Builder.Default
     private Boolean isAvailable = true;
 
     @Column(name = "booking_id", length = 36)
