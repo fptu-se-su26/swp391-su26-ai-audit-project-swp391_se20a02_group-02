@@ -22,6 +22,7 @@ import java.util.List;
 @RequestMapping("/pricing")
 @RequiredArgsConstructor
 @Tag(name = "Pricing Rules & Engine", description = "Calculate real-time prices & manage pricing multipliers")
+@SuppressWarnings("null")
 public class PricingRuleController {
 
     private final PricingEngineService pricingEngineService;

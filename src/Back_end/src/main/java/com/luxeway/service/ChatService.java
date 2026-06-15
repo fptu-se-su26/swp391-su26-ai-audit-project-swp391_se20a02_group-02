@@ -14,12 +14,12 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("null")
 public class ChatService {
 
     private final ConversationRepository conversationRepository;

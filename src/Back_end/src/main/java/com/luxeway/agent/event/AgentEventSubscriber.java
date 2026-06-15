@@ -17,19 +17,19 @@ import org.springframework.stereotype.Component;
 import java.util.Map;
 
 /**
- * AgentEventSubscriber — Spring Boot subscriber to the Agent Layer's Redis Pub/Sub events.
+ * AgentEventSubscriber â€” Spring Boot subscriber to the Agent Layer's Redis Pub/Sub events.
  *
  * Addresses reviewer feedback #4:
  *   "Introducing an event-driven layer could improve scalability and reduce
  *    coupling for anomaly detection, pricing updates, and monitoring."
  *
  * Subscribed Channels (via PATTERN luxeway.events.*):
- *   luxeway.events.anomaly_detected    → triggers admin WebSocket push
- *   luxeway.events.pricing_recommended → triggers pricing approval workflow
- *   luxeway.events.churn_alert         → triggers campaign dispatch
- *   luxeway.events.health_degraded     → triggers ops alert
- *   luxeway.events.demand_spike        → triggers inventory review
- *   luxeway.events.fleet_action_plan   → triggers dashboard update
+ *   luxeway.events.anomaly_detected    â†’ triggers admin WebSocket push
+ *   luxeway.events.pricing_recommended â†’ triggers pricing approval workflow
+ *   luxeway.events.churn_alert         â†’ triggers campaign dispatch
+ *   luxeway.events.health_degraded     â†’ triggers ops alert
+ *   luxeway.events.demand_spike        â†’ triggers inventory review
+ *   luxeway.events.fleet_action_plan   â†’ triggers dashboard update
  *
  * Activation: set spring.agent.events.enabled=true in application.properties
  */
@@ -37,6 +37,7 @@ import java.util.Map;
 @Component
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "spring.agent.events.enabled", havingValue = "true", matchIfMissing = false)
+@SuppressWarnings("null")
 public class AgentEventSubscriber implements MessageListener {
 
     private final ObjectMapper objectMapper;
@@ -117,7 +118,7 @@ public class AgentEventSubscriber implements MessageListener {
         // TODO: Store in DB, push to admin dashboard WebSocket
     }
 
-    // ── Redis Listener Container ──────────────────────────────────────────────
+    // â”€â”€ Redis Listener Container â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Configuration
     @ConditionalOnProperty(name = "spring.agent.events.enabled", havingValue = "true", matchIfMissing = false)

@@ -20,6 +20,7 @@ import java.time.Duration;
  * - Error mapping to domain exceptions
  */
 @Component
+@SuppressWarnings("null")
 public class AgentLayerClient {
 
     private final WebClient webClient;

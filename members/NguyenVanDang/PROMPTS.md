@@ -1395,6 +1395,72 @@ Tích hợp thành công toàn bộ các component và styling mới. Frontend b
 
 ---
 
+---
+
+### Prompt số 18
+
+| Nội dung | Thông tin |
+|---|---|
+| Ngày sử dụng | 2026-06-15 |
+| Công cụ AI | Antigravity |
+| Mục đích | Đồng bộ build.gradle với pom.xml và xử lý 358 warnings compiler |
+| Phần việc liên quan | Backend / Build Config & Debug |
+| Mức độ sử dụng | Hỏi debug & sinh code |
+
+#### 5.1. Prompt nguyên văn
+
+```text
+Sync build.gradle with pom.xml to add Webflux, Redis, Resilience4j, AOP and MySQL dependencies.
+Check all compiler warnings in current_problems (unused imports, unused fields/variables, raw types, and null type safety).
+Help me remove unused imports and fields. How can I suppress null safety warnings in JpaAuditingConfig, AIChatService, and controllers/services without touching the business logic?
+```
+
+#### 5.2. Bối cảnh khi viết prompt
+
+```text
+Dự án đang chạy compileJava bằng Gradle wrapper nhưng bị lỗi không tìm thấy package (Redis, Webflux, Resilience4j, AOP) do build.gradle chưa được đồng bộ với pom.xml. Sau khi đồng bộ, hệ thống có nhiều cảnh báo biên dịch (warnings) cần dọn sạch.
+```
+
+#### 5.3. Kết quả AI trả về
+
+```text
+AI cung cấp các blocks dependencies cần thêm vào build.gradle, chỉ ra các imports/variables dư thừa cần xoá ở các class Service, và đề xuất sử dụng @SuppressWarnings("null") cho các class controller/service.
+```
+
+#### 5.4. Kết quả đã áp dụng vào bài
+
+```text
+Đồng bộ build.gradle, xoá các imports và fields/variables không dùng, thêm SuppressWarnings thành công. Backend build bằng Gradle thành công 100% không còn warning.
+```
+
+#### 5.5. Phần sinh viên/nhóm đã chỉnh sửa hoặc cải tiến
+
+```text
+- Tự phát hiện và tắt tất cả các tiến trình Java/Gradle đang chạy ẩn để giải phóng file lock trước khi thực hiện clean build.
+- Viết script PowerShell chuyển đổi encoding các file Java bị ảnh hưởng sang UTF-8 Without BOM để khắc phục lỗi compiler '\ufeff'.
+```
+
+#### 5.6. Đánh giá chất lượng prompt
+
+- [x] Prompt rõ ràng
+- [x] Prompt có đủ bối cảnh
+- [ ] Prompt còn thiếu thông tin
+- [x] Prompt tạo ra kết quả tốt
+- [ ] Prompt tạo ra kết quả chưa phù hợp
+- [ ] Cần hỏi lại AI nhiều lần
+- [x] Cần tự kiểm tra và chỉnh sửa nhiều
+- [ ] Kết quả AI có lỗi hoặc chưa chính xác
+
+#### 5.7. Minh chứng liên quan
+
+| Loại minh chứng | Nội dung |
+|---|---|
+| File liên quan | build.gradle, AIChatService.java, CarService.java, BookingService.java, JavaFallbackService.java, và các Java controllers |
+| Kết quả chạy/test | `./gradlew compileJava` thành công không có lỗi và warning |
+| Link commit | [DE190324] fix: sync gradle dependencies with pom.xml and resolve all 358 compiler warnings |
+
+---
+
 ## 11. Cam kết sử dụng prompt minh bạch
 
 Sinh viên/nhóm cam kết rằng:
@@ -1407,5 +1473,5 @@ Sinh viên/nhóm cam kết rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-06-12 |
+| Nguyễn Văn Dạng - DE190324 | 2026-06-15 |
 

@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings({"rawtypes", "unchecked", "unused", "null"})
 public class AIChatService {
 
     private final AIChatSessionRepository sessionRepository;
@@ -73,7 +74,7 @@ public class AIChatService {
         messageRepository.save(userMsg);
 
         // 3. Resolve context updates
-        AIConversationContext context = contextResolverService.resolveAndSaveContext(sessionId, currentPage, activeVehicleId, activeBookingId);
+        contextResolverService.resolveAndSaveContext(sessionId, currentPage, activeVehicleId, activeBookingId);
 
         // 4. Load User & Booking History
         User user = null;
@@ -277,7 +278,6 @@ public class AIChatService {
 
         // 1. Separation Ecosystem Routing Responses
         boolean isMotorbikePath = currentPage != null && currentPage.contains("motorbike");
-        boolean isCarPath = currentPage != null && currentPage.contains("car");
 
         if (msgLower.contains("recommend") || msgLower.contains("suggest") || msgLower.contains("compare")) {
             if (isMotorbikePath) {

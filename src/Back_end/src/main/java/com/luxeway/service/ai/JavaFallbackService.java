@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 /**
@@ -16,8 +15,6 @@ import java.util.*;
 @Slf4j
 @Service
 public class JavaFallbackService {
-
-    private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ISO_LOCAL_DATE;
 
     // ---------------------------------------------------------------- revenue
 

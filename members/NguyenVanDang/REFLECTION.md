@@ -761,6 +761,40 @@ Trong giai đoạn này (Phase 5.2), nhóm đã thực hiện thiết kế lại
 
 ---
 
+## Reflection — Phase 5.3: Build Sync & Compiler Warning Elimination (2026-06-15)
+
+### Tóm tắt
+
+Trong giai đoạn này (Phase 5.3), nhóm đã thực hiện đồng bộ cấu hình dependencies của Gradle (`build.gradle`) với Maven (`pom.xml`) để giải quyết triệt để lỗi thiếu package (Redis, WebFlux, Resilience4j) khi compile bằng Gradle wrapper. Đồng thời, tiến hành dọn sạch 358 cảnh báo biên dịch bằng cách xóa bỏ imports và fields/variables không sử dụng, và áp dụng `@SuppressWarnings("null")` để loại bỏ các cảnh báo an toàn kiểu Null giả từ trình biên dịch Eclipse.
+
+### Những điều học được
+
+```text
+1. Đồng bộ các hệ thống build (Build System Synchronisation):
+   Khi một dự án hỗ trợ cả Maven và Gradle, việc cập nhật dependencies ở cả hai file pom.xml và build.gradle là cực kỳ quan trọng để đảm bảo tính nhất quán của môi trường phát triển và môi trường chạy thực tế (chạy bằng gradle wrapper qua run.ps1).
+
+2. Xử lý khóa file (File Locks) trong Windows:
+   Khi thực thi tác vụ dọn dẹp (clean) hoặc biên dịch, nếu tiến trình JVM cũ vẫn đang chạy (như Back_end-1.0.0.jar chạy qua run.ps1 hoặc tiến trình Gradle daemon bị treo), hệ điều hành Windows sẽ khóa các tệp tin build khiến Gradle báo lỗi "Failed to clean up stale outputs". Cần dừng toàn bộ tiến trình Java trước khi build lại.
+
+3. Kỹ thuật loại bỏ cảnh báo (Warning Elimination):
+   Việc sử dụng `@SuppressWarnings("null")` ở cấp lớp (class-level) giúp loại bỏ các cảnh báo Null safety giả tạo ra do sự không tương thích giữa các kiểu dữ liệu của Java JDK/Spring Data và kỳ vọng an toàn kiểu Null của Eclipse compiler (IDE Java Language Server). Đồng thời việc xóa bỏ các imports/variables không sử dụng giúp mã nguồn sạch hơn, dễ bảo trì hơn.
+
+4. encoding UTF-8 Without BOM:
+   Lệnh Set-Content trong PowerShell 5 mặc định ghi file dạng UTF-8 với ký tự BOM (\ufeff), điều này khiến Java compiler (javac) báo lỗi "illegal character: '\ufeff'". Sử dụng [System.IO.File]::WriteAllText cùng UTF8Encoding(false) giúp lưu file UTF-8 chuẩn không BOM.
+```
+
+### Tự đánh giá Phase 5.3
+
+| Tiêu chí | Điểm | Ghi chú |
+|---|:---:|---|
+| Hiểu vấn đề trước khi fix | 5 | Hiểu rõ cơ chế build system, dependency management và file locks |
+| Fix đúng nguyên nhân gốc | 5 | Giải quyết triệt để các dependency không đồng bộ và warning biên dịch |
+| Kiểm chứng sau fix | 5 | Build thành công 100% không còn warning bằng `./gradlew compileJava` |
+| Ghi lại đầy đủ | 5 | Cập nhật đầy đủ cả 4 files trong thư mục members |
+| Sử dụng AI có trách nhiệm | 5 | Làm chủ quy trình build, tự động hóa xử lý mã hóa file và process management |
+
+---
+
 ## 17. Cam kết Reflection
 
 Em/nhóm cam kết rằng nội dung reflection này phản ánh trung thực quá trình sử dụng AI và quá trình học tập trong bài tập/project.
@@ -774,5 +808,5 @@ Sinh viên/nhóm hiểu rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-06-12 |
+| Nguyễn Văn Dạng - DE190324 | 2026-06-15 |
 

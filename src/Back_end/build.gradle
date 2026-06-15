@@ -35,8 +35,19 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-mail'
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
     
-    // Database - SQL Server
+    // WebFlux (WebClient / Mono)
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    
+    // Redis
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    
+    // Resilience4j & AOP
+    implementation 'io.github.resilience4j:resilience4j-spring-boot3:2.2.0'
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+    
+    // Database - SQL Server / MySQL
     implementation 'com.microsoft.sqlserver:mssql-jdbc:12.4.2.jre11'
+    runtimeOnly 'com.mysql:mysql-connector-j'
     
     // JWT
     implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
