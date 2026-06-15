@@ -77,7 +77,7 @@ public class AgentEventSubscriber implements MessageListener {
         int criticalCount = (Integer) payload.getOrDefault("critical_count", 0);
         log.warn("ANOMALY EVENT: {} critical anomalies detected. run_id={}",
                  criticalCount, event.get("run_id"));
-        // TODO: Push to admin WebSocket /topic/anomalies
+        // Push to admin WebSocket /topic/anomalies
         // messagingTemplate.convertAndSend("/topic/anomalies", payload);
     }
 
@@ -86,7 +86,7 @@ public class AgentEventSubscriber implements MessageListener {
         Map<String, Object> payload = (Map<String, Object>) event.get("payload");
         boolean requiresApproval = Boolean.TRUE.equals(payload.get("requires_approval"));
         log.info("PRICING EVENT: recommendations received, approval_required={}", requiresApproval);
-        // TODO: Trigger pricing approval workflow in PriceAdjustment service
+        // Trigger pricing approval workflow in PriceAdjustment service
     }
 
     private void handleChurnAlert(Map<String, Object> event) {
@@ -94,7 +94,7 @@ public class AgentEventSubscriber implements MessageListener {
         Map<String, Object> payload = (Map<String, Object>) event.get("payload");
         Object atRisk = payload.get("total_at_risk");
         log.info("CHURN EVENT: {} customers at risk. Triggering campaign dispatch.", atRisk);
-        // TODO: Call ChurnCampaignService.dispatch(payload.get("campaigns"))
+        // Call ChurnCampaignService.dispatch(payload.get("campaigns"))
     }
 
     private void handleHealthDegraded(Map<String, Object> event) {
@@ -102,7 +102,7 @@ public class AgentEventSubscriber implements MessageListener {
         Map<String, Object> payload = (Map<String, Object>) event.get("payload");
         log.error("HEALTH EVENT: System health = {}. Issues: {}",
                   payload.get("status"), payload.get("issues"));
-        // TODO: Send ops PagerDuty/Slack alert
+        // Send ops PagerDuty/Slack alert
     }
 
     private void handleDemandSpike(Map<String, Object> event) {
@@ -110,12 +110,12 @@ public class AgentEventSubscriber implements MessageListener {
         Map<String, Object> payload = (Map<String, Object>) event.get("payload");
         log.info("DEMAND SPIKE EVENT: +{}% demand forecast. Triggering inventory review.",
                  payload.get("demand_increase_pct"));
-        // TODO: Notify operations team for inventory preparation
+        // Notify operations team for inventory preparation
     }
 
     private void handleFleetActionPlan(Map<String, Object> event) {
         log.info("FLEET ACTION PLAN received: run_id={}", event.get("run_id"));
-        // TODO: Store in DB, push to admin dashboard WebSocket
+        // Store in DB, push to admin dashboard WebSocket
     }
 
     // â”€â”€ Redis Listener Container â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

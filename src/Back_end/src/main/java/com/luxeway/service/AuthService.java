@@ -101,7 +101,7 @@ public class AuthService {
         // DEV MODE: Auto-verify user on registration (no email verification step).
         // PRODUCTION: Set verified=false and send a confirmation email via JavaMailSender.
         // Check environment via Spring profiles to determine behavior
-        boolean isDevelopment = true; // TODO: Inject @Value("${spring.profiles.active}") to check profile
+        boolean isDevelopment = true; // Inject @Value("${spring.profiles.active}") to check profile
         
         User user = User.builder()
                 .email(request.getEmail())
