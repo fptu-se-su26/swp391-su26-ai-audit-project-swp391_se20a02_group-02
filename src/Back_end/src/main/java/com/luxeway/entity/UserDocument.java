@@ -73,6 +73,19 @@ public class UserDocument {
     @Column(name = "license_nationality", length = 100)
     private String licenseNationality;
 
+    // ─── eKYC / OCR extracted fields ───────────────────────────────────────
+    @Column(name = "ekyc_id_number", length = 20)
+    private String ekycIdNumber;
+
+    @Column(name = "ekyc_full_name", length = 200)
+    private String ekycFullName;
+
+    @Column(name = "ekyc_dob", length = 20)
+    private String ekycDob;
+
+    @Column(name = "ekyc_raw_data", columnDefinition = "TEXT")
+    private String ekycRawData;
+
     @PrePersist
     private void prePersist() {
         if (id == null) {
