@@ -190,6 +190,17 @@ class ApiClient {
     return this.request<T>(endpoint, { ...options, method: 'DELETE' });
   }
 
+  /** Upload FormData (multipart/form-data) via POST */
+  async postForm<T>(endpoint: string, formData: FormData, options?: RequestInit) {
+    return this.request<T>(endpoint, { ...options, method: 'POST', body: formData });
+  }
+
+  /** Upload FormData (multipart/form-data) via PUT */
+  async putForm<T>(endpoint: string, formData: FormData, options?: RequestInit) {
+    return this.request<T>(endpoint, { ...options, method: 'PUT', body: formData });
+  }
+
+
   // Health Check
   async healthCheck() {
     return this.request('/test/health');
