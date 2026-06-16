@@ -16,7 +16,7 @@ export type MotorbikeCategory = 'scooter' | 'automatic_scooter' | 'manual_motorc
 // Combined (all categories in the system)
 export type VehicleCategory = CarCategory | MotorbikeCategory;
 
-export type BookingStatus = 'pending' | 'confirmed' | 'active' | 'completed' | 'cancelled' | 'disputed';
+export type BookingStatus = 'pending' | 'confirmed' | 'active' | 'completed' | 'cancelled' | 'disputed' | 'picking_up' | 'in_progress';
 export type PaymentStatus = 'pending' | 'processing' | 'succeeded' | 'failed' | 'refunded';
 export type VehicleStatus = 'available' | 'rented' | 'maintenance' | 'pending_approval';
 export type TransmissionType = 'automatic' | 'manual';

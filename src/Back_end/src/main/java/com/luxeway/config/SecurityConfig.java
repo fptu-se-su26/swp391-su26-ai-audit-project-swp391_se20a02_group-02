@@ -112,6 +112,8 @@ public class SecurityConfig {
                     "/api/v1/home/**",
                     "/locations/**",
                     "/api/v1/locations/**",
+                    "/location/**",
+                    "/api/v1/location/**",
                     "/faqs/**",
                     "/faqs",
                     "/api/v1/faqs/**",
@@ -119,6 +121,8 @@ public class SecurityConfig {
                     // Help Center Knowledge Base (public — no auth needed)
                     "/help/**",
                     "/api/v1/help/**",
+                    "/chat",
+                    "/api/v1/chat",
                     "/error"
                 ).permitAll()
                 // Support ticket endpoints — must be authenticated

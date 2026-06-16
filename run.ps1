@@ -14,6 +14,22 @@ $shortRoot = $fso.GetFolder($PSScriptRoot).ShortPath
 $shortJar  = "$shortRoot\src\Back_end\build\libs\Back_end-1.0.0.jar"
 $frontendPath = "$PSScriptRoot\src\Front_end"
 
+# Load .env file variables into current process environment
+$EnvFile = "$shortRoot\.env"
+if (Test-Path $EnvFile) {
+    Get-Content $EnvFile | ForEach-Object {
+        $line = $_.Trim()
+        if ($line -and -not $line.StartsWith('#')) {
+            $idx = $line.IndexOf('=')
+            if ($idx -gt 0) {
+                $k = $line.Substring(0, $idx).Trim()
+                $v = $line.Substring($idx + 1).Trim()
+                [System.Environment]::SetEnvironmentVariable($k, $v, 'Process')
+            }
+        }
+    }
+}
+
 # Check JAR
 if (-not (Test-Path $shortJar)) {
     Write-Host "  [ERROR] Backend JAR not found. Run Gradle build first:" -ForegroundColor Red
@@ -36,7 +52,7 @@ $javaCmd = "java " +
   "-DDB_NAME=car_rental_platform " +
   "-DDB_USERNAME=sa " +
   "-DDB_PASSWORD=123456 " +
-  "-Dspring.datasource.url=jdbc:sqlserver://localhost:1433;databaseName=car_rental_platform;encrypt=false;trustServerCertificate=true " +
+  "`"-Dspring.datasource.url=jdbc:sqlserver://localhost:1433;databaseName=car_rental_platform;encrypt=false;trustServerCertificate=true`" " +
   "-Dspring.datasource.username=sa " +
   "-Dspring.datasource.password=123456 " +
   "-DJWT_SECRET=LuxeWaySecretKey2024VeryLongAndSecureJWTTokenKeyForDevelopment256Bit " +
@@ -54,6 +70,7 @@ $javaCmd = "java " +
   "-DSTRIPE_SECRET_KEY=sk_test_placeholder " +
   "-DFRONTEND_URL=http://localhost:5173 " +
   "-DLOG_LEVEL=INFO " +
+  "-DGOONG_API_KEY=`"$($env:GOONG_API_KEY)`" " +
   "-jar `"$shortJar`" --spring.profiles.active=sqlserver"
 
 # Kill old java

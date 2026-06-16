@@ -23,6 +23,8 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -39,6 +41,7 @@ public class BookingService {
     private final BookingStatusHistoryRepository bookingStatusHistoryRepository;
     private final VehicleAvailabilityRepository vehicleAvailabilityRepository;
     private final PricingEngine pricingEngine;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Value("${business.pricing.service-fee-rate:0.12}")
     private double serviceFeeRate;
@@ -77,6 +80,14 @@ public class BookingService {
                 "Vehicle is already booked for dates " + req.getStartDate() + " to " + req.getEndDate() +
                 ". Please choose different dates."
             );
+        }
+
+        // Check for temporary locks preventing double booking
+        List<VehicleAvailability> conflictingLocks = vehicleAvailabilityRepository.findConflictingLocks(
+            req.getVehicleId(), req.getStartDate(), req.getEndDate(), java.time.LocalDateTime.now(), renterId
+        );
+        if (!conflictingLocks.isEmpty()) {
+            throw new RuntimeException("Vehicle is temporarily locked or unavailable for these dates. Please choose different dates.");
         }
 
         User renter = userRepository.findById(renterId)
@@ -177,11 +188,14 @@ public class BookingService {
             }
         }
 
-        return toResponse(booking);
+        BookingDTOs.BookingResponse response = toResponse(booking);
+        broadcastLifecycleEvent(booking, "BOOKING_CREATED");
+        return response;
     }
 
     // ====== Get bookings for renter ======
 
+    @Transactional(readOnly = true)
     public Page<BookingDTOs.BookingResponse> getMyBookings(String renterId, int page, int size) {
         // Do NOT add Sort here - 'OrderByCreatedAtDesc' in method name already handles ordering
         Pageable pageable = PageRequest.of(page, size);
@@ -190,6 +204,7 @@ public class BookingService {
 
     // ====== Get bookings for owner ======
 
+    @Transactional(readOnly = true)
     public Page<BookingDTOs.BookingResponse> getOwnerBookings(String ownerId, int page, int size) {
         // Do NOT add Sort here - 'OrderByCreatedAtDesc' in method name already handles ordering
         Pageable pageable = PageRequest.of(page, size);
@@ -198,12 +213,16 @@ public class BookingService {
 
     // ====== Get booking by ID ======
 
+    @Transactional(readOnly = true)
     public BookingDTOs.BookingResponse getById(String bookingId, String requesterId, boolean isAdmin) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
 
-        if (!isAdmin && !booking.getRenter().getId().equals(requesterId)
-                && !booking.getOwner().getId().equals(requesterId)) {
+        String renterId = booking.getRenter() != null ? booking.getRenter().getId() : "";
+        String ownerId = booking.getOwner() != null ? booking.getOwner().getId() : "";
+
+        if (!isAdmin && !renterId.equals(requesterId)
+                && !ownerId.equals(requesterId)) {
             throw new org.springframework.security.access.AccessDeniedException("Not authorized to view this booking");
         }
 
@@ -304,6 +323,18 @@ public class BookingService {
 
         booking = bookingRepository.save(booking);
 
+        String eventName = null;
+        if (newStatus == BookingStatus.PICKING_UP) {
+            eventName = "VEHICLE_PICKING_UP";
+        } else if (newStatus == BookingStatus.IN_PROGRESS || newStatus == BookingStatus.ACTIVE) {
+            eventName = "TRIP_STARTED";
+        } else if (newStatus == BookingStatus.COMPLETED) {
+            eventName = "TRIP_COMPLETED";
+        }
+        if (eventName != null) {
+            broadcastLifecycleEvent(booking, eventName);
+        }
+
         // Status History Audit Logging
         BookingStatusHistory history = BookingStatusHistory.builder()
                 .booking(booking)
@@ -346,17 +377,20 @@ public class BookingService {
     // ====== Availability Calendar Helpers ======
 
     private void blockAvailabilityCalendar(Booking booking) {
-        // BUG-06 FIX: Check if record already exists for this date before inserting.
-        // This prevents duplicate records on retry or re-confirmation calls.
         LocalDate start = booking.getStartDate();
         LocalDate end = booking.getEndDate();
         for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
             final LocalDate currentDate = date;
-            boolean alreadyBlocked = vehicleAvailabilityRepository
-                    .findByVehicleIdAndDateBetween(booking.getVehicle().getId(), currentDate, currentDate)
-                    .stream()
-                    .anyMatch(slot -> booking.getId().equals(slot.getBookingId()));
-            if (!alreadyBlocked) {
+            List<VehicleAvailability> existing = vehicleAvailabilityRepository
+                    .findByVehicleIdAndDateBetween(booking.getVehicle().getId(), currentDate, currentDate);
+            if (!existing.isEmpty()) {
+                VehicleAvailability availability = existing.get(0);
+                availability.setIsAvailable(false);
+                availability.setBookingId(booking.getId());
+                availability.setLockedUntil(null);
+                availability.setLockedBy(null);
+                vehicleAvailabilityRepository.save(availability);
+            } else {
                 VehicleAvailability availability = VehicleAvailability.builder()
                         .vehicle(booking.getVehicle())
                         .date(currentDate)
@@ -375,6 +409,24 @@ public class BookingService {
     @Transactional
     public void blockAvailabilityCalendarPublic(Booking booking) {
         blockAvailabilityCalendar(booking);
+        broadcastLifecycleEvent(booking, "PAYMENT_COMPLETED");
+    }
+
+    public void broadcastLifecycleEvent(Booking booking, String eventName) {
+        try {
+            java.util.Map<String, Object> payload = new java.util.HashMap<>();
+            payload.put("bookingId", booking.getId());
+            payload.put("event", eventName);
+            payload.put("status", booking.getStatus().name());
+            payload.put("booking", toResponse(booking));
+            payload.put("timestamp", java.time.LocalDateTime.now().toString());
+
+            String destination = "/topic/tracking/" + booking.getId();
+            messagingTemplate.convertAndSend(destination, payload);
+            log.info("Broadcasted lifecycle event {} to {}", eventName, destination);
+        } catch (Exception e) {
+            log.error("Failed to broadcast lifecycle event {}: {}", eventName, e.getMessage());
+        }
     }
 
     private void freeAvailabilityCalendar(Booking booking) {
@@ -435,7 +487,9 @@ public class BookingService {
             vi.setBrand(v.getBrand());
             vi.setThumbnailUrl(v.getThumbnailUrl());
             vi.setCity(v.getCity());
-            vi.setCategory(v.getCategory().name().toLowerCase());
+            if (v.getCategory() != null) {
+                vi.setCategory(v.getCategory().name().toLowerCase());
+            }
             r.setVehicle(vi);
         }
 

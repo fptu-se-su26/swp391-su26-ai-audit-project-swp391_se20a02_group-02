@@ -1,68 +1,15 @@
-import React, { useEffect, useRef, useMemo } from 'react';
+import React, { useEffect, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { Link } from 'react-router-dom';
-import { Star } from 'lucide-react';
 import { useUIStore } from '@/store';
 import { formatCurrency } from '@/utils';
 import type { Vehicle } from '@/types';
+import { getCoordinates } from './VehicleMap';
 
-// Load Goong Maptiles key from environment variables
 const GOONG_MAPTILES_KEY = (import.meta as any).env.VITE_GOONG_MAPTILES_KEY || 'mock_goong_key';
 const MAP_STYLE_URL = `https://tiles.goong.io/assets/goong_map_web.json?api_key=${GOONG_MAPTILES_KEY}`;
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=800';
 
-// Helper to resolve coordinates
-export const getCoordinates = (v: Vehicle, index: number): [number, number] => {
-  let lat: number | undefined;
-  let lng: number | undefined;
-
-  const rawVehicle = v as unknown as Record<string, unknown>;
-  if (typeof rawVehicle.latitude === 'number' && typeof rawVehicle.longitude === 'number') {
-    lat = rawVehicle.latitude;
-    lng = rawVehicle.longitude;
-  }
-
-  if ((lat === undefined || lng === undefined || lat === 0 || lng === 0) && v.location) {
-    const rawLoc = v.location as unknown as Record<string, unknown>;
-    if (typeof rawLoc.latitude === 'number' && typeof rawLoc.longitude === 'number') {
-      lat = rawLoc.latitude;
-      lng = rawLoc.longitude;
-    }
-  }
-
-  if ((lat === undefined || lng === undefined || lat === 0 || lng === 0) && v.location) {
-    if (typeof v.location.lat === 'number' && typeof v.location.lng === 'number') {
-      lat = v.location.lat;
-      lng = v.location.lng;
-    }
-  }
-
-  // Fallbacks scattered deterministically
-  if (lat === undefined || lng === undefined || lat === 0 || lng === 0) {
-    const city = (v.location?.city || rawVehicle.city as string || 'Ho Chi Minh').toLowerCase();
-    let base: [number, number] = [10.762, 106.660];
-    
-    if (city.includes('hà nội') || city.includes('ha noi')) {
-      base = [21.0285, 105.8542];
-    } else if (city.includes('đà nẵng') || city.includes('da nang')) {
-      base = [16.0544, 108.2022];
-    } else if (city.includes('nha trang')) {
-      base = [12.2451, 109.1943];
-    } else if (city.includes('đà lạt') || city.includes('da lat')) {
-      base = [11.9404, 108.4583];
-    }
-    
-    const angle = index * 137.5 * (Math.PI / 180); 
-    const radius = 0.008 + (index % 5) * 0.003;
-    lat = base[0] + Math.sin(angle) * radius;
-    lng = base[1] + Math.cos(angle) * radius;
-  }
-
-  return [lat, lng];
-};
-
-// Polyline Decoder
 function decodePolyline(encoded: string): [number, number][] {
   const points: [number, number][] = [];
   let index = 0, len = encoded.length;
@@ -93,7 +40,7 @@ function decodePolyline(encoded: string): [number, number][] {
   return points;
 }
 
-interface VehicleMapProps {
+export interface LuxeWayMapProps {
   vehicles: Vehicle[];
   selectedVehicleId?: string;
   hoveredVehicleId?: string;
@@ -102,9 +49,10 @@ interface VehicleMapProps {
   routePolyline?: string;
   pickupCoords?: [number, number];
   destCoords?: [number, number];
+  interactive?: boolean;
 }
 
-export const VehicleMapImpl: React.FC<VehicleMapProps> = ({
+export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
   vehicles,
   selectedVehicleId,
   hoveredVehicleId,
@@ -112,26 +60,28 @@ export const VehicleMapImpl: React.FC<VehicleMapProps> = ({
   height = '100%',
   routePolyline,
   pickupCoords,
-  destCoords
+  destCoords,
+  interactive = true
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<Map<string, maplibregl.Marker>>(new Map());
   const routeMarkersRef = useRef<maplibregl.Marker[]>([]);
   const activePopupRef = useRef<maplibregl.Popup | null>(null);
+  const { theme } = useUIStore();
+  const isDark = theme === 'dark';
 
   // 1. Initialize Map
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
-    // Use Ho Chi Minh default center
-    const defaultCenter: [number, number] = [106.660, 10.762]; // [lng, lat] for MapLibre
+    const defaultCenter: [number, number] = [106.660, 10.762];
     let initialCenter = defaultCenter;
     let initialZoom = 12;
 
     if (vehicles.length > 0) {
       const coords = getCoordinates(vehicles[0], 0);
-      initialCenter = [coords[1], coords[0]]; // [lng, lat]
+      initialCenter = [coords[1], coords[0]];
       initialZoom = vehicles.length === 1 ? 15 : 12;
     }
 
@@ -141,18 +91,88 @@ export const VehicleMapImpl: React.FC<VehicleMapProps> = ({
       center: initialCenter,
       zoom: initialZoom,
       attributionControl: false,
+      interactive
     });
 
     map.addControl(new maplibregl.NavigationControl({ showCompass: true }), 'top-right');
+    map.addControl(new maplibregl.FullscreenControl(), 'top-right');
+    map.addControl(new maplibregl.GeolocateControl({
+      positionOptions: { enableHighAccuracy: true },
+      trackUserLocation: true
+    }), 'top-right');
+
     mapRef.current = map;
+
+    // Load 3D buildings layer
+    map.on('load', () => {
+      try {
+        const layers = map.getStyle().layers;
+        let labelLayerId;
+        for (let i = 0; i < layers.length; i++) {
+          if (layers[i].type === 'symbol' && layers[i].layout && (layers[i].layout as any)['text-field']) {
+            labelLayerId = layers[i].id;
+            break;
+          }
+        }
+
+        map.addLayer(
+          {
+            id: '3d-buildings',
+            source: 'composite',
+            'source-layer': 'building',
+            filter: ['==', 'extrude', 'true'],
+            type: 'fill-extrusion',
+            minzoom: 15,
+            paint: {
+              'fill-extrusion-color': isDark ? '#1f2937' : '#e5e7eb',
+              'fill-extrusion-height': [
+                'interpolate',
+                ['linear'],
+                ['zoom'],
+                15,
+                0,
+                15.05,
+                ['get', 'height']
+              ],
+              'fill-extrusion-base': [
+                'interpolate',
+                ['linear'],
+                ['zoom'],
+                15,
+                0,
+                15.05,
+                ['get', 'min_height']
+              ],
+              'fill-extrusion-opacity': 0.6
+            }
+          },
+          labelLayerId
+        );
+      } catch (err) {
+        console.warn('Goong tiles 3D building source-layer failed or unsupported in this region', err);
+      }
+    });
 
     return () => {
       map.remove();
       mapRef.current = null;
     };
-  }, []);
+  }, [interactive]);
 
-  // 2. Sync Markers when vehicles list changes
+  // 2. Sync Paint properties on dark mode changes
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.isStyleLoaded()) return;
+    try {
+      if (map.getLayer('3d-buildings')) {
+        map.setPaintProperty('3d-buildings', 'fill-extrusion-color', isDark ? '#1f2937' : '#e5e7eb');
+      }
+    } catch (e) {
+      console.warn(e);
+    }
+  }, [isDark]);
+
+  // 3. Sync Markers
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -160,7 +180,6 @@ export const VehicleMapImpl: React.FC<VehicleMapProps> = ({
     const currentMarkers = markersRef.current;
     const newVehicleIds = new Set(vehicles.map(v => v.id));
 
-    // Remove obsolete markers
     currentMarkers.forEach((marker, id) => {
       if (!newVehicleIds.has(id)) {
         marker.remove();
@@ -168,102 +187,102 @@ export const VehicleMapImpl: React.FC<VehicleMapProps> = ({
       }
     });
 
-    // Add or update markers
     vehicles.forEach((v, index) => {
       const coords = getCoordinates(v, index);
       const isSelected = selectedVehicleId === v.id;
       const isHovered = hoveredVehicleId === v.id;
 
-      // Create Custom HTML Marker Element
       const markerEl = document.createElement('div');
-      markerEl.className = 'flex flex-col items-center select-none cursor-pointer group';
+      markerEl.className = 'flex flex-col items-center select-none cursor-pointer group relative';
       
       const isCar = String(v.vehicleType).toUpperCase() === 'CAR' || (v as any).vehicleType === 'car';
       const iconClass = isCar ? 'fa-car' : 'fa-motorcycle';
 
-      // Luxury Glass Element styling
       const bubbleEl = document.createElement('div');
       bubbleEl.className = `relative flex items-center justify-center w-11 h-11 rounded-full backdrop-blur-md transition-all duration-300 ease-out border shadow-lg`;
       
-      // Dynamic styles for active, hover or standard states
       if (isSelected) {
-        bubbleEl.className += ' bg-blue-600 border-blue-400 text-white scale-110 shadow-[0_0_15px_rgba(59,130,246,0.8)] z-50';
+        bubbleEl.className += ' bg-amber-500 border-amber-300 text-white scale-110 shadow-[0_0_15px_rgba(245,158,11,0.9)] z-50';
       } else if (isHovered) {
-        bubbleEl.className += ' bg-slate-800/90 border-blue-400 text-blue-400 scale-105 shadow-[0_0_8px_rgba(59,130,246,0.4)] z-40';
+        bubbleEl.className += ' bg-slate-900 border-amber-400 text-amber-400 scale-105 shadow-[0_0_8px_rgba(245,158,11,0.5)] z-40';
       } else {
-        bubbleEl.className += ' bg-slate-900/75 border-white/20 text-white hover:scale-105 hover:border-white/40';
+        bubbleEl.className += ' bg-slate-950/80 border-white/20 text-white hover:scale-105 hover:border-amber-500/50';
       }
 
-      // FontAwesome Icon
       bubbleEl.innerHTML = `<i class="fa-solid ${iconClass} text-base"></i>`;
 
-      // Pulse ring for detail page or selected vehicle
       if (isSelected || vehicles.length === 1) {
         const pulseRing = document.createElement('div');
-        pulseRing.className = 'absolute -inset-3.5 rounded-full border-2 border-blue-500 animate-ping opacity-50 pointer-events-none';
+        pulseRing.className = 'absolute -inset-3.5 rounded-full border-2 border-amber-500 animate-ping opacity-50 pointer-events-none';
         bubbleEl.appendChild(pulseRing);
       }
 
-      // Price Tag element
       const priceEl = document.createElement('div');
       priceEl.className = `mt-1.5 px-2.5 py-0.5 rounded-full font-extrabold text-[10px] tracking-tight shadow-md transition-colors duration-250 border ${
         isSelected 
-          ? 'bg-blue-600 border-blue-400 text-white' 
-          : 'bg-slate-950/85 border-slate-700/60 text-white'
+          ? 'bg-amber-500 border-amber-400 text-white font-black' 
+          : 'bg-slate-950/85 border-slate-700/60 text-white font-bold'
       }`;
       priceEl.innerText = formatCurrency(v.pricePerDay);
 
       markerEl.appendChild(bubbleEl);
       markerEl.appendChild(priceEl);
 
-      // Add Click Listener
-      markerEl.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (onVehicleClick) {
-          onVehicleClick(v);
-        }
-        
-        // Show detailed Popup
+      const setupPopup = () => {
         if (activePopupRef.current) {
           activePopupRef.current.remove();
         }
 
         const popupContent = document.createElement('div');
-        popupContent.className = 'flex gap-3 p-2.5 select-none items-center font-sans';
+        popupContent.className = 'flex gap-3 p-3 select-none items-center font-sans max-w-[280px] bg-slate-900 border border-slate-800 rounded-2xl text-white shadow-2xl';
+        
+        const distanceVal = (1.5 + (index % 4) * 0.9).toFixed(1);
+        const etaVal = (4 + (index % 4) * 3).toString();
+
         popupContent.innerHTML = `
           <img
             src="${v.images?.[0] || v.thumbnailUrl || FALLBACK_IMAGE}"
             alt="${v.name}"
-            class="w-16 h-14 object-cover rounded-lg bg-slate-100 flex-shrink-0"
+            class="w-16 h-16 object-cover rounded-xl border border-white/10 flex-shrink-0"
           />
-          <div class="flex-1 min-w-0 pr-1 text-slate-800 dark:text-slate-100">
-            <span class="text-[9px] font-bold text-blue-500 uppercase tracking-widest">${v.brand}</span>
-            <h4 class="font-extrabold text-xs leading-tight truncate mt-0.5 text-black" title="${v.name}">${v.name}</h4>
-            <div class="flex items-center gap-1 mt-1 text-xs">
+          <div class="flex-1 min-w-0 pr-0.5">
+            <span class="text-[8px] font-black text-amber-500 uppercase tracking-widest leading-none">${v.brand || 'Luxury'}</span>
+            <h4 class="font-extrabold text-xs text-white leading-tight truncate mt-0.5" title="${v.name}">${v.name}</h4>
+            <div class="flex items-center gap-1 mt-0.5 text-xs">
               <i class="fa-solid fa-star text-amber-500 text-[10px]"></i>
-              <span class="font-bold text-[10px] text-slate-800">${v.rating ? v.rating.toFixed(1) : '5.0'}</span>
-              <span class="text-slate-400 text-[9px]">(${v.totalReviews || 0})</span>
+              <span class="font-black text-[10px] text-white">${v.rating ? v.rating.toFixed(1) : '5.0'}</span>
+              <span class="text-slate-450 text-[9px]">(${v.totalReviews || 0})</span>
             </div>
-            <div class="mt-2 flex items-center justify-between">
-              <span class="text-[10px] font-extrabold text-slate-900">${formatCurrency(v.pricePerDay)}/day</span>
-              <a href="/vehicles/${v.id}" class="text-[9px] font-extrabold bg-blue-600 text-white px-2 py-0.5 rounded hover:bg-blue-700 transition-colors shadow-sm">Details</a>
+            <div class="flex items-center gap-2 mt-1 text-[9px] font-bold text-slate-400">
+              <span><i class="fa-solid fa-location-arrow text-[8px] text-amber-500 mr-0.5"></i>${distanceVal} km</span>
+              <span><i class="fa-solid fa-clock text-[8px] text-amber-500 mr-0.5"></i>${etaVal} mins</span>
+            </div>
+            <div class="mt-2.5 flex items-center justify-between border-t border-slate-800/80 pt-2">
+              <span class="text-[10px] font-black text-amber-500">${formatCurrency(v.pricePerDay)}/day</span>
+              <a href="/marketplace/vehicles/${v.id}" class="text-[9px] font-black bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 rounded-lg transition-all shadow-md shadow-amber-500/10">Details</a>
             </div>
           </div>
         `;
 
-        const popup = new maplibregl.Popup({ closeButton: true, maxWidth: '280px', offset: 25 })
+        const popup = new maplibregl.Popup({ closeButton: true, maxWidth: '300px', offset: 25 })
           .setLngLat([coords[1], coords[0]])
           .setDOMContent(popupContent)
           .addTo(map);
 
         activePopupRef.current = popup;
+      };
+
+      markerEl.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (onVehicleClick) {
+          onVehicleClick(v);
+        }
+        setupPopup();
       });
 
-      // Update or create maplibre marker
       let existingMarker = currentMarkers.get(v.id);
       if (existingMarker) {
         existingMarker.setLngLat([coords[1], coords[0]]);
-        // Replace inner element contents to update selected/hover states
         const oldEl = existingMarker.getElement();
         oldEl.innerHTML = '';
         oldEl.appendChild(bubbleEl);
@@ -275,21 +294,19 @@ export const VehicleMapImpl: React.FC<VehicleMapProps> = ({
         currentMarkers.set(v.id, marker);
       }
     });
+  }, [vehicles, selectedVehicleId, hoveredVehicleId, isDark]);
 
-  }, [vehicles, selectedVehicleId, hoveredVehicleId, onVehicleClick]);
-
-  // 3. Zoom / Pan Camera to fit bounds or fly to selection
+  // 4. Zoom / Pan Fly camera
   useEffect(() => {
     const map = mapRef.current;
     if (!map || vehicles.length === 0) return;
 
-    // Trigger map redraw to fix container sizing bugs
     map.resize();
 
     if (selectedVehicleId) {
-      const selectedVehicle = vehicles.find(v => v.id === selectedVehicleId);
-      if (selectedVehicle) {
-        const coords = getCoordinates(selectedVehicle, vehicles.indexOf(selectedVehicle));
+      const selected = vehicles.find(v => v.id === selectedVehicleId);
+      if (selected) {
+        const coords = getCoordinates(selected, vehicles.indexOf(selected));
         map.easeTo({
           center: [coords[1], coords[0]],
           zoom: 15.5,
@@ -317,13 +334,13 @@ export const VehicleMapImpl: React.FC<VehicleMapProps> = ({
         const coords = getCoordinates(v, index);
         bounds.extend([coords[1], coords[0]]);
       });
-      map.fitBounds(bounds, { padding: 50, maxZoom: 15, duration: 1200 });
+      map.fitBounds(bounds, { padding: 60, maxZoom: 15, duration: 1200 });
     } catch (e) {
-      console.error('Failed to fit bounds', e);
+      console.error(e);
     }
   }, [vehicles, selectedVehicleId]);
 
-  // 4. Sync Polyline Route
+  // 5. Sync Route Polyline
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -334,8 +351,8 @@ export const VehicleMapImpl: React.FC<VehicleMapProps> = ({
       if (map.getSource('route')) map.removeSource('route');
 
       if (routePolyline) {
-        const decodedCoords = decodePolyline(routePolyline);
-        const geojsonCoordinates = decodedCoords.map(c => [c[1], c[0]]);
+        const decoded = decodePolyline(routePolyline);
+        const geojsonCoordinates = decoded.map(c => [c[1], c[0]]);
 
         map.addSource('route', {
           type: 'geojson',
@@ -354,7 +371,7 @@ export const VehicleMapImpl: React.FC<VehicleMapProps> = ({
           type: 'line',
           source: 'route',
           layout: { 'line-join': 'round', 'line-cap': 'round' },
-          paint: { 'line-color': '#3b82f6', 'line-width': 8, 'line-opacity': 0.3 }
+          paint: { 'line-color': '#f59e0b', 'line-width': 8, 'line-opacity': 0.25 }
         });
 
         map.addLayer({
@@ -362,15 +379,15 @@ export const VehicleMapImpl: React.FC<VehicleMapProps> = ({
           type: 'line',
           source: 'route',
           layout: { 'line-join': 'round', 'line-cap': 'round' },
-          paint: { 'line-color': '#2563eb', 'line-width': 4 }
+          paint: { 'line-color': '#d97706', 'line-width': 4 }
         });
 
         try {
           const bounds = new maplibregl.LngLatBounds();
           geojsonCoordinates.forEach(coord => bounds.extend([coord[0], coord[1]]));
-          map.fitBounds(bounds, { padding: 50, maxZoom: 15, duration: 1000 });
+          map.fitBounds(bounds, { padding: 60, maxZoom: 15, duration: 1000 });
         } catch (e) {
-          console.error('Failed to fit route bounds', e);
+          console.error(e);
         }
       }
     };
@@ -386,7 +403,7 @@ export const VehicleMapImpl: React.FC<VehicleMapProps> = ({
     };
   }, [routePolyline]);
 
-  // 5. Sync Route Markers
+  // 6. Sync Pickup & Destination Pins
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -395,32 +412,31 @@ export const VehicleMapImpl: React.FC<VehicleMapProps> = ({
     routeMarkersRef.current = [];
 
     if (pickupCoords && destCoords) {
-      const el1 = document.createElement('div');
-      el1.className = 'w-8 h-8 rounded-full bg-amber-500 border-2 border-white flex items-center justify-center shadow-lg';
-      el1.innerHTML = '<i class="fa-solid fa-map-pin text-white text-xs"></i>';
+      const pinPickup = document.createElement('div');
+      pinPickup.className = 'w-8 h-8 rounded-full bg-amber-500 border-2 border-white flex items-center justify-center shadow-lg';
+      pinPickup.innerHTML = '<i class="fa-solid fa-map-pin text-white text-xs"></i>';
       
-      const el2 = document.createElement('div');
-      el2.className = 'w-8 h-8 rounded-full bg-blue-500 border-2 border-white flex items-center justify-center shadow-lg';
-      el2.innerHTML = '<i class="fa-solid fa-location-dot text-white text-xs"></i>';
+      const pinDest = document.createElement('div');
+      pinDest.className = 'w-8 h-8 rounded-full bg-blue-500 border-2 border-white flex items-center justify-center shadow-lg';
+      pinDest.innerHTML = '<i class="fa-solid fa-location-dot text-white text-xs"></i>';
 
-      const marker1 = new maplibregl.Marker({ element: el1 })
+      const m1 = new maplibregl.Marker({ element: pinPickup })
         .setLngLat([pickupCoords[1], pickupCoords[0]])
         .addTo(map);
 
-      const marker2 = new maplibregl.Marker({ element: el2 })
+      const m2 = new maplibregl.Marker({ element: pinDest })
         .setLngLat([destCoords[1], destCoords[0]])
         .addTo(map);
 
-      routeMarkersRef.current = [marker1, marker2];
+      routeMarkersRef.current = [m1, m2];
     }
   }, [pickupCoords, destCoords]);
 
   return (
-    <div style={{ height }} className="w-full rounded-[2rem] overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl relative z-10">
+    <div style={{ height }} className="w-full rounded-[2.5rem] overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl relative z-10">
       <div ref={mapContainerRef} className="w-full h-full" />
     </div>
   );
 };
 
-export const VehicleMap = React.memo(VehicleMapImpl);
-export default VehicleMap;
+export default LuxeWayMap;

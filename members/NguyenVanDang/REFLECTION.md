@@ -795,6 +795,40 @@ Trong giai đoạn này (Phase 5.3), nhóm đã thực hiện đồng bộ cấu
 
 ---
 
+## Reflection — Phase 5.4: LuxeWay Goong Map Production Upgrade & Real-Time Lifecycle System (2026-06-16)
+
+### Tóm tắt
+
+Trong giai đoạn này (Phase 5.4), mình đã cùng Antigravity hoàn thành nâng cấp sản phẩm lên cấp độ production thực tế. Chúng tôi đã chuyển đổi hoàn toàn sang bản đồ Goong Map và MapLibre GL JS, khắc phục triệt để lỗi mapping tọa độ ở Backend và tham số URL ở Frontend. Đồng thời, nhóm đã triển khai thành công cơ chế khóa ngày đặt tránh trùng lặp lịch, hệ thống theo dõi trực tiếp trạng thái qua WebSocket STOMP và tích hợp trợ lý AI Support Chatbot dựa trên Gemini API lưu trữ lịch sử dưới cơ sở dữ liệu.
+
+### Những điều học được
+
+```text
+1. Phân tách và cấu hình API keys trong Goong Maps:
+   Goong phân tách rõ ràng MapTiles Key (để tải stylesheet/vector tiles từ tiles.goong.io) và REST API Key (để sử dụng Geocoding, Direction và Matrix APIs từ rsapi.goong.io). Cố tình trộn lẫn hoặc dùng sai tham số (dùng key thay vì api_key trên styles endpoint) sẽ dẫn tới lỗi 403 Forbidden.
+   
+2. Gắn kết DTO mapping ở tầng Java Service:
+   Cơ sở dữ liệu SQL Server có thể đã lưu trữ đúng tọa độ xe nhưng nếu tầng DTO mapping (VehicleService) bỏ quên việc chuyển đổi trường latitude và longitude sang VehicleResponse thì dữ liệu trả về client sẽ bị null, khiến bản đồ không thể hiển thị marker. Bài học: luôn kiểm tra DTO mapping kỹ lưỡng trước khi phát triển UI.
+
+3. Đồng bộ trạng thái real-time qua WebSocket STOMP:
+   Việc thiết lập các kênh sub/pub (/topic/tracking/{bookingId}) giúp truyền tin tức thời khi trạng thái booking thay đổi từ phía chủ xe sang người thuê. Sự phân tách rạch ròi giữa telemetry GPS (tần suất cập nhật nhanh) và lifecycle status (tần suất cập nhật chậm) giúp giảm tải băng thông WebSocket đáng kể.
+
+4. Quản lý trạng thái và lưu trữ lịch sử AI Chatbot:
+   Thay vì chỉ lưu trên bộ nhớ tạm thời hoặc localStorage, thiết kế các bảng chat_sessions và chat_messages giúp hệ thống quản lý hội thoại đa phiên và phân tích hành vi khách hàng tốt hơn. Đặc biệt, việc áp dụng các prompt cứng để loại bỏ các emoji không phù hợp giúp giữ được tính lịch thiệp, cao cấp của một nền tảng thuê xe luxury.
+```
+
+### Tự đánh giá Phase 5.4
+
+| Tiêu chí | Điểm | Ghi chú |
+|---|:---:|---|
+| Hiểu vấn đề trước khi fix | 5 | Xác định đúng nguyên nhân lỗi 403 của Goong Map và lỗi DTO coordinate mapping |
+| Fix đúng nguyên nhân gốc | 5 | Giải quyết triệt để lỗi cấu hình tham số Goong URL và Java entity mapping |
+| Kiểm chứng sau fix | 5 | Chạy full stack app, xác thực map hiển thị pin xe, WebSocket hoạt động và Chatbot trả lời chuẩn |
+| Ghi lại đầy đủ | 5 | Cập nhật đầy đủ cả 4 files trong thư mục members |
+| Sử dụng AI có trách nhiệm | 5 | Làm chủ quy trình build, tự động hóa xử lý và testing manual các luồng phức tạp |
+
+---
+
 ## 17. Cam kết Reflection
 
 Em/nhóm cam kết rằng nội dung reflection này phản ánh trung thực quá trình sử dụng AI và quá trình học tập trong bài tập/project.
@@ -808,5 +842,5 @@ Sinh viên/nhóm hiểu rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-06-15 |
+| Nguyễn Văn Dạng - DE190324 | 2026-06-16 |
 

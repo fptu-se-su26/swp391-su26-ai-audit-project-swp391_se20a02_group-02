@@ -135,7 +135,7 @@ tasks.register('runSecurityTests') {
                 println "FAILED: ${failure.testIdentifier.displayName}"
                 failure.exception.printStackTrace()
             }
-            throw new GradleException("Security integration tests failed!")
+            throw new org.gradle.api.GradleException("Security integration tests failed!")
         }
     }
 }

@@ -23,4 +23,16 @@ public interface VehicleAvailabilityRepository extends JpaRepository<VehicleAvai
     );
 
     List<VehicleAvailability> findByVehicleIdAndDateBetween(String vehicleId, LocalDate start, LocalDate end);
+
+    @Query("SELECT va FROM VehicleAvailability va WHERE va.vehicle.id = :vehicleId " +
+           "AND va.date BETWEEN :start AND :end " +
+           "AND va.isAvailable = false " +
+           "AND (va.lockedUntil IS NULL OR (va.lockedUntil > :now AND va.lockedBy <> :userId))")
+    List<VehicleAvailability> findConflictingLocks(
+        @Param("vehicleId") String vehicleId,
+        @Param("start") LocalDate start,
+        @Param("end") LocalDate end,
+        @Param("now") java.time.LocalDateTime now,
+        @Param("userId") String userId
+    );
 }

@@ -133,18 +133,21 @@ public class CarBookingService {
         }
     }
 
+    @Transactional(readOnly = true)
     public List<CarBookingDTOs.CarBookingResponse> getBookingsByRenter(String renterId) {
         return carBookingRepository.findByRenterId(renterId).stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<CarBookingDTOs.CarBookingResponse> getBookingsByOwner(String ownerId) {
         return carBookingRepository.findByOwnerId(ownerId).stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public CarBookingDTOs.CarBookingResponse getBookingById(String id) {
         CarBooking booking = carBookingRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Car booking not found with ID: " + id));
@@ -192,9 +195,13 @@ public class CarBookingService {
             CarBookingDTOs.CarBookingResponse.CarInfo ci = new CarBookingDTOs.CarBookingResponse.CarInfo();
             ci.setId(b.getCar().getId());
             ci.setName(b.getCar().getName());
-            ci.setBrandName(b.getCar().getModel().getBrand().getName());
-            ci.setModelName(b.getCar().getModel().getName());
-            ci.setCategory(b.getCar().getModel().getCategory());
+            if (b.getCar().getModel() != null) {
+                ci.setModelName(b.getCar().getModel().getName());
+                ci.setCategory(b.getCar().getModel().getCategory());
+                if (b.getCar().getModel().getBrand() != null) {
+                    ci.setBrandName(b.getCar().getModel().getBrand().getName());
+                }
+            }
             ci.setLicensePlate(b.getCar().getLicensePlate());
             if (b.getCar().getImages() != null && !b.getCar().getImages().isEmpty()) {
                 ci.setThumbnailUrl(b.getCar().getImages().iterator().next().getUrl());

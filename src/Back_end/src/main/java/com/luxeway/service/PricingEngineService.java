@@ -38,7 +38,8 @@ public class PricingEngineService {
 
     public PricingBreakdown calculatePrice(String vehicleId, String vehicleType, String userId, 
                                            LocalDate startDate, LocalDate endDate, 
-                                           List<String> addonIds, String insuranceId) {
+                                           List<String> addonIds, String insuranceId,
+                                           boolean includeDelivery) {
         
         log.info("Calculating dynamic price for vehicleId: {}, type: {}, from {} to {}", 
                  vehicleId, vehicleType, startDate, endDate);
@@ -153,8 +154,17 @@ public class PricingEngineService {
             }
         }
 
+        // 5.5 Calculate Delivery Fee
+        BigDecimal deliveryFee = BigDecimal.ZERO;
+        if (includeDelivery) {
+            Vehicle vehicle = vehicleRepository.findById(vehicleId).orElse(null);
+            if (vehicle != null && vehicle.getDeliveryFee() != null) {
+                deliveryFee = vehicle.getDeliveryFee();
+            }
+        }
+
         // 6. Fees & Taxes (System Settings fallback to business default)
-        BigDecimal subtotal = baseTotalPrice.add(addonsTotal).add(insuranceTotal);
+        BigDecimal subtotal = baseTotalPrice.add(addonsTotal).add(insuranceTotal).add(deliveryFee);
         BigDecimal serviceFee = subtotal.multiply(new BigDecimal("0.12")).setScale(0, RoundingMode.HALF_UP); // 12%
         BigDecimal taxes = subtotal.add(serviceFee).multiply(new BigDecimal("0.08")).setScale(0, RoundingMode.HALF_UP); // 8%
         BigDecimal totalBeforeDiscount = subtotal.add(serviceFee).add(taxes);
@@ -196,6 +206,7 @@ public class PricingEngineService {
                 .loyaltyTier(loyaltyTier)
                 .finalTotal(finalTotal)
                 .deposit(deposit)
+                .deliveryFee(deliveryFee)
                 .build();
     }
 

@@ -350,4 +350,45 @@ public class VehicleController {
             return ResponseEntity.status(500).body(errorResponse);
         }
     }
+
+    @PostMapping("/{id}/lock")
+    public ResponseEntity<Map<String, Object>> lockVehicle(
+            @PathVariable String id,
+            @AuthenticationPrincipal com.luxeway.entity.User user,
+            @RequestBody Map<String, String> body) {
+        
+        if (user == null) {
+            return ResponseEntity.status(401).body(Map.of("error", "Authentication required to lock dates"));
+        }
+        
+        String startStr = body.get("startDate");
+        String endStr = body.get("endDate");
+        if (startStr == null || endStr == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "startDate and endDate are required"));
+        }
+        
+        java.time.LocalDate startDate = java.time.LocalDate.parse(startStr);
+        java.time.LocalDate endDate = java.time.LocalDate.parse(endStr);
+        
+        try {
+            boolean success = vehicleService.lockAvailability(id, user.getId(), startDate, endDate);
+            if (success) {
+                return ResponseEntity.ok(Map.of("success", true, "message", "Vehicle availability temporarily locked for 10 minutes"));
+            } else {
+                return ResponseEntity.badRequest().body(Map.of("error", "Vehicle is not available for the selected dates"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/{id}/availability")
+    public ResponseEntity<List<Map<String, Object>>> getAvailability(@PathVariable String id) {
+        try {
+            List<Map<String, Object>> availability = vehicleService.getAvailabilityList(id);
+            return ResponseEntity.ok(availability);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(null);
+        }
+    }
 }

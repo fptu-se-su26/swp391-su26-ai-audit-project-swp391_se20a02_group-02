@@ -718,6 +718,20 @@ Audit LuxeWay Car Rental Platform:
 
 ---
 
+## Log #18
+
+- **Date:** 2026-06-16
+- **Author:** NguyenVanDang (DE190324)
+- **AI Tool:** Antigravity
+- **Purpose:** Nâng cấp Goong Map, tích hợp Temporary Date Locking, WebSocket STOMP Live tracking, và AI Support Chatbot (Gemini).
+- **Prompt Reference:** PROMPTS.md#prompt-19
+- **AI Output Summary:** Gợi ý sửa lỗi mapping coordinate properties (`latitude`, `longitude`) trong `VehicleService.java` và sửa query parameter `api_key` cho Goong style URL; cung cấp khung code cho location tracking, routing và Matrix/Direction API qua MapLibre GL JS; thiết kế cấu trúc database cho `chat_sessions` & `chat_messages` và code Controller / Service kết nối Gemini API không dùng emoji.
+- **Human Decision:** Tự cấu hình logic availability calendar khóa 10 phút, kiểm thử kết nối STOMP WebSocket để đồng bộ trạng thái booking trực tiếp giữa Customer và Owner tracking panels; tùy chỉnh giao diện chatbot thủy tinh mờ (luxury glassmorphism) ăn khớp với design system.
+- **Applied To:** `src/Back_end/src/main/java/com/luxeway/service/VehicleService.java`, `src/Front_end/src/components/map/LuxeWayMap.tsx`, `src/Front_end/src/components/chat/SupportChatbot.tsx`, `src/Front_end/src/pages/booking/CustomerBookingPage.tsx`, `src/Front_end/src/pages/booking/OwnerBookingTrackingPage.tsx`, `src/Back_end/src/main/java/com/luxeway/controller/ChatController.java`.
+- **Verification:** Khởi động hệ thống hoàn chỉnh bằng `run.ps1` (backend và frontend), test manual: bản đồ hiển thị mượt mà không có lỗi 403, coordinates hiển thị chính xác từ DB SQL Server, chatbot tư vấn phản hồi cực tốt và lưu database thành công.
+
+---
+
 ## 10. Cam kết học thuật
 
 Sinh viên/nhóm cam kết rằng:
@@ -730,5 +744,5 @@ Sinh viên/nhóm cam kết rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-06-15 |
+| Nguyễn Văn Dạng - DE190324 | 2026-06-16 |
 

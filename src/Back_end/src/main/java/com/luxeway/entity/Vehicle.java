@@ -138,6 +138,18 @@ public class Vehicle {
     
     @Column(precision = 11, scale = 8)
     private BigDecimal longitude;
+
+    @Column(name = "current_lat", precision = 10, scale = 8)
+    private BigDecimal currentLat;
+    
+    @Column(name = "current_lng", precision = 11, scale = 8)
+    private BigDecimal currentLng;
+    
+    @Column(name = "last_location_update")
+    private LocalDateTime lastLocationUpdate;
+    
+    @Column(name = "location_status", length = 50)
+    private String locationStatus;
     
     // Specs fields
     private Integer horsepower;

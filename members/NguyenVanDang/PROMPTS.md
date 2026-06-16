@@ -1465,6 +1465,78 @@ AI cung cấp các blocks dependencies cần thêm vào build.gradle, chỉ ra c
 
 ---
 
+### Prompt số 19 — Phase 5.4: LuxeWay Goong Map Production Upgrade & Real-Time Lifecycle System
+
+| Nội dung | Thông tin |
+|---|---|
+| Ngày sử dụng | 2026-06-16 |
+| Công cụ AI | Antigravity |
+| Mục đích | Nâng cấp bản đồ Goong Map, tích hợp Temporary Date Locking, WebSocket STOMP Live tracking, và AI Support Chatbot (Gemini). |
+| Phần việc liên quan | Fullstack / Map & Tracking & AI Chatbot |
+| Mức độ sử dụng | Hỏi sinh code & debug |
+
+#### 5.1. Prompt nguyên văn
+
+```text
+Help me upgrade the LuxeWay vehicle details, booking, tracking and map systems to production-level:
+1. Map: Implement a MapLibre GL JS integration using Goong MapTiles with dark luxury theme, smooth zoom, 3D buildings, and custom HTML glass-style markers for cars and motorbikes with glow effects.
+2. Coordinates mapping fix: In VehicleService.java, map the latitude and longitude columns from SQL Server to the VehicleResponse DTO.
+3. Fix map rendering error: MapLibre requests are getting 403 Forbidden on stylesheet styles. The Goong map tiles style URL is style.json?key=VITE_GOONG_MAPTILES_KEY, does it require api_key query param?
+4. Real-time availability booking card: Fetch calendar availability GET /api/vehicles/{id}/availability. Implement date selection locking (POST /api/vehicles/{id}/lock for 10 minutes) and dynamic pricing calculations.
+5. Live location tracking: Integrate WebSocket STOMP for booking events (BOOKING_CREATED, PAYMENT_COMPLETED, VEHICLE_PICKING_UP, TRIP_STARTED, TRIP_COMPLETED) and location coordinates telemetry.
+6. AI Chatbot: Add a bottom-right floating support chatbot button. Use Gemini API backend POST /api/chat. Store chat sessions and messages in SQL Server database. The chatbot response must be helpful, professional and strictly emoji-free.
+```
+
+#### 5.2. Bối cảnh khi viết prompt
+
+```text
+Cần nâng cấp toàn bộ hệ thống bản đồ, theo dõi trực tiếp trạng thái đơn đặt xe qua WebSockets STOMP và tích hợp trợ lý chatbot Gemini ở Backend lưu database thay vì mock data, đồng thời fix lỗi map tiles 403 authorization.
+```
+
+#### 5.3. Kết quả AI trả về
+
+```text
+AI đề xuất:
+- Thay đổi style query param trong 5 tệp tin Frontend từ `?key=` thành `?api_key=`.
+- Sửa mapping code trong VehicleService toResponse và update.
+- Cấu hình DDL sql và các Entity ChatSession, ChatMessage kèm ChatController và ChatBotService tích hợp Gemini API.
+- Cấu hình WebSocket config STOMP và UI components listener và animation marker trên bản đồ.
+```
+
+#### 5.4. Kết quả đã áp dụng vào bài
+
+```text
+Đã áp dụng toàn bộ logic sửa đổi. Bản đồ lên tiles sắc nét, chatbot trả lời chuẩn và lưu DB tốt, WebSockets đồng bộ booking status tức thì giữa Customer và Owner.
+```
+
+#### 5.5. Phần sinh viên/nhóm đã chỉnh sửa hoặc cải tiến
+
+```text
+- Tùy biến CSS glassmorphism cho chatbot bong bóng nổi và khung chat ăn khớp với design system.
+- Kiểm thử luồng GPS coordinates bằng cách tích hợp mô phỏng di chuyển mượt mà trên bản đồ.
+```
+
+#### 5.6. Đánh giá chất lượng prompt
+
+- [x] Prompt rõ ràng
+- [x] Prompt có đủ bối cảnh
+- [ ] Prompt còn thiếu thông tin
+- [x] Prompt tạo ra kết quả tốt
+- [ ] Prompt tạo ra kết quả chưa phù hợp
+- [ ] Cần hỏi lại AI nhiều lần
+- [x] Cần tự kiểm tra và chỉnh sửa nhiều
+- [ ] Kết quả AI có lỗi hoặc chưa chính xác
+
+#### 5.7. Minh chứng liên quan
+
+| Loại minh chứng | Nội dung |
+|---|---|
+| File liên quan | LuxeWayMap.tsx, CustomerBookingPage.tsx, OwnerBookingTrackingPage.tsx, VehicleService.java, ChatController.java, ChatBotService.java, SupportChatbot.tsx |
+| Kết quả chạy/test | Map tiles render successfully, STOMP broadcasts and coordinates mapping validated, Gemini chatbot works |
+| Link commit | [DE190324] feat: implement real Goong Map upgrade, temporary availability locking, live WebSocket tracking and AI support chatbot |
+
+---
+
 ## 11. Cam kết sử dụng prompt minh bạch
 
 Sinh viên/nhóm cam kết rằng:
@@ -1477,5 +1549,5 @@ Sinh viên/nhóm cam kết rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-06-15 |
+| Nguyễn Văn Dạng - DE190324 | 2026-06-16 |
 

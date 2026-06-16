@@ -89,12 +89,12 @@ const mapMotorbike = (v: any): Vehicle => {
     instantBook: v.instantBook !== undefined && v.instantBook !== null ? v.instantBook : false,
     deposit: v.deposit !== undefined && v.deposit !== null ? v.deposit : 0,
     engineCc: v.engineCc || null,
-    hasHelmet: v.hasHelmet || false,
-    hasPhoneHolder: v.hasPhoneHolder || false,
-    hasRaincoat: v.hasRaincoat || false,
-    hasTouringPackage: v.hasTouringPackage || false,
-    deliveryAvailable: false,
-    deliveryFee: 0,
+    hasHelmet: v.helmetIncluded || v.hasHelmet || false,
+    hasPhoneHolder: v.phoneHolder || v.hasPhoneHolder || false,
+    hasRaincoat: v.raincoatIncluded || v.hasRaincoat || false,
+    hasTouringPackage: v.luggageRack || v.hasTouringPackage || false,
+    deliveryAvailable: v.deliveryAvailable !== undefined ? v.deliveryAvailable : true,
+    deliveryFee: v.deliveryFee || 100000,
   };
 };
 

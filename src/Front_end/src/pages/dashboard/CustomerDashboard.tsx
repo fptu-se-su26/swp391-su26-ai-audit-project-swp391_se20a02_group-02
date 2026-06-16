@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Calendar, Heart, Bell, User, Shield, FileText,
   CreditCard, Settings, LogOut, ChevronRight, Car, Star, TrendingUp,
   Package, Clock, CheckCircle, AlertCircle, X, Menu, Eye, EyeOff, Users, Wallet,
-  Loader2, Globe, Gift, Building2, Trash2
+  Loader2, Globe, Gift, Building2, Trash2, Navigation
 } from 'lucide-react';
 
 import { useAuthStore, useUIStore } from '@/store';
@@ -626,7 +626,7 @@ export const MyBookingsPage: React.FC = () => {
                     to={`/vehicles/${booking.vehicleId}`}
                     className={cn(
                       "py-2.5 rounded-xl text-xs font-bold text-center transition-all duration-200 flex items-center justify-center",
-                      ((booking.status !== 'completed' && booking.status !== 'pending' && booking.status !== 'confirmed') || (booking.status === 'completed' && booking.reviewId))
+                      ((booking.status !== 'completed' && booking.status !== 'pending' && booking.status !== 'confirmed' && booking.status !== 'active') || (booking.status === 'completed' && booking.reviewId))
                         ? "col-span-2"
                         : ""
                     )}
@@ -646,6 +646,27 @@ export const MyBookingsPage: React.FC = () => {
                   >
                     {t.dashboard.viewVehicle}
                   </Link>
+
+                  {booking.status === 'active' && (
+                    <Link
+                      to={`/dashboard/bookings/${booking.id}/tracking`}
+                      className="py-2.5 rounded-xl text-xs font-bold text-center transition-all duration-200 flex items-center justify-center gap-1.5"
+                      style={{
+                        background: 'linear-gradient(135deg, #10B981, #059669)',
+                        color: '#fff',
+                        boxShadow: '0 4px 15px rgba(16,185,129,0.3)',
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.filter = 'brightness(1.1)';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.filter = 'none';
+                      }}
+                    >
+                      <Navigation className="w-3.5 h-3.5 transform rotate-45" />
+                      Track Delivery
+                    </Link>
+                  )}
 
                   {booking.status === 'completed' && !booking.reviewId && (
                     <button

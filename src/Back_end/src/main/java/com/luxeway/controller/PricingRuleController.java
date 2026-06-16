@@ -42,7 +42,8 @@ public class PricingRuleController {
                 request.getStartDate(),
                 request.getEndDate(),
                 request.getAddonIds(),
-                request.getInsuranceId()
+                request.getInsuranceId(),
+                request.isIncludeDelivery()
         );
         return ResponseEntity.ok(ApiResponse.success("Price calculated successfully", breakdown));
     }
@@ -78,5 +79,6 @@ public class PricingRuleController {
         private LocalDate endDate;
         private List<String> addonIds;
         private String insuranceId;
+        private boolean includeDelivery;
     }
 }

@@ -12,7 +12,7 @@ import type { Vehicle, Notification, Review } from '@/types';
 import { formatDate } from '@/utils';
 import { useT, translateNotification } from '@/i18n/translations';
 const FloatingAIConcierge = lazy(() => import('@/components/help/FloatingAIConcierge').then(m => ({ default: m.FloatingAIConcierge })));
-const ChatbotWidget = lazy(() => import('@/components/ui/ChatbotWidget').then(m => ({ default: m.ChatbotWidget })));
+const SupportChatbot = lazy(() => import('@/components/chat/SupportChatbot').then(m => ({ default: m.SupportChatbot })));
 
 // Layouts
 import MainLayout from '@/layouts/MainLayout';
@@ -65,6 +65,8 @@ const FleetAnalyticsPage = lazy(() => import('@/pages/dashboard/BusinessOwnerDas
 const CorporateReportsPage = lazy(() => import('@/pages/dashboard/BusinessOwnerDashboard').then(m => ({ default: m.CorporateReportsPage })));
 const MessengerPage = lazy(() => import('@/pages/messages/MessengerPage'));
 const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'));
+const CustomerBookingPage = lazy(() => import('@/pages/booking/CustomerBookingPage'));
+const OwnerBookingTrackingPage = lazy(() => import('@/pages/booking/OwnerBookingTrackingPage'));
 
 // Static & feature pages
 const AboutPage = lazy(() => import('@/pages/static/StaticPages').then(m => ({ default: m.AboutPage })));
@@ -583,6 +585,7 @@ const App: React.FC = () => {
             <Route path="dashboard" element={<ProtectedRoute requiredRole="customer"><CustomerDashboardLayout /></ProtectedRoute>}>
               <Route index element={<CustomerOverview />} />
               <Route path="bookings" element={<MyBookingsPage />} />
+              <Route path="bookings/:bookingId/tracking" element={<CustomerBookingPage />} />
               <Route path="profile" element={<ProfilePage />} />
               <Route path="wishlist" element={<WishlistPage />} />
               <Route path="notifications" element={<NotificationsPage />} />
@@ -605,6 +608,7 @@ const App: React.FC = () => {
               <Route path="analytics" element={<OwnerRevenuePage />} />
               <Route path="calendar" element={<OwnerCalendarPage />} />
               <Route path="bookings" element={<OwnerBookingsPage />} />
+              <Route path="bookings/:bookingId/tracking" element={<OwnerBookingTrackingPage />} />
               <Route path="revenue" element={<OwnerRevenuePage />} />
               <Route path="fleet" element={<FleetManagementPage />} />
               <Route path="employees" element={<EmployeeManagementPage />} />
@@ -648,7 +652,7 @@ const App: React.FC = () => {
         {/* LuxeWay AI Chatbot Widget (RAG + Gemini) */}
         <ConciergeErrorBoundary>
           <Suspense fallback={null}>
-            <ChatbotWidget />
+            <SupportChatbot />
           </Suspense>
         </ConciergeErrorBoundary>
       </Suspense>

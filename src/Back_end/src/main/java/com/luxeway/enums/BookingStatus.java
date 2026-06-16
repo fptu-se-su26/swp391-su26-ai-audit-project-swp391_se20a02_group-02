@@ -3,6 +3,8 @@ package com.luxeway.enums;
 public enum BookingStatus {
     PENDING("Pending Approval"),
     CONFIRMED("Confirmed"),
+    PICKING_UP("Picking Up"),
+    IN_PROGRESS("In Progress"),
     ACTIVE("Active Rental"),
     COMPLETED("Completed"),
     CANCELLED("Cancelled"),
