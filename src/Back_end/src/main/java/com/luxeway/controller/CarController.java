@@ -192,8 +192,12 @@ public class CarController {
                 return ResponseEntity.status(401).body(error);
             }
             CarBookingDTOs.CarBookingResponse booking = carBookingService.getBookingById(id);
-            if (!booking.getRenter().getId().equals(user.getId()) &&
-                !booking.getOwner().getId().equals(user.getId()) &&
+            
+            String renterId = booking.getRenter() != null ? booking.getRenter().getId() : "";
+            String ownerId = booking.getOwner() != null ? booking.getOwner().getId() : "";
+            
+            if (!renterId.equals(user.getId()) &&
+                !ownerId.equals(user.getId()) &&
                 user.getRole() != com.luxeway.enums.UserRole.ADMIN) {
                 Map<String, Object> error = new HashMap<>();
                 error.put("error", "Forbidden");

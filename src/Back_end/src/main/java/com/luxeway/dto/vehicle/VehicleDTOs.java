@@ -99,6 +99,7 @@ public class VehicleDTOs {
         private Double rating;
         private Integer totalReviews;
         private Integer totalBookings;
+        private Integer rangeKm;
         private Boolean isVerified;
         private Boolean isFeatured;
         private Boolean instantBook;

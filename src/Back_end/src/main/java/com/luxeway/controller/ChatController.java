@@ -25,6 +25,28 @@ public class ChatController {
 
     private final ChatService chatService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final com.luxeway.service.ChatBotService chatBotService;
+
+    @PostMapping
+    public ResponseEntity<ApiResponse<Map<String, Object>>> chatSupport(
+            @AuthenticationPrincipal User user,
+            @RequestBody Map<String, String> body) {
+        
+        String sessionId = body.get("sessionId");
+        String message = body.get("message");
+        
+        if (sessionId == null || sessionId.trim().isEmpty()) {
+            sessionId = java.util.UUID.randomUUID().toString();
+        }
+        
+        if (message == null || message.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("Message content cannot be blank"));
+        }
+        
+        String userId = (user != null) ? user.getId() : null;
+        Map<String, Object> result = chatBotService.getChatbotResponse(sessionId, message, userId);
+        return ResponseEntity.ok(ApiResponse.success("Assistant response generated", result));
+    }
 
     @GetMapping("/conversations")
     public ResponseEntity<ApiResponse<List<Conversation>>> getConversations(

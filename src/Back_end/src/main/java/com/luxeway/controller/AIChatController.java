@@ -22,7 +22,7 @@ import java.util.UUID;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/ai")
+@RequestMapping("/ai")
 @RequiredArgsConstructor
 @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:5173"})
 @Tag(name = "LuxeWay Luxury AI Concierge API", description = "Endpoints for luxury concierge AI dialogues, feedback, preferences, and admin dashboard statistics")

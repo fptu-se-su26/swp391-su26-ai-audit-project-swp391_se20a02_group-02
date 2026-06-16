@@ -242,3 +242,127 @@ BEGIN
     );
 END
 GO
+
+-- 6. VEHICLE REAL-TIME TRACKING & ROUTING UPGRADES
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('vehicles') AND name = 'current_lat')
+BEGIN
+    ALTER TABLE vehicles ADD current_lat DECIMAL(10,8) NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('vehicles') AND name = 'current_lng')
+BEGIN
+    ALTER TABLE vehicles ADD current_lng DECIMAL(11,8) NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('vehicles') AND name = 'last_location_update')
+BEGIN
+    ALTER TABLE vehicles ADD last_location_update DATETIME2 NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('vehicles') AND name = 'location_status')
+BEGIN
+    ALTER TABLE vehicles ADD location_status NVARCHAR(50) NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('bookings') AND name = 'pickup_lat')
+BEGIN
+    ALTER TABLE bookings ADD pickup_lat DECIMAL(10,8) NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('bookings') AND name = 'pickup_lng')
+BEGIN
+    ALTER TABLE bookings ADD pickup_lng DECIMAL(11,8) NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('bookings') AND name = 'dropoff_lat')
+BEGIN
+    ALTER TABLE bookings ADD dropoff_lat DECIMAL(10,8) NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('bookings') AND name = 'dropoff_lng')
+BEGIN
+    ALTER TABLE bookings ADD dropoff_lng DECIMAL(11,8) NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('bookings') AND name = 'route_distance')
+BEGIN
+    ALTER TABLE bookings ADD route_distance DECIMAL(10,2) NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('bookings') AND name = 'estimated_time')
+BEGIN
+    ALTER TABLE bookings ADD estimated_time INT NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('bookings') AND name = 'route_polyline')
+BEGIN
+    ALTER TABLE bookings ADD route_polyline NVARCHAR(MAX) NULL;
+END
+GO
+
+IF OBJECT_ID('vehicle_tracking', 'U') IS NULL
+BEGIN
+    CREATE TABLE vehicle_tracking (
+        id NVARCHAR(36) PRIMARY KEY,
+        vehicle_id NVARCHAR(36) NOT NULL,
+        booking_id NVARCHAR(36) NULL,
+        lat DECIMAL(10,8) NOT NULL,
+        lng DECIMAL(11,8) NOT NULL,
+        speed DECIMAL(6,2) NULL,
+        heading DECIMAL(5,2) NULL,
+        created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+        FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE,
+        FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE SET NULL
+    );
+END
+GO
+
+-- 7. TEMPORARY AVAILABILITY LOCKING
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('vehicle_availability') AND name = 'locked_until')
+BEGIN
+    ALTER TABLE vehicle_availability ADD locked_until DATETIME2 NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('vehicle_availability') AND name = 'locked_by')
+BEGIN
+    ALTER TABLE vehicle_availability ADD locked_by NVARCHAR(36) NULL;
+END
+GO
+
+-- 8. AI SUPPORT CHATBOT PERSISTENCE
+IF OBJECT_ID('chat_sessions', 'U') IS NULL
+BEGIN
+    CREATE TABLE chat_sessions (
+        id NVARCHAR(36) PRIMARY KEY,
+        user_id NVARCHAR(36) NULL,
+        created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+    );
+END
+GO
+
+IF OBJECT_ID('chat_messages', 'U') IS NULL
+BEGIN
+    CREATE TABLE chat_messages (
+        id NVARCHAR(36) PRIMARY KEY,
+        session_id NVARCHAR(36) NOT NULL,
+        sender NVARCHAR(50) NOT NULL,
+        message NVARCHAR(MAX) NOT NULL,
+        created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+        FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE
+    );
+END
+GO
+
+

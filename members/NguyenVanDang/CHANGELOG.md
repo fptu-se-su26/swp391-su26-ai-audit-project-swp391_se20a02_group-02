@@ -1027,11 +1027,74 @@ Commit: [DE190324] fix: resolve all 460+ compiler warnings and clean compile bac
 
 ---
 
+# [Phase 05.4] LuxeWay Goong Map Production Upgrade & Real-Time Lifecycle System
+
+## Ngày thực hiện
+
+```text
+2026-06-16
+```
+
+## Đã hoàn thành
+
+- [x] **Nâng cấp bản đồ Goong Map & MapLibre GL JS**:
+  - Tích hợp thành công Goong Maps và MapLibre GL JS làm động cơ bản đồ chính.
+  - Sửa lỗi truy vấn tham số URL kiểu bản đồ từ `?key=` thành `?api_key=` trên tất cả 5 components bản đồ ở Frontend (`LuxeWayMap.tsx`, `VehicleMap.tsx`, `LocationPickerMap.tsx`, `CustomerBookingPage.tsx`, `OwnerBookingTrackingPage.tsx`).
+  - Thiết kế custom HTML markers dạng kính mờ (luxury glass-style) cho cả ô tô và xe máy kèm theo vòng hào quang phát sáng nhẹ.
+  - Tích hợp vẽ đường đi tự động (route polyline) từ Goong Directions API, tự giải mã polyline dạng Grab-like và tính khoảng cách, thời gian di chuyển thực tế.
+- [x] **Khắc phục lỗi Coordinate Mapping ở Backend**:
+  - Sửa đổi `VehicleService.java` để map chính xác các trường `latitude` và `longitude` từ JPA Entities sang `VehicleResponse` DTO trong hàm `toResponse()` và `update()`. Nhờ đó loại bỏ hoàn toàn giá trị `null` và truyền tọa độ thật của xe từ SQL Server ra Frontend.
+- [x] **Xây dựng Widget đặt xe thông minh & Khóa ngày đặt**:
+  - Lập trình Floating Booking Card tải trạng thái ngày từ API `GET /api/vehicles/{id}/availability` (Available, Pending, Booked, Maintenance).
+  - Triển khai cơ chế Khóa ngày tạm thời (`POST /api/vehicles/{id}/lock`) trong 10 phút khi người dùng chọn ngày để tránh hiện tượng double booking (đặt trùng lịch).
+  - Tích hợp dịch vụ tính toán giá tự động (Pricing Calculation Service) gồm: phí thuê cơ bản, phí bảo hiểm, phí giao xe, phí addon, mã giảm giá và thuế.
+- [x] **Hệ thống cảnh báo thời gian thực & Live Tracking qua WebSockets**:
+  - Cấu hình Spring STOMP WebSockets bắn sự kiện lifecycle của booking từ Backend đến endpoint `/topic/tracking/{bookingId}` khi có sự thay đổi trạng thái (`BOOKING_CREATED`, `PAYMENT_COMPLETED`, `VEHICLE_PICKING_UP`, `TRIP_STARTED`, `TRIP_COMPLETED`).
+  - Xây dựng bảng điều khiển giả lập dành cho chủ xe (Owner Tracking Panel) để thực hiện cập nhật trạng thái di chuyển trực quan.
+  - Vẽ lộ trình thực tế, vị trí điểm đón/trả và vị trí của xe chuyển động mượt mà bằng thuật toán nội suy tọa độ khi nhận thông báo GPS.
+- [x] **Tích hợp Trợ lý ảo AI Chatbot (Gemini API)**:
+  - Thiết kế nút bong bóng chat nổi (floating support chatbot button) hiển thị trên mọi trang (ngoại trừ Login/Register).
+  - Triển khai API backend `POST /api/v1/chat` và lưu lịch sử chat vào database qua hai bảng `chat_sessions` và `chat_messages`.
+  - Kết nối với Gemini API để tư vấn đặt xe, tư vấn thanh toán, giải quyết tranh chấp và tra cứu trạng thái booking với nguyên tắc phản hồi chuyên nghiệp, không dùng emoji.
+
+## Thay đổi chi tiết - Nguyễn Văn Dạng (DE190324)
+
+| STT | Nội dung thay đổi | Người thực hiện | File/Module liên quan | Minh chứng |
+|---:|---|---|---|---|
+| 1 | Sửa lỗi URL style query parameter sang api_key | Nguyễn Văn Dạng | LuxeWayMap.tsx, VehicleMap.tsx, LocationPickerMap.tsx, CustomerBookingPage.tsx, OwnerBookingTrackingPage.tsx | Bản đồ hiển thị tiles Goong sạch sẽ |
+| 2 | Map coordinates DTO fields in Java backend | Nguyễn Văn Dạng | VehicleService.java | Coordinates returned in response DTO |
+| 3 | Tích hợp Calendar Availability & Slot Locking | Nguyễn Văn Dạng | CarDetails.tsx, MotorbikeDetails.tsx, BookingService.java, VehicleAvailabilityRepository.java | POST /lock endpoint and locked calendar slots |
+| 4 | Cài đặt WebSocket STOMP live tracking & routing | Nguyễn Văn Dạng | CustomerBookingPage.tsx, OwnerBookingTrackingPage.tsx, BookingService.java | Real-time map positioning, ETA, and distance |
+| 5 | Tích hợp AI Gemini Support Chatbot & DB persistence | Nguyễn Văn Dạng | ChatController.java, ChatBotService.java, ChatSession.java, ChatMessage.java, SupportChatbot.tsx | POST /chat API with DB logging |
+
+## AI có hỗ trợ không?
+
+- [x] Có
+- [ ] Không
+
+Nếu có, mô tả AI đã hỗ trợ phần nào:
+
+```text
+AI (Antigravity) hỗ trợ:
+- Sửa lỗi mapping coordinates DTO ở backend và cấu hình style URL parameter api_key ở frontend.
+- Cung cấp khung logic WebSocket STOMP listener và map animation vẽ route trên MapLibre GL JS.
+- Hỗ trợ xây dựng giao diện bong bóng chatbot nổi và tích hợp Gemini API ở backend cùng cấu trúc lưu DB sessions.
+```
+
+## Commit/Screenshot minh chứng
+
+```text
+Branch: feature/de190324-vehicle-rental-platform
+Commit: [DE190324] feat: implement real Goong Map upgrade, temporary availability locking, live WebSocket tracking and AI support chatbot
+```
+
+---
+
 # 5. Cam kết cập nhật Changelog
 
 Sinh viên/nhóm cam kết rằng nội dung changelog phản ánh đúng các thay đổi đã thực hiện trong quá trình làm bài tập/project.
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-06-15 |
+| Nguyễn Văn Dạng - DE190324 | 2026-06-16 |
 

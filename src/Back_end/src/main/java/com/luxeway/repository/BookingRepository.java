@@ -32,7 +32,7 @@ public interface BookingRepository extends JpaRepository<Booking, String> {
 
     // Conflict detection: check if any active booking overlaps the requested dates
     @Query("SELECT COUNT(b) > 0 FROM Booking b WHERE b.vehicle.id = :vehicleId " +
-           "AND b.status IN (com.luxeway.enums.BookingStatus.PENDING, com.luxeway.enums.BookingStatus.CONFIRMED, com.luxeway.enums.BookingStatus.ACTIVE) " +
+           "AND b.status IN (com.luxeway.enums.BookingStatus.PENDING, com.luxeway.enums.BookingStatus.CONFIRMED, com.luxeway.enums.BookingStatus.ACTIVE, com.luxeway.enums.BookingStatus.PICKING_UP, com.luxeway.enums.BookingStatus.IN_PROGRESS) " +
            "AND b.startDate <= :endDate AND b.endDate >= :startDate")
     boolean hasConflictingBooking(
         @Param("vehicleId") String vehicleId,
@@ -43,7 +43,7 @@ public interface BookingRepository extends JpaRepository<Booking, String> {
     // Same but excluding a specific booking (for updates)
     @Query("SELECT COUNT(b) > 0 FROM Booking b WHERE b.vehicle.id = :vehicleId " +
            "AND b.id <> :excludeId " +
-           "AND b.status IN (com.luxeway.enums.BookingStatus.PENDING, com.luxeway.enums.BookingStatus.CONFIRMED, com.luxeway.enums.BookingStatus.ACTIVE) " +
+           "AND b.status IN (com.luxeway.enums.BookingStatus.PENDING, com.luxeway.enums.BookingStatus.CONFIRMED, com.luxeway.enums.BookingStatus.ACTIVE, com.luxeway.enums.BookingStatus.PICKING_UP, com.luxeway.enums.BookingStatus.IN_PROGRESS) " +
            "AND b.startDate <= :endDate AND b.endDate >= :startDate")
     boolean hasConflictingBookingExcluding(
         @Param("vehicleId") String vehicleId,

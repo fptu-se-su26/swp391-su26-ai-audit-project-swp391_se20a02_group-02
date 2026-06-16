@@ -130,18 +130,21 @@ public class MotorbikeBookingService {
         }
     }
 
+    @Transactional(readOnly = true)
     public List<MotorbikeBookingDTOs.MotorbikeBookingResponse> getBookingsByRenter(String renterId) {
         return motorbikeBookingRepository.findByRenterId(renterId).stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<MotorbikeBookingDTOs.MotorbikeBookingResponse> getBookingsByOwner(String ownerId) {
         return motorbikeBookingRepository.findByOwnerId(ownerId).stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public MotorbikeBookingDTOs.MotorbikeBookingResponse getBookingById(String id) {
         MotorbikeBooking booking = motorbikeBookingRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Motorbike booking not found with ID: " + id));
@@ -186,9 +189,13 @@ public class MotorbikeBookingService {
             MotorbikeBookingDTOs.MotorbikeBookingResponse.MotorbikeInfo mi = new MotorbikeBookingDTOs.MotorbikeBookingResponse.MotorbikeInfo();
             mi.setId(b.getMotorbike().getId());
             mi.setName(b.getMotorbike().getName());
-            mi.setBrandName(b.getMotorbike().getModel().getBrand().getName());
-            mi.setModelName(b.getMotorbike().getModel().getName());
-            mi.setCategory(b.getMotorbike().getModel().getCategory());
+            if (b.getMotorbike().getModel() != null) {
+                mi.setModelName(b.getMotorbike().getModel().getName());
+                mi.setCategory(b.getMotorbike().getModel().getCategory());
+                if (b.getMotorbike().getModel().getBrand() != null) {
+                    mi.setBrandName(b.getMotorbike().getModel().getBrand().getName());
+                }
+            }
             mi.setLicensePlate(b.getMotorbike().getLicensePlate());
             if (b.getMotorbike().getImages() != null && !b.getMotorbike().getImages().isEmpty()) {
                 mi.setThumbnailUrl(b.getMotorbike().getImages().iterator().next().getUrl());

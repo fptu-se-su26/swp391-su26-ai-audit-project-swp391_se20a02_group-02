@@ -22,7 +22,7 @@ public class BookingController {
 
     private final BookingService bookingService;
 
-    @PostMapping
+    @PostMapping(value = {"", "/create"})
     @Operation(summary = "Create a new booking request")
     public ResponseEntity<ApiResponse<BookingDTOs.BookingResponse>> createBooking(
             @AuthenticationPrincipal User user,

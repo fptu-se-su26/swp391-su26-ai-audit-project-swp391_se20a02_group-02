@@ -5,7 +5,9 @@ public enum PaymentStatus {
     PROCESSING("Processing"),
     SUCCEEDED("Succeeded"),
     FAILED("Failed"),
-    REFUNDED("Refunded");
+    REFUNDED("Refunded"),
+    PAYMENT_PENDING("Payment Pending"),
+    PAID("Paid");
     
     private final String displayName;
     

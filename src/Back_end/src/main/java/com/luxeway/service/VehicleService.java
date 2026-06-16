@@ -11,6 +11,9 @@ import com.luxeway.enums.VehicleCategory;
 import com.luxeway.enums.VehicleStatus;
 import com.luxeway.repository.UserRepository;
 import com.luxeway.repository.VehicleRepository;
+import com.luxeway.repository.BookingRepository;
+import com.luxeway.repository.VehicleAvailabilityRepository;
+import com.luxeway.entity.VehicleAvailability;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.*;
@@ -18,7 +21,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -31,9 +39,12 @@ public class VehicleService {
     private final UserRepository userRepository;
     private final EmailService emailService;
     private final TranslationService translationService;
+    private final BookingRepository bookingRepository;
+    private final VehicleAvailabilityRepository vehicleAvailabilityRepository;
 
     // ====== Get all (with filters) ======
 
+    @Transactional(readOnly = true)
     public Page<VehicleDTOs.VehicleResponse> getVehicles(VehicleDTOs.VehicleFilterRequest filter) {
         Pageable pageable = buildPageable(filter.getSortBy(), filter.getPage(), filter.getSize());
 
@@ -149,6 +160,7 @@ public class VehicleService {
 
     // ====== Search ======
 
+    @Transactional(readOnly = true)
     public Page<VehicleDTOs.VehicleResponse> search(String query, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         return vehicleRepository.searchVehicles(query, pageable).map(this::toResponse);
@@ -156,6 +168,7 @@ public class VehicleService {
 
     // ====== Get by ID ======
 
+    @Transactional(readOnly = true)
     public VehicleDTOs.VehicleResponse getById(String id) {
         Vehicle vehicle = vehicleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Vehicle not found: " + id));
@@ -164,6 +177,7 @@ public class VehicleService {
 
     // ====== Featured vehicles ======
 
+    @Transactional(readOnly = true)
     public List<VehicleDTOs.VehicleResponse> getFeatured() {
         return vehicleRepository
                 .findByIsFeaturedTrueAndStatusOrderByRatingDesc(VehicleStatus.AVAILABLE)
@@ -175,6 +189,7 @@ public class VehicleService {
 
     // ====== Get vehicles by owner ======
 
+    @Transactional(readOnly = true)
     public List<VehicleDTOs.VehicleResponse> getByOwner(String ownerId) {
         return vehicleRepository.findByOwnerIdOrderByCreatedAtDesc(ownerId)
                 .stream().map(this::toResponse).collect(Collectors.toList());
@@ -316,6 +331,8 @@ public class VehicleService {
         vehicle.setDeposit(req.getDeposit());
         vehicle.setCity(req.getCity());
         vehicle.setAddress(req.getAddress());
+        if (req.getLatitude() != null) vehicle.setLatitude(BigDecimal.valueOf(req.getLatitude()));
+        if (req.getLongitude() != null) vehicle.setLongitude(BigDecimal.valueOf(req.getLongitude()));
         vehicle.setSeats(req.getSeats());
         vehicle.setTransmission(req.getTransmission());
         vehicle.setFuelType(req.getFuelType());
@@ -359,6 +376,8 @@ public class VehicleService {
         r.setCity(translationService.translateVehicle(v.getId(), lang, v.getName(), v.getDescription(), v.getCity(), v.getAddress(), "city"));
         r.setCountry(v.getCountry());
         r.setAddress(translationService.translateVehicle(v.getId(), lang, v.getName(), v.getDescription(), v.getCity(), v.getAddress(), "address"));
+        r.setLatitude(v.getLatitude() != null ? v.getLatitude().doubleValue() : null);
+        r.setLongitude(v.getLongitude() != null ? v.getLongitude().doubleValue() : null);
         r.setSeats(v.getSeats());
         r.setDoors(v.getDoors());
         r.setHorsepower(v.getHorsepower());
@@ -370,6 +389,7 @@ public class VehicleService {
         r.setRating(v.getRating() != null ? v.getRating().doubleValue() : 0.0);
         r.setTotalReviews(v.getTotalReviews());
         r.setTotalBookings(v.getTotalBookings());
+        r.setRangeKm(v.getRangeKm());
         r.setIsVerified(v.getIsVerified());
         r.setIsFeatured(v.getIsFeatured());
         r.setInstantBook(v.getInstantBook());
@@ -433,5 +453,92 @@ public class VehicleService {
             default           -> Sort.by("isFeatured").descending().and(Sort.by("rating").descending());
         };
         return PageRequest.of(page, size, sort);
+    }
+
+    @Transactional
+    public boolean lockAvailability(String vehicleId, String userId, LocalDate start, LocalDate end) {
+        log.info("Attempting to lock availability for vehicle: {}, user: {}, from {} to {}", vehicleId, userId, start, end);
+        
+        Vehicle vehicle = vehicleRepository.findById(vehicleId)
+                .orElseThrow(() -> new RuntimeException("Vehicle not found: " + vehicleId));
+        
+        if (bookingRepository.hasConflictingBooking(vehicleId, start, end)) {
+            log.warn("Conflicting booking exists for vehicle: {} between {} and {}", vehicleId, start, end);
+            return false;
+        }
+        
+        List<VehicleAvailability> conflictingLocks = vehicleAvailabilityRepository.findConflictingLocks(
+            vehicleId, start, end, LocalDateTime.now(), userId
+        );
+        if (!conflictingLocks.isEmpty()) {
+            log.warn("Conflicting locks exist for vehicle: {} between {} and {}", vehicleId, start, end);
+            return false;
+        }
+        
+        LocalDateTime lockExpiry = LocalDateTime.now().plusMinutes(10);
+        for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
+            final LocalDate currentDate = date;
+            List<VehicleAvailability> existing = vehicleAvailabilityRepository.findByVehicleIdAndDateBetween(vehicleId, currentDate, currentDate);
+            
+            VehicleAvailability slot;
+            if (!existing.isEmpty()) {
+                slot = existing.get(0);
+                slot.setIsAvailable(false);
+                slot.setLockedUntil(lockExpiry);
+                slot.setLockedBy(userId);
+            } else {
+                slot = VehicleAvailability.builder()
+                        .vehicle(vehicle)
+                        .date(currentDate)
+                        .isAvailable(false)
+                        .lockedUntil(lockExpiry)
+                        .lockedBy(userId)
+                        .build();
+            }
+            vehicleAvailabilityRepository.save(slot);
+        }
+        
+        return true;
+    }
+
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getAvailabilityList(String vehicleId) {
+        LocalDate start = LocalDate.now();
+        LocalDate end = start.plusYears(1);
+        
+        List<VehicleAvailability> slots = vehicleAvailabilityRepository.findByVehicleIdAndDateBetween(vehicleId, start, end);
+        List<Map<String, Object>> result = new ArrayList<>();
+        
+        Map<LocalDate, VehicleAvailability> slotMap = new HashMap<>();
+        for (VehicleAvailability slot : slots) {
+            slotMap.put(slot.getDate(), slot);
+        }
+        
+        for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
+            String dateStr = date.toString();
+            String status = "AVAILABLE";
+            
+            VehicleAvailability slot = slotMap.get(date);
+            if (slot != null && !slot.getIsAvailable()) {
+                boolean isLocked = slot.getLockedUntil() != null && slot.getLockedUntil().isAfter(LocalDateTime.now());
+                if (slot.getBookingId() != null) {
+                    status = bookingRepository.findById(slot.getBookingId())
+                            .map(b -> b.getStatus() == com.luxeway.enums.BookingStatus.PENDING ? "PENDING" : "BOOKED")
+                            .orElse("BOOKED");
+                } else if (isLocked) {
+                    status = "PENDING";
+                } else {
+                    status = "MAINTENANCE";
+                }
+            }
+            
+            if (!"AVAILABLE".equals(status)) {
+                Map<String, Object> entry = new HashMap<>();
+                entry.put("date", dateStr);
+                entry.put("status", status);
+                result.add(entry);
+            }
+        }
+        return result;
     }
 }

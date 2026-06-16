@@ -3,14 +3,13 @@ import { Link, Outlet, useNavigate, useParams, useLocation } from 'react-router-
 import { motion, AnimatePresence } from 'framer-motion';
 import ImageUploader from '@/components/ui/ImageUploader';
 import { OwnerAnalyticsDashboard } from '@/components/enterprise/OwnerAnalyticsDashboard';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
-import L from 'leaflet';
+import { LocationPickerMap } from '@/components/map/LocationPickerMap';
 
 import {
   LayoutDashboard, Car, Calendar, TrendingUp, Users, Settings,
   Plus, Edit, Trash2, Eye, CheckCircle, Clock, DollarSign,
   BarChart2, Shield, AlertTriangle, LogOut, Globe, Menu,
-  MapPin, Star, Activity, ArrowUpRight
+  MapPin, Star, Activity, ArrowUpRight, Play
 } from 'lucide-react';
 
 import { useAuthStore, useUIStore } from '@/store';
@@ -586,32 +585,6 @@ export const VehicleManagePage: React.FC = () => {
   );
 };
 
-const pickerIcon = L.divIcon({
-  className: 'custom-picker-marker',
-  html: `
-    <div class="flex items-center justify-center" style="transform: translate(0, -14px);">
-      <svg class="w-8 h-8 text-amber-500 fill-amber-500 drop-shadow-lg" viewBox="0 0 24 24" fill="currentColor" style="filter: drop-shadow(0px 3px 3px rgba(0,0,0,0.3));">
-        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-      </svg>
-    </div>
-  `,
-  iconSize: [32, 32],
-  iconAnchor: [16, 32]
-});
-
-const MapClickSelector: React.FC<{ lat: number; lng: number; onChange: (lat: number, lng: number) => void }> = ({ lat, lng, onChange }) => {
-  const map = useMapEvents({
-    click(e) {
-      onChange(e.latlng.lat, e.latlng.lng);
-    },
-  });
-
-  useEffect(() => {
-    map.flyTo([lat, lng], map.getZoom());
-  }, [lat, lng, map]);
-
-  return <Marker position={[lat, lng]} icon={pickerIcon} />;
-};
 
 // ====== VEHICLE FORM PAGE ======
 export const VehicleFormPage: React.FC = () => {
@@ -1029,15 +1002,9 @@ export const VehicleFormPage: React.FC = () => {
                   {isVi ? 'Vị Trí Trên Bản Đồ (Click để chọn tọa độ mới)' : 'Location on Map (Click to select new coordinates)'}
                 </label>
                 <div className="h-64 w-full rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md relative z-10">
-                  <MapContainer center={[form.lat || 10.762, form.lng || 106.660]} zoom={13} className="w-full h-full">
-                    <TileLayer
-                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                      url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-                    />
-                    <MapClickSelector lat={form.lat || 10.762} lng={form.lng || 106.660} onChange={(lat, lng) => {
-                      setForm(f => ({ ...f, lat, lng }));
-                    }} />
-                  </MapContainer>
+                  <LocationPickerMap lat={form.lat || 10.762} lng={form.lng || 106.660} onChange={(lat, lng) => {
+                    setForm(f => ({ ...f, lat, lng }));
+                  }} />
                 </div>
               </div>
             </div>
@@ -1286,7 +1253,7 @@ export const OwnerBookingsPage: React.FC = () => {
                       <p className="text-base font-extrabold text-emerald-500 dark:text-emerald-400 mt-2.5">{formatCurrency(booking.pricing.total)}</p>
                     </div>
                   </div>
-                  {isPending && (
+                  {isPending ? (
                     <div className="flex gap-2.5 flex-shrink-0 justify-end mt-2 sm:mt-0">
                       <motion.button
                         whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
@@ -1303,7 +1270,16 @@ export const OwnerBookingsPage: React.FC = () => {
                         Reject
                       </motion.button>
                     </div>
-                  )}
+                  ) : (booking.status === 'confirmed' || booking.status === 'active') ? (
+                    <div className="flex gap-2.5 flex-shrink-0 justify-end mt-2 sm:mt-0">
+                      <Link
+                        to={`/owner/bookings/${booking.id}/tracking`}
+                        className="flex items-center gap-1.5 px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-extrabold shadow-md shadow-blue-500/15 transition-all hover-lift"
+                      >
+                        <Play className="w-3.5 h-3.5 fill-white" /> Simulate & Track
+                      </Link>
+                    </div>
+                  ) : null}
                 </div>
               </motion.div>
             );

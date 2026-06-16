@@ -26,6 +26,7 @@ public class MotorbikeService {
     private final UserRepository userRepository;
     private final TranslationService translationService;
 
+    @Transactional(readOnly = true)
     public Page<MotorbikeDTOs.MotorbikeResponse> searchMotorbikes(
             String city, Integer engineCc, String transmission,
             Boolean helmetIncluded, Boolean raincoatIncluded, Boolean phoneHolder, Boolean luggageRack,
@@ -47,6 +48,7 @@ public class MotorbikeService {
         return motorbikePage.map(this::toResponse);
     }
 
+    @Transactional(readOnly = true)
     public MotorbikeDTOs.MotorbikeResponse getMotorbikeById(String id) {
         Motorbike motorbike = motorbikeRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Motorbike not found with ID: " + id));
@@ -123,9 +125,13 @@ public class MotorbikeService {
         MotorbikeDTOs.MotorbikeResponse response = new MotorbikeDTOs.MotorbikeResponse();
         response.setId(motorbike.getId());
         response.setName(translationService.translateMotorbike(motorbike.getId(), lang, motorbike.getName(), null, "name"));
-        response.setBrandName(motorbike.getModel().getBrand().getName());
-        response.setModelName(motorbike.getModel().getName());
-        response.setCategory(motorbike.getModel().getCategory());
+        if (motorbike.getModel() != null) {
+            response.setModelName(motorbike.getModel().getName());
+            response.setCategory(motorbike.getModel().getCategory());
+            if (motorbike.getModel().getBrand() != null) {
+                response.setBrandName(motorbike.getModel().getBrand().getName());
+            }
+        }
         response.setLicensePlate(motorbike.getLicensePlate());
         response.setPricePerDay(motorbike.getPricePerDay());
         response.setDeposit(motorbike.getDeposit());

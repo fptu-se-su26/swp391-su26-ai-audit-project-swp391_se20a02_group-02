@@ -30,7 +30,7 @@ import java.util.UUID;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/agent")
+@RequestMapping("/agent")
 @RequiredArgsConstructor
 @Tag(name = "Agent Layer", description = "Agentic AI orchestration for LuxeWay fleet optimization")
 @SecurityRequirement(name = "bearerAuth")

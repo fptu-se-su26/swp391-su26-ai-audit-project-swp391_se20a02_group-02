@@ -33,6 +33,12 @@ public class VehicleAvailability {
     @Column(name = "booking_id", length = 36)
     private String bookingId;
 
+    @Column(name = "locked_until")
+    private java.time.LocalDateTime lockedUntil;
+
+    @Column(name = "locked_by", length = 36)
+    private String lockedBy;
+
     @PrePersist
     public void prePersist() {
         if (this.id == null) {
