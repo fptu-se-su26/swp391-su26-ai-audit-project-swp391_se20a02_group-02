@@ -2,7 +2,7 @@
 import { useUIStore } from '@/store';
 
 
-export type Language = 'en' | 'vi' | 'ja' | 'ko' | 'zh' | 'fr' | 'de' | 'es';
+export type Language = 'en' | 'vi' | 'ja' | 'ko';
 
 export const translations = {
   en: {
@@ -174,6 +174,15 @@ export const translations = {
     },
     // Dashboard
     dashboard: {
+      loyaltyRewards: "Loyalty Rewards",
+      corporatePortal: "Corporate Portal",
+      txId: "Transaction ID",
+      txBooking: "Booking",
+      txMethod: "Method",
+      txDate: "Date",
+      txAmount: "Amount",
+      txStatus: "Status",
+      txInvoice: "Invoice",
       welcome: 'Welcome back',
       overview: 'Overview',
       myBookings: 'My Bookings',
@@ -929,6 +938,15 @@ export const translations = {
       bookingConfirmed: 'Đặt Xe Thành Công!',
     },
     dashboard: {
+      loyaltyRewards: "Đổi Thưởng",
+      corporatePortal: "Cổng Doanh Nghiệp",
+      txId: "Mã Giao Dịch",
+      txBooking: "Đơn Đặt Xe",
+      txMethod: "Phương Thức",
+      txDate: "Ngày",
+      txAmount: "Số Tiền",
+      txStatus: "Trạng Thái",
+      txInvoice: "Hóa Đơn",
       welcome: 'Chào mừng trở lại',
       overview: 'Tổng Quan',
       myBookings: 'Đặt Xe Của Tôi',
@@ -1681,6 +1699,15 @@ export const jaTranslations = {
     bookingConfirmed: '予約確定！',
   },
   dashboard: {
+    loyaltyRewards: "ロイヤルティ特典",
+    corporatePortal: "企業ポータル",
+    txId: "取引ID",
+    txBooking: "予約",
+    txMethod: "支払い方法",
+    txDate: "日付",
+    txAmount: "金額",
+    txStatus: "ステータス",
+    txInvoice: "請求書",
     welcome: 'おかえりなさい',
     overview: '概要',
     myBookings: '私の予約',
@@ -2228,6 +2255,15 @@ export const koTranslations = {
   ...translations.en,
   dashboard: {
     ...translations.en.dashboard,
+    loyaltyRewards: "로열티 리워드",
+    corporatePortal: "기업 포탈",
+    txId: "거래 ID",
+    txBooking: "예약",
+    txMethod: "방법",
+    txDate: "날짜",
+    txAmount: "금액",
+    txStatus: "상태",
+    txInvoice: "송장",
     languageLabel: "언어",
     currencyLabel: "통화",
     saved: "저장됨",
@@ -2330,6 +2366,15 @@ export const zhTranslations = {
   ...translations.en,
   dashboard: {
     ...translations.en.dashboard,
+    loyaltyRewards: "会员积分奖励",
+    corporatePortal: "企业门户",
+    txId: "交易ID",
+    txBooking: "预订",
+    txMethod: "方式",
+    txDate: "日期",
+    txAmount: "金额",
+    txStatus: "状态",
+    txInvoice: "发票",
     languageLabel: "语言",
     currencyLabel: "货币",
     saved: "已保存",
@@ -2559,14 +2604,6 @@ export function useT() {
     activeDict = jaTranslations as any;
   } else if (language === 'ko') {
     activeDict = koTranslations as any;
-  } else if (language === 'zh') {
-    activeDict = zhTranslations as any;
-  } else if (language === 'fr') {
-    activeDict = frTranslations as any;
-  } else if (language === 'de') {
-    activeDict = deTranslations as any;
-  } else if (language === 'es') {
-    activeDict = esTranslations as any;
   }
 
   const extra = {

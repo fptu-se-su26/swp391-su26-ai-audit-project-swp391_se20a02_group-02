@@ -12,7 +12,7 @@ const staggerItem = {
 };
 
 export const InsuranceTrustSection: React.FC = () => (
-  <section className="py-24 bg-white">
+  <section className="py-24 bg-white dark:bg-slate-900">
     <div className="max-w-7xl mx-auto px-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
         {/* Left content */}
@@ -63,10 +63,10 @@ export const InsuranceTrustSection: React.FC = () => (
             <motion.div
               key={label}
               variants={staggerItem}
-              className="p-8 bg-slate-50 rounded-3xl border border-slate-100 hover:border-emerald-200 transition-colors"
+              className="p-8 bg-slate-50 dark:bg-slate-950 rounded-3xl border border-slate-100 hover:border-emerald-200 transition-colors"
             >
               <p className="font-black text-3xl md:text-5xl text-[#0F172A] mb-2 tracking-tight">{value}</p>
-              <p className="font-bold text-slate-800 text-sm md:text-base mb-1">{label}</p>
+              <p className="font-bold text-slate-800 dark:text-slate-200 text-sm md:text-base mb-1">{label}</p>
               <p className="text-slate-400 text-xs md:text-sm">{sub}</p>
             </motion.div>
           ))}

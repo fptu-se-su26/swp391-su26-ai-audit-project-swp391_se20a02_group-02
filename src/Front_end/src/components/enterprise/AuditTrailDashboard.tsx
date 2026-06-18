@@ -146,7 +146,7 @@ export const AuditTrailDashboard: React.FC = () => {
                   <tr 
                     key={log.id} 
                     onClick={() => setSelectedLog(log)}
-                    className="hover:bg-white/5 cursor-pointer transition-colors"
+                    className="hover:bg-white dark:bg-slate-900/5 cursor-pointer transition-colors"
                   >
                     <td className="p-4 font-semibold text-slate-400 flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5 text-slate-550 flex-shrink-0" />
@@ -179,7 +179,7 @@ export const AuditTrailDashboard: React.FC = () => {
               </h3>
               <button 
                 onClick={() => setSelectedLog(null)}
-                className="text-slate-400 hover:text-white text-xs font-bold px-2.5 py-1 rounded-lg hover:bg-white/5 border border-white/5"
+                className="text-slate-400 hover:text-white text-xs font-bold px-2.5 py-1 rounded-lg hover:bg-white dark:bg-slate-900/5 border border-white/5"
               >
                 Close
               </button>

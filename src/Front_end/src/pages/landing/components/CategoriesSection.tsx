@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Car, Bike } from 'lucide-react';
 import type { CategoryData } from '@/services/homeService';
+import { useUIStore } from '@/store';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -38,11 +39,17 @@ interface CategoryGridProps {
 
 const CategoryGrid: React.FC<CategoryGridProps> = ({ categories, counts, title }) => {
   const navigate = useNavigate();
+  const language = useUIStore((s: any) => s.language);
+  
+  const displayTitle = language === 'ja' ? (title === 'Cars' ? '車' : 'バイク') : 
+                       language === 'ko' ? (title === 'Cars' ? '자동차' : '오토바이') : 
+                       language === 'vi' ? (title === 'Cars' ? 'Ô Tô' : 'Xe Máy') : title;
+
   return (
     <div>
       <h3 className="font-bold text-2xl text-slate-900 dark:text-white mb-6 flex items-center gap-3">
         {title === 'Cars' ? <Car className="w-7 h-7 text-amber-500" /> : <Bike className="w-7 h-7 text-amber-500" />}
-        {title}
+        {displayTitle}
       </h3>
       <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true }} className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         {categories.map(cat => (
@@ -63,7 +70,7 @@ const CategoryGrid: React.FC<CategoryGridProps> = ({ categories, counts, title }
                   <p className="text-white font-extrabold text-base tracking-wide group-hover:text-amber-400 transition-colors">{cat.label}</p>
                 </div>
                 <span className="text-xs text-white bg-black/40 border border-white/10 backdrop-blur-md px-3.5 py-1.5 rounded-2xl font-bold group-hover:bg-amber-400 group-hover:text-slate-950 group-hover:border-amber-400 transition-all duration-300">
-                  {counts[cat.key] ?? 0} xe
+                  {counts[cat.key] ?? 0} {language === 'vi' ? 'xe' : language === 'ja' ? '台' : language === 'ko' ? '대' : 'vehicles'}
                 </span>
               </div>
             </div>
@@ -78,13 +85,20 @@ interface CategoriesSectionProps {
   data: CategoryData | null;
 }
 
-export const CategoriesSection: React.FC<CategoriesSectionProps> = ({ data }) => (
+export const CategoriesSection: React.FC<CategoriesSectionProps> = ({ data }) => {
+  const language = useUIStore((s: any) => s.language);
+  
+  const getLabel = () => language === 'ja' ? 'フリート一覧' : language === 'ko' ? '우리의 차량' : language === 'vi' ? 'Đội Xe Của Chúng Tôi' : 'Our Fleet';
+  const getTitle = () => language === 'ja' ? 'カテゴリーから探す' : language === 'ko' ? '카테고리별 검색' : language === 'vi' ? 'Duyệt Theo Danh Mục' : 'Browse by Category';
+  const getDesc = () => language === 'ja' ? 'あらゆるシーンに最適な車両を見つけよう' : language === 'ko' ? '모든 상황에 맞는 적합한 차량을 찾으세요' : language === 'vi' ? 'Tìm chiếc xe phù hợp cho mọi dịp' : 'Find the right vehicle for every occasion';
+
+  return (
   <section className="py-24 bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
     <div className="max-w-7xl mx-auto px-6">
       <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="mb-14">
-        <span className="text-xs font-bold tracking-widest uppercase text-amber-500 mb-2 block">Our Fleet</span>
-        <h2 className="font-bold text-3xl md:text-5xl text-slate-900 dark:text-white">Browse by Category</h2>
-        <p className="text-slate-500 dark:text-slate-400 mt-2 text-base">Find the right vehicle for every occasion</p>
+        <span className="text-xs font-bold tracking-widest uppercase text-amber-500 mb-2 block">{getLabel()}</span>
+        <h2 className="font-bold text-3xl md:text-5xl text-slate-900 dark:text-white">{getTitle()}</h2>
+        <p className="text-slate-500 dark:text-slate-400 mt-2 text-base">{getDesc()}</p>
       </motion.div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
         <CategoryGrid title="Cars" categories={CAR_CATEGORIES} counts={data?.cars ?? {}} />
@@ -92,6 +106,7 @@ export const CategoriesSection: React.FC<CategoriesSectionProps> = ({ data }) =>
       </div>
     </div>
   </section>
-);
+  );
+};
 
 export default CategoriesSection;

@@ -31,7 +31,7 @@ export const ThemeToggle: React.FC<{ className?: string }> = ({ className = '' }
       {/* Sliding background */}
       <motion.div
         className={`absolute inset-1 rounded-full ${
-          isDark ? 'bg-slate-600' : 'bg-white'
+          isDark ? 'bg-slate-600' : 'bg-white dark:bg-slate-900'
         }`}
         initial={false}
         animate={{
@@ -71,7 +71,7 @@ export const ThemeToggle: React.FC<{ className?: string }> = ({ className = '' }
 
       {/* Sliding toggle */}
       <motion.div
-        className="absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow-lg flex items-center justify-center"
+        className="absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white dark:bg-slate-900 shadow-lg flex items-center justify-center"
         initial={false}
         animate={{
           x: isDark ? 28 : 0,
@@ -83,7 +83,7 @@ export const ThemeToggle: React.FC<{ className?: string }> = ({ className = '' }
         }}
       >
         {isDark ? (
-          <Moon className="w-3.5 h-3.5 text-slate-700" />
+          <Moon className="w-3.5 h-3.5 text-slate-700 dark:text-slate-300" />
         ) : (
           <Sun className="w-3.5 h-3.5 text-yellow-500" />
         )}
@@ -111,7 +111,7 @@ export const ThemeToggleButton: React.FC<{ className?: string }> = ({ className 
       className={`relative p-2 rounded-xl transition-colors duration-300 ${
         isDark 
           ? 'bg-slate-800 text-yellow-400 hover:bg-slate-700' 
-          : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+          : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
       } ${className}`}
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
@@ -148,13 +148,13 @@ export const ThemeToggleIcon: React.FC<{ className?: string }> = ({ className = 
   return (
     <button
       onClick={toggleTheme}
-      className={`p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${className}`}
+      className={`p-2 rounded-lg hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-800 transition-colors ${className}`}
       aria-label="Toggle theme"
     >
       {isDark ? (
         <Sun className="w-5 h-5 text-yellow-400" />
       ) : (
-        <Moon className="w-5 h-5 text-slate-600" />
+        <Moon className="w-5 h-5 text-slate-600 dark:text-slate-400" />
       )}
     </button>
   );

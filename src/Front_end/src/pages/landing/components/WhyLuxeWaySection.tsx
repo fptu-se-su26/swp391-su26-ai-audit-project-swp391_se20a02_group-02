@@ -52,7 +52,7 @@ export const WhyLuxeWaySection: React.FC = () => (
             variants={staggerItem}
             whileHover={{ y: -6, scale: 1.01 }}
             transition={{ type: 'spring', damping: 20 }}
-            className="p-8 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-sm hover:border-white/25 transition-all duration-300 group"
+            className="p-8 rounded-3xl border border-white/10 bg-white dark:bg-slate-900/5 backdrop-blur-sm hover:border-white/25 transition-all duration-300 group"
           >
             <div className={`w-16 h-16 rounded-2xl ${color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
               <Icon className="w-8 h-8" />

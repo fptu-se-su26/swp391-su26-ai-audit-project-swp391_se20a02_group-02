@@ -18,7 +18,7 @@ const SpecRow: React.FC<{ label: string; values: (string | number | boolean | un
   };
 
   return (
-    <tr className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/50 dark:hover:bg-slate-850/50 transition-colors">
+    <tr className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:bg-slate-950/50 dark:hover:bg-slate-850/50 transition-colors">
       <td className="py-3 pr-4 text-sm font-medium text-slate-500 whitespace-nowrap w-36">{label}</td>
       {values.map((v, i) => (
         <td key={i} className="py-3 px-4 text-sm text-slate-800 dark:text-slate-200 text-center">
@@ -28,7 +28,7 @@ const SpecRow: React.FC<{ label: string; values: (string | number | boolean | un
       {/* Empty cells for unfilled slots */}
       {Array.from({ length: MAX_COMPARE - values.length }).map((_, i) => (
         <td key={`empty-${i}`} className="py-3 px-4 text-center">
-          <Minus className="w-4 h-4 text-slate-200 dark:text-slate-700 mx-auto" />
+          <Minus className="w-4 h-4 text-slate-200 dark:text-slate-700 dark:text-slate-300 mx-auto" />
         </td>
       ))}
     </tr>
@@ -64,7 +64,7 @@ const VehicleSlot: React.FC<{
 
   return (
     <motion.div variants={staggerItem} className="flex-1 min-w-0">
-      <div className="relative group luxury-card overflow-hidden bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800">
+      <div className="relative group luxury-card overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/50 dark:border-slate-800">
         <button
           onClick={onRemove}
           className="absolute top-3 right-3 z-20 w-7 h-7 bg-white dark:bg-slate-800 shadow-md rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-500"
@@ -143,7 +143,7 @@ const VehiclePicker: React.FC<{
       >
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-display text-xl font-bold text-[#0F172A] dark:text-white">{t.compare.selectVehicle}</h3>
-          <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+          <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-800 transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -167,7 +167,7 @@ const VehiclePicker: React.FC<{
               <button
                 key={v.id}
                 onClick={() => { onSelect(v); onClose(); }}
-                className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-850/50 border border-slate-100 dark:border-slate-800 hover:border-accent/30 transition-all text-left"
+                className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-50 dark:bg-slate-950 dark:hover:bg-slate-850/50 border border-slate-100 dark:border-slate-800 hover:border-accent/30 transition-all text-left"
               >
                 <img
                   src={v.images?.[0] || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?q=80&w=80'}
@@ -262,7 +262,7 @@ const ComparePage: React.FC = () => {
             variants={fadeUp}
             initial="hidden"
             animate="visible"
-            className="luxury-card p-6 overflow-x-auto bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800"
+            className="luxury-card p-6 overflow-x-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/50 dark:border-slate-800"
           >
             <h2 className="font-display text-xl font-bold text-[#0F172A] dark:text-white mb-6">{t.compare.specComparison}</h2>
             <table className="w-full">

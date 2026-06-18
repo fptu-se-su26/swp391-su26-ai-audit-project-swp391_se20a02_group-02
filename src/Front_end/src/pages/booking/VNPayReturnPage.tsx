@@ -86,7 +86,7 @@ export const VNPayReturnPage: React.FC = () => {
         transition={{ duration: 0.5, ease: 'easeOut' }}
         className="max-w-md w-full relative"
       >
-        <div className="bg-white rounded-[2rem] border border-slate-200/80 shadow-2xl shadow-slate-900/10 overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-700/80 shadow-2xl shadow-slate-900/10 overflow-hidden">
           {/* Top gradient line */}
           <div className="h-1.5 w-full"
             style={{
@@ -110,7 +110,7 @@ export const VNPayReturnPage: React.FC = () => {
                   <Loader2 className="w-8 h-8 text-indigo-500" />
                 </motion.div>
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-800 mb-2">{t.paymentReturn.verifying}</h2>
+                  <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-200 mb-2">{t.paymentReturn.verifying}</h2>
                   <p className="text-slate-500 text-sm">{t.paymentReturn.verifyingDesc}</p>
                 </div>
                 <div className="flex justify-center gap-1.5">
@@ -155,18 +155,18 @@ export const VNPayReturnPage: React.FC = () => {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.4 }}
-                    className="bg-slate-50 rounded-2xl p-4 text-left space-y-2"
+                    className="bg-slate-50 dark:bg-slate-950 rounded-2xl p-4 text-left space-y-2"
                   >
                     {transactionId && (
                       <div className="flex justify-between text-sm">
                         <span className="text-slate-500">{isVi ? 'Mã giao dịch' : 'Transaction ID'}</span>
-                        <span className="font-mono font-bold text-slate-800 text-xs">{transactionId.slice(-12).toUpperCase()}</span>
+                        <span className="font-mono font-bold text-slate-800 dark:text-slate-200 text-xs">{transactionId.slice(-12).toUpperCase()}</span>
                       </div>
                     )}
                     {bookingId && (
                       <div className="flex justify-between text-sm">
                         <span className="text-slate-500">{isVi ? 'Mã đặt xe' : 'Booking ID'}</span>
-                        <span className="font-mono font-bold text-slate-800 text-xs">#{bookingId.slice(-8).toUpperCase()}</span>
+                        <span className="font-mono font-bold text-slate-800 dark:text-slate-200 text-xs">#{bookingId.slice(-8).toUpperCase()}</span>
                       </div>
                     )}
                     <div className="flex justify-between text-sm">
@@ -198,7 +198,7 @@ export const VNPayReturnPage: React.FC = () => {
                   </button>
                   <button
                     onClick={() => navigate('/')}
-                    className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-slate-200 text-slate-600 font-semibold text-sm hover:border-slate-300 transition-colors"
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-semibold text-sm hover:border-slate-300 dark:border-slate-600 transition-colors"
                   >
                     <Home className="w-4 h-4" />
                     {isVi ? 'Về trang chủ' : 'Back to Home'}
@@ -221,7 +221,7 @@ export const VNPayReturnPage: React.FC = () => {
                 </motion.div>
 
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-                  <h2 className="text-2xl font-bold text-slate-800 mb-2">{t.paymentReturn.failed}</h2>
+                  <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-200 mb-2">{t.paymentReturn.failed}</h2>
                   <p className="text-slate-500 text-sm">{t.paymentReturn.failedDesc}</p>
                   {vnpResponseCode && vnpResponseCode !== '00' && (
                     <p className="text-xs text-slate-400 mt-2">
@@ -246,7 +246,7 @@ export const VNPayReturnPage: React.FC = () => {
                   </button>
                   <button
                     onClick={() => navigate('/marketplace')}
-                    className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-slate-200 text-slate-600 font-semibold text-sm hover:border-slate-300 transition-colors"
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-semibold text-sm hover:border-slate-300 dark:border-slate-600 transition-colors"
                   >
                     {isVi ? 'Quay lại Marketplace' : 'Browse Vehicles'}
                   </button>

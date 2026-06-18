@@ -24,7 +24,7 @@ export const BecomeOwnerSection: React.FC<BecomeOwnerSectionProps> = ({ ownerSta
   const estimatedRevenue = Math.round(days * pricePerDay * 0.8);
 
   return (
-    <section className="py-20 bg-white">
+    <section className="py-20 bg-white dark:bg-slate-900">
       <div className="max-w-7xl mx-auto px-6">
         <div className="rounded-3xl overflow-hidden bg-[#0F172A] flex flex-col lg:flex-row border border-white/5">
           {/* Left */}
@@ -49,7 +49,7 @@ export const BecomeOwnerSection: React.FC<BecomeOwnerSectionProps> = ({ ownerSta
                   { label: 'Owner Avg Rating', value: `${ownerStats?.averageRating?.toFixed(1) ?? 4.8}/5`, icon: Star },
                 ].map(({ label, value, icon: Icon }) => (
                   <motion.div key={label} variants={staggerItem}
-                    className="p-5 rounded-2xl bg-white/5 border border-white/10">
+                    className="p-5 rounded-2xl bg-white dark:bg-slate-900/5 border border-white/10">
                     <Icon className="w-6 h-6 text-amber-400 mb-3" />
                     <p className="font-black text-white text-xl md:text-2xl mb-1">{value}</p>
                     <p className="text-slate-400 text-sm">{label}</p>
@@ -58,7 +58,7 @@ export const BecomeOwnerSection: React.FC<BecomeOwnerSectionProps> = ({ ownerSta
               </motion.div>
  
               {/* Earnings Calculator */}
-              <motion.div variants={staggerItem} className="p-6 rounded-2xl bg-white/5 border border-white/10 mb-8">
+              <motion.div variants={staggerItem} className="p-6 rounded-2xl bg-white dark:bg-slate-900/5 border border-white/10 mb-8">
                 <p className="text-white font-extrabold text-base mb-5">Earnings Calculator</p>
                 <div className="flex items-center gap-4 mb-4">
                   <label className="text-slate-355 text-sm w-36 flex-shrink-0">Days rented / month</label>

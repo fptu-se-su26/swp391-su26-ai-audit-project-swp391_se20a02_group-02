@@ -109,7 +109,7 @@ export const InsuranceSelector: React.FC<InsuranceSelectorProps> = ({
               <div className={`mt-4 w-full py-2.5 rounded-xl text-center text-xs font-bold transition-all ${
                 isSelected 
                   ? 'bg-indigo-500 text-white shadow' 
-                  : 'bg-white/5 hover:bg-white/10 text-slate-300'
+                  : 'bg-white dark:bg-slate-900/5 hover:bg-white dark:bg-slate-900/10 text-slate-300'
               }`}>
                 {isSelected ? '✓ Selected Plan' : 'Select Plan'}
               </div>
@@ -131,7 +131,7 @@ export const InsuranceSelector: React.FC<InsuranceSelectorProps> = ({
           </thead>
           <tbody className="divide-y divide-white/5">
             {COVERAGE_FEATURES.map((feat, idx) => (
-              <tr key={idx} className="hover:bg-white/5 transition-colors">
+              <tr key={idx} className="hover:bg-white dark:bg-slate-900/5 transition-colors">
                 <td className="p-4 font-medium text-slate-300 flex items-center gap-1.5">
                   {feat.name}
                   <HelpCircle className="w-3 h-3 text-slate-500 cursor-help" />
@@ -140,21 +140,21 @@ export const InsuranceSelector: React.FC<InsuranceSelectorProps> = ({
                   {feat.basic ? (
                     <Check className="w-4 h-4 text-emerald-400 mx-auto" />
                   ) : (
-                    <X className="w-4 h-4 text-slate-600 mx-auto" />
+                    <X className="w-4 h-4 text-slate-600 dark:text-slate-400 mx-auto" />
                   )}
                 </td>
                 <td className="p-4 text-center">
                   {feat.premium ? (
                     <Check className="w-4 h-4 text-indigo-400 mx-auto" />
                   ) : (
-                    <X className="w-4 h-4 text-slate-600 mx-auto" />
+                    <X className="w-4 h-4 text-slate-600 dark:text-slate-400 mx-auto" />
                   )}
                 </td>
                 <td className="p-4 text-center">
                   {feat.enterprise ? (
                     <Check className="w-4 h-4 text-emerald-400 mx-auto" />
                   ) : (
-                    <X className="w-4 h-4 text-slate-600 mx-auto" />
+                    <X className="w-4 h-4 text-slate-600 dark:text-slate-400 mx-auto" />
                   )}
                 </td>
               </tr>

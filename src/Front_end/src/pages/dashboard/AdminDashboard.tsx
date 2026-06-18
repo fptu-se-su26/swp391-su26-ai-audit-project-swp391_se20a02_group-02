@@ -106,7 +106,7 @@ const AdminSidebar: React.FC = () => {
             return (
               <Link key={link.href} to={link.href}
                 onClick={() => window.innerWidth < 1024 && setSidebarOpen(false)}
-                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative group ${active ? 'text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative group ${active ? 'text-white' : 'text-slate-400 hover:text-white hover:bg-white dark:bg-slate-900/5'}`}
                 style={{
                   background: active ? 'linear-gradient(135deg, rgba(99,102,241,0.22), rgba(139,92,246,0.12))' : undefined,
                   border: active ? '1px solid rgba(99,102,241,0.28)' : '1px solid transparent',
@@ -145,7 +145,7 @@ const AdminHeader: React.FC = () => {
       <div className="flex items-center justify-between px-6 py-3.5 gap-4">
         <div className="flex items-center gap-4 flex-1 min-w-0">
           <button onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="lg:hidden p-2 hover:bg-white/5 rounded-xl transition-colors text-slate-400">
+            className="lg:hidden p-2 hover:bg-white dark:bg-slate-900/5 rounded-xl transition-colors text-slate-400">
             {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
           <div>
@@ -452,7 +452,7 @@ export const AdminOverview: React.FC = () => {
                 {loading ? '...' : urgentCount} urgent
               </span>
               <button onClick={refresh}
-                className="p-2 rounded-xl transition-all hover:bg-white/5"
+                className="p-2 rounded-xl transition-all hover:bg-white dark:bg-slate-900/5"
                 style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
                 <RefreshCw className="w-4 h-4 text-slate-400" />
               </button>

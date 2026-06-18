@@ -15,6 +15,7 @@ import type { Vehicle, VehicleFilters, VehicleCategory, VehicleType } from '@/ty
 import { formatCurrency, debounce, cn } from '@/utils';
 import { fadeUp, staggerContainer, staggerItem } from '@/animations/variants';
 import { useT } from '@/i18n/translations';
+import { useUIStore } from '@/store';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=800';
 const FALLBACK_MOTO = 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&q=80&w=800';
@@ -60,12 +61,12 @@ const CAR_BRANDS = ['Toyota', 'Honda', 'Mazda', 'Hyundai', 'Kia', 'Ford', 'Mitsu
 // ====== MOTORBIKE BRANDS ======
 const MOTO_BRANDS = ['Honda', 'Yamaha', 'Suzuki', 'VinFast', 'Kawasaki', 'Piaggio', 'Vespa', 'SYM'];
 
-const SORT_OPTIONS = [
-  { value: 'popular', label: 'Phổ biến nhất' },
-  { value: 'rating', label: 'Đánh giá cao' },
-  { value: 'price_asc', label: 'Giá thấp → cao' },
-  { value: 'price_desc', label: 'Giá cao → thấp' },
-  { value: 'newest', label: 'Mới nhất' },
+const getSortOptions = (t: any) => [
+  { value: 'popular', label: t.marketplace?.mostPopular || 'Phổ biến nhất' },
+  { value: 'rating', label: t.marketplace?.highestRated || 'Đánh giá cao' },
+  { value: 'price_asc', label: t.marketplace?.priceLowHigh || 'Giá thấp → cao' },
+  { value: 'price_desc', label: t.marketplace?.priceHighLow || 'Giá cao → thấp' },
+  { value: 'newest', label: t.marketplace?.newestFirst || 'Mới nhất' },
 ];
 
 // ====== MAP SIMULATOR ======
@@ -147,7 +148,7 @@ const MapSimulator: React.FC<{
               <div className={cn(
                 "px-2.5 py-1.5 rounded-full text-xs font-bold shadow-lg transition-all border flex items-center gap-1",
                 isSelected ? "bg-accent border-accent text-white scale-110"
-                  : isHovered ? "bg-slate-100 border-accent text-accent dark:bg-slate-900 scale-105"
+                  : isHovered ? "bg-slate-100 dark:bg-slate-800 border-accent text-accent dark:bg-slate-900 scale-105"
                     : "bg-slate-900/90 border-slate-700/80 text-white dark:bg-slate-900/90 hover:scale-105"
               )}>
                 {v.vehicleType === 'motorbike' ? '🏍' : '🚗'}
@@ -172,7 +173,7 @@ const MapSimulator: React.FC<{
             className="absolute bottom-6 left-6 right-6 md:right-auto md:w-80 bg-slate-900/95 border border-slate-800/80 backdrop-blur rounded-3xl p-4 shadow-2xl z-40"
             onClick={e => e.stopPropagation()}
           >
-            <button onClick={() => setSelectedPin(null)} className="absolute top-3 right-3 p-1 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors">
+            <button onClick={() => setSelectedPin(null)} className="absolute top-3 right-3 p-1 rounded-lg bg-white dark:bg-slate-900/10 hover:bg-white dark:bg-slate-900/20 text-white transition-colors">
               <X className="w-4 h-4" />
             </button>
             <div className="flex gap-4">
@@ -536,6 +537,8 @@ const MotorbikeFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: Ve
 
 // ====== MAIN MARKETPLACE PAGE ======
 const MarketplacePage: React.FC = () => {
+  const t = useT();
+  const language = useUIStore((s: any) => s.language);
   const [searchParams, setSearchParams] = useSearchParams();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -633,9 +636,9 @@ const MarketplacePage: React.FC = () => {
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-1 py-3 overflow-x-auto scrollbar-hide">
             {[
-              { type: 'all' as const, label: 'Tất Cả Xe', icon: <Sparkles className="w-4 h-4" />, count: null },
-              { type: 'car' as const, label: 'Ô Tô', icon: <Car className="w-4 h-4" />, count: null },
-              { type: 'motorbike' as const, label: 'Xe Máy', icon: <Bike className="w-4 h-4" />, count: null },
+              { type: 'all' as const, label: language === 'ja' ? 'すべての車' : language === 'ko' ? '모든 차량' : language === 'en' ? 'All Vehicles' : 'Tất Cả Xe', icon: <Sparkles className="w-4 h-4" />, count: null },
+              { type: 'car' as const, label: language === 'ja' ? '車' : language === 'ko' ? '자동차' : language === 'en' ? 'Cars' : 'Ô Tô', icon: <Car className="w-4 h-4" />, count: null },
+              { type: 'motorbike' as const, label: language === 'ja' ? 'バイク' : language === 'ko' ? '오토바이' : language === 'en' ? 'Motorbikes' : 'Xe Máy', icon: <Bike className="w-4 h-4" />, count: null },
             ].map(tab => (
               <button
                 key={tab.type}
@@ -648,7 +651,7 @@ const MarketplacePage: React.FC = () => {
                       : tab.type === 'car'
                         ? "border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400 shadow-sm"
                         : "border-accent bg-accent/10 text-accent shadow-sm"
-                    : "border-transparent text-slate-500 hover:text-foreground hover:bg-slate-50 dark:hover:bg-slate-900"
+                    : "border-transparent text-slate-500 hover:text-foreground hover:bg-slate-50 dark:bg-slate-950 dark:hover:bg-slate-900"
                 )}
               >
                 {tab.icon}
@@ -702,8 +705,8 @@ const MarketplacePage: React.FC = () => {
                 type="text"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                placeholder={activeType === 'motorbike' ? '🏍️ Tìm xe máy... Vision, Exciter, SH...' : activeType === 'car' ? '🚗 Tìm ô tô... Vios, Camry, CX5...' : '🔍 Tìm xe... Honda, Toyota, VinFast...'}
-                className="w-full pl-10 pr-10 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm outline-none text-foreground focus:border-accent focus:bg-white dark:focus:bg-slate-950 transition-all font-semibold"
+                placeholder={activeType === 'motorbike' ? (language === 'ja' ? '🏍️ バイクを検索...' : language === 'ko' ? '🏍️ 오토바이 검색...' : language === 'en' ? '🏍️ Search motorbikes...' : '🏍️ Tìm xe máy... Vision, Exciter, SH...') : activeType === 'car' ? (language === 'ja' ? '🚗 車を検索...' : language === 'ko' ? '🚗 자동차 검색...' : language === 'en' ? '🚗 Search cars...' : '🚗 Tìm ô tô... Vios, Camry, CX5...') : (language === 'ja' ? '🔍 車両を検索...' : language === 'ko' ? '🔍 차량 검색...' : language === 'en' ? '🔍 Search vehicles...' : '🔍 Tìm xe... Honda, Toyota, VinFast...')}
+                className="w-full pl-10 pr-10 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm outline-none text-foreground focus:border-accent focus:bg-white dark:bg-slate-900 dark:focus:bg-slate-950 transition-all font-semibold"
               />
               {searchQuery && (
                 <button onClick={() => setSearchQuery('')} className="absolute right-3.5 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400">
@@ -722,7 +725,7 @@ const MarketplacePage: React.FC = () => {
               )}
             >
               <SlidersHorizontal className="w-4 h-4" />
-              <span className="hidden sm:inline">Lọc</span>
+              <span className="hidden sm:inline">{language === 'ja' ? 'フィルター' : language === 'ko' ? '필터' : language === 'en' ? 'Filters' : 'Lọc'}</span>
               {activeFilterCount > 0 && (
                 <span className={cn("w-5 h-5 text-white text-[10px] font-extrabold rounded-full flex items-center justify-center",
                   activeType === 'motorbike' ? "bg-orange-500" : "bg-blue-500")}>
@@ -737,16 +740,16 @@ const MarketplacePage: React.FC = () => {
               <select
                 value={filters.sortBy || 'popular'}
                 onChange={e => handleFilterChange({ ...filters, sortBy: e.target.value as VehicleFilters['sortBy'] })}
-                className="appearance-none pl-4 pr-10 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-bold outline-none text-slate-600 dark:text-slate-300 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-850 transition-colors"
+                className="appearance-none pl-4 pr-10 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-bold outline-none text-slate-600 dark:text-slate-300 cursor-pointer hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-850 transition-colors"
               >
-                {SORT_OPTIONS.map(opt => (
+                {getSortOptions(t).map(opt => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
               </select>
               <ArrowUpDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
             </div>
 
-            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 rounded-2xl p-1 border border-slate-200/40 dark:border-slate-800/40">
+            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 rounded-2xl p-1 border border-slate-200 dark:border-slate-700/40 dark:border-slate-800/40">
               {(['grid', 'list'] as const).map(mode => (
                 <button key={mode} onClick={() => setViewMode(mode)}
                   className={cn("p-2 rounded-xl transition-all", viewMode === mode ? "bg-white dark:bg-slate-800 shadow-sm text-foreground font-bold" : "text-slate-450 hover:text-foreground")}>
@@ -760,7 +763,7 @@ const MarketplacePage: React.FC = () => {
               className={cn("hidden lg:flex items-center gap-2 px-4 py-2.5 rounded-2xl border text-xs font-bold transition-all",
                 mapOpen ? "bg-accent/15 border-accent text-accent" : "border-slate-200 dark:border-slate-800 text-slate-500")}>
               <Map className="w-4 h-4" />
-              <span>Bản Đồ</span>
+              <span>{language === 'ja' ? '地図' : language === 'ko' ? '지도' : language === 'en' ? 'Map' : 'Bản Đồ'}</span>
             </button>
           </div>
         </div>
@@ -795,9 +798,9 @@ const MarketplacePage: React.FC = () => {
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-3">
                 <p className="text-sm font-medium text-slate-450">
-                  {loading ? 'Đang tải...' : (
-                    <>Tìm thấy <span className="font-extrabold text-foreground">{total}</span>
-                      {' '}{activeType === 'motorbike' ? 'xe máy' : activeType === 'car' ? 'ô tô' : 'xe'}
+                  {loading ? (language === 'ja' ? '読み込み中...' : language === 'ko' ? '로딩 중...' : language === 'en' ? 'Loading...' : 'Đang tải...') : (
+                    <>{language === 'ja' || language === 'ko' ? '' : language === 'en' ? 'Found ' : 'Tìm thấy '}<span className="font-extrabold text-foreground">{total}</span>
+                      {' '}{activeType === 'motorbike' ? (language === 'ja' ? '台のバイクが見つかりました' : language === 'ko' ? '대의 오토바이를 찾았습니다' : language === 'en' ? 'motorbikes' : 'xe máy') : activeType === 'car' ? (language === 'ja' ? '台の車が見つかりました' : language === 'ko' ? '대의 자동차를 찾았습니다' : language === 'en' ? 'cars' : 'ô tô') : (language === 'ja' ? '台の車両が見つかりました' : language === 'ko' ? '대의 차량을 찾았습니다' : language === 'en' ? 'vehicles' : 'xe')}
                     </>
                   )}
                 </p>
@@ -865,7 +868,7 @@ const MarketplacePage: React.FC = () => {
                 {totalPages > 1 && (
                   <div className="flex justify-center gap-2 mt-12">
                     <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-                      className="px-5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 text-sm font-bold disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+                      className="px-5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 text-sm font-bold disabled:opacity-40 hover:bg-slate-50 dark:bg-slate-950 dark:hover:bg-slate-900 transition-colors">
                       ← Trước
                     </button>
                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -873,13 +876,13 @@ const MarketplacePage: React.FC = () => {
                       return (
                         <button key={pageNum} onClick={() => setPage(pageNum)}
                           className={cn("w-10 h-10 rounded-2xl text-sm font-bold border transition-all",
-                            pageNum === page ? "border-accent bg-accent text-white shadow-lg" : "border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900")}>
+                            pageNum === page ? "border-accent bg-accent text-white shadow-lg" : "border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:bg-slate-950 dark:hover:bg-slate-900")}>
                           {pageNum}
                         </button>
                       );
                     })}
                     <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-                      className="px-5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 text-sm font-bold disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+                      className="px-5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 text-sm font-bold disabled:opacity-40 hover:bg-slate-50 dark:bg-slate-950 dark:hover:bg-slate-900 transition-colors">
                       Sau →
                     </button>
                   </div>

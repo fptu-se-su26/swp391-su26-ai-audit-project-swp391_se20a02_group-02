@@ -38,7 +38,7 @@ export const FAQSection: React.FC<FAQSectionProps> = ({ faqs, loading }) => {
   const displayFaqs = faqs.length > 0 ? faqs : DEFAULT_FAQS;
 
   return (
-    <section className="py-20 bg-slate-50">
+    <section className="py-20 bg-slate-50 dark:bg-slate-950">
       <div className="max-w-3xl mx-auto px-6">
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-12">
           <span className="text-xs font-bold tracking-widest uppercase text-amber-500 mb-3 block">Got Questions?</span>
@@ -48,7 +48,7 @@ export const FAQSection: React.FC<FAQSectionProps> = ({ faqs, loading }) => {
           {(loading ? Array(5).fill(null) : displayFaqs).map((faq, i) => (
             <motion.div key={faq?.id ?? i} variants={staggerItem}>
               {faq ? (
-                <div className={`bg-white rounded-2xl border transition-colors ${open === i ? 'border-amber-200' : 'border-slate-100'}`}>
+                <div className={`bg-white dark:bg-slate-900 rounded-2xl border transition-colors ${open === i ? 'border-amber-200' : 'border-slate-100'}`}>
                   <button
                     onClick={() => setOpen(open === i ? null : i)}
                     className="w-full flex items-center justify-between p-5 text-left"
@@ -56,7 +56,7 @@ export const FAQSection: React.FC<FAQSectionProps> = ({ faqs, loading }) => {
                   >
                     <span className="font-semibold text-[#0F172A] text-sm pr-4">{faq.q}</span>
                     <motion.div animate={{ rotate: open === i ? 180 : 0 }} transition={{ duration: 0.2 }}
-                      className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
+                      className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0">
                       <ChevronDown className="w-4 h-4 text-slate-500" />
                     </motion.div>
                   </button>

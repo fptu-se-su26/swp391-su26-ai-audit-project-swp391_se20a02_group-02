@@ -112,7 +112,7 @@ export const EkycScanner: React.FC<EkycScannerProps> = ({ onComplete, onCancel }
   };
 
   return (
-    <div className="glass border border-slate-200/50 dark:border-white/5 rounded-[2rem] p-6 lg:p-8 shadow-xl max-w-3xl mx-auto w-full relative overflow-hidden">
+    <div className="glass border border-slate-200 dark:border-slate-700/50 dark:border-white/5 rounded-[2rem] p-6 lg:p-8 shadow-xl max-w-3xl mx-auto w-full relative overflow-hidden">
       <button 
         onClick={onCancel}
         className="absolute top-6 right-6 p-2 rounded-full hover:bg-slate-500/10 transition-colors"

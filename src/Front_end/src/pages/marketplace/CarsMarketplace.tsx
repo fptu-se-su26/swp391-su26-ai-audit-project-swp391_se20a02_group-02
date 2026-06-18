@@ -167,10 +167,10 @@ const MapSimulator: React.FC<{
 
       {/* Map controls */}
       <div className="absolute top-6 right-6 flex flex-col gap-1.5">
-        <button onClick={() => setZoom(z => Math.min(18, z + 1))} className="w-9 h-9 rounded-xl glass hover:bg-white/20 text-white flex items-center justify-center font-bold">
+        <button onClick={() => setZoom(z => Math.min(18, z + 1))} className="w-9 h-9 rounded-xl glass hover:bg-white dark:bg-slate-900/20 text-white flex items-center justify-center font-bold">
           <ZoomIn className="w-4 h-4" />
         </button>
-        <button onClick={() => setZoom(z => Math.max(10, z - 1))} className="w-9 h-9 rounded-xl glass hover:bg-white/20 text-white flex items-center justify-center font-bold">
+        <button onClick={() => setZoom(z => Math.max(10, z - 1))} className="w-9 h-9 rounded-xl glass hover:bg-white dark:bg-slate-900/20 text-white flex items-center justify-center font-bold">
           <ZoomOut className="w-4 h-4" />
         </button>
       </div>
@@ -483,7 +483,7 @@ export const CarsMarketplace: React.FC = () => {
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="🚗 Tìm xe ô tô... Camry, Mazda 3, Ford Ranger, VinFast VF8..."
-                className="w-full pl-10 pr-10 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm outline-none text-foreground focus:border-blue-500 focus:bg-white dark:focus:bg-slate-950 transition-all font-semibold"
+                className="w-full pl-10 pr-10 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm outline-none text-foreground focus:border-blue-500 focus:bg-white dark:bg-slate-900 dark:focus:bg-slate-950 transition-all font-semibold"
               />
               {searchQuery && (
                 <button onClick={() => setSearchQuery('')} className="absolute right-3.5 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400">
@@ -514,7 +514,7 @@ export const CarsMarketplace: React.FC = () => {
               <select
                 value={filters.sortBy || 'popular'}
                 onChange={e => handleFilterChange({ ...filters, sortBy: e.target.value as VehicleFilters['sortBy'] })}
-                className="appearance-none pl-4 pr-10 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-bold outline-none text-slate-600 dark:text-slate-300 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-850 transition-colors"
+                className="appearance-none pl-4 pr-10 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-bold outline-none text-slate-600 dark:text-slate-300 cursor-pointer hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-850 transition-colors"
               >
                 {SORT_OPTIONS.map(opt => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -523,7 +523,7 @@ export const CarsMarketplace: React.FC = () => {
               <ArrowUpDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
             </div>
 
-            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 rounded-2xl p-1 border border-slate-200/40 dark:border-slate-800/40">
+            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 rounded-2xl p-1 border border-slate-200 dark:border-slate-700/40 dark:border-slate-800/40">
               {(['grid', 'list'] as const).map(mode => (
                 <button key={mode} onClick={() => setViewMode(mode)}
                   className={cn("p-2 rounded-xl transition-all", viewMode === mode ? "bg-white dark:bg-slate-800 shadow-sm text-foreground font-bold" : "text-slate-450 hover:text-foreground")}>
@@ -632,7 +632,7 @@ export const CarsMarketplace: React.FC = () => {
                 {totalPages > 1 && (
                   <div className="flex justify-center gap-2 mt-12">
                     <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-                      className="px-5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 text-sm font-bold disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+                      className="px-5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 text-sm font-bold disabled:opacity-40 hover:bg-slate-50 dark:bg-slate-950 dark:hover:bg-slate-900 transition-colors">
                       ← Trước
                     </button>
                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -640,13 +640,13 @@ export const CarsMarketplace: React.FC = () => {
                       return (
                         <button key={pageNum} onClick={() => setPage(pageNum)}
                           className={cn("w-10 h-10 rounded-2xl text-sm font-bold border transition-all",
-                            pageNum === page ? "border-blue-500 bg-blue-500 text-white shadow-lg" : "border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900")}>
+                            pageNum === page ? "border-blue-500 bg-blue-500 text-white shadow-lg" : "border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:bg-slate-950 dark:hover:bg-slate-900")}>
                           {pageNum}
                         </button>
                       );
                     })}
                     <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-                      className="px-5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 text-sm font-bold disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+                      className="px-5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 text-sm font-bold disabled:opacity-40 hover:bg-slate-50 dark:bg-slate-950 dark:hover:bg-slate-900 transition-colors">
                       Sau →
                     </button>
                   </div>

@@ -944,16 +944,16 @@ export const MotorbikeDetails: React.FC = () => {
                 "p-2.5 rounded-2xl border transition-colors text-xs font-bold flex items-center gap-1",
                 isCompared
                   ? "border-orange-200 bg-orange-50 text-orange-500 dark:bg-orange-950/20"
-                  : "border-slate-200 dark:border-slate-800 text-slate-450 hover:bg-slate-50 dark:hover:bg-slate-900"
+                  : "border-slate-200 dark:border-slate-800 text-slate-450 hover:bg-slate-50 dark:bg-slate-950 dark:hover:bg-slate-900"
               )}
             >
               <CheckCircle2 className="w-4 h-4" />
               <span>{isCompared ? tLocal.comparing : tLocal.compare}</span>
             </button>
-            <button onClick={handleWishlistToggle} className="p-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+            <button onClick={handleWishlistToggle} className="p-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:bg-slate-950 dark:hover:bg-slate-900 transition-colors">
               <Heart className={cn("w-5 h-5", wishlisted ? "fill-red-500 text-red-500" : "text-slate-400")} />
             </button>
-            <button onClick={() => navigator.clipboard.writeText(window.location.href)} className="p-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+            <button onClick={() => navigator.clipboard.writeText(window.location.href)} className="p-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:bg-slate-950 dark:hover:bg-slate-900 transition-colors">
               <Share2 className="w-5 h-5 text-slate-400" />
             </button>
           </div>
@@ -1074,7 +1074,7 @@ export const MotorbikeDetails: React.FC = () => {
                         onClick={() => setActiveImage(idx)}
                         className={cn(
                           "w-2.5 h-2.5 rounded-full transition-all",
-                          activeImage === idx ? "bg-orange-500 w-5" : "bg-white/40 hover:bg-white/60"
+                          activeImage === idx ? "bg-orange-500 w-5" : "bg-white dark:bg-slate-900/40 hover:bg-white dark:bg-slate-900/60"
                         )}
                       />
                     ))}
@@ -1299,7 +1299,7 @@ export const MotorbikeDetails: React.FC = () => {
                 
                 {/* Helmet Option */}
                 {vehicle.hasHelmet && (
-                  <label className="flex items-center justify-between p-2.5 rounded-xl border border-slate-150 dark:border-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer">
+                  <label className="flex items-center justify-between p-2.5 rounded-xl border border-slate-150 dark:border-slate-800/80 hover:bg-slate-50 dark:bg-slate-950 dark:hover:bg-slate-900 cursor-pointer">
                     <div className="flex items-center gap-2">
                       <Shield className="w-4 h-4 text-orange-500" />
                       <div className="text-left">
@@ -1318,7 +1318,7 @@ export const MotorbikeDetails: React.FC = () => {
 
                 {/* Raincoat Option */}
                 {vehicle.hasRaincoat && (
-                  <label className="flex items-center justify-between p-2.5 rounded-xl border border-slate-150 dark:border-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer">
+                  <label className="flex items-center justify-between p-2.5 rounded-xl border border-slate-150 dark:border-slate-800/80 hover:bg-slate-50 dark:bg-slate-950 dark:hover:bg-slate-900 cursor-pointer">
                     <div className="flex items-center gap-2">
                       <CloudRain className="w-4 h-4 text-orange-500" />
                       <div className="text-left">
@@ -1337,7 +1337,7 @@ export const MotorbikeDetails: React.FC = () => {
 
                 {/* Phone Holder Option */}
                 {vehicle.hasPhoneHolder && (
-                  <label className="flex items-center justify-between p-2.5 rounded-xl border border-slate-150 dark:border-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer">
+                  <label className="flex items-center justify-between p-2.5 rounded-xl border border-slate-150 dark:border-slate-800/80 hover:bg-slate-50 dark:bg-slate-950 dark:hover:bg-slate-900 cursor-pointer">
                     <div className="flex items-center gap-2">
                       <Smartphone className="w-4 h-4 text-orange-500" />
                       <div className="text-left">
@@ -1356,7 +1356,7 @@ export const MotorbikeDetails: React.FC = () => {
 
                 {/* Luggage Rack Option */}
                 {vehicle.hasTouringPackage && (
-                  <label className="flex items-center justify-between p-2.5 rounded-xl border border-slate-150 dark:border-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer">
+                  <label className="flex items-center justify-between p-2.5 rounded-xl border border-slate-150 dark:border-slate-800/80 hover:bg-slate-50 dark:bg-slate-950 dark:hover:bg-slate-900 cursor-pointer">
                     <div className="flex items-center gap-2">
                       <Package className="w-4 h-4 text-orange-500" />
                       <div className="text-left">
@@ -1374,7 +1374,7 @@ export const MotorbikeDetails: React.FC = () => {
                 )}
 
                 {/* GoPro mount option */}
-                <label className="flex items-center justify-between p-2.5 rounded-xl border border-slate-150 dark:border-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer">
+                <label className="flex items-center justify-between p-2.5 rounded-xl border border-slate-150 dark:border-slate-800/80 hover:bg-slate-50 dark:bg-slate-950 dark:hover:bg-slate-900 cursor-pointer">
                   <div className="flex items-center gap-2">
                     <Video className="w-4 h-4 text-orange-500" />
                     <div className="text-left">
@@ -1393,7 +1393,7 @@ export const MotorbikeDetails: React.FC = () => {
                 {/* Delivery Option */}
                 {vehicle.deliveryAvailable && (
                   <>
-                    <label className="flex items-center justify-between p-2.5 rounded-xl border border-slate-150 dark:border-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer">
+                    <label className="flex items-center justify-between p-2.5 rounded-xl border border-slate-150 dark:border-slate-800/80 hover:bg-slate-50 dark:bg-slate-950 dark:hover:bg-slate-900 cursor-pointer">
                       <div className="flex items-center gap-2">
                         <MapPin className="w-4 h-4 text-orange-500" />
                         <div className="text-left">
@@ -1621,7 +1621,7 @@ export const MotorbikeDetails: React.FC = () => {
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/95 z-[250] flex items-center justify-center p-4"
           >
-            <button onClick={() => setLightboxOpen(false)} className="absolute top-4 right-4 p-2 rounded-xl text-white hover:bg-white/10 transition-colors">
+            <button onClick={() => setLightboxOpen(false)} className="absolute top-4 right-4 p-2 rounded-xl text-white hover:bg-white dark:bg-slate-900/10 transition-colors">
               <X className="w-6 h-6" />
             </button>
             <img src={images[activeImage]} alt={vehicle.name} className="max-w-full max-h-[85vh] object-contain rounded-2xl" />

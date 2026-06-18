@@ -115,7 +115,7 @@ const HeroFloatingCards: React.FC<{ stats: HomeStats | null }> = ({ stats }) => 
   return (
     <div className="flex flex-wrap justify-center gap-3 mt-6">
       {cards.map(({ icon: Icon, value, label, color }) => (
-        <div key={label} className="flex items-center gap-2.5 px-5 py-2.5 rounded-full border border-white/20 bg-white/10 backdrop-blur-md">
+        <div key={label} className="flex items-center gap-2.5 px-5 py-2.5 rounded-full border border-white/20 bg-white dark:bg-slate-900/10 backdrop-blur-md">
           <Icon className={`w-4.5 h-4.5 ${color}`} />
           <span className="text-white text-base font-bold">{value}</span>
           <span className="text-white/70 text-sm">{label}</span>
@@ -188,7 +188,7 @@ const HeroSection: React.FC<{ stats: HomeStats | null }> = ({ stats }) => {
           <button
             key={i}
             onClick={() => setHeroImage(i)}
-            className={`transition-all duration-300 rounded-full ${heroImage === i ? 'w-6 h-2 bg-amber-400' : 'w-2 h-2 bg-white/30'}`}
+            className={`transition-all duration-300 rounded-full ${heroImage === i ? 'w-6 h-2 bg-amber-400' : 'w-2 h-2 bg-white dark:bg-slate-900/30'}`}
           />
         ))}
       </div>
@@ -207,7 +207,7 @@ const HeroSection: React.FC<{ stats: HomeStats | null }> = ({ stats }) => {
           {/* Badge */}
           <motion.div
             variants={staggerItem}
-            className="inline-flex items-center gap-2 px-5 py-2.5 border border-white/25 rounded-full bg-white/15 backdrop-blur-sm text-white text-sm font-bold tracking-wider uppercase mb-6"
+            className="inline-flex items-center gap-2 px-5 py-2.5 border border-white/25 rounded-full bg-white dark:bg-slate-900/15 backdrop-blur-sm text-white text-sm font-bold tracking-wider uppercase mb-6"
           >
             <span className="text-base">🇻🇳</span>
             <span className="text-white/20">•</span>
@@ -241,11 +241,11 @@ const HeroSection: React.FC<{ stats: HomeStats | null }> = ({ stats }) => {
           {/* Search card */}
           <motion.div
             variants={staggerItem}
-            className="w-full max-w-5xl mx-auto bg-white rounded-2xl shadow-2xl p-2"
+            className="w-full max-w-5xl mx-auto bg-white dark:bg-slate-900 rounded-2xl shadow-2xl p-2"
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2 p-1.5">
               {/* Location */}
-              <div className="lg:col-span-2 flex items-center gap-2.5 px-4 py-3.5 hover:bg-slate-50 rounded-xl transition-colors">
+              <div className="lg:col-span-2 flex items-center gap-2.5 px-4 py-3.5 hover:bg-slate-50 dark:bg-slate-950 rounded-xl transition-colors">
                 <MapPin className="w-5 h-5 text-amber-500 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-0.5">{t.landing.hero.location}</p>
@@ -254,14 +254,14 @@ const HeroSection: React.FC<{ stats: HomeStats | null }> = ({ stats }) => {
                     value={location}
                     onChange={e => setLocation(e.target.value)}
                     placeholder={t.landing.hero.locationPlaceholder}
-                    className="w-full text-base font-semibold text-slate-800 placeholder:text-slate-300 outline-none bg-transparent"
+                    className="w-full text-base font-semibold text-slate-800 dark:text-slate-200 placeholder:text-slate-300 outline-none bg-transparent"
                     onKeyDown={e => e.key === 'Enter' && handleSearch()}
                   />
                 </div>
               </div>
 
               {/* Vehicle Type */}
-              <div className="flex items-center gap-2.5 px-4 py-3.5 border-l border-slate-100 hover:bg-slate-50 rounded-xl transition-colors">
+              <div className="flex items-center gap-2.5 px-4 py-3.5 border-l border-slate-100 hover:bg-slate-50 dark:bg-slate-950 rounded-xl transition-colors">
                 <Car className="w-5 h-5 text-amber-500 flex-shrink-0" />
                 <div className="flex-1 text-left min-w-0">
                   <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-0.5">{t.landing.hero.category}</p>
@@ -269,7 +269,7 @@ const HeroSection: React.FC<{ stats: HomeStats | null }> = ({ stats }) => {
                     <select
                       value={vehicleType}
                       onChange={e => setVehicleType(e.target.value)}
-                      className="w-full text-base font-semibold text-slate-800 outline-none bg-transparent cursor-pointer appearance-none pr-5 truncate"
+                      className="w-full text-base font-semibold text-slate-800 dark:text-slate-200 outline-none bg-transparent cursor-pointer appearance-none pr-5 truncate"
                     >
                       <option value="">{t.landing.hero.allTypes}</option>
                       <option value="car">🚗 {language === 'vi' ? 'Ô tô' : 'Cars'}</option>
@@ -281,24 +281,24 @@ const HeroSection: React.FC<{ stats: HomeStats | null }> = ({ stats }) => {
               </div>
 
               {/* Pickup */}
-              <div className="flex items-center gap-2.5 px-4 py-3.5 border-l border-slate-100 hover:bg-slate-50 rounded-xl transition-colors">
+              <div className="flex items-center gap-2.5 px-4 py-3.5 border-l border-slate-100 hover:bg-slate-50 dark:bg-slate-950 rounded-xl transition-colors">
                 <Calendar className="w-5 h-5 text-amber-500 flex-shrink-0" />
                 <div className="flex-1">
                   <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-0.5">{t.landing.hero.pickUp}</p>
                   <input type="date" value={startDate} min={today}
                     onChange={e => setStartDate(e.target.value)}
-                    className="w-full text-base font-semibold text-slate-800 outline-none bg-transparent cursor-pointer" />
+                    className="w-full text-base font-semibold text-slate-800 dark:text-slate-200 outline-none bg-transparent cursor-pointer" />
                 </div>
               </div>
 
               {/* Return */}
-              <div className="flex items-center gap-2.5 px-4 py-3.5 border-l border-slate-100 hover:bg-slate-50 rounded-xl transition-colors">
+              <div className="flex items-center gap-2.5 px-4 py-3.5 border-l border-slate-100 hover:bg-slate-50 dark:bg-slate-950 rounded-xl transition-colors">
                 <Calendar className="w-5 h-5 text-amber-500 flex-shrink-0" />
                 <div className="flex-1">
                   <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-0.5">{t.landing.hero.return}</p>
                   <input type="date" value={endDate} min={startDate || today}
                     onChange={e => setEndDate(e.target.value)}
-                    className="w-full text-base font-semibold text-slate-800 outline-none bg-transparent cursor-pointer" />
+                    className="w-full text-base font-semibold text-slate-800 dark:text-slate-200 outline-none bg-transparent cursor-pointer" />
                 </div>
               </div>
 
@@ -366,14 +366,14 @@ const StatsBar: React.FC<{ stats: HomeStats | null }> = ({ stats }) => {
         >
           {statsItems.map(({ icon: Icon, value, suffix, label, decimal }) => (
             <motion.div key={label} variants={staggerItem} className="text-center group">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-white/5 border border-white/10 mb-3 group-hover:border-amber-400/40 transition-colors">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-white dark:bg-slate-900/5 border border-white/10 mb-3 group-hover:border-amber-400/40 transition-colors">
                 <Icon className="w-5 h-5 text-amber-400" />
               </div>
               <div className="text-4xl font-extrabold text-white font-mono tabular-nums mb-1.5">
                 {stats ? (
                   <AnimatedCounter to={value} suffix={suffix} decimal={decimal} />
                 ) : (
-                  <Skeleton className="h-9 w-24 mx-auto bg-white/10" />
+                  <Skeleton className="h-9 w-24 mx-auto bg-white dark:bg-slate-900/10" />
                 )}
               </div>
               <p className="text-slate-300 text-sm font-semibold uppercase tracking-wider">{label}</p>
@@ -402,7 +402,7 @@ const PromotionSection: React.FC<{ promotions: Promotion[]; loading: boolean }> 
   if (!loading && promotions.length === 0) return null;
 
   return (
-    <section className="py-16 bg-slate-50 overflow-hidden">
+    <section className="py-16 bg-slate-50 dark:bg-slate-950 overflow-hidden">
       <div className="max-w-7xl mx-auto px-6">
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="flex justify-between items-end mb-8">
           <div>
@@ -478,7 +478,7 @@ const PromotionSection: React.FC<{ promotions: Promotion[]; loading: boolean }> 
                       </span>
                     )}
                     {promo.badgeText && (
-                      <span className="px-3.5 py-1.5 bg-white/10 backdrop-blur-md text-white text-xs font-bold rounded-xl border border-white/20 uppercase tracking-wider shadow-sm">
+                      <span className="px-3.5 py-1.5 bg-white dark:bg-slate-900/10 backdrop-blur-md text-white text-xs font-bold rounded-xl border border-white/20 uppercase tracking-wider shadow-sm">
                         {promo.badgeText}
                       </span>
                     )}
@@ -511,7 +511,7 @@ const TrendingSection: React.FC<{ vehicles: TrendingVehicle[]; loading: boolean 
   const scroll = (dir: number) => ref.current?.scrollBy({ left: dir * 340, behavior: 'smooth' });
 
   return (
-    <section className="py-16 bg-white overflow-hidden">
+    <section className="py-16 bg-white dark:bg-slate-900 overflow-hidden">
       <div className="max-w-7xl mx-auto px-6">
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="flex justify-between items-end mb-8">
           <div>
@@ -520,11 +520,11 @@ const TrendingSection: React.FC<{ vehicles: TrendingVehicle[]; loading: boolean 
             <p className="text-slate-500 mt-1 text-sm">{t.landingPage.trending.desc}</p>
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={() => scroll(-1)} className="w-9 h-9 rounded-full border border-slate-200 flex items-center justify-center hover:border-[#0F172A] transition-colors">
-              <ChevronLeft className="w-4 h-4 text-slate-600" />
+            <button onClick={() => scroll(-1)} className="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:border-[#0F172A] transition-colors">
+              <ChevronLeft className="w-4 h-4 text-slate-600 dark:text-slate-400" />
             </button>
-            <button onClick={() => scroll(1)} className="w-9 h-9 rounded-full border border-slate-200 flex items-center justify-center hover:border-[#0F172A] transition-colors">
-              <ChevronRight className="w-4 h-4 text-slate-600" />
+            <button onClick={() => scroll(1)} className="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:border-[#0F172A] transition-colors">
+              <ChevronRight className="w-4 h-4 text-slate-600 dark:text-slate-400" />
             </button>
           </div>
         </motion.div>
@@ -537,10 +537,10 @@ const TrendingSection: React.FC<{ vehicles: TrendingVehicle[]; loading: boolean 
                 key={v.id}
                 whileHover={{ y: -8, scale: 1.015 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                className="flex-shrink-0 w-80 bg-white border border-slate-100 rounded-3xl overflow-hidden cursor-pointer group shadow-luxury hover:shadow-luxury-lg transition-all duration-300"
+                className="flex-shrink-0 w-80 bg-white dark:bg-slate-900 border border-slate-100 rounded-3xl overflow-hidden cursor-pointer group shadow-luxury hover:shadow-luxury-lg transition-all duration-300"
                 onClick={() => navigate(`/vehicles/${v.id}`)}
               >
-                <div className="relative h-52 overflow-hidden bg-slate-100">
+                <div className="relative h-52 overflow-hidden bg-slate-100 dark:bg-slate-800">
                   {v.thumbnailUrl ? (
                     <img src={v.thumbnailUrl} alt={v.name} loading="lazy"
                       className="w-full h-full object-cover transition-transform duration-750 group-hover:scale-105" />
@@ -576,7 +576,7 @@ const TrendingSection: React.FC<{ vehicles: TrendingVehicle[]; loading: boolean 
                 <div className="p-5">
                   <div className="flex items-center justify-between mb-1.5">
                     <p className="text-xs text-slate-400 font-extrabold uppercase tracking-widest">{v.brand}</p>
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-50 border border-slate-100 text-[10px] font-bold text-slate-500">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-50 dark:bg-slate-950 border border-slate-100 text-[10px] font-bold text-slate-500">
                       {v.vehicleType === 'motorbike' ? (language === 'vi' ? '🏍️ Xe máy' : '🏍️ Motorbike') : (language === 'vi' ? '🚗 Ô tô' : '🚗 Car')}
                     </span>
                   </div>
@@ -587,7 +587,7 @@ const TrendingSection: React.FC<{ vehicles: TrendingVehicle[]; loading: boolean 
                   <div className="flex items-center justify-between pt-3.5 border-t border-slate-100">
                     <div className="flex items-center gap-1">
                       <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                      <span className="text-sm font-bold text-slate-700">{Number(v.rating).toFixed(1)}</span>
+                      <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{Number(v.rating).toFixed(1)}</span>
                       <span className="text-xs text-slate-400">({v.totalReviews})</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-slate-500 text-xs font-semibold">
@@ -669,7 +669,7 @@ const CategoryGrid: React.FC<{ categories: typeof CAR_CATEGORIES; counts: Record
               
               <div className="absolute inset-x-0 bottom-0 p-4 flex items-center justify-between z-10">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-white/15 backdrop-blur-md border border-white/10 flex items-center justify-center text-white group-hover:bg-amber-400 group-hover:text-black group-hover:border-amber-400 transition-all duration-300">
+                  <div className="w-9 h-9 rounded-xl bg-white dark:bg-slate-900/15 backdrop-blur-md border border-white/10 flex items-center justify-center text-white group-hover:bg-amber-400 group-hover:text-black group-hover:border-amber-400 transition-all duration-300">
                     <Icon className="w-4.5 h-4.5" />
                   </div>
                   <div>
@@ -678,7 +678,7 @@ const CategoryGrid: React.FC<{ categories: typeof CAR_CATEGORIES; counts: Record
                     </p>
                   </div>
                 </div>
-                <span className="text-[10px] text-white/95 bg-white/15 backdrop-blur-md border border-white/10 px-2.5 py-1 rounded-xl font-bold group-hover:bg-white/25 transition-all">
+                <span className="text-[10px] text-white/95 bg-white dark:bg-slate-900/15 backdrop-blur-md border border-white/10 px-2.5 py-1 rounded-xl font-bold group-hover:bg-white dark:bg-slate-900/25 transition-all">
                   {counts[cat.key] ?? 0} {t.landingPage.categories.xe}
                 </span>
               </div>
@@ -694,7 +694,7 @@ const CategoriesSection: React.FC<{ data: CategoryData | null }> = ({ data }) =>
   const t = useT();
 
   return (
-    <section className="py-16 bg-slate-50">
+    <section className="py-16 bg-slate-50 dark:bg-slate-950">
       <div className="max-w-7xl mx-auto px-6">
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="mb-10">
           <span className="text-sm font-bold tracking-widest uppercase text-amber-500 mb-2 block">{t.landingPage.categories.fleet}</span>
@@ -727,7 +727,7 @@ const DestinationsSection: React.FC<{ destinations: Destination[]; loading: bool
   const t = useT();
 
   return (
-    <section className="py-16 bg-white">
+    <section className="py-16 bg-white dark:bg-slate-900">
       <div className="max-w-7xl mx-auto px-6">
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="flex justify-between items-end mb-8">
           <div>
@@ -812,7 +812,7 @@ const WhyLuxeWaySection: React.FC = () => {
               variants={staggerItem}
               whileHover={{ y: -4, scale: 1.01 }}
               transition={{ type: 'spring', damping: 20 }}
-              className="p-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm hover:border-white/25 transition-colors duration-300 group"
+              className="p-6 rounded-2xl border border-white/10 bg-white dark:bg-slate-900/5 backdrop-blur-sm hover:border-white/25 transition-colors duration-300 group"
             >
               <div className={`w-10 h-10 rounded-xl ${color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
                 <Icon className="w-5 h-5" />
@@ -841,7 +841,7 @@ const HowItWorksSection: React.FC = () => {
   ];
 
   return (
-    <section className="py-20 bg-slate-50">
+    <section className="py-20 bg-slate-50 dark:bg-slate-950">
       <div className="max-w-7xl mx-auto px-6">
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-14">
           <span className="text-sm font-bold tracking-widest uppercase text-amber-500 mb-3 block">{t.landingPage.howItWorks.seamless}</span>
@@ -861,7 +861,7 @@ const HowItWorksSection: React.FC = () => {
               variants={staggerItem}
               whileHover={{ y: -6 }}
               transition={{ type: 'spring', damping: 15 }}
-              className="relative bg-white rounded-3xl p-7 shadow-sm border border-slate-100 text-center group hover:shadow-lg transition-shadow"
+              className="relative bg-white dark:bg-slate-900 rounded-3xl p-7 shadow-sm border border-slate-100 text-center group hover:shadow-lg transition-shadow"
             >
               <div className={`absolute -top-5 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-gradient-to-br ${step.color} text-white text-sm font-black flex items-center justify-center shadow-md`}>
                 {step.num}
@@ -910,7 +910,7 @@ const InsuranceSection: React.FC = () => {
   ];
 
   return (
-    <section className="py-20 bg-white">
+    <section className="py-20 bg-white dark:bg-slate-900">
       <div className="max-w-7xl mx-auto px-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
           {/* Left content */}
@@ -951,10 +951,10 @@ const InsuranceSection: React.FC = () => {
               <motion.div
                 key={label}
                 variants={staggerItem}
-                className="p-6 bg-slate-50 rounded-2xl border border-slate-100 hover:border-emerald-200 transition-colors"
+                className="p-6 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 hover:border-emerald-200 transition-colors"
               >
                 <p className="font-black text-2xl text-[#0F172A] mb-1">{value}</p>
-                <p className="font-semibold text-slate-700 text-base">{label}</p>
+                <p className="font-semibold text-slate-700 dark:text-slate-300 text-base">{label}</p>
                 <p className="text-slate-500 text-sm font-medium">{sub}</p>
               </motion.div>
             ))}
@@ -1006,7 +1006,7 @@ const TestimonialsSection: React.FC<{ data: TestimonialsData | null; loading: bo
 
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {[1, 2, 3].map(i => <Skeleton key={i} className="h-44 bg-white/5 rounded-2xl" />)}
+            {[1, 2, 3].map(i => <Skeleton key={i} className="h-44 bg-white dark:bg-slate-900/5 rounded-2xl" />)}
           </div>
         ) : reviews.length === 0 ? (
           <div className="text-center py-16 text-slate-400">
@@ -1021,7 +1021,7 @@ const TestimonialsSection: React.FC<{ data: TestimonialsData | null; loading: bo
             {/* Desktop grid */}
             <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true }} className="hidden md:grid grid-cols-3 gap-5">
               {reviews.slice(0, 6).map((r) => (
-                <motion.div key={r.id} variants={staggerItem} className="p-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm flex flex-col">
+                <motion.div key={r.id} variants={staggerItem} className="p-6 rounded-2xl border border-white/10 bg-white dark:bg-slate-900/5 backdrop-blur-sm flex flex-col">
                   <Quote className="w-6 h-6 text-amber-400 mb-3 opacity-70" />
                   <p className="text-white/90 text-base leading-relaxed flex-1 mb-5 line-clamp-4">{r.comment}</p>
                   <div className="flex items-center gap-3 pt-4 border-t border-white/10">
@@ -1051,7 +1051,7 @@ const TestimonialsSection: React.FC<{ data: TestimonialsData | null; loading: bo
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.35 }}
-                  className="p-6 rounded-2xl border border-white/10 bg-white/5"
+                  className="p-6 rounded-2xl border border-white/10 bg-white dark:bg-slate-900/5"
                 >
                   <Quote className="w-6 h-6 text-amber-400 mb-3 opacity-70" />
                   <p className="text-white/80 text-sm leading-relaxed mb-5">{reviews[idx]?.comment}</p>
@@ -1071,7 +1071,7 @@ const TestimonialsSection: React.FC<{ data: TestimonialsData | null; loading: bo
               <div className="flex justify-center gap-1.5 mt-4">
                 {reviews.map((_, i) => (
                   <button key={i} onClick={() => setIdx(i)}
-                    className={`transition-all rounded-full ${i === idx ? 'w-5 h-1.5 bg-amber-400' : 'w-1.5 h-1.5 bg-white/20'}`} />
+                    className={`transition-all rounded-full ${i === idx ? 'w-5 h-1.5 bg-amber-400' : 'w-1.5 h-1.5 bg-white dark:bg-slate-900/20'}`} />
                 ))}
               </div>
             </div>
@@ -1099,7 +1099,7 @@ const BecomeOwnerSection: React.FC<{ ownerStats: OwnerStats | null }> = ({ owner
   ];
 
   return (
-    <section className="py-20 bg-white">
+    <section className="py-20 bg-white dark:bg-slate-900">
       <div className="max-w-7xl mx-auto px-6">
         <div className="rounded-3xl overflow-hidden bg-[#0F172A] flex flex-col lg:flex-row">
           {/* Left */}
@@ -1119,7 +1119,7 @@ const BecomeOwnerSection: React.FC<{ ownerStats: OwnerStats | null }> = ({ owner
               <motion.div variants={staggerContainer} className="grid grid-cols-2 gap-4 mb-8">
                 {ownerStatsItems.map(({ label, value, icon: Icon }) => (
                   <motion.div key={label} variants={staggerItem}
-                    className="p-4 rounded-xl bg-white/5 border border-white/10">
+                    className="p-4 rounded-xl bg-white dark:bg-slate-900/5 border border-white/10">
                     <Icon className="w-4.5 h-4.5 text-amber-400 mb-2" />
                     <p className="font-bold text-white text-xl">{value}</p>
                     <p className="text-slate-400 text-sm font-medium">{label}</p>
@@ -1128,7 +1128,7 @@ const BecomeOwnerSection: React.FC<{ ownerStats: OwnerStats | null }> = ({ owner
               </motion.div>
 
               {/* Earnings Calculator */}
-              <motion.div variants={staggerItem} className="p-5 rounded-2xl bg-white/5 border border-white/10 mb-7">
+              <motion.div variants={staggerItem} className="p-5 rounded-2xl bg-white dark:bg-slate-900/5 border border-white/10 mb-7">
                 <p className="text-white font-bold text-base mb-4">{t.landingPage.owner.calculator}</p>
                 <div className="flex items-center gap-3 mb-3">
                   <label className="text-slate-350 text-sm w-32 flex-shrink-0">{t.landingPage.owner.days}</label>
@@ -1218,7 +1218,7 @@ const FAQSection: React.FC<{ faqs: FAQ[]; loading: boolean }> = ({ faqs, loading
   const displayFaqs = faqs.length > 0 ? faqs : DEFAULT_FAQS;
 
   return (
-    <section className="py-20 bg-slate-50">
+    <section className="py-20 bg-slate-50 dark:bg-slate-950">
       <div className="max-w-3xl mx-auto px-6">
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-12">
           <span className="text-sm font-bold tracking-wider uppercase text-amber-500 mb-3 block">{t.landingPage.faq.label}</span>
@@ -1228,7 +1228,7 @@ const FAQSection: React.FC<{ faqs: FAQ[]; loading: boolean }> = ({ faqs, loading
           {(loading ? Array(5).fill(null) : displayFaqs).map((faq, i) => (
             <motion.div key={faq?.id ?? i} variants={staggerItem}>
               {faq ? (
-                <div className={`bg-white rounded-2xl border transition-colors ${open === i ? 'border-amber-200' : 'border-slate-100'}`}>
+                <div className={`bg-white dark:bg-slate-900 rounded-2xl border transition-colors ${open === i ? 'border-amber-200' : 'border-slate-100'}`}>
                   <button
                     onClick={() => setOpen(open === i ? null : i)}
                     className="w-full flex items-center justify-between p-5 text-left"
@@ -1236,7 +1236,7 @@ const FAQSection: React.FC<{ faqs: FAQ[]; loading: boolean }> = ({ faqs, loading
                   >
                     <span className="font-bold text-[#0F172A] text-base pr-4">{faq.q}</span>
                     <motion.div animate={{ rotate: open === i ? 180 : 0 }} transition={{ duration: 0.2 }}
-                      className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
+                      className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0">
                       <ChevronDown className="w-4 h-4 text-slate-500" />
                     </motion.div>
                   </button>
@@ -1311,7 +1311,7 @@ const Footer: React.FC = () => {
             <div className="flex gap-2">
               <input type="email" value={email} onChange={e => setEmail(e.target.value)}
                 placeholder={t.landingPage.footer.placeholder}
-                className="flex-1 px-4 py-3 rounded-xl bg-white/10 border border-white/10 text-base text-white placeholder:text-slate-500 outline-none focus:border-amber-400/50 transition-colors" />
+                className="flex-1 px-4 py-3 rounded-xl bg-white dark:bg-slate-900/10 border border-white/10 text-base text-white placeholder:text-slate-500 outline-none focus:border-amber-400/50 transition-colors" />
               <button className="px-5 py-3 rounded-xl bg-amber-400 text-black text-base font-bold hover:bg-amber-300 transition-colors">
                 {t.landingPage.footer.go}
               </button>
@@ -1325,7 +1325,7 @@ const Footer: React.FC = () => {
                 { icon: Youtube, href: '#' },
               ].map(({ icon: Icon, href }) => (
                 <a key={href + Icon.name} href={href}
-                  className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center hover:bg-amber-400/20 transition-colors">
+                  className="w-8 h-8 rounded-lg bg-white dark:bg-slate-900/10 flex items-center justify-center hover:bg-amber-400/20 transition-colors">
                   <Icon className="w-4 h-4 text-slate-400" />
                 </a>
               ))}
@@ -1355,7 +1355,7 @@ const Footer: React.FC = () => {
             { icon: MapPin, label: '123 Nguyen Hue, Ho Chi Minh City', sub: t.landingPage.footer.headquarters },
           ].map(({ icon: Icon, label, sub }) => (
             <div key={label} className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-white dark:bg-slate-900/5 flex items-center justify-center flex-shrink-0">
                 <Icon className="w-4 h-4 text-amber-400" />
               </div>
               <div>
@@ -1419,15 +1419,38 @@ const VehicleTypeShowcase: React.FC = () => {
   const language = useUIStore((s: any) => s.language);
   const [activeTab, setActiveTab] = useState<'cars' | 'motorbikes'>('cars');
 
+  const getShowcaseTranslations = () => {
+    if (language === 'ja') return {
+      label: '注目の車',
+      title: '最も人気の車',
+      desc: '何千もの高品質な車やバイクがあなたを待っています。',
+      cars: '車',
+      motorbikes: 'バイク',
+      viewAllCars: 'すべての車を見る',
+      viewAllMotorbikes: 'すべてのバイクを見る'
+    };
+    if (language === 'ko') return {
+      label: '추천 차량',
+      title: '가장 인기 있는 차량',
+      desc: '수천 대의 고품질 자동차와 오토바이가 여러분을 기다립니다.',
+      cars: '자동차',
+      motorbikes: '오토바이',
+      viewAllCars: '모든 자동차 보기',
+      viewAllMotorbikes: '모든 오토바이 보기'
+    };
+    return t.landingPage.showcase;
+  };
+
+  const strings = getShowcaseTranslations();
   const list = activeTab === 'cars' ? FEATURED_CARS : FEATURED_MOTORBIKES;
 
   return (
     <section className="py-20 bg-white dark:bg-slate-900">
       <div className="max-w-7xl mx-auto px-6">
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-10">
-          <span className="text-sm font-bold tracking-widest uppercase text-amber-500 mb-2 block">{t.landingPage.showcase.label}</span>
-          <h2 className="font-bold text-3xl md:text-4xl text-[#0F172A] dark:text-white mb-3">{t.landingPage.showcase.title}</h2>
-          <p className="text-slate-500 max-w-xl mx-auto text-base">{t.landingPage.showcase.desc}</p>
+          <span className="text-sm font-bold tracking-widest uppercase text-amber-500 mb-2 block">{strings?.label}</span>
+          <h2 className="font-bold text-3xl md:text-4xl text-[#0F172A] dark:text-white mb-3">{strings?.title}</h2>
+          <p className="text-slate-500 max-w-xl mx-auto text-base">{strings?.desc}</p>
         </motion.div>
 
         {/* Type Tabs */}
@@ -1437,13 +1460,13 @@ const VehicleTypeShowcase: React.FC = () => {
               onClick={() => setActiveTab('cars')}
               className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'cars' ? 'bg-white dark:bg-slate-700 shadow text-blue-600 dark:text-blue-400' : 'text-slate-500 hover:text-foreground'}`}
             >
-              <Car className="w-4 h-4" /> {t.landingPage.showcase.cars}
+              <Car className="w-4 h-4" /> {strings?.cars}
             </button>
             <button
               onClick={() => setActiveTab('motorbikes')}
               className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'motorbikes' ? 'bg-white dark:bg-slate-700 shadow text-orange-600 dark:text-orange-400' : 'text-slate-500 hover:text-foreground'}`}
             >
-              <Bike className="w-4 h-4" /> {t.landingPage.showcase.motorbikes}
+              <Bike className="w-4 h-4" /> {strings?.motorbikes}
             </button>
           </div>
         </div>
@@ -1497,7 +1520,7 @@ const VehicleTypeShowcase: React.FC = () => {
             className="inline-flex items-center gap-2 px-8 py-3.5 rounded-2xl font-bold text-white transition-all hover:scale-105 active:scale-95"
             style={{ background: activeTab === 'cars' ? 'linear-gradient(135deg,#2563eb,#1d4ed8)' : 'linear-gradient(135deg,#f97316,#ea580c)' }}
           >
-            {activeTab === 'cars' ? t.landingPage.showcase.viewAllCars : t.landingPage.showcase.viewAllMotorbikes} <ArrowRight className="w-4 h-4" />
+            {activeTab === 'cars' ? strings?.viewAllCars : strings?.viewAllMotorbikes} <ArrowRight className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -1514,6 +1537,49 @@ const RevenueCalculator: React.FC = () => {
   const [vehicleType, setVehicleType] = useState<'car' | 'motorbike'>('car');
   const [daysPerMonth, setDaysPerMonth] = useState(15);
   const [pricePerDay, setPricePerDay] = useState(1000000);
+
+  const getCalculatorTranslations = () => {
+    if (language === 'ja') return {
+      label: '収益計算',
+      title: 'どのくらい稼げますか？',
+      desc: 'LuxeWayでの車両レンタルの収益を見積もる',
+      vehicleType: '車両タイプ',
+      cars: '車',
+      motorbikes: 'バイク',
+      selectModel: 'モデルを選択',
+      priceDay: '1日あたりの価格',
+      daysMonth: '1ヶ月あたりのレンタル日数',
+      daysUnit: '日',
+      netRevenueMonth: '1ヶ月あたりの純利益',
+      afterFee: '8％のプラットフォーム手数料後',
+      grossRevenue: '総収益',
+      annualRevenue: '年間収益',
+      feeLabel: 'プラットフォーム手数料 (8%)',
+      netRevenueLabel: '純利益',
+      cta: '今すぐホストとして登録する'
+    };
+    if (language === 'ko') return {
+      label: '수익 계산기',
+      title: '얼마나 벌 수 있을까요?',
+      desc: 'LuxeWay에서 차량 렌탈 수익을 예상해 보세요',
+      vehicleType: '차량 종류',
+      cars: '자동차',
+      motorbikes: '오토바이',
+      selectModel: '모델 선택',
+      priceDay: '일일 가격',
+      daysMonth: '월 렌탈 일수',
+      daysUnit: '일',
+      netRevenueMonth: '월 순수익',
+      afterFee: '플랫폼 수수료 8% 제외',
+      grossRevenue: '총 수익',
+      annualRevenue: '연간 수익',
+      feeLabel: '플랫폼 수수료 (8%)',
+      netRevenueLabel: '순수익',
+      cta: '지금 호스트로 등록하기'
+    };
+    return t.landingPage.calculator;
+  };
+  const strings = getCalculatorTranslations();
 
   const carPresets = [
     { label: 'Toyota Vios', price: 800000 },
@@ -1546,33 +1612,33 @@ const RevenueCalculator: React.FC = () => {
       <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, #3b82f6 0%, transparent 50%), radial-gradient(circle at 80% 20%, #f97316 0%, transparent 50%)' }} />
       <div className="max-w-5xl mx-auto px-6 relative">
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-10">
-          <span className="text-sm font-bold tracking-widest uppercase text-amber-400 mb-2 block">{t.landingPage.calculator.label}</span>
-          <h2 className="font-bold text-3xl md:text-4xl text-white mb-3">{t.landingPage.calculator.title}</h2>
-          <p className="text-slate-400 max-w-xl mx-auto">{t.landingPage.calculator.desc}</p>
+          <span className="text-sm font-bold tracking-widest uppercase text-amber-400 mb-2 block">{strings.label}</span>
+          <h2 className="font-bold text-3xl md:text-4xl text-white mb-3">{strings.title}</h2>
+          <p className="text-slate-400 max-w-xl mx-auto">{strings.desc}</p>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
           {/* Controls */}
           <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}
-            className="bg-white/5 border border-white/10 rounded-3xl p-8 space-y-6">
+            className="bg-white dark:bg-slate-900/5 border border-white/10 rounded-3xl p-8 space-y-6">
             {/* Vehicle type toggle */}
             <div>
-              <p className="text-white/70 text-xs font-bold uppercase tracking-wider mb-3">{t.landingPage.calculator.vehicleType}</p>
+              <p className="text-white/70 text-xs font-bold uppercase tracking-wider mb-3">{strings.vehicleType}</p>
               <div className="flex gap-2">
                 <button onClick={() => setVehicleType('car')}
                   className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold border-2 transition-all ${vehicleType === 'car' ? 'border-blue-500 bg-blue-500/20 text-blue-400' : 'border-white/10 text-white/50 hover:border-white/30'}`}>
-                  <Car className="w-4 h-4" /> {t.landingPage.calculator.cars}
+                  <Car className="w-4 h-4" /> {strings.cars}
                 </button>
                 <button onClick={() => setVehicleType('motorbike')}
                   className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold border-2 transition-all ${vehicleType === 'motorbike' ? 'border-orange-500 bg-orange-500/20 text-orange-400' : 'border-white/10 text-white/50 hover:border-white/30'}`}>
-                  <Bike className="w-4 h-4" /> {t.landingPage.calculator.motorbikes}
+                  <Bike className="w-4 h-4" /> {strings.motorbikes}
                 </button>
               </div>
             </div>
 
             {/* Preset models */}
             <div>
-              <p className="text-white/70 text-xs font-bold uppercase tracking-wider mb-3">{t.landingPage.calculator.selectModel}</p>
+              <p className="text-white/70 text-xs font-bold uppercase tracking-wider mb-3">{strings.selectModel}</p>
               <div className="grid grid-cols-2 gap-2">
                 {presets.map(p => (
                   <button key={p.label} onClick={() => setPricePerDay(p.price)}
@@ -1587,7 +1653,7 @@ const RevenueCalculator: React.FC = () => {
             {/* Price slider */}
             <div>
               <div className="flex justify-between mb-2">
-                <p className="text-white/70 text-xs font-bold uppercase tracking-wider">{t.landingPage.calculator.priceDay}</p>
+                <p className="text-white/70 text-xs font-bold uppercase tracking-wider">{strings.priceDay}</p>
                 <span className="text-white font-extrabold text-sm">{formatCurrency(pricePerDay)}</span>
               </div>
               <input type="range"
@@ -1603,14 +1669,14 @@ const RevenueCalculator: React.FC = () => {
             {/* Days slider */}
             <div>
               <div className="flex justify-between mb-2">
-                <p className="text-white/70 text-xs font-bold uppercase tracking-wider">{t.landingPage.calculator.daysMonth}</p>
-                <span className="text-white font-extrabold text-sm">{daysPerMonth} {t.landingPage.calculator.daysUnit}</span>
+                <p className="text-white/70 text-xs font-bold uppercase tracking-wider">{strings.daysMonth}</p>
+                <span className="text-white font-extrabold text-sm">{daysPerMonth} {strings.daysUnit}</span>
               </div>
               <input type="range" min={5} max={30} step={1} value={daysPerMonth}
                 onChange={e => setDaysPerMonth(Number(e.target.value))}
                 className="w-full h-2 rounded-lg appearance-none cursor-pointer accent-amber-400" />
               <div className="flex justify-between text-[10px] text-white/30 mt-1">
-                <span>5 {t.landingPage.calculator.daysUnit}</span><span>15 {t.landingPage.calculator.daysUnit}</span><span>30 {t.landingPage.calculator.daysUnit}</span>
+                <span>5 {strings.daysUnit}</span><span>15 {strings.daysUnit}</span><span>30 {strings.daysUnit}</span>
               </div>
             </div>
           </motion.div>
@@ -1619,7 +1685,7 @@ const RevenueCalculator: React.FC = () => {
           <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }}
             className="space-y-4">
             <div className="bg-gradient-to-br from-amber-400/10 to-amber-600/5 border border-amber-400/20 rounded-3xl p-8 text-center">
-              <p className="text-amber-400/80 text-sm font-bold uppercase tracking-wider mb-2">{t.landingPage.calculator.netRevenueMonth}</p>
+              <p className="text-amber-400/80 text-sm font-bold uppercase tracking-wider mb-2">{strings.netRevenueMonth}</p>
               <motion.p
                 key={netRevenue}
                 initial={{ scale: 0.9, opacity: 0 }}
@@ -1628,35 +1694,35 @@ const RevenueCalculator: React.FC = () => {
               >
                 {formatCurrency(netRevenue)}
               </motion.p>
-              <p className="text-white/40 text-xs mt-2">{t.landingPage.calculator.afterFee}</p>
+              <p className="text-white/40 text-xs mt-2">{strings.afterFee}</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-5 text-center">
-                <p className="text-white/50 text-xs font-bold uppercase tracking-wider mb-2">{t.landingPage.calculator.grossRevenue}</p>
+              <div className="bg-white dark:bg-slate-900/5 border border-white/10 rounded-2xl p-5 text-center">
+                <p className="text-white/50 text-xs font-bold uppercase tracking-wider mb-2">{strings.grossRevenue}</p>
                 <p className="text-2xl font-extrabold text-white">{formatCurrency(grossRevenue)}</p>
               </div>
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-5 text-center">
-                <p className="text-white/50 text-xs font-bold uppercase tracking-wider mb-2">{t.landingPage.calculator.annualRevenue}</p>
+              <div className="bg-white dark:bg-slate-900/5 border border-white/10 rounded-2xl p-5 text-center">
+                <p className="text-white/50 text-xs font-bold uppercase tracking-wider mb-2">{strings.annualRevenue}</p>
                 <p className="text-2xl font-extrabold text-emerald-400">{formatCurrency(annualRevenue)}</p>
               </div>
             </div>
 
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+            <div className="bg-white dark:bg-slate-900/5 border border-white/10 rounded-2xl p-5">
               <div className="flex justify-between items-center py-2 border-b border-white/10">
-                <span className="text-white/60 text-sm">{t.landingPage.calculator.priceDay}</span>
+                <span className="text-white/60 text-sm">{strings.priceDay}</span>
                 <span className="text-white font-bold text-sm">{formatCurrency(pricePerDay)}</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-white/10">
-                <span className="text-white/60 text-sm">{t.landingPage.calculator.daysMonth.split(' / ')[0]}</span>
-                <span className="text-white font-bold text-sm">{daysPerMonth} {t.landingPage.calculator.daysUnit}/{language === 'vi' ? 'tháng' : 'month'}</span>
+                <span className="text-white/60 text-sm">{strings.daysMonth.split(' / ')[0]}</span>
+                <span className="text-white font-bold text-sm">{daysPerMonth} {strings.daysUnit}/{language === 'vi' ? 'tháng' : language === 'ja' ? '月' : language === 'ko' ? '월' : 'month'}</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-white/10">
-                <span className="text-white/60 text-sm">{t.landingPage.calculator.feeLabel}</span>
+                <span className="text-white/60 text-sm">{strings.feeLabel}</span>
                 <span className="text-amber-400 font-bold text-sm">-{formatCurrency(platformFee)}</span>
               </div>
               <div className="flex justify-between items-center pt-3">
-                <span className="text-white font-bold">{t.landingPage.calculator.netRevenueLabel}</span>
+                <span className="text-white font-bold">{strings.netRevenueLabel}</span>
                 <span className="text-emerald-400 font-extrabold text-lg">{formatCurrency(netRevenue)}</span>
               </div>
             </div>
@@ -1665,7 +1731,7 @@ const RevenueCalculator: React.FC = () => {
               className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-bold text-white text-base transition-all hover:scale-105 active:scale-95"
               style={{ background: 'linear-gradient(135deg,#D4AF37,#F5D547,#B8860B)' }}>
               <TrendingUp className="w-5 h-5" style={{ color: '#0F172A' }} />
-              <span style={{ color: '#0F172A' }}>{t.landingPage.calculator.cta}</span>
+              <span style={{ color: '#0F172A' }}>{strings.cta}</span>
             </Link>
           </motion.div>
         </div>

@@ -37,7 +37,7 @@ export default {
           DEFAULT: '#EF4444',
           foreground: '#FFFFFF',
         },
-        background: '#F8FAFC',
+        background: 'hsl(var(--background))',
         surface: {
           DEFAULT: '#FFFFFF',
           hover: '#F1F5F9',

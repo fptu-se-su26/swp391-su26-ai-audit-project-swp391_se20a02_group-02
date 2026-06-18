@@ -48,7 +48,7 @@ export const Footer: React.FC = () => {
             <div className="flex gap-2">
               <input type="email" value={email} onChange={e => setEmail(e.target.value)}
                 placeholder="your@email.com"
-                className="flex-1 px-3 py-2.5 rounded-xl bg-white/10 border border-white/10 text-sm text-white placeholder:text-slate-500 outline-none focus:border-amber-400/50 transition-colors" />
+                className="flex-1 px-3 py-2.5 rounded-xl bg-white dark:bg-slate-900/10 border border-white/10 text-sm text-white placeholder:text-slate-500 outline-none focus:border-amber-400/50 transition-colors" />
               <button className="px-4 py-2.5 rounded-xl bg-amber-400 text-black text-sm font-bold hover:bg-amber-300 transition-colors">Go</button>
             </div>
             {/* Socials */}
@@ -60,7 +60,7 @@ export const Footer: React.FC = () => {
                 { icon: Youtube, href: '#' },
               ].map(({ icon: Icon, href }) => (
                 <a key={href + Icon.name} href={href}
-                  className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center hover:bg-amber-400/20 transition-colors">
+                  className="w-8 h-8 rounded-lg bg-white dark:bg-slate-900/10 flex items-center justify-center hover:bg-amber-400/20 transition-colors">
                   <Icon className="w-4 h-4 text-slate-400" />
                 </a>
               ))}
@@ -90,7 +90,7 @@ export const Footer: React.FC = () => {
             { icon: MapPin, label: '123 Nguyen Hue, Ho Chi Minh City', sub: 'Headquarters' },
           ].map(({ icon: Icon, label, sub }) => (
             <div key={label} className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-white dark:bg-slate-900/5 flex items-center justify-center flex-shrink-0">
                 <Icon className="w-4 h-4 text-amber-400" />
               </div>
               <div>

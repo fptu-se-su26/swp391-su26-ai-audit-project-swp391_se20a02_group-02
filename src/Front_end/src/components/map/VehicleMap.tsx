@@ -234,18 +234,18 @@ export const VehicleMapImpl: React.FC<VehicleMapProps> = ({
           <img
             src="${v.images?.[0] || v.thumbnailUrl || FALLBACK_IMAGE}"
             alt="${v.name}"
-            class="w-16 h-14 object-cover rounded-lg bg-slate-100 flex-shrink-0"
+            class="w-16 h-14 object-cover rounded-lg bg-slate-100 dark:bg-slate-800 flex-shrink-0"
           />
           <div class="flex-1 min-w-0 pr-1 text-slate-800 dark:text-slate-100">
             <span class="text-[9px] font-bold text-blue-500 uppercase tracking-widest">${v.brand}</span>
             <h4 class="font-extrabold text-xs leading-tight truncate mt-0.5 text-black" title="${v.name}">${v.name}</h4>
             <div class="flex items-center gap-1 mt-1 text-xs">
               <i class="fa-solid fa-star text-amber-500 text-[10px]"></i>
-              <span class="font-bold text-[10px] text-slate-800">${v.rating ? v.rating.toFixed(1) : '5.0'}</span>
+              <span class="font-bold text-[10px] text-slate-800 dark:text-slate-200">${v.rating ? v.rating.toFixed(1) : '5.0'}</span>
               <span class="text-slate-400 text-[9px]">(${v.totalReviews || 0})</span>
             </div>
             <div class="mt-2 flex items-center justify-between">
-              <span class="text-[10px] font-extrabold text-slate-900">${formatCurrency(v.pricePerDay)}/day</span>
+              <span class="text-[10px] font-extrabold text-slate-900 dark:text-slate-100">${formatCurrency(v.pricePerDay)}/day</span>
               <a href="/vehicles/${v.id}" class="text-[9px] font-extrabold bg-blue-600 text-white px-2 py-0.5 rounded hover:bg-blue-700 transition-colors shadow-sm">Details</a>
             </div>
           </div>

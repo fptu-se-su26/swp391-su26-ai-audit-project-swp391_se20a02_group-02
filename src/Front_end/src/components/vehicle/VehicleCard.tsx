@@ -154,7 +154,7 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
                     key={idx} 
                     className={cn(
                       "w-1.5 h-1.5 rounded-full transition-all",
-                      idx === currentImgIdx ? "bg-white w-3" : "bg-white/50"
+                      idx === currentImgIdx ? "bg-white dark:bg-slate-900 w-3" : "bg-white dark:bg-slate-900/50"
                     )}
                   />
                 ))}
@@ -183,7 +183,7 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
           <div className="flex-1 p-6 flex flex-col justify-between">
             <div>
               <div className="flex flex-wrap items-center gap-2 mb-2">
-                <span className={cn('px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider', categoryColors[vehicle.category] || 'bg-slate-150 text-slate-700')}>
+                <span className={cn('px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider', categoryColors[vehicle.category] || 'bg-slate-150 text-slate-700 dark:text-slate-300')}>
                   {(t.categories as any)[vehicle.category] || vehicle.category}
                 </span>
                 {vehicle.brand && (
@@ -252,7 +252,7 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
                   <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
                   <span className="font-bold text-foreground">{vehicle.rating || '5.0'}</span>
                   <span>({vehicle.totalReviews || 0} reviews)</span>
-                  <span className="text-slate-350 dark:text-slate-600">•</span>
+                  <span className="text-slate-350 dark:text-slate-600 dark:text-slate-400">•</span>
                   <span className="font-medium text-slate-600 dark:text-slate-300">{vehicle.totalBookings || Math.floor(Math.random() * 20) + 5} trips</span>
                 </div>
               </div>
@@ -335,7 +335,7 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
                   key={idx} 
                   className={cn(
                     "w-1.5 h-1.5 rounded-full transition-all",
-                    idx === currentImgIdx ? "bg-white w-2.5" : "bg-white/40"
+                    idx === currentImgIdx ? "bg-white dark:bg-slate-900 w-2.5" : "bg-white dark:bg-slate-900/40"
                   )}
                 />
               ))}
@@ -373,7 +373,7 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
 
           {/* KYC Badge Right Bottom */}
           {vehicle.isVerified && (
-            <div className="absolute bottom-3 right-3 flex items-center gap-0.5 bg-white/90 dark:bg-slate-900/90 text-blue-600 backdrop-blur-sm px-2 py-0.5 rounded-lg text-[9px] font-extrabold shadow-sm">
+            <div className="absolute bottom-3 right-3 flex items-center gap-0.5 bg-white dark:bg-slate-900/90 dark:bg-slate-900/90 text-blue-600 backdrop-blur-sm px-2 py-0.5 rounded-lg text-[9px] font-extrabold shadow-sm">
               <CheckCircle2 className="w-3 h-3 fill-blue-600 text-white" /> KYC
             </div>
           )}
@@ -408,7 +408,7 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
               <span className="text-[11px] font-bold text-yellow-700 dark:text-yellow-400">{vehicle.rating || '5.0'}</span>
             </div>
             <span className="text-[11px] text-slate-400">({vehicle.totalReviews || 0} reviews)</span>
-            <span className="text-slate-300 dark:text-slate-700">•</span>
+            <span className="text-slate-300 dark:text-slate-700 dark:text-slate-300">•</span>
             <span className="text-[11px] font-medium text-slate-500">{vehicle.totalBookings || Math.floor(Math.random() * 15) + 3} trips</span>
           </div>
 

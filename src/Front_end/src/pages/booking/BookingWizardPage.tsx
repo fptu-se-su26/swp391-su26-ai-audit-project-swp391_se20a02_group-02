@@ -210,7 +210,7 @@ const PriceSummary: React.FC<{
               <MapPin className="w-3 h-3" />{vehicle.location.city}
             </p>
           </div>
-          <div className="absolute top-3 right-3 flex items-center gap-1 bg-white/10 backdrop-blur-md border border-white/20 px-2.5 py-1 rounded-xl">
+          <div className="absolute top-3 right-3 flex items-center gap-1 bg-white dark:bg-slate-900/10 backdrop-blur-md border border-white/20 px-2.5 py-1 rounded-xl">
             <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
             <span className="text-white text-xs font-bold">{vehicle.rating?.toFixed(1) ?? '5.0'}</span>
           </div>
@@ -223,7 +223,7 @@ const PriceSummary: React.FC<{
               <p className="text-white/40 text-[10px] font-medium uppercase tracking-wider">{t.booking.pickUp}</p>
               <p className="text-white font-bold text-xs mt-0.5">{formatDate(startDate, 'short')}</p>
             </div>
-            <div className="w-px bg-white/10" />
+            <div className="w-px bg-white dark:bg-slate-900/10" />
             <div className="flex-1 text-center">
               <p className="text-white/40 text-[10px] font-medium uppercase tracking-wider">{t.booking.return}</p>
               <p className="text-white font-bold text-xs mt-0.5">{formatDate(endDate, 'short')}</p>
@@ -270,7 +270,7 @@ const PriceSummary: React.FC<{
               <span>−{formatVND(couponDiscount)}</span>
             </div>
           )}
-          <div className="h-px bg-white/10 my-2" />
+          <div className="h-px bg-white dark:bg-slate-900/10 my-2" />
           <div className="flex justify-between font-bold text-base">
             <span className="text-white">{t.booking.total}</span>
             <span style={{ background: 'linear-gradient(135deg, #A78BFA, #818CF8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
@@ -302,7 +302,7 @@ const PaymentMethodCard: React.FC<{
     className={`relative w-full p-4 rounded-2xl border-2 text-left transition-all duration-200 ${
       selected
         ? 'border-indigo-500 bg-indigo-50/40'
-        : 'border-slate-200 hover:border-slate-300'
+        : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:border-slate-600'
     }`}
   >
     {badge && (
@@ -311,11 +311,11 @@ const PaymentMethodCard: React.FC<{
       </span>
     )}
     <div className="flex items-center gap-3">
-      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${selected ? 'bg-indigo-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
+      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${selected ? 'bg-indigo-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
         {icon}
       </div>
       <div>
-        <p className="text-sm font-bold text-slate-800">{label}</p>
+        <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{label}</p>
         <p className="text-xs text-slate-400 font-semibold mt-0.5">{sublabel}</p>
       </div>
     </div>
@@ -580,7 +580,7 @@ const BookingWizardPage: React.FC = () => {
                 {isVi ? 'Hoàn Tất Đặt Xe' : 'Complete Your Booking'}
               </h1>
               <p className="text-slate-500 text-sm">
-                <span className="font-semibold text-slate-700">{vehicle.name}</span>
+                <span className="font-semibold text-slate-700 dark:text-slate-300">{vehicle.name}</span>
                 <span className="mx-2 text-slate-300">·</span>
                 {vehicle.location.city}
               </p>
@@ -604,13 +604,13 @@ const BookingWizardPage: React.FC = () => {
               {/* STEP 1 — Dates & Details */}
               {wizard.step === 1 && (
                 <motion.div key="step1" variants={scaleIn} initial="hidden" animate="visible" exit="hidden"
-                  className="bg-white rounded-3xl border border-slate-200/80 shadow-xl shadow-slate-900/5 p-6">
+                  className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-700/80 shadow-xl shadow-slate-900/5 p-6">
                   <div className="flex items-center gap-3 mb-6">
                     <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
                       style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)' }}>
                       <Calendar className="w-5 h-5 text-white" />
                     </div>
-                    <h2 className="font-display text-xl font-bold text-slate-800">{t.booking.selectDates}</h2>
+                    <h2 className="font-display text-xl font-bold text-slate-800 dark:text-slate-200">{t.booking.selectDates}</h2>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 mb-6">
@@ -621,7 +621,7 @@ const BookingWizardPage: React.FC = () => {
                         value={wizard.startDate}
                         min={new Date().toISOString().split('T')[0]}
                         onChange={e => wizard.setDates(e.target.value, wizard.endDate)}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all"
+                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all"
                       />
                     </div>
                     <div>
@@ -631,7 +631,7 @@ const BookingWizardPage: React.FC = () => {
                         value={wizard.endDate}
                         min={wizard.startDate || new Date().toISOString().split('T')[0]}
                         onChange={e => wizard.setDates(wizard.startDate, e.target.value)}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all"
+                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all"
                       />
                     </div>
                   </div>
@@ -658,7 +658,7 @@ const BookingWizardPage: React.FC = () => {
                       onChange={e => wizard.setNotes(e.target.value)}
                       rows={3}
                       placeholder={isVi ? 'Nhập yêu cầu đặc biệt hoặc hướng dẫn nhận xe...' : 'Any special requests, pickup instructions, etc.'}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all resize-none"
+                      className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-200 placeholder:text-slate-400 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all resize-none"
                     />
                   </div>
 
@@ -689,21 +689,21 @@ const BookingWizardPage: React.FC = () => {
                     onClick={() => wizard.setInsurance(!wizard.includeInsurance)}
                     whileHover={{ scale: 1.01 }}
                     whileTap={{ scale: 0.99 }}
-                    className={`bg-white rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
-                      wizard.includeInsurance ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 hover:border-slate-300'
+                    className={`bg-white dark:bg-slate-900 rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
+                      wizard.includeInsurance ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:border-slate-600'
                     }`}
                   >
                     <div className="flex items-start gap-4">
                       <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${
-                        wizard.includeInsurance ? 'bg-indigo-500' : 'bg-slate-100'
+                        wizard.includeInsurance ? 'bg-indigo-500' : 'bg-slate-100 dark:bg-slate-800'
                       }`}>
                         <Shield className={`w-6 h-6 ${wizard.includeInsurance ? 'text-white' : 'text-slate-400'}`} />
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
-                          <h3 className="font-bold text-slate-800">{isVi ? 'Bảo hiểm Premium' : 'Premium Insurance'}</h3>
+                          <h3 className="font-bold text-slate-800 dark:text-slate-200">{isVi ? 'Bảo hiểm Premium' : 'Premium Insurance'}</h3>
                           <div className="text-right">
-                            <p className="font-bold text-slate-800">{formatVND(Math.round(vehicle.pricePerDay * 0.15))}<span className="text-xs text-slate-400 font-normal">/{isVi ? 'ngày' : 'day'}</span></p>
+                            <p className="font-bold text-slate-800 dark:text-slate-200">{formatVND(Math.round(vehicle.pricePerDay * 0.15))}<span className="text-xs text-slate-400 font-normal">/{isVi ? 'ngày' : 'day'}</span></p>
                           </div>
                         </div>
                         <p className="text-sm text-slate-500 mt-1">
@@ -711,7 +711,7 @@ const BookingWizardPage: React.FC = () => {
                         </p>
                       </div>
                       <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
-                        wizard.includeInsurance ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300'
+                        wizard.includeInsurance ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300 dark:border-slate-600'
                       }`}>
                         {wizard.includeInsurance && <CheckCircle className="w-4 h-4 text-white" />}
                       </div>
@@ -727,27 +727,27 @@ const BookingWizardPage: React.FC = () => {
                           onClick={() => wizard.setDelivery(!wizard.includeDelivery)}
                           whileHover={{ scale: 1.01 }}
                           whileTap={{ scale: 0.99 }}
-                          className={`bg-white rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
-                            wizard.includeDelivery ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 hover:border-slate-300'
+                          className={`bg-white dark:bg-slate-900 rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
+                            wizard.includeDelivery ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:border-slate-600'
                           }`}
                         >
                           <div className="flex items-start gap-4">
                             <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${
-                              wizard.includeDelivery ? 'bg-indigo-500' : 'bg-slate-100'
+                              wizard.includeDelivery ? 'bg-indigo-500' : 'bg-slate-100 dark:bg-slate-800'
                             }`}>
                               <Truck className={`w-6 h-6 ${wizard.includeDelivery ? 'text-white' : 'text-slate-400'}`} />
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center justify-between">
-                                <h3 className="font-bold text-slate-800">{isVi ? 'Giao xe tại sân bay' : 'Airport Delivery'}</h3>
-                                <p className="font-bold text-slate-800">{formatVND(200000)}</p>
+                                <h3 className="font-bold text-slate-800 dark:text-slate-200">{isVi ? 'Giao xe tại sân bay' : 'Airport Delivery'}</h3>
+                                <p className="font-bold text-slate-800 dark:text-slate-200">{formatVND(200000)}</p>
                               </div>
                               <p className="text-sm text-slate-500 mt-1">
                                 {isVi ? 'Nhận và trả xe ngay tại ga đến sân bay' : 'Pick up and return vehicle directly at the airport terminal'}
                               </p>
                             </div>
                             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                              wizard.includeDelivery ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300'
+                              wizard.includeDelivery ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300 dark:border-slate-600'
                             }`}>
                               {wizard.includeDelivery && <CheckCircle className="w-4 h-4 text-white" />}
                             </div>
@@ -757,7 +757,7 @@ const BookingWizardPage: React.FC = () => {
                               <input
                                 type="text"
                                 placeholder={isVi ? 'Nhập mã chuyến bay hoặc địa chỉ chi tiết...' : 'Enter flight number or details...'}
-                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-400 transition-all"
+                                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-indigo-400 transition-all"
                                 onClick={e => e.stopPropagation()}
                                 onChange={e => wizard.setDelivery(true, e.target.value)}
                               />
@@ -772,27 +772,27 @@ const BookingWizardPage: React.FC = () => {
                           onClick={() => setHasChauffeur(!hasChauffeur)}
                           whileHover={{ scale: 1.01 }}
                           whileTap={{ scale: 0.99 }}
-                          className={`bg-white rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
-                            hasChauffeur ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 hover:border-slate-300'
+                          className={`bg-white dark:bg-slate-900 rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
+                            hasChauffeur ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:border-slate-600'
                           }`}
                         >
                           <div className="flex items-start gap-4">
                             <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${
-                              hasChauffeur ? 'bg-indigo-500' : 'bg-slate-100'
+                              hasChauffeur ? 'bg-indigo-500' : 'bg-slate-100 dark:bg-slate-800'
                             }`}>
                               <UserCircle className={`w-6 h-6 ${hasChauffeur ? 'text-white' : 'text-slate-400'}`} />
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center justify-between">
-                                <h3 className="font-bold text-slate-800">{isVi ? 'Thuê tài xế riêng' : 'Chauffeur Service'}</h3>
-                                <p className="font-bold text-slate-800">{formatVND(500000)}<span className="text-xs text-slate-400 font-normal">/{isVi ? 'ngày' : 'day'}</span></p>
+                                <h3 className="font-bold text-slate-800 dark:text-slate-200">{isVi ? 'Thuê tài xế riêng' : 'Chauffeur Service'}</h3>
+                                <p className="font-bold text-slate-800 dark:text-slate-200">{formatVND(500000)}<span className="text-xs text-slate-400 font-normal">/{isVi ? 'ngày' : 'day'}</span></p>
                               </div>
                               <p className="text-sm text-slate-500 mt-1">
                                 {isVi ? 'Tài xế chuyên nghiệp, lịch sự, thông thạo đường phố' : 'Professional, polite driver who knows the city inside out'}
                               </p>
                             </div>
                             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                              hasChauffeur ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300'
+                              hasChauffeur ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300 dark:border-slate-600'
                             }`}>
                               {hasChauffeur && <CheckCircle className="w-4 h-4 text-white" />}
                             </div>
@@ -806,27 +806,27 @@ const BookingWizardPage: React.FC = () => {
                           onClick={() => setWeddingPackage(!weddingPackage)}
                           whileHover={{ scale: 1.01 }}
                           whileTap={{ scale: 0.99 }}
-                          className={`bg-white rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
-                            weddingPackage ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 hover:border-slate-300'
+                          className={`bg-white dark:bg-slate-900 rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
+                            weddingPackage ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:border-slate-600'
                           }`}
                         >
                           <div className="flex items-start gap-4">
                             <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${
-                              weddingPackage ? 'bg-indigo-500' : 'bg-slate-100'
+                              weddingPackage ? 'bg-indigo-500' : 'bg-slate-100 dark:bg-slate-800'
                             }`}>
                               <Heart className={`w-6 h-6 ${weddingPackage ? 'text-white' : 'text-slate-400'}`} />
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center justify-between">
-                                <h3 className="font-bold text-slate-800">{isVi ? 'Gói xe hoa đám cưới' : 'Wedding Package Decor'}</h3>
-                                <p className="font-bold text-slate-800">{formatVND(1500000)}</p>
+                                <h3 className="font-bold text-slate-800 dark:text-slate-200">{isVi ? 'Gói xe hoa đám cưới' : 'Wedding Package Decor'}</h3>
+                                <p className="font-bold text-slate-800 dark:text-slate-200">{formatVND(1500000)}</p>
                               </div>
                               <p className="text-sm text-slate-500 mt-1">
                                 {isVi ? 'Trang trí hoa cưới sang trọng theo yêu cầu' : 'Elegant floral wedding decoration styled to your preference'}
                               </p>
                             </div>
                             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                              weddingPackage ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300'
+                              weddingPackage ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300 dark:border-slate-600'
                             }`}>
                               {weddingPackage && <CheckCircle className="w-4 h-4 text-white" />}
                             </div>
@@ -840,27 +840,27 @@ const BookingWizardPage: React.FC = () => {
                           onClick={() => setBusinessPackage(!businessPackage)}
                           whileHover={{ scale: 1.01 }}
                           whileTap={{ scale: 0.99 }}
-                          className={`bg-white rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
-                            businessPackage ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 hover:border-slate-300'
+                          className={`bg-white dark:bg-slate-900 rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
+                            businessPackage ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:border-slate-600'
                           }`}
                         >
                           <div className="flex items-start gap-4">
                             <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${
-                              businessPackage ? 'bg-indigo-500' : 'bg-slate-100'
+                              businessPackage ? 'bg-indigo-500' : 'bg-slate-100 dark:bg-slate-800'
                             }`}>
                               <Briefcase className={`w-6 h-6 ${businessPackage ? 'text-white' : 'text-slate-400'}`} />
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center justify-between">
-                                <h3 className="font-bold text-slate-800">{isVi ? 'Gói thuê doanh nghiệp (VAT)' : 'Business Corporate Package'}</h3>
-                                <p className="font-bold text-slate-800">-{isVi ? 'Giảm 10%' : '10% Off'}</p>
+                                <h3 className="font-bold text-slate-800 dark:text-slate-200">{isVi ? 'Gói thuê doanh nghiệp (VAT)' : 'Business Corporate Package'}</h3>
+                                <p className="font-bold text-slate-800 dark:text-slate-200">-{isVi ? 'Giảm 10%' : '10% Off'}</p>
                               </div>
                               <p className="text-sm text-slate-500 mt-1">
                                 {isVi ? 'Hỗ trợ xuất hóa đơn đỏ VAT đầy đủ, thủ tục nhanh' : 'Full VAT corporate tax invoice support and expedited processing'}
                               </p>
                             </div>
                             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                              businessPackage ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300'
+                              businessPackage ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300 dark:border-slate-600'
                             }`}>
                               {businessPackage && <CheckCircle className="w-4 h-4 text-white" />}
                             </div>
@@ -876,27 +876,27 @@ const BookingWizardPage: React.FC = () => {
                           onClick={() => setHasHelmet(!hasHelmet)}
                           whileHover={{ scale: 1.01 }}
                           whileTap={{ scale: 0.99 }}
-                          className={`bg-white rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
-                            hasHelmet ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 hover:border-slate-300'
+                          className={`bg-white dark:bg-slate-900 rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
+                            hasHelmet ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:border-slate-600'
                           }`}
                         >
                           <div className="flex items-start gap-4">
                             <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${
-                              hasHelmet ? 'bg-indigo-500' : 'bg-slate-100'
+                              hasHelmet ? 'bg-indigo-500' : 'bg-slate-100 dark:bg-slate-800'
                             }`}>
                               <Check className={`w-6 h-6 ${hasHelmet ? 'text-white' : 'text-slate-400'}`} />
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center justify-between">
-                                <h3 className="font-bold text-slate-800">{isVi ? 'Thuê mũ bảo hiểm' : 'Premium Helmet Rental'}</h3>
-                                <p className="font-bold text-slate-800">{formatVND(20000)}<span className="text-xs text-slate-400 font-normal">/{isVi ? 'ngày' : 'day'}</span></p>
+                                <h3 className="font-bold text-slate-800 dark:text-slate-200">{isVi ? 'Thuê mũ bảo hiểm' : 'Premium Helmet Rental'}</h3>
+                                <p className="font-bold text-slate-800 dark:text-slate-200">{formatVND(20000)}<span className="text-xs text-slate-400 font-normal">/{isVi ? 'ngày' : 'day'}</span></p>
                               </div>
                               <p className="text-sm text-slate-500 mt-1">
                                 {isVi ? 'Mũ bảo hiểm đạt chuẩn chất lượng an toàn cao' : 'High quality safety certified helmet for maximum protection'}
                               </p>
                             </div>
                             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                              hasHelmet ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300'
+                              hasHelmet ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300 dark:border-slate-600'
                             }`}>
                               {hasHelmet && <CheckCircle className="w-4 h-4 text-white" />}
                             </div>
@@ -910,27 +910,27 @@ const BookingWizardPage: React.FC = () => {
                           onClick={() => setHasRaincoat(!hasRaincoat)}
                           whileHover={{ scale: 1.01 }}
                           whileTap={{ scale: 0.99 }}
-                          className={`bg-white rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
-                            hasRaincoat ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 hover:border-slate-300'
+                          className={`bg-white dark:bg-slate-900 rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
+                            hasRaincoat ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:border-slate-600'
                           }`}
                         >
                           <div className="flex items-start gap-4">
                             <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${
-                              hasRaincoat ? 'bg-indigo-500' : 'bg-slate-100'
+                              hasRaincoat ? 'bg-indigo-500' : 'bg-slate-100 dark:bg-slate-800'
                             }`}>
                               <CloudRain className={`w-6 h-6 ${hasRaincoat ? 'text-white' : 'text-slate-400'}`} />
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center justify-between">
-                                <h3 className="font-bold text-slate-800">{isVi ? 'Thuê áo mưa' : 'Raincoat Included'}</h3>
-                                <p className="font-bold text-slate-800">{formatVND(10000)}<span className="text-xs text-slate-400 font-normal">/{isVi ? 'ngày' : 'day'}</span></p>
+                                <h3 className="font-bold text-slate-800 dark:text-slate-200">{isVi ? 'Thuê áo mưa' : 'Raincoat Included'}</h3>
+                                <p className="font-bold text-slate-800 dark:text-slate-200">{formatVND(10000)}<span className="text-xs text-slate-400 font-normal">/{isVi ? 'ngày' : 'day'}</span></p>
                               </div>
                               <p className="text-sm text-slate-500 mt-1">
                                 {isVi ? 'Áo mưa tiện lợi, chống thấm nước tốt' : 'Convenient, waterproof raincoat for rainy days'}
                               </p>
                             </div>
                             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                              hasRaincoat ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300'
+                              hasRaincoat ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300 dark:border-slate-600'
                             }`}>
                               {hasRaincoat && <CheckCircle className="w-4 h-4 text-white" />}
                             </div>
@@ -944,27 +944,27 @@ const BookingWizardPage: React.FC = () => {
                           onClick={() => setHasPhoneHolder(!hasPhoneHolder)}
                           whileHover={{ scale: 1.01 }}
                           whileTap={{ scale: 0.99 }}
-                          className={`bg-white rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
-                            hasPhoneHolder ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 hover:border-slate-300'
+                          className={`bg-white dark:bg-slate-900 rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
+                            hasPhoneHolder ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:border-slate-600'
                           }`}
                         >
                           <div className="flex items-start gap-4">
                             <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${
-                              hasPhoneHolder ? 'bg-indigo-500' : 'bg-slate-100'
+                              hasPhoneHolder ? 'bg-indigo-500' : 'bg-slate-100 dark:bg-slate-800'
                             }`}>
                               <Smartphone className={`w-6 h-6 ${hasPhoneHolder ? 'text-white' : 'text-slate-400'}`} />
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center justify-between">
-                                <h3 className="font-bold text-slate-800">{isVi ? 'Kẹp điện thoại' : 'Phone Holder'}</h3>
-                                <p className="font-bold text-slate-800">{formatVND(10000)}<span className="text-xs text-slate-400 font-normal">/{isVi ? 'ngày' : 'day'}</span></p>
+                                <h3 className="font-bold text-slate-800 dark:text-slate-200">{isVi ? 'Kẹp điện thoại' : 'Phone Holder'}</h3>
+                                <p className="font-bold text-slate-800 dark:text-slate-200">{formatVND(10000)}<span className="text-xs text-slate-400 font-normal">/{isVi ? 'ngày' : 'day'}</span></p>
                               </div>
                               <p className="text-sm text-slate-500 mt-1">
                                 {isVi ? 'Kẹp điện thoại chắc chắn gắn ghi-đông để định vị' : 'Sturdy handlebar-mounted phone holder for navigation'}
                               </p>
                             </div>
                             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                              hasPhoneHolder ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300'
+                              hasPhoneHolder ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300 dark:border-slate-600'
                             }`}>
                               {hasPhoneHolder && <CheckCircle className="w-4 h-4 text-white" />}
                             </div>
@@ -978,27 +978,27 @@ const BookingWizardPage: React.FC = () => {
                           onClick={() => setHasTouringPackage(!hasTouringPackage)}
                           whileHover={{ scale: 1.01 }}
                           whileTap={{ scale: 0.99 }}
-                          className={`bg-white rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
-                            hasTouringPackage ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 hover:border-slate-300'
+                          className={`bg-white dark:bg-slate-900 rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
+                            hasTouringPackage ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:border-slate-600'
                           }`}
                         >
                           <div className="flex items-start gap-4">
                             <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${
-                              hasTouringPackage ? 'bg-indigo-500' : 'bg-slate-100'
+                              hasTouringPackage ? 'bg-indigo-500' : 'bg-slate-100 dark:bg-slate-800'
                             }`}>
                               <Package className={`w-6 h-6 ${hasTouringPackage ? 'text-white' : 'text-slate-400'}`} />
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center justify-between">
-                                <h3 className="font-bold text-slate-800">{isVi ? 'Gói hành lý touring' : 'Touring Rack & Boxes'}</h3>
-                                <p className="font-bold text-slate-800">{formatVND(100000)}<span className="text-xs text-slate-400 font-normal">/{isVi ? 'ngày' : 'day'}</span></p>
+                                <h3 className="font-bold text-slate-800 dark:text-slate-200">{isVi ? 'Gói hành lý touring' : 'Touring Rack & Boxes'}</h3>
+                                <p className="font-bold text-slate-800 dark:text-slate-200">{formatVND(100000)}<span className="text-xs text-slate-400 font-normal">/{isVi ? 'ngày' : 'day'}</span></p>
                               </div>
                               <p className="text-sm text-slate-500 mt-1">
                                 {isVi ? 'Baga sau và thùng đựng đồ Givi tiện lợi đi phượt' : 'Heavy-duty rear luggage rack and side boxes for road trips'}
                               </p>
                             </div>
                             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                              hasTouringPackage ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300'
+                              hasTouringPackage ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300 dark:border-slate-600'
                             }`}>
                               {hasTouringPackage && <CheckCircle className="w-4 h-4 text-white" />}
                             </div>
@@ -1009,8 +1009,8 @@ const BookingWizardPage: React.FC = () => {
                   )}
 
                   {/* Coupon */}
-                  <div className="bg-white rounded-3xl border border-slate-200 shadow-lg shadow-slate-900/5 p-5">
-                    <h3 className="font-bold text-slate-800 mb-3 flex items-center gap-2">
+                  <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-lg shadow-slate-900/5 p-5">
+                    <h3 className="font-bold text-slate-800 dark:text-slate-200 mb-3 flex items-center gap-2">
                       <Tag className="w-4 h-4 text-amber-500" />
                       {t.booking.applyCoupon}
                     </h3>
@@ -1020,7 +1020,7 @@ const BookingWizardPage: React.FC = () => {
                         value={couponInput}
                         onChange={e => { setCouponInput(e.target.value.toUpperCase()); setCouponError(''); }}
                         placeholder="LUXE20, WELCOME15, VIP25..."
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-400 transition-all font-mono tracking-widest"
+                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-indigo-400 transition-all font-mono tracking-widest"
                       />
                       <button
                         onClick={handleApplyCoupon}
@@ -1045,13 +1045,13 @@ const BookingWizardPage: React.FC = () => {
               {/* STEP 3 — Review */}
               {wizard.step === 3 && (
                 <motion.div key="step3" variants={scaleIn} initial="hidden" animate="visible" exit="hidden"
-                  className="bg-white rounded-3xl border border-slate-200/80 shadow-xl shadow-slate-900/5 p-6">
+                  className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-700/80 shadow-xl shadow-slate-900/5 p-6">
                   <div className="flex items-center gap-3 mb-6">
                     <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
                       style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)' }}>
                       <CheckCircle className="w-5 h-5 text-white" />
                     </div>
-                    <h2 className="font-display text-xl font-bold text-slate-800">
+                    <h2 className="font-display text-xl font-bold text-slate-800 dark:text-slate-200">
                       {isVi ? 'Xem Lại Đặt Xe' : 'Review Your Booking'}
                     </h2>
                   </div>
@@ -1068,7 +1068,7 @@ const BookingWizardPage: React.FC = () => {
                     ].map(item => (
                       <div key={item.label} className="flex justify-between items-center py-3 border-b border-slate-100 last:border-0">
                         <span className="text-sm text-slate-500">{item.label}</span>
-                        <span className="text-sm font-bold text-slate-800">{item.value}</span>
+                        <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{item.value}</span>
                       </div>
                     ))}
                   </div>
@@ -1089,13 +1089,13 @@ const BookingWizardPage: React.FC = () => {
               {/* STEP 4 — Payment */}
               {wizard.step === 4 && (
                 <motion.div key="step4" variants={scaleIn} initial="hidden" animate="visible" exit="hidden"
-                  className="bg-white rounded-3xl border border-slate-200/80 shadow-xl shadow-slate-900/5 p-6">
+                  className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-700/80 shadow-xl shadow-slate-900/5 p-6">
                   <div className="flex items-center gap-3 mb-6">
                     <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
                       style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)' }}>
                       <CreditCard className="w-5 h-5 text-white" />
                     </div>
-                    <h2 className="font-display text-xl font-bold text-slate-800">
+                    <h2 className="font-display text-xl font-bold text-slate-800 dark:text-slate-200">
                       {isVi ? 'Chọn phương thức thanh toán' : 'Payment Method'}
                     </h2>
                   </div>
@@ -1152,7 +1152,7 @@ const BookingWizardPage: React.FC = () => {
                       </p>
                       <div className="flex gap-2 flex-wrap">
                         {['Vietcombank', 'BIDV', 'Techcombank', 'VietinBank', 'MBBank'].map(bank => (
-                          <span key={bank} className="px-2.5 py-1 bg-white text-slate-600 rounded-lg text-xs font-semibold shadow-sm border border-slate-200">
+                          <span key={bank} className="px-2.5 py-1 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 rounded-lg text-xs font-semibold shadow-sm border border-slate-200 dark:border-slate-700">
                             {bank}
                           </span>
                         ))}
@@ -1178,13 +1178,13 @@ const BookingWizardPage: React.FC = () => {
                                     setCardName(card.brand || 'Card');
                                   }}
                                   className={`p-4 rounded-2xl border-2 flex items-center justify-between cursor-pointer transition-all duration-200 ${
-                                    isSelected ? 'border-indigo-500 bg-indigo-50/40' : 'border-slate-100 hover:border-slate-200'
+                                    isSelected ? 'border-indigo-500 bg-indigo-50/40' : 'border-slate-100 hover:border-slate-200 dark:border-slate-700'
                                   }`}
                                 >
                                   <div className="flex items-center gap-3">
                                     <span className="text-2xl">💳</span>
                                     <div>
-                                      <p className="text-sm font-bold text-slate-800 uppercase">
+                                      <p className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase">
                                         {card.brand || 'Credit Card'} ···· {card.last4}
                                       </p>
                                       <p className="text-[10px] text-slate-400 font-semibold mt-0.5">
@@ -1193,9 +1193,9 @@ const BookingWizardPage: React.FC = () => {
                                     </div>
                                   </div>
                                   <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                                    isSelected ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300'
+                                    isSelected ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300 dark:border-slate-600'
                                   }`}>
-                                    {isSelected && <div className="w-2 h-2 bg-white rounded-full" />}
+                                    {isSelected && <div className="w-2 h-2 bg-white dark:bg-slate-900 rounded-full" />}
                                   </div>
                                 </div>
                               );
@@ -1240,7 +1240,7 @@ const BookingWizardPage: React.FC = () => {
                               value={cardName}
                               onChange={e => setCardName(e.target.value)}
                               placeholder={isVi ? 'NGUYEN VAN A' : 'JOHN DOE'}
-                              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all uppercase tracking-widest"
+                              className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all uppercase tracking-widest"
                             />
                           </div>
                           <div>
@@ -1250,7 +1250,7 @@ const BookingWizardPage: React.FC = () => {
                                 value={cardNumber}
                                 onChange={e => setCardNumber(e.target.value.replace(/\D/g, '').replace(/(.{4})/g, '$1 ').trim())}
                                 placeholder="0000 0000 0000 0000"
-                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all font-mono pr-12"
+                                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all font-mono pr-12"
                                 maxLength={19}
                               />
                               <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg">💳</span>
@@ -1266,7 +1266,7 @@ const BookingWizardPage: React.FC = () => {
                                   if (v.length > 2) v = v.slice(0, 2) + '/' + v.slice(2, 4);
                                   setCardExpiry(v);
                                 }}
-                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-400 transition-all font-mono"
+                                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-indigo-400 transition-all font-mono"
                                 placeholder="MM/YY"
                                 maxLength={5}
                               />
@@ -1276,7 +1276,7 @@ const BookingWizardPage: React.FC = () => {
                               <input
                                 value={cardCVC}
                                 onChange={e => setCardCVC(e.target.value.replace(/\D/g, ''))}
-                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-400 transition-all font-mono"
+                                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-indigo-400 transition-all font-mono"
                                 placeholder="•••"
                                 maxLength={4}
                                 type="password"
@@ -1291,7 +1291,7 @@ const BookingWizardPage: React.FC = () => {
                               id="save_card"
                               checked={saveCard}
                               onChange={e => setSaveCard(e.target.checked)}
-                              className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500 cursor-pointer"
+                              className="w-4 h-4 text-indigo-600 border-slate-300 dark:border-slate-600 rounded focus:ring-indigo-500 cursor-pointer"
                             />
                             <label htmlFor="save_card" className="text-xs text-slate-500 dark:text-slate-400 font-semibold cursor-pointer">
                               {isVi ? 'Lưu thẻ này để thanh toán cho lần sau' : 'Save card for future payments'}
@@ -1351,7 +1351,7 @@ const BookingWizardPage: React.FC = () => {
               {/* STEP 5 — Success */}
               {wizard.step === 5 && (
                 <motion.div key="step5" variants={scaleIn} initial="hidden" animate="visible" exit="hidden"
-                  className="bg-white rounded-3xl border border-slate-200/80 shadow-xl shadow-slate-900/5 p-10 text-center overflow-hidden relative">
+                  className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-700/80 shadow-xl shadow-slate-900/5 p-10 text-center overflow-hidden relative">
                   {/* Confetti-like decorative elements */}
                   <div className="absolute top-0 left-0 w-full h-2"
                     style={{ background: 'linear-gradient(90deg, #6366F1, #8B5CF6, #EC4899, #F59E0B, #10B981)' }} />
@@ -1375,13 +1375,13 @@ const BookingWizardPage: React.FC = () => {
                       {isVi ? 'Đơn đặt xe của bạn đã được ghi nhận thành công.' : 'Your booking has been successfully placed.'}
                     </p>
                     {bookingId && (
-                      <div className="inline-flex items-center gap-2 bg-slate-50 border border-slate-200 px-5 py-2.5 rounded-2xl mb-6">
+                      <div className="inline-flex items-center gap-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 px-5 py-2.5 rounded-2xl mb-6">
                         <span className="text-xs text-slate-500">{isVi ? 'Mã Đặt Xe:' : 'Booking ID:'}</span>
-                        <span className="font-mono font-bold text-slate-800 text-sm">#{bookingId.slice(-8).toUpperCase()}</span>
+                        <span className="font-mono font-bold text-slate-800 dark:text-slate-200 text-sm">#{bookingId.slice(-8).toUpperCase()}</span>
                       </div>
                     )}
 
-                    <div className="bg-slate-50 rounded-2xl p-5 text-left mb-8 max-w-sm mx-auto space-y-2.5 text-sm">
+                    <div className="bg-slate-50 dark:bg-slate-950 rounded-2xl p-5 text-left mb-8 max-w-sm mx-auto space-y-2.5 text-sm">
                       {[
                         { label: isVi ? 'Xe' : 'Vehicle', value: vehicle.name },
                         { label: t.booking.pickUp, value: formatDate(wizard.startDate, 'short') },
@@ -1390,7 +1390,7 @@ const BookingWizardPage: React.FC = () => {
                       ].map(item => (
                         <div key={item.label} className="flex justify-between">
                           <span className="text-slate-500">{item.label}</span>
-                          <span className="font-bold text-slate-800">{item.value}</span>
+                          <span className="font-bold text-slate-800 dark:text-slate-200">{item.value}</span>
                         </div>
                       ))}
                     </div>
@@ -1414,7 +1414,7 @@ const BookingWizardPage: React.FC = () => {
                         onClick={() => { wizard.reset(); navigate('/marketplace'); }}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        className="inline-flex items-center justify-center gap-2 px-8 py-3 font-bold rounded-2xl border-2 border-slate-200 text-slate-700 hover:border-indigo-300 transition-colors"
+                        className="inline-flex items-center justify-center gap-2 px-8 py-3 font-bold rounded-2xl border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-indigo-300 transition-colors"
                       >
                         {isVi ? 'Thuê Thêm Xe Khác' : 'Browse More Vehicles'}
                       </motion.button>
@@ -1431,7 +1431,7 @@ const BookingWizardPage: React.FC = () => {
                   onClick={() => wizard.step > 1 ? wizard.setStep(wizard.step - 1) : navigate(-1)}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="flex items-center gap-2 px-5 py-3 rounded-2xl border-2 border-slate-200 text-slate-600 font-semibold text-sm hover:border-slate-300 transition-colors"
+                  className="flex items-center gap-2 px-5 py-3 rounded-2xl border-2 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-semibold text-sm hover:border-slate-300 dark:border-slate-600 transition-colors"
                 >
                   <ChevronLeft className="w-4 h-4" />
                   {t.booking.back}

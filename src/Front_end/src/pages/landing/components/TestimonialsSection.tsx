@@ -57,7 +57,7 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({ data, 
  
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[1, 2, 3].map(i => <Skeleton key={i} className="h-56 bg-white/5 rounded-2xl" />)}
+            {[1, 2, 3].map(i => <Skeleton key={i} className="h-56 bg-white dark:bg-slate-900/5 rounded-2xl" />)}
           </div>
         ) : reviews.length === 0 ? (
           <div className="text-center py-20 text-slate-400">
@@ -70,7 +70,7 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({ data, 
             {/* Desktop grid */}
             <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true }} className="hidden md:grid grid-cols-3 gap-6">
               {reviews.slice(0, 6).map((r) => (
-                <motion.div key={r.id} variants={staggerItem} className="p-8 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-sm flex flex-col animate-hover">
+                <motion.div key={r.id} variants={staggerItem} className="p-8 rounded-3xl border border-white/10 bg-white dark:bg-slate-900/5 backdrop-blur-sm flex flex-col animate-hover">
                   <Quote className="w-8 h-8 text-amber-400 mb-4 opacity-70" />
                   <p className="text-white/90 text-sm md:text-base leading-relaxed flex-1 mb-6 line-clamp-4 font-medium italic">"{r.comment}"</p>
                   <div className="flex items-center gap-4 pt-5 border-t border-white/10">
@@ -100,7 +100,7 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({ data, 
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.35 }}
-                  className="p-6 rounded-2xl border border-white/10 bg-white/5"
+                  className="p-6 rounded-2xl border border-white/10 bg-white dark:bg-slate-900/5"
                 >
                   <Quote className="w-6 h-6 text-amber-400 mb-3 opacity-70" />
                   <p className="text-white/80 text-sm leading-relaxed mb-5">{reviews[idx]?.comment}</p>
@@ -120,7 +120,7 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({ data, 
               <div className="flex justify-center gap-1.5 mt-4">
                 {reviews.map((_, i) => (
                   <button key={i} onClick={() => setIdx(i)}
-                    className={`transition-all rounded-full ${i === idx ? 'w-5 h-1.5 bg-amber-400' : 'w-1.5 h-1.5 bg-white/20'}`} />
+                    className={`transition-all rounded-full ${i === idx ? 'w-5 h-1.5 bg-amber-400' : 'w-1.5 h-1.5 bg-white dark:bg-slate-900/20'}`} />
                 ))}
               </div>
             </div>

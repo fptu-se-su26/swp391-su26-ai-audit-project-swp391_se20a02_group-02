@@ -18,10 +18,6 @@ const LANGS = [
   { code: 'vi' as const, label: 'Tiếng Việt', flag: '🇻🇳' },
   { code: 'ja' as const, label: '日本語', flag: '🇯🇵' },
   { code: 'ko' as const, label: '한국어', flag: '🇰🇷' },
-  { code: 'zh' as const, label: '中文', flag: '🇨🇳' },
-  { code: 'fr' as const, label: 'Français', flag: '🇫🇷' },
-  { code: 'de' as const, label: 'Deutsch', flag: '🇩🇪' },
-  { code: 'es' as const, label: 'Español', flag: '🇪🇸' },
 ];
 
 const CURRENCIES = [
@@ -272,7 +268,7 @@ export const GlobalNavbar: React.FC = () => {
   const navBg = showGlassBg
     ? isDark
       ? 'bg-slate-950/80 backdrop-blur-xl border-slate-900/60 shadow-lg'
-      : 'bg-white/80 backdrop-blur-xl border-slate-100/80 shadow-sm'
+      : 'bg-white dark:bg-slate-900/80 backdrop-blur-xl border-slate-100/80 shadow-sm'
     : 'bg-transparent border-transparent';
 
   return (
@@ -312,11 +308,11 @@ export const GlobalNavbar: React.FC = () => {
                 'px-5 py-2.5 rounded-2xl text-base font-bold transition-all duration-200 hover-lift',
                 isActive(link.href)
                   ? isDark
-                    ? 'bg-white text-slate-950 shadow-md'
+                    ? 'bg-white dark:bg-slate-900 text-slate-950 shadow-md'
                     : 'bg-slate-950 text-white shadow-md'
                   : isDark
                     ? 'text-slate-350 hover:text-white hover:bg-slate-800/40'
-                    : 'text-slate-600 hover:text-slate-950 hover:bg-slate-50'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-950 hover:bg-slate-50 dark:bg-slate-950'
               )}
             >
               {link.label}
@@ -331,7 +327,7 @@ export const GlobalNavbar: React.FC = () => {
             onClick={() => navigate('/search')}
             className={cn(
               'p-2.5 sm:p-3 rounded-2xl transition-all hover-lift',
-              isDark ? 'text-slate-350 hover:bg-slate-800/40 hover:text-white' : 'text-slate-655 hover:bg-slate-50 hover:text-slate-950'
+              isDark ? 'text-slate-350 hover:bg-slate-800/40 hover:text-white' : 'text-slate-655 hover:bg-slate-50 dark:bg-slate-950 hover:text-slate-950'
             )}
             title={l.search}
           >
@@ -343,7 +339,7 @@ export const GlobalNavbar: React.FC = () => {
             onClick={toggleTheme}
             className={cn(
               'p-2.5 sm:p-3 rounded-2xl transition-all hover-lift',
-              isDark ? 'text-yellow-400 hover:bg-slate-800/40' : 'text-slate-655 hover:bg-slate-50 hover:text-slate-950'
+              isDark ? 'text-yellow-400 hover:bg-slate-800/40' : 'text-slate-655 hover:bg-slate-50 dark:bg-slate-950 hover:text-slate-950'
             )}
           >
             {isDark ? <Sun className="w-5.5 h-5.5" /> : <Moon className="w-5.5 h-5.5" />}
@@ -358,7 +354,7 @@ export const GlobalNavbar: React.FC = () => {
               }}
               className={cn(
                 'flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-bold transition-all hover-lift',
-                isDark ? 'text-slate-355 hover:bg-slate-800/40 hover:text-white' : 'text-slate-655 hover:bg-slate-50 hover:text-slate-950'
+                isDark ? 'text-slate-355 hover:bg-slate-800/40 hover:text-white' : 'text-slate-655 hover:bg-slate-50 dark:bg-slate-950 hover:text-slate-950'
               )}
             >
               <Globe className="w-4.5 h-4.5" />
@@ -376,7 +372,7 @@ export const GlobalNavbar: React.FC = () => {
                   transition={{ duration: 0.15 }}
                   className={cn(
                     'absolute right-0 mt-2 w-52 rounded-[20px] border shadow-[0_15px_30px_rgba(0,0,0,0.1)] overflow-hidden z-50',
-                    isDark ? 'bg-slate-900/95 border-slate-800/80' : 'bg-white/95 border-slate-100'
+                    isDark ? 'bg-slate-900/95 border-slate-800/80' : 'bg-white dark:bg-slate-900/95 border-slate-100'
                   )}
                 >
                   <div className="p-1.5 max-h-64 overflow-y-auto">
@@ -391,7 +387,7 @@ export const GlobalNavbar: React.FC = () => {
                           'w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-colors',
                           language === lang.code
                             ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400'
-                            : 'text-slate-655 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800/60'
+                            : 'text-slate-655 hover:bg-slate-50 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800/60'
                         )}
                       >
                         <span className="text-base">{lang.flag}</span>
@@ -414,7 +410,7 @@ export const GlobalNavbar: React.FC = () => {
               }}
               className={cn(
                 'flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-bold transition-all hover-lift',
-                isDark ? 'text-slate-355 hover:bg-slate-800/40 hover:text-white' : 'text-slate-655 hover:bg-slate-50 hover:text-slate-950'
+                isDark ? 'text-slate-355 hover:bg-slate-800/40 hover:text-white' : 'text-slate-655 hover:bg-slate-50 dark:bg-slate-950 hover:text-slate-950'
               )}
             >
               <span>{currentCurr.flag}</span>
@@ -432,7 +428,7 @@ export const GlobalNavbar: React.FC = () => {
                   transition={{ duration: 0.15 }}
                   className={cn(
                     'absolute right-0 mt-2 w-52 rounded-[20px] border shadow-[0_15px_30px_rgba(0,0,0,0.1)] overflow-hidden z-50',
-                    isDark ? 'bg-slate-900/95 border-slate-800/80' : 'bg-white/95 border-slate-100'
+                    isDark ? 'bg-slate-900/95 border-slate-800/80' : 'bg-white dark:bg-slate-900/95 border-slate-100'
                   )}
                 >
                   <div className="p-1.5">
@@ -447,7 +443,7 @@ export const GlobalNavbar: React.FC = () => {
                           'w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-colors',
                           currency === curr.code
                             ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400'
-                            : 'text-slate-655 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800/60'
+                            : 'text-slate-655 hover:bg-slate-50 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800/60'
                         )}
                       >
                         <span className="text-base">{curr.flag}</span>
@@ -468,7 +464,7 @@ export const GlobalNavbar: React.FC = () => {
                 onClick={() => navigate('/notifications')}
                 className={cn(
                   'relative p-2.5 sm:p-3 rounded-2xl transition-all hover-lift',
-                  isDark ? 'text-slate-355 hover:bg-slate-800/40 hover:text-white' : 'text-slate-655 hover:bg-slate-50 hover:text-slate-950'
+                  isDark ? 'text-slate-355 hover:bg-slate-800/40 hover:text-white' : 'text-slate-655 hover:bg-slate-50 dark:bg-slate-950 hover:text-slate-950'
                 )}
               >
                 <Bell className="w-5.5 h-5.5" />
@@ -483,7 +479,7 @@ export const GlobalNavbar: React.FC = () => {
                 onClick={() => navigate('/messages')}
                 className={cn(
                   'p-2.5 sm:p-3 rounded-2xl transition-all hover-lift',
-                  isDark ? 'text-slate-355 hover:bg-slate-800/40 hover:text-white' : 'text-slate-655 hover:bg-slate-50 hover:text-slate-950'
+                  isDark ? 'text-slate-355 hover:bg-slate-800/40 hover:text-white' : 'text-slate-655 hover:bg-slate-50 dark:bg-slate-950 hover:text-slate-950'
                 )}
               >
                 <MessageSquare className="w-5.5 h-5.5" />
@@ -500,7 +496,7 @@ export const GlobalNavbar: React.FC = () => {
                   'flex items-center gap-2 sm:gap-2.5 pl-2 pr-3.5 py-2 rounded-2xl border transition-all hover-lift',
                   isDark
                     ? 'border-slate-800/80 bg-slate-900/60 hover:bg-slate-800'
-                    : 'border-slate-150 bg-white hover:bg-slate-50'
+                    : 'border-slate-150 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:bg-slate-950'
                 )}
               >
                 <Avatar src={user.avatar} name={user.displayName} className="w-9 h-9 sm:w-10 sm:h-10 ring-2 ring-indigo-500/10" />
@@ -528,7 +524,7 @@ export const GlobalNavbar: React.FC = () => {
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className={cn(
               'p-2.5 sm:p-3 rounded-2xl md:hidden transition-all hover-lift',
-              isDark ? 'text-slate-355 hover:bg-slate-800/40 hover:text-white' : 'text-slate-655 hover:bg-slate-50 hover:text-slate-950'
+              isDark ? 'text-slate-355 hover:bg-slate-800/40 hover:text-white' : 'text-slate-655 hover:bg-slate-50 dark:bg-slate-950 hover:text-slate-950'
             )}
           >
             {mobileMenuOpen ? <X className="w-5.5 h-5.5" /> : <Menu className="w-5.5 h-5.5" />}
@@ -546,7 +542,7 @@ export const GlobalNavbar: React.FC = () => {
             transition={{ duration: 0.25, ease: 'easeInOut' }}
             className={cn(
               'absolute top-full left-0 w-full border-b overflow-hidden md:hidden shadow-luxury',
-              isDark ? 'border-slate-800 bg-slate-950' : 'border-slate-100 bg-white'
+              isDark ? 'border-slate-800 bg-slate-950' : 'border-slate-100 bg-white dark:bg-slate-900'
             )}
           >
             <div className="px-4 py-6 space-y-4 max-h-[85vh] overflow-y-auto">
@@ -562,10 +558,10 @@ export const GlobalNavbar: React.FC = () => {
                       isActive(link.href)
                         ? isDark
                           ? 'bg-slate-800 text-white'
-                          : 'bg-slate-100 text-slate-900'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100'
                         : isDark
                           ? 'text-slate-300 hover:bg-slate-900'
-                          : 'text-slate-600 hover:bg-slate-50'
+                          : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-950'
                     )}
                   >
                     <span>{link.label}</span>
@@ -675,7 +671,7 @@ export const GlobalNavbar: React.FC = () => {
                             'w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold',
                             language === lang.code
                               ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400'
-                              : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50'
+                              : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-950'
                           )}
                         >
                           <span>{lang.flag}</span>
@@ -719,7 +715,7 @@ export const GlobalNavbar: React.FC = () => {
                             'w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold',
                             currency === curr.code
                               ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400'
-                              : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50'
+                              : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-950'
                           )}
                         >
                           <span>{curr.flag}</span>

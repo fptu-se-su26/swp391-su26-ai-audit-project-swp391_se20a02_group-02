@@ -24,7 +24,7 @@ const STEPS = [
 ];
 
 export const HowItWorksSection: React.FC = () => (
-  <section className="py-24 bg-slate-50">
+  <section className="py-24 bg-slate-50 dark:bg-slate-950">
     <div className="max-w-7xl mx-auto px-6">
       <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-14">
         <span className="text-xs font-bold tracking-widest uppercase text-amber-500 mb-3 block">Simple & Seamless</span>
@@ -44,7 +44,7 @@ export const HowItWorksSection: React.FC = () => (
             variants={staggerItem}
             whileHover={{ y: -8 }}
             transition={{ type: 'spring', damping: 15 }}
-            className="relative bg-white rounded-3xl p-10 shadow-sm border border-slate-100 text-center group hover:shadow-lg transition-shadow"
+            className="relative bg-white dark:bg-slate-900 rounded-3xl p-10 shadow-sm border border-slate-100 text-center group hover:shadow-lg transition-shadow"
           >
             <div className={`absolute -top-5 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-gradient-to-br ${step.color} text-white text-sm font-black flex items-center justify-center shadow-md`}>
               {step.num}

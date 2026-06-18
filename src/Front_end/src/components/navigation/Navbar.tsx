@@ -18,10 +18,6 @@ const LANGS = [
   { code: 'vi' as const, label: 'Tiếng Việt', flag: '🇻🇳' },
   { code: 'ja' as const, label: '日本語', flag: '🇯🇵' },
   { code: 'ko' as const, label: '한국어', flag: '🇰🇷' },
-  { code: 'zh' as const, label: '中文', flag: '🇨🇳' },
-  { code: 'fr' as const, label: 'Français', flag: '🇫🇷' },
-  { code: 'de' as const, label: 'Deutsch', flag: '🇩🇪' },
-  { code: 'es' as const, label: 'Español', flag: '🇪🇸' },
 ];
 
 
@@ -41,7 +37,7 @@ const ThemeToggle: React.FC = () => {
         'relative p-2.5 rounded-xl transition-all duration-300',
         isDark
           ? 'bg-slate-700 text-yellow-300 hover:bg-slate-600'
-          : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
+          : 'text-slate-500 hover:bg-slate-100 dark:bg-slate-800 hover:text-slate-900 dark:text-slate-100'
       )}
     >
       <AnimatePresence mode="wait" initial={false}>
@@ -92,7 +88,7 @@ const LanguageSwitcher: React.FC = () => {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 p-2.5 rounded-xl text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700 hover:text-slate-900 transition-colors duration-200"
+        className="flex items-center gap-1.5 p-2.5 rounded-xl text-slate-500 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 hover:text-slate-900 dark:text-slate-100 transition-colors duration-200"
         title={t.nav.changeLanguage}
       >
         <Globe className="w-4 h-4" />
@@ -117,7 +113,7 @@ const LanguageSwitcher: React.FC = () => {
                   'w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors',
                   language === lang.code
                     ? 'bg-blue-50 text-accent font-semibold dark:bg-blue-900/30'
-                    : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-700'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-700'
                 )}
               >
                 <span className="text-lg">{lang.flag}</span>
@@ -162,7 +158,7 @@ const CurrencySwitcher: React.FC = () => {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 p-2.5 rounded-xl text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700 hover:text-slate-900 transition-colors duration-200"
+        className="flex items-center gap-1.5 p-2.5 rounded-xl text-slate-500 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 hover:text-slate-900 dark:text-slate-100 transition-colors duration-200"
         title="Change Currency"
       >
         <Globe className="w-4 h-4 text-slate-400" />
@@ -187,7 +183,7 @@ const CurrencySwitcher: React.FC = () => {
                   'w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors',
                   currency === curr.code
                     ? 'bg-blue-50 text-accent font-semibold dark:bg-blue-900/30'
-                    : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-700'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-700'
                 )}
               >
                 <span className="text-lg">{curr.flag}</span>
@@ -277,8 +273,8 @@ export const Navbar: React.FC = () => {
     ? isScrolled || mobileMenuOpen ? 'bg-slate-900/95 backdrop-blur-2xl border-b border-slate-700/50' : 'bg-transparent'
     : isScrolled || mobileMenuOpen ? 'glass-nav shadow-sm' : 'bg-transparent';
 
-  const textColor = isDark ? 'text-slate-200' : 'text-slate-600';
-  const hoverBg = isDark ? 'hover:bg-slate-700 hover:text-white' : 'hover:bg-slate-100 hover:text-slate-900';
+  const textColor = isDark ? 'text-slate-200' : 'text-slate-600 dark:text-slate-400';
+  const hoverBg = isDark ? 'hover:bg-slate-700 hover:text-white' : 'hover:bg-slate-100 dark:bg-slate-800 hover:text-slate-900 dark:text-slate-100';
 
   return (
     <>
@@ -363,7 +359,7 @@ export const Navbar: React.FC = () => {
                         'flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-2xl border transition-all duration-200',
                         isDark
                           ? 'border-slate-600 hover:border-slate-500 bg-slate-800 hover:bg-slate-700'
-                          : 'border-slate-200 hover:border-slate-300 hover:shadow-sm bg-white'
+                          : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:border-slate-600 hover:shadow-sm bg-white dark:bg-slate-900'
                       )}
                     >
                       {user.avatar ? (
@@ -373,7 +369,7 @@ export const Navbar: React.FC = () => {
                           {getInitials(user.displayName)}
                         </div>
                       )}
-                      <span className={cn('hidden md:block text-sm font-medium', isDark ? 'text-slate-200' : 'text-slate-700')}>
+                      <span className={cn('hidden md:block text-sm font-medium', isDark ? 'text-slate-200' : 'text-slate-700 dark:text-slate-300')}>
                         {user.firstName}
                       </span>
                       <ChevronDown className={cn('w-4 h-4 text-slate-400 transition-transform duration-200', userMenuOpen && 'rotate-180')} />
@@ -388,7 +384,7 @@ export const Navbar: React.FC = () => {
                           transition={{ duration: 0.2 }}
                           className={cn(
                             'absolute right-0 mt-2 w-64 rounded-2xl border shadow-luxury overflow-hidden z-50',
-                            isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'
+                            isDark ? 'bg-slate-800 border-slate-700' : 'bg-white dark:bg-slate-900 border-slate-100'
                           )}
                         >
                           {/* User Info */}
@@ -450,7 +446,7 @@ export const Navbar: React.FC = () => {
                                   onClick={() => setUserMenuOpen(false)}
                                   className={cn(
                                     'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors',
-                                    isDark ? 'text-slate-300 hover:bg-slate-700 hover:text-white' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                                    isDark ? 'text-slate-300 hover:bg-slate-700 hover:text-white' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-950 hover:text-slate-900 dark:text-slate-100'
                                   )}
                                 >
                                   <item.icon className="w-4 h-4 text-slate-400" />
@@ -504,7 +500,7 @@ export const Navbar: React.FC = () => {
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.25 }}
-              className={cn('lg:hidden border-t overflow-hidden', isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-100 bg-white')}
+              className={cn('lg:hidden border-t overflow-hidden', isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-100 bg-white dark:bg-slate-900')}
             >
               <div className="px-4 py-4 space-y-1">
                 {navLinks.map(link => (
@@ -516,7 +512,7 @@ export const Navbar: React.FC = () => {
                       'flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors',
                       isActive(link.href)
                         ? 'bg-[#0F172A] text-white'
-                        : isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-100'
+                        : isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'
                     )}
                   >
                     {link.label}

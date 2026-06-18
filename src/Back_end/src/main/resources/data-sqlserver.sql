@@ -121,8 +121,6 @@ BEGIN
 END;
 
 -- Clear tables (respecting foreign keys)
-DELETE FROM vehicle_models;
-DELETE FROM vehicle_brands;
 
 -- Seed brand catalog
 INSERT INTO vehicle_brands (id, name, country, vehicle_type, is_active) VALUES
@@ -174,48 +172,11 @@ INSERT INTO vehicle_models (id, brand_id, model_name, vehicle_type, category, en
 ('M28', 'B13', N'BMW 320i', 'CAR', 'LUXURY', NULL, 5, 2000000, 3000000, 1);
 
 -- Clear existing data (in reverse order of dependencies)
-DELETE FROM dispute_evidence;
-DELETE FROM disputes;
-DELETE FROM reviews;
-DELETE FROM payments;
-DELETE FROM bookings;
-DELETE FROM faqs;
-DELETE FROM vehicle_features;
-DELETE FROM vehicle_images;
-DELETE FROM vehicles;
+
 
 -- Clear new ecosystem data
-DELETE FROM car_delivery;
-DELETE FROM chauffeur_services;
-DELETE FROM airport_transfer_services;
-DELETE FROM car_booking_history;
-DELETE FROM car_bookings;
-DELETE FROM car_specifications;
-DELETE FROM car_images;
-DELETE FROM car_locations;
-DELETE FROM car_pricing;
-DELETE FROM car_availability;
-DELETE FROM business_packages;
-DELETE FROM wedding_packages;
-DELETE FROM cars;
-DELETE FROM car_models;
-DELETE FROM car_brands;
 
-DELETE FROM equipment_rentals;
-DELETE FROM motorbike_booking_history;
-DELETE FROM motorbike_bookings;
-DELETE FROM motorbike_specifications;
-DELETE FROM motorbike_images;
-DELETE FROM motorbike_locations;
-DELETE FROM motorbike_pricing;
-DELETE FROM motorbike_availability;
-DELETE FROM tour_packages;
-DELETE FROM adventure_packages;
-DELETE FROM motorbikes;
-DELETE FROM motorbike_models;
-DELETE FROM motorbike_brands;
 
-DELETE FROM users;
 -- ======-- ====== USERS DATA (SQL Server UUID Format) ======
 -- Admin User
 INSERT INTO users (
@@ -1450,7 +1411,6 @@ IF OBJECT_ID('dbo.system_settings', 'U') IS NULL CREATE TABLE system_settings (
     created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
     updated_at DATETIME2 NOT NULL DEFAULT GETDATE()
 );
-DELETE FROM system_settings;
 INSERT INTO system_settings (
         id,
         key_name,
@@ -1542,7 +1502,6 @@ VALUES (
         '2024-01-01 00:00:00'
     );
 -- ====== COUPONS ======
-DELETE FROM coupons;
 INSERT INTO coupons (
         code,
         discount_percentage,
@@ -1813,7 +1772,6 @@ VALUES (
         6
     );
 -- ====== DISPUTES ====== 
-DELETE FROM disputes;
 INSERT INTO disputes (
         booking_id,
         reporter_id,

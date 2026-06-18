@@ -157,7 +157,7 @@ export const DeliveryTrackerMap: React.FC<DeliveryTrackerMapProps> = ({ bookingI
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:30px_30px]" />
 
         {/* GPS coordinates overlays */}
-        <span className="absolute top-4 left-4 text-[9px] text-slate-600 font-mono tracking-wider">
+        <span className="absolute top-4 left-4 text-[9px] text-slate-600 dark:text-slate-400 font-mono tracking-wider">
           LAT: {tracking.latitude.toFixed(6)} | LNG: {tracking.longitude.toFixed(6)}
         </span>
         <span className="absolute top-4 right-4 text-[9px] text-amber-500/50 font-mono flex items-center gap-1 font-semibold uppercase tracking-wider">
@@ -283,7 +283,7 @@ export const DeliveryTrackerMap: React.FC<DeliveryTrackerMapProps> = ({ bookingI
           <button
             onClick={handleSimulateStep}
             disabled={tracking.status === 'ARRIVED' || tracking.status === 'COMPLETED'}
-            className="w-full py-3 bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-black font-extrabold text-xs uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-amber-950/20 disabled:from-slate-900 disabled:to-slate-900 disabled:text-slate-600 border border-amber-400/40 disabled:border-slate-800 cursor-pointer flex items-center justify-center gap-2"
+            className="w-full py-3 bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-black font-extrabold text-xs uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-amber-950/20 disabled:from-slate-900 disabled:to-slate-900 disabled:text-slate-600 dark:text-slate-400 border border-amber-400/40 disabled:border-slate-800 cursor-pointer flex items-center justify-center gap-2"
           >
             {tracking.status === 'ARRIVED' || tracking.status === 'COMPLETED' ? (
               <>

@@ -58,7 +58,7 @@ const GoogleLoginButton: React.FC<{ onSuccess?: () => void }> = () => {
         title={!isGoogleConfigured ? 'Google OAuth not configured — use email/password instead' : 'Continue with Google'}
         className={`w-full max-w-[320px] flex items-center justify-center gap-3 px-4 py-3 border rounded-full transition-all duration-200 shadow-sm font-semibold text-sm ${
           isGoogleConfigured
-            ? 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-foreground bg-background'
+            ? 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:bg-slate-950 dark:hover:bg-slate-800/50 text-foreground bg-background'
             : 'border-slate-200 dark:border-slate-700 opacity-60 cursor-not-allowed text-muted-foreground bg-background'
         }`}
       >
@@ -237,7 +237,7 @@ export const LoginPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-slate-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-slate-600 dark:text-slate-400"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -407,7 +407,7 @@ export const RegisterPage: React.FC = () => {
                         key={opt.value}
                         type="button"
                         onClick={() => update('role', opt.value)}
-                        className={`flex items-center gap-2 p-3 rounded-xl border-2 text-sm font-medium transition-all duration-200 ${form.role === opt.value ? 'border-accent bg-blue-50 dark:bg-blue-900/30 text-accent' : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-300'}`}
+                        className={`flex items-center gap-2 p-3 rounded-xl border-2 text-sm font-medium transition-all duration-200 ${form.role === opt.value ? 'border-accent bg-blue-50 dark:bg-blue-900/30 text-accent' : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:border-slate-600'}`}
                       >
                         <opt.icon className="w-4 h-4" /> {opt.label}
                       </button>

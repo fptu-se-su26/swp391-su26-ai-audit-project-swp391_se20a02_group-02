@@ -12,10 +12,6 @@ const languages = [
   { code: 'vi' as Language, name: 'Tiếng Việt', flag: '🇻🇳' },
   { code: 'ja' as Language, name: '日本語', flag: '🇯🇵' },
   { code: 'ko' as Language, name: '한국어', flag: '🇰🇷' },
-  { code: 'zh' as Language, name: '中文', flag: '🇨🇳' },
-  { code: 'fr' as Language, name: 'Français', flag: '🇫🇷' },
-  { code: 'de' as Language, name: 'Deutsch', flag: '🇩🇪' },
-  { code: 'es' as Language, name: 'Español', flag: '🇪🇸' },
 ];
 
 export const LanguageSwitcher: React.FC<{ className?: string }> = ({ className = '' }) => {
@@ -76,7 +72,7 @@ export const LanguageSwitcher: React.FC<{ className?: string }> = ({ className =
                   className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-colors ${
                     language === lang.code
                       ? 'bg-accent text-white'
-                      : 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
+                      : 'hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
                   }`}
                   whileHover={{ x: 4 }}
                   whileTap={{ scale: 0.98 }}
@@ -158,7 +154,7 @@ export const LanguageSwitcherToggle: React.FC<{ className?: string }> = ({ class
     >
       {/* Sliding toggle */}
       <motion.div
-        className="absolute top-1 left-1 w-6 h-6 rounded-full bg-white shadow-lg flex items-center justify-center text-sm"
+        className="absolute top-1 left-1 w-6 h-6 rounded-full bg-white dark:bg-slate-900 shadow-lg flex items-center justify-center text-sm"
         initial={false}
         animate={{
           x: isVietnamese ? 32 : 0,

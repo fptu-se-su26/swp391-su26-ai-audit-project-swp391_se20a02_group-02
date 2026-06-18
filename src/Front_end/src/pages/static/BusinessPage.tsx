@@ -154,7 +154,7 @@ const BusinessPage: React.FC = () => {
               <a href="mailto:business@luxeway.vn" className="btn-gold px-8 py-4 text-base inline-flex items-center gap-2">
                 <Phone className="w-5 h-5" /> Contact Sales
               </a>
-              <Link to="/marketplace" className="btn-outline px-8 py-4 text-base inline-flex items-center gap-2 border-white/30 text-white hover:bg-white/10">
+              <Link to="/marketplace" className="btn-outline px-8 py-4 text-base inline-flex items-center gap-2 border-white/30 text-white hover:bg-white dark:bg-slate-900/10">
                 Browse Fleet <ArrowRight className="w-5 h-5" />
               </Link>
             </motion.div>
@@ -215,7 +215,7 @@ const BusinessPage: React.FC = () => {
       </section>
 
       {/* Pricing */}
-      <section className={`section ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
+      <section className={`section ${isDark ? 'bg-slate-800' : 'bg-slate-50 dark:bg-slate-950'}`}>
         <div className="container-lux">
           <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-14">
             <span className="text-label text-gold mb-2 block">Transparent Pricing</span>
@@ -260,7 +260,7 @@ const BusinessPage: React.FC = () => {
                 </div>
                 <ul className="space-y-3 flex-1 mb-8">
                   {plan.features.map(f => (
-                    <li key={f} className="flex items-center gap-2.5 text-sm text-slate-600">
+                    <li key={f} className="flex items-center gap-2.5 text-sm text-slate-600 dark:text-slate-400">
                       <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
                       {f}
                     </li>
@@ -271,7 +271,7 @@ const BusinessPage: React.FC = () => {
                   className={`block text-center py-3 rounded-2xl font-semibold text-sm transition-all duration-200 ${
                     plan.highlight
                       ? 'bg-accent text-white hover:bg-blue-700'
-                      : 'bg-slate-100 text-[#0F172A] hover:bg-slate-200'
+                      : 'bg-slate-100 dark:bg-slate-800 text-[#0F172A] hover:bg-slate-200'
                   }`}
                 >
                   {plan.name === 'Enterprise' ? 'Contact Sales' : 'Start Free Trial'}
@@ -303,7 +303,7 @@ const BusinessPage: React.FC = () => {
                 <div className="flex text-yellow-400 mb-4">
                   {Array.from({ length: t.rating }).map((_, i) => <Star key={i} className="w-4 h-4 fill-yellow-400" />)}
                 </div>
-                <p className="text-slate-600 text-sm italic leading-relaxed mb-5">"{t.text}"</p>
+                <p className="text-slate-600 dark:text-slate-400 text-sm italic leading-relaxed mb-5">"{t.text}"</p>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent to-blue-700 flex items-center justify-center text-white text-sm font-bold">
                     {t.avatar}
@@ -333,7 +333,7 @@ const BusinessPage: React.FC = () => {
               <a href="mailto:business@luxeway.vn" className="btn-gold px-8 py-4 inline-flex items-center gap-2">
                 <Mail className="w-5 h-5" /> business@luxeway.vn
               </a>
-              <a href="tel:+84900000000" className="btn-outline border-white/30 text-white hover:bg-white/10 px-8 py-4 inline-flex items-center gap-2">
+              <a href="tel:+84900000000" className="btn-outline border-white/30 text-white hover:bg-white dark:bg-slate-900/10 px-8 py-4 inline-flex items-center gap-2">
                 <Phone className="w-5 h-5" /> +84 900 000 000
               </a>
             </div>

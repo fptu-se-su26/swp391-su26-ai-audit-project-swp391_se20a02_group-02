@@ -37,7 +37,7 @@ export const DestinationsSection: React.FC<DestinationsSectionProps> = ({ destin
             <span className="text-xs font-bold tracking-widest uppercase text-amber-500 mb-2 block">Top Destinations</span>
             <h2 className="font-bold text-3xl md:text-5xl text-slate-900 dark:text-white">Where Do You Want to Go?</h2>
           </div>
-          <Link to="/marketplace" className="text-sm font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-amber-450 flex items-center gap-1.5 transition-colors">
+          <Link to="/marketplace" className="text-sm font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 dark:hover:text-amber-450 flex items-center gap-1.5 transition-colors">
             All Cities <ArrowRight className="w-4 h-4" />
           </Link>
         </motion.div>

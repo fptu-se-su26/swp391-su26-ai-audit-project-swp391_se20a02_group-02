@@ -37,10 +37,10 @@ export const TrendingSection: React.FC<TrendingSectionProps> = ({ vehicles, load
             <p className="text-slate-500 dark:text-slate-400 mt-1 text-base">Most booked on LuxeWay this week</p>
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={() => scroll(-1)} className="w-11 h-11 rounded-full border border-slate-200 dark:border-slate-800 flex items-center justify-center hover:border-slate-900 dark:hover:border-amber-450 hover:bg-slate-50 dark:hover:bg-slate-850 transition-colors">
+            <button onClick={() => scroll(-1)} className="w-11 h-11 rounded-full border border-slate-200 dark:border-slate-800 flex items-center justify-center hover:border-slate-900 dark:hover:border-amber-450 hover:bg-slate-50 dark:bg-slate-950 dark:hover:bg-slate-850 transition-colors">
               <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
             </button>
-            <button onClick={() => scroll(1)} className="w-11 h-11 rounded-full border border-slate-200 dark:border-slate-800 flex items-center justify-center hover:border-slate-900 dark:hover:border-amber-450 hover:bg-slate-50 dark:hover:bg-slate-850 transition-colors">
+            <button onClick={() => scroll(1)} className="w-11 h-11 rounded-full border border-slate-200 dark:border-slate-800 flex items-center justify-center hover:border-slate-900 dark:hover:border-amber-450 hover:bg-slate-50 dark:bg-slate-950 dark:hover:bg-slate-850 transition-colors">
               <ChevronRight className="w-5 h-5 text-slate-600 dark:text-slate-400" />
             </button>
           </div>
@@ -63,7 +63,7 @@ export const TrendingSection: React.FC<TrendingSectionProps> = ({ vehicles, load
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                   ) : (
                     <div className="w-full h-full bg-slate-900 flex items-center justify-center">
-                      <Car className="w-14 h-14 text-slate-700" />
+                      <Car className="w-14 h-14 text-slate-700 dark:text-slate-300" />
                     </div>
                   )}
                   {/* Badges */}

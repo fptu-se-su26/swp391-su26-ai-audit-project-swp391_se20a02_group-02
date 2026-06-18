@@ -247,7 +247,7 @@ const WishlistPage: React.FC = () => {
                   if (user?.id) vehicleService.toggleWishlist(v.id, user.id);
                   setVehicles(prev => prev.filter(veh => veh.id !== v.id));
                 }}
-                className="absolute top-4 right-4 w-8 h-8 bg-white/80 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all z-10 shadow-sm backdrop-blur-sm"
+                className="absolute top-4 right-4 w-8 h-8 bg-white dark:bg-slate-900/80 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all z-10 shadow-sm backdrop-blur-sm"
               >
                 ✕
               </button>

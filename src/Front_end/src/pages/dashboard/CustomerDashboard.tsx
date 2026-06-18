@@ -21,6 +21,7 @@ import { useT, translateNotification } from '@/i18n/translations';
 import Avatar from '@/components/ui/Avatar';
 import StatusBadge from '@/components/ui/StatusBadge';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
+import logoImage from '@/image/logo.png';
 
 // ====== CUSTOMER SIDEBAR ======
 const CustomerSidebar: React.FC = () => {
@@ -42,26 +43,12 @@ const CustomerSidebar: React.FC = () => {
     {
       href: '/dashboard/rewards',
       icon: Gift,
-      label: language === 'vi' ? 'Đổi Thưởng' :
-        language === 'ja' ? 'ロイヤルティ特典' :
-          language === 'ko' ? '로열티 리워드' :
-            language === 'zh' ? '会员积分奖励' :
-              language === 'fr' ? 'Récompenses' :
-                language === 'de' ? 'Treueprämien' :
-                  language === 'es' ? 'Premios' :
-                    'Loyalty Rewards'
+      label: t.dashboard.loyaltyRewards || 'Loyalty Rewards'
     },
     {
       href: '/dashboard/corporate',
       icon: Building2,
-      label: language === 'vi' ? 'Cổng Doanh Nghiệp' :
-        language === 'ja' ? '企業ポータル' :
-          language === 'ko' ? '기업 포탈' :
-            language === 'zh' ? '企业门户' :
-              language === 'fr' ? 'Portail Entreprise' :
-                language === 'de' ? 'Unternehmensportal' :
-                  language === 'es' ? 'Portal Corporativo' :
-                    'Corporate Portal'
+      label: t.dashboard.corporatePortal || 'Corporate Portal'
     },
     { href: '/messages', icon: Bell, label: t.nav.messages },
     { href: '/dashboard/notifications', icon: Heart, label: t.dashboard.notifications },
@@ -100,13 +87,13 @@ const CustomerSidebar: React.FC = () => {
 
         {/* LuxeWay Sidebar Logo */}
         <div className="lw-sidebar-logo">
-          <img src="/logo.svg" alt="LuxeWay" style={{ height: '36px', width: 'auto', display: 'block' }} />
+          <img src={logoImage} alt="LuxeWay" style={{ height: '36px', width: 'auto', display: 'block' }} />
           <span className="lw-sidebar-logo-text font-black text-white">LuxeWay</span>
         </div>
 
         {/* User Info */}
         <div className="p-5 border-b relative border-[var(--lw-border)]">
-          <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/5">
+          <div className="flex items-center gap-3 p-3 rounded-2xl bg-white dark:bg-slate-900/5 border border-white/5">
             <Avatar src={user?.avatar} name={user?.displayName || 'Customer'} size="md" className="ring-2 ring-indigo-500/30" />
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-white text-sm truncate">{user?.displayName}</p>
@@ -758,7 +745,7 @@ export const ProfilePage: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Avatar Card */}
-        <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] text-center shadow-sm flex flex-col items-center">
+        <div className="glass border border-slate-200 dark:border-slate-700/50 dark:border-white/5 p-6 rounded-[2rem] text-center shadow-sm flex flex-col items-center">
           <div className="relative inline-block mb-4">
             <Avatar src={user?.avatar} name={user?.displayName || ''} size="xl" className="mx-auto ring-4 ring-gold/20" />
             <button className="absolute -bottom-1 -right-1 w-8 h-8 bg-accent text-white rounded-xl flex items-center justify-center text-xs shadow-md shadow-blue-500/30">✏️</button>
@@ -766,7 +753,7 @@ export const ProfilePage: React.FC = () => {
           <h3 className="font-display text-xl font-bold text-slate-800 dark:text-white mt-2">{user?.displayName}</h3>
           <p className="text-slate-400 dark:text-slate-500 text-sm font-medium mt-0.5">{user?.email}</p>
 
-          <div className="mt-5 space-y-3 w-full border-t border-slate-200/40 dark:border-white/10 pt-4">
+          <div className="mt-5 space-y-3 w-full border-t border-slate-200 dark:border-slate-700/40 dark:border-white/10 pt-4">
             {user?.verified && (
               <div className="flex items-center gap-2 justify-center text-xs font-bold text-green-600 bg-green-500/10 px-3 py-1.5 rounded-xl border border-green-200/20">
                 <Shield className="w-4 h-4" /> {t.dashboard.identityVerified}
@@ -788,8 +775,8 @@ export const ProfilePage: React.FC = () => {
         </div>
 
         {/* Edit Form */}
-        <div className="lg:col-span-2 glass border border-slate-200/50 dark:border-white/5 p-6 md:p-8 rounded-[2rem] shadow-sm">
-          <h3 className="font-display text-lg font-bold text-slate-800 dark:text-white mb-5 border-b border-slate-200/30 dark:border-white/5 pb-3">{t.dashboard.personalInfo}</h3>
+        <div className="lg:col-span-2 glass border border-slate-200 dark:border-slate-700/50 dark:border-white/5 p-6 md:p-8 rounded-[2rem] shadow-sm">
+          <h3 className="font-display text-lg font-bold text-slate-800 dark:text-white mb-5 border-b border-slate-200 dark:border-slate-700/30 dark:border-white/5 pb-3">{t.dashboard.personalInfo}</h3>
           <form onSubmit={handleSave} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -871,8 +858,8 @@ export const SecurityPage: React.FC = () => {
       <Breadcrumbs title={t.dashboard.securitySettings} items={breadcrumbItems} backHref="/dashboard" backText="Back to Dashboard" />
       <div className="space-y-6">
         {/* Change Password */}
-        <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm">
-          <div className="flex items-center gap-3 mb-6 border-b border-slate-200/30 dark:border-white/5 pb-4">
+        <div className="glass border border-slate-200 dark:border-slate-700/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm">
+          <div className="flex items-center gap-3 mb-6 border-b border-slate-200 dark:border-slate-700/30 dark:border-white/5 pb-4">
             <div className="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center">
               <Shield className="w-5 h-5 text-accent" />
             </div>
@@ -912,7 +899,7 @@ export const SecurityPage: React.FC = () => {
         </div>
 
         {/* Two-Factor Authentication */}
-        <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm">
+        <div className="glass border border-slate-200 dark:border-slate-700/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-green-500/10 rounded-xl flex items-center justify-center">
@@ -927,20 +914,20 @@ export const SecurityPage: React.FC = () => {
               onClick={() => { setTwoFA(!twoFA); toast.success(twoFA ? '2FA Disabled' : '2FA Enabled', twoFA ? 'Two-factor auth disabled.' : '2FA is now active.'); }}
               className={`relative w-12 h-6 rounded-full transition-colors duration-300 ${twoFA ? 'bg-success' : 'bg-slate-200 dark:bg-slate-800'}`}
             >
-              <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all duration-300 ${twoFA ? 'left-7' : 'left-1'}`} />
+              <div className={`absolute top-1 w-4 h-4 rounded-full bg-white dark:bg-slate-900 shadow transition-all duration-300 ${twoFA ? 'left-7' : 'left-1'}`} />
             </button>
           </div>
         </div>
 
         {/* Active Sessions */}
-        <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm">
+        <div className="glass border border-slate-200 dark:border-slate-700/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm">
           <h3 className="font-display text-lg font-bold text-slate-800 dark:text-white mb-4">Active Sessions</h3>
           <div className="space-y-3">
             {[
               { device: 'Chrome · Windows 11', location: 'Ho Chi Minh City, VN', time: 'Now', current: true },
               { device: 'Safari · iPhone 15', location: 'Ho Chi Minh City, VN', time: '2 hours ago', current: false },
             ].map((session, i) => (
-              <div key={i} className="flex items-center justify-between p-3.5 bg-slate-500/5 dark:bg-white/5 border border-slate-200/10 dark:border-white/5 rounded-2xl">
+              <div key={i} className="flex items-center justify-between p-3.5 bg-slate-500/5 dark:bg-white dark:bg-slate-900/5 border border-slate-200 dark:border-slate-700/10 dark:border-white/5 rounded-2xl">
                 <div className="flex items-center gap-3">
                   <div className={`w-2.5 h-2.5 rounded-full ${session.current ? 'bg-success shadow-lg shadow-green-500/40 animate-pulse' : 'bg-slate-300 dark:bg-slate-700'}`} />
                   <div>
@@ -1215,7 +1202,7 @@ export const DocumentsPage: React.FC = () => {
         </span>
       );
     }
-    return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-slate-200/30 text-slate-500 bg-slate-500/5">{t.dashboard.notUploadedDoc}</span>;
+    return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700/30 text-slate-500 bg-slate-500/5">{t.dashboard.notUploadedDoc}</span>;
   };
 
   const breadcrumbItems = [
@@ -1256,7 +1243,7 @@ export const DocumentsPage: React.FC = () => {
           {docs.map(doc => {
             const docInfo = getDocInfo(doc.id);
             return (
-              <motion.div key={doc.id} variants={staggerItem} className="glass border border-slate-200/50 dark:border-white/5 p-5 rounded-[2rem] shadow-sm">
+              <motion.div key={doc.id} variants={staggerItem} className="glass border border-slate-200 dark:border-slate-700/50 dark:border-white/5 p-5 rounded-[2rem] shadow-sm">
                 <div className="flex items-start gap-4">
                   <div className="text-3xl flex-shrink-0">{doc.icon}</div>
                   <div className="flex-1 min-w-0">
@@ -1290,7 +1277,7 @@ export const DocumentsPage: React.FC = () => {
                             </a>
                           )}
 
-                          <div className="mt-1 relative rounded-2xl overflow-hidden border border-slate-200/50 dark:border-white/10 max-w-sm shadow-sm bg-slate-500/5 max-h-56">
+                          <div className="mt-1 relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700/50 dark:border-white/10 max-w-sm shadow-sm bg-slate-500/5 max-h-56">
                             {!isPdfDocument(docInfo.url) ? (
                               <img
                                 src={resolveDocumentUrl(docInfo.url)}
@@ -1325,7 +1312,7 @@ export const DocumentsPage: React.FC = () => {
                       )}
                     </div>
                     {doc.id === 'license' && docInfo.status === 'verified' && (
-                      <div className="mt-3 p-3 bg-slate-500/5 dark:bg-white/5 border border-slate-200/10 dark:border-white/5 rounded-2xl max-w-2xl">
+                      <div className="mt-3 p-3 bg-slate-500/5 dark:bg-white dark:bg-slate-900/5 border border-slate-200 dark:border-slate-700/10 dark:border-white/5 rounded-2xl max-w-2xl">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
                             <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Tên trên bằng lái</span>
@@ -1371,8 +1358,6 @@ export const PaymentHistoryPage: React.FC = () => {
   const [loading, setLoading] = React.useState(true);
   const [paymentData, setPaymentData] = React.useState<any[]>([]);
   const t = useT();
-  const isVi = t.common.loading.includes('Đang');
-  const isJa = t.common.loading.includes('読み込み');
 
   React.useEffect(() => {
     if (!user) return;
@@ -1398,7 +1383,7 @@ export const PaymentHistoryPage: React.FC = () => {
       const invoiceId = invoice?.id;
       if (invoiceId) {
         const token = localStorage.getItem('luxeway_access_token');
-        const fileRes = await fetch(`http://localhost:8080/invoices/download/${invoiceId}`, {
+        const fileRes = await fetch(`http://localhost:8080/api/v1/invoices/download/${invoiceId}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -1426,11 +1411,15 @@ export const PaymentHistoryPage: React.FC = () => {
   const totalPaid = paymentData.filter((p: any) => p.status === 'succeeded').reduce((s: number, p: any) => s + p.amount, 0);
   const totalRefunded = paymentData.filter((p: any) => p.status === 'refunded').reduce((s: number, p: any) => s + p.amount, 0);
 
-  const getHeaders = () => {
-    if (isVi) return ['Mã Giao Dịch', 'Đơn Đặt Xe', 'Phương Thức', 'Ngày', 'Số Tiền', 'Trạng Thái', 'Hóa Đơn'];
-    if (isJa) return ['取引ID', '予約', '支払い方法', '日付', '金額', 'ステータス', '請求書'];
-    return ['Transaction ID', 'Booking', 'Method', 'Date', 'Amount', 'Status', 'Invoice'];
-  };
+  const getHeaders = () => [
+    t.dashboard.txId || 'Transaction ID',
+    t.dashboard.txBooking || 'Booking',
+    t.dashboard.txMethod || 'Method',
+    t.dashboard.txDate || 'Date',
+    t.dashboard.txAmount || 'Amount',
+    t.dashboard.txStatus || 'Status',
+    t.dashboard.txInvoice || 'Invoice'
+  ];
 
   const breadcrumbItems = [
     { label: t.marketplace.home, href: '/' },
@@ -1449,7 +1438,7 @@ export const PaymentHistoryPage: React.FC = () => {
             { label: t.dashboard.totalRefunded, value: formatCurrency(totalRefunded), color: 'text-blue-600 dark:text-blue-400' },
             { label: t.dashboard.transactionsCount, value: paymentData.length.toString(), color: 'text-accent' },
           ].map(s => (
-            <div key={s.label} className="glass border border-slate-200/50 dark:border-white/5 p-4 rounded-2xl text-center">
+            <div key={s.label} className="glass border border-slate-200 dark:border-slate-700/50 dark:border-white/5 p-4 rounded-2xl text-center">
               <p className={`text-lg font-extrabold ${s.color}`}>{s.value}</p>
               <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-1">{s.label}</p>
             </div>
@@ -1460,16 +1449,16 @@ export const PaymentHistoryPage: React.FC = () => {
       {loading ? (
         <TableSkeleton rows={5} />
       ) : paymentData.length === 0 ? (
-        <div className="glass border border-slate-200/50 dark:border-white/5 text-center py-16 rounded-[2rem]">
-          <CreditCard className="w-12 h-12 text-slate-300 dark:text-slate-700 mx-auto mb-3" />
+        <div className="glass border border-slate-200 dark:border-slate-700/50 dark:border-white/5 text-center py-16 rounded-[2rem]">
+          <CreditCard className="w-12 h-12 text-slate-300 dark:text-slate-700 dark:text-slate-300 mx-auto mb-3" />
           <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-1">{t.dashboard.noPayments}</h3>
           <p className="text-slate-400 text-xs font-medium">{t.dashboard.noPaymentsDesc}</p>
         </div>
       ) : (
-        <div className="glass border border-slate-200/50 dark:border-white/5 rounded-[2.5rem] overflow-hidden shadow-sm">
+        <div className="glass border border-slate-200 dark:border-slate-700/50 dark:border-white/5 rounded-[2.5rem] overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-slate-500/5 border-b border-slate-200/30 dark:border-white/5">
+              <thead className="bg-slate-500/5 border-b border-slate-200 dark:border-slate-700/30 dark:border-white/5">
                 <tr>
                   {getHeaders().map(h => (
                     <th key={h} className="text-left px-4 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{h}</th>
@@ -1529,7 +1518,7 @@ export const SettingsPage: React.FC = () => {
         {desc && <p className="text-xs text-slate-400 dark:text-slate-500 font-medium mt-0.5">{desc}</p>}
       </div>
       <button onClick={onChange} className={`relative w-12 h-6 rounded-full transition-colors duration-300 flex-shrink-0 ml-4 ${value ? 'bg-accent' : 'bg-slate-200 dark:bg-slate-800'}`}>
-        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all duration-300 ${value ? 'left-7' : 'left-1'}`} />
+        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white dark:bg-slate-900 shadow transition-all duration-300 ${value ? 'left-7' : 'left-1'}`} />
       </button>
     </div>
   );
@@ -1544,9 +1533,9 @@ export const SettingsPage: React.FC = () => {
     <div className="space-y-6 animate-fade-in">
       <Breadcrumbs title={t.dashboard.settings} items={breadcrumbItems} backHref="/dashboard" backText="Back to Dashboard" />
       <div className="space-y-6">
-        <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm">
+        <div className="glass border border-slate-200 dark:border-slate-700/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm">
           <h3 className="font-display text-lg font-bold text-slate-800 dark:text-white mb-1">{t.dashboard.emailNotifications}</h3>
-          <p className="text-slate-400 dark:text-slate-500 text-xs font-semibold mb-4 border-b border-slate-200/30 dark:border-white/5 pb-2">{t.dashboard.emailNotificationsDesc}</p>
+          <p className="text-slate-400 dark:text-slate-500 text-xs font-semibold mb-4 border-b border-slate-200 dark:border-slate-700/30 dark:border-white/5 pb-2">{t.dashboard.emailNotificationsDesc}</p>
           <div className="divide-y divide-slate-200/20 dark:divide-white/5">
             <Toggle value={prefs.emailBooking} onChange={() => setPrefs(p => ({ ...p, emailBooking: !p.emailBooking }))} label={t.dashboard.bookingUpdates} desc={t.dashboard.bookingUpdatesDesc} />
             <Toggle value={prefs.emailReview} onChange={() => setPrefs(p => ({ ...p, emailReview: !p.emailReview }))} label={t.dashboard.reviewRequests} desc={t.dashboard.reviewRequestsDesc} />
@@ -1554,20 +1543,20 @@ export const SettingsPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm">
+        <div className="glass border border-slate-200 dark:border-slate-700/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm">
           <h3 className="font-display text-lg font-bold text-slate-800 dark:text-white mb-1">{t.dashboard.pushNotifications}</h3>
-          <p className="text-slate-400 dark:text-slate-500 text-xs font-semibold mb-4 border-b border-slate-200/30 dark:border-white/5 pb-2">{t.dashboard.pushNotificationsDesc}</p>
+          <p className="text-slate-400 dark:text-slate-500 text-xs font-semibold mb-4 border-b border-slate-200 dark:border-slate-700/30 dark:border-white/5 pb-2">{t.dashboard.pushNotificationsDesc}</p>
           <div className="divide-y divide-slate-200/20 dark:divide-white/5">
             <Toggle value={prefs.pushNotif} onChange={() => setPrefs(p => ({ ...p, pushNotif: !p.pushNotif }))} label={t.dashboard.inAppNotifications} desc={t.dashboard.inAppNotificationsDesc} />
           </div>
         </div>
 
-        <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm">
+        <div className="glass border border-slate-200 dark:border-slate-700/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm">
           <h3 className="font-display text-lg font-bold text-slate-800 dark:text-white mb-4">{t.dashboard.displayPreferences}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">{isVi ? 'Ngôn Ngữ' : isJa ? '言語' : 'Language'}</label>
-              <select value={prefs.language} onChange={e => setPrefs(p => ({ ...p, language: e.target.value as any }))} className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100">
+              <select value={prefs.language} onChange={e => setPrefs(p => ({ ...p, language: e.target.value as any }))} className="lux-input bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/30 dark:border-white/5 text-slate-800 dark:text-slate-100">
                 <option value="en">English</option>
                 <option value="vi">Tiếng Việt</option>
                 <option value="ja">日本語</option>
@@ -1580,7 +1569,7 @@ export const SettingsPage: React.FC = () => {
             </div>
             <div>
               <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">{isVi ? 'Tiền Tệ' : isJa ? '通貨' : 'Currency'}</label>
-              <select value={prefs.currency} onChange={e => setPrefs(p => ({ ...p, currency: e.target.value }))} className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100">
+              <select value={prefs.currency} onChange={e => setPrefs(p => ({ ...p, currency: e.target.value }))} className="lux-input bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/30 dark:border-white/5 text-slate-800 dark:text-slate-100">
                 <option value="USD">USD ($)</option>
                 <option value="VND">VND (₫)</option>
                 <option value="EUR">EUR (€)</option>
@@ -1640,11 +1629,11 @@ export const MyReviewsPage: React.FC = () => {
       ) : (
         <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-4">
           {reviews.map((r: any) => (
-            <motion.div key={r.id} variants={staggerItem} className="glass border border-slate-200/50 dark:border-white/5 p-5 rounded-[2rem] hover-lift hover-glow shadow-sm transition-all duration-300">
+            <motion.div key={r.id} variants={staggerItem} className="glass border border-slate-200 dark:border-slate-700/50 dark:border-white/5 p-5 rounded-[2rem] hover-lift hover-glow shadow-sm transition-all duration-300">
               <div className="flex items-center gap-2 mb-3">
                 <div className="flex">
                   {[...Array(5)].map((_, i) => (
-                    <Star key={i} className={`w-4 h-4 ${i < Math.round(r.rating) ? 'fill-yellow-400 text-yellow-400' : 'text-slate-200 dark:text-slate-700'}`} />
+                    <Star key={i} className={`w-4 h-4 ${i < Math.round(r.rating) ? 'fill-yellow-400 text-yellow-400' : 'text-slate-200 dark:text-slate-700 dark:text-slate-300'}`} />
                   ))}
                 </div>
                 <span className="text-sm font-extrabold text-slate-800 dark:text-white">{r.rating}/5</span>
@@ -1653,7 +1642,7 @@ export const MyReviewsPage: React.FC = () => {
               <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed italic mb-3 font-medium">"{r.comment}"</p>
               <p className="text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">{t.dashboard.vehicleId}: <span className="font-mono text-slate-800 dark:text-slate-200">#{r.vehicleId.slice(-6).toUpperCase()}</span></p>
               {r.ownerResponse && (
-                <div className="mt-4 p-3.5 bg-slate-500/5 dark:bg-white/5 border border-slate-200/10 dark:border-white/5 rounded-2xl">
+                <div className="mt-4 p-3.5 bg-slate-500/5 dark:bg-white dark:bg-slate-900/5 border border-slate-200 dark:border-slate-700/10 dark:border-white/5 rounded-2xl">
                   <p className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">{t.dashboard.ownerReplied}</p>
                   <p className="text-xs text-slate-500 dark:text-slate-400 italic font-medium">"{r.ownerResponse}"</p>
                 </div>
@@ -1757,7 +1746,7 @@ export const LuxeWalletPage: React.FC = () => {
             {/* Deluxe Wallet Card */}
             <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A] p-6 text-white shadow-xl min-h-[190px] flex flex-col justify-between border border-white/10 hover-glow">
               {/* Shiny overlay effects */}
-              <div className="absolute -right-16 -top-16 w-48 h-48 rounded-full bg-white/5 blur-xl pointer-events-none" />
+              <div className="absolute -right-16 -top-16 w-48 h-48 rounded-full bg-white dark:bg-slate-900/5 blur-xl pointer-events-none" />
               <div className="absolute -left-16 -bottom-16 w-48 h-48 rounded-full bg-blue-500/10 blur-xl pointer-events-none" />
 
               <div className="flex justify-between items-start">
@@ -1780,7 +1769,7 @@ export const LuxeWalletPage: React.FC = () => {
             </div>
 
             {/* Quick stats / info card */}
-            <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm flex flex-col justify-between">
+            <div className="glass border border-slate-200 dark:border-slate-700/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm flex flex-col justify-between">
               <div>
                 <h4 className="font-bold text-slate-800 dark:text-white text-sm mb-3">{t.wallet.whyTitle}</h4>
                 <ul className="space-y-2 text-xs text-slate-500 dark:text-slate-400 font-semibold">
@@ -1795,7 +1784,7 @@ export const LuxeWalletPage: React.FC = () => {
                   </li>
                 </ul>
               </div>
-              <div className="mt-5 pt-3 border-t border-slate-200/40 dark:border-white/10 flex items-center justify-between text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">
+              <div className="mt-5 pt-3 border-t border-slate-200 dark:border-slate-700/40 dark:border-white/10 flex items-center justify-between text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">
                 <span>{t.wallet.verificationStatus}</span>
                 <span className="text-success font-bold flex items-center gap-1">
                   <Shield className="w-3.5 h-3.5" /> {t.wallet.secureWallet}
@@ -1805,7 +1794,7 @@ export const LuxeWalletPage: React.FC = () => {
           </div>
 
           {/* Top Up Wallet Form */}
-          <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm">
+          <div className="glass border border-slate-200 dark:border-slate-700/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm">
             <h3 className="font-display text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
               💰 {t.wallet.topUpTitle}
             </h3>
@@ -1824,7 +1813,7 @@ export const LuxeWalletPage: React.FC = () => {
                       onClick={() => handlePresetSelect(amt)}
                       className={`py-2.5 px-1 text-xs rounded-xl border-2 font-bold transition-all duration-300 text-center ${topUpAmount === amt
                         ? 'border-accent bg-blue-500/10 text-accent font-extrabold shadow-sm'
-                        : 'border-slate-200/50 dark:border-white/5 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-white/15'
+                        : 'border-slate-200 dark:border-slate-700/50 dark:border-white/5 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:border-slate-600 dark:hover:border-white/15'
                         }`}
                     >
                       {formatCurrency(amt).replace('₫', '').trim()} ₫
@@ -1843,7 +1832,7 @@ export const LuxeWalletPage: React.FC = () => {
                     type="text"
                     value={customAmount}
                     onChange={e => handleCustomAmountChange(e.target.value)}
-                    className="lux-input text-lg font-bold pr-12 text-slate-800 dark:text-white bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-white/5"
+                    className="lux-input text-lg font-bold pr-12 text-slate-800 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/50 dark:border-white/5"
                     placeholder={t.wallet.enterAmountPlaceholder}
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 font-extrabold text-slate-400 text-sm">VND</span>
@@ -1872,7 +1861,7 @@ export const LuxeWalletPage: React.FC = () => {
                       onClick={() => setMethod(m.id as any)}
                       className={`p-4 rounded-[1.5rem] border-2 text-left transition-all duration-300 ${method === m.id
                         ? 'border-accent bg-blue-500/10'
-                        : 'border-slate-200/50 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/10 bg-slate-500/5'
+                        : 'border-slate-200 dark:border-slate-700/50 dark:border-white/5 hover:border-slate-300 dark:border-slate-600 dark:hover:border-white/10 bg-slate-500/5'
                         }`}
                     >
                       <div className="text-2xl mb-1.5">{m.icon}</div>
@@ -1902,8 +1891,8 @@ export const LuxeWalletPage: React.FC = () => {
         </div>
 
         {/* Right Column - Recent Transactions */}
-        <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm flex flex-col h-full">
-          <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-200/30 dark:border-white/5">
+        <div className="glass border border-slate-200 dark:border-slate-700/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm flex flex-col h-full">
+          <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-200 dark:border-slate-700/30 dark:border-white/5">
             <h3 className="font-display text-lg font-bold text-slate-800 dark:text-white">{t.wallet.transactions}</h3>
             <button onClick={fetchTransactions} className="text-xs text-accent hover:underline font-bold">
               {t.wallet.refresh}

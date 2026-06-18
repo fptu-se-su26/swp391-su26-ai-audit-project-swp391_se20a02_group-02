@@ -7,9 +7,192 @@ import {
   Send, Clock, CheckCircle2, AlertCircle, Ticket, HeartHandshake, HelpCircle, Activity, BarChart3, Sparkles
 } from 'lucide-react';
 import { helpService, ticketV2Service, emergencyService, kbService } from '@/services/helpService';
-import { useAuthStore } from '@/store';
+import { useAuthStore, useUIStore } from '@/store';
 import { useT } from '@/i18n/translations';
 import { DeliveryTrackerMap } from '@/components/help/DeliveryTrackerMap';
+
+const getHelpTranslations = (lang: string) => {
+  if (lang === 'vi') return {
+    ecosystem: 'Hệ sinh thái Hỗ trợ Khách hàng LuxeWay',
+    title: 'Chúng tôi có thể giúp gì?',
+    subtitle: 'Xem hướng dẫn sử dụng, theo dõi giao xe trực tiếp hoặc yêu cầu Hỗ trợ Khẩn cấp trên đường.',
+    searchPlaceholder: 'Tìm kiếm bài viết hỗ trợ...',
+    noArticlesFor: 'Không tìm thấy bài viết nào cho',
+    reqRefund: 'Yêu cầu hoàn tiền',
+    reqRefundDesc: 'Hủy đặt xe và yêu cầu hoàn tiền',
+    openDispute: 'Mở tranh chấp',
+    openDisputeDesc: 'Ghi nhận tranh chấp với chủ xe/người thuê',
+    trackDelivery: 'Theo dõi giao xe',
+    trackDeliveryDesc: 'Theo dõi tọa độ giao xe trực tiếp',
+    roadsideEmergency: 'Hỗ trợ Khẩn cấp',
+    roadsideEmergencyDesc: 'Hỗ trợ ưu tiên khi hỏng xe hoặc tai nạn',
+    priorityEmergency: 'Cứu Hộ Khẩn Cấp Ưu Tiên',
+    priorityEmergencyDesc: 'Hỗ trợ hỏng xe, tai nạn hoặc sự cố nguy hiểm. Định vị GPS tự động.',
+    dispatchSuccess: 'Đã điều động thành công',
+    dispatchHelp: 'Gọi Cứu Hộ',
+    platformStatus: 'Trạng thái Hệ thống',
+    platformStatusDesc: 'Kiểm tra trạng thái hoạt động của dịch vụ, cổng thanh toán và bản đồ.',
+    platformHealthStatus: 'Xem Trạng thái Hệ thống',
+    hostSuccess: 'Trung tâm Chủ xe',
+    hostSuccessDesc: 'Thiết lập tài khoản nhận tiền, xem yêu cầu bảo hiểm và hóa đơn.',
+    hostSuccessDash: 'Bảng điều khiển Chủ xe',
+    adminOps: 'Bảng điều khiển Quản trị viên',
+    adminOpsDesc: 'Truy cập yêu cầu hỗ trợ, thống kê nhân viên và tỷ lệ giải quyết.',
+    openOpsRoom: 'Mở Phòng Điều Hành',
+    liveTracker: 'Theo Dõi Giao Xe Trực Tiếp',
+    liveTrackerDesc: 'Nếu xe đang được giao, nhập Mã Đặt Xe bên dưới để xem định vị GPS Goong.',
+    enterBookingId: 'Nhập Mã Đặt Xe (VD: BK-DEV-CAR)...',
+    startTracker: 'Bắt Đầu Theo Dõi',
+    helpArticles: 'Bài Viết Hỗ Trợ',
+    helpArticlesDesc: 'Chọn một danh mục bên dưới để xem hướng dẫn.',
+    allCategories: 'Tất cả danh mục',
+    noArticlesList: 'Không có bài viết nào trong danh mục này.',
+    selectCatRead: 'Chọn một danh mục bên trái để đọc hướng dẫn.',
+    openClaim: 'Mở Yêu Cầu Hỗ Trợ',
+    openClaimDesc: 'Gửi yêu cầu hỗ trợ trực tiếp liên quan đến hóa đơn, KYC hoặc lỗi nền tảng.',
+    ticketCreated: 'Đã tạo yêu cầu! Chúng tôi sẽ phản hồi trong 24h.',
+    createTicket: 'Tạo Yêu Cầu Hỗ Trợ',
+    signInFile: 'Đăng nhập để gửi yêu cầu',
+    activeTickets: 'Yêu Cầu Hỗ Trợ Đang Xử Lý',
+    faqTitle: 'Câu Hỏi Thường Gặp',
+    faqDesc: 'Câu trả lời nhanh cho các câu hỏi phổ biến nhất.'
+  };
+  if (lang === 'ja') return {
+    ecosystem: 'LuxeWayカスタマーサポートエコシステム',
+    title: '何かお困りですか？',
+    subtitle: 'マニュアルの閲覧、車両配達のリアルタイム追跡、またはロードサイドアシスタンスのリクエスト。',
+    searchPlaceholder: 'ヘルプ記事を検索...',
+    noArticlesFor: '記事が見つかりません：',
+    reqRefund: '返金をリクエスト',
+    reqRefundDesc: '予約をキャンセルし、返金をリクエストします',
+    openDispute: '異議申し立て',
+    openDisputeDesc: 'ホスト/ゲスト間のサービスに関する異議申し立て',
+    trackDelivery: '配達を追跡',
+    trackDeliveryDesc: '配達状況と座標をリアルタイムで追跡',
+    roadsideEmergency: 'ロードサイドの緊急事態',
+    roadsideEmergencyDesc: '故障や事故の際の優先対応',
+    priorityEmergency: '優先緊急対応',
+    priorityEmergencyDesc: '故障、車両の損傷、衝突、または即時の危険に対するサポート。自動GPS座標ルーティング。',
+    dispatchSuccess: '派遣が成功しました',
+    dispatchHelp: 'ロードサイドサポートを呼ぶ',
+    platformStatus: 'プラットフォームのステータス',
+    platformStatusDesc: 'アクティブなサービスの稼働状況を確認。支払いゲートウェイやマップの監視。',
+    platformHealthStatus: 'プラットフォームの健康状態',
+    hostSuccess: 'ホストサクセスハブ',
+    hostSuccessDesc: '受取口座の設定、保険金請求の確認、および請求書のダウンロード。',
+    hostSuccessDash: 'ホストサクセスダッシュボード',
+    adminOps: '管理者オペレーションダッシュボード',
+    adminOpsDesc: 'サポートチケット、エージェントの統計、および解決率メトリクスにアクセス。',
+    openOpsRoom: 'オペレーションルームを開く',
+    liveTracker: 'ライブ車両配達トラッカー',
+    liveTrackerDesc: '車両が配達中の場合、以下の予約IDを入力してGoong GPSテレメトリを表示します。',
+    enterBookingId: '予約IDを入力してください（例：BK-DEV-CAR）...',
+    startTracker: 'トラッカーを開始',
+    helpArticles: 'ヘルプセンター記事',
+    helpArticlesDesc: '以下のカテゴリーを選択して操作マニュアルを閲覧します。',
+    allCategories: 'すべてのカテゴリー',
+    noArticlesList: 'このカテゴリーには記事がありません。',
+    selectCatRead: '左側からカテゴリーを選択してガイドを読みます。',
+    openClaim: 'サポートチケットを開く',
+    openClaimDesc: '請求書、KYC、またはプラットフォームのバグに関するクレームを開く。',
+    ticketCreated: 'チケットが作成されました！24時間以内に対応します。',
+    createTicket: 'サポートチケットを作成',
+    signInFile: 'サインインしてチケットを送信',
+    activeTickets: 'アクティブなサポートチケット',
+    faqTitle: 'よくある質問',
+    faqDesc: '最もよくある質問への簡単な回答。'
+  };
+  if (lang === 'ko') return {
+    ecosystem: 'LuxeWay 고객 지원 에코시스템',
+    title: '무엇을 도와드릴까요?',
+    subtitle: '매뉴얼 검색, 차량 배송 실시간 추적 또는 긴급 출동 서비스 요청.',
+    searchPlaceholder: '도움말 문서 검색...',
+    noArticlesFor: '다음에 대한 문서를 찾을 수 없습니다:',
+    reqRefund: '환불 요청',
+    reqRefundDesc: '예약 취소 및 환불 요청',
+    openDispute: '분쟁 제기',
+    openDisputeDesc: '호스트/게스트 간의 서비스 분쟁 제기',
+    trackDelivery: '배송 추적',
+    trackDeliveryDesc: '실시간 배송 로그 및 위치 추적',
+    roadsideEmergency: '긴급 출동 서비스',
+    roadsideEmergencyDesc: '고장 또는 사고 시 우선 지원',
+    priorityEmergency: '우선 긴급 출동',
+    priorityEmergencyDesc: '고장, 차량 파손, 충돌 또는 즉각적인 위험 지원. 자동 GPS 위치 전송.',
+    dispatchSuccess: '출동 요청 성공',
+    dispatchHelp: '긴급 출동 요청',
+    platformStatus: '플랫폼 상태',
+    platformStatusDesc: '서비스 가동 상태, 결제 게이트웨이 및 지도 라우팅 모니터링.',
+    platformHealthStatus: '플랫폼 상태 보기',
+    hostSuccess: '호스트 성공 허브',
+    hostSuccessDesc: '대금 수령 은행 설정, 보험 청구 조회 및 송장 다운로드.',
+    hostSuccessDash: '호스트 성공 대시보드',
+    adminOps: '관리자 운영 대시보드',
+    adminOpsDesc: '지원 티켓, 상담원 통계 및 해결률 지표 액세스.',
+    openOpsRoom: '운영 룸 열기',
+    liveTracker: '실시간 차량 배송 추적',
+    liveTrackerDesc: '차량이 배송 중인 경우 아래에 예약 ID를 입력하여 Goong GPS 원격 측정을 봅니다.',
+    enterBookingId: '예약 ID 입력 (예: BK-DEV-CAR)...',
+    startTracker: '지도 추적기 시작',
+    helpArticles: '고객 센터 문서',
+    helpArticlesDesc: '아래 카테고리를 선택하여 운영 매뉴얼을 찾아보세요.',
+    allCategories: '모든 카테고리',
+    noArticlesList: '이 카테고리에 등록된 문서가 없습니다.',
+    selectCatRead: '가이드를 읽으려면 왼쪽에서 카테고리를 선택하세요.',
+    openClaim: '지원 요청 열기',
+    openClaimDesc: '인보이스, KYC 또는 플랫폼 버그에 관한 요청 제출.',
+    ticketCreated: '티켓이 생성되었습니다! 24시간 이내에 응답합니다.',
+    createTicket: '지원 티켓 생성',
+    signInFile: '티켓을 제출하려면 로그인하세요',
+    activeTickets: '진행 중인 지원 티켓',
+    faqTitle: '자주 묻는 질문',
+    faqDesc: '가장 일반적인 질문에 대한 빠른 답변.'
+  };
+  return {
+    ecosystem: 'LuxeWay Customer Support Ecosystem',
+    title: 'How can we help?',
+    subtitle: 'Browse our luxury operations manuals, track premium vehicle deliveries in real-time, or request Priority Roadside Support.',
+    searchPlaceholder: 'Search help articles...',
+    noArticlesFor: 'No articles found for',
+    reqRefund: 'Request Refund',
+    reqRefundDesc: 'Cancel booking and request refund dynamically',
+    openDispute: 'Open Dispute',
+    openDisputeDesc: 'Open dispute logs regarding host/renter services',
+    trackDelivery: 'Track Delivery',
+    trackDeliveryDesc: 'Monitor delivery logs & coordinates live',
+    roadsideEmergency: 'Roadside Emergency',
+    roadsideEmergencyDesc: 'Priority dispatch for breakdown or accident Support',
+    priorityEmergency: 'Priority Emergency Dispatch',
+    priorityEmergencyDesc: 'Breakdown, vehicle damage, collision, or immediate hazard support. Automatic GPS coordinates routing.',
+    dispatchSuccess: 'Dispatched Successfully',
+    dispatchHelp: 'Dispatch Roadside Help',
+    platformStatus: 'Platform Status',
+    platformStatusDesc: 'Check active service uptime status. Monitor payments gateways, Goong map routing, and SMS brokers.',
+    platformHealthStatus: 'Platform Health Status',
+    hostSuccess: 'Host Success Hub',
+    hostSuccessDesc: 'Configure payout bank details, view Allianz insurance claims, download tax invoices, and revenue statements.',
+    hostSuccessDash: 'Host Success Dashboard',
+    adminOps: 'Administrator Operations Dashboard',
+    adminOpsDesc: 'Access support tickets logs, agent statistics, and resolution rate metrics.',
+    openOpsRoom: 'Open Operations Room',
+    liveTracker: 'Live Vehicle Delivery Tracking',
+    liveTrackerDesc: 'If your vehicle delivery is en route, enter the Booking ID below to view Goong GPS telemetry.',
+    enterBookingId: 'Enter Booking ID (e.g. BK-DEV-CAR or BK-DEV-MOTO)...',
+    startTracker: 'Start Map Tracker',
+    helpArticles: 'Help Center Articles',
+    helpArticlesDesc: 'Select a category below to browse operational documentation.',
+    allCategories: 'All Categories',
+    noArticlesList: 'No articles listed in this category.',
+    selectCatRead: 'Select a category on the left to read guides.',
+    openClaim: 'Open Support Claim',
+    openClaimDesc: 'Direct client support pipeline. Open claims concerning invoices, KYC, contract details, or platform bugs.',
+    ticketCreated: 'Ticket Created! We respond in 24h.',
+    createTicket: 'Create Support Ticket',
+    signInFile: 'Sign In to File Ticket',
+    activeTickets: 'Active Support Tickets',
+    faqTitle: 'Frequently Asked Questions',
+    faqDesc: 'Quick answers to the most common questions.'
+  };
+};
 
 // =====================================================
 // ICON MAP
@@ -250,7 +433,7 @@ const TicketForm: React.FC<{ onClose: () => void; onSuccess: () => void; initial
 
           <div>
             <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-              {t.help.bookingIdLabel || 'Booking ID'} <span className="text-slate-600 font-normal lowercase">{t.help.optionalLabel || '(optional)'}</span>
+              {t.help.bookingIdLabel || 'Booking ID'} <span className="text-slate-600 dark:text-slate-400 font-normal lowercase">{t.help.optionalLabel || '(optional)'}</span>
             </label>
             <input
               type="text"
@@ -491,7 +674,7 @@ const MyTicketsPanel: React.FC<{ userId: string | null }> = ({ userId }) => {
       <div className="text-center py-12 text-slate-500 border border-slate-900/60 rounded-3xl bg-slate-950/20">
         <Ticket className="w-10 h-10 mx-auto mb-3 opacity-30 text-amber-500" />
         <p className="font-bold text-xs uppercase tracking-wider">{t.help.noTicketsYet || 'No support tickets yet'}</p>
-        <p className="text-slate-600 text-xs mt-1">{t.help.submitBelowIfHelp || 'Submit a request below if you need help.'}</p>
+        <p className="text-slate-600 dark:text-slate-400 text-xs mt-1">{t.help.submitBelowIfHelp || 'Submit a request below if you need help.'}</p>
       </div>
     );
   }
@@ -504,8 +687,8 @@ const MyTicketsPanel: React.FC<{ userId: string | null }> = ({ userId }) => {
         >
           <div>
             <div className="flex items-center gap-2 mb-1.5">
-              <span className="text-[10px] font-bold text-slate-600">ID: {t.id.slice(0, 8)}...</span>
-              <span className="text-slate-800">·</span>
+              <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400">ID: {t.id.slice(0, 8)}...</span>
+              <span className="text-slate-800 dark:text-slate-200">·</span>
               <span className="text-[9px] px-1.5 py-0.5 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded uppercase font-bold tracking-wider">
                 {t.category?.name || 'CLAIM'}
               </span>
@@ -524,7 +707,7 @@ const MyTicketsPanel: React.FC<{ userId: string | null }> = ({ userId }) => {
             }`}>
               {t.status}
             </span>
-            <span className="text-[9px] text-slate-600 font-mono font-semibold">
+            <span className="text-[9px] text-slate-600 dark:text-slate-400 font-mono font-semibold">
               {new Date(t.createdAt).toLocaleDateString()}
             </span>
           </div>
@@ -539,6 +722,8 @@ const MyTicketsPanel: React.FC<{ userId: string | null }> = ({ userId }) => {
 // =====================================================
 export const HelpPage: React.FC = () => {
   const t = useT();
+  const language = useUIStore((s: any) => s.language);
+  const strings = getHelpTranslations(language);
   const { user } = useAuthStore();
   const userId = user?.id ?? null;
 
@@ -636,18 +821,18 @@ export const HelpPage: React.FC = () => {
             className="inline-flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold px-5 py-2 rounded-full mb-6 tracking-widest uppercase"
           >
             <Sparkles className="w-3.5 h-3.5" />
-            LuxeWay Customer Support Ecosystem
+            {strings.ecosystem}
           </motion.div>
 
           <motion.h1 variants={fadeUp}
             className="font-black text-4xl md:text-5xl text-white mb-4 leading-tight tracking-tight"
           >
-            {t.help.title || 'How can we help?'}
+            {strings.title}
           </motion.h1>
           <motion.p variants={fadeUp}
             className="text-slate-400 text-sm max-w-lg mx-auto mb-10"
           >
-            {t.help.subtitle || 'Browse our luxury operations manuals, track premium vehicle deliveries in real-time, or request Priority Roadside Support.'}
+            {strings.subtitle}
           </motion.p>
 
           {/* Search bar */}
@@ -660,7 +845,7 @@ export const HelpPage: React.FC = () => {
               type="text"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              placeholder={t.help.searchPlaceholder || "Search help articles..."}
+              placeholder={strings.searchPlaceholder}
               className="w-full pl-12 pr-12 py-4 rounded-2xl bg-slate-900/60 border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-amber-500/50 shadow-xl text-sm transition-all"
             />
           </motion.div>
@@ -676,7 +861,7 @@ export const HelpPage: React.FC = () => {
               >
                 <div className="bg-[#0c0c0e] rounded-2xl shadow-2xl border border-slate-850 overflow-hidden text-left max-h-80 overflow-y-auto">
                   {searchResults.length === 0 && !searchLoading && (
-                    <p className="p-5 text-xs text-slate-500 text-center">No articles found for "{searchQuery}"</p>
+                    <p className="p-5 text-xs text-slate-500 text-center">{strings.noArticlesFor} "{searchQuery}"</p>
                   )}
                   {searchResults.map(a => (
                     <button
@@ -704,20 +889,20 @@ export const HelpPage: React.FC = () => {
         <div className="mb-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             {
-              title: t.help.requestRefund || "Request Refund",
-              desc: "Cancel booking and request refund dynamically",
+              title: strings.reqRefund,
+              desc: strings.reqRefundDesc,
               icon: CreditCard,
               action: () => { setTicketCategoryPreset('PAYMENT'); setShowTicketForm(true); }
             },
             {
-              title: t.help.openDispute || "Open Dispute",
-              desc: "Open dispute logs regarding host/renter services",
+              title: strings.openDispute,
+              desc: strings.openDisputeDesc,
               icon: ShieldAlert,
               action: () => { setTicketCategoryPreset('DISPUTE'); setShowTicketForm(true); }
             },
             {
-              title: t.help.deliveryTracker || "Track Delivery",
-              desc: "Monitor delivery logs & coordinates live",
+              title: strings.trackDelivery,
+              desc: strings.trackDeliveryDesc,
               icon: Car,
               action: () => {
                 // Focus and show tracking
@@ -726,8 +911,8 @@ export const HelpPage: React.FC = () => {
               }
             },
             {
-              title: t.help.emergencySupport || "Roadside Emergency",
-              desc: "Priority dispatch for breakdown or accident Support",
+              title: strings.roadsideEmergency,
+              desc: strings.roadsideEmergencyDesc,
               icon: AlertTriangle,
               action: () => { setShowEmergencyForm(true); }
             }
@@ -760,22 +945,22 @@ export const HelpPage: React.FC = () => {
             <div>
               <div className="flex items-center gap-2 text-rose-500">
                 <AlertTriangle className="w-4.5 h-4.5 animate-pulse" />
-                <h4 className="text-xs font-bold tracking-widest uppercase">{t.help.emergencySupport || 'Priority Emergency Dispatch'}</h4>
+                <h4 className="text-xs font-bold tracking-widest uppercase">{strings.priorityEmergency}</h4>
               </div>
               <p className="text-slate-400 text-xs mt-2.5 leading-relaxed">
-                Breakdown, vehicle damage, collision, or immediate hazard support. Automatic GPS coordinates routing.
+                {strings.priorityEmergencyDesc}
               </p>
             </div>
             {emergencySuccess ? (
               <span className="text-emerald-400 text-xs font-bold flex items-center gap-1">
-                <CheckCircle2 className="w-4 h-4" /> Dispatched Successfully
+                <CheckCircle2 className="w-4 h-4" /> {strings.dispatchSuccess}
               </span>
             ) : (
               <button
                 onClick={() => setShowEmergencyForm(true)}
                 className="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-[10px] uppercase tracking-widest rounded-xl transition-all cursor-pointer border border-rose-500/40"
               >
-                Dispatch Roadside Help
+                {strings.dispatchHelp}
               </button>
             )}
           </div>
@@ -785,17 +970,17 @@ export const HelpPage: React.FC = () => {
             <div>
               <div className="flex items-center gap-2 text-amber-400">
                 <Activity className="w-4.5 h-4.5" />
-                <h4 className="text-xs font-bold tracking-widest uppercase">{t.help.platformStatus || 'Platform Status'}</h4>
+                <h4 className="text-xs font-bold tracking-widest uppercase">{strings.platformStatus}</h4>
               </div>
               <p className="text-slate-400 text-xs mt-2.5 leading-relaxed">
-                Check active service uptime status. Monitor payments gateways, Goong map routing, and SMS brokers.
+                {strings.platformStatusDesc}
               </p>
             </div>
             <a
               href="/help/status"
               className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-amber-400 font-extrabold text-[10px] uppercase tracking-widest rounded-xl transition-all text-center block border border-slate-800/80 cursor-pointer"
             >
-              Platform Health Status
+              {strings.platformHealthStatus}
             </a>
           </div>
 
@@ -804,17 +989,17 @@ export const HelpPage: React.FC = () => {
             <div>
               <div className="flex items-center gap-2 text-amber-400">
                 <HeartHandshake className="w-4.5 h-4.5" />
-                <h4 className="text-xs font-bold tracking-widest uppercase">{t.help.ownerSuccess || 'Host Success Hub'}</h4>
+                <h4 className="text-xs font-bold tracking-widest uppercase">{strings.hostSuccess}</h4>
               </div>
               <p className="text-slate-400 text-xs mt-2.5 leading-relaxed">
-                Configure payout bank details, view Allianz insurance claims, download tax invoices, and revenue statements.
+                {strings.hostSuccessDesc}
               </p>
             </div>
             <a
               href="/help/owner-success"
               className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-amber-400 font-extrabold text-[10px] uppercase tracking-widest rounded-xl transition-all text-center block border border-slate-800/80 cursor-pointer"
             >
-              Host Success Dashboard
+              {strings.hostSuccessDash}
             </a>
           </div>
         </div>
@@ -827,15 +1012,15 @@ export const HelpPage: React.FC = () => {
                 <BarChart3 className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="text-sm font-bold text-white">Administrator Operations Dashboard</h4>
-                <p className="text-slate-500 text-xs mt-0.5">Access support tickets logs, agent statistics, and resolution rate metrics.</p>
+                <h4 className="text-sm font-bold text-white">{strings.adminOps}</h4>
+                <p className="text-slate-500 text-xs mt-0.5">{strings.adminOpsDesc}</p>
               </div>
             </div>
             <a
               href="/admin/support-analytics"
               className="px-6 py-2.5 bg-gradient-to-tr from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-black font-extrabold text-xs uppercase tracking-widest rounded-xl transition-all shadow-md"
             >
-              Open Operations Room
+              {strings.openOpsRoom}
             </a>
           </div>
         )}
@@ -844,9 +1029,9 @@ export const HelpPage: React.FC = () => {
         <div id="delivery-tracking-section" className="mb-14 scroll-mt-24 space-y-5">
           <div>
             <h3 className="text-lg font-black text-white tracking-wide uppercase flex items-center gap-2">
-              <Car className="w-5 h-5 text-amber-500" /> Live Vehicle Delivery Tracking
+              <Car className="w-5 h-5 text-amber-500" /> {strings.liveTracker}
             </h3>
-            <p className="text-slate-500 text-xs mt-1">If your vehicle delivery is en route, enter the Booking ID below to view Goong GPS telemetry.</p>
+            <p className="text-slate-500 text-xs mt-1">{strings.liveTrackerDesc}</p>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3">
@@ -854,14 +1039,14 @@ export const HelpPage: React.FC = () => {
               type="text"
               value={trackBookingId}
               onChange={e => setTrackBookingId(e.target.value)}
-              placeholder="Enter Booking ID (e.g. BK-DEV-CAR or BK-DEV-MOTO)..."
+              placeholder={strings.enterBookingId}
               className="flex-1 bg-slate-900/60 border border-slate-800 text-white placeholder-slate-500 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-amber-500/50"
             />
             <button
               onClick={() => setActiveTrackingBookingId(trackBookingId.trim() || null)}
               className="px-6 py-3 bg-slate-900 hover:bg-slate-800 text-amber-400 font-extrabold text-xs uppercase tracking-widest rounded-xl border border-slate-800 transition-all cursor-pointer"
             >
-              Start Map Tracker
+              {strings.startTracker}
             </button>
           </div>
 
@@ -876,15 +1061,15 @@ export const HelpPage: React.FC = () => {
         <div className="border-t border-slate-900 pt-10 mb-14">
           <div className="mb-8 flex items-center justify-between">
             <div>
-              <h2 className="font-extrabold text-2xl text-slate-100 uppercase tracking-wide">Help Center Articles</h2>
-              <p className="text-slate-500 text-xs mt-1">Select a category below to browse operational documentation.</p>
+              <h2 className="font-extrabold text-2xl text-slate-100 uppercase tracking-wide">{strings.helpArticles}</h2>
+              <p className="text-slate-500 text-xs mt-1">{strings.helpArticlesDesc}</p>
             </div>
             {selectedCategoryId && (
               <button
                 onClick={() => { setSelectedCategoryId(null); setArticles([]); }}
                 className="flex items-center gap-1.5 text-xs text-amber-500 font-bold hover:underline cursor-pointer"
               >
-                <ArrowLeft className="w-4 h-4" /> All Categories
+                <ArrowLeft className="w-4 h-4" /> {strings.allCategories}
               </button>
             )}
           </div>
@@ -923,7 +1108,7 @@ export const HelpPage: React.FC = () => {
                   {artLoading ? (
                     Array(3).fill(0).map((_, i) => <Skeleton key={i} className="h-16" />)
                   ) : articles.length === 0 ? (
-                    <p className="text-slate-500 text-xs italic">No articles listed in this category.</p>
+                    <p className="text-slate-500 text-xs italic">{strings.noArticlesList}</p>
                   ) : (
                     articles.map(art => (
                       <button
@@ -942,8 +1127,8 @@ export const HelpPage: React.FC = () => {
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center p-8 border border-slate-900 border-dashed rounded-3xl bg-slate-950/10 text-center h-[200px]">
-                  <BookOpen className="w-10 h-10 text-slate-600 mb-3" />
-                  <p className="text-slate-500 text-xs">Select a category on the left to read guides.</p>
+                  <BookOpen className="w-10 h-10 text-slate-600 dark:text-slate-400 mb-3" />
+                  <p className="text-slate-500 text-xs">{strings.selectCatRead}</p>
                 </div>
               )}
             </div>
@@ -959,29 +1144,29 @@ export const HelpPage: React.FC = () => {
             <div>
               <div className="flex items-center gap-2 text-amber-500">
                 <Ticket className="w-4.5 h-4.5" />
-                <h4 className="text-xs font-bold tracking-widest uppercase">Open Support Claim</h4>
+                <h4 className="text-xs font-bold tracking-widest uppercase">{strings.openClaim}</h4>
               </div>
               <p className="text-slate-400 text-xs mt-3 leading-relaxed">
-                Direct client support pipeline. Open claims concerning invoices, KYC, contract details, or platform bugs.
+                {strings.openClaimDesc}
               </p>
             </div>
             {ticketSuccess ? (
               <div className="text-emerald-400 text-xs font-bold flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4" /> Ticket Created! We respond in 24h.
+                <CheckCircle2 className="w-4 h-4" /> {strings.ticketCreated}
               </div>
             ) : userId ? (
               <button
                 onClick={() => { setTicketCategoryPreset('BOOKING'); setShowTicketForm(true); }}
                 className="w-full py-3 bg-gradient-to-tr from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-black font-extrabold text-xs uppercase tracking-widest rounded-xl transition-all cursor-pointer border border-amber-400/40"
               >
-                Create Support Ticket
+                {strings.createTicket}
               </button>
             ) : (
               <a
                 href="/auth/login"
                 className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-amber-400 font-extrabold text-xs uppercase tracking-widest rounded-xl text-center block border border-slate-800/80 cursor-pointer"
               >
-                Sign In to File Ticket
+                {strings.signInFile}
               </a>
             )}
           </div>
@@ -989,7 +1174,7 @@ export const HelpPage: React.FC = () => {
           {/* User Active tickets list */}
           <div className="lg:col-span-2">
             <h4 className="text-sm font-extrabold text-white uppercase tracking-wider mb-5 flex items-center gap-2">
-              <Clock className="w-4.5 h-4.5 text-amber-500" /> Active Support Tickets
+              <Clock className="w-4.5 h-4.5 text-amber-500" /> {strings.activeTickets}
             </h4>
             <MyTicketsPanel userId={userId} />
           </div>
@@ -1043,6 +1228,8 @@ export const HelpPage: React.FC = () => {
 // =====================================================
 const FaqSection: React.FC = () => {
   const t = useT();
+  const language = useUIStore((s: any) => s.language);
+  const strings = getHelpTranslations(language);
   const [faqs, setFaqs] = useState<{ id: number; q: string; a: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1087,8 +1274,8 @@ const FaqSection: React.FC = () => {
   return (
     <div className="border-t border-slate-900 pt-10">
       <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="mb-6">
-        <h2 className="font-extrabold text-2xl text-slate-100 uppercase tracking-wide">Frequently Asked Questions</h2>
-        <p className="text-slate-500 text-xs mt-1">Quick answers to the most common questions.</p>
+        <h2 className="font-extrabold text-2xl text-slate-100 uppercase tracking-wide">{strings.faqTitle}</h2>
+        <p className="text-slate-500 text-xs mt-1">{strings.faqDesc}</p>
       </motion.div>
       <div className="space-y-3">
         {faqs.map((faq, i) => {

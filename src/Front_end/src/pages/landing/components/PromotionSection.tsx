@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import type { Promotion } from '@/services/homeService';
+import { useUIStore } from '@/store';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -29,6 +30,27 @@ interface PromotionSectionProps {
 export const PromotionSection: React.FC<PromotionSectionProps> = ({ promotions, loading }) => {
   const [active, setActive] = useState(0);
   const navigate = useNavigate();
+  const language = useUIStore((s: any) => s.language);
+
+  const translateCta = (text: string) => {
+    const upper = text?.toUpperCase();
+    if (language === 'ja') {
+      if (upper === 'BOOK NOW') return '今すぐ予約';
+      if (upper === 'SEE DEALS') return 'キャンペーンを見る';
+      if (upper === 'GET COUPON') return 'クーポンを取得';
+    }
+    if (language === 'ko') {
+      if (upper === 'BOOK NOW') return '지금 예약하기';
+      if (upper === 'SEE DEALS') return '특가 보기';
+      if (upper === 'GET COUPON') return '쿠폰 받기';
+    }
+    if (language === 'vi') {
+      if (upper === 'BOOK NOW') return 'ĐẶT NGAY';
+      if (upper === 'SEE DEALS') return 'XEM ƯU ĐÃI';
+      if (upper === 'GET COUPON') return 'NHẬN MÃ';
+    }
+    return text;
+  };
 
   useEffect(() => {
     if (promotions.length <= 1) return;
@@ -39,15 +61,15 @@ export const PromotionSection: React.FC<PromotionSectionProps> = ({ promotions, 
   if (!loading && promotions.length === 0) return null;
 
   return (
-    <section className="py-24 bg-slate-50 overflow-hidden">
+    <section className="py-24 bg-slate-50 dark:bg-slate-950 overflow-hidden">
       <div className="max-w-7xl mx-auto px-6">
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="flex justify-between items-end mb-10">
           <div>
-            <span className="text-xs font-bold tracking-widest uppercase text-amber-500 mb-2 block">Current Offers</span>
-            <h2 className="font-bold text-3xl md:text-5xl text-[#0F172A]">Deals & Promotions</h2>
+            <span className="text-xs font-bold tracking-widest uppercase text-amber-500 mb-2 block">{language === 'ja' ? '現在のオファー' : language === 'ko' ? '현재 혜택' : language === 'vi' ? 'Ưu Đãi Hiện Tại' : 'Current Offers'}</span>
+            <h2 className="font-bold text-3xl md:text-5xl text-[#0F172A]">{language === 'ja' ? 'お得なキャンペーン' : language === 'ko' ? '특가 및 프로모션' : language === 'vi' ? 'Khuyến Mãi & Ưu Đãi' : 'Deals & Promotions'}</h2>
           </div>
           <Link to="/marketplace" className="text-sm font-semibold text-slate-500 hover:text-[#0F172A] flex items-center gap-1 transition-colors">
-            View All <ArrowRight className="w-4 h-4" />
+            {language === 'ja' ? 'すべて見る' : language === 'ko' ? '모두 보기' : language === 'vi' ? 'Xem Tất Cả' : 'View All'} <ArrowRight className="w-4 h-4" />
           </Link>
         </motion.div>
  
@@ -115,7 +137,7 @@ export const PromotionSection: React.FC<PromotionSectionProps> = ({ promotions, 
                       </span>
                     )}
                     {promo.badgeText && (
-                      <span className="px-3 py-1 bg-white/20 backdrop-blur-md text-white text-xs font-semibold rounded-full">
+                      <span className="px-3 py-1 bg-white dark:bg-slate-900/20 backdrop-blur-md text-white text-xs font-semibold rounded-full">
                         {promo.badgeText}
                       </span>
                     )}
@@ -123,7 +145,7 @@ export const PromotionSection: React.FC<PromotionSectionProps> = ({ promotions, 
                   <div className="absolute bottom-0 left-0 right-0 p-8">
                     <h3 className="font-bold text-white text-lg md:text-xl leading-tight mb-3">{promo.title}</h3>
                     <button className="flex items-center gap-1.5 text-amber-400 text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
-                      {promo.ctaText} <ArrowRight className="w-4 h-4" />
+                      {translateCta(promo.ctaText)} <ArrowRight className="w-4 h-4" />
                     </button>
                   </div>
                 </motion.div>

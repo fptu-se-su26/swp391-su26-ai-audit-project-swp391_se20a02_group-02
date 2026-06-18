@@ -299,7 +299,7 @@ export const RealTimeCalculator: React.FC<RealTimeCalculatorProps> = ({
                 ))}
               </div>
 
-              <div className="h-px bg-white/5 my-2" />
+              <div className="h-px bg-white dark:bg-slate-900/5 my-2" />
 
               <div className="flex justify-between text-xs text-slate-400">
                 <span>Base Total ({days} Days)</span>
@@ -339,7 +339,7 @@ export const RealTimeCalculator: React.FC<RealTimeCalculatorProps> = ({
                 <span className="text-white">{formatVND(breakdown.taxes)}</span>
               </div>
 
-              <div className="h-px bg-white/10 my-2" />
+              <div className="h-px bg-white dark:bg-slate-900/10 my-2" />
 
               <div className="flex justify-between items-baseline">
                 <span className="text-sm font-bold text-white">Total Payout</span>

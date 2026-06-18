@@ -163,7 +163,7 @@ export const ChatbotWidget: React.FC = () => {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 50 }}
             transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-            className="mb-4 w-[380px] sm:w-[420px] h-[580px] rounded-[30px] border border-slate-200/80 dark:border-slate-800/80 bg-white/95 dark:bg-slate-950/95 shadow-2xl backdrop-blur-xl flex flex-col overflow-hidden"
+            className="mb-4 w-[380px] sm:w-[420px] h-[580px] rounded-[30px] border border-slate-200 dark:border-slate-700/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/95 dark:bg-slate-950/95 shadow-2xl backdrop-blur-xl flex flex-col overflow-hidden"
           >
             {/* Header Area */}
             <div className="bg-gradient-to-r from-[#0F172A] to-[#1E3A5F] px-5 py-4 text-white flex items-center justify-between shadow-md">
@@ -195,7 +195,7 @@ export const ChatbotWidget: React.FC = () => {
                   disabled={isSyncing}
                   title="Đồng bộ dữ liệu xe từ SQL Server"
                   className={cn(
-                    "p-2 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 transition-all",
+                    "p-2 rounded-xl text-slate-300 hover:text-white hover:bg-white dark:bg-slate-900/10 transition-all",
                     isSyncing && "opacity-60 cursor-not-allowed"
                   )}
                 >
@@ -205,7 +205,7 @@ export const ChatbotWidget: React.FC = () => {
                 {/* Close Button */}
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 transition-all"
+                  className="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-white dark:bg-slate-900/10 transition-all"
                 >
                   <ChevronDown className="w-5 h-5" />
                 </button>
@@ -219,7 +219,7 @@ export const ChatbotWidget: React.FC = () => {
                 <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center flex-shrink-0">
                   <Bot className="w-4 h-4 text-slate-600 dark:text-slate-300" />
                 </div>
-                <div className="bg-slate-100/80 dark:bg-slate-900/80 rounded-2xl rounded-tl-none p-3.5 max-w-[82%] text-sm text-slate-700 dark:text-slate-300 border border-slate-100 dark:border-slate-850">
+                <div className="bg-slate-100 dark:bg-slate-800/80 dark:bg-slate-900/80 rounded-2xl rounded-tl-none p-3.5 max-w-[82%] text-sm text-slate-700 dark:text-slate-300 border border-slate-100 dark:border-slate-850">
                   Xin chào! Tôi là <strong>LuxeWay AI</strong>, trợ lý tư vấn thuê xe tự động của bạn.
                   <br /><br />
                   Tôi đã được nạp dữ liệu xe thực tế từ cơ sở dữ liệu. Bạn hãy đặt câu hỏi để tôi hỗ trợ tư vấn và so sánh các dòng xe tốt nhất nhé!
@@ -259,7 +259,7 @@ export const ChatbotWidget: React.FC = () => {
                   <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0 border border-slate-200 dark:border-slate-750">
                     <Bot className="w-4 h-4 text-slate-500" />
                   </div>
-                  <div className="bg-slate-100/50 dark:bg-slate-900/40 rounded-2xl rounded-tl-none px-4 py-3 border border-slate-100/60 dark:border-slate-800/40 flex items-center gap-1">
+                  <div className="bg-slate-100 dark:bg-slate-800/50 dark:bg-slate-900/40 rounded-2xl rounded-tl-none px-4 py-3 border border-slate-100/60 dark:border-slate-800/40 flex items-center gap-1">
                     <span className="w-2.5 h-2.5 rounded-full bg-slate-400 animate-bounce [animation-delay:-0.3s]" />
                     <span className="w-2.5 h-2.5 rounded-full bg-slate-400 animate-bounce [animation-delay:-0.15s]" />
                     <span className="w-2.5 h-2.5 rounded-full bg-slate-400 animate-bounce" />
@@ -280,7 +280,7 @@ export const ChatbotWidget: React.FC = () => {
                     <button
                       key={i}
                       onClick={() => handleSendMessage(q)}
-                      className="text-xs px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-450 transition-all font-medium text-left hover:scale-[1.02]"
+                      className="text-xs px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-450 transition-all font-medium text-left hover:scale-[1.02]"
                     >
                       {q}
                     </button>
@@ -290,7 +290,7 @@ export const ChatbotWidget: React.FC = () => {
             )}
 
             {/* Footer Input Area */}
-            <div className="p-4 border-t border-slate-200/80 dark:border-slate-800/80 flex gap-2 bg-slate-50/50 dark:bg-slate-950/50">
+            <div className="p-4 border-t border-slate-200 dark:border-slate-700/80 dark:border-slate-800/80 flex gap-2 bg-slate-50 dark:bg-slate-950/50 dark:bg-slate-950/50">
               <input
                 type="text"
                 value={inputValue}
