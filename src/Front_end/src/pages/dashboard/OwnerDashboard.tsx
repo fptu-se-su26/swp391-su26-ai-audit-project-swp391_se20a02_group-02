@@ -123,8 +123,7 @@ export const OwnerOverview: React.FC = () => {
         {/* Hero / Featured Vehicle Card */}
         <motion.div
           variants={fadeUp} initial="hidden" animate="visible"
-          className="lg:col-span-3 relative rounded-3xl overflow-hidden min-h-[260px] shadow-2xl"
-          style={{ boxShadow: '0 25px 60px rgba(0,0,0,0.5)' }}
+          className="lg:col-span-3 relative rounded-2xl overflow-hidden min-h-[260px] shadow-xl"
         >
           <img
             src={featuredVehicle?.thumbnailUrl || 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=900&q=80'}
@@ -151,20 +150,20 @@ export const OwnerOverview: React.FC = () => {
           <div className="absolute bottom-0 left-0 right-0 p-6">
             <div className="flex items-end justify-between gap-4">
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold mb-1 flex items-center gap-1.5" style={{ color: 'rgba(148,163,184,0.9)' }}>
+                <p className="text-xs font-semibold mb-1 flex items-center gap-1.5 text-slate-300">
                   <MapPin className="w-3 h-3" /> {featuredVehicle?.location?.city || 'Ho Chi Minh City'}, Vietnam
                 </p>
                 <h2 className="text-2xl font-extrabold text-white leading-tight tracking-tight">
                   {featuredVehicle?.name || 'Ferrari F8 Tributo'}
                 </h2>
-                <p className="text-xl font-extrabold mt-1" style={{ color: '#EAB308' }}>
+                <p className="text-xl font-extrabold mt-1 text-amber-400">
                   {formatCurrency(featuredVehicle?.pricePerDay || 8500000)}
-                  <span className="text-sm font-semibold ml-1" style={{ color: 'rgba(255,255,255,0.4)' }}>/day</span>
+                  <span className="text-sm font-semibold ml-1 text-white/50">/day</span>
                 </p>
               </div>
               <div className="flex flex-col gap-2 flex-shrink-0">
                 <Link to="/owner/vehicles/new"
-                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-black transition-all"
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-black bg-amber-550 hover:bg-amber-600 transition-all"
                   style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', boxShadow: '0 4px 15px rgba(245,158,11,0.4)' }}
                 >
                   <Plus className="w-3.5 h-3.5 inline mr-1" />
@@ -190,62 +189,58 @@ export const OwnerOverview: React.FC = () => {
             <motion.div
               key={stat.label}
               variants={staggerItem}
-              whileHover={{ y: -3, boxShadow: `0 15px 35px ${stat.glow}` }}
-              className="rounded-2xl p-4 cursor-default transition-all duration-300 relative overflow-hidden"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+              whileHover={{ y: -3 }}
+              className="lw-stat-card cursor-default group relative overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-lg transition-all duration-300"
             >
-              <div className="absolute top-0 right-0 w-14 h-14 rounded-full -translate-y-1/2 translate-x-1/2 opacity-40 blur-xl pointer-events-none"
-                style={{ background: stat.color }} />
-              <div className="relative z-10">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3"
-                  style={{ background: `${stat.color}22`, border: `1px solid ${stat.color}33` }}>
-                  <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
-                </div>
-                <p className="text-xl font-extrabold text-white tracking-tight leading-none">{stat.value}</p>
-                <p className="text-[10px] font-semibold uppercase tracking-wider mt-1.5" style={{ color: 'rgba(148,163,184,0.7)' }}>{stat.label}</p>
-                <p className="text-[10px] mt-1 font-semibold flex items-center gap-1" style={{ color: '#10B981' }}>
-                  <TrendingUp className="w-2.5 h-2.5" /> {stat.sub}
-                </p>
+              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <stat.icon className="w-12 h-12" style={{ color: stat.color }} />
               </div>
+              <div className="stat-icon" style={{ background: `${stat.color}15`, border: `1px solid ${stat.color}30` }}>
+                <stat.icon className="w-5 h-5" style={{ color: stat.color }} />
+              </div>
+              <p className="stat-value">{stat.value}</p>
+              <p className="stat-label">{stat.label}</p>
+              <p className="stat-sub flex items-center gap-1 text-emerald-600">
+                <TrendingUp className="w-2.5 h-2.5" /> {stat.sub}
+              </p>
             </motion.div>
           ))}
 
           {/* Goal ring */}
           <motion.div
             variants={staggerItem}
-            className="col-span-2 rounded-2xl p-4 relative overflow-hidden"
-            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+            className="lw-stat-card col-span-2 relative overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm"
           >
             <div className="flex items-center justify-between mb-3">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'rgba(148,163,184,0.6)' }}>Monthly Goal</p>
-                <p className="text-white font-bold text-sm mt-0.5">Revenue Target</p>
+                <p className="stat-label">Monthly Goal</p>
+                <p className="font-bold text-sm text-[var(--lw-text-primary)] mt-0.5">Revenue Target</p>
               </div>
               <div className="relative w-14 h-14">
                 <svg viewBox="0 0 48 48" className="w-full h-full -rotate-90">
-                  <circle cx="24" cy="24" r="20" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="5" />
+                  <circle cx="24" cy="24" r="20" fill="none" stroke="rgba(0,0,0,0.07)" strokeWidth="5" />
                   <circle cx="24" cy="24" r="20" fill="none" stroke="url(#ownerGoalGrad)" strokeWidth="5"
                     strokeDasharray={`${2 * Math.PI * 20 * goalPct / 100} ${2 * Math.PI * 20 * (1 - goalPct / 100)}`}
                     strokeLinecap="round" />
                   <defs>
                     <linearGradient id="ownerGoalGrad" x1="0%" y1="0%" x2="100%" y2="0%">
                       <stop offset="0%" stopColor="#F59E0B" />
-                      <stop offset="100%" stopColor="#EAB308" />
+                      <stop offset="100%" stopColor="#D97706" />
                     </linearGradient>
                   </defs>
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-xs font-extrabold text-white">{goalPct}%</span>
+                  <span className="text-xs font-extrabold text-[var(--lw-text-primary)]">{goalPct}%</span>
                 </div>
               </div>
             </div>
-            <div className="h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.08)' }}>
+            <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${goalPct}%` }}
                 transition={{ duration: 1.2, ease: 'easeOut', delay: 0.3 }}
                 className="h-full rounded-full"
-                style={{ background: 'linear-gradient(90deg, #F59E0B, #EAB308)' }}
+                style={{ background: 'linear-gradient(90deg, #6366F1, #8B5CF6)' }}
               />
             </div>
           </motion.div>
@@ -257,61 +252,58 @@ export const OwnerOverview: React.FC = () => {
         {/* Recent Vehicles */}
         <motion.div
           variants={fadeUp} initial="hidden" animate="visible"
-          className="lg:col-span-2 rounded-3xl p-5"
-          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
+          className="lw-stat-card lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm"
         >
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-white text-sm">Recent Properties</h3>
-            <Link to="/owner/vehicles" className="text-xs font-bold" style={{ color: '#F59E0B' }}>View all →</Link>
+            <h3 className="font-bold text-[var(--lw-text-primary)] text-sm">Recent Vehicles</h3>
+            <Link to="/owner/vehicles" className="text-xs font-bold text-amber-600 hover:text-amber-700 transition-colors">View all →</Link>
           </div>
           <div className="space-y-3">
             {vehicles.length === 0 ? (
-              [{
-                name: 'Luxury Villa in Bali', city: 'Bali', price: 7500000, status: 'available',
+              ([{
+                name: 'Honda Vision 2022', city: 'Ho Chi Minh City', price: 130000, status: 'available',
                 img: 'https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=120&q=80'
               }, {
-                name: 'Modern House in BSD', city: 'BSD City', price: 6200000, status: 'rented',
+                name: 'Honda Vision 2023 - Premium', city: 'Ho Chi Minh City', price: 150000, status: 'available',
                 img: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=120&q=80'
               }, {
-                name: 'Minimalist Home', city: 'Jakarta Selatan', price: 5800000, status: 'available',
+                name: 'Honda Vision 2021', city: 'Ho Chi Minh City', price: 120000, status: 'available',
                 img: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=120&q=80'
-              }].map((v, i) => (
+              }] as any[]).map((v, i) => (
                 <motion.div key={i} whileHover={{ x: 3 }}
-                  className="flex items-center gap-3 p-3 rounded-2xl transition-all duration-200"
-                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                  <img src={v.img} alt={v.name} className="w-14 h-10 rounded-xl object-cover flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-white truncate">{v.name}</p>
-                    <p className="text-[11px] flex items-center gap-1 mt-0.5" style={{ color: 'rgba(148,163,184,0.7)' }}>
-                      <MapPin className="w-2.5 h-2.5" />{v.city}
-                    </p>
+                  className="flex items-center gap-3 p-3.5 rounded-2xl transition-all duration-200 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-700/50">
+                <img src={v.thumbnailUrl || v.img} alt={v.name} className="w-16 h-12 rounded-xl object-cover flex-shrink-0 shadow-sm" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">{v.name}</p>
+                  <p className="text-[11px] font-medium flex items-center gap-1 mt-1 text-slate-500 dark:text-slate-400">
+                    <MapPin className="w-3 h-3" />{v.location?.city || v.city}
+                  </p>
                   </div>
                   <div className="text-right flex-shrink-0">
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg"
-                      style={{ background: v.status === 'available' ? 'rgba(16,185,129,0.15)' : 'rgba(99,102,241,0.15)', color: v.status === 'available' ? '#10B981' : '#818CF8' }}>
+                      style={{ background: v.status === 'available' ? 'rgba(16,185,129,0.12)' : 'rgba(99,102,241,0.12)', color: v.status === 'available' ? '#059669' : '#6366F1' }}>
                       {v.status === 'available' ? 'For Rent' : 'Rented'}
                     </span>
-                    <p className="text-xs font-bold text-white mt-1">{formatCurrency(v.price)}</p>
+                    <p className="text-xs font-bold text-[var(--lw-text-primary)] mt-1">{formatCurrency(v.price)}</p>
                   </div>
                 </motion.div>
               ))
             ) : vehicles.slice(0, 3).map(v => (
               <motion.div key={v.id} whileHover={{ x: 3 }}
-                className="flex items-center gap-3 p-3 rounded-2xl transition-all duration-200"
-                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                <img src={v.thumbnailUrl} alt={v.name} className="w-14 h-10 rounded-xl object-cover flex-shrink-0" />
+                className="flex items-center gap-3 p-3 rounded-xl transition-all duration-200 bg-[var(--lw-bg-secondary)] hover:bg-[var(--lw-bg-card-hover)]">
+                <img src={v.thumbnailUrl} alt={v.name} className="w-14 h-10 rounded-lg object-cover flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-white truncate">{v.name}</p>
-                  <p className="text-[11px] flex items-center gap-1 mt-0.5" style={{ color: 'rgba(148,163,184,0.7)' }}>
+                  <p className="text-sm font-semibold text-[var(--lw-text-primary)] truncate">{v.name}</p>
+                  <p className="text-[11px] flex items-center gap-1 mt-0.5 text-[var(--lw-text-muted)]">
                     <MapPin className="w-2.5 h-2.5" />{v.location?.city}
                   </p>
                 </div>
                 <div className="text-right flex-shrink-0">
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg"
-                    style={{ background: v.status === 'available' ? 'rgba(16,185,129,0.15)' : 'rgba(99,102,241,0.15)', color: v.status === 'available' ? '#10B981' : '#818CF8' }}>
+                    style={{ background: v.status === 'available' ? 'rgba(16,185,129,0.12)' : 'rgba(99,102,241,0.12)', color: v.status === 'available' ? '#059669' : '#6366F1' }}>
                     {v.status === 'available' ? 'For Rent' : 'Rented'}
                   </span>
-                  <p className="text-xs font-bold text-white mt-1">{formatCurrency(v.pricePerDay)}</p>
+                  <p className="text-xs font-bold text-[var(--lw-text-primary)] mt-1">{formatCurrency(v.pricePerDay)}</p>
                 </div>
               </motion.div>
             ))}
@@ -321,36 +313,34 @@ export const OwnerOverview: React.FC = () => {
         {/* Revenue Chart */}
         <motion.div
           variants={fadeUp} initial="hidden" animate="visible"
-          className="lg:col-span-3 rounded-3xl p-5"
-          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
+          className="lw-stat-card lg:col-span-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm"
         >
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h3 className="font-bold text-white text-sm">{t.ownerDashboard.revenueChartTitle}</h3>
-              <p className="text-[11px] mt-0.5" style={{ color: 'rgba(148,163,184,0.6)' }}>Your earnings this year</p>
+              <h3 className="font-bold text-[var(--lw-text-primary)] text-sm">{t.ownerDashboard.revenueChartTitle}</h3>
+              <p className="text-[11px] mt-0.5 text-[var(--lw-text-muted)]">Your earnings this year</p>
             </div>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl"
-              style={{ background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.25)' }}>
-              <Activity className="w-3 h-3 text-amber-400" />
-              <span className="text-xs font-bold text-amber-400">{t.ownerDashboard.liveAnalytics}</span>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800">
+              <Activity className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+              <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">{t.ownerDashboard.liveAnalytics}</span>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={revenueData} barSize={26}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" strokeWidth={0.5} opacity={0.3} vertical={false} />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fontWeight: 600, fill: 'rgba(148,163,184,0.6)' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: 'rgba(148,163,184,0.5)' }} axisLine={false} tickLine={false} tickFormatter={v => `${(v / 1000000).toFixed(0)}M`} />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(245,158,11,0.08)', radius: 8 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" strokeWidth={0.5} vertical={false} />
+              <XAxis dataKey="month" tick={{ fontSize: 11, fontWeight: 600, fill: '#94A3B8' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: '#94A3B8' }} axisLine={false} tickLine={false} tickFormatter={v => `${(v / 1000000).toFixed(0)}M`} />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(217,119,6,0.06)', radius: 8 }} />
               <Bar dataKey="revenue" radius={[6, 6, 0, 0]} cursor="pointer" activeBar={{ fillOpacity: 0.8 }}>
                 {revenueData.map((_, index) => (
                   <Cell key={index}
-                    fill={index === revenueData.length - 1 ? 'url(#ownerBarGrad)' : 'rgba(245,158,11,0.30)'} />
+                    fill={index === revenueData.length - 1 ? 'url(#ownerBarGrad)' : 'rgba(217,119,6,0.25)'} />
                 ))}
               </Bar>
               <defs>
                 <linearGradient id="ownerBarGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#F59E0B" />
-                  <stop offset="100%" stopColor="#D97706" />
+                  <stop offset="0%" stopColor="#6366F1" />
+                  <stop offset="100%" stopColor="#8B5CF6" />
                 </linearGradient>
               </defs>
             </BarChart>
@@ -363,35 +353,30 @@ export const OwnerOverview: React.FC = () => {
         {/* Pending Bookings */}
         <motion.div
           variants={fadeUp} initial="hidden" animate="visible"
-          className="rounded-3xl p-5"
-          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
+          className="lw-stat-card"
         >
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-white text-sm">{t.ownerDashboard.pendingRequests}</h3>
-            <span className="text-[10px] font-bold px-2.5 py-1 rounded-lg"
-              style={{ background: 'rgba(239,68,68,0.15)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.2)' }}>
+            <h3 className="font-bold text-[var(--lw-text-primary)] text-sm">{t.ownerDashboard.pendingRequests}</h3>
+            <span className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-red-50 text-red-600 border border-red-200">
               {stats.pending} pending
             </span>
           </div>
           <div className="space-y-3">
             {bookings.filter(b => b.status === 'pending').slice(0, 4).map(booking => (
               <div key={booking.id}
-                className="flex items-center gap-3 p-3.5 rounded-2xl transition-all duration-200"
-                style={{ background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.15)' }}>
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.2)' }}>
-                  <AlertTriangle className="w-4 h-4 text-amber-400" />
+                className="flex items-center gap-3 p-4 rounded-2xl transition-all duration-200 bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/50 hover:shadow-md">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-amber-100 dark:bg-amber-800/40 border border-amber-200 dark:border-amber-700/50">
+                  <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-white truncate">Booking #{booking.id.slice(-6).toUpperCase()}</p>
-                  <p className="text-[11px] mt-0.5" style={{ color: 'rgba(148,163,184,0.7)' }}>
+                  <p className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">Booking #{booking.id.slice(-6).toUpperCase()}</p>
+                  <p className="text-xs font-medium mt-1 text-slate-500 dark:text-slate-400">
                     📅 {formatDate(booking.startDate)} · {formatCurrency(booking.pricing.total)}
                   </p>
                 </div>
                 <button
                   onClick={() => bookingService.updateStatus(booking.id, 'confirmed')}
-                  className="px-3 py-1.5 rounded-xl text-xs font-bold text-black transition-all flex-shrink-0"
-                  style={{ background: 'linear-gradient(135deg, #10B981, #059669)' }}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-white transition-all flex-shrink-0 bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-500/20"
                 >
                   Approve
                 </button>
@@ -399,8 +384,8 @@ export const OwnerOverview: React.FC = () => {
             ))}
             {bookings.filter(b => b.status === 'pending').length === 0 && (
               <div className="text-center py-10">
-                <CheckCircle className="w-10 h-10 mx-auto mb-3" style={{ color: 'rgba(148,163,184,0.3)' }} />
-                <p className="text-sm font-medium" style={{ color: 'rgba(148,163,184,0.5)' }}>No pending requests</p>
+                <CheckCircle className="w-10 h-10 mx-auto mb-3 text-slate-300" />
+                <p className="text-sm font-medium text-[var(--lw-text-muted)]">No pending requests</p>
               </div>
             )}
           </div>
@@ -409,71 +394,63 @@ export const OwnerOverview: React.FC = () => {
         {/* Tasks Panel */}
         <motion.div
           variants={fadeUp} initial="hidden" animate="visible"
-          className="rounded-3xl p-5"
-          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
+          className="lw-stat-card"
         >
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-                style={{ background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.2)' }}>
-                <BarChart2 className="w-4 h-4 text-amber-400" />
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800">
+                <BarChart2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
               </div>
-              <h3 className="font-bold text-white text-sm">Tasks</h3>
+              <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm">Tasks</h3>
             </div>
-            <span className="text-[10px] font-bold px-2.5 py-1 rounded-lg"
-              style={{ background: 'rgba(245,158,11,0.15)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.2)' }}>
+            <span className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800">
               {tasks.filter(t => !t.done).length} pending
             </span>
           </div>
           <div className="space-y-2.5">
             {tasks.map((task, i) => (
               <Link key={i} to={task.href}
-                className="flex items-center gap-3 p-3.5 rounded-2xl transition-all duration-200 group"
+                className="flex items-center gap-3 p-3.5 rounded-2xl transition-all duration-200 group hover:bg-slate-50 dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
                 style={{
-                  background: task.done ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.04)',
-                  border: `1px solid ${task.done ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.08)'}`,
+                  opacity: task.done ? 0.6 : 1,
                 }}>
-                <div className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0"
-                  style={{
-                    background: task.done ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.05)',
-                    border: task.done ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(255,255,255,0.1)'
-                  }}>
+                <div className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
                   {task.done
-                    ? <CheckCircle className="w-3 h-3 text-emerald-400" />
-                    : <div className="w-2 h-2 rounded-sm" style={{ background: 'rgba(148,163,184,0.3)' }} />}
+                    ? <CheckCircle className="w-3.5 h-3.5 text-indigo-500" />
+                    : <div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600" />}
                 </div>
-                <span className="text-sm flex-1 font-medium"
-                  style={{ color: task.done ? 'rgba(148,163,184,0.4)' : 'rgba(226,232,240,0.9)', textDecoration: task.done ? 'line-through' : 'none' }}>
+                <span className="text-sm flex-1 font-medium text-slate-700 dark:text-slate-300"
+                  style={{ textDecoration: task.done ? 'line-through' : 'none' }}>
                   {task.label}
                 </span>
                 <div className="flex items-center gap-2">
                   {!task.done && task.count > 0 && (
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg"
-                      style={{ background: `${task.color}22`, color: task.color, border: `1px solid ${task.color}33` }}>
+                      style={{ background: `${task.color}18`, color: task.color, border: `1px solid ${task.color}30` }}>
                       {task.count}
                     </span>
                   )}
-                  <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: '#F59E0B' }} />
+                  <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-amber-600" />
                 </div>
               </Link>
             ))}
           </div>
-          <div className="mt-4 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="mt-4 pt-4 border-t border-[var(--lw-border)]">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'rgba(148,163,184,0.4)' }}>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--lw-text-muted)]">
                 {tasks.filter(t => t.done).length} of {tasks.length} completed
               </span>
-              <span className="text-[10px] font-bold" style={{ color: '#F59E0B' }}>
+              <span className="text-[10px] font-bold text-amber-600">
                 {Math.round(tasks.filter(t => t.done).length / tasks.length * 100)}%
               </span>
             </div>
-            <div className="h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
+            <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${tasks.filter(t => t.done).length / tasks.length * 100}%` }}
                 transition={{ duration: 1, ease: 'easeOut', delay: 0.5 }}
                 className="h-full rounded-full"
-                style={{ background: 'linear-gradient(90deg, #F59E0B, #EAB308)' }}
+                style={{ background: 'linear-gradient(90deg, #6366F1, #8B5CF6)' }}
               />
             </div>
           </div>
@@ -1738,17 +1715,9 @@ export const OwnerDashboardLayout: React.FC = () => {
 
   return (
     <div
-      className="min-h-screen relative overflow-hidden font-sans text-slate-100"
-      style={{ background: 'linear-gradient(135deg, #070B14 0%, #0B1221 50%, #070B14 100%)' }}
+      className="theme-owner min-h-screen relative font-sans bg-[var(--lw-bg-primary)] text-[var(--lw-text-primary)] transition-colors duration-300"
     >
-      {/* Ambient orbs */}
-      <div className="fixed top-0 right-0 w-[450px] h-[450px] rounded-full pointer-events-none opacity-10 blur-3xl"
-        style={{ background: 'radial-gradient(circle, #F59E0B 0%, transparent 70%)' }} />
-      <div className="fixed bottom-0 left-1/4 w-80 h-80 rounded-full pointer-events-none opacity-8 blur-3xl"
-        style={{ background: 'radial-gradient(circle, #6366F1 0%, transparent 70%)' }} />
-      <div className="absolute top-0 left-0 w-[500px] h-[500px] rounded-full opacity-10 blur-3xl pointer-events-none bg-amber-500" />
-      
-      {/* Mobile Sidebar Navigation Drawer (SRS REQ-RESP-001) */}
+      {/* Mobile Sidebar Navigation Drawer */}
       <AnimatePresence>
         {sidebarOpen && (
           <>
@@ -1758,48 +1727,35 @@ export const OwnerDashboardLayout: React.FC = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSidebarOpen(false)}
-              className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm"
+              className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
             />
-            {/* Sliding navigation drawer */}
+            {/* Sliding navigation drawer - mobile */}
             <motion.aside
               initial={{ x: -280 }}
               animate={{ x: 0 }}
               exit={{ x: -280 }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed left-0 top-0 h-full w-66 z-50 flex flex-col justify-between p-6 lg:hidden shadow-2xl border-r border-slate-200/50 dark:border-slate-800/80"
-              style={{
-                background: isDark
-                  ? 'linear-gradient(180deg, #080d16 0%, #0c1524 60%, #080d16 100%)'
-                  : 'linear-gradient(180deg, #f4f7fa 0%, #e9edf3 60%, #f4f7fa 100%)',
-              }}
+              className="lw-sidebar fixed left-0 top-0 h-full z-50 flex lg:hidden shadow-2xl"
             >
-              <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-amber-500/10 to-transparent pointer-events-none" />
-              
               <div className="relative z-10 flex flex-col flex-1 min-h-0">
                 {/* Branding */}
-                <div className="logo-wrapper flex items-center gap-3 px-2 mb-5">
-                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-600 flex items-center justify-center text-slate-905 shadow-lg">
-                    <Car className="w-5.5 h-5.5 text-slate-900" />
+                <div className="lw-sidebar-logo">
+                  <div className="w-8 h-8 rounded-xl bg-amber-500 flex items-center justify-center flex-shrink-0">
+                    <Car className="w-4 h-4 text-white" />
                   </div>
                   <div>
-                    <h2 className="font-sans font-black text-base tracking-wider text-slate-800 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-white dark:to-slate-400">
-                      LuxeWay
-                    </h2>
-                    <span className="text-[9px] font-black uppercase tracking-widest text-amber-500">
-                      {t.ownerDashboard.hostCommand}
-                    </span>
+                    <h2 className="lw-sidebar-logo-text text-[var(--lw-text-primary)]">LuxeWay</h2>
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-amber-500">Host Center</span>
                   </div>
                 </div>
 
-                <div className="mx-2 mb-6 px-3.5 py-1.5 rounded-xl border border-amber-500/20 bg-amber-500/5 text-[8px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-450 animate-ping" />
-                  {t.ownerDashboard.verifiedHost}
+                <div className="lw-sidebar-role-badge bg-amber-500/10 text-amber-600 border border-amber-500/20 m-0 mx-5 my-3">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                  Verified Host
                 </div>
 
-                <hr className="border-slate-200/50 dark:border-slate-800/80 mb-6" />
-
                 {/* Links */}
-                <nav className="space-y-1.5 flex-1 overflow-y-auto sidebar-scroll pr-1">
+                <div className="lw-sidebar-nav space-y-0.5">
                   {links.map(link => {
                     const active = isActive(link.href, link.exact);
                     return (
@@ -1808,29 +1764,29 @@ export const OwnerDashboardLayout: React.FC = () => {
                         to={link.href}
                         onClick={() => setSidebarOpen(false)}
                         className={cn(
-                          "lw-sidebar-nav-item flex items-center gap-3 px-4.5 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap group",
-                          active ? "active text-white animate-fade-in" : "text-slate-400 hover:text-white"
+                          "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative lw-sidebar-nav-item",
+                          active && "active"
                         )}
                       >
-                        <link.icon className="w-4.5 h-4.5 flex-shrink-0" />
+                        <link.icon className="w-4 h-4 flex-shrink-0" />
                         <span>{link.label}</span>
                       </Link>
                     );
                   })}
-                </nav>
+                </div>
               </div>
 
               {/* Bottom user card */}
-              <div className="relative z-10 mt-6 pt-5 border-t border-slate-200/50 dark:border-slate-800/80">
-                <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-100/50 dark:bg-slate-950/40 border border-slate-200/40 dark:border-slate-800/55 shadow-inner">
-                  <Avatar src={user.avatar} name={user.displayName} size="md" className="ring-2 ring-amber-500/20" />
+              <div className="lw-sidebar-footer">
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-[var(--lw-bg-secondary)] border border-[var(--lw-border)]">
+                  <Avatar src={user.avatar} name={user.displayName} size="md" className="flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-black truncate text-slate-800 dark:text-white">{user.displayName}</p>
-                    <p className="text-[9px] font-black uppercase tracking-wider text-amber-550 dark:text-amber-400 mt-0.5">{t.ownerDashboard.vehicleHost}</p>
+                    <p className="text-xs font-semibold truncate text-[var(--lw-text-primary)]">{user.displayName}</p>
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-amber-500 mt-0.5">{t.ownerDashboard.vehicleHost}</p>
                   </div>
                   <button 
                     onClick={() => { logout(); setSidebarOpen(false); navigate('/auth/login'); }}
-                    className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                    className="p-2 text-[var(--lw-text-muted)] hover:text-red-500 transition-colors"
                     title={t.nav.logout}
                   >
                     <LogOut className="w-4 h-4" />
@@ -1842,37 +1798,22 @@ export const OwnerDashboardLayout: React.FC = () => {
         )}
       </AnimatePresence>
 
-      <div className="max-w-[1600px] mx-auto px-4 lg:px-8 py-6 relative z-10 flex flex-col lg:flex-row gap-6">
+      {/* Main dashboard flex layout */}
+      <div className="lw-flex-layout pt-16">
         
-        {/* Sticky Left Sidebar */}
-        <aside className="w-66 flex-shrink-0 sticky top-6 h-[calc(100vh-3rem)] rounded-[2.5rem] glass dark:glass-dark border border-slate-200/50 dark:border-slate-800/80 p-6 flex flex-col justify-between hidden lg:flex relative overflow-hidden shadow-2xl">
-          <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-amber-500/10 to-transparent pointer-events-none" />
-          
+        {/* ============ SIDEBAR ============ */}
+        <aside className="lw-sidebar hidden lg:flex border-r border-[var(--lw-border)] bg-[var(--lw-sidebar-bg)]">
           <div className="relative z-10 flex flex-col flex-1 min-h-0">
-            {/* Branding */}
-            <div className="logo-wrapper flex items-center gap-3 px-2 mb-5">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-600 flex items-center justify-center text-slate-905 shadow-lg">
-                <Car className="w-5.5 h-5.5 text-slate-900" />
-              </div>
-              <div>
-                <h2 className="font-sans font-black text-base tracking-wider text-slate-800 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-white dark:to-slate-400">
-                  LuxeWay
-                </h2>
-                <span className="text-[9px] font-black uppercase tracking-widest text-amber-500">
-                  Host Center
-                </span>
+            {/* Role Badge only, no double logo on desktop */}
+            <div className="px-5 py-4 border-b border-[var(--lw-border)]">
+              <div className="lw-sidebar-role-badge bg-amber-500/10 text-amber-600 border border-amber-500/20 m-0 w-full flex items-center justify-center py-2.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse mr-1.5" />
+                Verified Host
               </div>
             </div>
 
-            <div className="mx-2 mb-6 px-3.5 py-1.5 rounded-xl border border-amber-500/20 bg-amber-500/5 text-[8px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-450 animate-ping" />
-              Verified Host
-            </div>
-
-            <hr className="border-slate-200/50 dark:border-slate-800/80 mb-6" />
-
-            {/* Links */}
-            <nav className="space-y-1.5 flex-1 overflow-y-auto sidebar-scroll pr-1">
+            {/* Navigation Links */}
+            <div className="lw-sidebar-nav space-y-0.5">
               {links.map(link => {
                 const active = isActive(link.href, link.exact);
                 return (
@@ -1880,29 +1821,29 @@ export const OwnerDashboardLayout: React.FC = () => {
                     key={link.href}
                     to={link.href}
                     className={cn(
-                      "lw-sidebar-nav-item flex items-center gap-3 px-4.5 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap group",
-                      active ? "active text-white animate-fade-in" : "text-slate-400 hover:text-white"
+                       "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative lw-sidebar-nav-item",
+                      active && "active"
                     )}
                   >
-                    <link.icon className="w-4.5 h-4.5 flex-shrink-0" />
+                    <link.icon className="w-4 h-4 flex-shrink-0" />
                     <span>{link.label}</span>
                   </Link>
                 );
               })}
-            </nav>
+            </div>
           </div>
 
           {/* Bottom user card */}
-          <div className="relative z-10 mt-6 pt-5 border-t border-slate-200/50 dark:border-slate-800/80">
-            <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-100/50 dark:bg-slate-950/40 border border-slate-200/40 dark:border-slate-800/55 shadow-inner">
-              <Avatar src={user.avatar} name={user.displayName} size="md" className="ring-2 ring-amber-500/20" />
+          <div className="lw-sidebar-footer">
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-[var(--lw-bg-secondary)] border border-[var(--lw-border)]">
+              <Avatar src={user.avatar} name={user.displayName} size="md" className="flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-black truncate text-slate-800 dark:text-white">{user.displayName}</p>
-                <p className="text-[9px] font-black uppercase tracking-wider text-amber-550 dark:text-amber-400 mt-0.5">{t.ownerDashboard.vehicleHost}</p>
+                <p className="text-xs font-semibold truncate text-[var(--lw-text-primary)]">{user.displayName}</p>
+                <p className="text-[9px] font-bold uppercase tracking-wider text-amber-500 mt-0.5">{t.ownerDashboard.vehicleHost}</p>
               </div>
               <button 
                 onClick={() => { logout(); navigate('/auth/login'); }}
-                className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                className="p-2 text-[var(--lw-text-muted)] hover:text-red-500 transition-colors"
                 title={t.nav.logout}
               >
                 <LogOut className="w-4 h-4" />
@@ -1911,50 +1852,38 @@ export const OwnerDashboardLayout: React.FC = () => {
           </div>
         </aside>
 
-        {/* Content canvas */}
-        <div className="flex-1 min-w-0 flex flex-col gap-6">
-          <header className={`rounded-[2rem] border backdrop-blur-xl transition-all duration-500 ${
-            isDark 
-              ? 'bg-slate-900/60 border-slate-800/80 shadow-2xl shadow-slate-950/30' 
-              : 'bg-white/80 border-slate-200/60 shadow-xl shadow-slate-200/40'
-          } p-6 flex items-center justify-between`}>
-            
+        {/* ============ MAIN CONTENT ============ */}
+        <div className="lw-flex-main gap-0">
+          {/* Dashboard Header Bar */}
+          <header className="p-5 border-b border-[var(--lw-border)] flex items-center justify-between gap-4 bg-[var(--lw-bg-card)] mb-6 -mx-6 -mt-6 px-6">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="p-2 rounded-xl border border-slate-200/50 dark:border-white/10 hover:bg-slate-500/10 transition-all lg:hidden shadow-sm"
+                className="p-2 rounded-xl border border-[var(--lw-border)] hover:bg-[var(--lw-bg-secondary)] transition-all lg:hidden"
                 title="Menu"
               >
-                <Menu className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+                <Menu className="w-5 h-5 text-[var(--lw-text-secondary)]" />
               </button>
-              <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-550">
-                <Car className="w-5.5 h-5.5" />
+              <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                <Car className="w-4.5 h-4.5 text-amber-600" />
               </div>
               <div>
-                <h1 className="font-sans font-black text-lg tracking-tight text-slate-855 dark:text-white">
+                <h1 className="font-bold text-base tracking-tight text-[var(--lw-text-primary)]">
                   {t.ownerDashboard.hostCommand}
                 </h1>
-                <p className="text-[10px] text-amber-550 dark:text-amber-450 font-extrabold uppercase tracking-widest mt-0.5">
-                  Platform rental Room
+                <p className="text-[10px] text-amber-500 font-semibold uppercase tracking-widest">
+                  Owner Portal
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
-              <div className={`hidden md:flex items-center gap-2.5 px-4.5 py-2.5 border rounded-2xl shadow-inner ${
-                isDark ? 'bg-slate-950/40 border-slate-800' : 'bg-slate-50 border-slate-200'
-              }`}>
-                <Clock className="w-4 h-4 text-amber-500" />
-                <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+            <div className="flex items-center gap-3">
+              <div className="hidden md:flex items-center gap-2 px-3.5 py-2 border border-[var(--lw-border)] rounded-xl bg-[var(--lw-bg-secondary)]">
+                <Clock className="w-3.5 h-3.5 text-amber-500" />
+                <span className="text-[10px] font-semibold text-[var(--lw-text-secondary)]">
                   {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                 </span>
               </div>
-              <button 
-                onClick={() => { logout(); navigate('/auth/login'); }}
-                className="text-[9px] font-black uppercase tracking-widest px-5 py-3.5 rounded-2xl border bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-red-500 hover:bg-red-500/10 transition-all hover-lift"
-              >
-                {t.nav.logout}
-              </button>
             </div>
           </header>
 

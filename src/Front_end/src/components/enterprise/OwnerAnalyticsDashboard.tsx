@@ -128,7 +128,7 @@ export const OwnerAnalyticsDashboard: React.FC = () => {
 
   if (!stats) {
     return (
-      <div className="bg-slate-900/40 border border-white/10 rounded-3xl p-8 text-center text-slate-400">
+      <div className="bg-[var(--lw-bg-card)] border border-[var(--lw-border)] rounded-3xl p-8 text-center text-[var(--lw-text-secondary)] shadow-md">
         No analytics data available for this owner profile.
       </div>
     );
@@ -141,14 +141,14 @@ export const OwnerAnalyticsDashboard: React.FC = () => {
       {/* Header and Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-black text-white tracking-tight">Fleet Earnings & Revenue Center</h2>
-          <p className="text-xs text-slate-400 font-semibold mt-0.5">Track dynamic utilization rates and financial performance statements</p>
+          <h2 className="text-2xl font-black text-[var(--lw-text-primary)] tracking-tight">Fleet Earnings & Revenue Center</h2>
+          <p className="text-xs text-[var(--lw-text-secondary)] font-semibold mt-0.5">Track dynamic utilization rates and financial performance statements</p>
         </div>
         <div className="flex flex-wrap gap-3">
           <button
             onClick={handleExportPdf}
             disabled={exportingPdf}
-            className="flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white font-bold text-xs uppercase tracking-widest px-4 py-3 rounded-xl transition-all shadow-lg shadow-indigo-500/20 disabled:opacity-50"
+            className="flex items-center gap-2 bg-indigo-650 hover:bg-indigo-700 text-white font-bold text-xs uppercase tracking-widest px-4 py-3 rounded-xl transition-all shadow-lg shadow-indigo-500/20 disabled:opacity-50"
           >
             {exportingPdf ? (
               <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -160,7 +160,7 @@ export const OwnerAnalyticsDashboard: React.FC = () => {
           <button
             onClick={handleExportExcel}
             disabled={exportingExcel}
-            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 border border-white/10 text-white font-bold text-xs uppercase tracking-widest px-4 py-3 rounded-xl transition-all disabled:opacity-50"
+            className="flex items-center gap-2 bg-[var(--lw-bg-secondary)] hover:bg-[var(--lw-bg-secondary)]/85 border border-[var(--lw-border)] text-[var(--lw-text-primary)] font-bold text-xs uppercase tracking-widest px-4 py-3 rounded-xl transition-all disabled:opacity-50"
           >
             {exportingExcel ? (
               <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -175,55 +175,55 @@ export const OwnerAnalyticsDashboard: React.FC = () => {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {/* Revenue Card */}
-        <div className="bg-slate-900/40 border border-white/10 p-5 rounded-2xl relative overflow-hidden">
+        <div className="bg-[var(--lw-bg-card)] border border-[var(--lw-border)] p-5 rounded-2xl relative overflow-hidden shadow-md">
           <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/10 rounded-full blur-xl" />
           <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-3">
-            <DollarSign className="w-5 h-5 text-emerald-400" />
+            <DollarSign className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
           </div>
-          <p className="text-2xl font-black text-white">{formatVND(stats.totalRevenue)}</p>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mt-1">Gross Earnings</p>
-          <div className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold mt-2">
+          <p className="text-2xl font-black text-[var(--lw-text-primary)]">{formatVND(stats.totalRevenue)}</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--lw-text-muted)] mt-1">Gross Earnings</p>
+          <div className="flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold mt-2">
             <TrendingUp className="w-3 h-3" />
             +18.4% vs last month
           </div>
         </div>
 
         {/* Utilization Card */}
-        <div className="bg-slate-900/40 border border-white/10 p-5 rounded-2xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-16 h-16 bg-indigo-500/10 rounded-full blur-xl" />
-          <div className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mb-3">
-            <Percent className="w-5 h-5 text-indigo-400" />
+        <div className="bg-[var(--lw-bg-card)] border border-[var(--lw-border)] p-5 rounded-2xl relative overflow-hidden shadow-md">
+          <div className="absolute top-0 right-0 w-16 h-16 bg-[var(--lw-accent-glow)] rounded-full blur-xl" />
+          <div className="w-9 h-9 rounded-xl bg-[var(--lw-accent-glow)] border border-[var(--lw-border-strong)] flex items-center justify-center mb-3">
+            <Percent className="w-5 h-5 text-[var(--lw-accent)]" />
           </div>
-          <p className="text-2xl font-black text-white">{stats.utilizationRate}%</p>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mt-1">Fleet Utilization Rate</p>
-          <div className="flex items-center gap-1 text-[10px] text-indigo-400 font-bold mt-2">
+          <p className="text-2xl font-black text-[var(--lw-text-primary)]">{stats.utilizationRate}%</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--lw-text-muted)] mt-1">Fleet Utilization Rate</p>
+          <div className="flex items-center gap-1 text-[10px] text-[var(--lw-accent)] font-bold mt-2">
             <Activity className="w-3 h-3 animate-pulse" />
             Optimal range (60-80%)
           </div>
         </div>
 
         {/* Total Bookings */}
-        <div className="bg-slate-900/40 border border-white/10 p-5 rounded-2xl relative overflow-hidden">
+        <div className="bg-[var(--lw-bg-card)] border border-[var(--lw-border)] p-5 rounded-2xl relative overflow-hidden shadow-md">
           <div className="absolute top-0 right-0 w-16 h-16 bg-amber-500/10 rounded-full blur-xl" />
           <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-3">
-            <Calendar className="w-5 h-5 text-amber-400" />
+            <Calendar className="w-5 h-5 text-amber-600 dark:text-amber-400" />
           </div>
-          <p className="text-2xl font-black text-white">{stats.totalBookings}</p>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mt-1">Total Bookings Completed</p>
-          <div className="flex items-center gap-1 text-[10px] text-amber-400 font-bold mt-2">
+          <p className="text-2xl font-black text-[var(--lw-text-primary)]">{stats.totalBookings}</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--lw-text-muted)] mt-1">Total Bookings Completed</p>
+          <div className="flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 font-bold mt-2">
             <span>{stats.activeBookings} ongoing active rentals</span>
           </div>
         </div>
 
         {/* Fleet Size */}
-        <div className="bg-slate-900/40 border border-white/10 p-5 rounded-2xl relative overflow-hidden">
+        <div className="bg-[var(--lw-bg-card)] border border-[var(--lw-border)] p-5 rounded-2xl relative overflow-hidden shadow-md">
           <div className="absolute top-0 right-0 w-16 h-16 bg-pink-500/10 rounded-full blur-xl" />
           <div className="w-9 h-9 rounded-xl bg-pink-500/10 border border-pink-500/20 flex items-center justify-center mb-3">
-            <Car className="w-5 h-5 text-pink-400" />
+            <Car className="w-5 h-5 text-pink-600 dark:text-pink-400" />
           </div>
-          <p className="text-2xl font-black text-white">{stats.fleetSize} Vehicles</p>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mt-1">Total Managed Fleet</p>
-          <div className="flex items-center gap-2 text-[10px] text-slate-400 font-semibold mt-2">
+          <p className="text-2xl font-black text-[var(--lw-text-primary)]">{stats.fleetSize} Vehicles</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--lw-text-muted)] mt-1">Total Managed Fleet</p>
+          <div className="flex items-center gap-2 text-[10px] text-[var(--lw-text-secondary)] font-semibold mt-2">
             <span>{stats.carCount} Cars</span>
             <span>·</span>
             <span>{stats.motorbikeCount} Motorbikes</span>
@@ -232,11 +232,11 @@ export const OwnerAnalyticsDashboard: React.FC = () => {
       </div>
 
       {/* Monthly Chart Card */}
-      <div className="bg-slate-900/40 border border-white/10 p-6 rounded-3xl relative overflow-hidden">
+      <div className="bg-[var(--lw-bg-card)] border border-[var(--lw-border)] p-6 rounded-3xl relative overflow-hidden shadow-md">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h3 className="text-base font-bold text-white">Monthly Revenue and Booking Ledger</h3>
-            <p className="text-xs text-slate-400">Comparing gross payouts vs completed bookings count</p>
+            <h3 className="text-base font-bold text-[var(--lw-text-primary)]">Monthly Revenue and Booking Ledger</h3>
+            <p className="text-xs text-[var(--lw-text-secondary)]">Comparing gross payouts vs completed bookings count</p>
           </div>
         </div>
 
@@ -246,29 +246,29 @@ export const OwnerAnalyticsDashboard: React.FC = () => {
               <AreaChart data={chartData}>
                 <defs>
                   <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366F1" stopOpacity={0.4}/>
-                    <stop offset="95%" stopColor="#6366F1" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="var(--lw-accent)" stopOpacity={0.4}/>
+                    <stop offset="95%" stopColor="var(--lw-accent)" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" strokeWidth={0.5} opacity={0.3} vertical={false} />
-                <XAxis dataKey="month" tick={{ fill: 'rgba(148, 163, 184, 0.6)', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: 'rgba(148, 163, 184, 0.6)', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => `${(v/1000000).toFixed(0)}M`} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--lw-border)" strokeWidth={0.5} opacity={0.3} vertical={false} />
+                <XAxis dataKey="month" tick={{ fill: 'var(--lw-text-secondary)', fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: 'var(--lw-text-secondary)', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => `${(v/1000000).toFixed(0)}M`} />
                 <Tooltip content={<CustomAnalyticsTooltip />} />
-                <Area type="monotone" dataKey="revenue" stroke="#6366F1" strokeWidth={2} fillOpacity={1} fill="url(#colorRevenue)" name="Revenue (VND)" />
+                <Area type="monotone" dataKey="revenue" stroke="var(--lw-accent)" strokeWidth={2} fillOpacity={1} fill="url(#colorRevenue)" name="Revenue (VND)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
 
-          <div className="bg-slate-950/40 border border-white/5 rounded-2xl p-5 space-y-4">
-            <h4 className="text-xs font-bold text-white uppercase tracking-wider">Breakdown History</h4>
+          <div className="bg-[var(--lw-bg-secondary)]/60 border border-[var(--lw-border)] rounded-2xl p-5 space-y-4">
+            <h4 className="text-xs font-bold text-[var(--lw-text-primary)] uppercase tracking-wider">Breakdown History</h4>
             <div className="space-y-3 max-h-56 overflow-y-auto pr-1">
               {chartData.map((d: any, idx: number) => (
                 <div key={idx} className="flex justify-between items-center text-xs">
                   <div>
-                    <p className="font-bold text-white">{d.month}</p>
-                    <p className="text-[10px] text-slate-500">{d.bookings} booking(s)</p>
+                    <p className="font-bold text-[var(--lw-text-primary)]">{d.month}</p>
+                    <p className="text-[10px] text-[var(--lw-text-muted)]">{d.bookings} booking(s)</p>
                   </div>
-                  <span className="font-extrabold text-indigo-400">{formatVND(d.revenue)}</span>
+                  <span className="font-extrabold text-[var(--lw-accent)]">{formatVND(d.revenue)}</span>
                 </div>
               ))}
             </div>

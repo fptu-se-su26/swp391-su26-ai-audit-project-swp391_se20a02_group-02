@@ -363,6 +363,39 @@ BEGIN
         FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE
     );
 END
+GO-- 9. VIETNAM KYC & DRIVER LICENSE VERIFICATION UPGRADE
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('users') AND name = 'kyc_status')
+BEGIN
+    ALTER TABLE users ADD kyc_status NVARCHAR(20) NOT NULL DEFAULT 'REJECTED';
+END
 GO
 
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('users') AND name = 'driver_license_status')
+BEGIN
+    ALTER TABLE users ADD driver_license_status NVARCHAR(20) NOT NULL DEFAULT 'NONE';
+END
+GO
 
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('user_documents') AND name = 'file_url')
+BEGIN
+    ALTER TABLE user_documents ADD file_url NVARCHAR(500) NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('user_documents') AND name = 'ocr_data')
+BEGIN
+    ALTER TABLE user_documents ADD ocr_data NVARCHAR(MAX) NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('user_documents') AND name = 'verification_status')
+BEGIN
+    ALTER TABLE user_documents ADD verification_status NVARCHAR(20) NOT NULL DEFAULT 'NOT_UPLOADED';
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('user_documents') AND name = 'verified_by_admin')
+BEGIN
+    ALTER TABLE user_documents ADD verified_by_admin NVARCHAR(36) NULL;
+END
+GO

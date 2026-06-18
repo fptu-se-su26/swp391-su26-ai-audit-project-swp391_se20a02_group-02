@@ -45,32 +45,66 @@ if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
 }
 Write-Host "  [OK] Node.js found" -ForegroundColor Green
 
-# Build java command with all required env vars
+# Get variables from environment (loaded from .env) or fallback to defaults
+$dbHost = if ($env:DB_HOST) { $env:DB_HOST } else { 'localhost' }
+$dbPort = if ($env:DB_PORT) { $env:DB_PORT } else { '1433' }
+$dbName = if ($env:DB_NAME) { $env:DB_NAME } else { 'car_rental_platform' }
+$dbUser = if ($env:DB_USERNAME) { $env:DB_USERNAME } else { 'sa' }
+$dbPass = if ($env:DB_PASSWORD) { $env:DB_PASSWORD } else { '123456' }
+
+$jwtSec = if ($env:JWT_SECRET) { $env:JWT_SECRET } else { 'LuxeWaySecretKey2024VeryLongAndSecureJWTTokenKeyForDevelopment256Bit' }
+$jwtExp = if ($env:JWT_EXPIRATION) { $env:JWT_EXPIRATION } else { '86400000' }
+$jwtRef = if ($env:JWT_REFRESH_EXPIRATION) { $env:JWT_REFRESH_EXPIRATION } else { '604800000' }
+
+$mailUser = if ($env:MAIL_USERNAME) { $env:MAIL_USERNAME } else { 'dev@luxeway.vn' }
+$mailPass = if ($env:MAIL_PASSWORD) { $env:MAIL_PASSWORD } else { 'dev_mail_password' }
+
+$ggId = if ($env:GOOGLE_CLIENT_ID) { $env:GOOGLE_CLIENT_ID } else { 'dev-google-client-id.apps.googleusercontent.com' }
+$ggSecret = if ($env:GOOGLE_CLIENT_SECRET) { $env:GOOGLE_CLIENT_SECRET } else { 'dev-google-client-secret' }
+
+$vnpTmn = if ($env:VNPAY_TMN_CODE) { $env:VNPAY_TMN_CODE } else { 'LUXEWAY01' }
+$vnpSec = if ($env:VNPAY_SECRET_KEY) { $env:VNPAY_SECRET_KEY } else { 'LUXEWAY_VNPAY_SECRET_KEY_2024' }
+$vnpUrl = if ($env:VNPAY_URL) { $env:VNPAY_URL } else { 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html' }
+$vnpIps = if ($env:VNPAY_ALLOWED_IPS) { $env:VNPAY_ALLOWED_IPS } else { '203.171.19.146' }
+
+$stripePub = if ($env:STRIPE_PUBLIC_KEY) { $env:STRIPE_PUBLIC_KEY } else { 'pk_test_placeholder' }
+$stripeSec = if ($env:STRIPE_SECRET_KEY) { $env:STRIPE_SECRET_KEY } else { 'sk_test_placeholder' }
+
+$feUrl = if ($env:FRONTEND_URL) { $env:FRONTEND_URL } else { 'http://localhost:5173' }
+$logLevel = if ($env:LOG_LEVEL) { $env:LOG_LEVEL } else { 'INFO' }
+$goongKey = if ($env:GOONG_API_KEY) { $env:GOONG_API_KEY } else { 'mock_goong_key' }
+$geminiKey = if ($env:GEMINI_API_KEY) { $env:GEMINI_API_KEY } else { 'mock_key' }
+$fptaiKey = if ($env:FPTAI_API_KEY) { $env:FPTAI_API_KEY } else { 'BKfUiImFD4DI3RI2OEjoCahBTQOgVtPf' }
+$port = if ($env:PORT) { $env:PORT } else { '8080' }
+
 $javaCmd = "java " +
-  "-DDB_HOST=localhost " +
-  "-DDB_PORT=1433 " +
-  "-DDB_NAME=car_rental_platform " +
-  "-DDB_USERNAME=sa " +
-  "-DDB_PASSWORD=123456 " +
-  "`"-Dspring.datasource.url=jdbc:sqlserver://localhost:1433;databaseName=car_rental_platform;encrypt=false;trustServerCertificate=true`" " +
-  "-Dspring.datasource.username=sa " +
-  "-Dspring.datasource.password=123456 " +
-  "-DJWT_SECRET=LuxeWaySecretKey2024VeryLongAndSecureJWTTokenKeyForDevelopment256Bit " +
-  "-DJWT_EXPIRATION=86400000 " +
-  "-DJWT_REFRESH_EXPIRATION=604800000 " +
-  "-DMAIL_USERNAME=dev@luxeway.vn " +
-  "-DMAIL_PASSWORD=dev_mail_password " +
-  "-DGOOGLE_CLIENT_ID=dev-google-client-id.apps.googleusercontent.com " +
-  "-DGOOGLE_CLIENT_SECRET=dev-google-client-secret " +
-  "-DVNPAY_TMN_CODE=LUXEWAY01 " +
-  "-DVNPAY_SECRET_KEY=LUXEWAY_VNPAY_SECRET_KEY_2024 " +
-  "-DVNPAY_URL=https://sandbox.vnpayment.vn/paymentv2/vpcpay.html " +
-  "-DVNPAY_ALLOWED_IPS=203.171.19.146 " +
-  "-DSTRIPE_PUBLIC_KEY=pk_test_placeholder " +
-  "-DSTRIPE_SECRET_KEY=sk_test_placeholder " +
-  "-DFRONTEND_URL=http://localhost:5173 " +
-  "-DLOG_LEVEL=INFO " +
-  "-DGOONG_API_KEY=`"$($env:GOONG_API_KEY)`" " +
+  "-DDB_HOST=`"$dbHost`" " +
+  "-DDB_PORT=`"$dbPort`" " +
+  "-DDB_NAME=`"$dbName`" " +
+  "-DDB_USERNAME=`"$dbUser`" " +
+  "-DDB_PASSWORD=`"$dbPass`" " +
+  "`"-Dspring.datasource.url=jdbc:sqlserver://$dbHost`:$dbPort;databaseName=$dbName;encrypt=false;trustServerCertificate=true`" " +
+  "-Dspring.datasource.username=`"$dbUser`" " +
+  "-Dspring.datasource.password=`"$dbPass`" " +
+  "-DJWT_SECRET=`"$jwtSec`" " +
+  "-DJWT_EXPIRATION=`"$jwtExp`" " +
+  "-DJWT_REFRESH_EXPIRATION=`"$jwtRef`" " +
+  "-DMAIL_USERNAME=`"$mailUser`" " +
+  "-DMAIL_PASSWORD=`"$mailPass`" " +
+  "-DGOOGLE_CLIENT_ID=`"$ggId`" " +
+  "-DGOOGLE_CLIENT_SECRET=`"$ggSecret`" " +
+  "-DVNPAY_TMN_CODE=`"$vnpTmn`" " +
+  "-DVNPAY_SECRET_KEY=`"$vnpSec`" " +
+  "-DVNPAY_URL=`"$vnpUrl`" " +
+  "-DVNPAY_ALLOWED_IPS=`"$vnpIps`" " +
+  "-DSTRIPE_PUBLIC_KEY=`"$stripePub`" " +
+  "-DSTRIPE_SECRET_KEY=`"$stripeSec`" " +
+  "-DFRONTEND_URL=`"$feUrl`" " +
+  "-DLOG_LEVEL=`"$logLevel`" " +
+  "-DGOONG_API_KEY=`"$goongKey`" " +
+  "-DGEMINI_API_KEY=`"$geminiKey`" " +
+  "-Dfptai.api-key=`"$fptaiKey`" " +
+  "-DPORT=`"$port`" " +
   "-jar `"$shortJar`" --spring.profiles.active=sqlserver"
 
 # Kill old java

@@ -82,6 +82,14 @@ public class User implements UserDetails {
     @Builder.Default
     private Boolean drivingLicenseVerified = false;
 
+    @Column(name = "kyc_status", length = 20, nullable = false)
+    @Builder.Default
+    private String kycStatus = "REJECTED";
+
+    @Column(name = "driver_license_status", length = 20, nullable = false)
+    @Builder.Default
+    private String driverLicenseStatus = "NONE";
+
     @Column(name = "license_class", length = 10)
     private String licenseClass;
 

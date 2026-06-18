@@ -126,7 +126,7 @@ export const aiConciergeService = {
     activeVehicleId?: string, 
     activeBookingId?: string
   ): Promise<any> {
-    const res = await apiClient.post<any>('/api/v1/ai/chat', { 
+    const res = await apiClient.post<any>('/ai/chat', { 
       sessionId, 
       message, 
       currentPage, 
@@ -136,7 +136,7 @@ export const aiConciergeService = {
     return res?.data;
   },
   async getHistory(sessionId: string): Promise<any[]> {
-    const res = await apiClient.get<any>(`/api/v1/ai/history?sessionId=${sessionId}`);
+    const res = await apiClient.get<any>(`/ai/history?sessionId=${sessionId}`);
     return res?.data ?? [];
   },
   async submitFeedback(payload: {
@@ -145,11 +145,11 @@ export const aiConciergeService = {
     isPositive: boolean;
     feedbackText?: string;
   }): Promise<any> {
-    const res = await apiClient.post<any>('/api/v1/ai/feedback', payload);
+    const res = await apiClient.post<any>('/ai/feedback', payload);
     return res?.data;
   },
   async getPreferences(): Promise<any> {
-    const res = await apiClient.get<any>('/api/v1/ai/preferences');
+    const res = await apiClient.get<any>('/ai/preferences');
     return res?.data;
   },
   async savePreferences(payload: {
@@ -157,7 +157,7 @@ export const aiConciergeService = {
     voiceEnabled: boolean;
     preferredVehicleType?: string;
   }): Promise<any> {
-    const res = await apiClient.post<any>('/api/v1/ai/preferences', payload);
+    const res = await apiClient.post<any>('/ai/preferences', payload);
     return res?.data;
   }
 };

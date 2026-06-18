@@ -30,9 +30,21 @@ const resolveImageUrl = (url: string | null | undefined): string => {
   if (!url) return '';
   const fallback = getVehicleFallbackImage(url);
   if (fallback) return fallback;
+  // Handle backend-uploaded images served by Spring Boot
   if (url.startsWith('/uploads') || url.startsWith('uploads')) {
     const cleanUrl = url.startsWith('/') ? url : '/' + url;
     return `${API_BASE}${cleanUrl}`;
+  }
+  // Handle scraped local images in /images/cars/ (served by Vite public folder)
+  // Encode spaces and special chars in filename to avoid broken URLs
+  if (url.startsWith('/images/')) {
+    const parts = url.split('/');
+    const encodedParts = parts.map((p, i) => i === parts.length - 1 ? encodeURIComponent(p) : p);
+    return encodedParts.join('/');
+  }
+  // Handle absolute URLs (Mioto CDN, unsplash, etc.)
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
   }
   return url;
 };

@@ -10,6 +10,8 @@ import { useUIStore, useNotificationStore } from '@/store';
 import { cn, getInitials } from '@/utils';
 import { useT } from '@/i18n/translations';
 import NavbarDropdown from './NavbarDropdown';
+import NotificationDropdown from './NotificationDropdown';
+import MessageDropdown from './MessageDropdown';
 import Avatar from '@/components/ui/Avatar';
 import logoImage from '../../image/logo.png';
 
@@ -208,6 +210,8 @@ export const GlobalNavbar: React.FC = () => {
   const [mobileAccountOpen, setMobileAccountOpen] = useState(false);
   const [mobileLangOpen, setMobileLangOpen] = useState(false);
   const [mobileCurrOpen, setMobileCurrOpen] = useState(false);
+  const [notificationOpen, setNotificationOpen] = useState(false);
+  const [messageOpen, setMessageOpen] = useState(false);
 
   const langRef = useRef<HTMLDivElement>(null);
   const currRef = useRef<HTMLDivElement>(null);
@@ -254,16 +258,8 @@ export const GlobalNavbar: React.FC = () => {
   const currentLang = LANGS.find(lang => lang.code === language) || LANGS[0];
   const currentCurr = CURRENCIES.find(curr => curr.code === currency) || CURRENCIES[0];
 
-  // Check if current route is a dashboard route requiring sidebar alignment
-  const dashboardPaths = ['/dashboard', '/owner', '/business', '/admin'];
-  const isDashboardRoute = dashboardPaths.some(
-    path => location.pathname === path || location.pathname.startsWith(path + '/')
-  );
-
-  // Position navbar to the right of the sidebar on desktop when sidebar is open
-  const headerPositionClasses = isDashboardRoute && sidebarOpen
-    ? 'lg:left-64 lg:w-[calc(100%-256px)]'
-    : 'left-0 w-full';
+  // Navbar is ALWAYS full-width, fixed at top-0, left-0
+  // Sidebar slides under the navbar using top: 64px
 
   // Always show glassmorphism on subpages/dashboards, dynamic trigger on home/landing page
   const isLandingPage = location.pathname === '/';
@@ -271,8 +267,8 @@ export const GlobalNavbar: React.FC = () => {
 
   const navBg = showGlassBg
     ? isDark
-      ? 'bg-slate-950/80 backdrop-blur-xl border-slate-900/60 shadow-lg'
-      : 'bg-white/80 backdrop-blur-xl border-slate-100/80 shadow-sm'
+      ? 'bg-slate-950/95 backdrop-blur-xl border-slate-900/60 shadow-lg'
+      : 'bg-white border-slate-100/80 shadow-sm'
     : 'bg-transparent border-transparent';
 
   return (
@@ -281,8 +277,7 @@ export const GlobalNavbar: React.FC = () => {
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
       className={cn(
-        'fixed top-0 z-50 transition-all duration-300 flex items-center border-b h-16',
-        headerPositionClasses,
+        'fixed top-0 left-0 right-0 z-[1000] transition-all duration-300 flex items-center border-b h-16',
         navBg
       )}
     >
@@ -464,30 +459,44 @@ export const GlobalNavbar: React.FC = () => {
           {/* Authed Message & Notifications Icons */}
           {isAuthenticated && (
             <>
-              <button
-                onClick={() => navigate('/notifications')}
-                className={cn(
-                  'relative p-2.5 sm:p-3 rounded-2xl transition-all hover-lift',
-                  isDark ? 'text-slate-355 hover:bg-slate-800/40 hover:text-white' : 'text-slate-655 hover:bg-slate-50 hover:text-slate-950'
-                )}
-              >
-                <Bell className="w-5.5 h-5.5" />
-                {unreadCount > 0 && (
-                  <span className="absolute top-2 right-2 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                )}
-              </button>
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    setNotificationOpen(!notificationOpen);
+                    setMessageOpen(false);
+                    setUserDropdownOpen(false);
+                  }}
+                  className={cn(
+                    'relative p-2.5 sm:p-3 rounded-2xl transition-all hover-lift',
+                    isDark ? 'text-slate-355 hover:bg-slate-800/40 hover:text-white' : 'text-slate-655 hover:bg-slate-50 hover:text-slate-950'
+                  )}
+                >
+                  <Bell className="w-5.5 h-5.5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-2 right-2 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </button>
+                <NotificationDropdown isOpen={notificationOpen} onClose={() => setNotificationOpen(false)} />
+              </div>
 
-              <button
-                onClick={() => navigate('/messages')}
-                className={cn(
-                  'p-2.5 sm:p-3 rounded-2xl transition-all hover-lift',
-                  isDark ? 'text-slate-355 hover:bg-slate-800/40 hover:text-white' : 'text-slate-655 hover:bg-slate-50 hover:text-slate-950'
-                )}
-              >
-                <MessageSquare className="w-5.5 h-5.5" />
-              </button>
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    setMessageOpen(!messageOpen);
+                    setNotificationOpen(false);
+                    setUserDropdownOpen(false);
+                  }}
+                  className={cn(
+                    'p-2.5 sm:p-3 rounded-2xl transition-all hover-lift',
+                    isDark ? 'text-slate-355 hover:bg-slate-800/40 hover:text-white' : 'text-slate-655 hover:bg-slate-50 hover:text-slate-950'
+                  )}
+                >
+                  <MessageSquare className="w-5.5 h-5.5" />
+                </button>
+                <MessageDropdown isOpen={messageOpen} onClose={() => setMessageOpen(false)} />
+              </div>
             </>
           )}
 
@@ -495,7 +504,11 @@ export const GlobalNavbar: React.FC = () => {
           {isAuthenticated && user ? (
             <div className="relative">
               <button
-                onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                onClick={() => {
+                  setUserDropdownOpen(!userDropdownOpen);
+                  setNotificationOpen(false);
+                  setMessageOpen(false);
+                }}
                 className={cn(
                   'flex items-center gap-2 sm:gap-2.5 pl-2 pr-3.5 py-2 rounded-2xl border transition-all hover-lift',
                   isDark

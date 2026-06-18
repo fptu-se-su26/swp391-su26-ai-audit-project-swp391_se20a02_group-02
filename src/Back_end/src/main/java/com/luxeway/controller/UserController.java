@@ -125,6 +125,12 @@ public class UserController {
     @Autowired
     private com.luxeway.service.FptAiOcrService fptAiOcrService;
 
+    @Autowired
+    private com.luxeway.service.FptAiEkycService fptAiEkycService;
+
+    @Autowired
+    private com.luxeway.repository.UserDocumentRepository userDocumentRepository;
+
     @org.springframework.beans.factory.annotation.Value("${file.upload-dir:uploads/}")
     private String uploadDir;
 
@@ -153,78 +159,102 @@ public class UserController {
         }
 
         String contentType = file.getContentType();
+
+        // Security: simple Content-Type check (Tika removed — unreliable for JPEG bytes without filename hint)
+        if (contentType == null || (!contentType.startsWith("image/") && !contentType.equalsIgnoreCase("application/pdf"))) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Only image or PDF files are allowed");
+            errorResponse.put("receivedContentType", contentType);
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+
+        // Read all bytes ONCE into memory
+        final byte[] fileBytes;
         try {
-            org.apache.tika.Tika tika = new org.apache.tika.Tika();
-            String detectedType = tika.detect(file.getInputStream());
-            if (detectedType == null || (!detectedType.startsWith("image/") && !detectedType.equalsIgnoreCase("application/pdf"))) {
-                Map<String, String> errorResponse = new HashMap<>();
-                errorResponse.put("error", "Security check failed: Only image or PDF files are allowed");
-                return ResponseEntity.badRequest().body(errorResponse);
-            }
-            if (contentType == null || (!contentType.startsWith("image/") && !contentType.equalsIgnoreCase("application/pdf"))) {
-                Map<String, String> errorResponse = new HashMap<>();
-                errorResponse.put("error", "Claimed format not supported");
-                return ResponseEntity.badRequest().body(errorResponse);
-            }
+            fileBytes = file.getBytes();
         } catch (java.io.IOException e) {
             Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Failed to verify file integrity");
+            errorResponse.put("error", "Failed to read uploaded file");
             errorResponse.put("message", e.getMessage());
             return ResponseEntity.badRequest().body(errorResponse);
         }
 
         try {
-            java.nio.file.Path uploadPath = java.nio.file.Paths.get(uploadDir);
+            // Use absolute path so files are always saved to the same location
+            java.nio.file.Path uploadPath = java.nio.file.Paths.get(uploadDir).toAbsolutePath().normalize();
             if (!java.nio.file.Files.exists(uploadPath)) {
                 java.nio.file.Files.createDirectories(uploadPath);
             }
 
-            String originalName = java.util.Objects.requireNonNull(file.getOriginalFilename());
+            String originalName = java.util.Objects.requireNonNullElse(file.getOriginalFilename(), "upload.jpg");
             String extension = originalName.contains(".")
                 ? originalName.substring(originalName.lastIndexOf("."))
                 : ".jpg";
             String uniqueName = java.util.UUID.randomUUID() + extension;
 
             java.nio.file.Path filePath = uploadPath.resolve(uniqueName);
-            java.nio.file.Files.copy(file.getInputStream(), filePath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            java.nio.file.Files.write(filePath, fileBytes);
 
-            String fileUrl = "/" + uploadDir + uniqueName;
+            // URL served via the /uploads/** static handler in WebConfig
+            String fileUrl = "/uploads/" + uniqueName;
 
-            if ("DRIVING_LICENSE".equalsIgnoreCase(documentType)) {
-                try {
-                    com.luxeway.service.FptAiOcrService.OcrResult ocrResult = fptAiOcrService.scanDrivingLicense(filePath);
-                    java.nio.file.Files.deleteIfExists(filePath);
+            com.luxeway.dto.user.UserDTOs.DocumentResponse docResp;
 
-                    com.luxeway.dto.user.UserDTOs.DocumentResponse docResp = userService.uploadDrivingLicense(
-                            user.getId(), ocrResult);
-                    return ResponseEntity.status(201).body(docResp);
-                } catch (Exception e) {
-                    try {
-                        java.nio.file.Files.deleteIfExists(filePath);
-                    } catch (Exception ex) {
-                        // ignore
-                    }
-                    Map<String, String> errorResponse = new HashMap<>();
-                    errorResponse.put("error", "Driving license verification failed");
-                    errorResponse.put("message", e.getMessage());
-                    return ResponseEntity.badRequest().body(errorResponse);
+            if ("CCCD_FRONT".equalsIgnoreCase(documentType)) {
+                com.luxeway.service.FptAiEkycService.CccdOcrResult ocrResult = fptAiEkycService.scanCccd(filePath.toAbsolutePath());
+                docResp = userService.uploadCccdFront(user.getId(), fileUrl, ocrResult);
+            } else if ("CCCD_BACK".equalsIgnoreCase(documentType)) {
+                docResp = userService.uploadCccdBack(user.getId(), fileUrl);
+            } else if ("DRIVER_LICENSE_FRONT".equalsIgnoreCase(documentType)) {
+                com.luxeway.service.FptAiEkycService.DlOcrResult ocrResult = fptAiEkycService.scanDriverLicense(filePath.toAbsolutePath());
+                docResp = userService.uploadDriverLicenseFront(user.getId(), fileUrl, ocrResult);
+            } else if ("DRIVER_LICENSE_BACK".equalsIgnoreCase(documentType)) {
+                docResp = userService.uploadDriverLicenseBack(user.getId(), fileUrl);
+            } else if ("SELFIE".equalsIgnoreCase(documentType)) {
+                java.util.List<com.luxeway.entity.UserDocument> cccdDocs = userDocumentRepository.findByUserIdAndDocumentTypeOrderByUploadedAtDesc(user.getId(), "CCCD_FRONT");
+                com.luxeway.service.FptAiEkycService.FaceMatchResult faceResult;
+                if (!cccdDocs.isEmpty()) {
+                    String cccdUrl = cccdDocs.get(0).getUrl();
+                    java.nio.file.Path cccdPath = java.nio.file.Paths.get(cccdUrl.substring(1));
+                    faceResult = fptAiEkycService.matchFaces(cccdPath.toAbsolutePath(), filePath.toAbsolutePath());
+                } else {
+                    faceResult = new com.luxeway.service.FptAiEkycService.FaceMatchResult();
+                    faceResult.setSimilarity(0.0);
+                    faceResult.setMatch(false);
+                    faceResult.setLivenessResult("No CCCD uploaded");
+                    faceResult.setLivenessScore(0.0);
+                    faceResult.setRawResponse("{\"error\":\"No CCCD Front uploaded to perform Face Match\"}");
                 }
+                docResp = userService.uploadSelfie(user.getId(), fileUrl, faceResult);
+            } else if ("DRIVING_LICENSE".equalsIgnoreCase(documentType)) {
+                com.luxeway.service.FptAiOcrService.OcrResult ocrResult = fptAiOcrService.scanDrivingLicense(filePath.toAbsolutePath());
+                docResp = userService.uploadDrivingLicense(user.getId(), ocrResult);
             } else {
                 com.luxeway.dto.user.UserDTOs.UploadDocumentRequest req = new com.luxeway.dto.user.UserDTOs.UploadDocumentRequest();
                 req.setDocumentType(documentType);
                 req.setUrl(fileUrl);
-
-                com.luxeway.dto.user.UserDTOs.DocumentResponse docResp = userService.uploadDocument(user.getId(), req);
-
-                return ResponseEntity.status(201).body(docResp);
+                docResp = userService.uploadDocument(user.getId(), req);
             }
 
-        } catch (java.io.IOException e) {
+            return ResponseEntity.status(201).body(docResp);
+
+        } catch (Exception e) {
             Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Failed to save file");
+            errorResponse.put("error", "Document processing failed");
             errorResponse.put("message", e.getMessage());
-            return ResponseEntity.status(500).body(errorResponse);
+            return ResponseEntity.badRequest().body(errorResponse);
         }
+    }
+
+    @PostMapping("/kyc/submit")
+    public ResponseEntity<?> submitKyc(@org.springframework.security.core.annotation.AuthenticationPrincipal com.luxeway.entity.User user) {
+        if (user == null) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Unauthorized");
+            return ResponseEntity.status(401).body(errorResponse);
+        }
+        com.luxeway.dto.user.UserDTOs.UserProfileResponse resp = userService.submitKycForReview(user.getId());
+        return ResponseEntity.ok(resp);
     }
 
     @GetMapping("/documents")

@@ -53,6 +53,8 @@ public class UserDTOs {
         private Boolean verified;
         private Boolean kycVerified;
         private Boolean drivingLicenseVerified;
+        private String kycStatus;
+        private String driverLicenseStatus;
         private String licenseClass;
         private String licenseNumber;
         private Boolean isActive;
@@ -75,7 +77,11 @@ public class UserDTOs {
         private String id;
         private String documentType;
         private String url;
+        private String fileUrl;
+        private String ocrData;
         private String status;
+        private String verificationStatus;
+        private String verifiedByAdmin;
         private String uploadedAt;
         private String verifiedAt;
         private String rejectionReason;
@@ -85,6 +91,9 @@ public class UserDTOs {
         private String licenseDateOfBirth;
         private String licenseResidence;
         private String licenseNationality;
+        private String ekycIdNumber;
+        private String ekycFullName;
+        private String ekycDob;
     }
 
     @Data

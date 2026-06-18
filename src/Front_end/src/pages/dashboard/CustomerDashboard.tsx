@@ -22,16 +22,23 @@ import Avatar from '@/components/ui/Avatar';
 import StatusBadge from '@/components/ui/StatusBadge';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
 
-// ====== CUSTOMER SIDEBAR ======
-const CustomerSidebar: React.FC = () => {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const { user, logout } = useAuthStore();
+// ====== CUSTOMER DASHBOARD LAYOUT ======
+export const CustomerDashboardLayout: React.FC = () => {
+  const { user, isAuthenticated, logout } = useAuthStore();
   const { sidebarOpen, setSidebarOpen } = useUIStore();
+  const navigate = useNavigate();
+  const location = useLocation();
   const language = useUIStore((s: any) => s.language) || 'en';
   const t = useT();
 
-  const customerLinks = [
+  useEffect(() => {
+    if (!isAuthenticated) navigate('/auth/login');
+    setSidebarOpen(window.innerWidth >= 1024);
+  }, [isAuthenticated]);
+
+  if (!user) return null;
+
+  const links = [
     { href: '/', icon: Globe, label: t.marketplace.home, exact: true },
     { href: '/dashboard', icon: LayoutDashboard, label: t.dashboard.overview, exact: true },
     { href: '/dashboard/bookings', icon: Calendar, label: t.dashboard.myBookings },
@@ -44,7 +51,7 @@ const CustomerSidebar: React.FC = () => {
       icon: Gift,
       label: language === 'vi' ? 'Đổi Thưởng' :
         language === 'ja' ? 'ロイヤルティ特典' :
-          language === 'ko' ? '로열티 리워드' :
+          language === 'ko' ? '로열티 リワード' :
             language === 'zh' ? '会员积分奖励' :
               language === 'fr' ? 'Récompenses' :
                 language === 'de' ? 'Treueprämien' :
@@ -69,117 +76,181 @@ const CustomerSidebar: React.FC = () => {
     { href: '/dashboard/settings', icon: Settings, label: t.dashboard.settings },
   ];
 
-  const getInitials = (name: string) => {
-    return name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : 'C';
-  };
-
   const isActive = (href: string, exact?: boolean) =>
     exact ? location.pathname === href : location.pathname.startsWith(href);
 
   return (
-    <>
+    <div className="theme-customer min-h-screen relative font-sans bg-[var(--lw-bg-primary)] text-[var(--lw-text-primary)] transition-colors duration-300">
+      
+      {/* Mobile Sidebar Navigation Drawer */}
       <AnimatePresence>
         {sidebarOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setSidebarOpen(false)}
-            className="fixed inset-0 bg-black/50 z-30 lg:hidden backdrop-blur-sm"
-          />
+          <>
+            {/* Backdrop blur overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSidebarOpen(false)}
+              className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
+            />
+            {/* Sliding navigation drawer - mobile */}
+            <motion.aside
+              initial={{ x: -280 }}
+              animate={{ x: 0 }}
+              exit={{ x: -280 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="lw-sidebar fixed left-0 top-0 h-full z-50 flex lg:hidden shadow-2xl"
+            >
+              <div className="relative z-10 flex flex-col flex-1 min-h-0">
+                {/* Branding */}
+                <div className="lw-sidebar-logo border-b border-[var(--lw-border)]">
+                  <img src="/logo.svg" alt="LuxeWay" style={{ height: '36px', width: 'auto', display: 'block' }} />
+                  <span className="lw-sidebar-logo-text font-black text-[var(--lw-text-primary)]">LuxeWay</span>
+                </div>
+
+                <div className="lw-sidebar-role-badge bg-[var(--lw-accent-glow)] text-[var(--lw-accent)] border border-[var(--lw-border-strong)] m-0 mx-5 my-3">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--lw-accent)] animate-pulse" />
+                  ✨ CUSTOMER
+                </div>
+
+                {/* Links */}
+                <div className="lw-sidebar-nav space-y-0.5">
+                  {links.map(link => {
+                    const active = isActive(link.href, link.exact);
+                    return (
+                      <Link
+                        key={link.href}
+                        to={link.href}
+                        onClick={() => setSidebarOpen(false)}
+                        className={cn(
+                          "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative lw-sidebar-nav-item",
+                          active && "active"
+                        )}
+                      >
+                        <link.icon className="w-4 h-4 flex-shrink-0" />
+                        <span>{link.label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Bottom user card */}
+              <div className="lw-sidebar-footer">
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-[var(--lw-bg-secondary)] border border-[var(--lw-border)]">
+                  <Avatar src={user.avatar} name={user.displayName} size="md" className="flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold truncate text-[var(--lw-text-primary)]">{user.displayName}</p>
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-[var(--lw-accent)] mt-0.5">CUSTOMER</p>
+                  </div>
+                  <button 
+                    onClick={() => { logout(); setSidebarOpen(false); navigate('/auth/login'); }}
+                    className="p-2 text-[var(--lw-text-muted)] hover:text-red-500 transition-colors"
+                    title={t.nav.logout}
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </motion.aside>
+          </>
         )}
       </AnimatePresence>
 
-      <motion.aside
-        animate={{ x: sidebarOpen ? 0 : -280 }}
-        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-        className="lw-sidebar fixed left-0 top-0 h-full z-40 lg:relative lg:translate-x-0 lg:top-auto lg:h-auto"
-      >
-        <div className="absolute top-0 left-0 w-full h-48 pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.15) 0%, transparent 70%)' }} />
+      {/* Main dashboard flex layout */}
+      <div className="lw-flex-layout pt-16">
+        
+        {/* ============ DESKTOP SIDEBAR ============ */}
+        <aside className="lw-sidebar hidden lg:flex border-r border-[var(--lw-border)] bg-[var(--lw-sidebar-bg)]">
+          <div className="relative z-10 flex flex-col flex-1 min-h-0">
+            {/* Role Badge only, no double logo on desktop */}
+            <div className="px-5 py-4 border-b border-[var(--lw-border)]">
+              <div className="lw-sidebar-role-badge bg-[var(--lw-accent-glow)] text-[var(--lw-accent)] border border-[var(--lw-border-strong)] m-0 w-full flex items-center justify-center py-2.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--lw-accent)] animate-pulse mr-1.5" />
+                ✨ CUSTOMER
+              </div>
+            </div>
 
-        {/* LuxeWay Sidebar Logo */}
-        <div className="lw-sidebar-logo">
-          <img src="/logo.svg" alt="LuxeWay" style={{ height: '36px', width: 'auto', display: 'block' }} />
-          <span className="lw-sidebar-logo-text font-black text-white">LuxeWay</span>
-        </div>
-
-        {/* User Info */}
-        <div className="p-5 border-b relative border-[var(--lw-border)]">
-          <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/5">
-            <Avatar src={user?.avatar} name={user?.displayName || 'Customer'} size="md" className="ring-2 ring-indigo-500/30" />
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-white text-sm truncate">{user?.displayName}</p>
-              <p className="text-xs truncate text-slate-400">{user?.email}</p>
+            {/* Navigation Links */}
+            <div className="lw-sidebar-nav space-y-0.5">
+              {links.map(link => {
+                const active = isActive(link.href, link.exact);
+                return (
+                  <Link
+                    key={link.href}
+                    to={link.href}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative lw-sidebar-nav-item",
+                      active && "active"
+                    )}
+                  >
+                    <link.icon className="w-4 h-4 flex-shrink-0" />
+                    <span>{link.label}</span>
+                  </Link>
+                );
+              })}
             </div>
           </div>
-          <div className="lw-sidebar-role-badge bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-            ✨ CUSTOMER
-          </div>
-        </div>
 
-        {/* Nav Links */}
-        <nav className="lw-sidebar-nav space-y-0.5">
-          {customerLinks.map(link => {
-            const active = isActive(link.href, link.exact);
-            return (
-              <Link
-                key={link.href}
-                to={link.href}
-                onClick={() => window.innerWidth < 1024 && setSidebarOpen(false)}
-                className={cn(
-                  "lw-sidebar-nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium relative group",
-                  active ? "active text-white" : "text-slate-400 hover:text-white"
-                )}
+          {/* Bottom user card */}
+          <div className="lw-sidebar-footer">
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-[var(--lw-bg-secondary)] border border-[var(--lw-border)]">
+              <Avatar src={user.avatar} name={user.displayName} size="md" className="flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold truncate text-[var(--lw-text-primary)]">{user.displayName}</p>
+                <p className="text-[9px] font-bold uppercase tracking-wider text-[var(--lw-accent)] mt-0.5">CUSTOMER</p>
+              </div>
+              <button 
+                onClick={() => { logout(); navigate('/auth/login'); }}
+                className="p-2 text-[var(--lw-text-muted)] hover:text-red-500 transition-colors"
+                title={t.nav.logout}
               >
-                <link.icon className="w-4 h-4 flex-shrink-0" />
-                <span className="truncate">{link.label}</span>
-                {active && <ChevronRight className="w-3.5 h-3.5 ml-auto flex-shrink-0" />}
-              </Link>
-            );
-          })}
-        </nav>
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </aside>
 
-        {/* Logout */}
-        <div className="lw-sidebar-footer">
-          <button
-            onClick={() => { logout(); navigate('/auth/login'); }}
-            className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 w-full transition-all duration-200"
-          >
-            <LogOut className="w-4 h-4" />
-            {t.dashboard.signOut}
-          </button>
+        {/* ============ MAIN CONTENT ============ */}
+        <div className="lw-flex-main gap-0">
+          {/* Dashboard Header Bar */}
+          <header className="p-5 border-b border-[var(--lw-border)] flex items-center justify-between gap-4 bg-[var(--lw-bg-card)] mb-6 -mx-6 -mt-6 px-6">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="p-2 rounded-xl border border-[var(--lw-border)] hover:bg-[var(--lw-bg-secondary)] transition-all lg:hidden"
+                title="Menu"
+              >
+                <Menu className="w-5 h-5 text-[var(--lw-text-secondary)]" />
+              </button>
+              <div className="w-9 h-9 rounded-xl bg-[var(--lw-accent-glow)] border border-[var(--lw-border-strong)] flex items-center justify-center">
+                <LayoutDashboard className="w-4.5 h-4.5 text-[var(--lw-accent)]" />
+              </div>
+              <div>
+                <h1 className="font-bold text-base tracking-tight text-[var(--lw-text-primary)]">
+                  {t.dashboard.overview}
+                </h1>
+                <p className="text-[10px] text-[var(--lw-accent)] font-semibold uppercase tracking-widest">
+                  Customer Portal
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="hidden md:flex items-center gap-2 px-3.5 py-2 border border-[var(--lw-border)] rounded-xl bg-[var(--lw-bg-secondary)]">
+                <Clock className="w-3.5 h-3.5 text-[var(--lw-accent)]" />
+                <span className="text-[10px] font-semibold text-[var(--lw-text-secondary)]">
+                  {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                </span>
+              </div>
+            </div>
+          </header>
+
+          <main className="flex-1">
+            <Outlet />
+          </main>
         </div>
-      </motion.aside>
-    </>
-  );
-};
-
-// ====== CUSTOMER DASHBOARD LAYOUT ======
-export const CustomerDashboardLayout: React.FC = () => {
-  const { user, isAuthenticated } = useAuthStore();
-  const { sidebarOpen, setSidebarOpen } = useUIStore();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!isAuthenticated) navigate('/auth/login');
-    setSidebarOpen(window.innerWidth >= 1024);
-  }, [isAuthenticated]);
-
-  if (!user) return null;
-
-  return (
-    <div className="theme-customer min-h-screen pt-16 transition-colors duration-300 relative overflow-hidden bg-[var(--lw-bg-primary)]">
-      <div className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full opacity-20 blur-3xl pointer-events-none"
-        style={{ background: 'radial-gradient(circle, var(--lw-accent) 0%, transparent 70%)' }} />
-      <div className="absolute bottom-0 left-1/4 w-96 h-96 rounded-full opacity-15 blur-3xl pointer-events-none"
-        style={{ background: 'radial-gradient(circle, #8B5CF6 0%, transparent 70%)' }} />
-
-      <div className="lw-dashboard-grid">
-        <CustomerSidebar />
-        <main className="lw-main-content">
-          <Outlet />
-        </main>
       </div>
     </div>
   );
@@ -192,7 +263,6 @@ export const CustomerOverview: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const t = useT();
-  const isVi = t.common.loading.includes('Đang');
 
   useEffect(() => {
     if (!user) return;
@@ -213,19 +283,16 @@ export const CustomerOverview: React.FC = () => {
     spent: bookings.filter(b => b.status === 'completed').reduce((sum, b) => sum + b.pricing.total, 0),
   };
 
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-
   const statCards = [
-    { label: t.dashboard.totalBookings, value: stats.total, icon: Calendar, color: '#6366F1', glow: 'rgba(99,102,241,0.3)', sub: t.dashboard.totalBookingsChange },
-    { label: t.dashboard.activeRentals, value: stats.active, icon: Car, color: '#10B981', glow: 'rgba(16,185,129,0.3)', sub: t.dashboard.activeRentalsDesc },
-    { label: t.dashboard.completedTrips, value: stats.completed, icon: CheckCircle, color: '#F59E0B', glow: 'rgba(245,158,11,0.3)', sub: t.dashboard.completedTripsDesc },
-    { label: t.dashboard.totalSpent, value: formatCurrency(stats.spent), icon: CreditCard, color: '#EC4899', glow: 'rgba(236,72,153,0.3)', sub: t.dashboard.totalSpentDesc, isStr: true },
+    { label: t.dashboard.totalBookings, value: stats.total, icon: Calendar, color: '#2563EB', glow: 'rgba(37,99,235,0.2)', sub: t.dashboard.totalBookingsChange },
+    { label: t.dashboard.activeRentals, value: stats.active, icon: Car, color: '#10B981', glow: 'rgba(16,185,129,0.2)', sub: t.dashboard.activeRentalsDesc },
+    { label: t.dashboard.completedTrips, value: stats.completed, icon: CheckCircle, color: '#F59E0B', glow: 'rgba(245,158,11,0.2)', sub: t.dashboard.completedTripsDesc },
+    { label: t.dashboard.totalSpent, value: formatCurrency(stats.spent), icon: CreditCard, color: '#EC4899', glow: 'rgba(236,72,153,0.2)', sub: t.dashboard.totalSpentDesc, isStr: true },
   ];
 
   const statusStyle: Record<string, { bg: string; text: string }> = {
     pending: { bg: 'rgba(245,158,11,0.15)', text: '#F59E0B' },
-    confirmed: { bg: 'rgba(99,102,241,0.15)', text: '#818CF8' },
+    confirmed: { bg: 'rgba(37,99,235,0.15)', text: '#2563EB' },
     active: { bg: 'rgba(16,185,129,0.15)', text: '#10B981' },
     completed: { bg: 'rgba(16,185,129,0.15)', text: '#10B981' },
     cancelled: { bg: 'rgba(239,68,68,0.15)', text: '#EF4444' },
@@ -238,24 +305,21 @@ export const CustomerOverview: React.FC = () => {
         {/* Hero Featured Vehicle Card */}
         <motion.div
           variants={fadeUp} initial="hidden" animate="visible"
-          className="lg:col-span-3 relative rounded-3xl overflow-hidden min-h-[260px] shadow-2xl"
-          style={{ boxShadow: '0 25px 60px rgba(0,0,0,0.5)' }}
+          className="lg:col-span-3 relative rounded-3xl overflow-hidden min-h-[260px] shadow-lg"
         >
           <img
             src="https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=900&q=80"
             alt="Featured luxury car"
             className="absolute inset-0 w-full h-full object-cover"
           />
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(7,11,20,0.92) 0%, rgba(7,11,20,0.55) 55%, rgba(7,11,20,0.20) 100%)' }} />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(7,11,20,0.85) 0%, rgba(7,11,20,0.45) 55%, rgba(7,11,20,0.10) 100%)' }} />
 
           <div className="absolute top-4 left-4">
-            <span className="text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg"
-              style={{ background: 'rgba(99,102,241,0.85)', color: '#fff' }}>✨ Recommended For You</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg bg-[var(--lw-accent)] text-white">✨ Recommended For You</span>
           </div>
 
           <div className="absolute top-4 right-4 flex gap-2">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl"
-              style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 border border-white/20 backdrop-blur-md">
               <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
               <span className="text-[10px] font-bold text-white">Available</span>
             </div>
@@ -264,26 +328,25 @@ export const CustomerOverview: React.FC = () => {
           <div className="absolute bottom-0 left-0 right-0 p-6">
             <div className="flex items-end justify-between gap-4">
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold mb-1 flex items-center gap-1.5" style={{ color: 'rgba(148,163,184,0.9)' }}>
+                <p className="text-xs font-semibold mb-1 flex items-center gap-1.5 text-slate-300">
                   📍 Ho Chi Minh City, Vietnam
                 </p>
                 <h2 className="text-2xl font-extrabold text-white leading-tight tracking-tight">Ferrari F8 Tributo</h2>
-                <p className="text-xl font-extrabold mt-1" style={{ color: '#EAB308' }}>
+                <p className="text-xl font-extrabold mt-1 text-yellow-400">
                   {formatCurrency(8500000)}
-                  <span className="text-sm font-semibold ml-1" style={{ color: 'rgba(255,255,255,0.4)' }}>/day</span>
+                  <span className="text-sm font-semibold ml-1 text-white/55">/day</span>
                 </p>
               </div>
               <div className="flex flex-col gap-2 flex-shrink-0">
                 <Link to="/marketplace"
-                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-white transition-all"
-                  style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)', boxShadow: '0 4px 15px rgba(99,102,241,0.4)' }}
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-white transition-all bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md shadow-blue-500/20"
                 >
                   Book Now
                 </Link>
                 <div className="flex items-center gap-1 justify-center">
                   <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
                   <span className="text-xs font-bold text-white">5.0</span>
-                  <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.4)' }}>(128)</span>
+                  <span className="text-[10px] text-white/60">(128)</span>
                 </div>
               </div>
             </div>
@@ -299,22 +362,21 @@ export const CustomerOverview: React.FC = () => {
             <motion.div
               key={stat.label}
               variants={staggerItem}
-              whileHover={{ y: -3, boxShadow: `0 15px 35px ${stat.glow}` }}
-              className="rounded-2xl p-4 cursor-default transition-all duration-300 relative overflow-hidden"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+              whileHover={{ y: -3 }}
+              className="lw-stat-card cursor-default hover:shadow-xl hover:shadow-[var(--lw-accent-glow)] transition-all duration-300"
             >
-              <div className="absolute top-0 right-0 w-14 h-14 rounded-full -translate-y-1/2 translate-x-1/2 opacity-40 blur-xl pointer-events-none"
+              <div className="absolute top-0 right-0 w-14 h-14 rounded-full -translate-y-1/2 translate-x-1/2 opacity-20 blur-xl pointer-events-none"
                 style={{ background: stat.color }} />
               <div className="relative z-10">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3"
-                  style={{ background: `${stat.color}22`, border: `1px solid ${stat.color}33` }}>
+                <div className="stat-icon"
+                  style={{ background: `${stat.color}15`, border: `1px solid ${stat.color}25` }}>
                   <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
                 </div>
-                <p className="text-xl font-extrabold text-white tracking-tight leading-none">
+                <p className="stat-value">
                   {loading ? '—' : stat.value}
                 </p>
-                <p className="text-[10px] font-semibold uppercase tracking-wider mt-1.5" style={{ color: 'rgba(148,163,184,0.7)' }}>{stat.label}</p>
-                <p className="text-[10px] mt-1 font-medium" style={{ color: 'rgba(148,163,184,0.5)' }}>{stat.sub}</p>
+                <p className="stat-label">{stat.label}</p>
+                <p className="stat-sub">{stat.sub}</p>
               </div>
             </motion.div>
           ))}
@@ -322,20 +384,19 @@ export const CustomerOverview: React.FC = () => {
           {/* Quick links card */}
           <motion.div
             variants={staggerItem}
-            className="col-span-2 rounded-2xl p-4"
-            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+            className="col-span-2 rounded-2xl p-4 bg-[var(--lw-bg-card)] border border-[var(--lw-border)]"
           >
-            <p className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{ color: 'rgba(148,163,184,0.5)' }}>Quick Actions</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest mb-3 text-[var(--lw-text-muted)]">Quick Actions</p>
             <div className="flex gap-2 flex-wrap">
               {[
-                { label: 'Explore Cars', href: '/marketplace', color: '#6366F1' },
+                { label: 'Explore Cars', href: '/marketplace', color: '#2563EB' },
                 { label: 'Explore Motorbikes', href: '/motorbikes', color: '#8B5CF6' },
                 { label: 'My Bookings', href: '/dashboard/bookings', color: '#F59E0B' },
                 { label: 'My Profile', href: '/dashboard/profile', color: '#10B981' },
               ].map(q => (
                 <Link key={q.label} to={q.href}
-                  className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all"
-                  style={{ background: `${q.color}18`, color: q.color, border: `1px solid ${q.color}30` }}
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all hover:scale-105"
+                  style={{ background: `${q.color}12`, color: q.color, border: `1px solid ${q.color}25` }}
                 >
                   {q.label}
                 </Link>
@@ -350,27 +411,25 @@ export const CustomerOverview: React.FC = () => {
         {/* Recent Bookings */}
         <motion.div
           variants={fadeUp} initial="hidden" animate="visible"
-          className="lg:col-span-2 rounded-3xl p-5"
-          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
+          className="lg:col-span-2 rounded-3xl p-5 bg-[var(--lw-bg-card)] border border-[var(--lw-border)]"
         >
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-white text-sm">{t.dashboard.recentBookings}</h3>
-            <Link to="/dashboard/bookings" className="text-xs font-bold" style={{ color: '#818CF8' }}>{t.dashboard.viewAll} →</Link>
+            <h3 className="font-bold text-[var(--lw-text-primary)] text-sm">{t.dashboard.recentBookings}</h3>
+            <Link to="/dashboard/bookings" className="text-xs font-bold text-[var(--lw-accent)]">{t.dashboard.viewAll} →</Link>
           </div>
 
           {loading ? (
             <div className="space-y-3">
               {[1, 2, 3].map(i => (
-                <div key={i} className="h-16 rounded-2xl animate-pulse" style={{ background: 'rgba(255,255,255,0.04)' }} />
+                <div key={i} className="h-16 rounded-2xl animate-pulse bg-[var(--lw-bg-secondary)]" />
               ))}
             </div>
           ) : bookings.length === 0 ? (
             <div className="text-center py-12">
-              <Calendar className="w-10 h-10 mx-auto mb-3" style={{ color: 'rgba(148,163,184,0.3)' }} />
-              <p className="text-sm font-medium mb-4" style={{ color: 'rgba(148,163,184,0.5)' }}>{t.dashboard.noBookings}</p>
+              <Calendar className="w-10 h-10 mx-auto mb-3 text-[var(--lw-text-muted)]" />
+              <p className="text-sm font-medium mb-4 text-[var(--lw-text-secondary)]">{t.dashboard.noBookings}</p>
               <Link to="/marketplace"
-                className="px-5 py-2.5 rounded-xl text-xs font-bold text-white"
-                style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)' }}>
+                className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-[var(--lw-accent)] hover:bg-[var(--lw-accent-alt)] transition-colors">
                 {t.dashboard.exploreVehicles}
               </Link>
             </div>
@@ -382,23 +441,21 @@ export const CustomerOverview: React.FC = () => {
                   <motion.div
                     key={booking.id}
                     whileHover={{ x: 3 }}
-                    className="flex items-center gap-3 p-3.5 rounded-2xl transition-all duration-200"
-                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+                    className="flex items-center gap-3 p-3.5 rounded-2xl transition-all duration-200 bg-[var(--lw-bg-secondary)] border border-[var(--lw-border)] hover:bg-[var(--lw-bg-card-hover)]"
                   >
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                      style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                      <Car className="w-5 h-5" style={{ color: 'rgba(148,163,184,0.6)' }} />
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-[var(--lw-bg-card)] border border-[var(--lw-border)]">
+                      <Car className="w-5 h-5 text-[var(--lw-text-secondary)]" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-white truncate">Booking #{booking.id.slice(-6).toUpperCase()}</p>
-                      <p className="text-[11px] mt-0.5" style={{ color: 'rgba(148,163,184,0.6)' }}>
+                      <p className="text-sm font-bold text-[var(--lw-text-primary)] truncate">Booking #{booking.id.slice(-6).toUpperCase()}</p>
+                      <p className="text-[11px] mt-0.5 text-[var(--lw-text-secondary)]">
                         {formatDate(booking.startDate)} → {formatDate(booking.endDate)}
                       </p>
                     </div>
                     <div className="text-right flex-shrink-0">
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg block mb-1"
                         style={{ background: st.bg, color: st.text }}>{booking.status}</span>
-                      <p className="text-xs font-bold text-white">{formatCurrency(booking.pricing.total)}</p>
+                      <p className="text-xs font-bold text-[var(--lw-text-primary)]">{formatCurrency(booking.pricing.total)}</p>
                     </div>
                   </motion.div>
                 );
@@ -410,37 +467,36 @@ export const CustomerOverview: React.FC = () => {
         {/* Notifications */}
         <motion.div
           variants={fadeUp} initial="hidden" animate="visible"
-          className="rounded-3xl p-5 flex flex-col"
-          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
+          className="rounded-3xl p-5 flex flex-col bg-[var(--lw-bg-card)] border border-[var(--lw-border)]"
         >
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-white text-sm">{t.dashboard.notifications}</h3>
-            <Link to="/dashboard/notifications" className="text-xs font-bold" style={{ color: '#818CF8' }}>{t.dashboard.viewAll}</Link>
+            <h3 className="font-bold text-[var(--lw-text-primary)] text-sm">{t.dashboard.notifications}</h3>
+            <Link to="/dashboard/notifications" className="text-xs font-bold text-[var(--lw-accent)]">{t.dashboard.viewAll}</Link>
           </div>
           <div className="space-y-3 overflow-y-auto flex-1 max-h-[340px] pr-1 sidebar-scroll">
             {notifications.length === 0 ? (
               <div className="text-center py-12 my-auto">
-                <Bell className="w-10 h-10 mx-auto mb-3" style={{ color: 'rgba(148,163,184,0.2)' }} />
-                <p className="text-xs font-medium" style={{ color: 'rgba(148,163,184,0.4)' }}>{t.dashboard.noNotifications}</p>
+                <Bell className="w-10 h-10 mx-auto mb-3 text-[var(--lw-text-muted)]" />
+                <p className="text-xs font-medium text-[var(--lw-text-secondary)]">{t.dashboard.noNotifications}</p>
               </div>
             ) : (
               notifications.map(notif => (
                 <div key={notif.id}
                   className="p-3.5 rounded-2xl transition-all duration-200"
                   style={{
-                    background: !notif.read ? 'rgba(99,102,241,0.08)' : 'rgba(255,255,255,0.02)',
-                    border: `1px solid ${!notif.read ? 'rgba(99,102,241,0.20)' : 'rgba(255,255,255,0.05)'}`,
+                    background: !notif.read ? 'var(--lw-accent-glow)' : 'var(--lw-bg-secondary)',
+                    border: `1px solid ${!notif.read ? 'var(--lw-border-strong)' : 'var(--lw-border)'}`,
                   }}
                 >
                   {!notif.read && (
                     <div className="flex items-center gap-1.5 mb-1.5">
-                      <div className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-                      <span className="text-[9px] font-bold uppercase tracking-wider text-indigo-400">New</span>
+                      <div className="w-1.5 h-1.5 rounded-full bg-[var(--lw-accent)]" />
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--lw-accent)]">New</span>
                     </div>
                   )}
-                  <p className="font-bold text-xs text-white">{translateNotification(notif.title)}</p>
-                  <p className="text-[11px] mt-0.5 leading-relaxed line-clamp-2" style={{ color: 'rgba(148,163,184,0.7)' }}>{translateNotification(notif.body)}</p>
-                  <p className="text-[9px] mt-2" style={{ color: 'rgba(148,163,184,0.4)' }}>{formatDate(notif.createdAt, 'relative')}</p>
+                  <p className="font-bold text-xs text-[var(--lw-text-primary)]">{translateNotification(notif.title)}</p>
+                  <p className="text-[11px] mt-0.5 leading-relaxed line-clamp-2 text-[var(--lw-text-secondary)]">{translateNotification(notif.body)}</p>
+                  <p className="text-[9px] mt-2 text-[var(--lw-text-muted)]">{formatDate(notif.createdAt, 'relative')}</p>
                 </div>
               ))
             )}
@@ -485,7 +541,7 @@ export const MyBookingsPage: React.FC = () => {
   ];
   const statusConfig: Record<string, { bg: string; color: string; border: string; label: string }> = {
     pending: { bg: 'rgba(245,158,11,0.12)', color: '#F59E0B', border: 'rgba(245,158,11,0.3)', label: 'PENDING' },
-    confirmed: { bg: 'rgba(99,102,241,0.12)', color: '#818CF8', border: 'rgba(99,102,241,0.3)', label: 'CONFIRMED' },
+    confirmed: { bg: 'rgba(37,99,235,0.12)', color: '#2563EB', border: 'rgba(37,99,235,0.3)', label: 'CONFIRMED' },
     active: { bg: 'rgba(16,185,129,0.12)', color: '#10B981', border: 'rgba(16,185,129,0.3)', label: 'ACTIVE' },
     completed: { bg: 'rgba(16,185,129,0.12)', color: '#10B981', border: 'rgba(16,185,129,0.3)', label: 'COMPLETED' },
     cancelled: { bg: 'rgba(239,68,68,0.12)', color: '#EF4444', border: 'rgba(239,68,68,0.3)', label: 'CANCELLED' },
@@ -514,9 +570,9 @@ export const MyBookingsPage: React.FC = () => {
           to="/marketplace"
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-all duration-200 flex-shrink-0"
           style={{
-            background: 'linear-gradient(135deg, #F59E0B, #FBBF24)',
-            color: '#0B0E17',
-            boxShadow: '0 4px 20px rgba(245,158,11,0.35)',
+            background: 'linear-gradient(135deg, var(--lw-accent), var(--lw-accent-alt))',
+            color: '#fff',
+            boxShadow: '0 4px 20px var(--lw-accent-glow)',
           }}
         >
           <Car className="w-4 h-4" />
@@ -525,7 +581,7 @@ export const MyBookingsPage: React.FC = () => {
       </div>
 
       {/* ── Filter pills ── */}
-      <div className="flex gap-2 overflow-x-auto p-2 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', scrollbarWidth: 'none' }}>
+      <div className="flex gap-2 overflow-x-auto p-2 rounded-2xl bg-[var(--lw-bg-card)] border border-[var(--lw-border)]" style={{ scrollbarWidth: 'none' }}>
         {filterDefs.map(f => {
           const active = filter === f.key;
           const count = countFor(f.key);
@@ -535,20 +591,20 @@ export const MyBookingsPage: React.FC = () => {
               onClick={() => setFilter(f.key)}
               className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200 flex-shrink-0"
               style={active ? {
-                background: 'rgba(6, 182, 212, 0.15)',
-                color: '#fff',
-                border: '1px solid rgba(6, 182, 212, 0.5)',
-                boxShadow: '0 0 10px rgba(6, 182, 212, 0.25)',
+                background: 'var(--lw-accent-glow)',
+                color: 'var(--lw-accent)',
+                border: '1px solid var(--lw-border-strong)',
+                boxShadow: '0 4px 12px var(--lw-accent-glow)',
               } : {
-                background: 'rgba(255,255,255,0.05)',
-                color: 'rgba(148,163,184,0.85)',
-                border: '1px solid rgba(255,255,255,0.08)',
+                background: 'var(--lw-bg-secondary)',
+                color: 'var(--lw-text-secondary)',
+                border: '1px solid var(--lw-border)',
               }}
             >
               {f.label}
               <span
                 className="text-[10px] font-black px-1.5 py-0.5 rounded-full"
-                style={active ? { background: 'rgba(6, 182, 212, 0.25)', color: '#06B6D4' } : { background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)' }}
+                style={active ? { background: 'var(--lw-border-strong)', color: 'var(--lw-accent)' } : { background: 'var(--lw-border)', color: 'var(--lw-text-muted)' }}
               >
                 {count}
               </span>
@@ -561,15 +617,15 @@ export const MyBookingsPage: React.FC = () => {
       {loading ? (
         <TableSkeleton rows={4} />
       ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center text-center py-20 rounded-3xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5" style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.2)' }}>
-            <Calendar className="w-8 h-8" style={{ color: '#818CF8' }} />
+        <div className="flex flex-col items-center justify-center text-center py-20 rounded-3xl bg-[var(--lw-bg-card)] border border-[var(--lw-border)]">
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5 bg-[var(--lw-accent-glow)] border border-[var(--lw-border-strong)]">
+            <Calendar className="w-8 h-8 text-[var(--lw-accent)]" />
           </div>
-          <h3 className="text-base font-bold text-white mb-2">{t.dashboard.noBookingsStatus}</h3>
-          <p className="text-sm mb-6 max-w-xs" style={{ color: 'rgba(148,163,184,0.6)' }}>{t.dashboard.noBookingsDesc}</p>
+          <h3 className="text-base font-bold text-[var(--lw-text-primary)] mb-2">{t.dashboard.noBookingsStatus}</h3>
+          <p className="text-sm mb-6 max-w-xs text-[var(--lw-text-secondary)]">{t.dashboard.noBookingsDesc}</p>
           <Link to="/marketplace"
             className="px-6 py-3 rounded-xl text-sm font-bold text-white transition-all"
-            style={{ background: 'linear-gradient(135deg, #6366F1, #818CF8)', boxShadow: '0 6px 20px rgba(99,102,241,0.4)' }}>
+            style={{ background: 'linear-gradient(135deg, var(--lw-accent), var(--lw-accent-alt))', boxShadow: '0 6px 20px var(--lw-accent-glow)' }}>
             {t.dashboard.exploreVehicles}
           </Link>
         </div>
@@ -581,19 +637,13 @@ export const MyBookingsPage: React.FC = () => {
               <motion.div
                 key={booking.id}
                 variants={staggerItem}
-                className="rounded-[2rem] p-6 transition-all duration-300 group flex flex-col justify-between relative overflow-hidden"
-                style={{
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  border: '1px solid rgba(255, 255, 255, 0.06)',
-                  backdropFilter: 'blur(20px)',
-                  boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)'
-                }}
-                whileHover={{ y: -6, boxShadow: '0 30px 60px rgba(0, 0, 0, 0.45)', borderColor: 'rgba(99,102,241,0.2)' }}
+                className="rounded-[2rem] p-6 transition-all duration-300 group flex flex-col justify-between relative overflow-hidden bg-[var(--lw-bg-card)] border border-[var(--lw-border)] shadow-md animate-fade-in"
+                whileHover={{ y: -6, boxShadow: '0 20px 40px var(--lw-accent-glow)', borderColor: 'var(--lw-border-strong)' }}
               >
                 <div>
                   {/* Status & Booking ID */}
                   <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-base font-extrabold text-white tracking-tight">Booking #{booking.id.slice(-6).toUpperCase()}</h4>
+                    <h4 className="text-base font-extrabold text-[var(--lw-text-primary)] tracking-tight">Booking #{booking.id.slice(-6).toUpperCase()}</h4>
                     <span className="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full"
                       style={{ background: sc.bg, color: sc.color, border: `1px solid ${sc.border}` }}>
                       {sc.label}
@@ -601,21 +651,21 @@ export const MyBookingsPage: React.FC = () => {
                   </div>
 
                   {/* Dates & Duration */}
-                  <div className="flex items-center gap-2 text-xs font-semibold mb-6" style={{ color: 'rgba(148,163,184,0.7)' }}>
+                  <div className="flex items-center gap-2 text-xs font-semibold mb-6 text-[var(--lw-text-secondary)]">
                     <Car className="w-3.5 h-3.5" />
                     <Calendar className="w-3.5 h-3.5" />
                     <span>{formatDate(booking.startDate)} – {formatDate(booking.endDate)} · {booking.totalDays} {t.booking.totalDays}</span>
                   </div>
 
                   {/* Amounts 2 Columns */}
-                  <div className="grid grid-cols-2 gap-4 py-4 mb-6" style={{ borderTop: '1px solid rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                  <div className="grid grid-cols-2 gap-4 py-4 mb-6" style={{ borderTop: '1px solid var(--lw-border)', borderBottom: '1px solid var(--lw-border)' }}>
                     <div>
-                      <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: 'rgba(148,163,184,0.5)' }}>{t.dashboard.bookingAmount}</p>
-                      <p className="text-base font-extrabold text-white">{formatCurrency(booking.pricing.total)}</p>
+                      <p className="text-[10px] font-bold uppercase tracking-wider mb-1 text-[var(--lw-text-muted)]">{t.dashboard.bookingAmount}</p>
+                      <p className="text-base font-extrabold text-[var(--lw-text-primary)]">{formatCurrency(booking.pricing.total)}</p>
                     </div>
-                    <div className="pl-4" style={{ borderLeft: '1px solid rgba(255,255,255,0.06)' }}>
-                      <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: 'rgba(148,163,184,0.5)' }}>{t.dashboard.refundableDeposit}</p>
-                      <p className="text-base font-extrabold text-white">{formatCurrency(booking.pricing.deposit)}</p>
+                    <div className="pl-4" style={{ borderLeft: '1px solid var(--lw-border)' }}>
+                      <p className="text-[10px] font-bold uppercase tracking-wider mb-1 text-[var(--lw-text-muted)]">{t.dashboard.refundableDeposit}</p>
+                      <p className="text-base font-extrabold text-[var(--lw-text-primary)]">{formatCurrency(booking.pricing.deposit)}</p>
                     </div>
                   </div>
                 </div>
@@ -631,17 +681,17 @@ export const MyBookingsPage: React.FC = () => {
                         : ""
                     )}
                     style={{
-                      background: 'rgba(255,255,255,0.03)',
-                      color: '#818CF8',
-                      border: '1px solid rgba(129, 140, 248, 0.2)',
+                      background: 'var(--lw-bg-secondary)',
+                      color: 'var(--lw-accent)',
+                      border: '1px solid var(--lw-border)',
                     }}
                     onMouseEnter={e => {
-                      e.currentTarget.style.background = 'rgba(129, 140, 248, 0.1)';
-                      e.currentTarget.style.borderColor = 'rgba(129, 140, 248, 0.4)';
+                      e.currentTarget.style.background = 'var(--lw-accent-glow)';
+                      e.currentTarget.style.borderColor = 'var(--lw-border-strong)';
                     }}
                     onMouseLeave={e => {
-                      e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
-                      e.currentTarget.style.borderColor = 'rgba(129, 140, 248, 0.2)';
+                      e.currentTarget.style.background = 'var(--lw-bg-secondary)';
+                      e.currentTarget.style.borderColor = 'var(--lw-border)';
                     }}
                   >
                     {t.dashboard.viewVehicle}

@@ -198,6 +198,11 @@ public class AdminService {
         return disputeRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
     }
 
+    public java.util.List<UserDTOs.DocumentResponse> getUserDocuments(String userId) {
+        return userDocumentRepository.findByUserIdOrderByUploadedAtDesc(userId)
+                .stream().map(userService::toDocumentResponse).collect(java.util.stream.Collectors.toList());
+    }
+
     @Transactional
     public UserDTOs.DocumentResponse reviewDocument(String documentId, AdminDTOs.ReviewDocumentRequest req) {
         com.luxeway.entity.UserDocument doc = userDocumentRepository.findById(documentId)
@@ -253,6 +258,91 @@ public class AdminService {
         }
 
         return userService.toDocumentResponse(doc);
+    }
+
+    @Transactional
+    public UserDTOs.UserProfileResponse approveUserKyc(String userId, String adminId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setKycStatus("VERIFIED");
+        user.setKycVerified(true);
+        
+        java.util.List<com.luxeway.entity.UserDocument> docs = userDocumentRepository.findByUserIdOrderByUploadedAtDesc(userId);
+        boolean hasDl = false;
+        for (com.luxeway.entity.UserDocument doc : docs) {
+            String docType = doc.getDocumentType().toUpperCase();
+            if (docType.contains("DRIVER_LICENSE") || docType.equals("DRIVING_LICENSE")) {
+                hasDl = true;
+                if (doc.getLicenseNumber() != null) {
+                    user.setLicenseNumber(doc.getLicenseNumber());
+                }
+                if (doc.getLicenseClass() != null) {
+                    user.setLicenseClass(doc.getLicenseClass());
+                }
+            }
+            
+            if ("PENDING".equals(doc.getStatus()) || "UNDER_REVIEW".equals(doc.getVerificationStatus())) {
+                doc.setStatus("VERIFIED");
+                doc.setVerificationStatus("VERIFIED");
+                doc.setVerifiedByAdmin(adminId);
+                doc.setVerifiedAt(java.time.LocalDateTime.now());
+                userDocumentRepository.save(doc);
+            }
+        }
+
+        if (hasDl) {
+            user.setDriverLicenseStatus("VERIFIED");
+            user.setDrivingLicenseVerified(true);
+        }
+        
+        user.setVerified(true);
+        user = userRepository.save(user);
+        
+        log.info("KYC approved for user: {}", userId);
+        
+        try {
+            emailService.sendKycStatus(user.getEmail(), "KYC_VERIFICATION", "VERIFIED", null);
+        } catch (Exception e) {
+            log.warn("Failed to send KYC email: {}", e.getMessage());
+        }
+        
+        return userService.toProfileResponse(user);
+    }
+
+    @Transactional
+    public UserDTOs.UserProfileResponse rejectUserKyc(String userId, String reason, String adminId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setKycStatus("REJECTED");
+        user.setDriverLicenseStatus("REJECTED");
+        user.setKycVerified(false);
+        user.setDrivingLicenseVerified(false);
+        user.setVerified(false);
+        user = userRepository.save(user);
+
+        java.util.List<com.luxeway.entity.UserDocument> docs = userDocumentRepository.findByUserIdOrderByUploadedAtDesc(userId);
+        for (com.luxeway.entity.UserDocument doc : docs) {
+            if ("PENDING".equals(doc.getStatus()) || "UNDER_REVIEW".equals(doc.getVerificationStatus())) {
+                doc.setStatus("REJECTED");
+                doc.setVerificationStatus("REJECTED");
+                doc.setRejectionReason(reason);
+                doc.setVerifiedByAdmin(adminId);
+                doc.setVerifiedAt(java.time.LocalDateTime.now());
+                userDocumentRepository.save(doc);
+            }
+        }
+
+        log.info("KYC rejected for user: {} because: {}", userId, reason);
+        
+        try {
+            emailService.sendKycStatus(user.getEmail(), "KYC_VERIFICATION", "REJECTED", reason);
+        } catch (Exception e) {
+            log.warn("Failed to send KYC email: {}", e.getMessage());
+        }
+
+        return userService.toProfileResponse(user);
     }
 
     // ====== Report Exporters ======
