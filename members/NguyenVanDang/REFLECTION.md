@@ -829,6 +829,56 @@ Trong giai đoạn này (Phase 5.4), mình đã cùng Antigravity hoàn thành n
 
 ---
 
+## Reflection — Phase 5.5: eKYC Document Upload Debug & FPT AI OCR Integration (2026-06-17 đến 2026-06-18)
+
+### Tóm tắt
+
+Trong giai đoạn này, nhóm đã debug và fix hoàn toàn luồng upload ảnh KYC của hệ thống LuxeWay. Chức năng eKYC cho phép người dùng upload ảnh CCCD để hệ thống tự động đọc thông tin bằng FPT AI OCR API. Sau nhiều giờ debug, AI đã xác định được 2 lỗi nghiêm trọng cùng tồn tại: (1) lỗi double-read InputStream gây file lưu rỗng, và (2) hardcoded logic sai trong service khiến API key thực bị chặn và fallback về mock data.
+
+### Những điều học được
+
+```text
+1. Java InputStream chỉ đọc được một lần (Single-read I/O):
+   MultipartFile.getInputStream() trả về một luồng dữ liệu chỉ đọc được 1 lần.
+   Sau khi Tika đọc luồng để detect MIME type, con trỏ đã ở cuối — lần gọi Files.write() 
+   sau đó đọc được luồng rỗng → file 0 byte được lưu vào disk.
+   Bài học quan trọng: luôn dùng file.getBytes() để buffer toàn bộ vào byte[] 
+   và dùng lại nhiều lần. Không bao giờ gọi getInputStream() hai lần.
+
+2. Tika.detect(byte[]) không đáng tin khi thiếu filename:
+   Apache Tika có thể detect MIME type từ magic bytes của file, nhưng khi chỉ nhận
+   byte[] không có filename gợi ý, nó thường trả về "application/octet-stream" cho ảnh JPEG.
+   Solution thực tế hơn: dùng file.getContentType() từ MultipartFile — browser/client
+   gán MIME type này dựa trên extension và content, thường chính xác cho upload từ UI.
+
+3. Hardcoded "safety check" nguy hiểm:
+   Logic `if (apiKey.contains("placeholder"))` được viết để ngăn dev test với key giả,
+   nhưng lại vô tình block cả key thực nếu format không khớp. Dẫn đến hệ thống production
+   luôn chạy mock data mà không có lỗi rõ ràng — rất khó debug.
+   Bài học: safety check phải cực kỳ rõ ràng và conservative (chỉ block null/empty),
+   không dùng pattern matching string vì dễ gây false positive.
+
+4. Kiểm tra từng layer trong upload flow:
+   Khi upload lỗi, cần kiểm tra từng bước: 
+   (a) Request nhận đúng file chưa? → log ContentType, size
+   (b) File lưu xuống disk đúng chưa? → kiểm tra size file trong /uploads/
+   (c) OCR service nhận đúng path chưa? → log đường dẫn file
+   (d) API key có hợp lệ không? → log từng bước validation
+   Không thể debug upload từ response code đơn lẻ.
+```
+
+### Tự đánh giá Phase 5.5
+
+| Tiêu chí | Điểm | Ghi chú |
+|---|:---:|---|
+| Hiểu vấn đề trước khi fix | 5 | Trace đúng root cause: InputStream double-read + false key check |
+| Fix đúng nguyên nhân gốc | 5 | Fix cả 2 lỗi độc lập, không workaround |
+| Kiểm chứng sau fix | 4 | Compile thành công, logic fix đúng; cần test E2E với ảnh thực |
+| Ghi lại đầy đủ | 5 | Cập nhật đủ 4 file members với chi tiết kỹ thuật đầy đủ |
+| Sử dụng AI có trách nhiệm | 5 | Hiểu nguyên nhân, không copy blindly, tự quyết định loại bỏ Tika |
+
+---
+
 ## 17. Cam kết Reflection
 
 Em/nhóm cam kết rằng nội dung reflection này phản ánh trung thực quá trình sử dụng AI và quá trình học tập trong bài tập/project.
@@ -842,5 +892,5 @@ Sinh viên/nhóm hiểu rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-06-16 |
+| Nguyễn Văn Dạng - DE190324 | 2026-06-18 |
 

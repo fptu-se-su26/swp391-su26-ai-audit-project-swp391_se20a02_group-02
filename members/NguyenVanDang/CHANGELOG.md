@@ -1090,11 +1090,71 @@ Commit: [DE190324] feat: implement real Goong Map upgrade, temporary availabilit
 
 ---
 
+# [Phase 5.5] eKYC Integration — FPT AI OCR & Document Upload Fix
+
+## Ngày thực hiện
+
+```text
+2026-06-17 đến 2026-06-18
+```
+
+## Đã hoàn thành
+
+- [x] **Phân tích toàn bộ 63 API endpoint** của hệ thống LuxeWay, lập bảng tổng hợp theo module (Auth, Vehicle, Booking, Payment, User/KYC, Admin, Chat, Help, AI).
+- [x] **Debug và fix lỗi double-read InputStream** trong `UserController.uploadUserDocument`:
+  - Phát hiện nguyên nhân gốc: `tika.detect(file.getInputStream())` tiêu thụ `InputStream` của `MultipartFile`, khiến lần gọi `Files.write()` tiếp theo nhận luồng rỗng → file được lưu trống → FPT AI OCR nhận ảnh rỗng → 400 Bad Request.
+  - Fix: đọc toàn bộ bytes một lần duy nhất vào `byte[] fileBytes = file.getBytes()`, dùng `fileBytes` cho cả Tika validation lẫn ghi file.
+- [x] **Gỡ bỏ kiểm tra sai "demo key"** trong `FptAiEkycService`:
+  - Phát hiện hardcoded check `apiKey.contains("placeholder")` sai, chặn API key thực, khiến service luôn fallback về mock data thay vì gọi FPT AI thật.
+  - Fix: xóa check sai, giữ kiểm tra hợp lệ thực sự (null và rỗng).
+- [x] **Thay thế Apache Tika bằng Content-Type check đơn giản**:
+  - `Tika.detect(byte[])` không có filename gợi ý thường trả về `application/octet-stream` thay vì `image/jpeg` → chặn ảnh JPEG hợp lệ.
+  - Fix: chuyển sang kiểm tra `file.getContentType().startsWith("image/")` — đáng tin hơn vì browser/client gán đúng MIME type.
+- [x] **Cập nhật `application.yml`** với API key thực của FPT AI (`fptai.api-key`).
+- [x] **Kiểm tra và xác nhận compile backend** bằng Gradle (`./gradlew compileJava`) → `BUILD SUCCESSFUL`.
+- [x] **Restart Frontend server** (`npm run dev` port 5173) sau khi bị tắt ngẫu nhiên.
+
+## Thay đổi chi tiết - Nguyễn Văn Dạng (DE190324)
+
+| STT | Nội dung thay đổi | Người thực hiện | File/Module liên quan | Minh chứng |
+|---:|---|---|---|---|
+| 1 | Fix double-read InputStream: buffer vào byte[] trước, dùng cho cả Tika và Files.write | Nguyễn Văn Dạng | `UserController.java` | `byte[] fileBytes = file.getBytes()` |
+| 2 | Gỡ bỏ hardcoded "demo key" check sai trong FptAiEkycService | Nguyễn Văn Dạng | `FptAiEkycService.java` | Xóa khối `if (apiKey.contains("placeholder"))` |
+| 3 | Thay Tika.detect() bằng Content-Type check của MultipartFile | Nguyễn Văn Dạng | `UserController.java` | `file.getContentType().startsWith("image/")` |
+| 4 | Cập nhật FPT AI API key thật trong application.yml | Nguyễn Văn Dạng | `application.yml` | `fptai.api-key: <real-key>` |
+| 5 | Xác nhận compile backend 0 lỗi qua Gradle compileJava | Nguyễn Văn Dạng | `build.gradle` / Gradle wrapper | `BUILD SUCCESSFUL in 10s` |
+| 6 | Restart Frontend Vite server (port 5173) | Nguyễn Văn Dạng | `src/Front_end` | `npm run dev` |
+
+## AI có hỗ trợ không?
+
+- [x] Có
+- [ ] Không
+
+Nếu có, mô tả AI đã hỗ trợ phần nào:
+
+```text
+AI (Antigravity) hỗ trợ:
+- Phân tích toàn bộ codebase để tìm nguyên nhân gốc rễ lỗi upload ảnh KYC (double-read InputStream).
+- Debug logic sai trong FptAiEkycService gây fallback về mock data.
+- Đề xuất và implement fix Content-Type check thay thế Tika để tránh false-positive với JPEG bytes.
+- Kiểm tra compile backend và hướng dẫn restart frontend server.
+Tất cả fix được review, test compile thành công trước khi commit.
+```
+
+## Commit/Screenshot minh chứng
+
+```text
+Branch: feature/de190324-vehicle-rental-platform
+Commit: [DE190324] fix: resolve eKYC document upload — fix InputStream double-read, remove false demo-key check, replace Tika with Content-Type validation
+```
+
+---
+
 # 5. Cam kết cập nhật Changelog
 
 Sinh viên/nhóm cam kết rằng nội dung changelog phản ánh đúng các thay đổi đã thực hiện trong quá trình làm bài tập/project.
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-06-16 |
+| Nguyễn Văn Dạng - DE190324 | 2026-06-18 |
 

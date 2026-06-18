@@ -265,6 +265,16 @@ public class VnptEkycService {
      */
     private JsonNode callVnptEkycApi(String ocrUrl, MultipartFile imageFile, String side) {
         try {
+            // ---- Validate credentials are configured ----
+            if (ekycConfig.getAccessToken() == null || ekycConfig.getAccessToken().isBlank()) {
+                log.error("eKYC: VNPT_EKYC_ACCESS_TOKEN is not configured! Set the environment variable.");
+                throw new RuntimeException("VNPT eKYC credentials not configured. Please set VNPT_EKYC_ACCESS_TOKEN, VNPT_EKYC_TOKEN_ID, and VNPT_EKYC_TOKEN_KEY environment variables.");
+            }
+            if (ekycConfig.getTokenId() == null || ekycConfig.getTokenId().isBlank()) {
+                log.error("eKYC: VNPT_EKYC_TOKEN_ID is not configured!");
+                throw new RuntimeException("VNPT eKYC Token-ID not configured. Please set VNPT_EKYC_TOKEN_ID environment variable.");
+            }
+
             org.springframework.http.client.SimpleClientHttpRequestFactory factory =
                     new org.springframework.http.client.SimpleClientHttpRequestFactory();
             factory.setConnectTimeout(15_000);

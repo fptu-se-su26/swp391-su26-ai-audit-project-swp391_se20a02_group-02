@@ -732,6 +732,20 @@ Audit LuxeWay Car Rental Platform:
 
 ---
 
+## Log #19
+
+- **Date:** 2026-06-17 đến 2026-06-18
+- **Author:** Nguyễn Văn Dạng (DE190324)
+- **AI Tool:** Antigravity
+- **Purpose:** Debug và fix hoàn toàn luồng upload ảnh KYC/eKYC — xác định nguyên nhân gốc rễ lỗi 400 Bad Request khi upload ảnh CCCD và tích hợp FPT AI OCR thật.
+- **Prompt Reference:** PROMPTS.md#prompt-20
+- **AI Output Summary:** AI đọc toàn bộ `UserController.java` và `FptAiEkycService.java`, phát hiện 2 lỗi nghiêm trọng: (1) `tika.detect(file.getInputStream())` tiêu thụ luồng `InputStream`, khiến `Files.write()` nhận luồng rỗng → ảnh lưu trống; (2) hardcoded kiểm tra `apiKey.contains("placeholder")` không chính xác, chặn API key thực và buộc service trả về mock data. AI đề xuất buffer bytes một lần (`file.getBytes()`), xóa kiểm tra sai, và thay Tika bằng `file.getContentType()`.
+- **Human Decision:** Áp dụng toàn bộ fix. Quyết định loại bỏ hoàn toàn Tika (không chỉ chạy song song) vì `Tika.detect(byte[])` luôn thiếu filename-hint khiến false-positive với JPEG binary. Cập nhật API key thực vào `application.yml`. Xác nhận compile thành công qua Gradle.
+- **Applied To:** `src/Back_end/src/main/java/com/luxeway/controller/UserController.java`, `src/Back_end/src/main/java/com/luxeway/service/FptAiEkycService.java`, `src/Back_end/src/main/resources/application.yml`.
+- **Verification:** `./gradlew compileJava` → `BUILD SUCCESSFUL in 10s`. Frontend restart thành công tại `localhost:5173`.
+
+---
+
 ## 10. Cam kết học thuật
 
 Sinh viên/nhóm cam kết rằng:
@@ -744,5 +758,5 @@ Sinh viên/nhóm cam kết rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-06-16 |
+| Nguyễn Văn Dạng - DE190324 | 2026-06-18 |
 

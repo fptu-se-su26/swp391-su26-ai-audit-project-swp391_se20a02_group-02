@@ -57,6 +57,14 @@ public class AdminController {
                 .build());
     }
 
+    @GetMapping("/users/{userId}/documents")
+    @Operation(summary = "Get a specific user's uploaded documents")
+    public ResponseEntity<ApiResponse<java.util.List<UserDTOs.DocumentResponse>>> getUserDocuments(
+            @PathVariable String userId) {
+        java.util.List<UserDTOs.DocumentResponse> docs = adminService.getUserDocuments(userId);
+        return ResponseEntity.ok(ApiResponse.success("Success", docs));
+    }
+
     @PutMapping("/users/{id}/status")
     @Operation(summary = "Update user account status (activate/deactivate, verify)")
     public ResponseEntity<ApiResponse<UserDTOs.UserProfileResponse>> updateUserStatus(
@@ -176,6 +184,29 @@ public class AdminController {
             @Valid @RequestBody AdminDTOs.ReviewDocumentRequest request) {
         UserDTOs.DocumentResponse doc = adminService.reviewDocument(id, request);
         return ResponseEntity.ok(ApiResponse.success("Document status updated successfully", doc));
+    }
+
+    @PutMapping("/kyc/{userId}/approve")
+    @Operation(summary = "Approve user's KYC application")
+    public ResponseEntity<ApiResponse<UserDTOs.UserProfileResponse>> approveUserKyc(
+            @PathVariable String userId,
+            @AuthenticationPrincipal User admin) {
+        UserDTOs.UserProfileResponse user = adminService.approveUserKyc(userId, admin.getId());
+        return ResponseEntity.ok(ApiResponse.success("KYC approved", user));
+    }
+
+    @PutMapping("/kyc/{userId}/reject")
+    @Operation(summary = "Reject user's KYC application")
+    public ResponseEntity<ApiResponse<UserDTOs.UserProfileResponse>> rejectUserKyc(
+            @PathVariable String userId,
+            @AuthenticationPrincipal User admin,
+            @RequestBody(required = false) java.util.Map<String, String> payload) {
+        String reason = "Documents rejected by administrator";
+        if (payload != null && payload.containsKey("reason")) {
+            reason = payload.get("reason");
+        }
+        UserDTOs.UserProfileResponse user = adminService.rejectUserKyc(userId, reason, admin.getId());
+        return ResponseEntity.ok(ApiResponse.success("KYC rejected", user));
     }
 
     @GetMapping("/settings")

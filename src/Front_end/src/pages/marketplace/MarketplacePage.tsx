@@ -11,6 +11,7 @@ import {
 import { vehicleService } from '@/services/vehicleService';
 import { VehicleCard } from '@/components/vehicle/VehicleCard';
 import { VehicleCardSkeleton } from '@/components/ui/Skeleton';
+import { LuxeWayMap } from '@/components/map/LuxeWayMap';
 import type { Vehicle, VehicleFilters, VehicleCategory, VehicleType } from '@/types';
 import { formatCurrency, debounce, cn } from '@/utils';
 import { fadeUp, staggerContainer, staggerItem } from '@/animations/variants';
@@ -68,140 +69,7 @@ const SORT_OPTIONS = [
   { value: 'newest', label: 'Mới nhất' },
 ];
 
-// ====== MAP SIMULATOR ======
-const MapSimulator: React.FC<{
-  vehicles: Vehicle[];
-  hoveredVehicleId: string | null;
-  onSelectVehicle: (id: string) => void;
-}> = ({ vehicles, hoveredVehicleId, onSelectVehicle }) => {
-  const [zoom, setZoom] = useState(13);
-  const [selectedPin, setSelectedPin] = useState<Vehicle | null>(null);
-  const [centerOffset, setCenterOffset] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
-  useEffect(() => {
-    if (selectedPin && !vehicles.some(v => v.id === selectedPin.id)) {
-      setSelectedPin(null);
-    }
-  }, [vehicles, selectedPin]);
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    setIsDragging(true);
-    setDragStart({ x: e.clientX - centerOffset.x, y: e.clientY - centerOffset.y });
-  };
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return;
-    setCenterOffset({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
-  };
-  const handleMouseUp = () => setIsDragging(false);
-
-  return (
-    <div
-      className="relative w-full h-full bg-[#1e293b] overflow-hidden rounded-3xl cursor-grab active:cursor-grabbing select-none"
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
-    >
-      <div
-        className="absolute inset-0 transition-transform duration-100 ease-out"
-        style={{
-          transform: `translate(${centerOffset.x}px, ${centerOffset.y}px) scale(${zoom / 13})`,
-          backgroundImage: 'radial-gradient(circle, #334155 1.5px, transparent 1.5px), linear-gradient(to right, #334155 1px, transparent 1px), linear-gradient(to bottom, #334155 1px, transparent 1px)',
-          backgroundSize: '30px 30px, 90px 90px, 90px 90px',
-          backgroundPosition: 'center'
-        }}
-      >
-        <div className="absolute top-[20%] left-[30%] text-slate-500 font-bold tracking-widest text-xs uppercase opacity-40">Quận 1 (Trung tâm)</div>
-        <div className="absolute top-[45%] left-[60%] text-slate-500 font-bold tracking-widest text-xs uppercase opacity-40">Quận 2 (Thảo Điền)</div>
-        <div className="absolute top-[70%] left-[20%] text-slate-500 font-bold tracking-widest text-xs uppercase opacity-40">Quận 7 (Phú Mỹ Hưng)</div>
-        <div className="absolute top-[10%] left-[75%] text-slate-500 font-bold tracking-widest text-xs uppercase opacity-40">Bình Thạnh</div>
-
-        <svg className="absolute inset-0 w-[200%] h-[200%] -left-1/2 -top-1/2 opacity-20 pointer-events-none" stroke="#475569" strokeWidth="2" fill="none">
-          <path d="M 0 300 Q 400 350 800 500 T 1600 600" />
-          <path d="M 300 0 Q 450 500 600 1200" />
-          <path d="M 100 800 C 500 700 900 900 1500 800" strokeWidth="4" stroke="#64748b" />
-        </svg>
-        <svg className="absolute inset-0 w-[200%] h-[200%] -left-1/2 -top-1/2 opacity-30 pointer-events-none" stroke="#1e3a8a" strokeWidth="40" fill="none" strokeLinecap="round">
-          <path d="M 200 0 Q 300 400 700 450 T 1100 800 T 1600 1200" />
-        </svg>
-
-        {vehicles.map((v, index) => {
-          const latOffset = v.location?.lat ? (v.location.lat - 10.762) * 500 : (Math.sin(index * 45) * 150);
-          const lngOffset = v.location?.lng ? (v.location.lng - 106.66) * 500 : (Math.cos(index * 45) * 150);
-          const isHovered = hoveredVehicleId === v.id;
-          const isSelected = selectedPin?.id === v.id;
-          return (
-            <div
-              key={v.id}
-              onClick={e => { e.stopPropagation(); setSelectedPin(v); onSelectVehicle(v.id); }}
-              className="absolute cursor-pointer transition-all duration-200"
-              style={{
-                top: `calc(50% + ${latOffset}px)`,
-                left: `calc(50% + ${lngOffset}px)`,
-                transform: 'translate(-50%, -50%)',
-                zIndex: isSelected ? 50 : isHovered ? 40 : 20
-              }}
-            >
-              <div className={cn(
-                "px-2.5 py-1.5 rounded-full text-xs font-bold shadow-lg transition-all border flex items-center gap-1",
-                isSelected ? "bg-accent border-accent text-white scale-110"
-                  : isHovered ? "bg-slate-100 border-accent text-accent dark:bg-slate-900 scale-105"
-                    : "bg-slate-900/90 border-slate-700/80 text-white dark:bg-slate-900/90 hover:scale-105"
-              )}>
-                {v.vehicleType === 'motorbike' ? '🏍' : '🚗'}
-                {formatVND(v.pricePerDay)}
-              </div>
-              <div className={cn("w-2 h-2 rounded-full mx-auto mt-1 border border-white shadow", isSelected || isHovered ? "bg-accent" : "bg-slate-500")} />
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="absolute bottom-6 right-6 flex flex-col gap-2 z-30">
-        <button onClick={() => setZoom(z => Math.min(z + 1, 16))} className="w-10 h-10 bg-slate-900/90 border border-slate-700 text-white flex items-center justify-center rounded-xl shadow-lg backdrop-blur hover:bg-slate-800"><ZoomIn className="w-5 h-5" /></button>
-        <button onClick={() => setZoom(z => Math.max(z - 1, 10))} className="w-10 h-10 bg-slate-900/90 border border-slate-700 text-white flex items-center justify-center rounded-xl shadow-lg backdrop-blur hover:bg-slate-800"><ZoomOut className="w-5 h-5" /></button>
-        <button onClick={() => { setCenterOffset({ x: 0, y: 0 }); setZoom(13); setSelectedPin(null); }} className="w-10 h-10 bg-slate-900/90 border border-slate-700 text-white flex items-center justify-center rounded-xl shadow-lg backdrop-blur hover:bg-slate-800"><Compass className="w-5 h-5" /></button>
-      </div>
-
-      <AnimatePresence>
-        {selectedPin && (
-          <motion.div
-            initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 15 }}
-            className="absolute bottom-6 left-6 right-6 md:right-auto md:w-80 bg-slate-900/95 border border-slate-800/80 backdrop-blur rounded-3xl p-4 shadow-2xl z-40"
-            onClick={e => e.stopPropagation()}
-          >
-            <button onClick={() => setSelectedPin(null)} className="absolute top-3 right-3 p-1 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors">
-              <X className="w-4 h-4" />
-            </button>
-            <div className="flex gap-4">
-              <img src={selectedPin.images?.[0] || selectedPin.thumbnailUrl || (selectedPin.vehicleType === 'motorbike' ? FALLBACK_MOTO : FALLBACK_IMAGE)} alt={selectedPin.name} className="w-24 h-20 object-cover rounded-2xl bg-slate-800" />
-              <div className="flex-1 min-w-0 pr-4">
-                <span className="text-[9px] font-bold text-accent uppercase tracking-widest">{selectedPin.brand}</span>
-                <h4 className="font-bold text-white text-sm leading-tight truncate mt-0.5">{selectedPin.name}</h4>
-                <div className="flex items-center gap-1 mt-1 text-xs text-yellow-400">
-                  <Star className="w-3.5 h-3.5 fill-current" />
-                  <span className="font-bold text-white text-xs">{selectedPin.rating || '5.0'}</span>
-                  <span className="text-slate-400 text-[10px]">({selectedPin.totalReviews || 0})</span>
-                </div>
-                <div className="mt-2 flex items-baseline justify-between">
-                  <span className="text-sm font-extrabold text-white">{formatVND(selectedPin.pricePerDay)}/ngày</span>
-                  <Link to={`/vehicles/${selectedPin.id}`} className="text-[10px] font-bold bg-accent text-white px-2.5 py-1.5 rounded-lg hover:bg-blue-600 transition-colors">Xem</Link>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <div className="absolute top-4 left-4 bg-slate-900/80 border border-slate-700/60 backdrop-blur text-white px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 pointer-events-none">
-        <Map className="w-3.5 h-3.5 text-accent" />
-        <span>LuxeWay Map</span>
-      </div>
-    </div>
-  );
-};
 
 // ====== CAR FILTER PANEL ======
 const CarFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: VehicleFilters) => void; onClose?: () => void }> = ({ filters, onChange, onClose }) => {
@@ -899,10 +767,16 @@ const MarketplacePage: React.FC = () => {
                 className="hidden lg:block flex-shrink-0 sticky top-52 overflow-hidden"
                 style={{ height: 'calc(100vh - 220px)' }}
               >
-                <MapSimulator vehicles={vehicles} hoveredVehicleId={hoveredVehicleId} onSelectVehicle={id => {
-                  setSelectedVehicleId(id);
-                  document.getElementById(`vehicle-card-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }} />
+                <LuxeWayMap
+                  vehicles={vehicles}
+                  selectedVehicleId={selectedVehicleId}
+                  hoveredVehicleId={hoveredVehicleId || undefined}
+                  onVehicleClick={v => {
+                    setSelectedVehicleId(v.id);
+                    document.getElementById(`vehicle-card-${v.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }}
+                  height="100%"
+                />
               </motion.div>
             )}
           </AnimatePresence>

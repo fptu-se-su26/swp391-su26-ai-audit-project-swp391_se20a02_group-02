@@ -38,6 +38,19 @@ public class UserDocument {
     @NotBlank(message = "Document URL is required")
     private String url;
 
+    @Column(name = "file_url", length = 500)
+    private String fileUrl;
+
+    @Column(name = "ocr_data", columnDefinition = "TEXT")
+    private String ocrData;
+
+    @Column(name = "verification_status", nullable = false, length = 20)
+    @Builder.Default
+    private String verificationStatus = "NOT_UPLOADED";
+
+    @Column(name = "verified_by_admin", length = 36)
+    private String verifiedByAdmin;
+
     /**
      * Verification status: PENDING, VERIFIED, REJECTED
      */

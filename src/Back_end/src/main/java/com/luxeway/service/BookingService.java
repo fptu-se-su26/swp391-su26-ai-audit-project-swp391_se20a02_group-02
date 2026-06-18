@@ -93,14 +93,32 @@ public class BookingService {
         User renter = userRepository.findById(renterId)
                 .orElseThrow(() -> new RuntimeException("Renter not found"));
 
-        // BUG-02 FIX: All non-admin renters (CUSTOMER and OWNER renting another owner's vehicle)
-        // must have KYC and driving license verified before creating a booking.
+        // Enforce KYC verification & license class matching
         if (renter.getRole() != com.luxeway.enums.UserRole.ADMIN) {
-            if (!Boolean.TRUE.equals(renter.getKycVerified()) || !Boolean.TRUE.equals(renter.getDrivingLicenseVerified())) {
-                throw new RuntimeException("KYC identity and driving license verification are required before booking. Please complete verification in your profile.");
+            if (!"VERIFIED".equals(renter.getKycStatus())) {
+                throw new RuntimeException("KYC identity verification is required and must be VERIFIED before booking. Current status: " + renter.getKycStatus());
+            }
+            if (!"VERIFIED".equals(renter.getDriverLicenseStatus())) {
+                throw new RuntimeException("Driving license verification is required and must be VERIFIED before booking. Current status: " + renter.getDriverLicenseStatus());
             }
 
-            // License class restrictions are temporarily disabled to allow payment testing.
+            String licenseClass = renter.getLicenseClass();
+            if (vehicle.getVehicleType() == com.luxeway.enums.VehicleType.MOTORBIKE) {
+                if (licenseClass == null || (!licenseClass.equalsIgnoreCase("A1") && !licenseClass.equalsIgnoreCase("A"))) {
+                    throw new RuntimeException("Invalid license class. Motorbike rental requires an A1 or A class driving license. Your class: " + (licenseClass == null ? "None" : licenseClass));
+                }
+            } else if (vehicle.getVehicleType() == com.luxeway.enums.VehicleType.CAR) {
+                boolean isCarLicense = (licenseClass != null && (
+                    licenseClass.toUpperCase().startsWith("B") || 
+                    licenseClass.toUpperCase().startsWith("C") || 
+                    licenseClass.toUpperCase().startsWith("D") || 
+                    licenseClass.toUpperCase().startsWith("E") || 
+                    licenseClass.toUpperCase().startsWith("F")
+                ));
+                if (!isCarLicense) {
+                    throw new RuntimeException("Invalid license class. Car rental requires a B, C, or D class driving license. Your class: " + (licenseClass == null ? "None" : licenseClass));
+                }
+            }
         }
 
         // Calculate pricing using Pricing Engine

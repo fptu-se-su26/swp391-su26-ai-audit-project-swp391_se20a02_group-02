@@ -333,6 +333,104 @@ const BookingWizardPage: React.FC = () => {
   const wizard = useBookingWizardStore();
   const isVi = t.common.loading.includes('Đang');
 
+  // Enforce KYC verification & license class matching
+  const isKycVerified = user?.role === 'admin' || user?.kycStatus === 'VERIFIED';
+  const isDlVerified = user?.role === 'admin' || user?.driverLicenseStatus === 'VERIFIED';
+  const licenseClass = (user?.licenseClass || '').toUpperCase();
+
+  const checkLicenseCompatibility = () => {
+    if (user?.role === 'admin') return true;
+    if (vehicle?.vehicleType === 'motorbike') {
+      return licenseClass === 'A1' || licenseClass === 'A';
+    } else if (vehicle?.vehicleType === 'car') {
+      return licenseClass.startsWith('B') || 
+             licenseClass.startsWith('C') || 
+             licenseClass.startsWith('D') || 
+             licenseClass.startsWith('E') || 
+             licenseClass.startsWith('F');
+    }
+    return false;
+  };
+
+  const isLicenseCompatible = checkLicenseCompatibility();
+  const isBlocked = user ? (!isKycVerified || !isDlVerified || !isLicenseCompatible) : false;
+
+  const getBlockingReason = () => {
+    if (user?.role === 'admin') return null;
+    if (user?.kycStatus !== 'VERIFIED') {
+      if (user?.kycStatus === 'PENDING') {
+        return {
+          title: isVi ? 'Hồ sơ KYC đang chờ duyệt' : 'KYC Verification Pending',
+          description: isVi 
+            ? 'Tài liệu định danh của bạn đã được tải lên và đang được ban quản trị xét duyệt. Vui lòng quay lại sau khi quá trình xác thực hoàn tất.' 
+            : 'Your identity documents have been uploaded and are currently under review by our admin team. Please check back once verification is completed.',
+          badge: isVi ? 'Đang duyệt' : 'Under Review',
+          status: 'pending'
+        };
+      }
+      return {
+        title: isVi ? 'Yêu cầu xác thực tài khoản (KYC)' : 'Identity Verification Required',
+        description: isVi 
+          ? 'Để đảm bảo an toàn và tuân thủ quy định pháp luật Việt Nam, bạn cần hoàn thành xác thực Căn cước công dân (CCCD) và ảnh chân dung trước khi thuê xe.' 
+          : 'To ensure safety and compliance with Vietnamese regulations, you must verify your Citizen ID (CCCD) and Selfie before renting a vehicle.',
+        badge: isVi ? 'Chưa xác thực' : 'Not Verified',
+        status: 'unverified'
+      };
+    }
+    if (user?.driverLicenseStatus !== 'VERIFIED') {
+      if (user?.driverLicenseStatus === 'PENDING') {
+        return {
+          title: isVi ? 'Bằng lái xe đang chờ duyệt' : 'Driving License Review Pending',
+          description: isVi 
+            ? 'Bằng lái xe của bạn đang được ban quản trị kiểm tra thông tin đối chiếu OCR. Quá trình này thường mất dưới 10 phút.' 
+            : 'Your driving license details are under administrative review. This usually takes less than 10 minutes.',
+          badge: isVi ? 'Đang duyệt' : 'Under Review',
+          status: 'pending'
+        };
+      }
+      return {
+        title: isVi ? 'Yêu cầu xác thực bằng lái xe' : 'Driving License Verification Required',
+        description: isVi 
+          ? 'Vui lòng cung cấp bằng lái xe hợp lệ để hệ thống đối chiếu lớp bằng lái tương ứng trước khi tiến hành thanh toán đặt xe.' 
+          : 'Please provide a valid driving license so our system can cross-reference the class compatibility before checkout.',
+        badge: isVi ? 'Chưa xác thực' : 'Not Verified',
+        status: 'unverified'
+      };
+    }
+    
+    if (vehicle?.vehicleType === 'motorbike') {
+      if (licenseClass !== 'A1' && licenseClass !== 'A') {
+        return {
+          title: isVi ? 'Hạng bằng lái không tương thích' : 'Incompatible Driving License Class',
+          description: isVi 
+            ? `Thuê xe máy yêu cầu bằng lái hạng A1 hoặc A. Bằng lái hiện tại của bạn là hạng [${licenseClass || 'Chưa rõ'}].` 
+            : `Motorbike rental requires an A1 or A class driving license. Your current license class is [${licenseClass || 'N/A'}].`,
+          badge: isVi ? 'Không tương thích' : 'Incompatible',
+          status: 'incompatible'
+        };
+      }
+    } else if (vehicle?.vehicleType === 'car') {
+      const isCarLicense = licenseClass.startsWith('B') || 
+                           licenseClass.startsWith('C') || 
+                           licenseClass.startsWith('D') || 
+                           licenseClass.startsWith('E') || 
+                           licenseClass.startsWith('F');
+      if (!isCarLicense) {
+        return {
+          title: isVi ? 'Hạng bằng lái không tương thích' : 'Incompatible Driving License Class',
+          description: isVi 
+            ? `Thuê xe ô tô yêu cầu bằng lái hạng B, C, D, E hoặc F. Bằng lái hiện tại của bạn là hạng [${licenseClass || 'Chưa rõ'}].` 
+            : `Car rental requires a B, C, D, E, or F class driving license. Your current license class is [${licenseClass || 'N/A'}].`,
+          badge: isVi ? 'Không tương thích' : 'Incompatible',
+          status: 'incompatible'
+        };
+      }
+    }
+    return null;
+  };
+
+  const blockReason = isBlocked ? getBlockingReason() : null;
+
   // Page level state
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1479,6 +1577,87 @@ const BookingWizardPage: React.FC = () => {
           </div>
         </div>
       </div>
+      {isBlocked && blockReason && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[999] flex items-end justify-center">
+          <motion.div 
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 180 }}
+            className="w-full max-w-3xl bg-white rounded-t-[2.5rem] shadow-[0_-15px_30px_rgba(0,0,0,0.15)] border-t border-slate-100 p-8 select-none relative pb-10"
+          >
+            {/* Top Drag Indicator Line */}
+            <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6" />
+
+            <div className="flex items-start gap-5 mb-6">
+              <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-500 flex-shrink-0 shadow-sm animate-pulse">
+                <Shield className="w-7 h-7" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-3">
+                  <h3 className="text-xl font-bold text-slate-800">{blockReason.title}</h3>
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                    blockReason.status === 'pending' 
+                      ? 'bg-amber-100 text-amber-800' 
+                      : blockReason.status === 'incompatible' 
+                      ? 'bg-red-100 text-red-800' 
+                      : 'bg-slate-100 text-slate-800'
+                  }`}>
+                    {blockReason.badge}
+                  </span>
+                </div>
+                <p className="text-sm text-slate-500 mt-2 leading-relaxed">
+                  {blockReason.description}
+                </p>
+              </div>
+            </div>
+
+            {/* Check Details Container */}
+            <div className="bg-slate-50 rounded-2xl p-5 border border-slate-250/60 mb-6 space-y-4">
+              <div className="flex justify-between items-center text-sm py-1 border-b border-slate-200/50 pb-3">
+                <span className="text-slate-500 font-semibold">{isVi ? '1. Định danh cá nhân (KYC)' : '1. Identity KYC Status'}</span>
+                <span className={`font-bold ${user?.kycStatus === 'VERIFIED' ? 'text-emerald-600' : user?.kycStatus === 'PENDING' ? 'text-amber-500' : 'text-slate-400'}`}>
+                  {user?.kycStatus === 'VERIFIED' ? '✓ VERIFIED' : user?.kycStatus === 'PENDING' ? '⏳ PENDING REVIEW' : '✗ NOT VERIFIED'}
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-sm py-1 border-b border-slate-200/50 pb-3">
+                <span className="text-slate-500 font-semibold">{isVi ? '2. Bằng lái xe (Driver License)' : '2. Driving License Status'}</span>
+                <span className={`font-bold ${user?.driverLicenseStatus === 'VERIFIED' ? 'text-emerald-600' : user?.driverLicenseStatus === 'PENDING' ? 'text-amber-500' : 'text-slate-400'}`}>
+                  {user?.driverLicenseStatus === 'VERIFIED' ? '✓ VERIFIED' : user?.driverLicenseStatus === 'PENDING' ? '⏳ PENDING REVIEW' : '✗ NOT VERIFIED'}
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-sm py-1">
+                <span className="text-slate-500 font-semibold">{isVi ? '3. Hạng bằng lái / Loại xe' : '3. License Compatibility'}</span>
+                <span className={`font-bold ${isLicenseCompatible ? 'text-emerald-600' : 'text-red-500'}`}>
+                  {isLicenseCompatible 
+                    ? `✓ COMPATIBLE (${user?.licenseClass || 'N/A'} for ${vehicle.vehicleType?.toUpperCase()})` 
+                    : `✗ INCOMPATIBLE (${user?.licenseClass || 'None'} for ${vehicle.vehicleType?.toUpperCase()})`
+                  }
+                </span>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              {blockReason.status !== 'pending' && (
+                <button
+                  onClick={() => navigate('/dashboard/documents')}
+                  className="flex-1 py-3.5 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-600/10 flex items-center justify-center gap-2 cursor-pointer transition-colors"
+                >
+                  <Lock className="w-4 h-4" />
+                  {isVi ? 'Xác thực tài liệu ngay' : 'Verify My Documents'}
+                </button>
+              )}
+              <button
+                onClick={() => navigate(-1)}
+                className="flex-1 py-3.5 px-6 border-2 border-slate-200 text-slate-600 hover:bg-slate-50 font-bold rounded-2xl transition-colors cursor-pointer flex items-center justify-center gap-2"
+              >
+                {isVi ? 'Quay lại cửa hàng' : 'Back to Marketplace'}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };

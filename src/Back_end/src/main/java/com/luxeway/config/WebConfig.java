@@ -18,7 +18,12 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
-        String uploadUri = uploadPath.toUri().toString();
+        // On Windows, Path.toString() uses backslashes.
+        // Spring ResourceHandlerRegistry requires forward slashes in the file: URI.
+        // We replace backslashes and use triple-slash for absolute Windows paths.
+        String pathStr = uploadPath.toString().replace('\\', '/');
+        // Ensure triple slash for absolute path: file:///C:/path/to/uploads/
+        String uploadUri = (pathStr.startsWith("/") ? "file://" : "file:///") + pathStr + "/";
 
         registry.addResourceHandler("/uploads/**", "/api/v1/uploads/**")
                 .addResourceLocations(uploadUri);

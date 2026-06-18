@@ -1,13 +1,12 @@
-# Set JAVA_HOME and Path
+$fso = New-Object -ComObject Scripting.FileSystemObject
+$shortBackend = $fso.GetFolder($PSScriptRoot).ShortPath
+$gradlewPath = "$shortBackend\gradlew.bat"
+
+Write-Host "gradlew Path: $gradlewPath"
+Set-Location $shortBackend
+
 $env:JAVA_HOME = "C:\Program Files\Java\jdk-21.0.10"
 $env:PATH = "$env:JAVA_HOME\bin;" + $env:PATH
 
-# Check if mvn.cmd exists
-$mvnCmd = "maven\apache-maven-3.9.6\bin\mvn.cmd"
-if (Test-Path $mvnCmd) {
-    Write-Host "✅ mvn.cmd found at $mvnCmd"
-    # Execute directly
-    & $mvnCmd clean compile
-} else {
-    Write-Host "❌ mvn.cmd not found at $mvnCmd"
-}
+Write-Host "Starting Gradle bootJar packaging..."
+cmd.exe /c "`"$gradlewPath`" bootJar -x test"

@@ -1537,6 +1537,111 @@ AI đề xuất:
 
 ---
 
+---
+
+### Prompt số 20
+
+| Nội dung | Thông tin |
+|---|---|
+| Ngày sử dụng | 2026-06-17 đến 2026-06-18 |
+| Công cụ AI | Antigravity |
+| Mục đích | Debug và fix luồng upload ảnh KYC — tìm nguyên nhân lỗi 400 Bad Request và tích hợp FPT AI OCR thật |
+| Phần việc liên quan | Backend / eKYC Integration |
+| Mức độ sử dụng | Hỏi debug + sinh code |
+
+#### 5.1. Prompt nguyên văn
+
+```text
+sao KYC của hệ thống vẫn ko chạy đc
+...
+up lên ko đc
+Api của fpt ai mà up lên có quét mà
+vẫn upda ảnh để quét ko đc
+```
+
+#### 5.2. Bối cảnh khi viết prompt
+
+```text
+Hệ thống đã có FptAiEkycService.java kết nối FPT AI Vision API để đọc CCCD.
+Nhưng mỗi lần upload ảnh qua endpoint POST /users/documents đều nhận 400 Bad Request.
+Phần file được lưu vào thư mục /uploads/ nhưng file lại rỗng (0 byte).
+API key FPT AI đã được cấu hình nhưng service vẫn trả về mock data.
+```
+
+#### 5.3. Kết quả AI trả về
+
+```text
+AI phát hiện 2 nguyên nhân gốc rễ:
+
+Lỗi 1 — Double-read InputStream:
+- Dòng `tika.detect(file.getInputStream())` đọc toàn bộ InputStream của MultipartFile.
+- InputStream của Spring MultipartFile CHỈ đọc được 1 lần, sau đó stream rỗng.
+- Khi gọi `Files.write(filePath, fileBytes)` sau đó, bytes nhận được là [] (rỗng).
+- FPT AI OCR nhận ảnh rỗng → trả về lỗi 400 Invalid image.
+- Fix: thay toàn bộ bằng `byte[] fileBytes = file.getBytes()` và dùng fileBytes cho mọi thao tác.
+
+Lỗi 2 — False "demo key" check:
+- Trong FptAiEkycService.java có đoạn:
+  if (apiKey == null || apiKey.contains("placeholder") || apiKey.length() < 10)
+  { return mockScanResult(); }
+- API key thực sự không chứa "placeholder" nhưng vẫn bị trigger mock vì check sai lệch.
+- Fix: xóa check `apiKey.contains("placeholder")`, chỉ giữ null/blank check.
+
+Lỗi 3 — Tika false-positive:
+- Tika.detect(byte[]) khi không có filename-hint thường trả về "application/octet-stream".
+- Dù file là JPEG hợp lệ, Tika vẫn trả sai → blocked.
+- Fix: thay bằng file.getContentType() do browser/client gán đúng MIME type.
+```
+
+#### 5.4. Kết quả đã áp dụng vào bài
+
+```text
+1. UserController.java: buffer byte[] một lần, dùng cho cả validate và Files.write.
+2. FptAiEkycService.java: xóa hardcoded "demo key" check, chỉ giữ null/blank validation.
+3. application.yml: cập nhật fptai.api-key với key thực.
+4. UserController.java: thay Tika bằng file.getContentType() check.
+Backend compile BUILD SUCCESSFUL. Frontend Vite server restart thành công.
+```
+
+#### 5.5. Phần sinh viên/nhóm đã chỉnh sửa hoặc cải tiến
+
+```text
+- Quyết định loại bỏ hoàn toàn Apache Tika khỏi validation flow thay vì chạy song song
+  vì Tika unreliable khi không có filename hint.
+- Thêm log rõ ràng: "FPT.AI: Scanning CCCD for file: {filename}" để dễ debug sau này.
+- Giữ lại kiểm tra file size (5MB limit) để bảo vệ server.
+```
+
+#### 5.6. Đánh giá chất lượng prompt
+
+- [ ] Prompt rõ ràng
+- [ ] Prompt có đủ bối cảnh
+- [x] Prompt còn thiếu thông tin
+- [x] Prompt tạo ra kết quả tốt
+- [ ] Prompt tạo ra kết quả chưa phù hợp
+- [ ] Cần hỏi lại AI nhiều lần
+- [x] Cần tự kiểm tra và chỉnh sửa nhiều
+- [ ] Kết quả AI có lỗi hoặc chưa chính xác
+
+#### 5.7. Minh chứng liên quan
+
+| Loại minh chứng | Nội dung |
+|---|---|
+| File liên quan | `UserController.java`, `FptAiEkycService.java`, `application.yml` |
+| Kết quả chạy/test | `./gradlew compileJava` → `BUILD SUCCESSFUL in 10s` |
+| Link commit | `[DE190324] fix: resolve eKYC document upload — fix InputStream double-read, remove false demo-key check, replace Tika with Content-Type validation` |
+
+#### 5.8. Ghi chú thêm
+
+```text
+Lỗi này là bài học điển hình về Java I/O: InputStream chỉ đọc được một lần.
+Khi dùng Spring MultipartFile, luôn phải gọi file.getBytes() hoặc file.getInputStream() một lần duy nhất,
+lưu vào biến và dùng lại. Không được gọi getInputStream() nhiều lần.
+Đây là gotcha phổ biến khi làm file upload trong Spring Boot.
+```
+
+---
+
 ## 11. Cam kết sử dụng prompt minh bạch
 
 Sinh viên/nhóm cam kết rằng:
@@ -1549,5 +1654,5 @@ Sinh viên/nhóm cam kết rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-06-16 |
+| Nguyễn Văn Dạng - DE190324 | 2026-06-18 |
 

@@ -11,6 +11,7 @@ import com.luxeway.repository.UserRepository;
 import com.luxeway.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +29,9 @@ public class UserService {
     private final UserDocumentRepository userDocumentRepository;
     private final VehicleRepository vehicleRepository;
     private final BookingRepository bookingRepository;
+
+    @Value("${file.upload-dir:uploads/}")
+    private String uploadDir;
 
     public UserDTOs.UserProfileResponse getProfile(String userId) {
         User user = userRepository.findById(userId)
@@ -109,6 +113,28 @@ public class UserService {
         return stats;
     }
 
+    @Transactional
+    public UserDTOs.UserProfileResponse submitKycForReview(String userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setKycStatus("PENDING");
+        user.setDriverLicenseStatus("PENDING");
+        user = userRepository.save(user);
+        
+        // Also update uploaded UNDER_REVIEW/PENDING documents status
+        List<UserDocument> docs = userDocumentRepository.findByUserIdOrderByUploadedAtDesc(userId);
+        for (UserDocument doc : docs) {
+            if ("NOT_UPLOADED".equals(doc.getVerificationStatus()) || "PENDING".equals(doc.getStatus())) {
+                doc.setVerificationStatus("UNDER_REVIEW");
+                doc.setStatus("PENDING");
+                userDocumentRepository.save(doc);
+            }
+        }
+        
+        log.info("KYC submitted for review: {}", userId);
+        return toProfileResponse(user);
+    }
+
     public UserDTOs.UserProfileResponse toProfileResponse(User u) {
         UserDTOs.UserProfileResponse resp = new UserDTOs.UserProfileResponse();
         resp.setId(u.getId());
@@ -129,6 +155,8 @@ public class UserService {
         resp.setVerified(u.getVerified());
         resp.setKycVerified(u.getKycVerified());
         resp.setDrivingLicenseVerified(u.getDrivingLicenseVerified());
+        resp.setKycStatus(u.getKycStatus());
+        resp.setDriverLicenseStatus(u.getDriverLicenseStatus());
         resp.setLicenseClass(u.getLicenseClass());
         resp.setLicenseNumber(u.getLicenseNumber());
         resp.setIsActive(u.getIsActive());
@@ -143,7 +171,11 @@ public class UserService {
         resp.setId(doc.getId());
         resp.setDocumentType(doc.getDocumentType());
         resp.setUrl(doc.getUrl());
+        resp.setFileUrl(doc.getFileUrl() != null ? doc.getFileUrl() : doc.getUrl());
+        resp.setOcrData(doc.getOcrData());
         resp.setStatus(doc.getStatus());
+        resp.setVerificationStatus(doc.getVerificationStatus());
+        resp.setVerifiedByAdmin(doc.getVerifiedByAdmin());
         resp.setUploadedAt(doc.getUploadedAt() != null ? doc.getUploadedAt().toString() : null);
         resp.setVerifiedAt(doc.getVerifiedAt() != null ? doc.getVerifiedAt().toString() : null);
         resp.setRejectionReason(doc.getRejectionReason());
@@ -153,6 +185,9 @@ public class UserService {
         resp.setLicenseDateOfBirth(doc.getLicenseDateOfBirth());
         resp.setLicenseResidence(doc.getLicenseResidence());
         resp.setLicenseNationality(doc.getLicenseNationality());
+        resp.setEkycIdNumber(doc.getEkycIdNumber());
+        resp.setEkycFullName(doc.getEkycFullName());
+        resp.setEkycDob(doc.getEkycDob());
         return resp;
     }
 
@@ -187,6 +222,113 @@ public class UserService {
     }
 
     @Transactional
+    public UserDTOs.DocumentResponse uploadCccdFront(String userId, String fileUrl, FptAiEkycService.CccdOcrResult ocrResult) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        UserDocument doc = UserDocument.builder()
+                .user(user)
+                .documentType("CCCD_FRONT")
+                .url(fileUrl)
+                .fileUrl(fileUrl)
+                .status("PENDING")
+                .verificationStatus("UNDER_REVIEW")
+                .ocrData(ocrResult.getRawResponse())
+                .ekycIdNumber(ocrResult.getCitizenId())
+                .ekycFullName(ocrResult.getFullName())
+                .ekycDob(ocrResult.getDateOfBirth())
+                .ekycRawData(ocrResult.getRawResponse())
+                .build();
+
+        doc = userDocumentRepository.save(doc);
+        log.info("CCCD Front uploaded and scanned for user {}", userId);
+        return toDocumentResponse(doc);
+    }
+
+    @Transactional
+    public UserDTOs.DocumentResponse uploadCccdBack(String userId, String fileUrl) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        UserDocument doc = UserDocument.builder()
+                .user(user)
+                .documentType("CCCD_BACK")
+                .url(fileUrl)
+                .fileUrl(fileUrl)
+                .status("PENDING")
+                .verificationStatus("UNDER_REVIEW")
+                .build();
+
+        doc = userDocumentRepository.save(doc);
+        log.info("CCCD Back uploaded for user {}", userId);
+        return toDocumentResponse(doc);
+    }
+
+    @Transactional
+    public UserDTOs.DocumentResponse uploadDriverLicenseFront(String userId, String fileUrl, FptAiEkycService.DlOcrResult ocrResult) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        UserDocument doc = UserDocument.builder()
+                .user(user)
+                .documentType("DRIVER_LICENSE_FRONT")
+                .url(fileUrl)
+                .fileUrl(fileUrl)
+                .status("PENDING")
+                .verificationStatus("UNDER_REVIEW")
+                .ocrData(ocrResult.getRawResponse())
+                .licenseNumber(ocrResult.getLicenseNumber())
+                .licenseClass(ocrResult.getLicenseClass())
+                .licenseFullName(ocrResult.getFullName())
+                .licenseDateOfBirth(ocrResult.getDateOfBirth())
+                .build();
+
+        doc = userDocumentRepository.save(doc);
+        log.info("Driver License Front uploaded and scanned for user {}", userId);
+        return toDocumentResponse(doc);
+    }
+
+    @Transactional
+    public UserDTOs.DocumentResponse uploadDriverLicenseBack(String userId, String fileUrl) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        UserDocument doc = UserDocument.builder()
+                .user(user)
+                .documentType("DRIVER_LICENSE_BACK")
+                .url(fileUrl)
+                .fileUrl(fileUrl)
+                .status("PENDING")
+                .verificationStatus("UNDER_REVIEW")
+                .build();
+
+        doc = userDocumentRepository.save(doc);
+        log.info("Driver License Back uploaded for user {}", userId);
+        return toDocumentResponse(doc);
+    }
+
+    @Transactional
+    public UserDTOs.DocumentResponse uploadSelfie(String userId, String fileUrl, FptAiEkycService.FaceMatchResult faceResult) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        UserDocument doc = UserDocument.builder()
+                .user(user)
+                .documentType("SELFIE")
+                .url(fileUrl)
+                .fileUrl(fileUrl)
+                .status("PENDING")
+                .verificationStatus("UNDER_REVIEW")
+                .ocrData(faceResult.getRawResponse())
+                .build();
+
+        doc = userDocumentRepository.save(doc);
+        log.info("Selfie uploaded and matched for user {}", userId);
+        return toDocumentResponse(doc);
+    }
+
+
+    @Transactional
     public void deleteDocument(String userId, String documentId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -209,8 +351,10 @@ public class UserService {
         String url = doc.getUrl();
         if (url != null && url.startsWith("/uploads/")) {
             try {
-                String relativePath = url.substring(1);
-                java.nio.file.Path filePath = java.nio.file.Paths.get(relativePath);
+                // Extract just the filename from /uploads/{filename}
+                String filename = url.substring("/uploads/".length());
+                java.nio.file.Path uploadBase = java.nio.file.Paths.get(uploadDir).toAbsolutePath().normalize();
+                java.nio.file.Path filePath = uploadBase.resolve(filename);
                 java.nio.file.Files.deleteIfExists(filePath);
                 log.info("Physical file deleted: {}", filePath);
             } catch (Exception e) {

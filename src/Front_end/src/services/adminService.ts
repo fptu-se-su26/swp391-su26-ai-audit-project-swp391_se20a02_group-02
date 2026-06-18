@@ -106,6 +106,19 @@ export const adminService = {
   },
 
   /**
+   * Fetch a specific user's uploaded documents (for Admin review)
+   */
+  async getUserDocuments(userId: string): Promise<any[]> {
+    try {
+      const response = await apiClient.get<any>(`/admin/users/${userId}/documents`);
+      return response.data || response;
+    } catch (error) {
+      console.error('Failed to fetch user documents:', error);
+      return [];
+    }
+  },
+
+  /**
    * Update account status of a user (activation/verification)
    */
   async updateUserStatus(id: string, payload: { active: boolean; verified: boolean; kycVerified: boolean }): Promise<any> {
@@ -114,6 +127,32 @@ export const adminService = {
       return response.data || response;
     } catch (error) {
       console.error('Failed to update user status:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Approve a user's KYC submission
+   */
+  async approveUserKyc(userId: string): Promise<any> {
+    try {
+      const response = await apiClient.put<any>(`/admin/kyc/${userId}/approve`, {});
+      return response.data || response;
+    } catch (error) {
+      console.error('Failed to approve user KYC:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Reject a user's KYC submission with a reason
+   */
+  async rejectUserKyc(userId: string, reason: string): Promise<any> {
+    try {
+      const response = await apiClient.put<any>(`/admin/kyc/${userId}/reject`, { reason });
+      return response.data || response;
+    } catch (error) {
+      console.error('Failed to reject user KYC:', error);
       throw error;
     }
   },
