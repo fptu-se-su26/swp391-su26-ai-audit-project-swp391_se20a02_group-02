@@ -1150,11 +1150,60 @@ Commit: [DE190324] fix: resolve eKYC document upload — fix InputStream double-
 
 ---
 
+# [Phase 5.6] Admin KYC Status Filters & Advanced Database Search
+
+## Ngày thực hiện
+
+```text
+2026-06-19
+```
+
+## Đã hoàn thành
+
+- [x] **Tích hợp bộ lọc KYC nâng cao phía Backend**:
+  - Bổ sung query `searchUsersAdvanced` trong [UserRepository.java](file:///c:/Users/nguye/OneDrive/T%C3%A0i%20li%E1%BB%87u/Project_ALL_Mon/swp391-su26-ai-audit-project-swp391_se20a02_group-02/src/Back_end/src/main/java/com/luxeway/repository/UserRepository.java) để lọc người dùng theo `role` (CUSTOMER, OWNER, ADMIN), `kycStatus` (PENDING, VERIFIED, REJECTED), và search keyword (tên, email, display name) trực tiếp tại database layer.
+  - Cập nhật [AdminService.java](file:///c:/Users/nguye/OneDrive/T%C3%A0i%20li%E1%BB%87u/Project_ALL_Mon/swp391-su26-ai-audit-project-swp391_se20a02_group-02/src/Back_end/src/main/java/com/luxeway/service/AdminService.java) và [AdminController.java](file:///c:/Users/nguye/OneDrive/T%C3%A0i%20li%E1%BB%87u/Project_ALL_Mon/swp391-su26-ai-audit-project-swp391_se20a02_group-02/src/Back_end/src/main/java/com/luxeway/controller/AdminController.java) nhận parameter `kycStatus` mới cho danh sách người dùng.
+  - Cập nhật backend service để hỗ trợ tìm kiếm xe theo `keyword` trực tiếp bằng truy vấn SQL.
+- [x] **Cải tiến giao diện Admin Dashboard và Debounced Search**:
+  - Tích hợp các bộ lọc dropdown và ô tìm kiếm keyword tại cả 3 tabs lớn: **KYC Verification Hub** (lọc status), **Platform Accounts Directory** (lọc role + KYC status), và **Vehicle Approval Roster** (lọc status + tìm kiếm keyword xe).
+  - Sử dụng cơ chế debounced search (400ms delay) trong [AdminDashboard.tsx](file:///c:/Users/nguye/OneDrive/T%C3%A0i%20li%E1%BB%87u/Project_ALL_Mon/swp391-su26-ai-audit-project-swp391_se20a02_group-02/src/Front_end/src/pages/admin/AdminDashboard.tsx) để tối ưu số lượng request gọi lên server khi người dùng đang nhập ký tự.
+  - Đảm bảo đồng bộ client-side state tức thì khi admin thực hiện duyệt KYC hoặc đình chỉ (suspend/unsuspend) người dùng.
+
+## Thay đổi chi tiết - Nguyễn Văn Dạng (DE190324)
+
+| STT | Nội dung thay đổi | Người thực hiện | File/Module liên quan | Minh chứng |
+|---:|---|---|---|---|
+| 1 | Thêm truy vấn nâng cao JPQL lọc KYC & Search | Nguyễn Văn Dạng | UserRepository.java | Query method searchUsersAdvanced |
+| 2 | Cập nhật endpoints Admin list users/vehicles | Nguyễn Văn Dạng | AdminService.java, AdminController.java | Nhận kycStatus và keyword |
+| 3 | Thêm filters & debounce hook ở Admin UI | Nguyễn Văn Dạng | AdminDashboard.tsx, adminService.ts | Giao diện dropdowns & search inputs |
+
+## AI có hỗ trợ không?
+
+- [x] Có
+- [ ] Không
+
+Nếu có, mô tả AI đã hỗ trợ phần nào:
+
+```text
+AI (Antigravity) hỗ trợ:
+- Gợi ý cấu trúc câu truy vấn JPQL động phía Backend để lọc chính xác các trường kycStatus và keyword.
+- Cung cấp giải pháp debounce hook và cấu trúc lại useEffect gọi API tại AdminDashboard.tsx để tối ưu hiệu năng.
+```
+
+## Commit/Screenshot minh chứng
+
+```text
+Branch: main
+Commit: docs: [DE190324] implement admin kyc filters, database-level search and update documentation
+```
+
+---
+
 # 5. Cam kết cập nhật Changelog
 
 Sinh viên/nhóm cam kết rằng nội dung changelog phản ánh đúng các thay đổi đã thực hiện trong quá trình làm bài tập/project.
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-06-18 |
+| Nguyễn Văn Dạng - DE190324 | 2026-06-19 |
 

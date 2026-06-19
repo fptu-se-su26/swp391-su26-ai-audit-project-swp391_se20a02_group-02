@@ -877,6 +877,35 @@ Trong giai đoạn này, nhóm đã debug và fix hoàn toàn luồng upload ả
 | Ghi lại đầy đủ | 5 | Cập nhật đủ 4 file members với chi tiết kỹ thuật đầy đủ |
 | Sử dụng AI có trách nhiệm | 5 | Hiểu nguyên nhân, không copy blindly, tự quyết định loại bỏ Tika |
 
+## Reflection — Phase 5.6: Admin KYC Status Filters & Advanced Database Search (2026-06-19)
+
+### Tóm tắt
+
+Trong giai đoạn này (Phase 5.6), mình đã cùng Antigravity triển khai thành công hệ thống lọc nhanh KYC và tìm kiếm nâng cao trực tiếp từ Database tầng SQL Server cho giao diện Admin. Các bộ lọc này được đồng bộ thời gian thực với Frontend bằng cơ chế debounce 400ms và các dropdown status selectors.
+
+### Những điều học được
+
+```text
+1. Lọc dữ liệu tại Database Layer (Database-level filtering):
+   Khi số lượng người dùng hay phương tiện tăng lên hàng nghìn, việc kéo toàn bộ danh sách về client rồi dùng hàm .filter() của Javascript sẽ gây crash browser và tốn băng thông nghiêm trọng. Việc tối ưu hóa câu truy vấn JPQL với các tham số động (:kycStatus, :role, :keyword) trực tiếp ở SQL Server là giải pháp bắt buộc cho các hệ thống enterprise.
+
+2. Tầm quan trọng của Debounce trong Search Inputs:
+   Nếu không sử dụng debounce, mỗi khi người dùng gõ 1 ký tự, frontend sẽ trigger gọi 1 request API lên server. Người dùng gõ từ "Ferrari" (7 ký tự) sẽ gửi liên tục 7 requests không cần thiết. Áp dụng debounce (400ms delay) giúp gom các phím gõ lại và chỉ gửi duy nhất 1 request khi người dùng đã dừng nhập.
+
+3. Đồng bộ client-side state sau các thao tác thay đổi dữ liệu:
+   Khi Admin thực hiện suspend/unsuspend người dùng hoặc approve/reject KYC, việc cập nhật trực tiếp phần tử bị thay đổi trong mảng state của React giúp danh sách hiển thị đúng trạng thái mới ngay lập tức mà không cần gọi lại API GET toàn bộ danh sách, giảm tải đáng kể cho server.
+```
+
+### Tự đánh giá Phase 5.6
+
+| Tiêu chí | Điểm | Ghi chú |
+|---|:---:|---|
+| Hiểu vấn đề trước khi fix | 5 | Hiểu rõ cơ chế lọc database-level và debounce hook |
+| Fix đúng nguyên nhân gốc | 5 | Tích hợp hoàn thiện JPQL dynamic query và debounced states |
+| Kiểm chứng sau fix | 5 | Chạy build compile thành công, test manual mượt mà |
+| Ghi lại đầy đủ | 5 | Cập nhật đầy đủ cả 4 files trong thư mục members |
+| Sử dụng AI có trách nhiệm | 5 | Làm chủ mã nguồn, tự custom UI dropdown và state sync logic |
+
 ---
 
 ## 17. Cam kết Reflection
@@ -892,5 +921,5 @@ Sinh viên/nhóm hiểu rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-06-18 |
+| Nguyễn Văn Dạng - DE190324 | 2026-06-19 |
 
