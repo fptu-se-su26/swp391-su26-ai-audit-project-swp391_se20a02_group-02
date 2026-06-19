@@ -88,13 +88,14 @@ export const adminService = {
   /**
    * List all platform users (paginated)
    */
-  async listUsers(role?: string, keyword?: string, page = 0, size = 50): Promise<any> {
+  async listUsers(role?: string, kycStatus?: string, keyword?: string, page = 0, size = 50): Promise<any> {
     try {
       const params = new URLSearchParams({
         page: page.toString(),
         size: size.toString(),
       });
       if (role) params.append('role', role);
+      if (kycStatus) params.append('kycStatus', kycStatus);
       if (keyword) params.append('keyword', keyword);
 
       const response = await apiClient.get<any>(`/admin/users?${params.toString()}`);
@@ -160,13 +161,14 @@ export const adminService = {
   /**
    * List all platform vehicles (paginated)
    */
-  async listAllVehicles(status?: string, page = 0, size = 50): Promise<any> {
+  async listAllVehicles(status?: string, keyword?: string, page = 0, size = 50): Promise<any> {
     try {
       const params = new URLSearchParams({
         page: page.toString(),
         size: size.toString(),
       });
       if (status) params.append('status', status);
+      if (keyword) params.append('keyword', keyword);
 
       const response = await apiClient.get<any>(`/admin/vehicles?${params.toString()}`);
       return response.data || response;

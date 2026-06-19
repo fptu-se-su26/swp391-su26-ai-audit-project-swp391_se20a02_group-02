@@ -712,7 +712,13 @@ export const CarDetails: React.FC = () => {
         } else {
           setReviews(r);
         }
+      } else {
+        setVehicle(null);
       }
+      setLoading(false);
+    }).catch(err => {
+      console.error("Failed to load car details", err);
+      setVehicle(null);
       setLoading(false);
     });
   }, [id, language]);
@@ -841,12 +847,34 @@ export const CarDetails: React.FC = () => {
     setIsRotating(false);
   };
 
-  if (loading || !vehicle) {
+  if (loading) {
     return (
       <div className="min-h-screen pt-20 px-4 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-10 h-10 animate-spin text-blue-500 mx-auto mb-4" />
           <p className="text-slate-500 font-semibold">{tLocal.loading}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!vehicle) {
+    return (
+      <div className="min-h-screen pt-20 px-4 flex flex-col items-center justify-center text-center bg-slate-50 dark:bg-slate-950">
+        <div className="max-w-md p-8 bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-slate-100 dark:border-slate-800">
+          <div className="w-16 h-16 bg-red-50 dark:bg-red-950/20 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">Car Not Found</h2>
+          <p className="text-slate-500 dark:text-slate-400 mb-6">The vehicle you are looking for does not exist, has been removed, or is currently unavailable.</p>
+          <button
+            onClick={() => navigate('/cars')}
+            className="w-full py-3 px-6 bg-blue-500 hover:bg-blue-600 text-white rounded-2xl font-bold transition-all shadow-lg shadow-blue-500/20 active:scale-[0.98]"
+          >
+            Go to Catalog
+          </button>
         </div>
       </div>
     );

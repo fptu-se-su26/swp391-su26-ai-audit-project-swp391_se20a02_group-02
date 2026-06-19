@@ -312,11 +312,15 @@ public class VehicleService {
         vehicle.setName(req.getName());
         vehicle.setBrand(req.getBrand());
         vehicle.setModel(req.getModel());
+        vehicle.setYear(req.getYear());
+        vehicle.setCategory(req.getCategory());
+        
         if (req.getVehicleType() != null) {
             try {
                 vehicle.setVehicleType(com.luxeway.enums.VehicleType.valueOf(req.getVehicleType().toUpperCase()));
             } catch (IllegalArgumentException ignored) {}
         }
+        
         vehicle.setEngineCc(req.getEngineCc());
         if (req.getHasHelmet() != null) vehicle.setHasHelmet(req.getHasHelmet());
         if (req.getHasPhoneHolder() != null) vehicle.setHasPhoneHolder(req.getHasPhoneHolder());
@@ -326,18 +330,73 @@ public class VehicleService {
         if (req.getAirportDelivery() != null) vehicle.setAirportDelivery(req.getAirportDelivery());
         if (req.getWeddingRental() != null) vehicle.setWeddingRental(req.getWeddingRental());
         if (req.getBusinessRental() != null) vehicle.setBusinessRental(req.getBusinessRental());
+        
         vehicle.setDescription(req.getDescription());
         vehicle.setPricePerDay(req.getPricePerDay());
+        vehicle.setPricePerWeek(req.getPricePerWeek());
         vehicle.setDeposit(req.getDeposit());
         vehicle.setCity(req.getCity());
+        vehicle.setCountry(req.getCountry() != null ? req.getCountry() : "Vietnam");
         vehicle.setAddress(req.getAddress());
+        
         if (req.getLatitude() != null) vehicle.setLatitude(BigDecimal.valueOf(req.getLatitude()));
         if (req.getLongitude() != null) vehicle.setLongitude(BigDecimal.valueOf(req.getLongitude()));
+        
         vehicle.setSeats(req.getSeats());
+        vehicle.setDoors(req.getDoors());
+        vehicle.setHorsepower(req.getHorsepower());
+        vehicle.setTopSpeed(req.getTopSpeed());
         vehicle.setTransmission(req.getTransmission());
         vehicle.setFuelType(req.getFuelType());
+        vehicle.setRangeKm(req.getRangeKm());
+        vehicle.setEngineSize(req.getEngineSize());
+        vehicle.setColor(req.getColor());
+        vehicle.setLicensePlate(req.getLicensePlate());
+        
+        vehicle.setMinRentalDays(req.getMinRentalDays());
+        vehicle.setMaxRentalDays(req.getMaxRentalDays());
         vehicle.setInstantBook(req.getInstantBook());
         vehicle.setDeliveryAvailable(req.getDeliveryAvailable());
+        vehicle.setDeliveryFee(req.getDeliveryFee() != null ? req.getDeliveryFee() : BigDecimal.ZERO);
+
+        // Update images
+        if (vehicle.getImages() == null) {
+            vehicle.setImages(new java.util.HashSet<>());
+        }
+        if (req.getImageUrls() != null) {
+            vehicle.getImages().clear();
+            Vehicle finalVehicle = vehicle;
+            var newImages = req.getImageUrls().stream()
+                    .map(url -> VehicleImage.builder()
+                            .vehicle(finalVehicle)
+                            .url(url)
+                            .isPrimary(false)
+                            .build())
+                    .collect(Collectors.toSet());
+            if (!newImages.isEmpty()) {
+                newImages.iterator().next().setIsPrimary(true);
+                vehicle.getImages().addAll(newImages);
+                vehicle.setThumbnailUrl(req.getImageUrls().get(0));
+            } else {
+                vehicle.setThumbnailUrl(null);
+            }
+        }
+
+        // Update features
+        if (vehicle.getFeatures() == null) {
+            vehicle.setFeatures(new java.util.HashSet<>());
+        }
+        if (req.getFeatures() != null) {
+            vehicle.getFeatures().clear();
+            Vehicle finalVehicle = vehicle;
+            var newFeatures = req.getFeatures().stream()
+                    .map(f -> VehicleFeature.builder()
+                            .vehicle(finalVehicle)
+                            .feature(f)
+                            .build())
+                    .collect(Collectors.toSet());
+            vehicle.getFeatures().addAll(newFeatures);
+        }
 
         return toResponse(vehicleRepository.save(vehicle));
     }
@@ -513,6 +572,17 @@ public class VehicleService {
         for (VehicleAvailability slot : slots) {
             slotMap.put(slot.getDate(), slot);
         }
+
+        // Batch-load bookings to avoid N+1 query overhead inside the loop
+        List<String> bookingIds = slots.stream()
+                .map(VehicleAvailability::getBookingId)
+                .filter(id -> id != null)
+                .distinct()
+                .collect(Collectors.toList());
+        Map<String, com.luxeway.entity.Booking> bookingMap = new HashMap<>();
+        if (!bookingIds.isEmpty()) {
+            bookingRepository.findAllById(bookingIds).forEach(b -> bookingMap.put(b.getId(), b));
+        }
         
         for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
             String dateStr = date.toString();
@@ -522,9 +592,9 @@ public class VehicleService {
             if (slot != null && !slot.getIsAvailable()) {
                 boolean isLocked = slot.getLockedUntil() != null && slot.getLockedUntil().isAfter(LocalDateTime.now());
                 if (slot.getBookingId() != null) {
-                    status = bookingRepository.findById(slot.getBookingId())
-                            .map(b -> b.getStatus() == com.luxeway.enums.BookingStatus.PENDING ? "PENDING" : "BOOKED")
-                            .orElse("BOOKED");
+                    com.luxeway.entity.Booking booking = bookingMap.get(slot.getBookingId());
+                    status = (booking != null && booking.getStatus() == com.luxeway.enums.BookingStatus.PENDING) 
+                            ? "PENDING" : "BOOKED";
                 } else if (isLocked) {
                     status = "PENDING";
                 } else {

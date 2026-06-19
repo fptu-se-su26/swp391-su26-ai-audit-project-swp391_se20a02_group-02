@@ -1642,6 +1642,85 @@ lưu vào biến và dùng lại. Không được gọi getInputStream() nhiều
 
 ---
 
+### Prompt số 21
+
+| Nội dung | Thông tin |
+|---|---|
+| Ngày sử dụng | 2026-06-19 |
+| Công cụ AI | Antigravity |
+| Mục đích | Tích hợp bộ lọc KYC nâng cao cho user và tìm kiếm xe/người dùng trực tiếp ở Database tầng Admin |
+| Phần việc liên quan | Fullstack / Coding & Integration |
+| Mức độ sử dụng | Hỏi sinh code & debug |
+
+#### 5.1. Prompt nguyên văn
+
+```text
+Help me add advanced search and filtering to the admin panel:
+1. In UserRepository.java, add a dynamic query method (JPQL) searchUsersAdvanced that filters users by role (CUSTOMER, OWNER, ADMIN), kycStatus (PENDING, VERIFIED, REJECTED), and a search keyword matching their name or email or displayName.
+2. Update AdminService.java and AdminController.java to expose kycStatus query parameter on GET /admin/users, and search keyword query parameter on GET /admin/vehicles.
+3. In React Frontend: update adminService.ts to support passing these query filters.
+4. In AdminDashboard.tsx, add state hooks and UI dropdown inputs for:
+   - KYC Verification Hub (kycStatusFilter: All, Pending, Verified, Rejected)
+   - Platform Accounts Directory (userRoleFilter, userKycStatusFilter)
+   - Vehicle Approval Roster (vehicleStatusFilter, search keyword for vehicles)
+5. Implement a 400ms debounce timer for the search keyword to avoid spamming the backend API, and ensure lists are updated when filters change.
+```
+
+#### 5.2. Bối cảnh khi viết prompt
+
+```text
+Danh sách người dùng và xe trên nền tảng LuxeWay ngày càng nhiều. Admin gặp khó khăn lớn khi phải lướt thủ công qua hàng nghìn dòng để duyệt KYC hoặc quản lý xe. Cần thực hiện các bộ lọc nhanh và tìm kiếm trực tiếp tại database layer (SQL Server) để tối ưu hóa hiệu năng và tăng trải nghiệm sử dụng.
+```
+
+#### 5.3. Kết quả AI trả về
+
+```text
+AI cung cấp:
+- Câu truy vấn JPQL động sử dụng conditional parameters: u.kycStatus = :kycStatus AND (u.firstName LIKE :keyword OR u.lastName LIKE :keyword...)
+- Cập nhật các service và controller Spring Boot để nhận tham số kycStatus và keyword.
+- Cấu hình API client adminService.ts và code UI dropdowns, search inputs kèm logic debounce sử dụng setTimeout trong useEffect.
+```
+
+#### 5.4. Kết quả đã áp dụng vào bài
+
+```text
+Áp dụng toàn bộ logic lọc và tìm kiếm ở cả hai phía Backend và Frontend. Danh sách Admin Dashboard giờ đây tải dữ liệu tức thì từ SQL Server theo bộ lọc được chọn mà không bị lag.
+```
+
+#### 5.5. Phần sinh viên/nhóm đã chỉnh sửa hoặc cải tiến
+
+```text
+- Tùy chỉnh CSS dropdowns và ô search inputs phù hợp với phong cách Glassmorphism của Admin Dashboard.
+- Điều chỉnh logic để các hoạt động duyệt KYC và suspend/unsuspend người dùng cập nhật trực tiếp local state của danh sách thay vì phải refresh toàn bộ trang, giúp tối ưu hóa hiệu năng phản hồi.
+```
+
+#### 5.6. Đánh giá chất lượng prompt
+
+- [x] Prompt rõ ràng
+- [x] Prompt có đủ bối cảnh
+- [ ] Prompt còn thiếu thông tin
+- [x] Prompt tạo ra kết quả tốt
+- [ ] Prompt tạo ra kết quả chưa phù hợp
+- [ ] Cần hỏi lại AI nhiều lần
+- [x] Cần tự kiểm tra và chỉnh sửa nhiều
+- [ ] Kết quả AI có lỗi hoặc chưa chính xác
+
+#### 5.7. Minh chứng liên quan
+
+| Loại minh chứng | Nội dung |
+|---|---|
+| File liên quan | `UserRepository.java`, `AdminService.java`, `AdminController.java`, `adminService.ts`, `AdminDashboard.tsx` |
+| Kết quả chạy/test | Biên dịch backend 0 warning/error, chạy E2E lọc KYC và tìm kiếm xe hoạt động mượt mà |
+| Link commit | `docs: [DE190324] implement admin kyc filters, database-level search and update documentation` |
+
+#### 5.8. Ghi chú thêm
+
+```text
+Việc thực hiện các bộ lọc tìm kiếm trực tiếp tại Database (database-level search) thay vì lọc client-side là nguyên tắc bắt buộc đối với các hệ thống lớn để tránh overload tài nguyên đường truyền mạng và RAM của browser.
+```
+
+---
+
 ## 11. Cam kết sử dụng prompt minh bạch
 
 Sinh viên/nhóm cam kết rằng:
@@ -1654,5 +1733,5 @@ Sinh viên/nhóm cam kết rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-06-18 |
+| Nguyễn Văn Dạng - DE190324 | 2026-06-19 |
 

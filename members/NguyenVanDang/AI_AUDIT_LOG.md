@@ -746,6 +746,22 @@ Audit LuxeWay Car Rental Platform:
 
 ---
 
+## Log #20
+
+- **Date:** 2026-06-19
+- **Author:** Nguyễn Văn Dạng (DE190324)
+- **AI Tool:** Antigravity
+- **Purpose:** Tích hợp bộ lọc KYC nâng cao cho user và tìm kiếm xe/người dùng trực tiếp ở Database tầng Admin
+- **Prompt Reference:** PROMPTS.md#prompt-21
+- **AI Output Summary:** Gợi ý truy vấn JPA nâng cao hỗ trợ các tham số động (`kycStatus`, `role`, `keyword`), Controller endpoints nhận query parameters mới, và giao diện dropdowns, search inputs kèm cơ chế debounced search (400ms) ở Frontend.
+- **Human Decision:** Áp dụng toàn bộ câu truy vấn JPQL động ở backend, tích hợp logic debounce và UI components dropdown đồng bộ với phong cách chung của AdminDashboard (phông nền xám nhạt, border bo góc, hover transitions).
+- **Applied To:**
+  - Backend: `UserRepository.java`, `AdminService.java`, `AdminController.java`
+  - Frontend: `adminService.ts`, `AdminDashboard.tsx`
+- **Verification:** Compile backend Gradle thành công, khởi động bằng `run.ps1` cùng frontend. Test tính năng lọc KYC status (All, Pending, Verified, Rejected) và nhập keyword tìm kiếm: danh sách lọc nhanh chóng và chính xác từ cơ sở dữ liệu SQL Server.
+
+---
+
 ## 10. Cam kết học thuật
 
 Sinh viên/nhóm cam kết rằng:
@@ -758,5 +774,5 @@ Sinh viên/nhóm cam kết rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-06-18 |
+| Nguyễn Văn Dạng - DE190324 | 2026-06-19 |
 

@@ -131,6 +131,115 @@ const AdminDashboard: React.FC = () => {
   const [bookingSearch, setBookingSearch] = useState('');
   const [paymentSearch, setPaymentSearch] = useState('');
 
+  const [userRoleFilter, setUserRoleFilter] = useState('ALL');
+  const [userKycStatusFilter, setUserKycStatusFilter] = useState('ALL');
+  const [vehicleStatusFilter, setVehicleStatusFilter] = useState('ALL');
+  
+  // KYC specific states
+  const [kycUsers, setKycUsers] = useState<any[]>([]);
+  const [kycSearch, setKycSearch] = useState('');
+  const [kycStatusFilter, setKycStatusFilter] = useState('ALL');
+
+  // Debounced search values
+  const [debouncedUserSearch, setDebouncedUserSearch] = useState('');
+  const [debouncedVehicleSearch, setDebouncedVehicleSearch] = useState('');
+  const [debouncedKycSearch, setDebouncedKycSearch] = useState('');
+
+  // Debounce effect for User Search
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedUserSearch(userSearch);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [userSearch]);
+
+  // Debounce effect for Vehicle Search
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedVehicleSearch(vehicleSearch);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [vehicleSearch]);
+
+  // Debounce effect for KYC Search
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedKycSearch(kycSearch);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [kycSearch]);
+
+  const fetchUsers = async (role?: string, kycStatus?: string, keyword?: string) => {
+    try {
+      const res = await adminService.listUsers(
+        role === 'ALL' ? undefined : role,
+        kycStatus === 'ALL' ? undefined : kycStatus,
+        keyword || undefined,
+        0,
+        100
+      );
+      if (res && res.content) {
+        setUsers(res.content);
+      }
+    } catch (err) {
+      console.error('Failed to fetch users:', err);
+    }
+  };
+
+  const fetchKycUsers = async (kycStatus?: string, keyword?: string) => {
+    try {
+      const res = await adminService.listUsers(
+        'customer',
+        kycStatus === 'ALL' ? undefined : kycStatus,
+        keyword || undefined,
+        0,
+        100
+      );
+      if (res && res.content) {
+        setKycUsers(res.content);
+      }
+    } catch (err) {
+      console.error('Failed to fetch KYC users:', err);
+    }
+  };
+
+  const fetchVehicles = async (status?: string, keyword?: string) => {
+    try {
+      const res = await adminService.listAllVehicles(
+        status === 'ALL' ? undefined : status,
+        keyword || undefined,
+        0,
+        100
+      );
+      if (res && res.content) {
+        setVehicles(res.content);
+      }
+    } catch (err) {
+      console.error('Failed to fetch vehicles:', err);
+    }
+  };
+
+  // Trigger fetch users when filters change
+  useEffect(() => {
+    if (activeTab === 'users') {
+      fetchUsers(userRoleFilter, userKycStatusFilter, debouncedUserSearch);
+    }
+  }, [userRoleFilter, userKycStatusFilter, debouncedUserSearch, activeTab]);
+
+  // Trigger fetch KYC users when filters change
+  useEffect(() => {
+    if (activeTab === 'kyc') {
+      fetchKycUsers(kycStatusFilter, debouncedKycSearch);
+    }
+  }, [kycStatusFilter, debouncedKycSearch, activeTab]);
+
+  // Trigger fetch vehicles when filters change
+  useEffect(() => {
+    if (activeTab === 'vehicles') {
+      fetchVehicles(vehicleStatusFilter, debouncedVehicleSearch);
+    }
+  }, [vehicleStatusFilter, debouncedVehicleSearch, activeTab]);
+
   // Operations review side panel states
   const [selectedVehicle, setSelectedVehicle] = useState<any | null>(null);
   const [selectedKycUser, setSelectedKycUser] = useState<any | null>(null);
@@ -284,7 +393,11 @@ const AdminDashboard: React.FC = () => {
       ]);
 
       if (statsRes) setStats(statsRes);
-      if (userList) setUsers(userList.content || []);
+      if (userList) {
+        const userContent = userList.content || [];
+        setUsers(userContent);
+        setKycUsers(userContent.filter((u: any) => u.role === 'customer'));
+      }
       if (vehList) setVehicles(vehList.content || []);
       if (bookList) setBookings(bookList.content || []);
       if (disputeList) setDisputes(disputeList || []);
@@ -361,13 +474,15 @@ const AdminDashboard: React.FC = () => {
         await adminService.rejectUserKyc(userId, rejectionReason || 'Documents rejected by administrator');
       }
       toast.success(approved ? 'KYC Approved' : 'KYC Declined', `Verification status for user has been successfully synchronized.`);
-      setUsers(prev => prev.map(u => u.id === userId ? { 
+      const updatedUserMapper = (u: any) => u.id === userId ? { 
         ...u, 
         verified: approved, 
         kycVerified: approved,
         kycStatus: approved ? 'VERIFIED' : 'REJECTED',
         driverLicenseStatus: approved ? 'VERIFIED' : 'REJECTED'
-      } : u));
+      } : u;
+      setUsers(prev => prev.map(updatedUserMapper));
+      setKycUsers(prev => prev.map(updatedUserMapper));
       setSelectedKycUser(null);
       setRejectionReason('');
       setLogs(prev => [
@@ -394,7 +509,9 @@ const AdminDashboard: React.FC = () => {
         isCurrentlyActive ? 'User Suspended' : 'User Activated',
         `User status has been successfully updated.`
       );
-      setUsers(prev => prev.map(usr => usr.id === userId ? { ...usr, active: !isCurrentlyActive } : usr));
+      const updatedActiveMapper = (usr: any) => usr.id === userId ? { ...usr, active: !isCurrentlyActive } : usr;
+      setUsers(prev => prev.map(updatedActiveMapper));
+      setKycUsers(prev => prev.map(updatedActiveMapper));
       setLogs(prev => [
         { id: String(prev.length + 1), action: isCurrentlyActive ? 'USER_SUSPEND' : 'USER_ACTIVATE', admin: user?.displayName || 'Admin', target: `User ID ${userId.substring(0, 8)}`, status: 'SUCCESS', time: new Date().toISOString(), ip: '127.0.0.1', type: 'USER' },
         ...prev
@@ -547,8 +664,8 @@ const AdminDashboard: React.FC = () => {
   ] as const;
 
   // Search filter calculations
-  const filteredUsers = users.filter(u => u.displayName?.toLowerCase().includes(userSearch.toLowerCase()) || u.email?.toLowerCase().includes(userSearch.toLowerCase()));
-  const filteredVehicles = vehicles.filter(v => v.name?.toLowerCase().includes(vehicleSearch.toLowerCase()) || v.brand?.toLowerCase().includes(vehicleSearch.toLowerCase()));
+  const filteredUsers = users;
+  const filteredVehicles = vehicles;
   const filteredBookings = bookings.filter(b => b.id?.toLowerCase().includes(bookingSearch.toLowerCase()) || b.renter?.displayName?.toLowerCase().includes(bookingSearch.toLowerCase()));
   const filteredPayments = payments.filter(p => p.transactionId?.toLowerCase().includes(paymentSearch.toLowerCase()) || p.id?.toLowerCase().includes(paymentSearch.toLowerCase()));
 
@@ -994,21 +1111,37 @@ const AdminDashboard: React.FC = () => {
                     title="Vehicle Approval Roster" 
                     items={[{ label: "LuxeWay", href: "/" }, { label: "Admin" }, { label: "Vehicles" }]} 
                   />
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-4 flex-wrap">
                     <div>
                       <p className="text-[11px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-widest">Verify dynamic vehicle spec requirements and accept registrations</p>
                     </div>
-                    <div className="relative">
-                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-400" />
-                      <input
-                        placeholder="Search model or brand..."
-                        value={vehicleSearch}
-                        onChange={e => setVehicleSearch(e.target.value)}
+                    <div className="flex items-center gap-3">
+                      <select
+                        value={vehicleStatusFilter}
+                        onChange={e => setVehicleStatusFilter(e.target.value)}
                         className={cn(
-                          "pl-11 pr-5 py-3 border rounded-xl text-xs placeholder:text-slate-450 outline-none w-72 transition-all duration-300",
+                          "px-4 py-3 border rounded-xl text-xs outline-none transition-all duration-300",
                           isDark ? "bg-slate-900 border-slate-800 text-slate-200 focus:border-indigo-500" : "bg-white border-slate-200 text-slate-800 focus:border-indigo-500"
                         )}
-                      />
+                      >
+                        <option value="ALL">All Statuses</option>
+                        <option value="PENDING_APPROVAL">Pending Approval</option>
+                        <option value="AVAILABLE">Available</option>
+                        <option value="REJECTED">Rejected</option>
+                      </select>
+
+                      <div className="relative">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-400" />
+                        <input
+                          placeholder="Search model or brand..."
+                          value={vehicleSearch}
+                          onChange={e => setVehicleSearch(e.target.value)}
+                          className={cn(
+                            "pl-11 pr-5 py-3 border rounded-xl text-xs placeholder:text-slate-450 outline-none w-72 transition-all duration-300",
+                            isDark ? "bg-slate-900 border-slate-800 text-slate-200 focus:border-indigo-500" : "bg-white border-slate-200 text-slate-800 focus:border-indigo-500"
+                          )}
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -1066,8 +1199,38 @@ const AdminDashboard: React.FC = () => {
                     title="KYC Verification Hub" 
                     items={[{ label: "LuxeWay", href: "/" }, { label: "Admin" }, { label: "KYC" }]} 
                   />
-                  <div>
-                    <p className="text-[11px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-widest">Review guest identity passports, national IDs, and driver licenses</p>
+                  <div className="flex items-center justify-between gap-4 flex-wrap">
+                    <div>
+                      <p className="text-[11px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-widest">Review guest identity passports, national IDs, and driver licenses</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <select
+                        value={kycStatusFilter}
+                        onChange={e => setKycStatusFilter(e.target.value)}
+                        className={cn(
+                          "px-4 py-3 border rounded-xl text-xs outline-none transition-all duration-300",
+                          isDark ? "bg-slate-900 border-slate-800 text-slate-200 focus:border-indigo-500" : "bg-white border-slate-200 text-slate-800 focus:border-indigo-500"
+                        )}
+                      >
+                        <option value="ALL">All KYC Statuses</option>
+                        <option value="PENDING">Pending</option>
+                        <option value="VERIFIED">Verified</option>
+                        <option value="REJECTED">Rejected</option>
+                      </select>
+
+                      <div className="relative">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-400" />
+                        <input
+                          placeholder="Search guest by name/email..."
+                          value={kycSearch}
+                          onChange={e => setKycSearch(e.target.value)}
+                          className={cn(
+                            "pl-11 pr-5 py-3 border rounded-xl text-xs placeholder:text-slate-450 outline-none w-72 transition-all duration-300",
+                            isDark ? "bg-slate-900 border-slate-800 text-slate-200 focus:border-indigo-500" : "bg-white border-slate-200 text-slate-800 focus:border-indigo-500"
+                          )}
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   <div className={cn(
@@ -1083,10 +1246,10 @@ const AdminDashboard: React.FC = () => {
                         </tr>
                       </thead>
                       <tbody className={cn("divide-y", isDark ? "divide-slate-850" : "divide-slate-100")}>
-                        {filteredUsers.filter(u => u.role === 'customer').length === 0 ? (
+                        {kycUsers.length === 0 ? (
                           <tr><td colSpan={4} className="text-slate-400 text-xs font-black uppercase tracking-widest text-center py-20">No pending verification items.</td></tr>
                         ) : (
-                          filteredUsers.filter(u => u.role === 'customer').map(u => (
+                          kycUsers.map(u => (
                             <tr 
                               key={u.id} 
                               onClick={() => setSelectedKycUser(u)}
@@ -1330,21 +1493,51 @@ const AdminDashboard: React.FC = () => {
                     title="Platform Accounts Directory" 
                     items={[{ label: "LuxeWay", href: "/" }, { label: "Admin" }, { label: "Users" }]} 
                   />
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-4 flex-wrap">
                     <div>
                       <p className="text-[11px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-widest">Audit user access, verify customer/owner profiles, and manage status logs</p>
                     </div>
-                    <div className="relative">
-                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-400" />
-                      <input
-                        placeholder="Search by name or email..."
-                        value={userSearch}
-                        onChange={e => setUserSearch(e.target.value)}
+                    <div className="flex items-center gap-3">
+                      <select
+                        value={userRoleFilter}
+                        onChange={e => setUserRoleFilter(e.target.value)}
                         className={cn(
-                          "pl-11 pr-5 py-3 border rounded-xl text-xs placeholder:text-slate-450 outline-none w-72 transition-all duration-300",
+                          "px-4 py-3 border rounded-xl text-xs outline-none transition-all duration-300",
                           isDark ? "bg-slate-900 border-slate-800 text-slate-200 focus:border-indigo-500" : "bg-white border-slate-200 text-slate-800 focus:border-indigo-500"
                         )}
-                      />
+                      >
+                        <option value="ALL">All Roles</option>
+                        <option value="CUSTOMER">Customer</option>
+                        <option value="OWNER">Owner</option>
+                        <option value="ADMIN">Admin</option>
+                      </select>
+
+                      <select
+                        value={userKycStatusFilter}
+                        onChange={e => setUserKycStatusFilter(e.target.value)}
+                        className={cn(
+                          "px-4 py-3 border rounded-xl text-xs outline-none transition-all duration-300",
+                          isDark ? "bg-slate-900 border-slate-800 text-slate-200 focus:border-indigo-500" : "bg-white border-slate-200 text-slate-800 focus:border-indigo-500"
+                        )}
+                      >
+                        <option value="ALL">All KYC Statuses</option>
+                        <option value="PENDING">Pending</option>
+                        <option value="VERIFIED">Verified</option>
+                        <option value="REJECTED">Rejected</option>
+                      </select>
+
+                      <div className="relative">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-400" />
+                        <input
+                          placeholder="Search by name or email..."
+                          value={userSearch}
+                          onChange={e => setUserSearch(e.target.value)}
+                          className={cn(
+                            "pl-11 pr-5 py-3 border rounded-xl text-xs placeholder:text-slate-450 outline-none w-72 transition-all duration-300",
+                            isDark ? "bg-slate-900 border-slate-800 text-slate-200 focus:border-indigo-500" : "bg-white border-slate-200 text-slate-800 focus:border-indigo-500"
+                          )}
+                        />
+                      </div>
                     </div>
                   </div>
 

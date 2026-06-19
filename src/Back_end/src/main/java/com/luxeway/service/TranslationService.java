@@ -18,6 +18,12 @@ public class TranslationService {
     private final MessageSource messageSource;
     private final JdbcTemplate jdbcTemplate;
 
+    private final java.util.Map<String, java.util.Map<String, String>> vehicleCache = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.Map<String, java.util.Map<String, String>> carCache = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.Map<String, java.util.Map<String, String>> motorbikeCache = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.Map<String, String> reviewCache = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.Map<String, java.util.Map<String, String>> notificationCache = new java.util.concurrent.ConcurrentHashMap<>();
+
     public String getMessage(String key, String langCode, Object... args) {
         Locale locale = getLocale(langCode);
         try {
@@ -80,20 +86,32 @@ public class TranslationService {
         if (langCode != null && langCode.equalsIgnoreCase("vi")) {
             return getOriginalField(originalName, originalDescription, originalCity, originalAddress, field);
         }
-        try {
-            String sql = "SELECT name, description, city, address FROM vehicle_translations WHERE vehicle_id = ? AND language_code = ?";
-            String val = jdbcTemplate.queryForObject(sql, (rs, rowNum) -> {
-                if ("name".equals(field)) return rs.getString("name");
-                if ("description".equals(field)) return rs.getString("description");
-                if ("city".equals(field)) return rs.getString("city");
-                if ("address".equals(field)) return rs.getString("address");
-                return null;
-            }, vehicleId, langCode);
-            if (val != null && !val.trim().isEmpty()) {
-                return val;
+        String cacheKey = vehicleId + "_" + langCode;
+        java.util.Map<String, String> cached = vehicleCache.get(cacheKey);
+        if (cached == null) {
+            cached = new java.util.HashMap<>();
+            try {
+                String sql = "SELECT name, description, city, address FROM vehicle_translations WHERE vehicle_id = ? AND language_code = ?";
+                java.util.Map<String, String> dbMap = jdbcTemplate.queryForObject(sql, (rs, rowNum) -> {
+                    java.util.Map<String, String> map = new java.util.HashMap<>();
+                    map.put("name", rs.getString("name"));
+                    map.put("description", rs.getString("description"));
+                    map.put("city", rs.getString("city"));
+                    map.put("address", rs.getString("address"));
+                    return map;
+                }, vehicleId, langCode);
+                if (dbMap != null) {
+                    cached.putAll(dbMap);
+                }
+            } catch (Exception e) {
+                // Not found or DB error, mark cached as empty
             }
-        } catch (Exception e) {
-            // ignore
+            vehicleCache.put(cacheKey, cached);
+        }
+        
+        String val = cached.get(field);
+        if (val != null && !val.trim().isEmpty()) {
+            return val;
         }
         return getEnglishVehicleField(vehicleId, originalName, originalDescription, originalCity, originalAddress, field);
     }
@@ -110,18 +128,30 @@ public class TranslationService {
         if (langCode != null && langCode.equalsIgnoreCase("vi")) {
             return "name".equals(field) ? originalName : originalDescription;
         }
-        try {
-            String sql = "SELECT name, description FROM car_translations WHERE car_id = ? AND language_code = ?";
-            String val = jdbcTemplate.queryForObject(sql, (rs, rowNum) -> {
-                if ("name".equals(field)) return rs.getString("name");
-                if ("description".equals(field)) return rs.getString("description");
-                return null;
-            }, carId, langCode);
-            if (val != null && !val.trim().isEmpty()) {
-                return val;
+        String cacheKey = carId + "_" + langCode;
+        java.util.Map<String, String> cached = carCache.get(cacheKey);
+        if (cached == null) {
+            cached = new java.util.HashMap<>();
+            try {
+                String sql = "SELECT name, description FROM car_translations WHERE car_id = ? AND language_code = ?";
+                java.util.Map<String, String> dbMap = jdbcTemplate.queryForObject(sql, (rs, rowNum) -> {
+                    java.util.Map<String, String> map = new java.util.HashMap<>();
+                    map.put("name", rs.getString("name"));
+                    map.put("description", rs.getString("description"));
+                    return map;
+                }, carId, langCode);
+                if (dbMap != null) {
+                    cached.putAll(dbMap);
+                }
+            } catch (Exception e) {
+                // ignore
             }
-        } catch (Exception e) {
-            // ignore
+            carCache.put(cacheKey, cached);
+        }
+        
+        String val = cached.get(field);
+        if (val != null && !val.trim().isEmpty()) {
+            return val;
         }
         if ("name".equals(field)) {
             return translateNameToEnglish(originalName);
@@ -134,18 +164,30 @@ public class TranslationService {
         if (langCode != null && langCode.equalsIgnoreCase("vi")) {
             return "name".equals(field) ? originalName : originalDescription;
         }
-        try {
-            String sql = "SELECT name, description FROM motorbike_translations WHERE motorbike_id = ? AND language_code = ?";
-            String val = jdbcTemplate.queryForObject(sql, (rs, rowNum) -> {
-                if ("name".equals(field)) return rs.getString("name");
-                if ("description".equals(field)) return rs.getString("description");
-                return null;
-            }, motorbikeId, langCode);
-            if (val != null && !val.trim().isEmpty()) {
-                return val;
+        String cacheKey = motorbikeId + "_" + langCode;
+        java.util.Map<String, String> cached = motorbikeCache.get(cacheKey);
+        if (cached == null) {
+            cached = new java.util.HashMap<>();
+            try {
+                String sql = "SELECT name, description FROM motorbike_translations WHERE motorbike_id = ? AND language_code = ?";
+                java.util.Map<String, String> dbMap = jdbcTemplate.queryForObject(sql, (rs, rowNum) -> {
+                    java.util.Map<String, String> map = new java.util.HashMap<>();
+                    map.put("name", rs.getString("name"));
+                    map.put("description", rs.getString("description"));
+                    return map;
+                }, motorbikeId, langCode);
+                if (dbMap != null) {
+                    cached.putAll(dbMap);
+                }
+            } catch (Exception e) {
+                // ignore
             }
-        } catch (Exception e) {
-            // ignore
+            motorbikeCache.put(cacheKey, cached);
+        }
+        
+        String val = cached.get(field);
+        if (val != null && !val.trim().isEmpty()) {
+            return val;
         }
         if ("name".equals(field)) {
             return translateNameToEnglish(originalName);
@@ -158,14 +200,23 @@ public class TranslationService {
         if (langCode != null && langCode.equalsIgnoreCase("vi")) {
             return originalComment;
         }
-        try {
-            String sql = "SELECT comment FROM review_translations WHERE review_id = ? AND language_code = ?";
-            String val = jdbcTemplate.queryForObject(sql, (rs, rowNum) -> rs.getString("comment"), reviewId, langCode);
-            if (val != null && !val.trim().isEmpty()) {
-                return val;
+        String cacheKey = reviewId + "_" + langCode;
+        String cached = reviewCache.get(cacheKey);
+        if (cached == null) {
+            cached = "";
+            try {
+                String sql = "SELECT comment FROM review_translations WHERE review_id = ? AND language_code = ?";
+                String val = jdbcTemplate.queryForObject(sql, (rs, rowNum) -> rs.getString("comment"), reviewId, langCode);
+                if (val != null) {
+                    cached = val;
+                }
+            } catch (Exception e) {
+                // ignore
             }
-        } catch (Exception e) {
-            // ignore
+            reviewCache.put(cacheKey, cached);
+        }
+        if (!cached.isEmpty()) {
+            return cached;
         }
         return translateReviewCommentToEnglish(originalComment);
     }
@@ -174,18 +225,30 @@ public class TranslationService {
         if (langCode != null && langCode.equalsIgnoreCase("vi")) {
             return "title".equals(field) ? originalTitle : originalBody;
         }
-        try {
-            String sql = "SELECT title, body FROM notification_translations WHERE notification_id = ? AND language_code = ?";
-            String val = jdbcTemplate.queryForObject(sql, (rs, rowNum) -> {
-                if ("title".equals(field)) return rs.getString("title");
-                if ("body".equals(field)) return rs.getString("body");
-                return null;
-            }, notificationId, langCode);
-            if (val != null && !val.trim().isEmpty()) {
-                return val;
+        String cacheKey = notificationId + "_" + langCode;
+        java.util.Map<String, String> cached = notificationCache.get(cacheKey);
+        if (cached == null) {
+            cached = new java.util.HashMap<>();
+            try {
+                String sql = "SELECT title, body FROM notification_translations WHERE notification_id = ? AND language_code = ?";
+                java.util.Map<String, String> dbMap = jdbcTemplate.queryForObject(sql, (rs, rowNum) -> {
+                    java.util.Map<String, String> map = new java.util.HashMap<>();
+                    map.put("title", rs.getString("title"));
+                    map.put("body", rs.getString("body"));
+                    return map;
+                }, notificationId, langCode);
+                if (dbMap != null) {
+                    cached.putAll(dbMap);
+                }
+            } catch (Exception e) {
+                // ignore
             }
-        } catch (Exception e) {
-            // ignore
+            notificationCache.put(cacheKey, cached);
+        }
+        
+        String val = cached.get(field);
+        if (val != null && !val.trim().isEmpty()) {
+            return val;
         }
         return "title".equals(field) ? originalTitle : originalBody;
     }

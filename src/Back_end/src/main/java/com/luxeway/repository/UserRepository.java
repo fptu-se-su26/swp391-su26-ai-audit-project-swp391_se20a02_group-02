@@ -42,6 +42,18 @@ public interface UserRepository extends JpaRepository<User, String> {
            "LOWER(u.displayName) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     Page<User> searchUsers(@Param("keyword") String keyword, Pageable pageable);
     
+    @Query("SELECT u FROM User u WHERE " +
+           "(:role IS NULL OR u.role = :role) AND " +
+           "(:kycStatus IS NULL OR u.kycStatus = :kycStatus) AND " +
+           "(:keyword IS NULL OR LOWER(u.firstName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "                  LOWER(u.lastName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "                  LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "                  LOWER(u.displayName) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Page<User> searchUsersAdvanced(@Param("role") UserRole role, 
+                                   @Param("kycStatus") String kycStatus, 
+                                   @Param("keyword") String keyword, 
+                                   Pageable pageable);
+    
     // Statistics
     long countByRole(UserRole role);
 

@@ -75,21 +75,27 @@ public class AdminService {
 
     // ====== User Management ======
 
-    public Page<UserDTOs.UserProfileResponse> listUsers(String role, String keyword, int page, int size) {
+    public Page<UserDTOs.UserProfileResponse> listUsers(String role, String kycStatus, String keyword, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("joinedAt").descending());
 
-        if (keyword != null && !keyword.isBlank()) {
-            return userRepository.searchUsers(keyword, pageable).map(userService::toProfileResponse);
-        }
-
-        if (role != null && !role.isBlank()) {
+        UserRole userRole = null;
+        if (role != null && !role.isBlank() && !role.equalsIgnoreCase("ALL")) {
             try {
-                UserRole userRole = UserRole.valueOf(role.toUpperCase());
-                return userRepository.findByRole(userRole, pageable).map(userService::toProfileResponse);
+                userRole = UserRole.valueOf(role.toUpperCase());
             } catch (IllegalArgumentException ignored) {}
         }
 
-        return userRepository.findAll(pageable).map(userService::toProfileResponse);
+        String kycStatusVal = null;
+        if (kycStatus != null && !kycStatus.isBlank() && !kycStatus.equalsIgnoreCase("ALL")) {
+            kycStatusVal = kycStatus.toUpperCase();
+        }
+
+        String kw = null;
+        if (keyword != null && !keyword.isBlank()) {
+            kw = keyword.trim();
+        }
+
+        return userRepository.searchUsersAdvanced(userRole, kycStatusVal, kw, pageable).map(userService::toProfileResponse);
     }
 
     @Transactional
@@ -115,10 +121,20 @@ public class AdminService {
                 .map(vehicleService::toResponse);
     }
 
-    public Page<VehicleDTOs.VehicleResponse> listAllVehicles(String status, int page, int size) {
+    public Page<VehicleDTOs.VehicleResponse> listAllVehicles(String status, String keyword, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
-        if (status != null && !status.isBlank()) {
+        if (keyword != null && !keyword.isBlank()) {
+            if (status != null && !status.isBlank() && !status.equalsIgnoreCase("ALL")) {
+                try {
+                    VehicleStatus vehicleStatus = VehicleStatus.valueOf(status.toUpperCase());
+                    return vehicleRepository.searchVehicles(keyword, vehicleStatus, pageable).map(vehicleService::toResponse);
+                } catch (IllegalArgumentException ignored) {}
+            }
+            return vehicleRepository.searchVehicles(keyword, pageable).map(vehicleService::toResponse);
+        }
+
+        if (status != null && !status.isBlank() && !status.equalsIgnoreCase("ALL")) {
             try {
                 VehicleStatus vehicleStatus = VehicleStatus.valueOf(status.toUpperCase());
                 return vehicleRepository.findByStatus(vehicleStatus, pageable).map(vehicleService::toResponse);

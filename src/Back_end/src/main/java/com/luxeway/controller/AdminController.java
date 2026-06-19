@@ -41,13 +41,14 @@ public class AdminController {
     // ====== User Management ======
 
     @GetMapping("/users")
-    @Operation(summary = "List all users with optional role filter and search")
+    @Operation(summary = "List all users with optional role, KYC status filter, and search")
     public ResponseEntity<ApiResponse<Page<UserDTOs.UserProfileResponse>>> listUsers(
             @RequestParam(required = false) String role,
+            @RequestParam(required = false) String kycStatus,
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        Page<UserDTOs.UserProfileResponse> users = adminService.listUsers(role, keyword, page, size);
+        Page<UserDTOs.UserProfileResponse> users = adminService.listUsers(role, kycStatus, keyword, page, size);
         return ResponseEntity.ok(ApiResponse.<Page<UserDTOs.UserProfileResponse>>builder()
                 .success(true).data(users)
                 .meta(ApiResponse.PageMeta.builder()
@@ -77,12 +78,13 @@ public class AdminController {
     // ====== Vehicle Management ======
 
     @GetMapping("/vehicles")
-    @Operation(summary = "List all vehicles with optional status filter")
+    @Operation(summary = "List all vehicles with optional status and search keyword filter")
     public ResponseEntity<ApiResponse<Page<VehicleDTOs.VehicleResponse>>> listAllVehicles(
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        Page<VehicleDTOs.VehicleResponse> vehicles = adminService.listAllVehicles(status, page, size);
+        Page<VehicleDTOs.VehicleResponse> vehicles = adminService.listAllVehicles(status, keyword, page, size);
         return ResponseEntity.ok(ApiResponse.<Page<VehicleDTOs.VehicleResponse>>builder()
                 .success(true).data(vehicles)
                 .meta(ApiResponse.PageMeta.builder()
