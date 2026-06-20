@@ -29,6 +29,8 @@ public interface UserRepository extends JpaRepository<User, String> {
     
     Page<User> findByRole(UserRole role, Pageable pageable);
     
+    List<User> findByKycStatus(String kycStatus);
+    
     // Business owner users
     List<User> findByAccountType(String accountType);
     

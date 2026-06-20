@@ -315,7 +315,7 @@ export const AdminOverview: React.FC = () => {
       adminService.listAllBookings('pending', 0, 5),
       adminService.listAllPayments(0, 6),
       adminService.listAllDisputes(),
-      adminService.listUsers(undefined, undefined, 0, 50),
+      adminService.listUsers(undefined, undefined, undefined, 0, 50),
       adminService.getHistoricalAnalytics(9),
     ]).then(([s, pv, ab, pb, pay, disp, users, hist]) => {
       setStats(s);

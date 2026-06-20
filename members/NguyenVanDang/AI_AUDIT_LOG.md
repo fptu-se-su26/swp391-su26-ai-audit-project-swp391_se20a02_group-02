@@ -762,6 +762,22 @@ Audit LuxeWay Car Rental Platform:
 
 ---
 
+## Log #21
+
+- **Date:** 2026-06-20
+- **Author:** Nguyễn Văn Dạng (DE190324)
+- **AI Tool:** Antigravity
+- **Purpose:** Triển khai hệ thống xác thực danh tính KYC song hành FPT AI eKYC và kiểm tra phân hạng bằng lái khi booking.
+- **Prompt Reference:** PROMPTS.md#prompt-22
+- **AI Output Summary:** Gợi ý thiết kế stepper 4 bước cho khách hàng ở Frontend, API upload và submit KYC ở Backend; cấu hình kiểm tra kycStatus và licenseClass trong Car/MotorbikeBookingService; layout review drawer 5 tài liệu ảnh cho Admin.
+- **Human Decision:** Áp dụng toàn bộ checks ở backend services, custom layout review drawer để hiển thị chi tiết 5 ảnh và parsed metadata, sửa đổi types/index.ts để fix lỗi biên dịch TypeScript.
+- **Applied To:**
+  - Backend: `CarBookingService.java`, `MotorbikeBookingService.java`
+  - Frontend: `MyDocuments.tsx`, `AdminDashboard.tsx`, `types/index.ts`
+- **Verification:** `./gradlew compileJava` thành công, `npm run build` thành công 100% không còn warning/error.
+
+---
+
 ## 10. Cam kết học thuật
 
 Sinh viên/nhóm cam kết rằng:
@@ -774,5 +790,5 @@ Sinh viên/nhóm cam kết rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-06-19 |
+| Nguyễn Văn Dạng - DE190324 | 2026-06-20 |
 

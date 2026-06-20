@@ -188,6 +188,12 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.success("Document status updated successfully", doc));
     }
 
+    @GetMapping("/kyc")
+    @Operation(summary = "Get list of all users with PENDING KYC status")
+    public ResponseEntity<ApiResponse<java.util.List<UserDTOs.UserProfileResponse>>> getPendingKyc() {
+        return ResponseEntity.ok(ApiResponse.success("Success", adminService.getPendingKycUsers()));
+    }
+
     @PutMapping("/kyc/{userId}/approve")
     @Operation(summary = "Approve user's KYC application")
     public ResponseEntity<ApiResponse<UserDTOs.UserProfileResponse>> approveUserKyc(

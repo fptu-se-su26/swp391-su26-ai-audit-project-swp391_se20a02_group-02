@@ -41,6 +41,7 @@ public class AdminService {
     private final UserDocumentRepository userDocumentRepository;
     private final AnalyticsRepository analyticsRepository;
     private final EmailService emailService;
+    private final NotificationService notificationService;
 
     // ====== Dashboard Statistics ======
 
@@ -219,6 +220,12 @@ public class AdminService {
                 .stream().map(userService::toDocumentResponse).collect(java.util.stream.Collectors.toList());
     }
 
+    public java.util.List<UserDTOs.UserProfileResponse> getPendingKycUsers() {
+        return userRepository.findByKycStatus("PENDING").stream()
+                .map(userService::toProfileResponse)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
     @Transactional
     public UserDTOs.DocumentResponse reviewDocument(String documentId, AdminDTOs.ReviewDocumentRequest req) {
         com.luxeway.entity.UserDocument doc = userDocumentRepository.findById(documentId)
@@ -318,6 +325,18 @@ public class AdminService {
         log.info("KYC approved for user: {}", userId);
         
         try {
+            notificationService.createNotification(
+                userId,
+                "KYC",
+                "KYC Approved",
+                "Your KYC has been approved. You can rent vehicles now.",
+                "/dashboard/documents"
+            );
+        } catch (Exception e) {
+            log.warn("Failed to send KYC approval in-app notification: {}", e.getMessage());
+        }
+        
+        try {
             emailService.sendKycStatus(user.getEmail(), "KYC_VERIFICATION", "VERIFIED", null);
         } catch (Exception e) {
             log.warn("Failed to send KYC email: {}", e.getMessage());
@@ -351,6 +370,18 @@ public class AdminService {
         }
 
         log.info("KYC rejected for user: {} because: {}", userId, reason);
+        
+        try {
+            notificationService.createNotification(
+                userId,
+                "KYC",
+                "KYC Rejected",
+                "KYC rejected. Reason: " + reason,
+                "/dashboard/documents"
+            );
+        } catch (Exception e) {
+            log.warn("Failed to send KYC rejection in-app notification: {}", e.getMessage());
+        }
         
         try {
             emailService.sendKycStatus(user.getEmail(), "KYC_VERIFICATION", "REJECTED", reason);

@@ -43,8 +43,8 @@ export interface User {
   verified: boolean;
   kycVerified: boolean;
   drivingLicenseVerified: boolean;
-  kycStatus?: 'PENDING' | 'VERIFIED' | 'REJECTED';
-  driverLicenseStatus?: 'NONE' | 'PENDING' | 'VERIFIED' | 'REJECTED';
+  kycStatus?: 'PENDING' | 'VERIFIED' | 'REJECTED' | 'FAILED';
+  driverLicenseStatus?: 'NONE' | 'PENDING' | 'VERIFIED' | 'REJECTED' | 'FAILED';
   licenseClass?: string;
   licenseNumber?: string;
   rating: number;

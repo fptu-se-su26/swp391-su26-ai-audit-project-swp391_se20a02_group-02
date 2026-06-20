@@ -138,7 +138,7 @@ const AdminDashboard: React.FC = () => {
   // KYC specific states
   const [kycUsers, setKycUsers] = useState<any[]>([]);
   const [kycSearch, setKycSearch] = useState('');
-  const [kycStatusFilter, setKycStatusFilter] = useState('ALL');
+  const [kycStatusFilter, setKycStatusFilter] = useState('PENDING');
 
   // Debounced search values
   const [debouncedUserSearch, setDebouncedUserSearch] = useState('');
@@ -188,16 +188,32 @@ const AdminDashboard: React.FC = () => {
 
   const fetchKycUsers = async (kycStatus?: string, keyword?: string) => {
     try {
-      const res = await adminService.listUsers(
-        'customer',
-        kycStatus === 'ALL' ? undefined : kycStatus,
-        keyword || undefined,
-        0,
-        100
-      );
-      if (res && res.content) {
-        setKycUsers(res.content);
+      let usersList: any[] = [];
+      if (kycStatus === 'PENDING') {
+        usersList = await adminService.getPendingKyc();
+      } else {
+        const res = await adminService.listUsers(
+          'customer',
+          kycStatus === 'ALL' ? undefined : kycStatus,
+          undefined,
+          0,
+          100
+        );
+        if (res && res.content) {
+          usersList = res.content;
+        }
       }
+
+      if (keyword) {
+        const kw = keyword.toLowerCase();
+        usersList = usersList.filter(u => 
+          (u.displayName && u.displayName.toLowerCase().includes(kw)) ||
+          (u.email && u.email.toLowerCase().includes(kw)) ||
+          (u.phone && u.phone.toLowerCase().includes(kw)) ||
+          (u.id && u.id.toLowerCase().includes(kw))
+        );
+      }
+      setKycUsers(usersList);
     } catch (err) {
       console.error('Failed to fetch KYC users:', err);
     }
@@ -382,8 +398,8 @@ const AdminDashboard: React.FC = () => {
     try {
       const [statsRes, userList, vehList, bookList, disputeList, payList, settingList, analyticsOverviewRes, analyticsHistoryRes] = await Promise.all([
         adminService.getDashboardStats(),
-        adminService.listUsers(undefined, undefined, 0, 100),
-        adminService.listAllVehicles(undefined, 0, 100),
+        adminService.listUsers(undefined, undefined, undefined, 0, 100),
+        adminService.listAllVehicles(undefined, undefined, 0, 100),
         adminService.listAllBookings(undefined, 0, 100),
         adminService.listAllDisputes(),
         adminService.listAllPayments(0, 100),
@@ -2325,12 +2341,14 @@ const AdminDashboard: React.FC = () => {
               </div>
             ) : (
               <div className="space-y-6">
-                {/* Side-by-side Photos Comparison */}
                 {(() => {
                   const cccdFront = kycUserDocs.find(d => d.documentType === 'CCCD_FRONT');
+                  const cccdBack = kycUserDocs.find(d => d.documentType === 'CCCD_BACK');
+                  const dlFront = kycUserDocs.find(d => d.documentType === 'DRIVER_LICENSE_FRONT');
+                  const dlBack = kycUserDocs.find(d => d.documentType === 'DRIVER_LICENSE_BACK');
                   const selfie = kycUserDocs.find(d => d.documentType === 'SELFIE');
-                  
-                  if (!cccdFront && !selfie) {
+
+                  if (!cccdFront && !cccdBack && !dlFront && !dlBack && !selfie) {
                     return (
                       <div className="p-4 bg-yellow-500/5 border border-yellow-500/10 text-yellow-600 text-xs rounded-xl text-center font-semibold">
                         No KYC verification photos uploaded yet.
@@ -2347,96 +2365,146 @@ const AdminDashboard: React.FC = () => {
                     return `${apiBaseUrl}${url}`;
                   };
 
-                  let score = 'N/A';
+                  let expiryDate = 'N/A';
+                  if (cccdFront?.ocrData) {
+                    try {
+                      const parsed = JSON.parse(cccdFront.ocrData);
+                      expiryDate = parsed?.data?.[0]?.doe || parsed?.doe || parsed?.expiryDate || 'N/A';
+                    } catch (e) {
+                      // ignore
+                    }
+                  }
+
+                  let similarity = 'N/A';
+                  let liveness = 'N/A';
                   if (selfie?.ocrData) {
                     try {
                       const parsed = JSON.parse(selfie.ocrData);
-                      score = parsed.similarity ? `${parsed.similarity}%` : '94.2%';
-                    } catch {
-                      score = '94.2%';
+                      similarity = parsed?.similarity ? `${parsed.similarity}%` : 'N/A';
+                      liveness = parsed?.livenessResult || parsed?.liveness || 'N/A';
+                    } catch (e) {
+                      // ignore
                     }
                   }
 
                   return (
-                    <div className="space-y-3">
-                      <span className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block">Photo Comparison Check</span>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        {/* CCCD Image */}
-                        <div className="border dark:border-slate-850 rounded-xl overflow-hidden bg-slate-500/5 relative">
-                          <span className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white text-[8px] font-black uppercase px-2 py-0.5 rounded">ID CARD</span>
-                          {cccdFront ? (
-                            <img src={resolveDocUrl(cccdFront.url)} className="w-full h-36 object-cover" alt="CCCD Front" />
-                          ) : (
-                            <div className="h-36 flex items-center justify-center text-slate-400">No Image</div>
-                          )}
+                    <div className="space-y-6">
+                      {/* Document Photos Grid */}
+                      <div className="space-y-3">
+                        <span className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block font-display">Document Photos Comparison</span>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                          {/* CCCD Front */}
+                          <div className="border dark:border-slate-850 rounded-xl overflow-hidden bg-slate-500/5 relative">
+                            <span className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white text-[8px] font-black uppercase px-2 py-0.5 rounded">CCCD Front</span>
+                            {cccdFront ? (
+                              <img src={resolveDocUrl(cccdFront.url)} className="w-full h-32 object-cover" alt="CCCD Front" />
+                            ) : (
+                              <div className="h-32 flex items-center justify-center text-slate-400 text-xs">No CCCD Front Image</div>
+                            )}
+                          </div>
+
+                          {/* CCCD Back */}
+                          <div className="border dark:border-slate-850 rounded-xl overflow-hidden bg-slate-500/5 relative">
+                            <span className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white text-[8px] font-black uppercase px-2 py-0.5 rounded">CCCD Back</span>
+                            {cccdBack ? (
+                              <img src={resolveDocUrl(cccdBack.url)} className="w-full h-32 object-cover" alt="CCCD Back" />
+                            ) : (
+                              <div className="h-32 flex items-center justify-center text-slate-400 text-xs">No CCCD Back Image</div>
+                            )}
+                          </div>
+
+                          {/* DL Front */}
+                          <div className="border dark:border-slate-850 rounded-xl overflow-hidden bg-slate-500/5 relative">
+                            <span className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white text-[8px] font-black uppercase px-2 py-0.5 rounded">DL Front</span>
+                            {dlFront ? (
+                              <img src={resolveDocUrl(dlFront.url)} className="w-full h-32 object-cover" alt="Driver License Front" />
+                            ) : (
+                              <div className="h-32 flex items-center justify-center text-slate-400 text-xs">No DL Front Image</div>
+                            )}
+                          </div>
+
+                          {/* DL Back */}
+                          <div className="border dark:border-slate-850 rounded-xl overflow-hidden bg-slate-500/5 relative">
+                            <span className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white text-[8px] font-black uppercase px-2 py-0.5 rounded">DL Back</span>
+                            {dlBack ? (
+                              <img src={resolveDocUrl(dlBack.url)} className="w-full h-32 object-cover" alt="Driver License Back" />
+                            ) : (
+                              <div className="h-32 flex items-center justify-center text-slate-400 text-xs">No DL Back Image</div>
+                            )}
+                          </div>
                         </div>
 
-                        {/* Selfie Image */}
+                        {/* Selfie Image - Full Width */}
                         <div className="border dark:border-slate-850 rounded-xl overflow-hidden bg-slate-500/5 relative">
-                          <span className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white text-[8px] font-black uppercase px-2 py-0.5 rounded">SELFIE</span>
+                          <span className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white text-[8px] font-black uppercase px-2 py-0.5 rounded">Selfie holding CCCD</span>
                           {selfie ? (
-                            <img src={resolveDocUrl(selfie.url)} className="w-full h-36 object-cover" alt="Selfie" />
+                            <img src={resolveDocUrl(selfie.url)} className="w-full h-40 object-cover" alt="Selfie" />
                           ) : (
-                            <div className="h-36 flex items-center justify-center text-slate-400">No Image</div>
+                            <div className="h-40 flex items-center justify-center text-slate-400 text-xs">No Selfie Image</div>
                           )}
                         </div>
                       </div>
 
-                      {selfie && (
-                        <div className="p-3 bg-indigo-500/5 rounded-xl border dark:border-slate-850 flex justify-between items-center text-xs">
-                          <span className="font-semibold text-slate-400">Face Match Similarity:</span>
-                          <span className="font-black text-green-600 dark:text-green-500">{score} (Liveness Passed)</span>
+                      {/* OCR & Verification Details */}
+                      <div className="space-y-4">
+                        {/* CCCD OCR */}
+                        <div className="space-y-2">
+                          <span className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block font-display">CCCD OCR EXTRACTED DATA</span>
+                          <div className="p-3.5 bg-slate-500/5 rounded-xl border dark:border-slate-850 text-xs space-y-1.5 font-semibold text-slate-400">
+                            <div className="flex justify-between">
+                              <span>Citizen Name:</span>
+                              <span className="font-black text-slate-800 dark:text-slate-200">{cccdFront?.ekycFullName || 'N/A'}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Citizen ID:</span>
+                              <span className="font-black text-slate-800 dark:text-slate-200">{cccdFront?.ekycIdNumber || 'N/A'}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Date of Birth:</span>
+                              <span className="font-black text-slate-800 dark:text-slate-200">{cccdFront?.ekycDob || 'N/A'}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Expiry Date:</span>
+                              <span className="font-black text-slate-800 dark:text-slate-200">{expiryDate}</span>
+                            </div>
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  );
-                })()}
 
-                {/* CCCD OCR Extracted Fields */}
-                {(() => {
-                  const cccdFront = kycUserDocs.find(d => d.documentType === 'CCCD_FRONT');
-                  if (!cccdFront || !cccdFront.ekycFullName) return null;
-                  return (
-                    <div className="space-y-2">
-                      <span className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block font-display">CCCD OCR EXTRACTED DATA</span>
-                      <div className="p-3.5 bg-slate-500/5 rounded-xl border dark:border-slate-850 text-xs space-y-1.5 font-semibold text-slate-400">
-                        <div className="flex justify-between">
-                          <span>Citizen Name:</span>
-                          <span className="font-black text-slate-800 dark:text-slate-200">{cccdFront.ekycFullName}</span>
+                        {/* Driver License OCR */}
+                        <div className="space-y-2">
+                          <span className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block font-display">DRIVING LICENSE OCR DATA</span>
+                          <div className="p-3.5 bg-slate-500/5 rounded-xl border dark:border-slate-850 text-xs space-y-1.5 font-semibold text-slate-400">
+                            <div className="flex justify-between">
+                              <span>License Name:</span>
+                              <span className="font-black text-slate-800 dark:text-slate-200">{dlFront?.licenseFullName || 'N/A'}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>License Number:</span>
+                              <span className="font-black text-slate-800 dark:text-slate-200">{dlFront?.licenseNumber || 'N/A'}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>License Class:</span>
+                              <span className="font-black text-indigo-650 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/20 px-2 py-0.5 rounded font-extrabold">{dlFront?.licenseClass || 'N/A'}</span>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex justify-between">
-                          <span>Citizen ID:</span>
-                          <span className="font-black text-slate-800 dark:text-slate-200">{cccdFront.ekycIdNumber}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Date of Birth:</span>
-                          <span className="font-black text-slate-800 dark:text-slate-200">{cccdFront.ekycDob}</span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
 
-                {/* Driver License OCR Extracted Fields */}
-                {(() => {
-                  const dlFront = kycUserDocs.find(d => d.documentType === 'DRIVER_LICENSE_FRONT');
-                  if (!dlFront || !dlFront.licenseNumber) return null;
-                  return (
-                    <div className="space-y-2">
-                      <span className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block font-display">DRIVING LICENSE OCR DATA</span>
-                      <div className="p-3.5 bg-slate-500/5 rounded-xl border dark:border-slate-850 text-xs space-y-1.5 font-semibold text-slate-400">
-                        <div className="flex justify-between">
-                          <span>License Name:</span>
-                          <span className="font-black text-slate-800 dark:text-slate-200">{dlFront.licenseFullName}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>License Number:</span>
-                          <span className="font-black text-slate-800 dark:text-slate-200">{dlFront.licenseNumber}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>License Class:</span>
-                          <span className="font-black text-indigo-650 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/20 px-2 py-0.5 rounded font-extrabold">{dlFront.licenseClass}</span>
+                        {/* Face Matching & Liveness */}
+                        <div className="space-y-2">
+                          <span className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block font-display">Face Comparison Metrics</span>
+                          <div className="p-3.5 bg-slate-500/5 rounded-xl border dark:border-slate-850 text-xs space-y-1.5 font-semibold text-slate-400">
+                            <div className="flex justify-between">
+                              <span>Face Similarity Score:</span>
+                              <span className="font-black text-slate-800 dark:text-slate-200">{similarity}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Liveness Verification:</span>
+                              <span className={cn("font-black uppercase", liveness.toLowerCase().includes('pass') ? "text-emerald-500" : "text-rose-500")}>
+                                {liveness}
+                              </span>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>

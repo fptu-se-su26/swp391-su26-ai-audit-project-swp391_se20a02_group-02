@@ -107,6 +107,19 @@ export const adminService = {
   },
 
   /**
+   * Fetch pending KYC users list
+   */
+  async getPendingKyc(): Promise<any[]> {
+    try {
+      const response = await apiClient.get<any>('/admin/kyc');
+      return response.data || response || [];
+    } catch (error) {
+      console.error('Failed to fetch pending KYC users:', error);
+      return [];
+    }
+  },
+
+  /**
    * Fetch a specific user's uploaded documents (for Admin review)
    */
   async getUserDocuments(userId: string): Promise<any[]> {

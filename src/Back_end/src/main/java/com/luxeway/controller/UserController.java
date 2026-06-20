@@ -19,6 +19,7 @@ import java.util.Optional;
 @RequestMapping("/users")
 @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173"})
 @SuppressWarnings("all")
+@lombok.extern.slf4j.Slf4j
 public class UserController {
     
     @Autowired
@@ -130,6 +131,9 @@ public class UserController {
 
     @Autowired
     private com.luxeway.repository.UserDocumentRepository userDocumentRepository;
+
+    @Autowired
+    private com.luxeway.service.NotificationService notificationService;
 
     @org.springframework.beans.factory.annotation.Value("${file.upload-dir:uploads/}")
     private String uploadDir;
@@ -246,14 +250,243 @@ public class UserController {
         }
     }
 
-    @PostMapping("/kyc/submit")
-    public ResponseEntity<?> submitKyc(@org.springframework.security.core.annotation.AuthenticationPrincipal com.luxeway.entity.User user) {
-        if (user == null) {
+    @PostMapping("/kyc/upload")
+    public ResponseEntity<?> uploadKycDocument(
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.luxeway.entity.User authUser,
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file,
+            @RequestParam("documentType") String documentType) {
+        
+        if (authUser == null) {
             Map<String, String> errorResponse = new HashMap<>();
             errorResponse.put("error", "Unauthorized");
             return ResponseEntity.status(401).body(errorResponse);
         }
+
+        com.luxeway.entity.User user = userRepository.findById(authUser.getId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (file.isEmpty()) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "No file provided");
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+
+        if (file.getSize() > 5 * 1024 * 1024) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "File size exceeds 5MB limit");
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Only image files are allowed");
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+
+        final byte[] fileBytes;
+        try {
+            fileBytes = file.getBytes();
+        } catch (java.io.IOException e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Failed to read uploaded file");
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+
+        try {
+            java.nio.file.Path uploadPath = java.nio.file.Paths.get(uploadDir).toAbsolutePath().normalize();
+            if (!java.nio.file.Files.exists(uploadPath)) {
+                java.nio.file.Files.createDirectories(uploadPath);
+            }
+
+            String originalName = java.util.Objects.requireNonNullElse(file.getOriginalFilename(), "upload.jpg");
+            String extension = originalName.contains(".")
+                ? originalName.substring(originalName.lastIndexOf("."))
+                : ".jpg";
+            String uniqueName = java.util.UUID.randomUUID() + extension;
+
+            java.nio.file.Path filePath = uploadPath.resolve(uniqueName);
+            java.nio.file.Files.write(filePath, fileBytes);
+
+            String fileUrl = "/uploads/" + uniqueName;
+            com.luxeway.dto.user.UserDTOs.DocumentResponse docResp;
+
+            if ("CCCD_FRONT".equalsIgnoreCase(documentType)) {
+                com.luxeway.service.FptAiEkycService.CccdOcrResult ocrResult;
+                try {
+                    ocrResult = fptAiEkycService.scanCccd(filePath.toAbsolutePath());
+                    if (ocrResult == null || ocrResult.getCitizenId() == null || ocrResult.getFullName() == null 
+                            || ocrResult.getDateOfBirth() == null || ocrResult.getAddress() == null) {
+                        throw new RuntimeException("OCR fields are empty");
+                    }
+                } catch (Exception ex) {
+                    user.setKycStatus("FAILED");
+                    userRepository.save(user);
+                    
+                    userService.uploadCccdFront(user.getId(), fileUrl, new com.luxeway.service.FptAiEkycService.CccdOcrResult());
+                    
+                    Map<String, String> errorResponse = new HashMap<>();
+                    errorResponse.put("error", "Your identity document verification failed. Please upload again.");
+                    errorResponse.put("message", ex.getMessage());
+                    return ResponseEntity.badRequest().body(errorResponse);
+                }
+                docResp = userService.uploadCccdFront(user.getId(), fileUrl, ocrResult);
+                
+            } else if ("CCCD_BACK".equalsIgnoreCase(documentType)) {
+                docResp = userService.uploadCccdBack(user.getId(), fileUrl);
+                
+            } else if ("DRIVER_LICENSE_FRONT".equalsIgnoreCase(documentType)) {
+                com.luxeway.service.FptAiEkycService.DlOcrResult ocrResult;
+                try {
+                    ocrResult = fptAiEkycService.scanDriverLicense(filePath.toAbsolutePath());
+                    if (ocrResult == null || ocrResult.getLicenseClass() == null || ocrResult.getLicenseNumber() == null) {
+                        throw new RuntimeException("OCR fields are empty");
+                    }
+                    
+                    String clazz = ocrResult.getLicenseClass().trim().toUpperCase();
+                    boolean isValidClass = clazz.equals("A") || clazz.equals("A1") ||
+                                           clazz.equals("B") || clazz.equals("B1") ||
+                                           clazz.equals("C") || clazz.equals("C1") ||
+                                           clazz.equals("D");
+                    if (!isValidClass) {
+                        throw new RuntimeException("Invalid license class: " + clazz);
+                    }
+                } catch (Exception ex) {
+                    user.setKycStatus("FAILED");
+                    user.setDriverLicenseStatus("FAILED");
+                    userRepository.save(user);
+                    
+                    userService.uploadDriverLicenseFront(user.getId(), fileUrl, new com.luxeway.service.FptAiEkycService.DlOcrResult());
+                    
+                    Map<String, String> errorResponse = new HashMap<>();
+                    errorResponse.put("error", "Your driving license verification failed. Please upload again.");
+                    errorResponse.put("message", ex.getMessage());
+                    return ResponseEntity.badRequest().body(errorResponse);
+                }
+                
+                docResp = userService.uploadDriverLicenseFront(user.getId(), fileUrl, ocrResult);
+                
+                user.setLicenseClass(ocrResult.getLicenseClass().trim().toUpperCase());
+                user.setLicenseNumber(ocrResult.getLicenseNumber());
+                userRepository.save(user);
+                
+            } else if ("DRIVER_LICENSE_BACK".equalsIgnoreCase(documentType)) {
+                docResp = userService.uploadDriverLicenseBack(user.getId(), fileUrl);
+                
+            } else if ("SELFIE".equalsIgnoreCase(documentType)) {
+                java.util.List<com.luxeway.entity.UserDocument> cccdDocs = userDocumentRepository.findByUserIdAndDocumentTypeOrderByUploadedAtDesc(user.getId(), "CCCD_FRONT");
+                if (cccdDocs.isEmpty()) {
+                    Map<String, String> errorResponse = new HashMap<>();
+                    errorResponse.put("error", "Please upload CCCD front image first.");
+                    return ResponseEntity.badRequest().body(errorResponse);
+                }
+                
+                com.luxeway.service.FptAiEkycService.FaceMatchResult faceResult;
+                try {
+                    String cccdUrl = cccdDocs.get(0).getUrl();
+                    java.nio.file.Path cccdPath = java.nio.file.Paths.get(cccdUrl.substring(1));
+                    faceResult = fptAiEkycService.matchFaces(cccdPath.toAbsolutePath(), filePath.toAbsolutePath());
+                    
+                    boolean isLivenessPass = "PASS".equalsIgnoreCase(faceResult.getLivenessResult()) || "Passed".equalsIgnoreCase(faceResult.getLivenessResult());
+                    if (faceResult.getSimilarity() < 70.0 || !isLivenessPass) {
+                        throw new RuntimeException("Face similarity: " + faceResult.getSimilarity() + "%, Liveness: " + faceResult.getLivenessResult());
+                    }
+                } catch (Exception ex) {
+                    user.setKycStatus("FAILED");
+                    userRepository.save(user);
+                    
+                    userService.uploadSelfie(user.getId(), fileUrl, new com.luxeway.service.FptAiEkycService.FaceMatchResult());
+                    
+                    Map<String, String> errorResponse = new HashMap<>();
+                    errorResponse.put("error", "Face verification failed. Require customer retry.");
+                    errorResponse.put("message", ex.getMessage());
+                    return ResponseEntity.badRequest().body(errorResponse);
+                }
+                
+                docResp = userService.uploadSelfie(user.getId(), fileUrl, faceResult);
+                
+            } else {
+                Map<String, String> errorResponse = new HashMap<>();
+                errorResponse.put("error", "Unsupported document type for eKYC flow.");
+                return ResponseEntity.badRequest().body(errorResponse);
+            }
+
+            return ResponseEntity.status(201).body(docResp);
+
+        } catch (Exception e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Document processing failed");
+            errorResponse.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
+
+    @PostMapping("/kyc/submit")
+    public ResponseEntity<?> submitKyc(@org.springframework.security.core.annotation.AuthenticationPrincipal com.luxeway.entity.User authUser) {
+        if (authUser == null) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Unauthorized");
+            return ResponseEntity.status(401).body(errorResponse);
+        }
+
+        com.luxeway.entity.User user = userRepository.findById(authUser.getId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        java.util.List<com.luxeway.entity.UserDocument> docs = userDocumentRepository.findByUserIdOrderByUploadedAtDesc(user.getId());
+        boolean hasCccdFront = false;
+        boolean hasCccdBack = false;
+        boolean hasDlFront = false;
+        boolean hasDlBack = false;
+        boolean hasSelfie = false;
+
+        for (com.luxeway.entity.UserDocument doc : docs) {
+            if ("CCCD_FRONT".equalsIgnoreCase(doc.getDocumentType()) && !"FAILED".equalsIgnoreCase(doc.getStatus())) hasCccdFront = true;
+            if ("CCCD_BACK".equalsIgnoreCase(doc.getDocumentType()) && !"FAILED".equalsIgnoreCase(doc.getStatus())) hasCccdBack = true;
+            if ("DRIVER_LICENSE_FRONT".equalsIgnoreCase(doc.getDocumentType()) && !"FAILED".equalsIgnoreCase(doc.getStatus())) hasDlFront = true;
+            if ("DRIVER_LICENSE_BACK".equalsIgnoreCase(doc.getDocumentType()) && !"FAILED".equalsIgnoreCase(doc.getStatus())) hasDlBack = true;
+            if ("SELFIE".equalsIgnoreCase(doc.getDocumentType()) && !"FAILED".equalsIgnoreCase(doc.getStatus())) hasSelfie = true;
+        }
+
+        if (!hasCccdFront || !hasCccdBack || !hasDlFront || !hasDlBack || !hasSelfie) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Missing required KYC documents. Please upload all 5 documents before submitting.");
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+
         com.luxeway.dto.user.UserDTOs.UserProfileResponse resp = userService.submitKycForReview(user.getId());
+
+        String title = "New KYC Verification Request";
+        String content = "Customer " + user.getDisplayName() + " submitted documents.";
+        String link = "/admin/kyc/" + user.getId();
+
+        try {
+            java.util.List<User> admins = userRepository.findByRole(com.luxeway.enums.UserRole.ADMIN);
+            java.util.List<User> superAdmins = userRepository.findByRole(com.luxeway.enums.UserRole.SUPER_ADMIN);
+            
+            for (User admin : admins) {
+                notificationService.createNotification(admin.getId(), "KYC", title, content, link);
+            }
+            for (User superAdmin : superAdmins) {
+                notificationService.createNotification(superAdmin.getId(), "KYC", title, content, link);
+            }
+        } catch (Exception ex) {
+            log.warn("Failed to dispatch admin KYC notifications: {}", ex.getMessage());
+        }
+
+        return ResponseEntity.ok(resp);
+    }
+
+    @PostMapping("/kyc/reset")
+    public ResponseEntity<?> resetKyc(@org.springframework.security.core.annotation.AuthenticationPrincipal com.luxeway.entity.User authUser) {
+        if (authUser == null) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Unauthorized");
+            return ResponseEntity.status(401).body(errorResponse);
+        }
+
+        userService.resetKyc(authUser.getId());
+        
+        com.luxeway.dto.user.UserDTOs.UserProfileResponse resp = userService.getProfile(authUser.getId());
         return ResponseEntity.ok(resp);
     }
 
