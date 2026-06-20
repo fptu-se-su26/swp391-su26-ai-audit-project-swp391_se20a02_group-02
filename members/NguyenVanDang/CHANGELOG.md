@@ -1199,11 +1199,69 @@ Commit: docs: [DE190324] implement admin kyc filters, database-level search and 
 
 ---
 
+# [Phase 06.0] Vietnam Vehicle Rental KYC Verification System
+
+## Ngày thực hiện
+
+```text
+2026-06-20
+```
+
+## Đã hoàn thành
+
+- [x] **Xác thực KYC Stepper 4 bước cho khách hàng**:
+  - Giai đoạn 1 (Identity): Tải lên CCCD Front + Back, tự động gọi FPT AI CCCD OCR để trích xuất Citizen Name, Citizen ID, DOB, Address, Expiry date.
+  - Giai đoạn 2 (Driver License): Tải lên DL Front + Back, gọi DL OCR để trích xuất số bằng, hạng bằng lái.
+  - Giai đoạn 3 (Selfie): Tải lên ảnh selfie cầm CCCD, gọi Face Matching (độ tương đồng >= 70%) và Liveness check (PASS).
+  - Giai đoạn 4 (Admin Approval): Khóa UI hiển thị chờ phê duyệt, tự động thăm dò (polling 5 giây) cập nhật trạng thái KYC.
+- [x] **Ràng buộc an toàn & Phân hạng bằng lái khi booking**:
+  - Khóa toàn bộ các luồng đặt xe ở cả Car và Motorbike nếu `kycStatus != 'VERIFIED'`, ném lỗi: `"Please complete KYC verification first."`.
+  - Giới hạn đặt xe máy (`A` hoặc `A1` license), nếu không ném: `"Your driving license does not support motorcycle rental."`.
+  - Giới hạn đặt ô tô (`B`, `B1`, `C`, `C1`, `D`), nếu người dùng chỉ có hạng xe máy ném: `"Your driving license only supports motorcycle rental."`, ngược lại ném: `"Your driving license does not support car rental."`.
+- [x] **Giao diện Review chi tiết của Admin**:
+  - KYC Review tab mặc định lọc ở chế độ `PENDING` để tối ưu công việc của admin.
+  - Slide drawer hiển thị đầy đủ **5 bức ảnh** đã upload kèm theo toàn bộ trường thông tin trích xuất OCR (bao gồm expiry date) và điểm đối sánh khuôn mặt (similarity %, liveness).
+  - Cung cấp nút APPROVE và DECLINE (yêu cầu điền lý do từ chối).
+- [x] **Cơ chế Fallback Mock Mode an toàn**:
+  - Tự động fallback sang mock data khi api-key bị thiếu hoặc call API lỗi. Hỗ trợ test lỗi/đổi hạng bằng qua hook tên file (chứa "fail" hoặc "motorbike").
+
+## Thay đổi chi tiết - Nguyễn Văn Dạng (DE190324)
+
+| STT | Nội dung thay đổi | Người thực hiện | File/Module liên quan | Minh chứng |
+|---:|---|---|---|---|
+| 1 | Sửa đổi luồng stepper & retry & polling | Nguyễn Văn Dạng | `MyDocuments.tsx` | Stepper 4 bước động |
+| 2 | Bổ dung check kycStatus và licenseClass | Nguyễn Văn Dạng | `CarBookingService.java`, `MotorbikeBookingService.java` | Exception messages ném chính xác |
+| 3 | Overhaul KYC reviews tab & detail drawer | Nguyễn Văn Dạng | `AdminDashboard.tsx`, `adminService.ts` | Hiển thị 5 ảnh, OCR fields, Face metrics |
+| 4 | Fix các lỗi TypeScript frontend | Nguyễn Văn Dạng | `index.ts` (User interface), `AdminDashboard.tsx` | Build thành công 0 warning |
+
+## AI có hỗ trợ không?
+
+- [x] Có
+- [ ] Không
+
+Nếu có, mô tả AI đã hỗ trợ phần nào:
+
+```text
+AI (Antigravity) hỗ trợ:
+- Gợi ý thiết kế layout cho stepper 4 bước và review drawer chứa đầy đủ 5 ảnh tài liệu kèm metadata.
+- Hỗ trợ sửa đổi code checking ở CarBookingService / MotorbikeBookingService.
+- Debug và sửa các lỗi type mismatch variables ở AdminDashboard.tsx và types/index.ts.
+```
+
+## Commit/Screenshot minh chứng
+
+```text
+Branch: main
+Commit: feat: implement production-level Vietnam vehicle rental KYC verification system with FPT AI OCR and license class validation
+```
+
+---
+
 # 5. Cam kết cập nhật Changelog
 
 Sinh viên/nhóm cam kết rằng nội dung changelog phản ánh đúng các thay đổi đã thực hiện trong quá trình làm bài tập/project.
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-06-19 |
+| Nguyễn Văn Dạng - DE190324 | 2026-06-20 |
 

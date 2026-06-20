@@ -56,8 +56,20 @@ public class CarBookingService {
                 .orElseThrow(() -> new RuntimeException("Renter not found"));
 
         if (renter.getRole() != com.luxeway.enums.UserRole.ADMIN) {
-            if (!Boolean.TRUE.equals(renter.getKycVerified()) || !Boolean.TRUE.equals(renter.getDrivingLicenseVerified())) {
-                throw new RuntimeException("KYC identity and driving license verification are required before booking.");
+            if (!"VERIFIED".equals(renter.getKycStatus())) {
+                throw new RuntimeException("Please complete KYC verification first.");
+            }
+
+            String licenseClass = renter.getLicenseClass() != null ? renter.getLicenseClass().trim().toUpperCase() : "";
+            boolean isCarLicense = licenseClass.equals("B") || licenseClass.equals("B1") ||
+                                   licenseClass.equals("C") || licenseClass.equals("C1") ||
+                                   licenseClass.equals("D");
+            if (!isCarLicense) {
+                if (licenseClass.equals("A") || licenseClass.equals("A1")) {
+                    throw new RuntimeException("Your driving license only supports motorcycle rental.");
+                } else {
+                    throw new RuntimeException("Your driving license does not support car rental.");
+                }
             }
         }
 

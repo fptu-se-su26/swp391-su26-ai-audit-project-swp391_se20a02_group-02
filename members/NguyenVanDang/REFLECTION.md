@@ -908,6 +908,37 @@ Trong giai đoạn này (Phase 5.6), mình đã cùng Antigravity triển khai t
 
 ---
 
+## Reflection — Phase 6.0: Vietnam Vehicle Rental KYC Verification System (2026-06-20)
+
+### Tóm tắt
+
+Trong giai đoạn này (Phase 6.0), mình đã cùng Antigravity triển khai hệ thống xác thực danh tính KYC song hành cùng FPT AI eKYC API cho nền tảng thuê xe LuxeWay Vietnam. Chúng tôi đã xây dựng luồng stepper 4 bước cho khách hàng ở Frontend, tích hợp các API OCR CCCD, Driver License và so khớp khuôn mặt kèm phát hiện thực thể sống (liveness detection). Đồng thời, bổ sung các lớp kiểm tra ràng buộc hạng bằng lái xe (A/A1 cho xe máy, B/B1/C/C1/D cho ô tô) ở cả hai module booking và xây dựng giao diện xem tài liệu 5 ảnh chi tiết cho Admin.
+
+### Những điều học được
+
+```text
+1. Ràng buộc bảo mật ở cả hai phía (Dual-layer security constraints):
+   Không bao giờ chỉ tin tưởng vào các kiểm tra giao diện (Frontend validations) vì hacker có thể bypass UI và gọi API đặt xe trực tiếp. Việc kiểm tra trạng thái kycStatus = VERIFIED và đối chiếu hạng bằng lái xe (License Class) trực tiếp trong CarBookingService và MotorbikeBookingService trước khi lưu đơn hàng là cực kỳ quan trọng để bảo vệ nền tảng.
+
+2. Trải nghiệm người dùng thông qua Polling & Background updates:
+   Khi khách hàng hoàn tất tải 5 tài liệu KYC lên, hệ thống chuyển sang trạng thái PENDING chờ admin duyệt. Việc triển khai cơ chế polling (5 giây một lần) ở Frontend để tự động kiểm tra và chuyển tiếp bước của khách hàng sang VERIFIED hoặc FAILED/REJECTED mang lại trải nghiệm mượt mà, không yêu cầu người dùng refresh trang thủ công.
+
+3. Tách biệt mock data và real API qua environments:
+   Cung cấp cơ chế tự động fallback sang mock data khi thiếu FPT_AI_API_KEY hoặc khi API thật lỗi giúp quy trình phát triển và kiểm thử tự động của nhóm không bị gián đoạn, đồng thời hỗ trợ kiểm thử các nhánh lỗi thông qua name hooks (tên file chứa "fail").
+```
+
+### Tự đánh giá Phase 6.0
+
+| Tiêu chí | Điểm | Ghi chú |
+|---|:---:|---|
+| Hiểu vấn đề trước khi fix | 5 | Hiểu rõ các luồng stepper, logic so khớp khuôn mặt và phân hạng bằng lái xe |
+| Fix đúng nguyên nhân gốc | 5 | Tích hợp hoàn hảo Spring Security, Spring Services và React Stepper |
+| Kiểm chứng sau fix | 5 | Build frontend npm run build thành công 0 warning, compile backend 0 error |
+| Ghi lại đầy đủ | 5 | Cập nhật đầy đủ cả 4 files trong thư mục members |
+| Sử dụng AI có trách nhiệm | 5 | Kiểm soát chặt chẽ kiểu dữ liệu TypeScript, tự viết logic check class xe |
+
+---
+
 ## 17. Cam kết Reflection
 
 Em/nhóm cam kết rằng nội dung reflection này phản ánh trung thực quá trình sử dụng AI và quá trình học tập trong bài tập/project.
@@ -921,5 +952,5 @@ Sinh viên/nhóm hiểu rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-06-19 |
+| Nguyễn Văn Dạng - DE190324 | 2026-06-20 |
 

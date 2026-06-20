@@ -96,27 +96,25 @@ public class BookingService {
         // Enforce KYC verification & license class matching
         if (renter.getRole() != com.luxeway.enums.UserRole.ADMIN) {
             if (!"VERIFIED".equals(renter.getKycStatus())) {
-                throw new RuntimeException("KYC identity verification is required and must be VERIFIED before booking. Current status: " + renter.getKycStatus());
-            }
-            if (!"VERIFIED".equals(renter.getDriverLicenseStatus())) {
-                throw new RuntimeException("Driving license verification is required and must be VERIFIED before booking. Current status: " + renter.getDriverLicenseStatus());
+                throw new RuntimeException("Please complete KYC verification first.");
             }
 
-            String licenseClass = renter.getLicenseClass();
+            String licenseClass = renter.getLicenseClass() != null ? renter.getLicenseClass().trim().toUpperCase() : "";
             if (vehicle.getVehicleType() == com.luxeway.enums.VehicleType.MOTORBIKE) {
-                if (licenseClass == null || (!licenseClass.equalsIgnoreCase("A1") && !licenseClass.equalsIgnoreCase("A"))) {
-                    throw new RuntimeException("Invalid license class. Motorbike rental requires an A1 or A class driving license. Your class: " + (licenseClass == null ? "None" : licenseClass));
+                boolean isMotorbikeLicense = licenseClass.equals("A") || licenseClass.equals("A1");
+                if (!isMotorbikeLicense) {
+                    throw new RuntimeException("Your driving license does not support motorcycle rental.");
                 }
             } else if (vehicle.getVehicleType() == com.luxeway.enums.VehicleType.CAR) {
-                boolean isCarLicense = (licenseClass != null && (
-                    licenseClass.toUpperCase().startsWith("B") || 
-                    licenseClass.toUpperCase().startsWith("C") || 
-                    licenseClass.toUpperCase().startsWith("D") || 
-                    licenseClass.toUpperCase().startsWith("E") || 
-                    licenseClass.toUpperCase().startsWith("F")
-                ));
+                boolean isCarLicense = licenseClass.equals("B") || licenseClass.equals("B1") ||
+                                       licenseClass.equals("C") || licenseClass.equals("C1") ||
+                                       licenseClass.equals("D");
                 if (!isCarLicense) {
-                    throw new RuntimeException("Invalid license class. Car rental requires a B, C, or D class driving license. Your class: " + (licenseClass == null ? "None" : licenseClass));
+                    if (licenseClass.equals("A") || licenseClass.equals("A1")) {
+                        throw new RuntimeException("Your driving license only supports motorcycle rental.");
+                    } else {
+                        throw new RuntimeException("Your driving license does not support car rental.");
+                    }
                 }
             }
         }

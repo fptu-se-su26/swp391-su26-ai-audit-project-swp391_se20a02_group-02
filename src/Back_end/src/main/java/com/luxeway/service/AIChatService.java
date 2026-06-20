@@ -44,7 +44,16 @@ public class AIChatService {
     @Value("${gemini.model:gemini-1.5-flash}")
     private String modelName;
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate = createRestTemplateWithTimeouts();
+
+    private static RestTemplate createRestTemplateWithTimeouts() {
+        org.springframework.http.client.SimpleClientHttpRequestFactory factory = new org.springframework.http.client.SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(5000);
+        factory.setReadTimeout(5000);
+        return new RestTemplate(factory);
+    }
+
+    private final RestTemplate restTemplateFieldBackup = null; // Unused but preserves structure if needed
 
     @Transactional
     public Map<String, Object> generateConciergeResponse(String sessionId, String userMessage, String userId, String currentPage, String activeVehicleId, String activeBookingId) {
@@ -113,10 +122,10 @@ public class AIChatService {
             // An action was successfully executed, inject action message
             aiResponse = (String) actionCard.get("message");
             rawResponse = "{\"actionExecuted\": true, \"action\": \"" + actionCard.get("action") + "\"}";
-        } else if (apiKey == null || apiKey.trim().isEmpty() || "mock_key".equals(apiKey)) {
-            // Fallback to Mock Responses if API key is not configured
+        } else if (apiKey == null || apiKey.trim().isEmpty() || "mock_key".equals(apiKey) || !apiKey.startsWith("AIzaSy")) {
+            // Fallback to Mock Responses if API key is not configured or invalid (doesn't start with AIzaSy)
             aiResponse = generateMockResponse(userMessage, user, recentBookings, contextBooking, contextVehicle, currentPage);
-            rawResponse = "{\"mock\": true}";
+            rawResponse = "{\"mock\": true, \"reason\": \"API key is not configured or mock_key or invalid\"}";
         } else {
             try {
                 String url = String.format("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s", modelName, apiKey);

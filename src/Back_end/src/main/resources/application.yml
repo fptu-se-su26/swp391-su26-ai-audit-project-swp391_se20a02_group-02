@@ -128,6 +128,9 @@ gemini:
 goong:
   api-key: ${GOONG_API_KEY:mock_goong_key}
 
+fptai:
+  api-key: ${FPTAI_API_KEY:BKfUiImFD4DI3RI2OEjoCahBTQOgVtPf}
+
 # VNPT eKYC Configuration
 # SECURITY: Set these via environment variables - NEVER hardcode credentials
 vnpt:

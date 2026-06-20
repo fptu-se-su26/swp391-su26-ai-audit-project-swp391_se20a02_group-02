@@ -56,8 +56,14 @@ public class MotorbikeBookingService {
                 .orElseThrow(() -> new RuntimeException("Renter not found"));
 
         if (renter.getRole() != com.luxeway.enums.UserRole.ADMIN) {
-            if (!Boolean.TRUE.equals(renter.getKycVerified()) || !Boolean.TRUE.equals(renter.getDrivingLicenseVerified())) {
-                throw new RuntimeException("KYC identity and driving license verification are required before booking.");
+            if (!"VERIFIED".equals(renter.getKycStatus())) {
+                throw new RuntimeException("Please complete KYC verification first.");
+            }
+
+            String licenseClass = renter.getLicenseClass() != null ? renter.getLicenseClass().trim().toUpperCase() : "";
+            boolean isMotorbikeLicense = licenseClass.equals("A") || licenseClass.equals("A1");
+            if (!isMotorbikeLicense) {
+                throw new RuntimeException("Your driving license does not support motorcycle rental.");
             }
         }
 

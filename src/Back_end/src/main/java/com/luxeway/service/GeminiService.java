@@ -43,7 +43,16 @@ public class GeminiService {
     @Value("${gemini.model:gemini-1.5-flash}")
     private String modelName;
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate = createRestTemplateWithTimeouts();
+
+    private static RestTemplate createRestTemplateWithTimeouts() {
+        org.springframework.http.client.SimpleClientHttpRequestFactory factory = new org.springframework.http.client.SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(5000);
+        factory.setReadTimeout(5000);
+        return new RestTemplate(factory);
+    }
+
+    private final RestTemplate restTemplateFieldBackup = null; // Backup/preserves constructor injection structure
 
     /**
      * Main entrypoint for chat concierge interactions.
@@ -107,11 +116,11 @@ public class GeminiService {
         String aiResponse = "";
         String rawResponse = "";
 
-        // Check if API Key is mock or empty
-        if (apiKey == null || apiKey.trim().isEmpty() || "mock_key".equals(apiKey)) {
-            log.info("Gemini API key is mock or empty. Using luxury concierge mock response logic.");
+        // Check if API Key is mock or empty or invalid (doesn't start with AIzaSy)
+        if (apiKey == null || apiKey.trim().isEmpty() || "mock_key".equals(apiKey) || !apiKey.startsWith("AIzaSy")) {
+            log.info("Gemini API key is mock, empty, or invalid. Using luxury concierge mock response logic.");
             aiResponse = generateMockResponse(userMessage, user, recentBookings, contextBooking, contextVehicle);
-            rawResponse = "{\"mock\": true, \"reason\": \"API key is not configured or mock_key\"}";
+            rawResponse = "{\"mock\": true, \"reason\": \"API key is not configured or mock_key or invalid\"}";
         } else {
             try {
                 // Call Google Generative AI API

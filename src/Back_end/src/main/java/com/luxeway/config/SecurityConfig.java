@@ -121,6 +121,8 @@ public class SecurityConfig {
                     // Help Center Knowledge Base (public — no auth needed)
                     "/help/**",
                     "/api/v1/help/**",
+                    "/ai/**",
+                    "/api/v1/ai/**",
                     "/chat",
                     "/api/v1/chat",
                     "/error"

@@ -365,4 +365,39 @@ public class UserService {
         userDocumentRepository.delete(doc);
         log.info("Document {} deleted for user {}", documentId, userId);
     }
+
+    @Transactional
+    public void resetKyc(String userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setKycStatus("NOT_UPLOADED");
+        user.setDriverLicenseStatus("NOT_UPLOADED");
+        user.setKycVerified(false);
+        user.setDrivingLicenseVerified(false);
+        user.setLicenseClass(null);
+        user.setLicenseNumber(null);
+        user.setVerified(false);
+        userRepository.save(user);
+
+        List<UserDocument> docs = userDocumentRepository.findByUserIdOrderByUploadedAtDesc(userId);
+        for (UserDocument doc : docs) {
+            String docType = doc.getDocumentType();
+            if (List.of("CCCD_FRONT", "CCCD_BACK", "DRIVER_LICENSE_FRONT", "DRIVER_LICENSE_BACK", "SELFIE").contains(docType)) {
+                String url = doc.getUrl();
+                if (url != null && url.startsWith("/uploads/")) {
+                    try {
+                        String filename = url.substring("/uploads/".length());
+                        java.nio.file.Path uploadBase = java.nio.file.Paths.get(uploadDir).toAbsolutePath().normalize();
+                        java.nio.file.Path filePath = uploadBase.resolve(filename);
+                        java.nio.file.Files.deleteIfExists(filePath);
+                        log.info("Physical file deleted on reset: {}", filePath);
+                    } catch (Exception e) {
+                        log.warn("Failed to delete physical file during KYC reset: {}", url, e);
+                    }
+                }
+                userDocumentRepository.delete(doc);
+            }
+        }
+        log.info("KYC reset completed for user: {}", userId);
+    }
 }

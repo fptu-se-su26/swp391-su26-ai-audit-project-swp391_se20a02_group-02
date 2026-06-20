@@ -1721,6 +1721,78 @@ Việc thực hiện các bộ lọc tìm kiếm trực tiếp tại Database (d
 
 ---
 
+### Prompt số 22
+
+| Nội dung | Thông tin |
+|---|---|
+| Ngày sử dụng | 2026-06-20 |
+| Công cụ AI | Antigravity |
+| Mục đích | Triển khai hệ thống xác thực danh tính KYC song hành FPT AI eKYC và kiểm tra phân hạng bằng lái khi booking. |
+| Phần việc liên quan | Fullstack / Security & UI/UX |
+| Mức độ sử dụng | Hỏi thiết kế & debug |
+
+#### 5.1. Prompt nguyên văn
+
+```text
+Help me implement a production-level Vietnam vehicle rental KYC verification system:
+1. In MyDocuments.tsx, redesign the customer document stepper to support 4 steps (Identity CCCD front/back, Driver License front/back, Selfie holding CCCD, Admin Approval status). Add status badges, retry callbacks, and a 5-second background polling when status is PENDING.
+2. In AdminDashboard.tsx, initialize the kycStatusFilter to default to 'PENDING'. Modify the KYC details drawer to fetch and render all 5 document images (CCCD Front/Back, DL Front/Back, Selfie holding CCCD), show all extracted OCR attributes (dob, citizen id, name, license class, and expiry date parsed from cccdFront.ocrData), and show face matching similarity and liveness result (parsed from selfie.ocrData).
+3. In CarBookingService.java and MotorbikeBookingService.java, block checkouts if kycStatus != 'VERIFIED' with message "Please complete KYC verification first.". Enforce license class limits: Car requires B, B1, C, C1, D (if user holds A/A1, throw "Your driving license only supports motorcycle rental."); Motorbike requires A or A1 (else throw "Your driving license does not support motorcycle rental.").
+4. I am getting TypeScript errors when building the frontend:
+   - "This comparison appears to be unintentional because the types '"REJECTED" | undefined' and '"FAILED"' have no overlap" in MyDocuments.tsx.
+   - "Argument of type 'number' is not assignable to parameter of type 'string'" in AdminDashboard.tsx listUsers call.
+   How can I resolve them?
+```
+
+#### 5.2. Bối cảnh khi viết prompt
+
+```text
+Cần triển khai hệ thống xác thực KYC hoàn chỉnh tích hợp FPT AI để tự động hóa quy trình phê duyệt danh tính và hạng bằng lái xe của khách hàng thuê xe, đảm bảo chỉ khách hàng có bằng lái xe phù hợp mới được đặt xe, đồng thời sửa các lỗi biên dịch TypeScript khi đóng gói ứng dụng.
+```
+
+#### 5.3. Kết quả AI trả về
+
+```text
+AI cung cấp:
+- Hướng dẫn thiết kế stepper và review drawer hiển thị 5 ảnh kèm metadata OCR, so khớp khuôn mặt trên React Frontend.
+- Sửa đổi logic validate kycStatus và licenseClass trong các java service backend.
+- Hướng dẫn thêm 'FAILED' vào union types của kycStatus và driverLicenseStatus trong types/index.ts, và sửa lại danh sách tham số listUsers/listAllVehicles trong AdminDashboard.tsx để fix các lỗi TypeScript.
+```
+
+#### 5.4. Kết quả đã áp dụng vào bài
+
+```text
+Tích hợp stepper và drawer review hoàn hảo, compile backend thành công và build frontend đạt 0 warnings, 0 errors.
+```
+
+#### 5.5. Phần sinh viên/nhóm đã chỉnh sửa hoặc cải tiến
+
+```text
+- Custom lại giao diện review drawer đẹp mắt, gọn gàng bằng các thẻ grid CSS.
+- Bổ sung logic hiển thị thông báo lỗi chi tiết khi so khớp khuôn mặt hoặc liveness thất bại ở stepper.
+```
+
+#### 5.6. Đánh giá chất lượng prompt
+
+- [x] Prompt rõ ràng
+- [x] Prompt có đủ bối cảnh
+- [ ] Prompt còn thiếu thông tin
+- [x] Prompt tạo ra kết quả tốt
+- [ ] Prompt tạo ra kết quả chưa phù hợp
+- [ ] Cần hỏi lại AI nhiều lần
+- [x] Cần tự kiểm tra và chỉnh sửa nhiều
+- [ ] Kết quả AI có lỗi hoặc chưa chính xác
+
+#### 5.7. Minh chứng liên quan
+
+| Loại minh chứng | Nội dung |
+|---|---|
+| File liên quan | `MyDocuments.tsx`, `AdminDashboard.tsx`, `CarBookingService.java`, `MotorbikeBookingService.java`, `types/index.ts` |
+| Kết quả chạy/test | `./gradlew bootJar` thành công, `npm run build` thành công 100% |
+| Link commit | `feat: implement production-level Vietnam vehicle rental KYC verification system with FPT AI OCR and license class validation` |
+
+---
+
 ## 11. Cam kết sử dụng prompt minh bạch
 
 Sinh viên/nhóm cam kết rằng:
@@ -1733,5 +1805,5 @@ Sinh viên/nhóm cam kết rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-06-19 |
+| Nguyễn Văn Dạng - DE190324 | 2026-06-20 |
 

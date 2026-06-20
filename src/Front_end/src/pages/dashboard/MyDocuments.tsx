@@ -35,6 +35,27 @@ export const MyDocuments: React.FC = () => {
     };
   }, []);
 
+  // Real-time polling when PENDING
+  useEffect(() => {
+    let interval: any;
+    if (user?.kycStatus === 'PENDING') {
+      interval = setInterval(async () => {
+        await initAuth();
+        await fetchDocuments();
+      }, 5000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [user?.kycStatus]);
+
+  // Direct route to step 4 when not in default upload flow
+  useEffect(() => {
+    if (user?.kycStatus === 'PENDING' || user?.kycStatus === 'VERIFIED' || user?.kycStatus === 'FAILED' || user?.kycStatus === 'REJECTED') {
+      setActiveStep(4);
+    }
+  }, [user?.kycStatus]);
+
   const startCamera = async () => {
     try {
       setIsCameraActive(true);
@@ -42,7 +63,6 @@ export const MyDocuments: React.FC = () => {
         video: { width: 480, height: 480, facingMode: 'user' } 
       });
       streamRef.current = stream;
-      // Allow video element time to mount
       setTimeout(() => {
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
@@ -86,7 +106,6 @@ export const MyDocuments: React.FC = () => {
       
       const ctx = canvas.getContext('2d');
       if (ctx) {
-        // Draw centered square mirror frame
         ctx.translate(canvas.width, 0);
         ctx.scale(-1, 1);
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -101,18 +120,21 @@ export const MyDocuments: React.FC = () => {
         formData.append('documentType', 'SELFIE');
         
         setUploadingDoc('SELFIE');
-        await apiClient.post('/users/documents', formData, {
+        await apiClient.post('/users/kyc/upload', formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
         });
         
         toast.success('Selfie Captured', 'Selfie captured and verified successfully.');
+        await initAuth();
         await fetchDocuments();
       }
     } catch (err: any) {
       console.error(err);
-      toast.error('Upload Failed', err.response?.data?.message || err.message || 'Verification scan failed.');
+      toast.error('Upload Failed', err.response?.data?.error || err.response?.data?.message || err.message || 'Verification scan failed.');
+      await initAuth();
+      await fetchDocuments();
     } finally {
       setUploadingDoc(null);
     }
@@ -153,7 +175,6 @@ export const MyDocuments: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file || !currentUploadType) return;
 
-    // Validation
     if (file.size > 5 * 1024 * 1024) {
       toast.error('File Too Large', 'Maximum file size allowed is 5MB.');
       return;
@@ -165,16 +186,19 @@ export const MyDocuments: React.FC = () => {
 
     setUploadingDoc(currentUploadType);
     try {
-      await apiClient.post('/users/documents', formData, {
+      await apiClient.post('/users/kyc/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
-      toast.success('Upload Successful', `${currentUploadType.replace('_', ' ')} uploaded successfully.`);
+      toast.success('Upload Successful', `${currentUploadType.replace(/_/g, ' ')} uploaded successfully.`);
+      await initAuth();
       await fetchDocuments();
     } catch (err: any) {
       console.error(err);
-      toast.error('Upload Failed', err.response?.data?.message || err.message || 'Verification scan failed.');
+      toast.error('Upload Failed', err.response?.data?.error || err.response?.data?.message || err.message || 'Verification scan failed.');
+      await initAuth();
+      await fetchDocuments();
     } finally {
       setUploadingDoc(null);
       setCurrentUploadType(null);
@@ -205,10 +229,26 @@ export const MyDocuments: React.FC = () => {
       setLoading(true);
       await apiClient.post('/users/kyc/submit', {});
       toast.success('KYC Submitted', 'Your verification documents have been locked and sent for admin review.');
-      await initAuth(); // Refresh user profile status
+      await initAuth();
       await fetchDocuments();
+      setActiveStep(4);
     } catch (err: any) {
-      toast.error('Submission Failed', err.message || 'Could not submit KYC review.');
+      toast.error('Submission Failed', err.response?.data?.error || err.message || 'Could not submit KYC review.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetKyc = async () => {
+    try {
+      setLoading(true);
+      await apiClient.post('/users/kyc/reset', {});
+      toast.success('KYC Reset Successful', 'Verification data has been reset. You can start over.');
+      await initAuth();
+      await fetchDocuments();
+      setActiveStep(1);
+    } catch (err: any) {
+      toast.error('Reset Failed', err.response?.data?.message || err.message || 'Could not reset KYC.');
     } finally {
       setLoading(false);
     }
@@ -220,9 +260,9 @@ export const MyDocuments: React.FC = () => {
   const dlBack = getDoc('DRIVER_LICENSE_BACK');
   const selfie = getDoc('SELFIE');
 
-  const cccdCompleted = cccdFront && cccdBack;
-  const dlCompleted = dlFront && dlBack;
-  const selfieCompleted = !!selfie;
+  const cccdCompleted = cccdFront && cccdFront.status !== 'FAILED' && cccdBack && cccdBack.status !== 'FAILED';
+  const dlCompleted = dlFront && dlFront.status !== 'FAILED' && dlBack && dlBack.status !== 'FAILED';
+  const selfieCompleted = selfie && selfie.status !== 'FAILED';
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-10 min-h-screen bg-[#FAFAFA] text-slate-900 rounded-[2.5rem] shadow-sm border border-slate-100">
@@ -283,24 +323,25 @@ export const MyDocuments: React.FC = () => {
       </div>
 
       {/* Stepper Navigation */}
-      <div className="grid grid-cols-3 gap-4 mb-10">
+      <div className="grid grid-cols-4 gap-4 mb-10">
         {[
-          { step: 1, label: 'Citizen ID', icon: FileText, completed: cccdCompleted },
-          { step: 2, label: 'Driver License', icon: CreditCard, completed: dlCompleted },
-          { step: 3, label: 'Selfie Match', icon: Camera, completed: selfieCompleted }
+          { step: 1, label: 'Identity Verification', icon: FileText, completed: cccdCompleted },
+          { step: 2, label: 'Driver License Verification', icon: CreditCard, completed: dlCompleted },
+          { step: 3, label: 'Face Verification', icon: Camera, completed: selfieCompleted },
+          { step: 4, label: 'Admin Approval', icon: Shield, completed: user?.kycStatus === 'VERIFIED' }
         ].map((s) => (
           <button
             key={s.step}
-            disabled={user?.kycStatus === 'PENDING'}
+            disabled={s.step === 4 || user?.kycStatus === 'PENDING'}
             onClick={() => setActiveStep(s.step)}
             className={`p-4 rounded-2xl text-left border transition-all duration-200 relative overflow-hidden ${
               activeStep === s.step 
-                ? 'bg-white border-indigo-600 shadow-md ring-1 ring-indigo-600' 
+                ? 'bg-white border-indigo-650 shadow-md ring-1 ring-indigo-650' 
                 : 'bg-white border-slate-100 hover:border-slate-200 shadow-sm'
             }`}
           >
             <div className="flex items-center justify-between mb-2">
-              <div className={`p-2 rounded-xl ${activeStep === s.step ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-50 text-slate-400'}`}>
+              <div className={`p-2 rounded-xl ${activeStep === s.step ? 'bg-indigo-50 text-indigo-650' : 'bg-slate-50 text-slate-400'}`}>
                 <s.icon className="w-5 h-5" />
               </div>
               {s.completed ? (
@@ -681,6 +722,99 @@ export const MyDocuments: React.FC = () => {
               </div>
             </motion.div>
           )}
+
+          {activeStep === 4 && (
+            <motion.div
+              key="step-approval"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              className="space-y-6 text-center py-10 max-w-md mx-auto"
+            >
+              {user?.kycStatus === 'PENDING' ? (
+                <>
+                  <div className="w-16 h-16 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-4 animate-pulse">
+                    <Loader2 className="w-8 h-8 animate-spin" />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900">Waiting for Approval</h3>
+                  <p className="text-sm text-slate-500 font-semibold">
+                    Your verification is waiting for admin approval.
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    We will notify you immediately once the administrator reviews your submitted documents.
+                  </p>
+                </>
+              ) : user?.kycStatus === 'VERIFIED' ? (
+                <>
+                  <div className="w-16 h-16 rounded-full bg-green-500 text-white flex items-center justify-center mx-auto mb-4 shadow-md">
+                    <Check className="w-8 h-8 stroke-[3]" />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900">Verification Approved</h3>
+                  <p className="text-sm text-green-600 font-bold">
+                    Your KYC has been approved. You can rent vehicles now.
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    Your account is fully verified. Thank you for completing the verification process!
+                  </p>
+                </>
+              ) : user?.kycStatus === 'REJECTED' ? (
+                <>
+                  <div className="w-16 h-16 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto mb-4">
+                    <AlertCircle className="w-8 h-8" />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900">Verification Rejected</h3>
+                  <p className="text-sm text-rose-600 font-bold">
+                    KYC rejected. Reason: {backendDocs.find(d => d.status === 'REJECTED')?.rejectionReason || 'Documents rejected by administrator'}
+                  </p>
+                  <p className="text-xs text-slate-400 mt-2">
+                    Please click the button below to reset and re-upload your documents.
+                  </p>
+                  <button
+                    onClick={handleResetKyc}
+                    className="mt-6 py-2.5 px-6 bg-indigo-650 hover:bg-indigo-750 text-white font-bold rounded-xl text-xs shadow-md transition-colors"
+                  >
+                    Retry Verification
+                  </button>
+                </>
+              ) : user?.kycStatus === 'FAILED' ? (
+                <>
+                  <div className="w-16 h-16 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto mb-4">
+                    <AlertCircle className="w-8 h-8" />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900">Verification Failed</h3>
+                  <p className="text-sm text-rose-600 font-bold">
+                    Your identity document verification failed. Please upload again.
+                  </p>
+                  <p className="text-xs text-slate-400 mt-2">
+                    FPT AI failed to scan or verify the validity of your uploaded documents.
+                  </p>
+                  <button
+                    onClick={handleResetKyc}
+                    className="mt-6 py-2.5 px-6 bg-indigo-650 hover:bg-indigo-750 text-white font-bold rounded-xl text-xs shadow-md transition-colors"
+                  >
+                    Retry Verification
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="w-16 h-16 rounded-full bg-slate-50 text-slate-400 flex items-center justify-center mx-auto mb-4">
+                    <Shield className="w-8 h-8" />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900">Submit for Approval</h3>
+                  <p className="text-sm text-slate-500">
+                    All document steps are complete. Please submit your application for administrator review.
+                  </p>
+                  <button
+                    onClick={handleSubmitKyc}
+                    disabled={!cccdCompleted || !dlCompleted || !selfieCompleted}
+                    className="mt-6 py-3 px-8 bg-indigo-650 hover:bg-indigo-750 disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold rounded-xl text-xs shadow-md disabled:shadow-none transition-colors"
+                  >
+                    Submit Verification
+                  </button>
+                </>
+              )}
+            </motion.div>
+          )}
         </AnimatePresence>
       </div>
 
@@ -693,7 +827,7 @@ export const MyDocuments: React.FC = () => {
             <ul className="list-disc list-inside mt-1 space-y-0.5">
               {backendDocs.filter(d => d.status === 'REJECTED').map(d => (
                 <li key={d.id}>
-                  <strong>{d.documentType.replace('_', ' ')}:</strong> {d.rejectionReason || 'No details provided.'}
+                  <strong>{d.documentType.replace(/_/g, ' ')}:</strong> {d.rejectionReason || 'No details provided.'}
                 </li>
               ))}
             </ul>
@@ -702,18 +836,20 @@ export const MyDocuments: React.FC = () => {
       )}
 
       {/* Action Footer */}
-      <div className="flex items-center justify-between p-6 bg-slate-50 rounded-2xl border border-slate-100">
-        <div className="text-xs text-slate-400 max-w-md">
-          Once you submit, your files will be locked and reviewed by an administrator. Review typically takes 5-10 minutes.
+      {user?.kycStatus !== 'PENDING' && user?.kycStatus !== 'VERIFIED' && user?.kycStatus !== 'FAILED' && user?.kycStatus !== 'REJECTED' && (
+        <div className="flex items-center justify-between p-6 bg-slate-50 rounded-2xl border border-slate-100">
+          <div className="text-xs text-slate-400 max-w-md">
+            Once you submit, your files will be locked and reviewed by an administrator. Review typically takes 5-10 minutes.
+          </div>
+          <button
+            onClick={handleSubmitKyc}
+            disabled={loading || !cccdCompleted || !dlCompleted || !selfieCompleted}
+            className="py-3.5 px-8 bg-indigo-650 hover:bg-indigo-750 disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold rounded-2xl text-xs transition-all tracking-wider uppercase shadow-md disabled:shadow-none hover:shadow-indigo-600/10"
+          >
+            {loading ? 'Submitting...' : 'Submit Verification'}
+          </button>
         </div>
-        <button
-          onClick={handleSubmitKyc}
-          disabled={loading || !cccdCompleted || !dlCompleted || !selfieCompleted || user?.kycStatus === 'PENDING'}
-          className="py-3.5 px-8 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold rounded-2xl text-xs transition-all tracking-wider uppercase shadow-md disabled:shadow-none hover:shadow-indigo-600/10"
-        >
-          {loading ? 'Submitting...' : 'Submit Verification'}
-        </button>
-      </div>
+      )}
     </div>
   );
 };
