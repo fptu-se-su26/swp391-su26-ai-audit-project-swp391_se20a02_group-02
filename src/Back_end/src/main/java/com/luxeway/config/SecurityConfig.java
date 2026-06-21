@@ -100,6 +100,7 @@ public class SecurityConfig {
                     "/payments/vnpay/return",
                     // Static uploads
                     "/uploads/**",
+                    "/api/v1/uploads/**",
                     // Public pages
                     "/stats/**",
                     "/stats",
@@ -119,32 +120,43 @@ public class SecurityConfig {
                     "/vehicles/search",
                     "/vehicles/featured",
                     "/vehicles/{id}",
+                    "/api/v1/vehicles",
+                    "/api/v1/vehicles/search",
+                    "/api/v1/vehicles/featured",
+                    "/api/v1/vehicles/{id}",
                     "/cars",
                     "/cars/{id}",
+                    "/api/v1/cars",
+                    "/api/v1/cars/{id}",
                     "/motorbikes",
                     "/motorbikes/{id}",
+                    "/api/v1/motorbikes",
+                    "/api/v1/motorbikes/{id}",
                     "/reviews",
-                    "/reviews/**"
+                    "/reviews/**",
+                    "/api/v1/reviews",
+                    "/api/v1/reviews/**"
                 ).permitAll()
                 // ======== Admin only (ADMIN and SUPER_ADMIN both get access) ========
                 .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                .requestMatchers("/api/v1/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                 .requestMatchers("/test/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                .requestMatchers(HttpMethod.GET, "/users").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                .requestMatchers(HttpMethod.GET, "/users", "/api/v1/users").hasAnyRole("ADMIN", "SUPER_ADMIN")
                 // ======== Owner or Admin ========
                 .requestMatchers(HttpMethod.POST,
-                    "/vehicles",
-                    "/cars",
-                    "/motorbikes"
+                    "/vehicles", "/api/v1/vehicles",
+                    "/cars", "/api/v1/cars",
+                    "/motorbikes", "/api/v1/motorbikes"
                 ).hasAnyRole("OWNER", "ADMIN")
                 .requestMatchers(HttpMethod.PUT,
-                    "/vehicles/**",
-                    "/cars/**",
-                    "/motorbikes/**"
+                    "/vehicles/**", "/api/v1/vehicles/**",
+                    "/cars/**", "/api/v1/cars/**",
+                    "/motorbikes/**", "/api/v1/motorbikes/**"
                 ).hasAnyRole("OWNER", "ADMIN")
                 .requestMatchers(HttpMethod.DELETE,
-                    "/vehicles/**",
-                    "/cars/**",
-                    "/motorbikes/**"
+                    "/vehicles/**", "/api/v1/vehicles/**",
+                    "/cars/**", "/api/v1/cars/**",
+                    "/motorbikes/**", "/api/v1/motorbikes/**"
                 ).hasAnyRole("OWNER", "ADMIN")
                 // Upload endpoint requires authentication
                 .requestMatchers(HttpMethod.POST, "/upload", "/upload/**", "/users/documents").authenticated()
