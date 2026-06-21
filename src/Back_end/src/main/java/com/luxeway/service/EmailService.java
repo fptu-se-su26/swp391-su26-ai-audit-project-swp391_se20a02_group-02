@@ -151,6 +151,13 @@ public class EmailService {
         sendEmail(adminEmail, subject, htmlContent, null, null);
     }
 
+    /**
+     * Send a custom HTML email (used by NotificationHubService for templated notifications).
+     */
+    public void sendCustomHtmlEmail(String to, String subject, String htmlContent) {
+        sendEmail(to, subject, htmlContent, null, null);
+    }
+
     private void sendEmail(String to, String subject, String htmlContent, String attachmentName, byte[] attachmentBytes) {
         try {
             MimeMessage message = mailSender.createMimeMessage();

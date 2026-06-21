@@ -17,6 +17,11 @@ class ApiClient {
     this.baseURL = baseURL;
   }
 
+  /** Public accessor for the base URL (used by services that build download URLs) */
+  public getBaseURL(): string {
+    return this.baseURL;
+  }
+
   private subscribeToRefresh(callback: (token: string) => void) {
     this.refreshSubscribers.push(callback);
   }
