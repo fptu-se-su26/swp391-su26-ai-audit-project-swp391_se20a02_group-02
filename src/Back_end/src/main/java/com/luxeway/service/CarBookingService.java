@@ -13,21 +13,25 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * @deprecated Use {@link BookingService} instead.
+ * Handled in Phase 1 by delegating internal persistence to the unified bookings table.
+ */
+@Deprecated
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class CarBookingService {
 
-    private final CarBookingRepository carBookingRepository;
-    private final CarRepository carRepository;
+    private final BookingRepository bookingRepository;
+    private final VehicleRepository vehicleRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
-    private final CarAvailabilityRepository carAvailabilityRepository;
+    private final VehicleAvailabilityRepository vehicleAvailabilityRepository;
 
     @Transactional
     public CarBookingDTOs.CarBookingResponse createBooking(String renterId, CarBookingDTOs.CreateCarBookingRequest req) {
@@ -41,15 +45,15 @@ public class CarBookingService {
             throw new RuntimeException("Start date cannot be in the past");
         }
 
-        Car car = carRepository.findByIdForUpdate(req.getCarId())
-                .orElseThrow(() -> new RuntimeException("Car not found: " + req.getCarId()));
+        Vehicle car = vehicleRepository.findByIdForUpdate(req.getCarId())
+                .orElseThrow(() -> new RuntimeException("Vehicle not found: " + req.getCarId()));
 
         if (car.getStatus() != VehicleStatus.AVAILABLE) {
-            throw new RuntimeException("Car is not available for booking (status: " + car.getStatus() + ")");
+            throw new RuntimeException("Vehicle is not available for booking (status: " + car.getStatus() + ")");
         }
 
-        if (carBookingRepository.hasConflictingBooking(req.getCarId(), req.getStartDate(), req.getEndDate())) {
-            throw new RuntimeException("Car is already booked for these dates.");
+        if (bookingRepository.hasConflictingBooking(req.getCarId(), req.getStartDate(), req.getEndDate())) {
+            throw new RuntimeException("Vehicle is already booked for these dates.");
         }
 
         User renter = userRepository.findById(renterId)
@@ -75,10 +79,13 @@ public class CarBookingService {
 
         BigDecimal serviceFee = basePrice.multiply(BigDecimal.valueOf(0.12)).setScale(0, RoundingMode.HALF_UP);
         BigDecimal taxes = basePrice.multiply(BigDecimal.valueOf(0.08)).setScale(0, RoundingMode.HALF_UP);
-        BigDecimal total = basePrice.add(insuranceFee).add(deliveryFee).add(chauffeurFee).add(weddingFee).add(serviceFee).add(taxes).subtract(corporateDiscount);
+        
+        // Sum specialized car fees into addonsTotal
+        BigDecimal addonsTotal = chauffeurFee.add(weddingFee).subtract(corporateDiscount);
+        BigDecimal total = basePrice.add(insuranceFee).add(deliveryFee).add(serviceFee).add(taxes).add(addonsTotal);
 
-        CarBooking booking = CarBooking.builder()
-                .car(car)
+        Booking booking = Booking.builder()
+                .vehicle(car)
                 .renter(renter)
                 .owner(car.getOwner())
                 .status(BookingStatus.CONFIRMED)
@@ -89,23 +96,22 @@ public class CarBookingService {
                 .pricePerDay(car.getPricePerDay())
                 .serviceFee(serviceFee)
                 .taxes(taxes)
+                .addonsTotal(addonsTotal)
+                .insuranceFee(insuranceFee)
+                .deliveryFee(deliveryFee)
                 .total(total)
                 .deposit(car.getDeposit())
                 .includeInsurance(req.isIncludeInsurance())
-                .insuranceTier(req.getInsuranceTier() != null ? req.getInsuranceTier() : "premium")
-                .hasChauffeur(req.isHasChauffeur())
-                .airportDelivery(req.isAirportDelivery())
-                .weddingPackage(req.isWeddingPackage())
-                .businessPackage(req.isBusinessPackage())
+                .includeDelivery(req.isAirportDelivery())
                 .deliveryAddress(req.getDeliveryAddress())
                 .pickupLocation(req.getPickupLocation())
                 .notes(req.getNotes())
                 .couponCode(req.getCouponCode())
                 .build();
 
-        booking = carBookingRepository.save(booking);
+        booking = bookingRepository.save(booking);
 
-        // Block calendar
+        // Block calendar using unified VehicleAvailability table
         blockAvailability(booking);
 
         // Notify owner
@@ -120,46 +126,49 @@ public class CarBookingService {
         return toResponse(booking);
     }
 
-    private void blockAvailability(CarBooking booking) {
+    private void blockAvailability(Booking booking) {
         LocalDate start = booking.getStartDate();
         LocalDate end = booking.getEndDate();
         for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
-            CarAvailability availability = CarAvailability.builder()
-                    .car(booking.getCar())
+            VehicleAvailability availability = VehicleAvailability.builder()
+                    .vehicle(booking.getVehicle())
                     .date(date)
                     .isAvailable(false)
+                    .bookingId(booking.getId())
                     .build();
-            carAvailabilityRepository.save(availability);
+            vehicleAvailabilityRepository.save(availability);
         }
     }
 
     public List<CarBookingDTOs.CarBookingResponse> getBookingsByRenter(String renterId) {
-        return carBookingRepository.findByRenterId(renterId).stream()
+        return bookingRepository.findByRenterId(renterId).stream()
+                .filter(b -> b.getVehicle().getVehicleType() == com.luxeway.enums.VehicleType.CAR)
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
     public List<CarBookingDTOs.CarBookingResponse> getBookingsByOwner(String ownerId) {
-        return carBookingRepository.findByOwnerId(ownerId).stream()
+        return bookingRepository.findByOwnerId(ownerId).stream()
+                .filter(b -> b.getVehicle().getVehicleType() == com.luxeway.enums.VehicleType.CAR)
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
     public CarBookingDTOs.CarBookingResponse getBookingById(String id) {
-        CarBooking booking = carBookingRepository.findById(id)
+        Booking booking = bookingRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Car booking not found with ID: " + id));
         return toResponse(booking);
     }
 
     @Transactional
     public CarBookingDTOs.CarBookingResponse updateStatus(String bookingId, String status) {
-        CarBooking booking = carBookingRepository.findById(bookingId)
+        Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Car booking not found"));
         booking.setStatus(BookingStatus.valueOf(status.toUpperCase()));
-        return toResponse(carBookingRepository.save(booking));
+        return toResponse(bookingRepository.save(booking));
     }
 
-    public CarBookingDTOs.CarBookingResponse toResponse(CarBooking b) {
+    public CarBookingDTOs.CarBookingResponse toResponse(Booking b) {
         CarBookingDTOs.CarBookingResponse r = new CarBookingDTOs.CarBookingResponse();
         r.setId(b.getId());
         r.setStatus(b.getStatus().name().toLowerCase());
@@ -174,12 +183,12 @@ public class CarBookingService {
         r.setTotal(b.getTotal());
         r.setDeposit(b.getDeposit());
 
-        r.setIncludeInsurance(b.isIncludeInsurance());
-        r.setInsuranceTier(b.getInsuranceTier());
-        r.setHasChauffeur(b.isHasChauffeur());
-        r.setAirportDelivery(b.isAirportDelivery());
-        r.setWeddingPackage(b.isWeddingPackage());
-        r.setBusinessPackage(b.isBusinessPackage());
+        r.setIncludeInsurance(b.getIncludeInsurance());
+        r.setInsuranceTier("premium");
+        r.setHasChauffeur(false); // Legacy fallback, handled via addonsTotal now
+        r.setAirportDelivery(b.getIncludeDelivery());
+        r.setWeddingPackage(false);
+        r.setBusinessPackage(false);
         
         r.setDeliveryAddress(b.getDeliveryAddress());
         r.setPickupLocation(b.getPickupLocation());
@@ -188,17 +197,15 @@ public class CarBookingService {
         r.setCouponCode(b.getCouponCode());
         r.setCreatedAt(b.getCreatedAt() != null ? b.getCreatedAt().toString() : null);
 
-        if (b.getCar() != null) {
+        if (b.getVehicle() != null) {
             CarBookingDTOs.CarBookingResponse.CarInfo ci = new CarBookingDTOs.CarBookingResponse.CarInfo();
-            ci.setId(b.getCar().getId());
-            ci.setName(b.getCar().getName());
-            ci.setBrandName(b.getCar().getModel().getBrand().getName());
-            ci.setModelName(b.getCar().getModel().getName());
-            ci.setCategory(b.getCar().getModel().getCategory());
-            ci.setLicensePlate(b.getCar().getLicensePlate());
-            if (b.getCar().getImages() != null && !b.getCar().getImages().isEmpty()) {
-                ci.setThumbnailUrl(b.getCar().getImages().iterator().next().getUrl());
-            }
+            ci.setId(b.getVehicle().getId());
+            ci.setName(b.getVehicle().getName());
+            ci.setBrandName(b.getVehicle().getBrand());
+            ci.setModelName(b.getVehicle().getModel());
+            ci.setCategory(b.getVehicle().getCategory() != null ? b.getVehicle().getCategory().name() : null);
+            ci.setLicensePlate(b.getVehicle().getLicensePlate());
+            ci.setThumbnailUrl(b.getVehicle().getThumbnailUrl());
             r.setCar(ci);
         }
 

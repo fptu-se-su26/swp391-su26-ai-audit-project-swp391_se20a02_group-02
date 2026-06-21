@@ -32,7 +32,8 @@ public class Conversation {
         joinColumns = @JoinColumn(name = "conversation_id"),
         inverseJoinColumns = @JoinColumn(name = "user_id")
     )
-    private Set<User> participants;
+    @Builder.Default
+    private Set<User> participants = new java.util.HashSet<>();
 
     @PrePersist
     private void prePersist() {

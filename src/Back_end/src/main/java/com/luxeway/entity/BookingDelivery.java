@@ -38,6 +38,7 @@ public class BookingDelivery {
     private BigDecimal longitude;
 
     @NotBlank
+    @Builder.Default
     @Column(nullable = false, length = 30)
     private String status = "PENDING"; // PENDING, IN_TRANSIT, DELIVERED, RETURNED
 

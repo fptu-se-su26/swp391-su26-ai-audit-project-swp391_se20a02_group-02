@@ -30,7 +30,7 @@ import java.util.Set;
 public class User implements UserDetails {
     
     @Id
-    @Column(length = 36)
+    @Column(name = "id", columnDefinition = "uniqueidentifier")
     private String id;
     
     @Column(unique = true, nullable = false)
@@ -139,6 +139,21 @@ public class User implements UserDetails {
     @Column(name = "updated_at")
     @LastModifiedDate
     private LocalDateTime updatedAt;
+
+    @Column(name = "is_deleted", nullable = false)
+    @Builder.Default
+    private Boolean isDeleted = false;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Column(name = "created_by", length = 100)
+    @org.springframework.data.annotation.CreatedBy
+    private String createdBy;
+
+    @Column(name = "updated_by", length = 100)
+    @org.springframework.data.annotation.LastModifiedBy
+    private String updatedBy;
     
     // Relationships
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -146,19 +161,23 @@ public class User implements UserDetails {
 
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
-    private Set<Vehicle> vehicles;
+    @Builder.Default
+    private Set<Vehicle> vehicles = new java.util.HashSet<>();
     
     @OneToMany(mappedBy = "renter", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
-    private Set<Booking> rentals;
+    @Builder.Default
+    private Set<Booking> rentals = new java.util.HashSet<>();
     
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
-    private Set<Booking> bookingsAsOwner;
+    @Builder.Default
+    private Set<Booking> bookingsAsOwner = new java.util.HashSet<>();
     
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
-    private Set<UserDocument> documents;
+    @Builder.Default
+    private Set<UserDocument> documents = new java.util.HashSet<>();
     
     // UserDetails implementation
     @Override

@@ -178,9 +178,12 @@ async def test_demand_agent_parallel_sub_agents(mock_ml_client, sample_analytics
     output, _ = await agent.execute(state, "test-run-7")
 
     do = output["demand_output"]
-    assert len(do["sub_agent_outputs"]) == 3  # short + medium + long
+    # DemandAgent runs 6 sub-agents in parallel:
+    # 3 ML forecast horizons (short/medium/long) + 3 external signals (weather/tourism/events)
+    assert len(do["sub_agent_outputs"]) == 6
     assert do["avg_daily_demand"] >= 0.0
     assert isinstance(do["recommended_inventory"], dict)
+
 
 
 # ── RevenueAgent tests ────────────────────────────────────────────────────────

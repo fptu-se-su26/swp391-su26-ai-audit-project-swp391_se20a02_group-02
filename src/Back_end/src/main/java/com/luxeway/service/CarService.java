@@ -17,11 +17,16 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * @deprecated Use {@link VehicleService} instead.
+ * Handled in Phase 1 by delegating internal persistence to the unified vehicles table.
+ */
+@Deprecated
 @Service
 @RequiredArgsConstructor
 public class CarService {
 
-    private final CarRepository carRepository;
+    private final VehicleRepository vehicleRepository;
     private final CarBrandRepository carBrandRepository;
     private final CarModelRepository carModelRepository;
     private final UserRepository userRepository;
@@ -47,19 +52,51 @@ public class CarService {
             } catch (IllegalArgumentException e) {
                 // Ignore invalid fuel type
             }
+        } else if (Boolean.TRUE.equals(electric)) {
+            fuelEnum = com.luxeway.enums.FuelType.ELECTRIC;
+        } else if (Boolean.TRUE.equals(hybrid)) {
+            fuelEnum = com.luxeway.enums.FuelType.HYBRID;
         }
         
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<Car> carPage = carRepository.searchCars(
-            city, seats, transEnum, fuelEnum, hasChauffeur, airportDelivery, electric, hybrid, pageable
+        Page<Vehicle> vehiclePage = vehicleRepository.filterVehiclesMulti(
+            city, // location
+            null, // categories
+            null, // brands
+            null, // minPrice
+            null, // maxPrice
+            seats, // minSeats
+            transEnum, // transmission
+            fuelEnum, // fuelType
+            null, // minRating
+            false, // isFeatured
+            false, // instantBook
+            false, // deliveryAvailable
+            com.luxeway.enums.VehicleType.CAR, // vehicleType
+            null, // minEngineCc
+            null, // maxEngineCc
+            false, // hasHelmet
+            false, // hasPhoneHolder
+            false, // hasRaincoat
+            false, // hasTouringPackage
+            hasChauffeur != null ? hasChauffeur : false,
+            airportDelivery != null ? airportDelivery : false,
+            false, // weddingRental
+            false, // businessRental
+            null, // startDate
+            null, // endDate
+            pageable
         );
-        return carPage.map(this::toResponse);
+        return vehiclePage.map(this::toResponse);
     }
 
     public CarDTOs.CarResponse getCarById(String id) {
-        Car car = carRepository.findById(id)
+        Vehicle vehicle = vehicleRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Car not found with ID: " + id));
-        return toResponse(car);
+        if (vehicle.getVehicleType() != com.luxeway.enums.VehicleType.CAR) {
+            throw new RuntimeException("Vehicle found is not a CAR");
+        }
+        return toResponse(vehicle);
     }
 
     @Transactional
@@ -70,72 +107,85 @@ public class CarService {
         CarModel model = carModelRepository.findById(request.getModelId())
             .orElseThrow(() -> new RuntimeException("Car Model not found"));
 
-        Car car = Car.builder()
-            .name(request.getName())
-            .model(model)
+        com.luxeway.enums.VehicleCategory categoryEnum = com.luxeway.enums.VehicleCategory.SEDAN;
+        if (model.getCategory() != null) {
+            try {
+                categoryEnum = com.luxeway.enums.VehicleCategory.valueOf(model.getCategory().toUpperCase());
+            } catch (IllegalArgumentException ignored) {}
+        }
+
+        com.luxeway.enums.FuelType fuelEnum = request.getFuelType();
+        if (fuelEnum == null) {
+            if (Boolean.TRUE.equals(request.getElectric())) {
+                fuelEnum = com.luxeway.enums.FuelType.ELECTRIC;
+            } else if (Boolean.TRUE.equals(request.getHybrid())) {
+                fuelEnum = com.luxeway.enums.FuelType.HYBRID;
+            } else {
+                fuelEnum = com.luxeway.enums.FuelType.GASOLINE;
+            }
+        }
+
+        Vehicle vehicle = Vehicle.builder()
             .owner(owner)
-            .licensePlate(request.getLicensePlate())
+            .name(request.getName())
+            .brand(model.getBrand().getName())
+            .model(model.getName())
+            .year(java.time.LocalDate.now().getYear())
+            .category(categoryEnum)
+            .vehicleType(com.luxeway.enums.VehicleType.CAR)
             .pricePerDay(request.getPricePerDay())
             .deposit(request.getDeposit())
-            .status(VehicleStatus.AVAILABLE)
-            .build();
-
-        car = carRepository.save(car);
-
-        CarSpecification spec = CarSpecification.builder()
-            .car(car)
-            .seats(request.getSeats())
-            .doors(request.getDoors() != null ? request.getDoors() : 4)
-            .transmission(request.getTransmission())
-            .fuelType(request.getFuelType())
-            .hasChauffeur(request.getHasChauffeur() != null ? request.getHasChauffeur() : false)
-            .airportDelivery(request.getAirportDelivery() != null ? request.getAirportDelivery() : false)
-            .electric(request.getElectric() != null ? request.getElectric() : false)
-            .hybrid(request.getHybrid() != null ? request.getHybrid() : false)
-            .build();
-        car.setSpecification(spec);
-
-        CarLocation loc = CarLocation.builder()
-            .car(car)
             .city(request.getCity())
             .address(request.getAddress())
             .latitude(request.getLatitude() != null ? java.math.BigDecimal.valueOf(request.getLatitude()) : null)
             .longitude(request.getLongitude() != null ? java.math.BigDecimal.valueOf(request.getLongitude()) : null)
+            .seats(request.getSeats() != null ? request.getSeats() : 4)
+            .doors(request.getDoors() != null ? request.getDoors() : 4)
+            .transmission(request.getTransmission() != null ? request.getTransmission() : com.luxeway.enums.TransmissionType.AUTOMATIC)
+            .fuelType(fuelEnum)
+            .hasChauffeur(request.getHasChauffeur() != null ? request.getHasChauffeur() : false)
+            .airportDelivery(request.getAirportDelivery() != null ? request.getAirportDelivery() : false)
+            .status(VehicleStatus.AVAILABLE)
             .build();
-        car.setLocation(loc);
+
+        vehicle = vehicleRepository.save(vehicle);
 
         if (request.getImageUrls() != null) {
-            Set<CarImage> images = new HashSet<>();
+            Vehicle finalVehicle = vehicle;
             int order = 0;
+            java.util.Set<VehicleImage> images = new java.util.HashSet<>();
             for (String url : request.getImageUrls()) {
-                images.add(CarImage.builder()
-                    .car(car)
+                images.add(VehicleImage.builder()
+                    .vehicle(finalVehicle)
                     .url(url)
                     .isPrimary(order == 0)
                     .sortOrder(order++)
                     .build());
             }
-            car.setImages(images);
+            vehicle.setImages(images);
+            if (!request.getImageUrls().isEmpty()) {
+                vehicle.setThumbnailUrl(request.getImageUrls().get(0));
+            }
+            vehicleRepository.save(vehicle);
         }
 
-        return toResponse(carRepository.save(car));
+        return toResponse(vehicle);
     }
 
     @Transactional
     public void deleteCar(String id) {
-        if (!carRepository.existsById(id)) {
-            throw new RuntimeException("Car not found");
-        }
-        carRepository.deleteById(id);
+        Vehicle vehicle = vehicleRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Vehicle not found"));
+        vehicleRepository.delete(vehicle);
     }
 
-    public CarDTOs.CarResponse toResponse(Car car) {
+    public CarDTOs.CarResponse toResponse(Vehicle car) {
         CarDTOs.CarResponse response = new CarDTOs.CarResponse();
         response.setId(car.getId());
         response.setName(car.getName());
-        response.setBrandName(car.getModel().getBrand().getName());
-        response.setModelName(car.getModel().getName());
-        response.setCategory(car.getModel().getCategory());
+        response.setBrandName(car.getBrand());
+        response.setModelName(car.getModel());
+        response.setCategory(car.getCategory() != null ? car.getCategory().name().toLowerCase() : null);
         response.setLicensePlate(car.getLicensePlate());
         response.setPricePerDay(car.getPricePerDay());
         response.setDeposit(car.getDeposit());
@@ -143,27 +193,23 @@ public class CarService {
         response.setRating(car.getRating().doubleValue());
         response.setTotalReviews(car.getTotalReviews());
 
-        if (car.getLocation() != null) {
-            response.setCity(car.getLocation().getCity());
-            response.setAddress(car.getLocation().getAddress());
-            response.setLatitude(car.getLocation().getLatitude() != null ? car.getLocation().getLatitude().doubleValue() : null);
-            response.setLongitude(car.getLocation().getLongitude() != null ? car.getLocation().getLongitude().doubleValue() : null);
-        }
+        response.setCity(car.getCity());
+        response.setAddress(car.getAddress());
+        response.setLatitude(car.getLatitude() != null ? car.getLatitude().doubleValue() : null);
+        response.setLongitude(car.getLongitude() != null ? car.getLongitude().doubleValue() : null);
 
-        if (car.getSpecification() != null) {
-            response.setSeats(car.getSpecification().getSeats());
-            response.setDoors(car.getSpecification().getDoors());
-            response.setTransmission(car.getSpecification().getTransmission().name());
-            response.setFuelType(car.getSpecification().getFuelType().name());
-            response.setHasChauffeur(car.getSpecification().getHasChauffeur());
-            response.setAirportDelivery(car.getSpecification().getAirportDelivery());
-            response.setElectric(car.getSpecification().getElectric());
-            response.setHybrid(car.getSpecification().getHybrid());
-        }
+        response.setSeats(car.getSeats());
+        response.setDoors(car.getDoors());
+        response.setTransmission(car.getTransmission() != null ? car.getTransmission().name() : null);
+        response.setFuelType(car.getFuelType() != null ? car.getFuelType().name() : null);
+        response.setHasChauffeur(car.getHasChauffeur());
+        response.setAirportDelivery(car.getAirportDelivery());
+        response.setElectric(car.getFuelType() == com.luxeway.enums.FuelType.ELECTRIC);
+        response.setHybrid(car.getFuelType() == com.luxeway.enums.FuelType.HYBRID);
 
         if (car.getImages() != null) {
             response.setImages(car.getImages().stream()
-                .map(CarImage::getUrl)
+                .map(VehicleImage::getUrl)
                 .collect(Collectors.toList()));
         }
 

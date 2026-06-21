@@ -102,6 +102,18 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- FLYWAY MIGRATION -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-sqlserver</artifactId>
+            <version>${flyway.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+
         <!-- MYSQL -->
         
         <dependency>

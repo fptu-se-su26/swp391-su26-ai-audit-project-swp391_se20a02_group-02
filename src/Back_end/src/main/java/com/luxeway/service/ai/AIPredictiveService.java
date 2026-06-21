@@ -21,6 +21,8 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import org.springframework.transaction.annotation.Transactional;
+
 /**
  * Orchestrates parallel ML prediction calls and assembles the dashboard snapshot.
  *
@@ -53,6 +55,7 @@ public class AIPredictiveService {
      *
      * @return assembled dashboard snapshot, never null.
      */
+    @Transactional(readOnly = true)
     public AIPredictiveDashboardDTO buildDashboard() {
         log.info("AIPredictiveService: building AI predictive dashboard");
 
@@ -70,15 +73,15 @@ public class AIPredictiveService {
                         .build())
                 .collect(Collectors.toList());
 
-        // ---- Fetch vehicles (for utilization) ----
+        // ---- Fetch vehicles and bookings (for utilization and churn) ----
         List<Vehicle> vehicles = vehicleRepository.findAll();
-        Map<String, List<Double>> utilizationByCategory = buildUtilizationMap(vehicles);
+        List<Booking> allBookings = bookingRepository.findAll();
+        
+        Map<String, List<Double>> utilizationByCategory = buildUtilizationMap(vehicles, allBookings);
 
-        // ---- Fetch customers with bookings (for churn) ----
         List<User> customers = userRepository.findAll().stream()
                 .filter(u -> u.getRole() != null && u.getRole().name().equals("CUSTOMER"))
                 .collect(Collectors.toList());
-        List<Booking> allBookings = bookingRepository.findAll();
         List<CustomerDataPoint> churnPayload = buildChurnPayload(customers, allBookings);
 
         // Platform averages for churn scoring
@@ -138,17 +141,44 @@ public class AIPredictiveService {
 
     // ---------------------------------------------------------------- helpers
 
-    /**
-     * Groups vehicles by category and computes a utilization rate series
-     * (ratio of bookings to capacity per period, simplified as booking count / max).
-     */
-    private Map<String, List<Double>> buildUtilizationMap(List<Vehicle> vehicles) {
+    private Map<String, List<Double>> buildUtilizationMap(List<Vehicle> vehicles, List<Booking> allBookings) {
         Map<String, List<Double>> map = new LinkedHashMap<>();
-        for (Vehicle v : vehicles) {
-            String category = v.getCategory() != null ? v.getCategory().name() : "UNKNOWN";
-            double rate = v.getStatus() == VehicleStatus.AVAILABLE ? 0.3
-                    : v.getStatus() == VehicleStatus.RENTED ? 1.0 : 0.0;
-            map.computeIfAbsent(category, k -> new ArrayList<>()).add(rate);
+        
+        // Count total vehicles per category
+        Map<String, Long> categoryCapacity = vehicles.stream()
+                .collect(Collectors.groupingBy(
+                        v -> v.getCategory() != null ? v.getCategory().name() : "UNKNOWN",
+                        Collectors.counting()
+                ));
+                
+        LocalDate today = LocalDate.now();
+        
+        // For each category, compute utilization for the last 14 days
+        for (Map.Entry<String, Long> entry : categoryCapacity.entrySet()) {
+            String category = entry.getKey();
+            long capacity = entry.getValue();
+            if (capacity == 0) continue;
+            
+            List<Double> timeSeries = new ArrayList<>();
+            for (int i = 13; i >= 0; i--) {
+                LocalDate targetDate = today.minusDays(i);
+                
+                // Count active bookings for this category on targetDate
+                long activeRentals = allBookings.stream()
+                        .filter(b -> b.getVehicle() != null)
+                        .filter(b -> {
+                            String c = b.getVehicle().getCategory() != null ? b.getVehicle().getCategory().name() : "UNKNOWN";
+                            return c.equals(category);
+                        })
+                        .filter(b -> b.getStatus() != BookingStatus.CANCELLED)
+                        .filter(b -> b.getStartDate() != null && b.getEndDate() != null)
+                        .filter(b -> !b.getStartDate().isAfter(targetDate) && !b.getEndDate().isBefore(targetDate))
+                        .count();
+                        
+                double rate = (double) activeRentals / capacity;
+                timeSeries.add(Math.max(0.0, Math.min(1.0, rate)));
+            }
+            map.put(category, timeSeries);
         }
         return map;
     }
@@ -167,6 +197,7 @@ public class AIPredictiveService {
                 bm.put("status", b.getStatus().name());
                 bm.put("total", b.getTotal() != null ? b.getTotal().doubleValue() : 0.0);
                 bm.put("createdAt", b.getCreatedAt() != null ? b.getCreatedAt().toString() : "");
+                bm.put("end_date", b.getEndDate() != null ? b.getEndDate().toString() : "");
                 return bm;
             }).collect(Collectors.toList());
 

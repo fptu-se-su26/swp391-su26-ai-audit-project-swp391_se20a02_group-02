@@ -89,6 +89,18 @@ public class AgentLayerClient {
                 .timeout(Duration.ofSeconds(10));
     }
 
+    /**
+     * Run standalone copilot agent.
+     */
+    public Mono<Object> runCopilotAgent(Object requestBody) {
+        return webClient.post()
+                .uri("/api/v1/agent/copilot")
+                .bodyValue(requestBody)
+                .retrieve()
+                .bodyToMono(Object.class)
+                .timeout(Duration.ofSeconds(15));
+    }
+
     // ── Domain Exception ──────────────────────────────────────────────────────
 
     public static class AgentServiceException extends RuntimeException {

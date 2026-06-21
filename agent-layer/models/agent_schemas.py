@@ -20,6 +20,9 @@ class AgentName(str, Enum):
     DEMAND = "DemandAgent"
     REVENUE = "RevenueAgent"
     UTILIZATION = "UtilizationAgent"
+    ANALYTICS = "AnalyticsAgent"
+    COPILOT = "CopilotAgent"
+    SUPERVISOR = "SupervisorAgent"
     ORCHESTRATOR = "FleetOptimizationOrchestrator"
 
 
@@ -194,6 +197,27 @@ class UtilizationAgentResponse(BaseModel):
     highest_category: str
     rebalancing_recommendations: list[dict[str, Any]]
     reasoning_chain: list[str] = Field(default_factory=list)
+
+
+class AnalyticsAgentRequest(BaseModel):
+    query: str
+    timeframe: Optional[str] = None
+    focus_area: Optional[str] = None
+
+class AnalyticsAgentResponse(BaseModel):
+    summary: str
+    metrics: dict[str, Any] = Field(default_factory=dict)
+    insights: list[str] = Field(default_factory=list)
+
+class CopilotAgentRequest(BaseModel):
+    prompt: str
+    context: dict[str, Any] = Field(default_factory=dict)
+    admin_id: Optional[str] = None
+
+class CopilotAgentResponse(BaseModel):
+    response_text: str
+    suggested_actions: list[str] = Field(default_factory=list)
+    routed_to: Optional[str] = None
 
 
 # ── Fleet Action Plan (Orchestrator Output) ───────────────────────────────────

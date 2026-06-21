@@ -22,10 +22,12 @@ public interface BookingRepository extends JpaRepository<Booking, String> {
     Page<Booking> findByStatus(BookingStatus status, Pageable pageable);
 
     // By renter
+    List<Booking> findByRenterId(String renterId);
     Page<Booking> findByRenterIdOrderByCreatedAtDesc(String renterId, Pageable pageable);
     List<Booking> findByRenterIdAndStatus(String renterId, BookingStatus status);
 
     // By owner
+    List<Booking> findByOwnerId(String ownerId);
     Page<Booking> findByOwnerIdOrderByCreatedAtDesc(String ownerId, Pageable pageable);
     List<Booking> findByOwnerIdAndStatus(String ownerId, BookingStatus status);
 

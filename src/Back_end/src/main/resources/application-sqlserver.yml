@@ -8,7 +8,12 @@ spring:
     init:
       schema-locations: []
       data-locations: classpath:data-sqlserver.sql, classpath:seed_vehicles.sql
-      mode: always
+      mode: never
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
+    locations: classpath:db/migration
   jpa:
     hibernate:
       ddl-auto: none
@@ -17,9 +22,9 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.SQLServerDialect
         format_sql: true
-    defer-datasource-initialization: true
+    defer-datasource-initialization: false
 
 ml:
   service:
     url: http://localhost:8000
-    timeout-ms: 5000
+    timeout-ms: 10000

@@ -40,6 +40,8 @@ from models.agent_schemas import (
     DemandAgentRequest,
     RevenueAgentRequest,
     UtilizationAgentRequest,
+    AnalyticsAgentRequest,
+    CopilotAgentRequest,
 )
 
 # ── Logging ───────────────────────────────────────────────────────────────────
@@ -51,9 +53,15 @@ logger = logging.getLogger("luxeway.agent_service")
 
 # ── Prometheus (optional) ─────────────────────────────────────────────────────
 try:
-    from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
-    REQUEST_COUNT = Counter("agent_requests_total", "Total agent requests", ["endpoint", "status"])
-    REQUEST_LATENCY = Histogram("agent_request_duration_seconds", "Agent request latency", ["endpoint"])
+    from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST, REGISTRY
+    
+    if "agent_requests_total" not in REGISTRY._names_to_collectors:
+        REQUEST_COUNT = Counter("agent_requests_total", "Total agent requests", ["endpoint", "status"])
+        REQUEST_LATENCY = Histogram("agent_request_duration_seconds", "Agent request latency", ["endpoint"])
+    else:
+        REQUEST_COUNT = REGISTRY._names_to_collectors["agent_requests_total"]
+        REQUEST_LATENCY = REGISTRY._names_to_collectors["agent_request_duration_seconds"]
+
     PROMETHEUS_AVAILABLE = True
 except ImportError:
     PROMETHEUS_AVAILABLE = False
@@ -291,6 +299,40 @@ async def run_utilization_agent(
         "input_data": {
             "vehicle_utilization": request.by_category,
         }
+    }
+    output, _ = await agent.execute(state, "standalone")
+    return output
+
+
+@app.post("/api/v1/agent/analytics", tags=["Agents"])
+async def run_analytics_agent(
+    request: AnalyticsAgentRequest,
+    token_data: dict = Depends(verify_token),
+) -> dict:
+    from agents.analytics_agent import AnalyticsAgent
+    ml_client = await get_ml_client()
+    agent = AnalyticsAgent(ml_client, settings.BACKEND_URL)
+    state = {
+        "query": request.query,
+        "timeframe": request.timeframe,
+        "focus_area": request.focus_area
+    }
+    output, _ = await agent.execute(state, "standalone")
+    return output
+
+
+@app.post("/api/v1/agent/copilot", tags=["Agents"])
+async def run_copilot_agent(
+    request: CopilotAgentRequest,
+    token_data: dict = Depends(verify_token),
+) -> dict:
+    from agents.copilot_agent import CopilotAgent
+    ml_client = await get_ml_client()
+    agent = CopilotAgent(ml_client, settings.BACKEND_URL)
+    state = {
+        "prompt": request.prompt,
+        "context": request.context,
+        "admin_id": request.admin_id
     }
     output, _ = await agent.execute(state, "standalone")
     return output

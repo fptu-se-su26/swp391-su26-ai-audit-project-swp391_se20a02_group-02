@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Set;
 
+@Deprecated
 @Entity
 @Table(name = "motorbikes")
 @Data
@@ -84,19 +85,22 @@ public class Motorbike {
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private Set<MotorbikeImage> images;
+    @Builder.Default
+    private Set<MotorbikeImage> images = new java.util.HashSet<>();
 
     @OneToMany(mappedBy = "motorbike", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private Set<MotorbikePricing> pricingRules;
+    @Builder.Default
+    private Set<MotorbikePricing> pricingRules = new java.util.HashSet<>();
 
     @OneToMany(mappedBy = "motorbike", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private Set<MotorbikeAvailability> availabilities;
+    @Builder.Default
+    private Set<MotorbikeAvailability> availabilities = new java.util.HashSet<>();
 
     @PrePersist
     private void prePersist() {

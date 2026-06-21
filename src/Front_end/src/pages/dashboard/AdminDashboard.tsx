@@ -15,6 +15,7 @@ import { formatCurrency, formatDate, getInitials } from '@/utils';
 import { staggerContainer, staggerItem, fadeUp } from '@/animations/variants';
 import { adminService } from '@/services/adminService';
 import type { AdminStats } from '@/services/adminService';
+import { LanguageSwitcherMinimal } from '@/components/ui/LanguageSwitcher';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell
@@ -166,6 +167,8 @@ const AdminHeader: React.FC = () => {
             style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)', boxShadow: '0 4px 15px rgba(99,102,241,0.35)' }}>
             <Plus className="w-4 h-4" /> Add Vehicle
           </Link>
+          <div className="hidden sm:block w-px h-6 mx-1 bg-white/10" />
+          <LanguageSwitcherMinimal className="!bg-white/5 border border-white/10 !text-white hover:!bg-white/10" />
         </div>
       </div>
     </header>

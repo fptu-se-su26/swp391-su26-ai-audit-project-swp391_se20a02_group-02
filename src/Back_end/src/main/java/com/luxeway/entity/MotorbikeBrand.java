@@ -34,7 +34,8 @@ public class MotorbikeBrand {
     private LocalDateTime createdAt = LocalDateTime.now();
 
     @OneToMany(mappedBy = "brand", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private Set<MotorbikeModel> models;
+    @Builder.Default
+    private Set<MotorbikeModel> models = new java.util.HashSet<>();
 
     @PrePersist
     private void prePersist() {

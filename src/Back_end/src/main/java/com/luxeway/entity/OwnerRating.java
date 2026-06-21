@@ -23,12 +23,15 @@ public class OwnerRating {
     private OwnerProfile owner;
 
     @Column(name = "avg_rating", precision = 3, scale = 2, nullable = false)
+    @Builder.Default
     private BigDecimal avgRating = BigDecimal.valueOf(5.00);
 
     @Column(name = "total_reviews", nullable = false)
+    @Builder.Default
     private Integer totalReviews = 0;
 
     @Column(name = "response_rate", precision = 5, scale = 2, nullable = false)
+    @Builder.Default
     private BigDecimal responseRate = BigDecimal.valueOf(100.00);
 
     @Column(name = "avg_response_time_minutes", nullable = false)

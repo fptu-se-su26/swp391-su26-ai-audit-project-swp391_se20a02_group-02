@@ -25,7 +25,7 @@ import java.time.temporal.ChronoUnit;
 public class Booking {
     
     @Id
-    @Column(length = 36)
+    @Column(name = "id", columnDefinition = "uniqueidentifier")
     private String id;
     
     @ManyToOne(fetch = FetchType.LAZY)
@@ -164,6 +164,21 @@ public class Booking {
     @Column(name = "updated_at")
     @LastModifiedDate
     private LocalDateTime updatedAt;
+
+    @Column(name = "is_deleted", nullable = false)
+    @Builder.Default
+    private Boolean isDeleted = false;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Column(name = "created_by", length = 100)
+    @org.springframework.data.annotation.CreatedBy
+    private String createdBy;
+
+    @Column(name = "updated_by", length = 100)
+    @org.springframework.data.annotation.LastModifiedBy
+    private String updatedBy;
     
     // Helper methods
     public boolean canBeCancelled() {

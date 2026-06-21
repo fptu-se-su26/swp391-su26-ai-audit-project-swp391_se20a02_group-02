@@ -13,6 +13,7 @@ import jakarta.persistence.LockModeType;
 import java.util.Optional;
 import java.util.List;
 
+@Deprecated
 @Repository
 public interface MotorbikeRepository extends JpaRepository<Motorbike, String> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)

@@ -1,5 +1,6 @@
 package com.luxeway.dto.ai;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,10 +15,12 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class AnomalyDTO {
 
     private String date;
 
+    @JsonProperty("metric_type")
     private String metric;
 
     @JsonProperty("actual_value")

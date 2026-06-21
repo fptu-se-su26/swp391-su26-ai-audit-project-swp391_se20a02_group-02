@@ -1,9 +1,10 @@
 package com.luxeway.service.ai;
 
 import com.luxeway.dto.ai.AIPredictiveDashboardDTO;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -33,12 +34,15 @@ public class PredictionCacheService {
     // ---------------------------------------------------------------- lifecycle
 
     /**
-     * Schedules the initial cache warm-up without blocking Spring context startup.
-     * Uses @Async to run in the background executor thread pool.
+     * Schedules the initial cache warm-up when Spring has fully initialized.
+     * Uses @EventListener(ApplicationReadyEvent.class) to ensure all auto-configs
+     * and the async executor are ready before triggering the async warmup.
+     * This prevents race conditions where the async thread might query the DB
+     * before Spring has finished startup.
      */
-    @PostConstruct
-    public void init() {
-        log.info("PredictionCacheService: scheduling initial warm-up");
+    @EventListener(ApplicationReadyEvent.class)
+    public void onApplicationReady(ApplicationReadyEvent event) {
+        log.info("PredictionCacheService: ApplicationReadyEvent received, scheduling async warm-up");
         warmUp();
     }
 

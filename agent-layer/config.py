@@ -63,9 +63,10 @@ class Settings(BaseSettings):
     RATE_LIMIT_REQUESTS: int = 1000
     RATE_LIMIT_WINDOW_SECONDS: int = 60
 
-    # ── LangGraph ─────────────────────────────────────────────────────────────
+    # ── LangGraph & LLMs ──────────────────────────────────────────────────────
     LANGGRAPH_RECURSION_LIMIT: int = 50
     ENABLE_HUMAN_IN_LOOP: bool = False  # set True in prod for revenue changes
+    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
 
     class Config:
         env_file = ".env"

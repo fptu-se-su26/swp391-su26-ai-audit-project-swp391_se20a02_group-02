@@ -29,7 +29,7 @@ import java.util.Set;
 public class Vehicle {
     
     @Id
-    @Column(length = 36)
+    @Column(name = "id", columnDefinition = "uniqueidentifier")
     private String id;
     
     @ManyToOne(fetch = FetchType.LAZY)
@@ -232,6 +232,21 @@ public class Vehicle {
     @Column(name = "updated_at")
     @LastModifiedDate
     private LocalDateTime updatedAt;
+
+    @Column(name = "is_deleted", nullable = false)
+    @Builder.Default
+    private Boolean isDeleted = false;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Column(name = "created_by", length = 100)
+    @org.springframework.data.annotation.CreatedBy
+    private String createdBy;
+
+    @Column(name = "updated_by", length = 100)
+    @org.springframework.data.annotation.LastModifiedBy
+    private String updatedBy;
     
     // Relationships
     @OneToOne(mappedBy = "vehicle", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -241,22 +256,27 @@ public class Vehicle {
     private VehicleLocation location;
 
     @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private Set<VehicleAvailability> availabilities;
+    @Builder.Default
+    private Set<VehicleAvailability> availabilities = new java.util.HashSet<>();
 
     @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private Set<VehiclePricingRule> pricingRules;
+    @Builder.Default
+    private Set<VehiclePricingRule> pricingRules = new java.util.HashSet<>();
 
     @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
-    private Set<VehicleImage> images;
+    @Builder.Default
+    private Set<VehicleImage> images = new java.util.HashSet<>();
     
     @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
-    private Set<VehicleFeature> features;
+    @Builder.Default
+    private Set<VehicleFeature> features = new java.util.HashSet<>();
     
     @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
-    private Set<Booking> bookings;
+    @Builder.Default
+    private Set<Booking> bookings = new java.util.HashSet<>();
     
     // Helper methods
     public boolean isAvailable() {

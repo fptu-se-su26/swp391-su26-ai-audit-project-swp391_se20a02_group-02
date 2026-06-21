@@ -226,6 +226,14 @@ apiClient.onUnauthorized = () => {
   });
   useNotificationStore.setState({ unreadCount: 0 });
 
+  try {
+    localStorage.removeItem('luxeway_access_token');
+    localStorage.removeItem('luxeway_refresh_token');
+    localStorage.removeItem('luxeway_user');
+  } catch (e) {
+    console.error('Failed to clear local storage:', e);
+  }
+
   const protectedPrefixes = ['/dashboard', '/admin', '/owner', '/booking', '/payment', '/messages', '/notifications'];
   const path = window.location.pathname;
   const isProtected = protectedPrefixes.some(prefix => path === prefix || path.startsWith(prefix + '/'));

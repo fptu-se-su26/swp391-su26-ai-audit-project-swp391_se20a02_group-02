@@ -2,6 +2,9 @@ spring:
   application:
     name: luxeway-backend
 
+  flyway:
+    enabled: false
+
   main:
     allow-circular-references: true
 
@@ -119,3 +122,8 @@ business:
     service-fee-rate: 0.12
     tax-rate: 0.08
     platform-commission: 0.15
+
+# ML Sidecar Configuration
+ml:
+  service:
+    timeout-ms: 10000

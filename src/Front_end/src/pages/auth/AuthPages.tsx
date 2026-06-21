@@ -17,9 +17,14 @@ declare global {
   }
 }
 
-// Redirect logged-in/registering users to Homepage to show logged-in state
+// Redirect logged-in/registering users to their role-based dashboard
 const getRoleBasedDashboard = (user: User | null): string => {
-  return '/';
+  if (!user) return '/';
+  const role = user.role?.toUpperCase();
+  if (role === 'ADMIN' || role === 'SUPER_ADMIN') return '/admin';
+  if (role === 'OWNER') return '/owner';
+  if (role === 'BUSINESS_OWNER') return '/business';
+  return '/dashboard';
 };
 
 

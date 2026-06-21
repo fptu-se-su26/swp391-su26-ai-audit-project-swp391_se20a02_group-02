@@ -33,9 +33,9 @@ public class InsurancePackage {
     private BigDecimal costPerDay = BigDecimal.ZERO;
 
     @NotNull
-    @Column(name = "coverage_limit", precision = 18)
+    @Column(name = "coverage_limit", precision = 18, scale = 2)
     @Builder.Default
-    private Double coverageAmount = 0.0;
+    private BigDecimal coverageAmount = BigDecimal.ZERO;
 
     @Column(columnDefinition = "TEXT")
     private String description;

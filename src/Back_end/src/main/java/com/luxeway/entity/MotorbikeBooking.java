@@ -102,7 +102,8 @@ public class MotorbikeBooking {
     @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private Set<EquipmentRental> equipmentRentals;
+    @Builder.Default
+    private Set<EquipmentRental> equipmentRentals = new java.util.HashSet<>();
 
     @PrePersist
     private void prePersist() {

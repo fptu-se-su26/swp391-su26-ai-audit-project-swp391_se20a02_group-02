@@ -557,7 +557,7 @@ const AIPredictivePanel: React.FC<AIPredictivePanelProps> = ({ isDark, currency 
                 {anomalies.map((a, i) => (
                   <tr key={i} className={cn('border-b', isDark ? 'border-slate-800' : 'border-slate-100')}>
                     <td className="py-2.5 px-3 font-mono">{a.date}</td>
-                    <td className="py-2.5 px-3 font-bold capitalize">{a.metric}</td>
+                    <td className="py-2.5 px-3 font-bold capitalize">{a.metric || (a as any).metric_type || 'UNKNOWN'}</td>
                     <td className="py-2.5 px-3">{a.actual_value.toLocaleString()}</td>
                     <td className="py-2.5 px-3">{a.expected_value.toLocaleString()}</td>
                     <td className="py-2.5 px-3 font-mono">{a.z_score.toFixed(2)}</td>
@@ -628,18 +628,30 @@ const AIPredictivePanel: React.FC<AIPredictivePanelProps> = ({ isDark, currency 
                       {insight.title}
                     </p>
                     <p className="text-[11px] text-slate-400 leading-relaxed">{insight.description}</p>
-                    {insight.actionLabel && (
-                      <button className={cn(
-                        'mt-2 text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border transition-all',
-                        isCritical
-                          ? 'border-red-500/30 text-red-400 hover:bg-red-500/10'
-                          : isWarning
-                          ? 'border-amber-500/30 text-amber-400 hover:bg-amber-500/10'
-                          : 'border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10'
-                      )}>
-                        {insight.actionLabel}
+                    <div className="flex flex-wrap gap-2">
+                      {insight.actionLabel && (
+                        <button className={cn(
+                          'mt-2 text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border transition-all',
+                          isCritical
+                            ? 'border-red-500/30 text-red-400 hover:bg-red-500/10'
+                            : isWarning
+                            ? 'border-amber-500/30 text-amber-400 hover:bg-amber-500/10'
+                            : 'border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10'
+                        )}>
+                          {insight.actionLabel}
+                        </button>
+                      )}
+                      <button 
+                        className="mt-2 text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border border-purple-500/30 text-purple-400 hover:bg-purple-500/10 transition-all flex items-center gap-1"
+                        onClick={() => {
+                          // In a full implementation, this would dispatch an event to open the Copilot widget
+                          // and pre-fill it with "Analyze: " + insight.title
+                          window.dispatchEvent(new CustomEvent('open-copilot', { detail: { prompt: `Analyze this insight: ${insight.title}` } }));
+                        }}
+                      >
+                        Ask Copilot
                       </button>
-                    )}
+                    </div>
                   </div>
                 </motion.div>
               );

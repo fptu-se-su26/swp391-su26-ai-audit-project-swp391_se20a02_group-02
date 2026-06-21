@@ -16,10 +16,12 @@ import {
 } from 'recharts';
 import { adminService, AdminStats } from '@/services/adminService';
 import { AIPredictivePanel } from '@/components/admin/AIPredictivePanel';
+import { AICopilotWidget } from '@/components/admin/AICopilotWidget';
 import { paymentService } from '@/services/bookingService';
 import { useToast } from '@/components/ui/Toast';
 import { useUIStore, useAuthStore } from '@/store';
 import { useT } from '@/i18n/translations';
+import { LanguageSwitcherMinimal } from '@/components/ui/LanguageSwitcher';
 
 const COLORS = ['#EAB308', '#6366F1', '#10B981', '#A855F7', '#06B6D4', '#EC4899'];
 
@@ -692,6 +694,12 @@ const AdminDashboard: React.FC = () => {
                   {t.adminDashboard.systemSecure}
                 </span>
               </div>
+              
+              <LanguageSwitcherMinimal className={cn(
+                "p-2 border rounded-2xl transition-all duration-300 shadow-sm",
+                isDark ? "bg-slate-800 border-slate-700 hover:bg-slate-750 text-slate-300" : "bg-white border-slate-200 hover:bg-slate-50 text-slate-600"
+              )} />
+              
               <button 
                 onClick={loadDashboardData}
                 className={cn(
@@ -2384,6 +2392,7 @@ const AdminDashboard: React.FC = () => {
         )}
       </AdminSlideDrawer>
 
+      <AICopilotWidget />
     </div>
   );
 };

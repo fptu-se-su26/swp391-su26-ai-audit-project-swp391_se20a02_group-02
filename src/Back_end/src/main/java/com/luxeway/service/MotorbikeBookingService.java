@@ -13,21 +13,25 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * @deprecated Use {@link BookingService} instead.
+ * Handled in Phase 1 by delegating internal persistence to the unified bookings table.
+ */
+@Deprecated
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class MotorbikeBookingService {
 
-    private final MotorbikeBookingRepository motorbikeBookingRepository;
-    private final MotorbikeRepository motorbikeRepository;
+    private final BookingRepository bookingRepository;
+    private final VehicleRepository vehicleRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
-    private final MotorbikeAvailabilityRepository motorbikeAvailabilityRepository;
+    private final VehicleAvailabilityRepository vehicleAvailabilityRepository;
 
     @Transactional
     public MotorbikeBookingDTOs.MotorbikeBookingResponse createBooking(String renterId, MotorbikeBookingDTOs.CreateMotorbikeBookingRequest req) {
@@ -41,14 +45,14 @@ public class MotorbikeBookingService {
             throw new RuntimeException("Start date cannot be in the past");
         }
 
-        Motorbike motorbike = motorbikeRepository.findByIdForUpdate(req.getMotorbikeId())
-                .orElseThrow(() -> new RuntimeException("Motorbike not found: " + req.getMotorbikeId()));
+        Vehicle motorbike = vehicleRepository.findByIdForUpdate(req.getMotorbikeId())
+                .orElseThrow(() -> new RuntimeException("Vehicle not found: " + req.getMotorbikeId()));
 
         if (motorbike.getStatus() != VehicleStatus.AVAILABLE) {
             throw new RuntimeException("Motorbike is not available for booking (status: " + motorbike.getStatus() + ")");
         }
 
-        if (motorbikeBookingRepository.hasConflictingBooking(req.getMotorbikeId(), req.getStartDate(), req.getEndDate())) {
+        if (bookingRepository.hasConflictingBooking(req.getMotorbikeId(), req.getStartDate(), req.getEndDate())) {
             throw new RuntimeException("Motorbike is already booked for these dates.");
         }
 
@@ -75,10 +79,13 @@ public class MotorbikeBookingService {
 
         BigDecimal serviceFee = basePrice.multiply(BigDecimal.valueOf(0.12)).setScale(0, RoundingMode.HALF_UP);
         BigDecimal taxes = basePrice.multiply(BigDecimal.valueOf(0.08)).setScale(0, RoundingMode.HALF_UP);
-        BigDecimal total = basePrice.add(insuranceFee).add(helmetFee).add(raincoatFee).add(phoneHolderFee).add(touringFee).add(serviceFee).add(taxes);
+        
+        // Sum specialized motorbike fees into addonsTotal
+        BigDecimal addonsTotal = helmetFee.add(raincoatFee).add(phoneHolderFee).add(touringFee);
+        BigDecimal total = basePrice.add(insuranceFee).add(serviceFee).add(taxes).add(addonsTotal);
 
-        MotorbikeBooking booking = MotorbikeBooking.builder()
-                .motorbike(motorbike)
+        Booking booking = Booking.builder()
+                .vehicle(motorbike)
                 .renter(renter)
                 .owner(motorbike.getOwner())
                 .status(BookingStatus.CONFIRMED)
@@ -89,20 +96,18 @@ public class MotorbikeBookingService {
                 .pricePerDay(motorbike.getPricePerDay())
                 .serviceFee(serviceFee)
                 .taxes(taxes)
+                .addonsTotal(addonsTotal)
+                .insuranceFee(insuranceFee)
                 .total(total)
                 .deposit(motorbike.getDeposit())
                 .includeInsurance(req.isIncludeInsurance())
-                .hasHelmet(req.isHasHelmet())
-                .hasRaincoat(req.isHasRaincoat())
-                .hasPhoneHolder(req.isHasPhoneHolder())
-                .hasTouringPackage(req.isHasTouringPackage())
                 .notes(req.getNotes())
                 .couponCode(req.getCouponCode())
                 .build();
 
-        booking = motorbikeBookingRepository.save(booking);
+        booking = bookingRepository.save(booking);
 
-        // Block calendar
+        // Block calendar using unified VehicleAvailability table
         blockAvailability(booking);
 
         // Notify owner
@@ -117,46 +122,49 @@ public class MotorbikeBookingService {
         return toResponse(booking);
     }
 
-    private void blockAvailability(MotorbikeBooking booking) {
+    private void blockAvailability(Booking booking) {
         LocalDate start = booking.getStartDate();
         LocalDate end = booking.getEndDate();
         for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
-            MotorbikeAvailability availability = MotorbikeAvailability.builder()
-                    .motorbike(booking.getMotorbike())
+            VehicleAvailability availability = VehicleAvailability.builder()
+                    .vehicle(booking.getVehicle())
                     .date(date)
                     .isAvailable(false)
+                    .bookingId(booking.getId())
                     .build();
-            motorbikeAvailabilityRepository.save(availability);
+            vehicleAvailabilityRepository.save(availability);
         }
     }
 
     public List<MotorbikeBookingDTOs.MotorbikeBookingResponse> getBookingsByRenter(String renterId) {
-        return motorbikeBookingRepository.findByRenterId(renterId).stream()
+        return bookingRepository.findByRenterId(renterId).stream()
+                .filter(b -> b.getVehicle().getVehicleType() == com.luxeway.enums.VehicleType.MOTORBIKE)
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
     public List<MotorbikeBookingDTOs.MotorbikeBookingResponse> getBookingsByOwner(String ownerId) {
-        return motorbikeBookingRepository.findByOwnerId(ownerId).stream()
+        return bookingRepository.findByOwnerId(ownerId).stream()
+                .filter(b -> b.getVehicle().getVehicleType() == com.luxeway.enums.VehicleType.MOTORBIKE)
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
     public MotorbikeBookingDTOs.MotorbikeBookingResponse getBookingById(String id) {
-        MotorbikeBooking booking = motorbikeBookingRepository.findById(id)
+        Booking booking = bookingRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Motorbike booking not found with ID: " + id));
         return toResponse(booking);
     }
 
     @Transactional
     public MotorbikeBookingDTOs.MotorbikeBookingResponse updateStatus(String bookingId, String status) {
-        MotorbikeBooking booking = motorbikeBookingRepository.findById(bookingId)
+        Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Motorbike booking not found"));
         booking.setStatus(BookingStatus.valueOf(status.toUpperCase()));
-        return toResponse(motorbikeBookingRepository.save(booking));
+        return toResponse(bookingRepository.save(booking));
     }
 
-    public MotorbikeBookingDTOs.MotorbikeBookingResponse toResponse(MotorbikeBooking b) {
+    public MotorbikeBookingDTOs.MotorbikeBookingResponse toResponse(Booking b) {
         MotorbikeBookingDTOs.MotorbikeBookingResponse r = new MotorbikeBookingDTOs.MotorbikeBookingResponse();
         r.setId(b.getId());
         r.setStatus(b.getStatus().name().toLowerCase());
@@ -171,28 +179,26 @@ public class MotorbikeBookingService {
         r.setTotal(b.getTotal());
         r.setDeposit(b.getDeposit());
 
-        r.setIncludeInsurance(b.isIncludeInsurance());
-        r.setHasHelmet(b.isHasHelmet());
-        r.setHasRaincoat(b.isHasRaincoat());
-        r.setHasPhoneHolder(b.isHasPhoneHolder());
-        r.setHasTouringPackage(b.isHasTouringPackage());
+        r.setIncludeInsurance(b.getIncludeInsurance());
+        r.setHasHelmet(false); // Legacy fallback, handled via addonsTotal now
+        r.setHasRaincoat(false);
+        r.setHasPhoneHolder(false);
+        r.setHasTouringPackage(false);
         
         r.setNotes(b.getNotes());
         r.setOwnerNotes(b.getOwnerNotes());
         r.setCouponCode(b.getCouponCode());
         r.setCreatedAt(b.getCreatedAt() != null ? b.getCreatedAt().toString() : null);
 
-        if (b.getMotorbike() != null) {
+        if (b.getVehicle() != null) {
             MotorbikeBookingDTOs.MotorbikeBookingResponse.MotorbikeInfo mi = new MotorbikeBookingDTOs.MotorbikeBookingResponse.MotorbikeInfo();
-            mi.setId(b.getMotorbike().getId());
-            mi.setName(b.getMotorbike().getName());
-            mi.setBrandName(b.getMotorbike().getModel().getBrand().getName());
-            mi.setModelName(b.getMotorbike().getModel().getName());
-            mi.setCategory(b.getMotorbike().getModel().getCategory());
-            mi.setLicensePlate(b.getMotorbike().getLicensePlate());
-            if (b.getMotorbike().getImages() != null && !b.getMotorbike().getImages().isEmpty()) {
-                mi.setThumbnailUrl(b.getMotorbike().getImages().iterator().next().getUrl());
-            }
+            mi.setId(b.getVehicle().getId());
+            mi.setName(b.getVehicle().getName());
+            mi.setBrandName(b.getVehicle().getBrand());
+            mi.setModelName(b.getVehicle().getModel());
+            mi.setCategory(b.getVehicle().getCategory() != null ? b.getVehicle().getCategory().name() : null);
+            mi.setLicensePlate(b.getVehicle().getLicensePlate());
+            mi.setThumbnailUrl(b.getVehicle().getThumbnailUrl());
             r.setMotorbike(mi);
         }
 

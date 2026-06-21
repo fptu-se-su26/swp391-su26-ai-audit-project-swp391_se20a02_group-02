@@ -31,6 +31,7 @@ public class OwnerProfile {
     @Column(columnDefinition = "TEXT")
     private String bio;
 
+    @Builder.Default
     @Column(name = "account_type", nullable = false, length = 20)
     private String accountType = "INDIVIDUAL"; // INDIVIDUAL, BUSINESS
 
@@ -56,7 +57,8 @@ public class OwnerProfile {
     private OwnerRating rating;
 
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<OwnerVerification> verifications;
+    @Builder.Default
+    private Set<OwnerVerification> verifications = new java.util.HashSet<>();
 
     // Commented out because Vehicle.owner maps to User entity type, not OwnerProfile.
     // Use ownerProfile.getUser().getVehicles() instead to avoid Hibernate mapping conflicts.

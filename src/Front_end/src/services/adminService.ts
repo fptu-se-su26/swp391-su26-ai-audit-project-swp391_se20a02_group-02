@@ -463,5 +463,16 @@ export const adminService = {
       return [];
     }
   },
+  /**
+   * Send a message to the AI Copilot Agent.
+   */
+  async askCopilot(prompt: string, context?: Record<string, any>): Promise<any> {
+    try {
+      return await apiClient.post<any>('/admin/copilot/chat', { prompt, context });
+    } catch (error) {
+      console.error('Failed to ask Copilot:', error);
+      throw error;
+    }
+  },
 };
 
