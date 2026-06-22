@@ -49,13 +49,13 @@ def _get_llm(model: str = None, temperature: float = 0.2, node_type: str = "gene
         api_key = os.getenv("XAI_API_KEY", "")
         if not api_key:
             raise EnvironmentError("XAI_API_KEY not set in environment.")
-        return ChatOpenAI(model=model, temperature=temperature, api_key=api_key, base_url="https://api.x.ai/v1", max_tokens=6000)
+        return ChatOpenAI(model=model, temperature=temperature, api_key=api_key, base_url="https://api.x.ai/v1", max_tokens=3000)
     elif "llama" in model.lower() or "groq" in model.lower() or "mixtral" in model.lower():
         from langchain_openai import ChatOpenAI
         api_key = os.getenv("GROQ_API_KEY", "")
         if not api_key:
             raise EnvironmentError("GROQ_API_KEY not set in environment.")
-        return ChatOpenAI(model=model, temperature=temperature, api_key=api_key, base_url="https://api.groq.com/openai/v1", max_tokens=6000)
+        return ChatOpenAI(model=model, temperature=temperature, api_key=api_key, base_url="https://api.groq.com/openai/v1", max_tokens=3000)
     else:
         raise ValueError(f"Unsupported model: {model}")
 
@@ -329,7 +329,9 @@ def test_case_node(state: MVPState) -> MVPState:
     seq_end = target_count
 
     # Process in batches if many functions
-    BATCH_SIZE = 5
+    # Groq Llama 3 8B tends to ignore instructions if there are too many functions in one prompt.
+    # Setting BATCH_SIZE = 1 forces the LLM to focus deeply on generating 4-6 test cases per function.
+    BATCH_SIZE = 1
     all_test_cases = []
     tc_counter = 0
     llm = _get_llm(state.get("llm_model"), temperature=0.3, node_type="test_case")
