@@ -14,6 +14,9 @@ COLUMNS = [
     "Test Case Description",
     "Test Case Procedure",
     "Expected Result",
+    "Linked BR",
+    "Linked VR",
+    "Linked Function",
     "Pre-condition",
     "Round 1",
     "Test Date",
@@ -145,6 +148,9 @@ def write_test_cases_to_excel(
             tc.get("test_case_description", ""),
             tc.get("test_case_procedure", ""),
             tc.get("expected_result", ""),
+            ", ".join(tc.get("linked_br", [])) if isinstance(tc.get("linked_br"), list) else tc.get("linked_br", ""),
+            ", ".join(tc.get("linked_vr", [])) if isinstance(tc.get("linked_vr"), list) else tc.get("linked_vr", ""),
+            tc.get("linked_function", ""),
             tc.get("pre_condition", ""),
             tc.get("round1_result", "Untested"),
             tc.get("round1_date", ""),
@@ -176,17 +182,20 @@ def write_test_cases_to_excel(
         2: 42,   # Description
         3: 60,   # Procedure
         4: 45,   # Expected
-        5: 40,   # Pre-condition
-        6: 14,   # Round 1
-        7: 14,   # Date
-        8: 18,   # Tester
-        9: 14,   # Round 2
-        10: 14,
-        11: 18,
-        12: 14,  # Round 3
+        5: 18,   # Linked BR
+        6: 18,   # Linked VR
+        7: 25,   # Linked Function
+        8: 40,   # Pre-condition
+        9: 14,   # Round 1
+        10: 14,  # Date
+        11: 18,  # Tester
+        12: 14,  # Round 2
         13: 14,
         14: 18,
-        15: 30,  # Note
+        15: 14,  # Round 3
+        16: 14,
+        17: 18,
+        18: 30,  # Note
     }
     for col_idx, width in col_widths.items():
         ws.column_dimensions[get_column_letter(col_idx)].width = width

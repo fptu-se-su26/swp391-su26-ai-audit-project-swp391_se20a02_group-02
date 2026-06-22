@@ -130,10 +130,13 @@ CONFIDENCE SCORING:
   Set rule_status = "confirmed" if confidence >= 0.8, "inferred" if >= 0.6, "uncertain" if < 0.6
 
 ANTI-HALLUCINATION RULES:
-  - Only extract rules that are VISIBLE in the provided source code
+  - Only extract rules explicitly implemented in the provided source code
+  - Do NOT infer policies not present in the code
   - Do NOT invent rules based on general knowledge of booking systems
+  - If certainty is low, set rule_status = "candidate" and confidence < 0.80
+  - Otherwise, set rule_status = "confirmed"
+  - Confidence Threshold: >= 0.80 is REQUIRED for "confirmed" rules
   - If you cannot find the source method, set source_method = "unknown"
-  - Mark confidence = 0.5 and rule_status = "uncertain" for anything you're guessing
 
 Return ONLY valid JSON wrapped in ```json ... ```
 """
@@ -382,6 +385,11 @@ TEST_CASE_USER = """## TASK: Generate Test Cases for Module {module_code}
 
 ---
 
+### Known Business Rules
+{business_rules_text}
+
+---
+
 ### GENERATION INSTRUCTIONS
 
 For each function, use RISK-BASED minimum TC counts:
@@ -389,6 +397,12 @@ For each function, use RISK-BASED minimum TC counts:
 - risk_level "High"     → MINIMUM 10 TCs (must include all 6 types)
 - risk_level "Medium"   → MINIMUM 6 TCs  (must include Positive, Negative, Security)
 - risk_level "Low"      → MINIMUM 4 TCs  (Positive, Negative minimum)
+
+### BUSINESS RULE COVERAGE MANDATE (CRITICAL)
+For every Business Rule provided in the Function Inventory (via linked_br):
+- You MUST generate test cases to cover it. No business rule may remain uncovered.
+- P0/P1 Business Rules: Minimum 1 Positive TC + 1 Negative TC
+- P2/P3 Business Rules: Minimum 1 TC (Positive or Negative)
 
 Composition rule per function:
 - 2 Functional Positive + 2 Functional Negative + 1 Boundary + 1 Edge Case + 2 Security + 1 Validation (minimum baseline)
@@ -412,8 +426,11 @@ OUTPUT FORMAT:
       "test_case_type": "Functional Positive",
       "priority": "P0",
       "pre_condition": "1. Tài khoản testcustomer@luxeway.vn đã được tạo và verified\n2. Dữ liệu hợp lệ tồn tại trong DB\n3. Backend đang chạy tại http://localhost:8080",
-      "test_case_procedure": "1. Mở Postman\n2. Tạo [METHOD] request: http://localhost:8080[ENDPOINT]\n3. Header: Content-Type: application/json\n4. Body: {\"field1\": \"value1\"}\n5. Gửi request\n6. Kiểm tra HTTP Status Code = 200\n7. Kiểm tra response body",
-      "expected_result": "HTTP 200 OK. Response: {\"success\": true, \"message\": \"Thành công\", \"data\": {}}",
+      "test_case_procedure": "1. Mở Postman\n2. Tạo [METHOD] request: http://localhost:8080[ENDPOINT]\n3. Header: Content-Type: application/json\n4. Body: {{\"field1\": \"value1\"}}\n5. Gửi request\n6. Kiểm tra HTTP Status Code = 200\n7. Kiểm tra response body",
+      "expected_result": "HTTP 200 OK. Response: {{\"success\": true, \"message\": \"Thành công\", \"data\": {{}}}}",
+      "linked_br": ["BR-{module_code}-001"],
+      "linked_vr": [],
+      "linked_function": "Register New Customer Account",
       "round1_result": "Untested",
       "round1_date": "",
       "round1_tester": "",

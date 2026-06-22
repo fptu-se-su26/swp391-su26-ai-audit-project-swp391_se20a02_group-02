@@ -475,29 +475,7 @@ def function_inventory_node(state: MVPState) -> MVPState:
         state["quality_scores"] = {**state.get("quality_scores", {}), "function_inventory": 0.0}
         return state
 
-    # ── Default business rules per module ─────────────────────────────────
-    DEFAULT_BR = {
-        "AA": (
-            "BR-AA-001: Account must be email-verified before login (mandatory, blocking)\n"
-            "BR-AA-002: Password must be 8-128 characters, contain uppercase, digit, special char\n"
-            "BR-AA-003: Account locked after 5 consecutive failed login attempts\n"
-            "BR-AA-004: OTP expires after 5 minutes\n"
-            "BR-AA-005: Password reset token is single-use"
-        ),
-        "BL": (
-            "BR-BL-001: Customer KYC must be verified before booking\n"
-            "BR-BL-002: Booking dates must not overlap existing bookings for the same vehicle\n"
-            "BR-BL-003: Cancellation within 24h before pickup incurs 50% penalty\n"
-            "BR-BL-004: Customer must pay deposit before booking is confirmed"
-        ),
-        "PGI": (
-            "BR-PGI-001: VNPay callback must contain valid HMAC-SHA512 signature\n"
-            "BR-PGI-002: Payment amount must match booking total exactly\n"
-            "BR-PGI-003: Refund only allowed for cancelled bookings\n"
-            "BR-PGI-004: Transaction ID must be unique"
-        ),
-    }
-    business_rules_text = DEFAULT_BR.get(module_code, f"No specific business rules defined for {module_code}")
+    business_rules_text = br_summary if br_summary and br_summary != "(No business rules extracted for this module)" else f"No specific business rules extracted for {module_code}"
 
     target_count = len(endpoints)
     user_prompt = FUNCTION_INVENTORY_USER.format(
@@ -596,10 +574,19 @@ def test_case_node(state: MVPState) -> MVPState:
         batch_target = max(10, target_count // len(func_batches))
         logger.info(f"  📡 Batch {batch_idx + 1}/{len(func_batches)}: {len(func_batch)} functions → ~{batch_target} TCs")
 
+        # Extract BR summary again for Test Case Generator
+        business_rules = state.get("business_rules", [])
+        if business_rules:
+            br_lines = [f"  - [{r['priority']}] {r['description']} (br_id: {r['br_id']})" for r in business_rules]
+            business_rules_text = "\n".join(br_lines)
+        else:
+            business_rules_text = "(No business rules extracted for this module)"
+
         user_prompt = TEST_CASE_USER.format(
             module_code=module_code,
             module_name=module_name,
             functions_json=json.dumps(func_batch, indent=2),
+            business_rules_text=business_rules_text,
             target_count=batch_target,
             function_count=len(func_batch),
             seq_end=tc_counter + batch_target,

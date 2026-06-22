@@ -54,6 +54,9 @@ class TestCaseDef(TypedDict):
     pre_condition: str
     test_case_procedure: str
     expected_result: str
+    linked_br: List[str]     # NEW: Business Rule traceability
+    linked_vr: List[str]     # NEW: Validation Rule traceability
+    linked_function: str     # NEW: Function Name traceability
     round1_result: str
     round1_date: str
     round1_tester: str
