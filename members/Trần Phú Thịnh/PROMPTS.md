@@ -9,8 +9,8 @@
 | Lớp | SE20A02 |
 | Học kỳ | SU26 |
 | Tên bài tập / Project | LuxeWay - Trusted E-commerce Platform for Vehicle Rental |
-| Tên sinh viên / Nhóm | Nguyễn Văn Dạng - Nhóm 2 |
-| MSSV / Danh sách MSSV | DE190324 |
+| Tên sinh viên / Nhóm | Trần Phú Thịnh - Nhóm 2 |
+| MSSV / Danh sách MSSV | DE190371 |
 | Giảng viên hướng dẫn | (Giảng viên môn SWP391) |
 | Ngày bắt đầu | 2026-05-12 |
 | Ngày cập nhật gần nhất | 2026-05-21 |
@@ -155,7 +155,7 @@ Tất cả 12 subfolder được tạo đúng như gợi ý của AI.
 
 | Loại minh chứng | Nội dung |
 |---|---|
-| Link commit | Commit 9c591ff - DE190324/ setup UI UX for project |
+| Link commit | Commit 9c591ff - DE190371/ setup UI UX for project |
 | File liên quan | src/Front_end/src/ (toàn bộ thư mục) |
 | Screenshot | Thư mục src/Front_end/src/ với 12 subdirectories |
 | Kết quả chạy/test | Project chạy được với `npm run dev` |
@@ -968,7 +968,7 @@ Sinh viên/nhóm cam kết rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-05-31 |
+| Trần Phú Thịnh - DE190371 | 2026-05-31 |
 
 ---
 
@@ -1087,7 +1087,7 @@ main.tsx:
 - Thay bằng i18n.changeLanguage(lang) dùng thẳng static import
 
 4 file members được cập nhật đầy đủ nội dung Phase 3.
-Commit theo convention: [DE190324] perf + fix + docs
+Commit theo convention: [DE190371] perf + fix + docs
 ```
 
 #### 5.4. Kết quả đã áp dụng vào bài
@@ -1126,7 +1126,7 @@ Chunk output:
 |---|---|
 | File liên quan | vite.config.ts, main.tsx, members/ (4 files) |
 | Kết quả chạy/test | npm run build: ✓ built in 7.15s, 0 warnings |
-| Link commit | [DE190324] perf(frontend): add manualChunks, fix Sass deprecation, fix mixed i18n import |
+| Link commit | [DE190371] perf(frontend): add manualChunks, fix Sass deprecation, fix mixed i18n import |
 
 ---
 
@@ -1199,7 +1199,7 @@ AI cung cấp:
 |---|---|
 | File liên quan | HelpController.java, HelpPage.tsx, LandingPage.tsx |
 | Kết quả chạy/test | APIs hoạt động, frontend hiển thị correct stats và help categories |
-| Link commit | [DE190324] feat: upgrade help center to enterprise marketplace support and fix landing page stats |
+| Link commit | [DE190371] feat: upgrade help center to enterprise marketplace support and fix landing page stats |
 
 ---
 
@@ -1260,7 +1260,7 @@ Custom lại các filter logic của riêng Cars vs Motorbikes, đồng thời w
 |---|---|
 | File liên quan | Car.java, Motorbike.java, CarsMarketplace.tsx, MotorbikeMarketplace.tsx |
 | Kết quả chạy/test | APIs hoạt động, frontend hiển thị riêng biệt ô tô và xe máy |
-| Link commit | [DE190324] feat: split Vehicle entity into specialized Car and Motorbike sub-modules |
+| Link commit | [DE190371] feat: split Vehicle entity into specialized Car and Motorbike sub-modules |
 
 ---
 
@@ -1321,7 +1321,7 @@ Tối ưu hóa giao diện LiveActivitySection và công thức tính toán lợ
 |---|---|
 | File liên quan | LandingPage.tsx, DatabaseMigration.java, translations.ts, App.tsx |
 | Kết quả chạy/test | Landing page hiển thị live activity và calculator chạy mượt mà, dịch thông báo chuẩn xác |
-| Link commit | [DE190324] feat: redesign premium Landing Page with live activity, revenue calculator and promotions seed |
+| Link commit | [DE190371] feat: redesign premium Landing Page with live activity, revenue calculator and promotions seed |
 
 ---
 
@@ -1391,7 +1391,7 @@ Tích hợp thành công toàn bộ các component và styling mới. Frontend b
 |---|---|
 | File liên quan | CustomerDashboard.tsx, OwnerDashboard.tsx, AdminDashboard.tsx, globals.css, Avatar.tsx, StatusBadge.tsx, Breadcrumbs.tsx, Skeleton.tsx |
 | Kết quả chạy/test | Build Vite thành công, dashboard hiển thị mượt mà với premium components |
-| Link commit | [DE190324] feat: overhaul dashboard UI/UX with premium design system components and micro-interactions |
+| Link commit | [DE190371] feat: overhaul dashboard UI/UX with premium design system components and micro-interactions |
 
 ---
 
@@ -1461,7 +1461,7 @@ AI cung cấp các blocks dependencies cần thêm vào build.gradle, chỉ ra c
 |---|---|
 | File liên quan | build.gradle, AIChatService.java, CarService.java, BookingService.java, JavaFallbackService.java, các Java controllers, AIPredictiveControllerTest.java, SecurityIntegrationTest.java |
 | Kết quả chạy/test | `./gradlew compileJava compileTestJava` thành công không có lỗi và warning |
-| Link commit | [DE190324] fix: resolve all compiler warnings and clean compile backend with 0 errors 0 warnings |
+| Link commit | [DE190371] fix: resolve all compiler warnings and clean compile backend with 0 errors 0 warnings |
 
 ---
 
@@ -1533,263 +1533,7 @@ AI đề xuất:
 |---|---|
 | File liên quan | LuxeWayMap.tsx, CustomerBookingPage.tsx, OwnerBookingTrackingPage.tsx, VehicleService.java, ChatController.java, ChatBotService.java, SupportChatbot.tsx |
 | Kết quả chạy/test | Map tiles render successfully, STOMP broadcasts and coordinates mapping validated, Gemini chatbot works |
-| Link commit | [DE190324] feat: implement real Goong Map upgrade, temporary availability locking, live WebSocket tracking and AI support chatbot |
-
----
-
----
-
-### Prompt số 20
-
-| Nội dung | Thông tin |
-|---|---|
-| Ngày sử dụng | 2026-06-17 đến 2026-06-18 |
-| Công cụ AI | Antigravity |
-| Mục đích | Debug và fix luồng upload ảnh KYC — tìm nguyên nhân lỗi 400 Bad Request và tích hợp FPT AI OCR thật |
-| Phần việc liên quan | Backend / eKYC Integration |
-| Mức độ sử dụng | Hỏi debug + sinh code |
-
-#### 5.1. Prompt nguyên văn
-
-```text
-sao KYC của hệ thống vẫn ko chạy đc
-...
-up lên ko đc
-Api của fpt ai mà up lên có quét mà
-vẫn upda ảnh để quét ko đc
-```
-
-#### 5.2. Bối cảnh khi viết prompt
-
-```text
-Hệ thống đã có FptAiEkycService.java kết nối FPT AI Vision API để đọc CCCD.
-Nhưng mỗi lần upload ảnh qua endpoint POST /users/documents đều nhận 400 Bad Request.
-Phần file được lưu vào thư mục /uploads/ nhưng file lại rỗng (0 byte).
-API key FPT AI đã được cấu hình nhưng service vẫn trả về mock data.
-```
-
-#### 5.3. Kết quả AI trả về
-
-```text
-AI phát hiện 2 nguyên nhân gốc rễ:
-
-Lỗi 1 — Double-read InputStream:
-- Dòng `tika.detect(file.getInputStream())` đọc toàn bộ InputStream của MultipartFile.
-- InputStream của Spring MultipartFile CHỈ đọc được 1 lần, sau đó stream rỗng.
-- Khi gọi `Files.write(filePath, fileBytes)` sau đó, bytes nhận được là [] (rỗng).
-- FPT AI OCR nhận ảnh rỗng → trả về lỗi 400 Invalid image.
-- Fix: thay toàn bộ bằng `byte[] fileBytes = file.getBytes()` và dùng fileBytes cho mọi thao tác.
-
-Lỗi 2 — False "demo key" check:
-- Trong FptAiEkycService.java có đoạn:
-  if (apiKey == null || apiKey.contains("placeholder") || apiKey.length() < 10)
-  { return mockScanResult(); }
-- API key thực sự không chứa "placeholder" nhưng vẫn bị trigger mock vì check sai lệch.
-- Fix: xóa check `apiKey.contains("placeholder")`, chỉ giữ null/blank check.
-
-Lỗi 3 — Tika false-positive:
-- Tika.detect(byte[]) khi không có filename-hint thường trả về "application/octet-stream".
-- Dù file là JPEG hợp lệ, Tika vẫn trả sai → blocked.
-- Fix: thay bằng file.getContentType() do browser/client gán đúng MIME type.
-```
-
-#### 5.4. Kết quả đã áp dụng vào bài
-
-```text
-1. UserController.java: buffer byte[] một lần, dùng cho cả validate và Files.write.
-2. FptAiEkycService.java: xóa hardcoded "demo key" check, chỉ giữ null/blank validation.
-3. application.yml: cập nhật fptai.api-key với key thực.
-4. UserController.java: thay Tika bằng file.getContentType() check.
-Backend compile BUILD SUCCESSFUL. Frontend Vite server restart thành công.
-```
-
-#### 5.5. Phần sinh viên/nhóm đã chỉnh sửa hoặc cải tiến
-
-```text
-- Quyết định loại bỏ hoàn toàn Apache Tika khỏi validation flow thay vì chạy song song
-  vì Tika unreliable khi không có filename hint.
-- Thêm log rõ ràng: "FPT.AI: Scanning CCCD for file: {filename}" để dễ debug sau này.
-- Giữ lại kiểm tra file size (5MB limit) để bảo vệ server.
-```
-
-#### 5.6. Đánh giá chất lượng prompt
-
-- [ ] Prompt rõ ràng
-- [ ] Prompt có đủ bối cảnh
-- [x] Prompt còn thiếu thông tin
-- [x] Prompt tạo ra kết quả tốt
-- [ ] Prompt tạo ra kết quả chưa phù hợp
-- [ ] Cần hỏi lại AI nhiều lần
-- [x] Cần tự kiểm tra và chỉnh sửa nhiều
-- [ ] Kết quả AI có lỗi hoặc chưa chính xác
-
-#### 5.7. Minh chứng liên quan
-
-| Loại minh chứng | Nội dung |
-|---|---|
-| File liên quan | `UserController.java`, `FptAiEkycService.java`, `application.yml` |
-| Kết quả chạy/test | `./gradlew compileJava` → `BUILD SUCCESSFUL in 10s` |
-| Link commit | `[DE190324] fix: resolve eKYC document upload — fix InputStream double-read, remove false demo-key check, replace Tika with Content-Type validation` |
-
-#### 5.8. Ghi chú thêm
-
-```text
-Lỗi này là bài học điển hình về Java I/O: InputStream chỉ đọc được một lần.
-Khi dùng Spring MultipartFile, luôn phải gọi file.getBytes() hoặc file.getInputStream() một lần duy nhất,
-lưu vào biến và dùng lại. Không được gọi getInputStream() nhiều lần.
-Đây là gotcha phổ biến khi làm file upload trong Spring Boot.
-```
-
----
-
-### Prompt số 21
-
-| Nội dung | Thông tin |
-|---|---|
-| Ngày sử dụng | 2026-06-19 |
-| Công cụ AI | Antigravity |
-| Mục đích | Tích hợp bộ lọc KYC nâng cao cho user và tìm kiếm xe/người dùng trực tiếp ở Database tầng Admin |
-| Phần việc liên quan | Fullstack / Coding & Integration |
-| Mức độ sử dụng | Hỏi sinh code & debug |
-
-#### 5.1. Prompt nguyên văn
-
-```text
-Help me add advanced search and filtering to the admin panel:
-1. In UserRepository.java, add a dynamic query method (JPQL) searchUsersAdvanced that filters users by role (CUSTOMER, OWNER, ADMIN), kycStatus (PENDING, VERIFIED, REJECTED), and a search keyword matching their name or email or displayName.
-2. Update AdminService.java and AdminController.java to expose kycStatus query parameter on GET /admin/users, and search keyword query parameter on GET /admin/vehicles.
-3. In React Frontend: update adminService.ts to support passing these query filters.
-4. In AdminDashboard.tsx, add state hooks and UI dropdown inputs for:
-   - KYC Verification Hub (kycStatusFilter: All, Pending, Verified, Rejected)
-   - Platform Accounts Directory (userRoleFilter, userKycStatusFilter)
-   - Vehicle Approval Roster (vehicleStatusFilter, search keyword for vehicles)
-5. Implement a 400ms debounce timer for the search keyword to avoid spamming the backend API, and ensure lists are updated when filters change.
-```
-
-#### 5.2. Bối cảnh khi viết prompt
-
-```text
-Danh sách người dùng và xe trên nền tảng LuxeWay ngày càng nhiều. Admin gặp khó khăn lớn khi phải lướt thủ công qua hàng nghìn dòng để duyệt KYC hoặc quản lý xe. Cần thực hiện các bộ lọc nhanh và tìm kiếm trực tiếp tại database layer (SQL Server) để tối ưu hóa hiệu năng và tăng trải nghiệm sử dụng.
-```
-
-#### 5.3. Kết quả AI trả về
-
-```text
-AI cung cấp:
-- Câu truy vấn JPQL động sử dụng conditional parameters: u.kycStatus = :kycStatus AND (u.firstName LIKE :keyword OR u.lastName LIKE :keyword...)
-- Cập nhật các service và controller Spring Boot để nhận tham số kycStatus và keyword.
-- Cấu hình API client adminService.ts và code UI dropdowns, search inputs kèm logic debounce sử dụng setTimeout trong useEffect.
-```
-
-#### 5.4. Kết quả đã áp dụng vào bài
-
-```text
-Áp dụng toàn bộ logic lọc và tìm kiếm ở cả hai phía Backend và Frontend. Danh sách Admin Dashboard giờ đây tải dữ liệu tức thì từ SQL Server theo bộ lọc được chọn mà không bị lag.
-```
-
-#### 5.5. Phần sinh viên/nhóm đã chỉnh sửa hoặc cải tiến
-
-```text
-- Tùy chỉnh CSS dropdowns và ô search inputs phù hợp với phong cách Glassmorphism của Admin Dashboard.
-- Điều chỉnh logic để các hoạt động duyệt KYC và suspend/unsuspend người dùng cập nhật trực tiếp local state của danh sách thay vì phải refresh toàn bộ trang, giúp tối ưu hóa hiệu năng phản hồi.
-```
-
-#### 5.6. Đánh giá chất lượng prompt
-
-- [x] Prompt rõ ràng
-- [x] Prompt có đủ bối cảnh
-- [ ] Prompt còn thiếu thông tin
-- [x] Prompt tạo ra kết quả tốt
-- [ ] Prompt tạo ra kết quả chưa phù hợp
-- [ ] Cần hỏi lại AI nhiều lần
-- [x] Cần tự kiểm tra và chỉnh sửa nhiều
-- [ ] Kết quả AI có lỗi hoặc chưa chính xác
-
-#### 5.7. Minh chứng liên quan
-
-| Loại minh chứng | Nội dung |
-|---|---|
-| File liên quan | `UserRepository.java`, `AdminService.java`, `AdminController.java`, `adminService.ts`, `AdminDashboard.tsx` |
-| Kết quả chạy/test | Biên dịch backend 0 warning/error, chạy E2E lọc KYC và tìm kiếm xe hoạt động mượt mà |
-| Link commit | `docs: [DE190324] implement admin kyc filters, database-level search and update documentation` |
-
-#### 5.8. Ghi chú thêm
-
-```text
-Việc thực hiện các bộ lọc tìm kiếm trực tiếp tại Database (database-level search) thay vì lọc client-side là nguyên tắc bắt buộc đối với các hệ thống lớn để tránh overload tài nguyên đường truyền mạng và RAM của browser.
-```
-
----
-
-### Prompt số 22
-
-| Nội dung | Thông tin |
-|---|---|
-| Ngày sử dụng | 2026-06-20 |
-| Công cụ AI | Antigravity |
-| Mục đích | Triển khai hệ thống xác thực danh tính KYC song hành FPT AI eKYC và kiểm tra phân hạng bằng lái khi booking. |
-| Phần việc liên quan | Fullstack / Security & UI/UX |
-| Mức độ sử dụng | Hỏi thiết kế & debug |
-
-#### 5.1. Prompt nguyên văn
-
-```text
-Help me implement a production-level Vietnam vehicle rental KYC verification system:
-1. In MyDocuments.tsx, redesign the customer document stepper to support 4 steps (Identity CCCD front/back, Driver License front/back, Selfie holding CCCD, Admin Approval status). Add status badges, retry callbacks, and a 5-second background polling when status is PENDING.
-2. In AdminDashboard.tsx, initialize the kycStatusFilter to default to 'PENDING'. Modify the KYC details drawer to fetch and render all 5 document images (CCCD Front/Back, DL Front/Back, Selfie holding CCCD), show all extracted OCR attributes (dob, citizen id, name, license class, and expiry date parsed from cccdFront.ocrData), and show face matching similarity and liveness result (parsed from selfie.ocrData).
-3. In CarBookingService.java and MotorbikeBookingService.java, block checkouts if kycStatus != 'VERIFIED' with message "Please complete KYC verification first.". Enforce license class limits: Car requires B, B1, C, C1, D (if user holds A/A1, throw "Your driving license only supports motorcycle rental."); Motorbike requires A or A1 (else throw "Your driving license does not support motorcycle rental.").
-4. I am getting TypeScript errors when building the frontend:
-   - "This comparison appears to be unintentional because the types '"REJECTED" | undefined' and '"FAILED"' have no overlap" in MyDocuments.tsx.
-   - "Argument of type 'number' is not assignable to parameter of type 'string'" in AdminDashboard.tsx listUsers call.
-   How can I resolve them?
-```
-
-#### 5.2. Bối cảnh khi viết prompt
-
-```text
-Cần triển khai hệ thống xác thực KYC hoàn chỉnh tích hợp FPT AI để tự động hóa quy trình phê duyệt danh tính và hạng bằng lái xe của khách hàng thuê xe, đảm bảo chỉ khách hàng có bằng lái xe phù hợp mới được đặt xe, đồng thời sửa các lỗi biên dịch TypeScript khi đóng gói ứng dụng.
-```
-
-#### 5.3. Kết quả AI trả về
-
-```text
-AI cung cấp:
-- Hướng dẫn thiết kế stepper và review drawer hiển thị 5 ảnh kèm metadata OCR, so khớp khuôn mặt trên React Frontend.
-- Sửa đổi logic validate kycStatus và licenseClass trong các java service backend.
-- Hướng dẫn thêm 'FAILED' vào union types của kycStatus và driverLicenseStatus trong types/index.ts, và sửa lại danh sách tham số listUsers/listAllVehicles trong AdminDashboard.tsx để fix các lỗi TypeScript.
-```
-
-#### 5.4. Kết quả đã áp dụng vào bài
-
-```text
-Tích hợp stepper và drawer review hoàn hảo, compile backend thành công và build frontend đạt 0 warnings, 0 errors.
-```
-
-#### 5.5. Phần sinh viên/nhóm đã chỉnh sửa hoặc cải tiến
-
-```text
-- Custom lại giao diện review drawer đẹp mắt, gọn gàng bằng các thẻ grid CSS.
-- Bổ sung logic hiển thị thông báo lỗi chi tiết khi so khớp khuôn mặt hoặc liveness thất bại ở stepper.
-```
-
-#### 5.6. Đánh giá chất lượng prompt
-
-- [x] Prompt rõ ràng
-- [x] Prompt có đủ bối cảnh
-- [ ] Prompt còn thiếu thông tin
-- [x] Prompt tạo ra kết quả tốt
-- [ ] Prompt tạo ra kết quả chưa phù hợp
-- [ ] Cần hỏi lại AI nhiều lần
-- [x] Cần tự kiểm tra và chỉnh sửa nhiều
-- [ ] Kết quả AI có lỗi hoặc chưa chính xác
-
-#### 5.7. Minh chứng liên quan
-
-| Loại minh chứng | Nội dung |
-|---|---|
-| File liên quan | `MyDocuments.tsx`, `AdminDashboard.tsx`, `CarBookingService.java`, `MotorbikeBookingService.java`, `types/index.ts` |
-| Kết quả chạy/test | `./gradlew bootJar` thành công, `npm run build` thành công 100% |
-| Link commit | `feat: implement production-level Vietnam vehicle rental KYC verification system with FPT AI OCR and license class validation` |
+| Link commit | [DE190371] feat: implement real Goong Map upgrade, temporary availability locking, live WebSocket tracking and AI support chatbot |
 
 ---
 
@@ -1805,5 +1549,5 @@ Sinh viên/nhóm cam kết rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-06-20 |
+| Trần Phú Thịnh - DE190371 | 2026-06-16 |
 

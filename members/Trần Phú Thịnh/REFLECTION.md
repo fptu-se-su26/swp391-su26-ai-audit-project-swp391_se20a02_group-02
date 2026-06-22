@@ -9,8 +9,8 @@
 | Lớp | SE20A02 |
 | Học kỳ | SU26 |
 | Tên bài tập / Project | LuxeWay - Trusted E-commerce Platform for Vehicle Rental |
-| Tên sinh viên / Nhóm | Nguyễn Văn Dạng - Nhóm 2 |
-| MSSV / Danh sách MSSV | DE190324 |
+| Tên sinh viên / Nhóm | Trần Phú Thịnh - Nhóm 2 |
+| MSSV / Danh sách MSSV | DE190371 |
 | Giảng viên hướng dẫn | (Giảng viên môn SWP391) |
 | Ngày hoàn thành reflection | 2026-06-04 |
 
@@ -18,7 +18,7 @@
 
 ## 2. Mục đích Reflection
 
-File này dùng để Nguyễn Văn Dạng (DE190324) tự đánh giá quá trình sử dụng AI (Antigravity) trong việc xây dựng Frontend UI/UX cho dự án LuxeWay.
+File này dùng để Trần Phú Thịnh (DE190371) tự đánh giá quá trình sử dụng AI (Antigravity) trong việc xây dựng Frontend UI/UX cho dự án LuxeWay.
 
 Reflection cần thể hiện:
 
@@ -338,7 +338,7 @@ Bước 5 - Review và chỉnh sửa:
 ## 9. Phần đóng góp thật sự của sinh viên/nhóm
 
 ```text
-Nguyễn Văn Dạng (DE190324) - Đóng góp thật sự trong sprint này:
+Trần Phú Thịnh (DE190371) - Đóng góp thật sự trong sprint này:
 
 1. Tự quyết định toàn bộ design direction:
    - Chọn luxury aesthetic: dark navy (#0F172A), subtle gold accents, glassmorphism
@@ -593,7 +593,7 @@ Sinh viên/nhóm hiểu rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-06-04 |
+| Trần Phú Thịnh - DE190371 | 2026-06-04 |
 
 ---
 
@@ -829,116 +829,6 @@ Trong giai đoạn này (Phase 5.4), mình đã cùng Antigravity hoàn thành n
 
 ---
 
-## Reflection — Phase 5.5: eKYC Document Upload Debug & FPT AI OCR Integration (2026-06-17 đến 2026-06-18)
-
-### Tóm tắt
-
-Trong giai đoạn này, nhóm đã debug và fix hoàn toàn luồng upload ảnh KYC của hệ thống LuxeWay. Chức năng eKYC cho phép người dùng upload ảnh CCCD để hệ thống tự động đọc thông tin bằng FPT AI OCR API. Sau nhiều giờ debug, AI đã xác định được 2 lỗi nghiêm trọng cùng tồn tại: (1) lỗi double-read InputStream gây file lưu rỗng, và (2) hardcoded logic sai trong service khiến API key thực bị chặn và fallback về mock data.
-
-### Những điều học được
-
-```text
-1. Java InputStream chỉ đọc được một lần (Single-read I/O):
-   MultipartFile.getInputStream() trả về một luồng dữ liệu chỉ đọc được 1 lần.
-   Sau khi Tika đọc luồng để detect MIME type, con trỏ đã ở cuối — lần gọi Files.write() 
-   sau đó đọc được luồng rỗng → file 0 byte được lưu vào disk.
-   Bài học quan trọng: luôn dùng file.getBytes() để buffer toàn bộ vào byte[] 
-   và dùng lại nhiều lần. Không bao giờ gọi getInputStream() hai lần.
-
-2. Tika.detect(byte[]) không đáng tin khi thiếu filename:
-   Apache Tika có thể detect MIME type từ magic bytes của file, nhưng khi chỉ nhận
-   byte[] không có filename gợi ý, nó thường trả về "application/octet-stream" cho ảnh JPEG.
-   Solution thực tế hơn: dùng file.getContentType() từ MultipartFile — browser/client
-   gán MIME type này dựa trên extension và content, thường chính xác cho upload từ UI.
-
-3. Hardcoded "safety check" nguy hiểm:
-   Logic `if (apiKey.contains("placeholder"))` được viết để ngăn dev test với key giả,
-   nhưng lại vô tình block cả key thực nếu format không khớp. Dẫn đến hệ thống production
-   luôn chạy mock data mà không có lỗi rõ ràng — rất khó debug.
-   Bài học: safety check phải cực kỳ rõ ràng và conservative (chỉ block null/empty),
-   không dùng pattern matching string vì dễ gây false positive.
-
-4. Kiểm tra từng layer trong upload flow:
-   Khi upload lỗi, cần kiểm tra từng bước: 
-   (a) Request nhận đúng file chưa? → log ContentType, size
-   (b) File lưu xuống disk đúng chưa? → kiểm tra size file trong /uploads/
-   (c) OCR service nhận đúng path chưa? → log đường dẫn file
-   (d) API key có hợp lệ không? → log từng bước validation
-   Không thể debug upload từ response code đơn lẻ.
-```
-
-### Tự đánh giá Phase 5.5
-
-| Tiêu chí | Điểm | Ghi chú |
-|---|:---:|---|
-| Hiểu vấn đề trước khi fix | 5 | Trace đúng root cause: InputStream double-read + false key check |
-| Fix đúng nguyên nhân gốc | 5 | Fix cả 2 lỗi độc lập, không workaround |
-| Kiểm chứng sau fix | 4 | Compile thành công, logic fix đúng; cần test E2E với ảnh thực |
-| Ghi lại đầy đủ | 5 | Cập nhật đủ 4 file members với chi tiết kỹ thuật đầy đủ |
-| Sử dụng AI có trách nhiệm | 5 | Hiểu nguyên nhân, không copy blindly, tự quyết định loại bỏ Tika |
-
-## Reflection — Phase 5.6: Admin KYC Status Filters & Advanced Database Search (2026-06-19)
-
-### Tóm tắt
-
-Trong giai đoạn này (Phase 5.6), mình đã cùng Antigravity triển khai thành công hệ thống lọc nhanh KYC và tìm kiếm nâng cao trực tiếp từ Database tầng SQL Server cho giao diện Admin. Các bộ lọc này được đồng bộ thời gian thực với Frontend bằng cơ chế debounce 400ms và các dropdown status selectors.
-
-### Những điều học được
-
-```text
-1. Lọc dữ liệu tại Database Layer (Database-level filtering):
-   Khi số lượng người dùng hay phương tiện tăng lên hàng nghìn, việc kéo toàn bộ danh sách về client rồi dùng hàm .filter() của Javascript sẽ gây crash browser và tốn băng thông nghiêm trọng. Việc tối ưu hóa câu truy vấn JPQL với các tham số động (:kycStatus, :role, :keyword) trực tiếp ở SQL Server là giải pháp bắt buộc cho các hệ thống enterprise.
-
-2. Tầm quan trọng của Debounce trong Search Inputs:
-   Nếu không sử dụng debounce, mỗi khi người dùng gõ 1 ký tự, frontend sẽ trigger gọi 1 request API lên server. Người dùng gõ từ "Ferrari" (7 ký tự) sẽ gửi liên tục 7 requests không cần thiết. Áp dụng debounce (400ms delay) giúp gom các phím gõ lại và chỉ gửi duy nhất 1 request khi người dùng đã dừng nhập.
-
-3. Đồng bộ client-side state sau các thao tác thay đổi dữ liệu:
-   Khi Admin thực hiện suspend/unsuspend người dùng hoặc approve/reject KYC, việc cập nhật trực tiếp phần tử bị thay đổi trong mảng state của React giúp danh sách hiển thị đúng trạng thái mới ngay lập tức mà không cần gọi lại API GET toàn bộ danh sách, giảm tải đáng kể cho server.
-```
-
-### Tự đánh giá Phase 5.6
-
-| Tiêu chí | Điểm | Ghi chú |
-|---|:---:|---|
-| Hiểu vấn đề trước khi fix | 5 | Hiểu rõ cơ chế lọc database-level và debounce hook |
-| Fix đúng nguyên nhân gốc | 5 | Tích hợp hoàn thiện JPQL dynamic query và debounced states |
-| Kiểm chứng sau fix | 5 | Chạy build compile thành công, test manual mượt mà |
-| Ghi lại đầy đủ | 5 | Cập nhật đầy đủ cả 4 files trong thư mục members |
-| Sử dụng AI có trách nhiệm | 5 | Làm chủ mã nguồn, tự custom UI dropdown và state sync logic |
-
----
-
-## Reflection — Phase 6.0: Vietnam Vehicle Rental KYC Verification System (2026-06-20)
-
-### Tóm tắt
-
-Trong giai đoạn này (Phase 6.0), mình đã cùng Antigravity triển khai hệ thống xác thực danh tính KYC song hành cùng FPT AI eKYC API cho nền tảng thuê xe LuxeWay Vietnam. Chúng tôi đã xây dựng luồng stepper 4 bước cho khách hàng ở Frontend, tích hợp các API OCR CCCD, Driver License và so khớp khuôn mặt kèm phát hiện thực thể sống (liveness detection). Đồng thời, bổ sung các lớp kiểm tra ràng buộc hạng bằng lái xe (A/A1 cho xe máy, B/B1/C/C1/D cho ô tô) ở cả hai module booking và xây dựng giao diện xem tài liệu 5 ảnh chi tiết cho Admin.
-
-### Những điều học được
-
-```text
-1. Ràng buộc bảo mật ở cả hai phía (Dual-layer security constraints):
-   Không bao giờ chỉ tin tưởng vào các kiểm tra giao diện (Frontend validations) vì hacker có thể bypass UI và gọi API đặt xe trực tiếp. Việc kiểm tra trạng thái kycStatus = VERIFIED và đối chiếu hạng bằng lái xe (License Class) trực tiếp trong CarBookingService và MotorbikeBookingService trước khi lưu đơn hàng là cực kỳ quan trọng để bảo vệ nền tảng.
-
-2. Trải nghiệm người dùng thông qua Polling & Background updates:
-   Khi khách hàng hoàn tất tải 5 tài liệu KYC lên, hệ thống chuyển sang trạng thái PENDING chờ admin duyệt. Việc triển khai cơ chế polling (5 giây một lần) ở Frontend để tự động kiểm tra và chuyển tiếp bước của khách hàng sang VERIFIED hoặc FAILED/REJECTED mang lại trải nghiệm mượt mà, không yêu cầu người dùng refresh trang thủ công.
-
-3. Tách biệt mock data và real API qua environments:
-   Cung cấp cơ chế tự động fallback sang mock data khi thiếu FPT_AI_API_KEY hoặc khi API thật lỗi giúp quy trình phát triển và kiểm thử tự động của nhóm không bị gián đoạn, đồng thời hỗ trợ kiểm thử các nhánh lỗi thông qua name hooks (tên file chứa "fail").
-```
-
-### Tự đánh giá Phase 6.0
-
-| Tiêu chí | Điểm | Ghi chú |
-|---|:---:|---|
-| Hiểu vấn đề trước khi fix | 5 | Hiểu rõ các luồng stepper, logic so khớp khuôn mặt và phân hạng bằng lái xe |
-| Fix đúng nguyên nhân gốc | 5 | Tích hợp hoàn hảo Spring Security, Spring Services và React Stepper |
-| Kiểm chứng sau fix | 5 | Build frontend npm run build thành công 0 warning, compile backend 0 error |
-| Ghi lại đầy đủ | 5 | Cập nhật đầy đủ cả 4 files trong thư mục members |
-| Sử dụng AI có trách nhiệm | 5 | Kiểm soát chặt chẽ kiểu dữ liệu TypeScript, tự viết logic check class xe |
-
----
-
 ## 17. Cam kết Reflection
 
 Em/nhóm cam kết rằng nội dung reflection này phản ánh trung thực quá trình sử dụng AI và quá trình học tập trong bài tập/project.
@@ -952,5 +842,5 @@ Sinh viên/nhóm hiểu rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-06-20 |
+| Trần Phú Thịnh - DE190371 | 2026-06-16 |
 

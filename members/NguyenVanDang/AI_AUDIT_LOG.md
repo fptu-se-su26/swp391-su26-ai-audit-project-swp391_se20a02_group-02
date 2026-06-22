@@ -690,6 +690,94 @@ Audit LuxeWay Car Rental Platform:
 
 ---
 
+## Log #16
+
+- **Date:** 2026-06-12
+- **Author:** NguyenVanDang (DE190324)
+- **AI Tool:** Antigravity
+- **Purpose:** Tối ưu hóa UI/UX Dashboard, xây dựng các component Design System (Avatar, StatusBadge, Breadcrumbs) và shimmer loaders
+- **Prompt Reference:** PROMPTS.md#prompt-17
+- **AI Output Summary:** Cung cấp mã nguồn cho các component Avatar, StatusBadge, Breadcrumbs; cấu hình CSS variables cho globals.css; nâng cấp các dashboards (Customer, Owner, Admin) để sử dụng các component này; sửa lỗi chart tooltip và các TypeScript warnings.
+- **Human Decision:** Custom màu sắc cho Avatar fallback background gradient ngẫu nhiên, tối ưu layout grid của các Dashboard để có giao diện Premium, căn chỉnh tooltip Recharts hiển thị nổi bật trên nền tối.
+- **Applied To:** `src/Front_end/src/pages/dashboard/CustomerDashboard.tsx`, `src/Front_end/src/pages/dashboard/OwnerDashboard.tsx`, `src/Front_end/src/pages/admin/AdminDashboard.tsx`, `src/Front_end/src/styles/globals.css`, `src/Front_end/src/components/ui/` (Avatar, StatusBadge, Breadcrumbs, Skeleton).
+- **Verification:** Chạy thành công lệnh build `tsc -b && vite build` trên frontend, kiểm tra trực quan giao diện responsive và các hiệu ứng vi mô hoạt động trơn tru.
+
+---
+
+## Log #17
+
+- **Date:** 2026-06-15
+- **Author:** NguyenVanDang (DE190324)
+- **AI Tool:** Antigravity
+- **Purpose:** Loại bỏ hoàn toàn 460+ warnings biên dịch, dọn sạch warnings trong Test classes, đồng bộ build dependencies cho Gradle và xử lý triệt để JDT null safety option warnings.
+- **Prompt Reference:** PROMPTS.md#prompt-18
+- **AI Output Summary:** Cấu hình bổ sung dependencies Webflux, Redis, Resilience4j, AOP, MySQL trong build.gradle; dọn dẹp toàn bộ các imports không sử dụng, các trường và biến cục bộ không sử dụng; thêm @SuppressWarnings("all") và @SuppressWarnings("null") cho các lớp controller/service; refactor TestController.java sử dụng try-with-resources; dọn sạch các imports dư thừa và null checks trong test classes (AIPredictiveControllerTest, SecurityIntegrationTest); thay thế toàn bộ @SuppressWarnings("null") thành @SuppressWarnings("all") ở cấp class để xóa bỏ cảnh báo JDT Java(1102).
+- **Human Decision:** Đồng bộ các dependencies mới vào build.gradle để Gradle wrapper compile hoạt động độc lập. Thực hiện try-with-resources cho database connection để đảm bảo giải phóng tài nguyên. Tự phát hiện và giải phóng tiến trình Java/Gradle đang khóa file. Chuyển đổi định dạng mã hóa file về UTF-8 Without BOM. Thực hiện dọn dẹp test classes và annotation để đạt 0 error, 0 warning trên toàn dự án Java.
+- **Applied To:** `src/Back_end/build.gradle`, `TestController.java`, `RecommendationService.java`, `AIPredictiveControllerTest.java`, `SecurityIntegrationTest.java`, và toàn bộ các lớp Controller/Service có `@SuppressWarnings("null")` trước đó.
+- **Verification:** Chạy thành công lệnh build backend `./gradlew compileJava compileTestJava` hoàn toàn sạch lỗi và không còn bất kỳ warning nào (0 error, 0 warning).
+
+---
+
+## Log #18
+
+- **Date:** 2026-06-16
+- **Author:** NguyenVanDang (DE190324)
+- **AI Tool:** Antigravity
+- **Purpose:** Nâng cấp Goong Map, tích hợp Temporary Date Locking, WebSocket STOMP Live tracking, và AI Support Chatbot (Gemini).
+- **Prompt Reference:** PROMPTS.md#prompt-19
+- **AI Output Summary:** Gợi ý sửa lỗi mapping coordinate properties (`latitude`, `longitude`) trong `VehicleService.java` và sửa query parameter `api_key` cho Goong style URL; cung cấp khung code cho location tracking, routing và Matrix/Direction API qua MapLibre GL JS; thiết kế cấu trúc database cho `chat_sessions` & `chat_messages` và code Controller / Service kết nối Gemini API không dùng emoji.
+- **Human Decision:** Tự cấu hình logic availability calendar khóa 10 phút, kiểm thử kết nối STOMP WebSocket để đồng bộ trạng thái booking trực tiếp giữa Customer và Owner tracking panels; tùy chỉnh giao diện chatbot thủy tinh mờ (luxury glassmorphism) ăn khớp với design system.
+- **Applied To:** `src/Back_end/src/main/java/com/luxeway/service/VehicleService.java`, `src/Front_end/src/components/map/LuxeWayMap.tsx`, `src/Front_end/src/components/chat/SupportChatbot.tsx`, `src/Front_end/src/pages/booking/CustomerBookingPage.tsx`, `src/Front_end/src/pages/booking/OwnerBookingTrackingPage.tsx`, `src/Back_end/src/main/java/com/luxeway/controller/ChatController.java`.
+- **Verification:** Khởi động hệ thống hoàn chỉnh bằng `run.ps1` (backend và frontend), test manual: bản đồ hiển thị mượt mà không có lỗi 403, coordinates hiển thị chính xác từ DB SQL Server, chatbot tư vấn phản hồi cực tốt và lưu database thành công.
+
+---
+
+## Log #19
+
+- **Date:** 2026-06-17 đến 2026-06-18
+- **Author:** Nguyễn Văn Dạng (DE190324)
+- **AI Tool:** Antigravity
+- **Purpose:** Debug và fix hoàn toàn luồng upload ảnh KYC/eKYC — xác định nguyên nhân gốc rễ lỗi 400 Bad Request khi upload ảnh CCCD và tích hợp FPT AI OCR thật.
+- **Prompt Reference:** PROMPTS.md#prompt-20
+- **AI Output Summary:** AI đọc toàn bộ `UserController.java` và `FptAiEkycService.java`, phát hiện 2 lỗi nghiêm trọng: (1) `tika.detect(file.getInputStream())` tiêu thụ luồng `InputStream`, khiến `Files.write()` nhận luồng rỗng → ảnh lưu trống; (2) hardcoded kiểm tra `apiKey.contains("placeholder")` không chính xác, chặn API key thực và buộc service trả về mock data. AI đề xuất buffer bytes một lần (`file.getBytes()`), xóa kiểm tra sai, và thay Tika bằng `file.getContentType()`.
+- **Human Decision:** Áp dụng toàn bộ fix. Quyết định loại bỏ hoàn toàn Tika (không chỉ chạy song song) vì `Tika.detect(byte[])` luôn thiếu filename-hint khiến false-positive với JPEG binary. Cập nhật API key thực vào `application.yml`. Xác nhận compile thành công qua Gradle.
+- **Applied To:** `src/Back_end/src/main/java/com/luxeway/controller/UserController.java`, `src/Back_end/src/main/java/com/luxeway/service/FptAiEkycService.java`, `src/Back_end/src/main/resources/application.yml`.
+- **Verification:** `./gradlew compileJava` → `BUILD SUCCESSFUL in 10s`. Frontend restart thành công tại `localhost:5173`.
+
+---
+
+## Log #20
+
+- **Date:** 2026-06-19
+- **Author:** Nguyễn Văn Dạng (DE190324)
+- **AI Tool:** Antigravity
+- **Purpose:** Tích hợp bộ lọc KYC nâng cao cho user và tìm kiếm xe/người dùng trực tiếp ở Database tầng Admin
+- **Prompt Reference:** PROMPTS.md#prompt-21
+- **AI Output Summary:** Gợi ý truy vấn JPA nâng cao hỗ trợ các tham số động (`kycStatus`, `role`, `keyword`), Controller endpoints nhận query parameters mới, và giao diện dropdowns, search inputs kèm cơ chế debounced search (400ms) ở Frontend.
+- **Human Decision:** Áp dụng toàn bộ câu truy vấn JPQL động ở backend, tích hợp logic debounce và UI components dropdown đồng bộ với phong cách chung của AdminDashboard (phông nền xám nhạt, border bo góc, hover transitions).
+- **Applied To:**
+  - Backend: `UserRepository.java`, `AdminService.java`, `AdminController.java`
+  - Frontend: `adminService.ts`, `AdminDashboard.tsx`
+- **Verification:** Compile backend Gradle thành công, khởi động bằng `run.ps1` cùng frontend. Test tính năng lọc KYC status (All, Pending, Verified, Rejected) và nhập keyword tìm kiếm: danh sách lọc nhanh chóng và chính xác từ cơ sở dữ liệu SQL Server.
+
+---
+
+## Log #21
+
+- **Date:** 2026-06-20
+- **Author:** Nguyễn Văn Dạng (DE190324)
+- **AI Tool:** Antigravity
+- **Purpose:** Triển khai hệ thống xác thực danh tính KYC song hành FPT AI eKYC và kiểm tra phân hạng bằng lái khi booking.
+- **Prompt Reference:** PROMPTS.md#prompt-22
+- **AI Output Summary:** Gợi ý thiết kế stepper 4 bước cho khách hàng ở Frontend, API upload và submit KYC ở Backend; cấu hình kiểm tra kycStatus và licenseClass trong Car/MotorbikeBookingService; layout review drawer 5 tài liệu ảnh cho Admin.
+- **Human Decision:** Áp dụng toàn bộ checks ở backend services, custom layout review drawer để hiển thị chi tiết 5 ảnh và parsed metadata, sửa đổi types/index.ts để fix lỗi biên dịch TypeScript.
+- **Applied To:**
+  - Backend: `CarBookingService.java`, `MotorbikeBookingService.java`
+  - Frontend: `MyDocuments.tsx`, `AdminDashboard.tsx`, `types/index.ts`
+- **Verification:** `./gradlew compileJava` thành công, `npm run build` thành công 100% không còn warning/error.
+
+---
+
 ## 10. Cam kết học thuật
 
 Sinh viên/nhóm cam kết rằng:
@@ -702,5 +790,5 @@ Sinh viên/nhóm cam kết rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-06-07 |
+| Nguyễn Văn Dạng - DE190324 | 2026-06-20 |
 
