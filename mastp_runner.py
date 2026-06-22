@@ -213,6 +213,69 @@ def run_module(
     return result
 
 
+def generate_coverage_report(result: dict) -> dict:
+    """Generate a per-module coverage report immediately after module completes.
+    
+    Critical Issue #2 fix: Coverage is measured per-module, not at end of all 36 modules.
+    """
+    metrics    = result.get("metrics", {})
+    module     = result.get("module_code", "?")
+    name       = result.get("module_name", "?")
+    functions  = metrics.get("functions_generated", 0)
+    tcs        = metrics.get("test_cases_generated", 0)
+    target_tcs = metrics.get("target_tcs", 1)
+    qs         = result.get("quality_scores", {})
+
+    # Coverage Quality Score (Remaining Issue #3 fix)
+    # tc_coverage_percent alone is misleading: 1 TC per BR = 100% coverage but "Weak" quality.
+    # rule_test_depth = avg TCs per function (proxy until BR Agent exists in Phase 2)
+    rule_test_depth = round(tcs / max(functions, 1), 1)
+    if rule_test_depth >= 8:
+        coverage_strength = "Strong"
+    elif rule_test_depth >= 4:
+        coverage_strength = "Moderate"
+    elif rule_test_depth >= 2:
+        coverage_strength = "Weak"
+    else:
+        coverage_strength = "Minimal"
+
+    report = {
+        "module_code":       module,
+        "module_name":       name,
+        "generated_at":      datetime.now().isoformat(),
+        "coverage": {
+            "functions_covered":     functions,
+            "test_cases_generated":  tcs,
+            "target_tcs":            target_tcs,
+            "tc_coverage_percent":   tc_coverage_pct,
+            "coverage_tier":         coverage_tier,
+            "coverage_strength":     coverage_strength,     # NEW: quality dimension
+            "rule_test_depth":       rule_test_depth,       # NEW: avg TCs per function
+            "business_rules_linked": None,  # Phase 2: populated by BR Agent
+            "br_coverage_percent":   None,  # Phase 2: populated by BR Agent
+        },
+        "quality_scores":    qs,
+        "gaps": {
+            "missing_tcs":           max(0, target_tcs - tcs),
+            "needs_improvement":     tc_coverage_pct < 70 or coverage_strength in ("Weak", "Minimal"),
+            "recommendation":        (
+                f"Rerun --module {module}: only {rule_test_depth} TCs/function (target ≥8 for Strong)"
+                if coverage_strength in ("Weak", "Minimal")
+                else f"Rerun --module {module} to generate {max(0, target_tcs - tcs)} more TCs"
+                if tc_coverage_pct < 70
+                else "Coverage acceptable"
+            ),
+        },
+    }
+
+    # Save per-module coverage file immediately
+    coverage_path = f"mastp_output/coverage_{module}.json"
+    with open(coverage_path, "w", encoding="utf-8") as f:
+        json.dump(report, f, indent=2, ensure_ascii=False)
+    logger.info(f"  📊 Coverage report saved → {coverage_path} [{coverage_tier}: {tc_coverage_pct}%]")
+    return report
+
+
 def print_results(result: dict):
     """Print a formatted results summary."""
     print("\n" + "─" * 68)
@@ -378,6 +441,9 @@ Examples:
         result_path = f"mastp_output/result_{module_code}.json"
         with open(result_path, "w", encoding="utf-8") as f:
             json.dump(result, f, indent=2, ensure_ascii=False)
+
+        # Generate per-module coverage report immediately (Critical Issue #2 fix)
+        generate_coverage_report(result)
             
         # Pause to respect API Rate Limits (Tokens Per Minute)
         if len(modules_to_run) > 1 and result.get("status") != "failed":

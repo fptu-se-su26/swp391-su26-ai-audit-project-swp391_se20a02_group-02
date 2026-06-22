@@ -23,10 +23,15 @@ ANNOTATION SEMANTICS:
 - @RequestParam(required=false) → optional query parameter
 
 COMPLEXITY SCORING (cyclomatic):
-  Low    (1-4):  Simple CRUD, single happy path
-  Medium (5-9):  Conditional logic, multiple DB calls
-  High   (10-14): Complex business logic, multiple branches
-  Critical (15+): Very high-risk, needs exhaustive coverage
+  Low      (1-4):   cyclomatic_score 1-4.  Simple CRUD, single happy path
+  Medium   (5-9):   cyclomatic_score 5-9.  Conditional logic, multiple DB calls
+  High     (10-14): cyclomatic_score 10-14. Complex business logic, multiple branches
+  Critical (15+):   cyclomatic_score 15+.  Very high-risk, needs exhaustive coverage
+
+DEPENDENCY EXTRACTION RULES:
+  - List every Spring @Service or @Repository injected (from constructor or @Autowired fields)
+  - List every external API call (RestTemplate, WebClient, Feign client)
+  - Use short class names only (e.g., "BookingService", "PaymentGatewayClient")
 
 RESPONSE API FORMAT:
   All LuxeWay endpoints return: ApiResponse<T> where T is the data type.
@@ -35,7 +40,7 @@ RESPONSE API FORMAT:
 
 OUTPUT RULES:
 1. Extract EVERY @*Mapping method — do NOT skip any
-2. For each endpoint, fill ALL fields in the schema
+2. For each endpoint, fill ALL fields in the schema including cyclomatic_score and dependencies
 3. requires_auth = true if @PreAuthorize OR @AuthenticationPrincipal present
 4. Extract role from @PreAuthorize — strip ROLE_ prefix
 5. Return ONLY valid JSON wrapped in ```json ... ```
@@ -75,8 +80,14 @@ For each endpoint found, output:
       "requires_auth": false,
       "required_roles": [],
       "has_validation": true,
+      "validation_rules": [
+        "email: required, valid email format",
+        "password: required, min length 8"
+      ],
       "annotations": ["@PostMapping", "@Valid"],
       "complexity": "Medium",
+      "cyclomatic_score": 6,
+      "dependencies": ["BookingService", "NotificationService"],
       "module_code": "{module_code}"
     }}
   ],
@@ -174,8 +185,10 @@ Actors for LuxeWay:
       "required_roles": [],
       "linked_br": ["BR-{module_code}-001"],
       "linked_vr": ["VR-{module_code}-001"],
+      "dependencies": ["ServiceA", "RepositoryB"],
       "estimated_scenarios": 10,
       "estimated_tcs": 30,
+      "risk_score": 85,
       "risk_level": "Critical",
       "automation_feasibility": "High"
     }}
@@ -183,8 +196,18 @@ Actors for LuxeWay:
 }}
 ```
 
-Generate exactly one function per endpoint listed above.
-Assign function_id sequentially: FUNC-{module_code}-001, FUNC-{module_code}-002, ...
+IMPORTANT RULES:
+- Do NOT force one function per endpoint.
+- One function = one TESTABLE BUSINESS CAPABILITY.
+- If multiple endpoints together form one workflow (e.g., POST /booking -> check availability -> create invoice), group them as sub-steps under one function.
+- If a single endpoint covers multiple independent actions, split into multiple functions.
+- RISK SCORE FORMULA (0-100): Assign risk_score based on:
+    * Business Impact:      Critical=40 | High=30 | Medium=15 | Low=5
+    * Cyclomatic Complexity: 15+=25 | 10-14=18 | 5-9=10 | 1-4=3
+    * Security Exposure:    Has auth bypass risk=20 | Standard auth=10 | Public=5
+    * Dependency Count:     4+=15 | 2-3=8 | 1=3 | 0=0
+  Sum these 4 scores. If risk_score >= 80 -> Critical. 60-79 -> High. 40-59 -> Medium. <40 -> Low.
+- Assign function_id sequentially: FUNC-{module_code}-001, FUNC-{module_code}-002, ...
 """
 
 
@@ -225,12 +248,23 @@ TEST CASE TYPES — generate AT LEAST ONE of each for every function:
   Security:            Attempt to bypass auth, inject SQL/XSS, IDOR, privilege escalation
   Validation:          Missing required fields, wrong format, wrong data type
 
-LUXEWAY-SPECIFIC SECURITY TESTS (always include for auth module):
-  → POST /auth/login with email = "admin'--" → SQL injection attempt
-  → POST /auth/login with XSS in email field: "<script>alert(1)</script>@test.com"
-  → GET /auth/me without Authorization header → should return 401
-  → GET /auth/me with expired JWT → should return 401
-  → GET /auth/me with tampered JWT (modified role claim) → should return 401/403
+LUXEWAY VEHICLE RENTAL DOMAIN RISKS — generate test cases for any that apply to this module:
+  → Double Booking:         Same vehicle booked by 2 customers at overlapping time
+  → Concurrent Booking:     Race condition when 2 users submit booking simultaneously
+  → Payment Timeout:        Payment gateway does not respond within 30s
+  → Contract Signing Fail:  Digital signature fails mid-process
+  → Refund Flow:            Cancellation after payment — refund must be initiated
+  → Deposit Release:        Deposit held during booking, released upon return without damage
+  → Host Cancellation:      Host cancels after customer already paid
+  → Customer No-Show:       Booking starts but customer never picks up vehicle
+  → Vehicle Unavailable:    Vehicle flagged unavailable after booking was confirmed
+  → Coupon Stacking Abuse:  Customer applies multiple coupons to bypass price limits
+
+SECURITY BASELINE (always include where applicable):
+  → SQL injection attempt in input fields (e.g., ' or 1=1 --)
+  → XSS attempt in input fields (e.g., <script>alert(1)</script>)
+  → Unauthorized access without JWT (if requires_auth=true) → should return 401
+  → Privilege escalation: Customer calling Host/Admin-only endpoint → should return 403
 
 Return ONLY valid JSON wrapped in ```json ... ```
 """
@@ -252,11 +286,17 @@ TEST_CASE_USER = """## TASK: Generate Test Cases for Module {module_code}
 
 ### GENERATION INSTRUCTIONS
 
-For each function:
-- Generate at minimum: 2 Functional Positive + 3 Functional Negative + 2 Boundary + 1 Edge Case + 2 Security + 1 Validation
-- For P0 functions: generate AT LEAST 12 TCs
-- For P1 functions: generate AT LEAST 8 TCs
-- Pre-condition must list setup steps, not vague state descriptions
+For each function, use RISK-BASED minimum TC counts:
+- risk_level "Critical" → MINIMUM 15 TCs (must include all 6 types + domain risks)
+- risk_level "High"     → MINIMUM 10 TCs (must include all 6 types)
+- risk_level "Medium"   → MINIMUM 6 TCs  (must include Positive, Negative, Security)
+- risk_level "Low"      → MINIMUM 4 TCs  (Positive, Negative minimum)
+
+Composition rule per function:
+- 2 Functional Positive + 2 Functional Negative + 1 Boundary + 1 Edge Case + 2 Security + 1 Validation (minimum baseline)
+- Add LuxeWay Domain Risk TCs when the function touches Booking, Payment, Vehicle availability, or Coupon
+- Pre-condition must list concrete setup steps, not vague state descriptions
+- NEVER generate two test cases that test the exact same condition with different wording
 
 OUTPUT FORMAT:
 ```json
@@ -270,12 +310,12 @@ OUTPUT FORMAT:
       "function_id": "FUNC-{module_code}-001",
       "module_code": "{module_code}",
       "module_name": "{module_name}",
-      "test_case_description": "Xác minh đăng nhập thành công với email và mật khẩu hợp lệ của Customer",
+      "test_case_description": "Xác minh [Hành động] thành công với [Điều kiện hợp lệ] của [Actor]",
       "test_case_type": "Functional Positive",
       "priority": "P0",
-      "pre_condition": "1. Tài khoản testcustomer@luxeway.vn đã được tạo và verified\\n2. Backend đang chạy tại http://localhost:8080\\n3. Tài khoản không bị ban",
-      "test_case_procedure": "1. Mở Postman\\n2. Tạo POST request: http://localhost:8080/auth/login\\n3. Header: Content-Type: application/json\\n4. Body: {{\\\"email\\\": \\\"testcustomer@luxeway.vn\\\", \\\"password\\\": \\\"P@ssword123!\\\"}}\\n5. Gửi request\\n6. Kiểm tra HTTP Status Code = 200\\n7. Kiểm tra response body có chứa access_token\\n8. Kiểm tra user.role = \\\"customer\\\"",
-      "expected_result": "HTTP 200 OK. Response: {{\\\"success\\\": true, \\\"message\\\": \\\"Login successful\\\", \\\"data\\\": {{\\\"access_token\\\": \\\"<JWT>\\\", \\\"user\\\": {{\\\"email\\\": \\\"testcustomer@luxeway.vn\\\", \\\"role\\\": \\\"customer\\\"}}}}}}",
+      "pre_condition": "1. Tài khoản testcustomer@luxeway.vn đã được tạo và verified\n2. Dữ liệu hợp lệ tồn tại trong DB\n3. Backend đang chạy tại http://localhost:8080",
+      "test_case_procedure": "1. Mở Postman\n2. Tạo [METHOD] request: http://localhost:8080[ENDPOINT]\n3. Header: Content-Type: application/json\n4. Body: {\"field1\": \"value1\"}\n5. Gửi request\n6. Kiểm tra HTTP Status Code = 200\n7. Kiểm tra response body",
+      "expected_result": "HTTP 200 OK. Response: {\"success\": true, \"message\": \"Thành công\", \"data\": {}}",
       "round1_result": "Untested",
       "round1_date": "",
       "round1_tester": "",

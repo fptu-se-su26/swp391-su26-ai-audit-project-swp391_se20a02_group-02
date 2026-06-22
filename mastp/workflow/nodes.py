@@ -8,6 +8,7 @@ import json
 import re
 import os
 import uuid
+import hashlib
 import logging
 from typing import List, Optional
 
@@ -109,6 +110,114 @@ def _has_placeholders(text: str) -> bool:
     return any(re.search(p, text, re.IGNORECASE) for p in PLACEHOLDER_PATTERNS)
 
 
+# ─── Context Chunking Strategy (Critical Issue #1 fix) ───────────────────────
+# Agent 03 Context Overflow Prevention:
+# Large modules (Booking, Payment, Contract) can have 8,000+ lines of code
+# across Controller + Service + Validator. Naively truncating at 8,000 chars
+# can silently drop entire endpoint definitions mid-function.
+# Solution: split by @*Mapping boundaries so each chunk is a complete method.
+
+CHUNK_CHAR_LIMIT = 5_500  # Safe limit: leaves ~500 chars for prompt overhead within 6k TPM
+
+
+def _chunk_source_code(source_code: str, limit: int = CHUNK_CHAR_LIMIT) -> list[str]:
+    """Split source code into chunks at @*Mapping method boundaries.
+    
+    Each chunk ends right before the next HTTP mapping annotation so
+    no endpoint definition is ever split across two prompts.
+    """
+    if len(source_code) <= limit:
+        return [source_code]
+
+    # Split at @GetMapping / @PostMapping / etc. boundaries
+    boundaries = [m.start() for m in re.finditer(
+        r"@(?:Get|Post|Put|Delete|Patch)Mapping", source_code
+    )]
+
+    if not boundaries:
+        # Fallback: split by line count
+        lines = source_code.splitlines()
+        chunks, current = [], []
+        current_len = 0
+        for line in lines:
+            if current_len + len(line) > limit and current:
+                chunks.append("\n".join(current))
+                current, current_len = [], 0
+            current.append(line)
+            current_len += len(line)
+        if current:
+            chunks.append("\n".join(current))
+        return chunks
+
+    # Build chunks from boundary positions
+    chunks = []
+    chunk_start = 0
+    for boundary in boundaries[1:]:  # skip first — it's the start
+        if boundary - chunk_start >= limit:
+            chunks.append(source_code[chunk_start:boundary])
+            chunk_start = boundary
+    chunks.append(source_code[chunk_start:])  # last chunk
+    return [c for c in chunks if c.strip()]
+
+
+def _load_service_context(source_root: str, module_code: str, max_chars: int = 3_000) -> str:
+    """Load companion Service file for dependency + BR enrichment context (Stage B).
+    
+    Returns a truncated excerpt of the Service file if found, or empty string.
+    This gives the Code Analysis Agent visibility into BookingService,
+    PaymentService, etc. without exploding the context window.
+    """
+    controller_name_base = None
+    controller_dir = os.path.join(source_root, "controller")
+    service_dir = os.path.join(source_root, "service")
+
+    if not os.path.exists(service_dir):
+        return ""
+
+    # Try to find Service file matching module (e.g. BookingService.java)
+    # Look for *Service.java files related to this module code
+    candidates = [
+        f for f in os.listdir(service_dir)
+        if f.endswith("Service.java") or f.endswith("ServiceImpl.java")
+    ]
+
+    # Match heuristically: module code letters appear in service name
+    module_lower = module_code.lower()
+    best = None
+    for cand in candidates:
+        if module_lower in cand.lower():
+            best = cand
+            break
+
+    if not best and candidates:
+        # Fallback: take first available service
+        best = candidates[0]
+
+    if not best:
+        return ""
+
+    service_path = os.path.join(service_dir, best)
+    try:
+        with open(service_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        logger.info(f"  ✓ Loaded service context: {best} ({len(content)} chars, using first {max_chars})")
+        return f"\n\n--- SERVICE CONTEXT ({best}) ---\n" + content[:max_chars]
+    except Exception:
+        return ""
+
+
+def _stable_br_key(text: str) -> str:
+    """Generate a deterministic, stable key from a business rule description.
+    
+    Stable BR IDs (Remaining Issue #2): Using hash prevents ID drift when AI
+    re-orders or renames rules between runs, preserving traceability.
+    """
+    normalized = re.sub(r"\s+", "_", text.lower().strip())
+    normalized = re.sub(r"[^a-z0-9_]", "", normalized)[:40]
+    short_hash = hashlib.md5(text.encode()).hexdigest()[:6]
+    return f"{normalized}_{short_hash}"
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # NODE 1 — Code Analysis Agent
 # ─────────────────────────────────────────────────────────────────────────────
@@ -144,52 +253,83 @@ def code_analysis_node(state: MVPState) -> MVPState:
     state["source_code"] = source_code
     logger.info(f"  ✓ Loaded {controller_file} ({len(source_code)} chars)")
 
-    # ── LLM Analysis ─────────────────────────────────────────────────────
-    # Determine base path from source
+    # Stage B: Load Service context for dependency enrichment (non-blocking)
+    service_context = _load_service_context(source_root, module_code)
+
+    # ── Context Chunking (Critical Issue #1 fix) ─────────────────────────
+    # Split source into chunks at @Mapping boundaries instead of hard truncation.
+    # Each chunk = a set of complete endpoint methods.
+    source_chunks = _chunk_source_code(source_code)
+    if len(source_chunks) > 1:
+        logger.info(f"  📦 Source split into {len(source_chunks)} chunk(s) to prevent context overflow")
+
+    # ── LLM Analysis — run per chunk, merge results ───────────────────────
     base_path_match = re.search(r'@RequestMapping\("([^"]+)"\)', source_code)
     base_path = base_path_match.group(1) if base_path_match else f"/{module_code.lower()}"
 
-    user_prompt = CODE_ANALYSIS_USER.format(
-        controller_name=controller_file.replace(".java", ""),
-        module_code=module_code,
-        module_name=module_name,
-        base_url=base_url,
-        base_path=base_path,
-        source_code=source_code[:8000],  # Truncate for context window
-    )
-
     max_retries = 3
-    endpoints = []
+    all_endpoints = []
     llm = _get_llm(state.get("llm_model"), temperature=0.1, node_type="code_analysis")
 
-    for attempt in range(max_retries):
-        try:
-            logger.info(f"  📡 LLM call attempt {attempt + 1}/{max_retries}...")
-            messages = [
-                {"role": "user", "content": f"SYSTEM CONTEXT:\n{CODE_ANALYSIS_SYSTEM}\n\n---\n\n{user_prompt}"}
-            ]
-            response = llm.invoke(messages)
-            result = _extract_json(response.content)
-            endpoints = result.get("endpoints", [])
+    for chunk_idx, chunk in enumerate(source_chunks):
+        # Append service context only to first chunk (avoids duplication)
+        enriched_chunk = chunk + (service_context if chunk_idx == 0 else "")
+        if len(enriched_chunk) > CHUNK_CHAR_LIMIT + 1000:
+            enriched_chunk = enriched_chunk[:CHUNK_CHAR_LIMIT + 1000]
 
-            if len(endpoints) == 0 and attempt < max_retries - 1:
-                logger.warning(f"  ⚠ No endpoints extracted on attempt {attempt + 1}. Retrying...")
-                user_prompt += "\n\nIMPORTANT: The previous attempt extracted 0 endpoints. Re-examine EVERY @GetMapping, @PostMapping, @PutMapping, @DeleteMapping, @PatchMapping annotation in the code."
-                continue
+        user_prompt = CODE_ANALYSIS_USER.format(
+            controller_name=controller_file.replace(".java", ""),
+            module_code=module_code,
+            module_name=module_name,
+            base_url=base_url,
+            base_path=base_path,
+            source_code=enriched_chunk,
+        )
+        if len(source_chunks) > 1:
+            user_prompt += f"\n\nNOTE: This is chunk {chunk_idx + 1} of {len(source_chunks)}. Extract ONLY endpoints defined in this chunk."
 
-            logger.info(f"  ✓ Extracted {len(endpoints)} endpoints")
-            break
+        chunk_endpoints = []
+        for attempt in range(max_retries):
+            try:
+                if len(source_chunks) > 1:
+                    logger.info(f"  📡 LLM call: chunk {chunk_idx + 1}/{len(source_chunks)}, attempt {attempt + 1}/{max_retries}...")
+                else:
+                    logger.info(f"  📡 LLM call attempt {attempt + 1}/{max_retries}...")
+                messages = [
+                    {"role": "user", "content": f"SYSTEM CONTEXT:\n{CODE_ANALYSIS_SYSTEM}\n\n---\n\n{user_prompt}"}
+                ]
+                response = llm.invoke(messages)
+                result = _extract_json(response.content)
+                chunk_endpoints = result.get("endpoints", [])
 
-        except Exception as e:
-            logger.warning(f"  ⚠ Attempt {attempt + 1} failed: {e}")
-            if attempt == max_retries - 1:
-                state["errors"] = state.get("errors", []) + [f"Code analysis LLM failed: {e}"]
-                state["endpoints"] = []
-                state["quality_scores"] = {**state.get("quality_scores", {}), "code_analysis": 0.0}
-                return state
+                if len(chunk_endpoints) == 0 and attempt < max_retries - 1:
+                    logger.warning(f"  ⚠ No endpoints extracted on attempt {attempt + 1}. Retrying...")
+                    user_prompt += "\n\nIMPORTANT: The previous attempt extracted 0 endpoints. Re-examine EVERY @GetMapping, @PostMapping, @PutMapping, @DeleteMapping, @PatchMapping annotation in the code."
+                    continue
+
+                break
+
+            except Exception as e:
+                logger.warning(f"  ⚠ Attempt {attempt + 1} failed: {e}")
+                if attempt == max_retries - 1:
+                    state["errors"] = state.get("errors", []) + [f"Code analysis LLM failed: {e}"]
+
+        # Re-sequence endpoint IDs to avoid collisions across chunks
+        offset = len(all_endpoints)
+        for i, ep in enumerate(chunk_endpoints):
+            ep["endpoint_id"] = f"EP-{module_code}-{offset + i + 1:03d}"
+        all_endpoints.extend(chunk_endpoints)
+
+    endpoints = all_endpoints
+    logger.info(f"  ✓ Extracted {len(endpoints)} endpoints")
+
+    if not endpoints:
+        state["errors"] = state.get("errors", []) + ["Code analysis: 0 endpoints after all chunks"]
+        state["endpoints"] = []
+        state["quality_scores"] = {**state.get("quality_scores", {}), "code_analysis": 0.0}
+        return state
 
     # ── Quality scoring ───────────────────────────────────────────────────
-    # If it extracted at least 1 endpoint successfully, consider it 100% (since some modules are very small)
     quality = 1.0 if len(endpoints) > 0 else 0.0
     logger.info(f"  📊 Quality score: {quality:.2f} ({len(endpoints)} endpoints)")
 
@@ -372,7 +512,8 @@ def test_case_node(state: MVPState) -> MVPState:
                     logger.warning(f"  ⚠ {placeholder_count} TCs have placeholders. Retrying with stricter instruction...")
                     user_prompt += (
                         f"\n\nCRITICAL: {placeholder_count} test cases still have placeholder values like 'valid_email', 'your_password', etc. "
-                        "Replace ALL placeholders with real values: testcustomer@luxeway.vn, P@ssword123!, http://localhost:8080/auth/login"
+                        "Replace ALL placeholders with real values (e.g., testcustomer@luxeway.vn, P@ssword123!). "
+                        "DO NOT use generic text like [Hành động], [METHOD], [ENDPOINT]. USE THE REAL DATA FROM THE FUNCTION INVENTORY."
                     )
                     continue
 
