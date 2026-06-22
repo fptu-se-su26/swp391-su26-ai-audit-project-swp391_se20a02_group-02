@@ -29,6 +29,10 @@ public class MotorbikeModel {
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @Column(name = "is_active", nullable = false)
+    @Builder.Default
+    private Boolean isActive = true;
+
     @PrePersist
     private void prePersist() {
         if (id == null) {

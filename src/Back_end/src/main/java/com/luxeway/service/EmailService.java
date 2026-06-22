@@ -151,6 +151,10 @@ public class EmailService {
         sendEmail(adminEmail, subject, htmlContent, null, null);
     }
 
+    public void sendCustomHtmlEmail(String to, String subject, String htmlBody) {
+        sendEmail(to, subject, htmlBody, null, null);
+    }
+
     private void sendEmail(String to, String subject, String htmlContent, String attachmentName, byte[] attachmentBytes) {
         try {
             MimeMessage message = mailSender.createMimeMessage();

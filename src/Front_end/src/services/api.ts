@@ -7,7 +7,7 @@ const REFRESH_TOKEN_KEY = 'luxeway_refresh_token';
 
 // API Client with error handling and automatic token refresh
 class ApiClient {
-  private baseURL: string;
+  public baseURL: string;
   public onUnauthorized?: () => void;
   // Flag to prevent infinite refresh loops
   private isRefreshing = false;

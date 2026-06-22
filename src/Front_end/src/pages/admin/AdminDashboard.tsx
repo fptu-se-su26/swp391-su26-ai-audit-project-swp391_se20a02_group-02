@@ -110,7 +110,7 @@ const AdminDashboard: React.FC = () => {
   const t = useT();
   
   // Dashboard states
-  const [activeTab, setActiveTab] = useState<'overview' | 'marketplace' | 'vehicles' | 'kyc' | 'bookings' | 'payments' | 'disputes' | 'users' | 'fraud' | 'analytics' | 'notifications' | 'logs' | 'health' | 'settings'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'marketplace' | 'vehicles' | 'kyc' | 'bookings' | 'payments' | 'disputes' | 'users' | 'fraud' | 'analytics' | 'ai-predictive' | 'notifications' | 'logs' | 'health' | 'settings'>('overview');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);

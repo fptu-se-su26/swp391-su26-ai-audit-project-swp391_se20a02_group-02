@@ -796,6 +796,14 @@ Audit LuxeWay Car Rental Platform:
 
 - **Date:** 2026-06-14
 - **Author:** LeVanHau (DE190968)
+**Outcome:** main_scraper.py now parses multiple .html files in data/html_sources into aw_vehicles.json.
+
+---
+
+## Log #29
+
+- **Date:** 2026-06-14
+- **Author:** LeVanHau (DE190968)
 - **AI Tool:** Antigravity
 - **Purpose:** Sửa lỗi đồng bộ giao diện giữa /marketplace và /cars
 - **Prompt Reference:** PROMPTS.md#prompt-29
@@ -803,3 +811,17 @@ Audit LuxeWay Car Rental Platform:
 - **Human Decision:** Xác nhận việc điều hướng xử lý đúng VehicleDetailPage cho mọi loại xe, giúp đồng bộ state và API calls.
 - **Applied To:** src/Front_end/src/App.tsx, xóa file ở src/Front_end/src/pages/marketplace/
 - **Verification:** Chạy thành công, các trang được đồng bộ 100% không còn code rác.
+
+---
+
+## Log #30
+
+- **Date:** 2026-06-21
+- **Author:** Lê Văn Hậu (DE190968)
+- **AI Tool:** Antigravity
+- **Purpose:** Xây dựng AI Copilot Widget, AI Predictive Dashboard và Agent Layer Client. Xử lý conflict khi merge nhánh tính năng xe.
+- **Prompt Reference:** N/A
+- **AI Output Summary:** Cung cấp mã nguồn các component React (AICopilotWidget, AIPredictivePanel), cấu trúc DTOs, Controllers (AICopilotController, AIPredictiveController) và kịch bản seed SQL Analytics (ai_analytics_seed_v2.sql).
+- **Human Decision:** Review code UI/UX của Dashboard, tinh chỉnh thiết kế Agent Client cho Spring Boot, và chủ động giải quyết các xung đột merge (conflict) với cấu trúc Vehicle cũ và mới.
+- **Applied To:** `src/Back_end/`, `src/Front_end/src/components/admin/`, `src/Front_end/src/pages/admin/`
+- **Verification:** Build project backend và frontend thành công. Test API Dashboard trả về dữ liệu predictive analytics và widget AI hoạt động mượt mà trên giao diện Admin.
