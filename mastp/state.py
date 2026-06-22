@@ -66,8 +66,20 @@ class TestCaseDef(TypedDict):
     note: str
 
 
+class BusinessRuleDef(TypedDict):
+    br_id: str               # e.g. BR-BL-001
+    br_key: str              # stable hash key e.g. "booking_overlap_a1b2c3"
+    description: str         # Human-readable rule description
+    source_layer: str        # "Service" | "Validator" | "Entity" | "Controller"
+    source_method: str       # e.g. "BookingService.checkAvailability()"
+    testable_condition: str  # Concrete test scenario
+    priority: str            # P0 | P1 | P2 | P3
+    confidence: float        # 0.0–1.0 — how sure the AI is about this rule
+    rule_status: str         # "confirmed" | "inferred" | "uncertain"
+
+
 class MVPState(TypedDict):
-    """Minimal LangGraph state for MVP 3-agent pipeline."""
+    """LangGraph state for 4-agent pipeline: Code Analysis → BR Extraction → Function Inventory → Test Cases."""
 
     # ── Session ────────────────────────────────────────────
     session_id: str
@@ -83,8 +95,10 @@ class MVPState(TypedDict):
     llm_model: str
 
     # ── Phase outputs ──────────────────────────────────────
-    source_code: Optional[str]           # Raw Java source
+    source_code: Optional[str]                    # Raw Java source (Controller)
+    service_code: Optional[str]                   # Raw Java source (Service layer)
     endpoints: Optional[List[EndpointDef]]
+    business_rules: Optional[List[BusinessRuleDef]]   # Agent 05 output
     functions: Optional[List[FunctionDef]]
     test_cases: Optional[List[TestCaseDef]]
 

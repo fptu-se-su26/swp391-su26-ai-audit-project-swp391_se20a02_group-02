@@ -15,6 +15,7 @@ from typing import List, Optional
 from mastp.state import MVPState
 from mastp.prompts import (
     CODE_ANALYSIS_SYSTEM, CODE_ANALYSIS_USER,
+    BR_EXTRACTION_SYSTEM, BR_EXTRACTION_USER,
     FUNCTION_INVENTORY_SYSTEM, FUNCTION_INVENTORY_USER,
     TEST_CASE_SYSTEM, TEST_CASE_USER,
 )
@@ -339,6 +340,109 @@ def code_analysis_node(state: MVPState) -> MVPState:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# NODE 1.5 — Business Rule Extraction Agent (Agent 05)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def business_rule_node(state: MVPState) -> MVPState:
+    """
+    Extract Business Rules from Controller + Service layer source code.
+    
+    Runs after code_analysis_node. Reads the service_code already loaded
+    by _load_service_context(). Outputs business_rules[] which feeds into
+    both function_inventory_node (linked_br) and test_case_node (BR test types).
+    """
+    logger.info("📖 [BR EXTRACTION] Extracting business rules...")
+    state = dict(state)
+    state["current_node"] = "business_rule_extraction"
+
+    module_code = state["module_code"]
+    module_name = state["module_name"]
+    source_root  = state["source_root"]
+    controller_code = state.get("source_code", "") or ""
+
+    # Load service code (full pass — chunked separately from controller analysis)
+    service_code = state.get("service_code", "") or ""
+    if not service_code:
+        svc_raw = _load_service_context(source_root, module_code, max_chars=6_000)
+        # Strip the "--- SERVICE CONTEXT --- " header added by _load_service_context
+        service_code = svc_raw.split("---\n", 1)[-1] if "---\n" in svc_raw else svc_raw
+        state["service_code"] = service_code
+
+    if not controller_code and not service_code:
+        logger.warning("  ⚠ No source code available for BR extraction. Skipping.")
+        state["business_rules"] = []
+        state["quality_scores"] = {**state.get("quality_scores", {}), "br_extraction": 0.0}
+        return state
+
+    # Chunk controller code to avoid overflow
+    controller_chunks = _chunk_source_code(controller_code[:4_000])
+    controller_excerpt = controller_chunks[0] if controller_chunks else controller_code[:4_000]
+
+    # Service code: first 5,000 chars is usually enough for BR extraction
+    service_excerpt = service_code[:5_000]
+
+    all_rules = []
+    seq_end = 20  # initial target; we collect all rules found
+
+    user_prompt = BR_EXTRACTION_USER.format(
+        module_code=module_code,
+        module_name=module_name,
+        controller_code=controller_excerpt,
+        service_code=service_excerpt if service_excerpt else "(No service file found for this module)",
+        seq_end=seq_end,
+    )
+
+    llm = _get_llm(state.get("llm_model"), temperature=0.1, node_type="br_extraction")
+    max_retries = 3
+
+    for attempt in range(max_retries):
+        try:
+            logger.info(f"  📡 BR LLM call attempt {attempt + 1}/{max_retries}...")
+            messages = [
+                {"role": "user", "content": f"SYSTEM CONTEXT:\n{BR_EXTRACTION_SYSTEM}\n\n---\n\n{user_prompt}"}
+            ]
+            response = llm.invoke(messages)
+            result   = _extract_json(response.content)
+            all_rules = result.get("business_rules", [])
+
+            if not all_rules and attempt < max_retries - 1:
+                logger.warning(f"  ⚠ No BRs extracted on attempt {attempt + 1}. Retrying...")
+                user_prompt += (
+                    "\n\nIMPORTANT: Zero business rules were returned. "
+                    "Look for if-throw blocks, @NotNull/@Min/@Max annotations, and enum status transitions. "
+                    "Extract EVERY condition you see, even if you are only 60% confident."
+                )
+                continue
+
+            # Apply stable br_key using hash to prevent ID drift across runs
+            for i, rule in enumerate(all_rules):
+                rule["br_id"]  = f"BR-{module_code}-{i + 1:03d}"
+                rule["br_key"] = rule.get("br_key") or _stable_br_key(
+                    rule.get("description", f"rule_{i}")
+                )
+            break
+
+        except Exception as e:
+            logger.warning(f"  ⚠ BR attempt {attempt + 1} failed: {e}")
+            if attempt == max_retries - 1:
+                state["errors"] = state.get("errors", []) + [f"BR extraction failed: {e}"]
+
+    # Filter out uncertain hallucinations (confidence < 0.5)
+    confirmed = [r for r in all_rules if r.get("confidence", 1.0) >= 0.5]
+    dropped   = len(all_rules) - len(confirmed)
+    if dropped:
+        logger.info(f"  🗑️ Dropped {dropped} uncertain rules (confidence < 0.5)")
+
+    quality = min(1.0, len(confirmed) / max(5, 1))  # expect at least 5 BRs for a real module
+    quality = 1.0 if confirmed else 0.0
+    logger.info(f"  ✓ Extracted {len(confirmed)} business rules (quality: {quality:.2f})")
+
+    state["business_rules"] = confirmed
+    state["quality_scores"]  = {**state.get("quality_scores", {}), "br_extraction": quality}
+    return state
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # NODE 2 — Function Inventory Agent
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -353,7 +457,17 @@ def function_inventory_node(state: MVPState) -> MVPState:
 
     module_code = state["module_code"]
     module_name = state["module_name"]
-    endpoints = state.get("endpoints", [])
+    endpoints   = state.get("endpoints", [])
+
+    # Pull BR data from Agent 05 — pass as context to the LLM
+    business_rules = state.get("business_rules", [])
+    br_summary = ""
+    if business_rules:
+        br_lines = [f"  - [{r['priority']}] {r['description']} (br_id: {r['br_id']})" for r in business_rules]
+        br_summary = "\n".join(br_lines)
+        logger.info(f"  📖 Injecting {len(business_rules)} business rules into Function Inventory")
+    else:
+        br_summary = "(No business rules extracted for this module)"
 
     if not endpoints:
         logger.warning("  ⚠ No endpoints to process. Generating minimal inventory.")

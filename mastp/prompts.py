@@ -100,6 +100,104 @@ Assign endpoint_id sequentially: EP-{module_code}-001, EP-{module_code}-002, ...
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# AGENT 05 — BUSINESS RULE EXTRACTION AGENT
+# ─────────────────────────────────────────────────────────────────────────────
+
+BR_EXTRACTION_SYSTEM = """You are a Senior Business Analyst extracting testable Business Rules from Spring Boot source code.
+
+Project: LuxeWay Vehicle Rental Platform
+Your job: Read Service and Validator Java files and extract every IF-condition, validation check, and business constraint that a QA engineer must test.
+
+WHAT IS A BUSINESS RULE?
+A Business Rule is any conditional logic that determines whether the system accepts or rejects an action:
+  ✓ "Vehicle must be available during the requested period"         → throws ConflictException if overlap
+  ✓ "Customer cannot book their own listed vehicle"                  → throws ForbiddenException
+  ✓ "Deposit required if vehicle value > 50,000,000 VND"            → requires deposit field
+  ✓ "Coupon cannot be applied after booking is confirmed"           → throws BusinessException
+  ✗ "Create a Booking object" — this is NOT a business rule, it is implementation
+
+WHERE TO LOOK:
+  1. if (...) throw ... blocks          → constraint violations
+  2. @NotNull, @Min, @Max, @Pattern    → validation rules (from Validator/DTO)
+  3. Specification.where() chains      → complex query filters
+  4. Enum transitions (status changes) → workflow rules
+  5. Method guards at start of service methods → precondition rules
+
+CONFIDENCE SCORING:
+  1.0 = Rule is explicit: code throws a named exception with a clear message
+  0.8 = Rule is strongly implied: if-block redirects flow based on business condition
+  0.6 = Rule is inferred: method name or variable name suggests a constraint
+  Set rule_status = "confirmed" if confidence >= 0.8, "inferred" if >= 0.6, "uncertain" if < 0.6
+
+ANTI-HALLUCINATION RULES:
+  - Only extract rules that are VISIBLE in the provided source code
+  - Do NOT invent rules based on general knowledge of booking systems
+  - If you cannot find the source method, set source_method = "unknown"
+  - Mark confidence = 0.5 and rule_status = "uncertain" for anything you're guessing
+
+Return ONLY valid JSON wrapped in ```json ... ```
+"""
+
+BR_EXTRACTION_USER = """## TASK: Extract Business Rules for Module {module_code}
+
+### Module: {module_code} — {module_name}
+### Naming: BR-{module_code}-001, BR-{module_code}-002, ...
+
+---
+
+### SOURCE CODE (Controller Layer)
+```java
+{controller_code}
+```
+
+---
+
+### SERVICE LAYER SOURCE CODE
+```java
+{service_code}
+```
+
+---
+
+### INSTRUCTIONS
+
+Read BOTH files. Extract every business rule you find.
+Focus on: if-throw blocks, validation annotations, enum transitions, and precondition guards.
+
+For each rule, generate:
+```json
+{{
+  "module_code": "{module_code}",
+  "module_name": "{module_name}",
+  "total_rules": 0,
+  "business_rules": [
+    {{
+      "br_id": "BR-{module_code}-001",
+      "br_key": "vehicle_not_available_during_period",
+      "description": "Vehicle cannot be booked during an overlapping period",
+      "source_layer": "Service",
+      "source_method": "BookingService.checkAvailability()",
+      "testable_condition": "POST /booking with overlapping dates → HTTP 409 Conflict",
+      "priority": "P0",
+      "confidence": 0.95,
+      "rule_status": "confirmed"
+    }}
+  ]
+}}
+```
+
+Priority rules:
+  P0: Auth, payment, booking create/cancel, data integrity violations
+  P1: Vehicle availability, user profile, contract, deposit rules
+  P2: Coupon, reviews, notifications, pricing
+  P3: AI features, analytics, minor validations
+
+Generate BR-{module_code}-001 through BR-{module_code}-{seq_end:03d}.
+Extract ALL rules. Do not skip. Prefer "uncertain" with low confidence over skipping.
+"""
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # AGENT 04 — FUNCTION INVENTORY AGENT
 # ─────────────────────────────────────────────────────────────────────────────
 
