@@ -189,6 +189,8 @@ def run_module(
     errors = final_state.get("errors", [])
     warnings = final_state.get("warnings", [])
 
+    state_metrics = final_state.get("metrics", {})
+
     result = {
         "session_id": session_id,
         "module_code": module_code,
@@ -196,6 +198,7 @@ def run_module(
         "status": "completed" if not errors else "completed_with_errors",
         "elapsed_seconds": round(elapsed, 1),
         "metrics": {
+            **state_metrics,
             "endpoints_analyzed": len(endpoints),
             "functions_generated": len(functions),
             "test_cases_generated": len(test_cases),
@@ -239,6 +242,23 @@ def generate_coverage_report(result: dict) -> dict:
     else:
         coverage_strength = "Minimal"
 
+    tc_coverage_pct = min(100.0, (tcs / max(target_tcs, 1)) * 100.0)
+    if tc_coverage_pct >= 90:
+        coverage_tier = "Excellent"
+    elif tc_coverage_pct >= 70:
+        coverage_tier = "Good"
+    elif tc_coverage_pct >= 40:
+        coverage_tier = "Fair"
+    else:
+        coverage_tier = "Poor"
+
+    total_rules_before = metrics.get("total_rules_before_dedup", 0)
+    total_rules_after = metrics.get("total_rules_after_dedup", 0)
+    duplicates_removed = metrics.get("duplicate_rules_removed", 0)
+    low_quality_tc_count = metrics.get("low_quality_tc_count", 0)
+    covered_br = metrics.get("covered_business_rules", 0)
+    uncovered_rules = metrics.get("uncovered_rules", [])
+
     report = {
         "module_code":       module,
         "module_name":       name,
@@ -249,13 +269,17 @@ def generate_coverage_report(result: dict) -> dict:
             "target_tcs":            target_tcs,
             "tc_coverage_percent":   tc_coverage_pct,
             "coverage_tier":         coverage_tier,
-            "coverage_strength":     coverage_strength,     # NEW: quality dimension
-            "rule_test_depth":       rule_test_depth,       # NEW: avg TCs per function
-            "business_rules_linked": None,  # Phase 2: populated by BR Agent
-            "br_coverage_percent":   None,  # Phase 2: populated by BR Agent
+            "coverage_strength":     coverage_strength,
+            "rule_test_depth":       rule_test_depth,
+            "total_rules_before_dedup": total_rules_before,
+            "total_rules_after_dedup":  total_rules_after,
+            "duplicate_rules_removed":  duplicates_removed,
+            "covered_business_rules":   covered_br,
+            "low_quality_tc_count":     low_quality_tc_count,
         },
         "quality_scores":    qs,
         "gaps": {
+            "uncovered_rules":       uncovered_rules,
             "missing_tcs":           max(0, target_tcs - tcs),
             "needs_improvement":     tc_coverage_pct < 70 or coverage_strength in ("Weak", "Minimal"),
             "recommendation":        (

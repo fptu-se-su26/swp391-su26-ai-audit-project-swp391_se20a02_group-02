@@ -11,6 +11,7 @@ import uuid
 import hashlib
 import logging
 from typing import List, Optional
+from difflib import SequenceMatcher
 
 from mastp.state import MVPState
 from mastp.prompts import (
@@ -217,6 +218,105 @@ def _stable_br_key(text: str) -> str:
     normalized = re.sub(r"[^a-z0-9_]", "", normalized)[:40]
     short_hash = hashlib.md5(text.encode()).hexdigest()[:6]
     return f"{normalized}_{short_hash}"
+
+
+# ─── Production Readiness Helpers (Deduplication & Quality Gate) ───────────────
+
+def _normalize_text(text: str) -> str:
+    """Lowercase and remove non-alphanumeric characters for comparison."""
+    text = text.lower().strip()
+    return re.sub(r"[^a-z0-9\s]", "", text)
+
+def _jaccard_sim(str1: str, str2: str) -> float:
+    a = set(str1.split())
+    b = set(str2.split())
+    if not a or not b: return 0.0
+    return len(a.intersection(b)) / len(a.union(b))
+
+def _deduplicate_brs(rules: list[dict]) -> list[dict]:
+    """Remove semantic duplicate business rules. (Change Request #1)"""
+    SEQUENCE_THRESHOLD = 0.85
+    JACCARD_THRESHOLD = 0.80
+    
+    unique_rules = []
+    for rule in rules:
+        is_dup = False
+        desc_norm = _normalize_text(rule.get("description", ""))
+        for existing in unique_rules:
+            # Never merge rules with different priorities
+            if rule.get("priority") != existing.get("priority"):
+                continue
+                
+            ex_norm = _normalize_text(existing.get("description", ""))
+            
+            # Exact Match
+            if desc_norm == ex_norm:
+                is_dup = True
+                break
+                
+            # SequenceMatcher ratio
+            seq_ratio = SequenceMatcher(None, desc_norm, ex_norm).ratio()
+            if seq_ratio >= SEQUENCE_THRESHOLD:
+                is_dup = True
+                break
+                
+            # Jaccard similarity
+            jac_ratio = _jaccard_sim(desc_norm, ex_norm)
+            if jac_ratio >= JACCARD_THRESHOLD:
+                is_dup = True
+                break
+                
+        if not is_dup:
+            unique_rules.append(rule)
+            
+    return unique_rules
+
+def _evaluate_tc_quality(tc: dict, existing_tcs: list[dict]) -> int:
+    """Evaluate TC quality on a 0-100 scale. (Change Request #3)"""
+    score = 0
+    
+    # 1. Clear action (20)
+    procedure = tc.get("test_case_procedure", "")
+    lines = [l.strip() for l in procedure.split("\n") if l.strip()]
+    numbered_steps = sum(1 for l in lines if re.match(r"^\d+\.", l))
+    if len(lines) >= 4 and numbered_steps >= 2:
+        score += 20
+        
+    # 2. Expected result (20)
+    expected = (tc.get("expected_result") or "").lower()
+    has_http = "http" in expected or "200" in expected or "400" in expected or "401" in expected or "403" in expected or "404" in expected or "409" in expected or "500" in expected
+    has_outcome = "success" in expected or "fail" in expected or "error" in expected or "true" in expected or "false" in expected
+    if len(expected) >= 15 and has_http and has_outcome:
+        score += 20
+        
+    # 3. Concrete test data (20)
+    proc_val = (tc.get("test_case_procedure") or "")
+    pre_val = (tc.get("pre_condition") or "")
+    if not _has_placeholders(proc_val + "\n" + pre_val):
+        text = (proc_val + " " + pre_val).lower()
+        has_concrete_value = "@luxeway.vn" in text or re.search(r"\b\d{2,}\b", text) or re.search(r"\b[a-z]+-\d+\b", text)
+        if has_concrete_value:
+            score += 20
+            
+    # 4. Linked Business Rule (20)
+    linked = tc.get("linked_br", [])
+    if isinstance(linked, list) and len(linked) > 0:
+        score += 20
+    elif isinstance(linked, str) and len(linked) > 0:
+        score += 20
+        
+    # 5. Non-duplicate content (20)
+    proc_norm = _normalize_text(procedure)
+    is_dup = False
+    for ex in existing_tcs:
+        ex_proc_norm = _normalize_text(ex.get("test_case_procedure", ""))
+        if SequenceMatcher(None, proc_norm, ex_proc_norm).ratio() > 0.85:
+            is_dup = True
+            break
+    if not is_dup:
+        score += 20
+        
+    return score
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -433,6 +533,20 @@ def business_rule_node(state: MVPState) -> MVPState:
     if dropped:
         logger.info(f"  🗑️ Dropped {dropped} uncertain rules (confidence < 0.5)")
 
+    # Deduplication stage
+    total_before = len(confirmed)
+    confirmed = _deduplicate_brs(confirmed)
+    total_after = len(confirmed)
+    duplicates_removed = total_before - total_after
+    
+    if duplicates_removed > 0:
+        logger.info(f"  ♻️ Deduplicated {duplicates_removed} business rules")
+    
+    state["metrics"] = state.get("metrics", {})
+    state["metrics"]["total_rules_before_dedup"] = total_before
+    state["metrics"]["total_rules_after_dedup"] = total_after
+    state["metrics"]["duplicate_rules_removed"] = duplicates_removed
+
     quality = min(1.0, len(confirmed) / max(5, 1))  # expect at least 5 BRs for a real module
     quality = 1.0 if confirmed else 0.0
     logger.info(f"  ✓ Extracted {len(confirmed)} business rules (quality: {quality:.2f})")
@@ -602,25 +716,43 @@ def test_case_node(state: MVPState) -> MVPState:
                 ]
                 response = llm.invoke(messages)
                 result = _extract_json(response.content)
-                batch_tcs = result.get("test_cases", [])
+                batch_tcs_raw = result.get("test_cases", [])
 
-                # Check for placeholders
-                placeholder_count = sum(
-                    1 for tc in batch_tcs
-                    if _has_placeholders(tc.get("test_case_procedure", ""))
-                )
-                if placeholder_count > 0 and attempt < max_retries - 1:
-                    logger.warning(f"  ⚠ {placeholder_count} TCs have placeholders. Retrying with stricter instruction...")
+                # Quality Gate (Change Request #3 & #4)
+                batch_tcs = []
+                low_quality_count = 0
+                for tc in batch_tcs_raw:
+                    if not isinstance(tc, dict):
+                        continue
+                    score = _evaluate_tc_quality(tc, all_test_cases + batch_tcs)
+                    tc["quality_score"] = score
+                    if score >= 80:
+                        batch_tcs.append(tc)
+                    else:
+                        low_quality_count += 1
+                
+                state["metrics"] = state.get("metrics", {})
+                state["metrics"]["low_quality_tc_count"] = state["metrics"].get("low_quality_tc_count", 0) + low_quality_count
+
+                if low_quality_count > 0 and attempt < max_retries - 1:
+                    logger.warning(f"  ⚠ {low_quality_count} TCs failed quality gate. Retrying...")
                     user_prompt += (
-                        f"\n\nCRITICAL: {placeholder_count} test cases still have placeholder values like 'valid_email', 'your_password', etc. "
-                        "Replace ALL placeholders with real values (e.g., testcustomer@luxeway.vn, P@ssword123!). "
-                        "DO NOT use generic text like [Hành động], [METHOD], [ENDPOINT]. USE THE REAL DATA FROM THE FUNCTION INVENTORY."
+                        f"\n\nCRITICAL: {low_quality_count} test cases were rejected for low quality. "
+                        "You MUST ensure: 1) Procedure has at least 4 numbered steps. 2) Expected Result includes HTTP Status + Outcome. "
+                        "3) Use CONCRETE test data (@luxeway.vn, real IDs). 4) Map to a Linked BR. 5) No duplicates."
                     )
                     continue
 
+                if attempt == max_retries - 1 and low_quality_count > 0:
+                    logger.warning(f"  ⚠ {low_quality_count} TCs pushed to Manual Review Queue.")
+                    for tc in batch_tcs_raw:
+                        if tc.get("quality_score", 0) < 80:
+                            tc["note"] = f"[MANUAL REVIEW REQUIRED] Low Quality Score ({tc.get('quality_score')})"
+                            batch_tcs.append(tc)
+
                 if len(batch_tcs) < max(3, batch_target // 3) and attempt < max_retries - 1:
-                    logger.warning(f"  ⚠ Only {len(batch_tcs)}/{batch_target} TCs generated. Retrying...")
-                    user_prompt += f"\n\nIMPORTANT: Only {len(batch_tcs)} test cases generated but {batch_target} requested. Generate more test cases covering Security and Boundary types."
+                    logger.warning(f"  ⚠ Only {len(batch_tcs)}/{batch_target} valid TCs generated. Retrying...")
+                    user_prompt += f"\n\nIMPORTANT: Only {len(batch_tcs)} test cases passed validation. Generate more test cases."
                     continue
 
                 break
@@ -669,6 +801,22 @@ def test_case_node(state: MVPState) -> MVPState:
     expected_minimum = max(len(functions) * 4, 1)
     quality = min(1.0, len(all_test_cases) / expected_minimum)
     logger.info(f"  📊 Quality score: {quality:.2f} ({len(all_test_cases)} TCs generated)")
+
+    # ── Coverage Metrics ───────────────────────────────────────────────────
+    covered_brs = set()
+    for tc in all_test_cases:
+        linked = tc.get("linked_br", [])
+        if isinstance(linked, list):
+            covered_brs.update(linked)
+        elif isinstance(linked, str):
+            covered_brs.update([b.strip() for b in linked.split(",") if b.strip()])
+            
+    all_br_ids = set(r.get("br_id") for r in state.get("business_rules", []))
+    uncovered_rules = list(all_br_ids - covered_brs)
+    
+    state["metrics"] = state.get("metrics", {})
+    state["metrics"]["covered_business_rules"] = len(covered_brs.intersection(all_br_ids))
+    state["metrics"]["uncovered_rules"] = uncovered_rules
 
     state["test_cases"] = all_test_cases
     state["quality_scores"] = {**state.get("quality_scores", {}), "test_case": quality}
