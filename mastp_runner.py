@@ -116,9 +116,10 @@ def run_module(
     target_tcs: int = None,
     llm_model: str = None,
     base_url: str = "http://localhost:8080",
+    junit_only: bool = False,
 ) -> dict:
     """Run the full MVP pipeline for a single module."""
-    from mastp.workflow.graph import build_mvp_graph
+    from mastp.workflow.graph import build_mvp_graph, build_junit_graph
 
     if module_code not in MODULE_REGISTRY:
         raise ValueError(f"Unknown module: {module_code}. Available: {list(MODULE_REGISTRY.keys())}")
@@ -160,7 +161,11 @@ def run_module(
 
     # ── Execute graph ─────────────────────────────────────────────────────
     start_time = time.time()
-    graph = build_mvp_graph()
+    if junit_only:
+        logger.info("   Mode: JUNIT ONLY (Skipping Excel TC Generation)")
+        graph = build_junit_graph()
+    else:
+        graph = build_mvp_graph()
 
     try:
         final_state = graph.invoke(initial_state)
@@ -395,6 +400,11 @@ Examples:
         default=None,
         help="LLM model to use (default: claude-sonnet-4-5)"
     )
+    parser.add_argument(
+        "--junit-only", "-j",
+        action="store_true",
+        help="Skip Excel Test Case generation and ONLY generate JUnit code"
+    )
 
     args = parser.parse_args()
 
@@ -439,7 +449,7 @@ Examples:
                     tc_count = past_result.get("metrics", {}).get("test_cases_generated", 0)
                     # Chỉ skip khi status completed VÀ tạo ra số test_case > 0
                     if past_result.get("status") == "completed" and tc_count > 0:
-                        should_skip = True
+                        should_skip = False # TEMPORARILY DISABLED
                 except:
                     pass
                     
@@ -457,6 +467,7 @@ Examples:
             target_tcs=args.target_tcs,
             llm_model=args.model,
             base_url=args.base_url,
+            junit_only=args.junit_only,
         )
         print_results(result)
         all_results.append(result)

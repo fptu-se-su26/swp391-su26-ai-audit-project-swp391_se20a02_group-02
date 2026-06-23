@@ -1,6 +1,7 @@
 """
 mastp/state.py
-LangGraph State Model for MASTP MVP
+LangGraph State Model for MASTP V3
+Extended to support JUnit generation, compile validation, JaCoCo, and traceability.
 """
 from __future__ import annotations
 from typing import TypedDict, List, Optional, Dict, Any
@@ -81,8 +82,55 @@ class BusinessRuleDef(TypedDict):
     rule_status: str         # "confirmed" | "inferred" | "uncertain"
 
 
+class ServiceMethodDef(TypedDict):
+    """One public method in a @Service class, extracted by service_parser."""
+    method_name: str
+    return_type: str
+    parameters: List[str]
+    throws: List[str]
+    is_transactional: bool
+    body_snippet: str
+
+
+class ServiceInventoryDef(TypedDict):
+    """Full static inventory of one @Service class, fed to JUnit Generator."""
+    class_name: str
+    package: str
+    dependencies: List[Dict[str, str]]  # [{"type": "UserRepository", "field": "userRepository"}]
+    methods: List[ServiceMethodDef]
+    source_file: str
+
+
+class CompileResultDef(TypedDict):
+    """Compile result for one generated JUnit test file."""
+    class_name: str       # e.g. "UserServiceTest"
+    java_file: str        # Absolute path to the generated .java file
+    status: str           # "PASS" | "COMPILE_ERROR" | "SKIPPED"
+    error_log: str        # Maven compiler output on failure
+
+
+class JaCoCoClassMetrics(TypedDict):
+    """Per-class coverage metrics parsed from jacoco.csv."""
+    class_name: str
+    line_coverage: float
+    branch_coverage: float
+    method_coverage: float
+
+
+class TraceabilityRow(TypedDict):
+    """One row in the final traceability matrix export."""
+    rule_id: str
+    rule_description: str
+    rule_source: str           # "@NotNull" | "service logic"
+    rule_confidence: float
+    test_case_id: str
+    unit_test_method: str      # e.g. "testGetProfile_UserNotFound"
+    compile_status: str
+    execution_status: str
+
+
 class MVPState(TypedDict):
-    """LangGraph state for 4-agent pipeline: Code Analysis → BR Extraction → Function Inventory → Test Cases."""
+    """LangGraph state for V3 pipeline: Code Analysis → BR → Inventory → TC (Excel) → JUnit → Compile → JaCoCo → Traceability."""
 
     # ── Session ────────────────────────────────────────────
     session_id: str
@@ -104,6 +152,27 @@ class MVPState(TypedDict):
     business_rules: Optional[List[BusinessRuleDef]]   # Agent 05 output
     functions: Optional[List[FunctionDef]]
     test_cases: Optional[List[TestCaseDef]]
+
+    # ── V3: Service Inventory (Phase 1 – Static Extraction) ──────────────────
+    service_inventory: Optional[List[ServiceInventoryDef]]
+
+    # ── V3: Service BR Extraction (1 LLM req per class) ────────────────────────────
+    service_business_rules: Optional[List[Dict[str, Any]]]  # {class_name, service_rules: [...]}
+
+    # ── V3: JUnit Generation (Phase 2) ────────────────────────────────────────
+    generated_junit_files: Optional[List[str]]      # Paths of generated .java files
+    junit_metadata: Optional[List[Dict[str, Any]]]  # {ut_id, class_name, method_name, rule_id}
+
+    # ── V3: Compile Validation (Phase 3) ──────────────────────────────────────
+    compile_results: Optional[List[CompileResultDef]]
+
+    # ── V3: JaCoCo Metrics (Phase 4) ──────────────────────────────────────────
+    jacoco_metrics: Optional[List[JaCoCoClassMetrics]]
+    jacoco_report_path: Optional[str]
+
+    # ── V3: Traceability Matrix (Phase 5) ─────────────────────────────────────
+    traceability_matrix: Optional[List[TraceabilityRow]]
+    traceability_csv_path: Optional[str]
 
     # ── Artifacts ──────────────────────────────────────────
     excel_path: Optional[str]
