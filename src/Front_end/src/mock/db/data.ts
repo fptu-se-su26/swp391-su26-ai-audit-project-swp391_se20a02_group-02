@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import type { Booking, BookingStatus, Payment, PaymentStatus, Review, Notification, Message, Conversation, AnalyticsData } from '@/types';
+import type { Booking, BookingStatus, Payment, PaymentStatus, Review, Notification, Message, Conversation, Business, AnalyticsData } from '@/types';
 
 faker.seed(100);
 
@@ -241,7 +241,62 @@ export function generateMessages(): Message[] {
   return messages;
 }
 
-
+// ====== BUSINESSES ======
+export function generateBusinesses(): Business[] {
+  return [
+    {
+      id: 'business-001',
+      name: 'Aura Prestige Motors',
+      legalName: 'Aura Prestige Motors LLC',
+      description: 'Premier luxury vehicle rental company with 15+ years of excellence.',
+      logo: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&h=200&fit=crop',
+      coverImage: 'https://images.unsplash.com/photo-1603584173870-7f23fdae1b7a?w=1200&auto=format&fit=crop',
+      email: 'contact@auraprestige.com',
+      phone: '+1-310-555-0100',
+      website: 'https://auraprestige.com',
+      rating: 4.9,
+      totalReviews: 312,
+      totalVehicles: 28,
+      totalEmployees: 15,
+      verified: true,
+      branches: [
+        { id: 'branch-001', name: 'Beverly Hills HQ', address: '400 N. Rodeo Drive', city: 'Beverly Hills', lat: 34.0697, lng: -118.3986, phone: '+1-310-555-0101', isMain: true },
+        { id: 'branch-002', name: 'LAX Airport', address: 'LAX Terminal 5', city: 'Los Angeles', lat: 33.9425, lng: -118.4081, phone: '+1-310-555-0102', isMain: false },
+      ],
+      employees: ['owner-001'],
+      ownerId: 'owner-001',
+      createdAt: '2022-01-15T00:00:00Z',
+      revenue: 2450000,
+      tier: 'enterprise',
+    },
+    {
+      id: 'business-002',
+      name: 'Prestige Fleet International',
+      legalName: 'Prestige Fleet International Inc.',
+      description: 'Global luxury vehicle marketplace with locations in 15 countries.',
+      logo: 'https://images.unsplash.com/photo-1614850715649-1d0106293bd1?w=200&h=200&fit=crop',
+      coverImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1200&auto=format&fit=crop',
+      email: 'contact@prestigefleet.com',
+      phone: '+1-305-555-0200',
+      website: 'https://prestigefleet.com',
+      rating: 4.95,
+      totalReviews: 892,
+      totalVehicles: 67,
+      totalEmployees: 48,
+      verified: true,
+      branches: [
+        { id: 'branch-003', name: 'Miami Beach', address: '1500 Ocean Drive', city: 'Miami', lat: 25.7825, lng: -80.1303, phone: '+1-305-555-0201', isMain: true },
+        { id: 'branch-004', name: 'New York Midtown', address: '455 Park Ave', city: 'New York', lat: 40.7580, lng: -73.9855, phone: '+1-212-555-0202', isMain: false },
+        { id: 'branch-005', name: 'Las Vegas Strip', address: '3600 Las Vegas Blvd', city: 'Las Vegas', lat: 36.1147, lng: -115.1728, phone: '+1-702-555-0203', isMain: false },
+      ],
+      employees: ['business-owner-001'],
+      ownerId: 'business-owner-001',
+      createdAt: '2021-06-01T00:00:00Z',
+      revenue: 8900000,
+      tier: 'enterprise',
+    },
+  ];
+}
 
 // ====== ANALYTICS ======
 export function generateAnalytics(): AnalyticsData[] {

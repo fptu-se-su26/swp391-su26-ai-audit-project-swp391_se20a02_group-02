@@ -24,7 +24,7 @@
 | 5 |DE190264  | Nguyễn Bùi Quang Vinh | quangvinh7115 | Member |  |
 
 ---
-  
+
 ## 3. Project Structure
 
 ```text
@@ -103,84 +103,10 @@ feat, fix, docs, test, refactor, style, chore
 
 ---
 
-## 🔐 SECURITY UPDATE (June 4, 2026)
-
-**⚠️ CRITICAL: Environment Variables Required**
-
-This project now uses environment variables for security. Before starting:
-
-1. **Copy environment template:**
-   ```bash
-   copy .env.example .env
-   ```
-
-2. **Generate JWT secret:**
-   ```bash
-   openssl rand -base64 32
-   ```
-   
-3. **Edit `.env` with your credentials**
-
-4. **Read security guides:**
-   - Quick Start: `QUICK-SECURITY-FIX-REFERENCE.md`
-   - Full Guide: `SECURITY-SETUP-GUIDE.md`
-   - Bug Fixes: `BUG-FIXES-SUMMARY.md`
-
-**Never commit `.env` file to Git!** (Already in `.gitignore`)
-
----
-
 ## 8. How to Run
 
-### 🚀 Quick Start
-
-#### Prerequisites
-- ✅ Node.js 18+ & npm (for Frontend)
-- ✅ Java 17+ (for Backend)
-- ✅ SQL Server (Database)
-- ⚠️ Maven or IDE (IntelliJ IDEA/Eclipse)
-
-#### Step 1: Start Frontend
-```bash
-cd src/Front_end
-npm install
-npm run dev
-```
-**Frontend URL**: http://localhost:5173/
-
-#### Step 2: Start Backend
-**Option A - Using IDE (Recommended)**
-1. Open IntelliJ IDEA or Eclipse
-2. Import Maven project from `src/Back_end`
-3. Run `LuxewayBackendApplication.java`
-
-**Option B - Using Maven**
-```bash
-cd src/Back_end
-mvn spring-boot:run
-```
-**Backend URL**: http://localhost:8080/api/v1
-
-#### Step 3: Import Sample Data
-Run `src/Back_end/import-data.sql` in SQL Server Management Studio
-
-#### Step 4: Test Connection
-Visit: http://localhost:5173/test-backend
-
-### 📖 Detailed Documentation
-See [START-PROJECT.md](START-PROJECT.md) for complete setup guide.
-
-### 🔗 Important URLs
-- **Frontend**: http://localhost:5173/
-- **Backend Test Page**: http://localhost:5173/test-backend
-- **Backend API**: http://localhost:8080/api/v1/test/health
-- **Swagger UI**: http://localhost:8080/api/v1/swagger-ui.html
-
-### 🧪 Test Accounts
-```
-Admin:    admin@luxeway.vn / password
-Customer: nguyen.van.a@gmail.com / password
-Owner:    pham.minh.d@gmail.com / password
+```text
+Students write project running instructions here.
 ```
 
 ---
