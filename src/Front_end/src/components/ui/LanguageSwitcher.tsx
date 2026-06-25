@@ -8,14 +8,10 @@ import type { Language } from '@/store';
 // Beautiful dropdown language selector with flags
 
 const languages = [
-  { code: 'en' as Language, name: 'English', flag: '🇺🇸' },
   { code: 'vi' as Language, name: 'Tiếng Việt', flag: '🇻🇳' },
+  { code: 'en' as Language, name: 'English', flag: '🇺🇸' },
   { code: 'ja' as Language, name: '日本語', flag: '🇯🇵' },
-  { code: 'ko' as Language, name: '한국어', flag: '🇰🇷' },
   { code: 'zh' as Language, name: '中文', flag: '🇨🇳' },
-  { code: 'fr' as Language, name: 'Français', flag: '🇫🇷' },
-  { code: 'de' as Language, name: 'Deutsch', flag: '🇩🇪' },
-  { code: 'es' as Language, name: 'Español', flag: '🇪🇸' },
 ];
 
 export const LanguageSwitcher: React.FC<{ className?: string }> = ({ className = '' }) => {
@@ -158,7 +154,7 @@ export const LanguageSwitcherToggle: React.FC<{ className?: string }> = ({ class
     >
       {/* Sliding toggle */}
       <motion.div
-        className="absolute top-1 left-1 w-6 h-6 rounded-full bg-white shadow-lg flex items-center justify-center text-sm"
+        className="absolute top-1 left-1 w-6 h-6 rounded-full bg-white dark:bg-slate-900 shadow-lg flex items-center justify-center text-sm"
         initial={false}
         animate={{
           x: isVietnamese ? 32 : 0,

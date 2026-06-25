@@ -57,7 +57,7 @@ public class Vehicle {
     @Column(nullable = false)
     private VehicleCategory category;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "NVARCHAR(MAX)")
     private String description;
 
     // ====== VEHICLE TYPE DISCRIMINATOR (CAR vs MOTORBIKE) ======
@@ -130,7 +130,7 @@ public class Vehicle {
     @Builder.Default
     private String country = "Vietnam";
     
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "NVARCHAR(MAX)")
     private String address;
     
     @Column(precision = 10, scale = 8)

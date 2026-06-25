@@ -65,7 +65,7 @@ export const PlatformStatus: React.FC = () => {
       default:
         return {
           label: status,
-          color: 'text-slate-400 border-slate-500/25 bg-slate-500/5',
+          color: 'text-slate-400 border-slate-500/25 bg-slate-50 dark:bg-slate-9000/5',
           icon: ShieldCheck
         };
     }

@@ -89,6 +89,12 @@ export const translations = {
     },
     // Marketplace
     marketplace: {
+      allVehicles: 'All Vehicles',
+      cars: 'Cars',
+      motorbikes: 'Motorbikes',
+      searchMotorbikesPlaceholder: '🏍️ Search motorbikes... Vision, Exciter, SH...',
+      searchCarsPlaceholder: '🚗 Search cars... Vios, Camry, CX5...',
+      searchVehiclesPlaceholder: '🔍 Search vehicles... Honda, Toyota, VinFast...',
       title: 'Luxury Fleet',
       vehicles: 'vehicles found',
       filters: 'Filters',
@@ -845,6 +851,12 @@ export const translations = {
     },
     // Marketplace
     marketplace: {
+      allVehicles: 'Tất Cả Xe',
+      cars: 'Ô Tô',
+      motorbikes: 'Xe Máy',
+      searchMotorbikesPlaceholder: '🏍️ Tìm xe máy... Vision, Exciter, SH...',
+      searchCarsPlaceholder: '🚗 Tìm ô tô... Vios, Camry, CX5...',
+      searchVehiclesPlaceholder: '🔍 Tìm xe... Honda, Toyota, VinFast...',
       title: 'Đội Xe Cao Cấp',
       vehicles: 'xe được tìm thấy',
       filters: 'Bộ Lọc',
@@ -1598,6 +1610,12 @@ export const jaTranslations = {
     passwordMismatch: 'パスワードが一致しません',
   },
   marketplace: {
+    allVehicles: 'すべての車両',
+    cars: '車',
+    motorbikes: 'バイク',
+    searchMotorbikesPlaceholder: '🏍️ バイクを検索... Vision, Exciter, SH...',
+    searchCarsPlaceholder: '🚗 車を検索... Vios, Camry, CX5...',
+    searchVehiclesPlaceholder: '🔍 車両を検索... Honda, Toyota, VinFast...',
     title: '車を探す',
     vehicles: '台が見つかりました',
     filters: 'フィルター',
@@ -2300,7 +2318,6 @@ export const koTranslations = {
     agreeTerms: '이용약관 및 개인정보처리방침에 동의합니다'
   },
   marketplace: {
-    ...translations.en.marketplace,
     title: '럭셔리 차량 목록',
     vehicles: '대의 차량 발견',
     filters: '필터',
@@ -2402,7 +2419,12 @@ export const zhTranslations = {
     agreeTerms: '我同意服务条款与隐私政策'
   },
   marketplace: {
-    ...translations.en.marketplace,
+    allVehicles: '所有车辆',
+    cars: '汽车',
+    motorbikes: '摩托车',
+    searchMotorbikesPlaceholder: '🏍️ 搜索摩托车... Vision, Exciter, SH...',
+    searchCarsPlaceholder: '🚗 搜索汽车... Vios, Camry, CX5...',
+    searchVehiclesPlaceholder: '🔍 搜索车辆... Honda, Toyota, VinFast...',
     title: '豪华车队列表',
     vehicles: '款车型已找到',
     filters: '筛选条件',
@@ -2557,16 +2579,8 @@ export function useT() {
   
   if (language === 'ja') {
     activeDict = jaTranslations as any;
-  } else if (language === 'ko') {
-    activeDict = koTranslations as any;
   } else if (language === 'zh') {
     activeDict = zhTranslations as any;
-  } else if (language === 'fr') {
-    activeDict = frTranslations as any;
-  } else if (language === 'de') {
-    activeDict = deTranslations as any;
-  } else if (language === 'es') {
-    activeDict = esTranslations as any;
   }
 
   const extra = {

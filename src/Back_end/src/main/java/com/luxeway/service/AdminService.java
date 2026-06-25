@@ -237,6 +237,7 @@ public class AdminService {
         }
 
         doc.setStatus(status);
+        doc.setVerificationStatus(status); // Keep verificationStatus in sync with status
         doc.setVerifiedAt(java.time.LocalDateTime.now());
         if (status.equals("REJECTED")) {
             doc.setRejectionReason(req.getRejectionReason());
@@ -248,20 +249,72 @@ public class AdminService {
 
         // Synchronize user verification flags
         User user = doc.getUser();
-        String docType = doc.getDocumentType().toUpperCase();
-        if (status.equals("VERIFIED")) {
-            if (docType.equals("DRIVING_LICENSE")) {
-                user.setDrivingLicenseVerified(true);
-            } else if (docType.equals("PASSPORT") || docType.equals("NATIONAL_ID")) {
-                user.setKycVerified(true);
+        java.util.List<com.luxeway.entity.UserDocument> docs = userDocumentRepository.findByUserIdOrderByUploadedAtDesc(user.getId());
+        
+        boolean hasCccdFrontVerified = false;
+        boolean hasCccdBackVerified = false;
+        boolean hasSelfieVerified = false;
+        boolean hasDlFrontVerified = false;
+        boolean hasDlBackVerified = false;
+
+        boolean hasCccdFrontRejected = false;
+        boolean hasCccdBackRejected = false;
+        boolean hasSelfieRejected = false;
+        boolean hasDlFrontRejected = false;
+        boolean hasDlBackRejected = false;
+
+        for (com.luxeway.entity.UserDocument docItem : docs) {
+            String type = docItem.getDocumentType().toUpperCase();
+            String docStatus = docItem.getStatus().toUpperCase();
+            
+            if (type.contains("DRIVER_LICENSE") || type.contains("DRIVING_LICENSE")) {
+                if (docItem.getLicenseNumber() != null && !docItem.getLicenseNumber().trim().isEmpty()) {
+                    user.setLicenseNumber(docItem.getLicenseNumber());
+                }
+                if (docItem.getLicenseClass() != null && !docItem.getLicenseClass().trim().isEmpty()) {
+                    user.setLicenseClass(docItem.getLicenseClass());
+                }
             }
+
+            if ("VERIFIED".equals(docStatus)) {
+                if ("CCCD_FRONT".equals(type) || "EKYC_CCCD_FRONT".equals(type) || "NATIONAL_ID".equals(type) || "PASSPORT".equals(type)) hasCccdFrontVerified = true;
+                if ("CCCD_BACK".equals(type) || "EKYC_CCCD_BACK".equals(type) || "NATIONAL_ID".equals(type) || "PASSPORT".equals(type)) hasCccdBackVerified = true;
+                if ("SELFIE".equals(type)) hasSelfieVerified = true;
+                if ("DRIVER_LICENSE_FRONT".equals(type) || "DRIVING_LICENSE_FRONT".equals(type) || "DRIVING_LICENSE".equals(type)) hasDlFrontVerified = true;
+                if ("DRIVER_LICENSE_BACK".equals(type) || "DRIVING_LICENSE_BACK".equals(type) || "DRIVING_LICENSE".equals(type)) hasDlBackVerified = true;
+            } else if ("REJECTED".equals(docStatus)) {
+                if ("CCCD_FRONT".equals(type) || "EKYC_CCCD_FRONT".equals(type) || "NATIONAL_ID".equals(type) || "PASSPORT".equals(type)) hasCccdFrontRejected = true;
+                if ("CCCD_BACK".equals(type) || "EKYC_CCCD_BACK".equals(type) || "NATIONAL_ID".equals(type) || "PASSPORT".equals(type)) hasCccdBackRejected = true;
+                if ("SELFIE".equals(type)) hasSelfieRejected = true;
+                if ("DRIVER_LICENSE_FRONT".equals(type) || "DRIVING_LICENSE_FRONT".equals(type) || "DRIVING_LICENSE".equals(type)) hasDlFrontRejected = true;
+                if ("DRIVER_LICENSE_BACK".equals(type) || "DRIVING_LICENSE_BACK".equals(type) || "DRIVING_LICENSE".equals(type)) hasDlBackRejected = true;
+            }
+        }
+
+        // KYC Status & Verification Flags
+        if ((hasCccdFrontVerified && hasCccdBackVerified && hasSelfieVerified) || 
+            (docs.stream().anyMatch(d -> ("NATIONAL_ID".equals(d.getDocumentType().toUpperCase()) || "PASSPORT".equals(d.getDocumentType().toUpperCase())) && "VERIFIED".equals(d.getStatus().toUpperCase())))) {
+            user.setKycStatus("VERIFIED");
+            user.setKycVerified(true);
+        } else if (hasCccdFrontRejected || hasCccdBackRejected || hasSelfieRejected) {
+            user.setKycStatus("REJECTED");
+            user.setKycVerified(false);
         } else {
-            // REJECTED
-            if (docType.equals("DRIVING_LICENSE")) {
-                user.setDrivingLicenseVerified(false);
-            } else if (docType.equals("PASSPORT") || docType.equals("NATIONAL_ID")) {
-                user.setKycVerified(false);
-            }
+            user.setKycStatus("PENDING");
+            user.setKycVerified(false);
+        }
+
+        // Driver's License Status & Verification Flags
+        if ((hasDlFrontVerified && hasDlBackVerified) || 
+            (docs.stream().anyMatch(d -> "DRIVING_LICENSE".equals(d.getDocumentType().toUpperCase()) && "VERIFIED".equals(d.getStatus().toUpperCase())))) {
+            user.setDriverLicenseStatus("VERIFIED");
+            user.setDrivingLicenseVerified(true);
+        } else if (hasDlFrontRejected || hasDlBackRejected) {
+            user.setDriverLicenseStatus("REJECTED");
+            user.setDrivingLicenseVerified(false);
+        } else {
+            user.setDriverLicenseStatus("PENDING");
+            user.setDrivingLicenseVerified(false);
         }
 
         // Synchronize overall user.verified status (requires both driving license and kyc/passport/national id)
@@ -275,7 +328,7 @@ public class AdminService {
         log.info("Document {} reviewed by admin. Status={}, User verified={}", documentId, status, user.getVerified());
 
         try {
-            emailService.sendKycStatus(user.getEmail(), docType, status, doc.getRejectionReason());
+            emailService.sendKycStatus(user.getEmail(), doc.getDocumentType(), status, doc.getRejectionReason());
         } catch (Exception e) {
             log.warn("Failed to send KYC verification update email alert: {}", e.getMessage());
         }
@@ -295,7 +348,8 @@ public class AdminService {
         boolean hasDl = false;
         for (com.luxeway.entity.UserDocument doc : docs) {
             String docType = doc.getDocumentType().toUpperCase();
-            if (docType.contains("DRIVER_LICENSE") || docType.equals("DRIVING_LICENSE")) {
+            // Match both FPT AI flow (DRIVER_LICENSE_*) and VNPT eKYC flow (DRIVING_LICENSE_*)
+            if (docType.contains("DRIVER_LICENSE") || docType.contains("DRIVING_LICENSE")) {
                 hasDl = true;
                 if (doc.getLicenseNumber() != null) {
                     user.setLicenseNumber(doc.getLicenseNumber());

@@ -30,6 +30,8 @@ public class SeedingService {
     private final MotorbikeModelRepository motorbikeModelRepository;
     private final MotorbikeRepository motorbikeRepository;
 
+    private final VehicleRepository vehicleRepository;
+
     private static final String[] CITIES = {"Ho Chi Minh", "Ha Noi", "Da Nang", "Nha Trang", "Da Lat", "Hue"};
     
     @Transactional
@@ -51,6 +53,14 @@ public class SeedingService {
             seedMotorbikes(owner);
         } else {
             log.info("Motorbike repository already has {} records, skipping seeding.", motorbikeRepository.count());
+        }
+
+        // 3. Seed Vehicles (30+ records for general marketplace)
+        if (vehicleRepository.count() < 20) {
+            log.info("Seeding marketplace vehicles...");
+            seedVehicles(owner);
+        } else {
+            log.info("Vehicle repository already has {} records, skipping seeding.", vehicleRepository.count());
         }
 
         log.info("Enterprise database seeding completed successfully.");
@@ -343,5 +353,155 @@ public class SeedingService {
         int num = 80000 + index;
         String formatted = String.format("%05d", num);
         return "29-H1 " + formatted.substring(0, 3) + "." + formatted.substring(3);
+    }
+
+    private void seedVehicles(User owner) {
+        log.info("Starting seeding marketplace vehicles...");
+        
+        String[] carModels = {
+            "Toyota Vios:SEDAN:800000:3000000:5:AUTOMATIC:GASOLINE:1.5L:Trắng",
+            "Toyota Fortuner:SUV:1400000:5000000:7:AUTOMATIC:DIESEL:2.4L:Đen",
+            "Mazda CX-5:SUV:1000000:4000000:5:AUTOMATIC:GASOLINE:2.0L:Đỏ Pha Lê",
+            "VinFast VF8:ELECTRIC_CAR:1300000:5000000:5:AUTOMATIC:ELECTRIC:Electric:Xám Titan",
+            "VinFast VF9:ELECTRIC_CAR:2000000:10000000:6:AUTOMATIC:ELECTRIC:Electric:Đen",
+            "Mercedes-Benz C200:LUXURY:2000000:10000000:5:AUTOMATIC:GASOLINE:1.5L:Đen",
+            "BMW 320i:LUXURY:2200000:10000000:5:AUTOMATIC:GASOLINE:2.0L:Trắng",
+            "Kia Morning:CITY_CAR:500000:2000000:5:AUTOMATIC:GASOLINE:1.25L:Đỏ",
+            "Hyundai Accent:SEDAN:700000:3000000:5:AUTOMATIC:GASOLINE:1.4L:Đỏ",
+            "Hyundai Santa Fe:SUV:1500000:5000000:7:AUTOMATIC:DIESEL:2.2L:Xanh Đá",
+            "Ford Ranger:PICKUP:1100000:5000000:5:AUTOMATIC:DIESEL:2.0L:Cam",
+            "Mazda 3:SEDAN:800000:3000000:5:AUTOMATIC:GASOLINE:1.5L:Trắng"
+        };
+        
+        String[] motorbikeModels = {
+            "Honda Vision:SCOOTER:130000:1000000:2:AUTOMATIC:GASOLINE:110cc:Đỏ",
+            "Honda Air Blade:AUTOMATIC_SCOOTER:180000:1500000:2:AUTOMATIC:GASOLINE:125cc:Đỏ Đen",
+            "Yamaha Exciter:MANUAL_MOTORCYCLE:200000:2000000:2:MANUAL:GASOLINE:155cc:Cam Đen",
+            "VinFast Evo200:ELECTRIC_BIKE:130000:1500000:2:AUTOMATIC:ELECTRIC:Electric:Vàng",
+            "Honda Lead:SCOOTER:160000:1500000:2:AUTOMATIC:GASOLINE:125cc:Đỏ Đô",
+            "Honda SH125i:SCOOTER:350000:3000000:2:AUTOMATIC:GASOLINE:125cc:Xám Xi Măng",
+            "Honda SH160i:SCOOTER:450000:4000000:2:AUTOMATIC:GASOLINE:156cc:Trắng",
+            "Yamaha Sirius:MANUAL_MOTORCYCLE:100000:1000000:2:MANUAL:GASOLINE:110cc:Đen Bạc",
+            "Yamaha Grande:SCOOTER:180000:1500000:2:AUTOMATIC:GASOLINE:125cc:Trắng Ngọc Trai",
+            "VinFast Feliz S:ELECTRIC_BIKE:160000:1500000:2:AUTOMATIC:ELECTRIC:Electric:Xanh Dương",
+            "VinFast Klara S:ELECTRIC_BIKE:180000:1500000:2:AUTOMATIC:ELECTRIC:Electric:Trắng",
+            "Kawasaki Versys X300:ADVENTURE_BIKE:650000:5000000:2:MANUAL:GASOLINE:300cc:Xám Xanh"
+        };
+        
+        for (int i = 0; i < carModels.length; i++) {
+            String[] parts = carModels[i].split(":");
+            String name = parts[0];
+            String brandName = name.split(" ")[0];
+            String modelName = name.substring(brandName.length() + 1);
+            VehicleCategory category = VehicleCategory.valueOf(parts[1]);
+            BigDecimal price = new BigDecimal(parts[2]);
+            BigDecimal deposit = new BigDecimal(parts[3]);
+            int seats = Integer.parseInt(parts[4]);
+            TransmissionType trans = TransmissionType.valueOf(parts[5]);
+            FuelType fuel = FuelType.valueOf(parts[6]);
+            String engineSize = parts[7];
+            String color = parts[8];
+            
+            Vehicle v = Vehicle.builder()
+                .id("VC-" + String.format("%02d", i + 1))
+                .owner(owner)
+                .name(name + " - LuxeWay Elite")
+                .brand(brandName)
+                .model(modelName)
+                .year(2022)
+                .category(category)
+                .vehicleType(VehicleType.CAR)
+                .description("Xe " + name + " chất lượng cao, nội ngoại thất sạch đẹp, vận hành êm ái, thích hợp đi gia đình hoặc công tác.")
+                .pricePerDay(price)
+                .pricePerWeek(price.multiply(new BigDecimal("6.5")))
+                .deposit(deposit)
+                .city("Hồ Chí Minh")
+                .address("LuxeWay Plaza, Quận 1, TP. Hồ Chí Minh")
+                .latitude(new BigDecimal("10.7769"))
+                .longitude(new BigDecimal("106.7009"))
+                .seats(seats)
+                .doors(4)
+                .transmission(trans)
+                .fuelType(fuel)
+                .engineSize(engineSize)
+                .color(color)
+                .licensePlate("51G-" + String.format("%05d", 80000 + i))
+                .status(VehicleStatus.AVAILABLE)
+                .rating(new BigDecimal("4.85"))
+                .totalReviews(5 + i)
+                .totalBookings(10 + i * 2)
+                .isVerified(true)
+                .isFeatured(i % 3 == 0)
+                .instantBook(i % 2 == 0)
+                .deliveryAvailable(true)
+                .deliveryFee(new BigDecimal("50000"))
+                .createdAt(LocalDateTime.now().minusDays(10))
+                .build();
+            
+            v.setThumbnailUrl("https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=800");
+            vehicleRepository.save(v);
+        }
+        
+        for (int i = 0; i < motorbikeModels.length; i++) {
+            String[] parts = motorbikeModels[i].split(":");
+            String name = parts[0];
+            String brandName = name.split(" ")[0];
+            String modelName = name.substring(brandName.length() + 1);
+            VehicleCategory category = VehicleCategory.valueOf(parts[1]);
+            BigDecimal price = new BigDecimal(parts[2]);
+            BigDecimal deposit = new BigDecimal(parts[3]);
+            int seats = Integer.parseInt(parts[4]);
+            TransmissionType trans = TransmissionType.valueOf(parts[5]);
+            FuelType fuel = FuelType.valueOf(parts[6]);
+            String engineCcStr = parts[7];
+            String color = parts[8];
+            
+            Integer engineCc = engineCcStr.equalsIgnoreCase("Electric") ? null : Integer.parseInt(engineCcStr.replace("cc", ""));
+            
+            Vehicle v = Vehicle.builder()
+                .id("VM-" + String.format("%02d", i + 1))
+                .owner(owner)
+                .name(name + " - LuxeWay Ride")
+                .brand(brandName)
+                .model(modelName)
+                .year(2022)
+                .category(category)
+                .vehicleType(VehicleType.MOTORBIKE)
+                .description("Xe máy " + name + " tiết kiệm xăng, máy bốc, di chuyển linh hoạt trong thành phố.")
+                .pricePerDay(price)
+                .pricePerWeek(price.multiply(new BigDecimal("6.5")))
+                .deposit(deposit)
+                .city("Hà Nội")
+                .address("LuxeWay Station, Đống Đa, Hà Nội")
+                .latitude(new BigDecimal("21.0285"))
+                .longitude(new BigDecimal("105.8542"))
+                .seats(seats)
+                .doors(0)
+                .transmission(trans)
+                .fuelType(fuel)
+                .engineCc(engineCc)
+                .engineSize(engineCcStr)
+                .color(color)
+                .licensePlate("29F1-" + String.format("%05d", 90000 + i))
+                .status(VehicleStatus.AVAILABLE)
+                .rating(new BigDecimal("4.75"))
+                .totalReviews(4 + i)
+                .totalBookings(8 + i * 2)
+                .isVerified(true)
+                .isFeatured(i % 3 == 0)
+                .instantBook(i % 2 == 0)
+                .deliveryAvailable(true)
+                .deliveryFee(new BigDecimal("20000"))
+                .hasHelmet(true)
+                .hasPhoneHolder(true)
+                .hasRaincoat(true)
+                .createdAt(LocalDateTime.now().minusDays(10))
+                .build();
+            
+            v.setThumbnailUrl("https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=800");
+            vehicleRepository.save(v);
+        }
+        
+        log.info("Finished seeding marketplace vehicles.");
     }
 }

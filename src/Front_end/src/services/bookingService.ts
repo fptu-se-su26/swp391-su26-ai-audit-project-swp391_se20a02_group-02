@@ -160,7 +160,7 @@ export const bookingService = {
         deliveryAddress: wizardState.deliveryAddress,
         couponCode: wizardState.couponCode,
         notes: wizardState.notes,
-        selectedAddons: wizardState.selectedAddons,
+        addonIds: wizardState.selectedAddons,
       };
       const response = await apiClient.post<any>('/bookings', payload);
       const booking = response.data || response;
@@ -249,7 +249,7 @@ export const paymentService = {
         method: method.toUpperCase(),
         amount,
         currency: 'VND',
-        returnUrl: returnUrl || `${window.location.origin}/payment/vnpay/return`,
+        returnUrl: returnUrl || `${window.location.origin}/payment/momo/return`,
         description: `Payment for booking ${bookingId}`,
       };
       // apiClient.post returns the full response body from backend
@@ -287,7 +287,7 @@ export const paymentService = {
         amount,
         method: method.toUpperCase(),
         currency: 'VND',
-        returnUrl: returnUrl || `${window.location.origin}/payment/vnpay/return`,
+        returnUrl: returnUrl || `${window.location.origin}/payment/momo/return`,
       };
       const response = await apiClient.post<any>('/payments/wallet/topup', payload);
       const isSuccess = response.success === true;

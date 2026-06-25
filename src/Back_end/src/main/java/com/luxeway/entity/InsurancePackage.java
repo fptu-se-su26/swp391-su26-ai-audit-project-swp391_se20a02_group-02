@@ -36,7 +36,7 @@ public class InsurancePackage {
     @Column(name = "coverage_limit", precision = 18, scale = 2)
     private BigDecimal coverageLimit;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "NVARCHAR(MAX)")
     private String description;
 
     @Column(name = "is_active", nullable = false)

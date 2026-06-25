@@ -18,7 +18,7 @@ const SpecRow: React.FC<{ label: string; values: (string | number | boolean | un
   };
 
   return (
-    <tr className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/50 dark:hover:bg-slate-850/50 transition-colors">
+    <tr className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:hover:bg-slate-850/50 transition-colors">
       <td className="py-3 pr-4 text-sm font-medium text-slate-500 whitespace-nowrap w-36">{label}</td>
       {values.map((v, i) => (
         <td key={i} className="py-3 px-4 text-sm text-slate-800 dark:text-slate-200 text-center">
@@ -64,7 +64,7 @@ const VehicleSlot: React.FC<{
 
   return (
     <motion.div variants={staggerItem} className="flex-1 min-w-0">
-      <div className="relative group luxury-card overflow-hidden bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800">
+      <div className="relative group luxury-card overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/50 dark:border-slate-800">
         <button
           onClick={onRemove}
           className="absolute top-3 right-3 z-20 w-7 h-7 bg-white dark:bg-slate-800 shadow-md rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-500"
@@ -75,7 +75,7 @@ const VehicleSlot: React.FC<{
           <img src={image} alt={vehicle.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
           {vehicle.isFeatured && (
-            <span className="absolute top-3 left-3 px-2 py-1 bg-gold text-[#0F172A] text-[10px] font-bold rounded-full">
+            <span className="absolute top-3 left-3 px-2 py-1 bg-gold text-[#0F172A] dark:text-white text-[10px] font-bold rounded-full">
               {t.compare.featured}
             </span>
           )}
@@ -262,7 +262,7 @@ const ComparePage: React.FC = () => {
             variants={fadeUp}
             initial="hidden"
             animate="visible"
-            className="luxury-card p-6 overflow-x-auto bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800"
+            className="luxury-card p-6 overflow-x-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/50 dark:border-slate-800"
           >
             <h2 className="font-display text-xl font-bold text-[#0F172A] dark:text-white mb-6">{t.compare.specComparison}</h2>
             <table className="w-full">

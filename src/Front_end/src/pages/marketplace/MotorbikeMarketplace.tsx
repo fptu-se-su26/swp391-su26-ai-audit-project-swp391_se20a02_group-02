@@ -41,18 +41,20 @@ const MOTORBIKE_CATEGORIES: { value: VehicleCategory; label: string; icon: strin
 
 const MOTO_BRANDS = ['Honda', 'Yamaha', 'Suzuki', 'VinFast', 'Kawasaki', 'Piaggio', 'Vespa', 'SYM'];
 
-const SORT_OPTIONS = [
-  { value: 'popular', label: 'Phổ biến nhất' },
-  { value: 'rating', label: 'Đánh giá cao' },
-  { value: 'price_asc', label: 'Giá thấp → cao' },
-  { value: 'price_desc', label: 'Giá cao → thấp' },
-  { value: 'newest', label: 'Mới nhất' },
+const getSortOptions = (t: any) => [
+  { value: 'popular', label: t.marketplace?.mostPopular || 'Phổ biến nhất' },
+  { value: 'rating', label: t.marketplace?.highestRated || 'Đánh giá cao' },
+  { value: 'price_asc', label: t.marketplace?.priceLowHigh || 'Giá thấp → cao' },
+  { value: 'price_desc', label: t.marketplace?.priceHighLow || 'Giá cao → thấp' },
+  { value: 'newest', label: t.marketplace?.newestFirst || 'Mới nhất' },
 ];
 
 
 
 // ====== MOTORBIKE FILTER PANEL ======
 const MotorbikeFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: VehicleFilters) => void; onClose?: () => void }> = ({ filters, onChange, onClose }) => {
+  const t = useT();
+  const language = useUIStore((s: any) => s.language) || 'en';
   const [priceRange, setPriceRange] = useState<[number, number]>([filters.minPrice ?? 0, filters.maxPrice ?? 1500000]);
 
   const toggle = (key: keyof VehicleFilters, val: any) => {
@@ -68,17 +70,17 @@ const MotorbikeFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: Ve
     <div className="space-y-6 max-h-[80vh] overflow-y-auto pr-2 pb-6">
       <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
         <h3 className="font-display font-bold text-foreground text-base flex items-center gap-2">
-          <Bike className="w-4 h-4 text-orange-500" /> Lọc Xe Máy
+          <Bike className="w-4 h-4 text-orange-500" /> {t.marketplace?.category || 'Lọc Xe Máy'}
         </h3>
         <div className="flex gap-2">
-          <button onClick={() => onChange({ vehicleType: 'motorbike' })} className="text-xs text-orange-500 hover:underline font-bold">Xóa lọc</button>
+          <button onClick={() => onChange({ vehicleType: 'motorbike' })} className="text-xs text-orange-500 hover:underline font-bold">{t.marketplace?.clearFilters || 'Xóa lọc'}</button>
           {onClose && <button onClick={onClose} className="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800"><X className="w-4 h-4 text-slate-400" /></button>}
         </div>
       </div>
 
       {/* Motorbike categories */}
       <div>
-        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Loại Xe Máy</p>
+        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">{t.marketplace?.category || 'Loại Xe Máy'}</p>
         <div className="grid grid-cols-2 gap-2">
           {MOTORBIKE_CATEGORIES.map(cat => {
             const sel = (filters.category || []).includes(cat.value);
@@ -96,7 +98,7 @@ const MotorbikeFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: Ve
       {/* Price range for motorbikes */}
       <div>
         <div className="flex justify-between items-center mb-3">
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Giá / Ngày</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-400">{t.marketplace?.price || 'Giá / Ngày'}</p>
           <span className="text-xs font-bold text-foreground">{formatVND(priceRange[0])} – {formatVND(priceRange[1])}</span>
         </div>
         <input type="range" min={0} max={1500000} step={10000} value={priceRange[0]}
@@ -112,7 +114,7 @@ const MotorbikeFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: Ve
 
       {/* Engine CC */}
       <div>
-        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Dung Tích Máy (CC)</p>
+        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">{language === 'vi' ? 'Dung Tích Máy (CC)' : 'Engine CC'}</p>
         <div className="grid grid-cols-3 gap-2">
           {[
             { label: '50cc', min: 50, max: 110 },
@@ -136,15 +138,15 @@ const MotorbikeFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: Ve
 
       {/* Transmission */}
       <div>
-        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Hộp Số</p>
+        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">{t.marketplace?.transmission || 'Hộp Số'}</p>
         <div className="flex gap-2">
-          {(['automatic', 'manual'] as const).map(t => {
-            const sel = (filters.transmission || []).includes(t);
+          {(['automatic', 'manual'] as const).map(trans => {
+            const sel = (filters.transmission || []).includes(trans);
             return (
-              <button key={t} onClick={() => { onChange({ ...filters, transmission: sel ? undefined : [t] }); }}
+              <button key={trans} onClick={() => { onChange({ ...filters, transmission: sel ? undefined : [trans] }); }}
                 className={cn("flex-1 py-2 rounded-xl text-xs font-bold border transition-all capitalize",
                   sel ? "border-orange-500 bg-orange-500/10 text-orange-600 dark:text-orange-400" : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400")}>
-                {t === 'automatic' ? 'Tự Động' : 'Số Sàn'}
+                {trans === 'automatic' ? t.marketplace?.automatic || 'Tự Động' : t.marketplace?.manual || 'Số Sàn'}
               </button>
             );
           })}
@@ -153,7 +155,7 @@ const MotorbikeFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: Ve
 
       {/* Brands */}
       <div>
-        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Thương Hiệu</p>
+        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">{t.marketplace?.brand || 'Thương Hiệu'}</p>
         <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
           {MOTO_BRANDS.map(brand => {
             const checked = (filters.brands || []).includes(brand);
@@ -176,7 +178,7 @@ const MotorbikeFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: Ve
             { key: 'hasRaincoat', icon: <CloudRain className="w-3.5 h-3.5" />, label: 'Áo Mưa Kèm Theo' },
             { key: 'hasPhoneHolder', icon: <Smartphone className="w-3.5 h-3.5" />, label: 'Kẹp Điện Thoại' },
             { key: 'hasTouringPackage', icon: <Package className="w-3.5 h-3.5" />, label: 'Baga / Thùng Đồ (Touring)' },
-            { key: 'instantBook', icon: <Zap className="w-3.5 h-3.5" />, label: 'Đặt Ngay' },
+            { key: 'instantBook', icon: <Zap className="w-3.5 h-3.5" />, label: t.marketplace?.instantBook || 'Đặt Ngay' },
           ].map(f => (
             <label key={f.key} className="flex items-center gap-2.5 cursor-pointer group">
               <input type="checkbox" checked={!!(filters as any)[f.key]} onChange={() => toggleBool(f.key as keyof VehicleFilters)} className="rounded text-orange-500 accent-orange-500 w-4 h-4" />
@@ -190,7 +192,7 @@ const MotorbikeFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: Ve
 
       {/* Rating */}
       <div>
-        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Đánh Giá Tối Thiểu</p>
+        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">{t.marketplace?.rating || 'Đánh Giá Tối Thiểu'}</p>
         <div className="flex gap-2">
           {[4.0, 4.5, 4.8].map(r => (
             <button key={r} onClick={() => onChange({ ...filters, minRating: filters.minRating === r ? undefined : r })}
@@ -331,7 +333,7 @@ export const MotorbikeMarketplace: React.FC = () => {
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="🏍️ Tìm xe máy... Vision, Air Blade, Exciter, Winner, SH..."
-                className="w-full pl-10 pr-10 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm outline-none text-foreground focus:border-orange-500 focus:bg-white dark:focus:bg-slate-950 transition-all font-semibold"
+                className="w-full pl-10 pr-10 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm outline-none text-foreground focus:border-orange-500 focus:bg-white dark:bg-slate-900 dark:focus:bg-slate-950 transition-all font-semibold"
               />
               {searchQuery && (
                 <button onClick={() => setSearchQuery('')} className="absolute right-3.5 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400">
@@ -348,7 +350,7 @@ export const MotorbikeMarketplace: React.FC = () => {
               )}
             >
               <SlidersHorizontal className="w-4 h-4" />
-              <span className="hidden sm:inline">Lọc</span>
+              <span className="hidden sm:inline">{t.marketplace?.filters || 'Lọc'}</span>
               {activeFilterCount > 0 && (
                 <span className="w-5 h-5 text-white text-[10px] font-extrabold rounded-full flex items-center justify-center bg-orange-500">
                   {activeFilterCount}
@@ -364,14 +366,14 @@ export const MotorbikeMarketplace: React.FC = () => {
                 onChange={e => handleFilterChange({ ...filters, sortBy: e.target.value as VehicleFilters['sortBy'] })}
                 className="appearance-none pl-4 pr-10 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-bold outline-none text-slate-600 dark:text-slate-300 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-850 transition-colors"
               >
-                {SORT_OPTIONS.map(opt => (
+                {getSortOptions(t).map(opt => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
               </select>
               <ArrowUpDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
             </div>
 
-            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 rounded-2xl p-1 border border-slate-200/40 dark:border-slate-800/40">
+            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 rounded-2xl p-1 border border-slate-200 dark:border-slate-700/40 dark:border-slate-800/40">
               {(['grid', 'list'] as const).map(mode => (
                 <button key={mode} onClick={() => setViewMode(mode)}
                   className={cn("p-2 rounded-xl transition-all", viewMode === mode ? "bg-white dark:bg-slate-800 shadow-sm text-foreground font-bold" : "text-slate-450 hover:text-foreground")}>
@@ -445,7 +447,7 @@ export const MotorbikeMarketplace: React.FC = () => {
               <motion.div variants={fadeUp} initial="hidden" animate="visible"
                 className="text-center py-24 bg-card border border-slate-100 dark:border-slate-800 rounded-3xl shadow-sm">
                 <div className="text-7xl mb-4">🏍️</div>
-                <h3 className="font-display text-2xl font-bold text-foreground mb-2">Không tìm thấy xe máy phù hợp</h3>
+                <h3 className="font-display text-2xl font-bold text-foreground mb-2">{t.marketplace?.noResults || 'Không tìm thấy xe'} máy phù hợp</h3>
                 <p className="text-slate-500 mb-6 max-w-md mx-auto">Thử điều chỉnh bộ lọc hoặc tìm kiếm với từ khóa khác.</p>
                 <button onClick={() => { setFilters({ vehicleType: 'motorbike' }); setSearchQuery(''); }}
                   className="btn-primary px-6 py-2.5" style={{ backgroundColor: '#f97316' }}>Xóa Bộ Lọc</button>
@@ -481,7 +483,7 @@ export const MotorbikeMarketplace: React.FC = () => {
                   <div className="flex justify-center gap-2 mt-12">
                     <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
                       className="px-5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 text-sm font-bold disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
-                      ← Trước
+                      ← {language === 'vi' ? 'Trước' : 'Prev'}
                     </button>
                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                       const pageNum = Math.max(1, Math.min(page - 2, totalPages - 4)) + i;
@@ -495,7 +497,7 @@ export const MotorbikeMarketplace: React.FC = () => {
                     })}
                     <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
                       className="px-5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 text-sm font-bold disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
-                      Sau →
+                      {language === 'vi' ? 'Sau' : 'Next'} →
                     </button>
                   </div>
                 )}

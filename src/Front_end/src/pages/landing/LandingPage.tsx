@@ -241,11 +241,11 @@ const HeroSection: React.FC<{ stats: HomeStats | null }> = ({ stats }) => {
           {/* Search card */}
           <motion.div
             variants={staggerItem}
-            className="w-full max-w-5xl mx-auto bg-white rounded-2xl shadow-2xl p-2"
+            className="w-full max-w-5xl mx-auto bg-white dark:bg-slate-900 rounded-2xl shadow-2xl p-2"
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2 p-1.5">
               {/* Location */}
-              <div className="lg:col-span-2 flex items-center gap-2.5 px-4 py-3.5 hover:bg-slate-50 rounded-xl transition-colors">
+              <div className="lg:col-span-2 flex items-center gap-2.5 px-4 py-3.5 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors">
                 <MapPin className="w-5 h-5 text-amber-500 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-0.5">{t.landing.hero.location}</p>
@@ -254,14 +254,14 @@ const HeroSection: React.FC<{ stats: HomeStats | null }> = ({ stats }) => {
                     value={location}
                     onChange={e => setLocation(e.target.value)}
                     placeholder={t.landing.hero.locationPlaceholder}
-                    className="w-full text-base font-semibold text-slate-800 placeholder:text-slate-300 outline-none bg-transparent"
+                    className="w-full text-base font-semibold text-slate-800 dark:text-slate-200 placeholder:text-slate-300 outline-none bg-transparent"
                     onKeyDown={e => e.key === 'Enter' && handleSearch()}
                   />
                 </div>
               </div>
 
               {/* Vehicle Type */}
-              <div className="flex items-center gap-2.5 px-4 py-3.5 border-l border-slate-100 hover:bg-slate-50 rounded-xl transition-colors">
+              <div className="flex items-center gap-2.5 px-4 py-3.5 border-l border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors">
                 <Car className="w-5 h-5 text-amber-500 flex-shrink-0" />
                 <div className="flex-1 text-left min-w-0">
                   <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-0.5">{t.landing.hero.category}</p>
@@ -269,7 +269,7 @@ const HeroSection: React.FC<{ stats: HomeStats | null }> = ({ stats }) => {
                     <select
                       value={vehicleType}
                       onChange={e => setVehicleType(e.target.value)}
-                      className="w-full text-base font-semibold text-slate-800 outline-none bg-transparent cursor-pointer appearance-none pr-5 truncate"
+                      className="w-full text-base font-semibold text-slate-800 dark:text-slate-200 outline-none bg-transparent cursor-pointer appearance-none pr-5 truncate"
                     >
                       <option value="">{t.landing.hero.allTypes}</option>
                       <option value="car">🚗 {language === 'vi' ? 'Ô tô' : 'Cars'}</option>
@@ -281,24 +281,24 @@ const HeroSection: React.FC<{ stats: HomeStats | null }> = ({ stats }) => {
               </div>
 
               {/* Pickup */}
-              <div className="flex items-center gap-2.5 px-4 py-3.5 border-l border-slate-100 hover:bg-slate-50 rounded-xl transition-colors">
+              <div className="flex items-center gap-2.5 px-4 py-3.5 border-l border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors">
                 <Calendar className="w-5 h-5 text-amber-500 flex-shrink-0" />
                 <div className="flex-1">
                   <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-0.5">{t.landing.hero.pickUp}</p>
                   <input type="date" value={startDate} min={today}
                     onChange={e => setStartDate(e.target.value)}
-                    className="w-full text-base font-semibold text-slate-800 outline-none bg-transparent cursor-pointer" />
+                    className="w-full text-base font-semibold text-slate-800 dark:text-slate-200 outline-none bg-transparent cursor-pointer" />
                 </div>
               </div>
 
               {/* Return */}
-              <div className="flex items-center gap-2.5 px-4 py-3.5 border-l border-slate-100 hover:bg-slate-50 rounded-xl transition-colors">
+              <div className="flex items-center gap-2.5 px-4 py-3.5 border-l border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors">
                 <Calendar className="w-5 h-5 text-amber-500 flex-shrink-0" />
                 <div className="flex-1">
                   <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-0.5">{t.landing.hero.return}</p>
                   <input type="date" value={endDate} min={startDate || today}
                     onChange={e => setEndDate(e.target.value)}
-                    className="w-full text-base font-semibold text-slate-800 outline-none bg-transparent cursor-pointer" />
+                    className="w-full text-base font-semibold text-slate-800 dark:text-slate-200 outline-none bg-transparent cursor-pointer" />
                 </div>
               </div>
 
@@ -402,14 +402,14 @@ const PromotionSection: React.FC<{ promotions: Promotion[]; loading: boolean }> 
   if (!loading && promotions.length === 0) return null;
 
   return (
-    <section className="py-16 bg-slate-50 overflow-hidden">
+    <section className="py-16 bg-slate-50 dark:bg-slate-900 overflow-hidden">
       <div className="max-w-7xl mx-auto px-6">
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="flex justify-between items-end mb-8">
           <div>
             <span className="text-sm font-bold tracking-widest uppercase text-amber-500 mb-2 block">{t.landingPage.promo.offers}</span>
-            <h2 className="font-bold text-3xl md:text-4xl text-[#0F172A]">{t.landingPage.promo.title}</h2>
+            <h2 className="font-bold text-3xl md:text-4xl text-[#0F172A] dark:text-white">{t.landingPage.promo.title}</h2>
           </div>
-          <Link to="/marketplace" className="text-base font-bold text-slate-500 hover:text-[#0F172A] flex items-center gap-1 transition-colors">
+          <Link to="/marketplace" className="text-base font-bold text-slate-500 hover:text-[#0F172A] dark:text-white flex items-center gap-1 transition-colors">
             {t.landingPage.promo.viewAll} <ArrowRight className="w-4 h-4" />
           </Link>
         </motion.div>
@@ -511,19 +511,19 @@ const TrendingSection: React.FC<{ vehicles: TrendingVehicle[]; loading: boolean 
   const scroll = (dir: number) => ref.current?.scrollBy({ left: dir * 340, behavior: 'smooth' });
 
   return (
-    <section className="py-16 bg-white overflow-hidden">
+    <section className="py-16 bg-white dark:bg-slate-900 overflow-hidden">
       <div className="max-w-7xl mx-auto px-6">
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="flex justify-between items-end mb-8">
           <div>
             <span className="text-xs font-bold tracking-widest uppercase text-amber-500 mb-2 block">{t.landingPage.trending.popular}</span>
-            <h2 className="font-bold text-3xl md:text-4xl text-[#0F172A]">{t.landingPage.trending.title}</h2>
+            <h2 className="font-bold text-3xl md:text-4xl text-[#0F172A] dark:text-white">{t.landingPage.trending.title}</h2>
             <p className="text-slate-500 mt-1 text-sm">{t.landingPage.trending.desc}</p>
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={() => scroll(-1)} className="w-9 h-9 rounded-full border border-slate-200 flex items-center justify-center hover:border-[#0F172A] transition-colors">
+            <button onClick={() => scroll(-1)} className="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:border-[#0F172A] transition-colors">
               <ChevronLeft className="w-4 h-4 text-slate-600" />
             </button>
-            <button onClick={() => scroll(1)} className="w-9 h-9 rounded-full border border-slate-200 flex items-center justify-center hover:border-[#0F172A] transition-colors">
+            <button onClick={() => scroll(1)} className="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:border-[#0F172A] transition-colors">
               <ChevronRight className="w-4 h-4 text-slate-600" />
             </button>
           </div>
@@ -537,7 +537,7 @@ const TrendingSection: React.FC<{ vehicles: TrendingVehicle[]; loading: boolean 
                 key={v.id}
                 whileHover={{ y: -8, scale: 1.015 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                className="flex-shrink-0 w-80 bg-white border border-slate-100 rounded-3xl overflow-hidden cursor-pointer group shadow-luxury hover:shadow-luxury-lg transition-all duration-300"
+                className="flex-shrink-0 w-80 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl overflow-hidden cursor-pointer group shadow-luxury hover:shadow-luxury-lg transition-all duration-300"
                 onClick={() => navigate(`/vehicles/${v.id}`)}
               >
                 <div className="relative h-52 overflow-hidden bg-slate-100">
@@ -576,15 +576,15 @@ const TrendingSection: React.FC<{ vehicles: TrendingVehicle[]; loading: boolean 
                 <div className="p-5">
                   <div className="flex items-center justify-between mb-1.5">
                     <p className="text-xs text-slate-400 font-extrabold uppercase tracking-widest">{v.brand}</p>
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-50 border border-slate-100 text-[10px] font-bold text-slate-500">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-[10px] font-bold text-slate-500">
                       {v.vehicleType === 'motorbike' ? (language === 'vi' ? '🏍️ Xe máy' : '🏍️ Motorbike') : (language === 'vi' ? '🚗 Ô tô' : '🚗 Car')}
                     </span>
                   </div>
-                  <h3 className="font-extrabold text-[#0F172A] text-lg leading-tight mb-2 truncate group-hover:text-amber-500 transition-colors">{v.name}</h3>
+                  <h3 className="font-extrabold text-[#0F172A] dark:text-white text-lg leading-tight mb-2 truncate group-hover:text-amber-500 transition-colors">{v.name}</h3>
                   <p className="text-xs text-slate-500 mb-4 flex items-center gap-1.5 font-medium">
                     <MapPin className="w-3.5 h-3.5 text-slate-400" /> {v.city}
                   </p>
-                  <div className="flex items-center justify-between pt-3.5 border-t border-slate-100">
+                  <div className="flex items-center justify-between pt-3.5 border-t border-slate-100 dark:border-slate-800">
                     <div className="flex items-center gap-1">
                       <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
                       <span className="text-sm font-bold text-slate-700">{Number(v.rating).toFixed(1)}</span>
@@ -694,11 +694,11 @@ const CategoriesSection: React.FC<{ data: CategoryData | null }> = ({ data }) =>
   const t = useT();
 
   return (
-    <section className="py-16 bg-slate-50">
+    <section className="py-16 bg-slate-50 dark:bg-slate-900">
       <div className="max-w-7xl mx-auto px-6">
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="mb-10">
           <span className="text-sm font-bold tracking-widest uppercase text-amber-500 mb-2 block">{t.landingPage.categories.fleet}</span>
-          <h2 className="font-bold text-3xl md:text-4xl text-[#0F172A]">{t.landingPage.categories.title}</h2>
+          <h2 className="font-bold text-3xl md:text-4xl text-[#0F172A] dark:text-white">{t.landingPage.categories.title}</h2>
           <p className="text-slate-500 mt-1 text-base">{t.landingPage.categories.desc}</p>
         </motion.div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
@@ -727,14 +727,14 @@ const DestinationsSection: React.FC<{ destinations: Destination[]; loading: bool
   const t = useT();
 
   return (
-    <section className="py-16 bg-white">
+    <section className="py-16 bg-white dark:bg-slate-900">
       <div className="max-w-7xl mx-auto px-6">
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="flex justify-between items-end mb-8">
           <div>
             <span className="text-sm font-bold tracking-widest uppercase text-amber-500 mb-2 block">{t.landingPage.destinations.top}</span>
-            <h2 className="font-bold text-3xl md:text-4xl text-[#0F172A]">{t.landingPage.destinations.title}</h2>
+            <h2 className="font-bold text-3xl md:text-4xl text-[#0F172A] dark:text-white">{t.landingPage.destinations.title}</h2>
           </div>
-          <Link to="/marketplace" className="text-base font-bold text-slate-500 hover:text-[#0F172A] flex items-center gap-1 transition-colors">
+          <Link to="/marketplace" className="text-base font-bold text-slate-500 hover:text-[#0F172A] dark:text-white flex items-center gap-1 transition-colors">
             {t.landingPage.destinations.viewAll} <ArrowRight className="w-4 h-4" />
           </Link>
         </motion.div>
@@ -841,11 +841,11 @@ const HowItWorksSection: React.FC = () => {
   ];
 
   return (
-    <section className="py-20 bg-slate-50">
+    <section className="py-20 bg-slate-50 dark:bg-slate-900">
       <div className="max-w-7xl mx-auto px-6">
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-14">
           <span className="text-sm font-bold tracking-widest uppercase text-amber-500 mb-3 block">{t.landingPage.howItWorks.seamless}</span>
-          <h2 className="font-bold text-3xl md:text-5xl text-[#0F172A] mb-4">{t.landingPage.howItWorks.title}</h2>
+          <h2 className="font-bold text-3xl md:text-5xl text-[#0F172A] dark:text-white mb-4">{t.landingPage.howItWorks.title}</h2>
           <p className="text-slate-500 max-w-lg mx-auto text-base">{t.landingPage.howItWorks.desc}</p>
         </motion.div>
         <motion.div
@@ -861,7 +861,7 @@ const HowItWorksSection: React.FC = () => {
               variants={staggerItem}
               whileHover={{ y: -6 }}
               transition={{ type: 'spring', damping: 15 }}
-              className="relative bg-white rounded-3xl p-7 shadow-sm border border-slate-100 text-center group hover:shadow-lg transition-shadow"
+              className="relative bg-white dark:bg-slate-900 rounded-3xl p-7 shadow-sm border border-slate-100 dark:border-slate-800 text-center group hover:shadow-lg transition-shadow"
             >
               <div className={`absolute -top-5 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-gradient-to-br ${step.color} text-white text-sm font-black flex items-center justify-center shadow-md`}>
                 {step.num}
@@ -869,7 +869,7 @@ const HowItWorksSection: React.FC = () => {
               <div className={`w-14 h-14 ${step.bg} rounded-2xl flex items-center justify-center mx-auto mb-5 group-hover:scale-110 transition-transform`}>
                 <step.icon className={`w-7 h-7 ${step.iconColor}`} />
               </div>
-              <h3 className="font-bold text-[#0F172A] text-lg mb-2">{step.title}</h3>
+              <h3 className="font-bold text-[#0F172A] dark:text-white text-lg mb-2">{step.title}</h3>
               <p className="text-slate-500 text-base leading-relaxed">{step.desc}</p>
               {i < steps.length - 1 && (
                 <div className="hidden lg:block absolute top-1/2 -right-3 w-6 h-0.5 bg-slate-200" />
@@ -910,7 +910,7 @@ const InsuranceSection: React.FC = () => {
   ];
 
   return (
-    <section className="py-20 bg-white">
+    <section className="py-20 bg-white dark:bg-slate-900">
       <div className="max-w-7xl mx-auto px-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
           {/* Left content */}
@@ -918,7 +918,7 @@ const InsuranceSection: React.FC = () => {
             <motion.span variants={staggerItem} className="text-sm font-bold tracking-widest uppercase text-emerald-500 mb-3 block">
               {t.landingPage.insurance.safety}
             </motion.span>
-            <motion.h2 variants={staggerItem} className="font-bold text-3xl md:text-4xl text-[#0F172A] mb-4">
+            <motion.h2 variants={staggerItem} className="font-bold text-3xl md:text-4xl text-[#0F172A] dark:text-white mb-4">
               {t.landingPage.insurance.title}
             </motion.h2>
             <motion.p variants={staggerItem} className="text-slate-500 mb-8 leading-relaxed text-base">
@@ -931,7 +931,7 @@ const InsuranceSection: React.FC = () => {
                     <Icon className={`w-5 h-5 ${color}`} />
                   </div>
                   <div>
-                    <p className="font-bold text-[#0F172A] text-base">{title}</p>
+                    <p className="font-bold text-[#0F172A] dark:text-white text-base">{title}</p>
                     <p className="text-slate-500 text-sm leading-relaxed">{desc}</p>
                   </div>
                 </motion.div>
@@ -951,9 +951,9 @@ const InsuranceSection: React.FC = () => {
               <motion.div
                 key={label}
                 variants={staggerItem}
-                className="p-6 bg-slate-50 rounded-2xl border border-slate-100 hover:border-emerald-200 transition-colors"
+                className="p-6 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-emerald-200 transition-colors"
               >
-                <p className="font-black text-2xl text-[#0F172A] mb-1">{value}</p>
+                <p className="font-black text-2xl text-[#0F172A] dark:text-white mb-1">{value}</p>
                 <p className="font-semibold text-slate-700 text-base">{label}</p>
                 <p className="text-slate-500 text-sm font-medium">{sub}</p>
               </motion.div>
@@ -1099,7 +1099,7 @@ const BecomeOwnerSection: React.FC<{ ownerStats: OwnerStats | null }> = ({ owner
   ];
 
   return (
-    <section className="py-20 bg-white">
+    <section className="py-20 bg-white dark:bg-slate-900">
       <div className="max-w-7xl mx-auto px-6">
         <div className="rounded-3xl overflow-hidden bg-[#0F172A] flex flex-col lg:flex-row">
           {/* Left */}
@@ -1218,23 +1218,23 @@ const FAQSection: React.FC<{ faqs: FAQ[]; loading: boolean }> = ({ faqs, loading
   const displayFaqs = faqs.length > 0 ? faqs : DEFAULT_FAQS;
 
   return (
-    <section className="py-20 bg-slate-50">
+    <section className="py-20 bg-slate-50 dark:bg-slate-900">
       <div className="max-w-3xl mx-auto px-6">
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-12">
           <span className="text-sm font-bold tracking-wider uppercase text-amber-500 mb-3 block">{t.landingPage.faq.label}</span>
-          <h2 className="font-bold text-3xl md:text-4xl text-[#0F172A]">{t.landingPage.faq.title}</h2>
+          <h2 className="font-bold text-3xl md:text-4xl text-[#0F172A] dark:text-white">{t.landingPage.faq.title}</h2>
         </motion.div>
         <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true }} className="space-y-3">
           {(loading ? Array(5).fill(null) : displayFaqs).map((faq, i) => (
             <motion.div key={faq?.id ?? i} variants={staggerItem}>
               {faq ? (
-                <div className={`bg-white rounded-2xl border transition-colors ${open === i ? 'border-amber-200' : 'border-slate-100'}`}>
+                <div className={`bg-white dark:bg-slate-900 rounded-2xl border transition-colors ${open === i ? 'border-amber-200' : 'border-slate-100 dark:border-slate-800'}`}>
                   <button
                     onClick={() => setOpen(open === i ? null : i)}
                     className="w-full flex items-center justify-between p-5 text-left"
                     aria-expanded={open === i}
                   >
-                    <span className="font-bold text-[#0F172A] text-base pr-4">{faq.q}</span>
+                    <span className="font-bold text-[#0F172A] dark:text-white text-base pr-4">{faq.q}</span>
                     <motion.div animate={{ rotate: open === i ? 180 : 0 }} transition={{ duration: 0.2 }}
                       className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
                       <ChevronDown className="w-4 h-4 text-slate-500" />
@@ -1375,7 +1375,7 @@ const Footer: React.FC = () => {
             <span>·</span>
             <span>USD / VND</span>
             <span>·</span>
-            <span>Tiếng Việt / English / 日本語 / 한국어 / 简体中文 / Français / Deutsch</span>
+            <span>Tiếng Việt / English / 日本語 / 中文</span>
           </div>
         </div>
       </div>

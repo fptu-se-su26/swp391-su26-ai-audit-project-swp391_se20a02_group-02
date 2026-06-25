@@ -81,17 +81,17 @@ const ArticleViewer: React.FC<{
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 20, scale: 0.96 }}
           transition={{ duration: 0.3 }}
-          className="bg-white border border-amber-500/20 rounded-3xl shadow-[0_0_50px_rgba(245,158,11,0.08)] max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col"
+          className="bg-white dark:bg-slate-900 border border-amber-500/20 rounded-3xl shadow-[0_0_50px_rgba(245,158,11,0.08)] max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col"
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-7 py-5 border-b border-slate-100 bg-slate-50/50">
+          <div className="flex items-center justify-between px-7 py-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
             <div className="flex items-center gap-2 text-sm text-slate-600 font-semibold uppercase tracking-wider">
               <BookOpen className="w-4 h-4 text-amber-500" />
               <span>{(article?.category?.name ?? t.help.helpArticle) || 'Article'}</span>
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 hover:border-slate-300 flex items-center justify-center text-slate-500 hover:text-slate-800 transition-all cursor-pointer"
+              className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 dark:border-slate-700 hover:border-slate-300 flex items-center justify-center text-slate-500 hover:text-slate-800 dark:text-slate-200 transition-all cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -101,10 +101,10 @@ const ArticleViewer: React.FC<{
           <div className="flex-1 overflow-y-auto px-7 py-6">
             {loading && (
               <div className="space-y-4">
-                <Skeleton className="h-8 w-3/4 bg-slate-200/50 border-slate-100" />
-                <Skeleton className="h-4 w-full bg-slate-250/50 border-slate-100" />
-                <Skeleton className="h-4 w-5/6 bg-slate-250/50 border-slate-100" />
-                <Skeleton className="h-4 w-full bg-slate-250/50 border-slate-100" />
+                <Skeleton className="h-8 w-3/4 bg-slate-200/50 border-slate-100 dark:border-slate-800" />
+                <Skeleton className="h-4 w-full bg-slate-250/50 border-slate-100 dark:border-slate-800" />
+                <Skeleton className="h-4 w-5/6 bg-slate-250/50 border-slate-100 dark:border-slate-800" />
+                <Skeleton className="h-4 w-full bg-slate-250/50 border-slate-100 dark:border-slate-800" />
               </div>
             )}
             {error && (
@@ -115,7 +115,7 @@ const ArticleViewer: React.FC<{
             )}
             {article && !loading && (
               <div>
-                <h1 className="font-black text-2xl text-slate-800 mb-4 leading-tight">
+                <h1 className="font-black text-2xl text-slate-800 dark:text-slate-200 mb-4 leading-tight">
                   {article.title}
                 </h1>
                 <div className="flex flex-wrap gap-2 mb-6">
@@ -189,14 +189,14 @@ const TicketForm: React.FC<{ onClose: () => void; onSuccess: () => void; initial
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 20 }}
         transition={{ duration: 0.3 }}
-        className="bg-white border border-amber-500/20 rounded-3xl shadow-[0_0_50px_rgba(245,158,11,0.08)] max-w-lg w-full overflow-hidden"
+        className="bg-white dark:bg-slate-900 border border-amber-500/20 rounded-3xl shadow-[0_0_50px_rgba(245,158,11,0.08)] max-w-lg w-full overflow-hidden"
       >
-        <div className="bg-gradient-to-b from-amber-50/50 via-amber-50/10 to-transparent px-7 py-5 flex items-center justify-between border-b border-slate-100">
-          <div className="flex items-center gap-2 text-slate-800">
+        <div className="bg-gradient-to-b from-amber-50/50 via-amber-50/10 to-transparent px-7 py-5 flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
+          <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200">
             <Ticket className="w-5 h-5 text-amber-550" />
             <h2 className="font-bold text-base tracking-wide uppercase">Open Support Claim</h2>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 hover:border-slate-300 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-all cursor-pointer">
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 dark:border-slate-700 hover:border-slate-300 text-slate-500 hover:text-slate-800 dark:text-slate-200 flex items-center justify-center transition-all cursor-pointer">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -216,7 +216,7 @@ const TicketForm: React.FC<{ onClose: () => void; onSuccess: () => void; initial
               value={form.subject}
               onChange={e => setForm(f => ({ ...f, subject: e.target.value }))}
               placeholder={t.help.subjectPlaceholder || "Briefly describe your issue..."}
-              className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-amber-500/50 transition-all"
+              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-amber-500/50 transition-all"
               required
             />
           </div>
@@ -227,7 +227,7 @@ const TicketForm: React.FC<{ onClose: () => void; onSuccess: () => void; initial
               <select
                 value={form.categoryId}
                 onChange={e => setForm(f => ({ ...f, categoryId: e.target.value }))}
-                className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-amber-500/50"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-amber-500/50"
               >
                 {['BOOKING','PAYMENT','VEHICLE','ACCOUNT','KYC','DISPUTE','OTHER'].map(c => (
                   <option key={c} value={c}>{c}</option>
@@ -239,7 +239,7 @@ const TicketForm: React.FC<{ onClose: () => void; onSuccess: () => void; initial
               <select
                 value={form.priorityId}
                 onChange={e => setForm(f => ({ ...f, priorityId: e.target.value }))}
-                className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-amber-500/50"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-amber-500/50"
               >
                 {['LOW','NORMAL','HIGH','URGENT'].map(p => (
                   <option key={p} value={p}>{p}</option>
@@ -257,7 +257,7 @@ const TicketForm: React.FC<{ onClose: () => void; onSuccess: () => void; initial
               value={form.bookingId}
               onChange={e => setForm(f => ({ ...f, bookingId: e.target.value }))}
               placeholder={t.help.bookingIdPlaceholder || "e.g. BK-2026-001"}
-              className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-amber-500/50 transition-all"
+              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-amber-500/50 transition-all"
             />
           </div>
 
@@ -268,14 +268,14 @@ const TicketForm: React.FC<{ onClose: () => void; onSuccess: () => void; initial
               onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
               placeholder={t.help.messagePlaceholder || "Describe your issue in detail..."}
               rows={4}
-              className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-amber-500/50 resize-none transition-all"
+              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-amber-500/50 resize-none transition-all"
               required
             />
           </div>
 
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose}
-              className="flex-1 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-500 font-bold text-xs uppercase tracking-widest hover:bg-slate-100 transition-all cursor-pointer">
+              className="flex-1 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-500 font-bold text-xs uppercase tracking-widest hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer">
               Cancel
             </button>
             <button type="submit" disabled={submitting}
@@ -344,7 +344,7 @@ const EmergencyForm: React.FC<{ onClose: () => void; onSuccess: () => void }> = 
         initial={{ opacity: 0, y: 30, scale: 0.96 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 20 }}
-        className="bg-white border border-rose-350/30 rounded-3xl shadow-[0_0_50px_rgba(239,68,68,0.08)] max-w-lg w-full overflow-hidden"
+        className="bg-white dark:bg-slate-900 border border-rose-350/30 rounded-3xl shadow-[0_0_50px_rgba(239,68,68,0.08)] max-w-lg w-full overflow-hidden"
       >
         <div className="bg-rose-50/40 border-b border-rose-100 px-7 py-5 flex items-center justify-between">
           <div className="flex items-center gap-2 text-rose-600">
@@ -353,7 +353,7 @@ const EmergencyForm: React.FC<{ onClose: () => void; onSuccess: () => void }> = 
               {t.help.emergencySupport || 'Priority Emergency Dispatch'}
             </h2>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 hover:border-slate-350 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-all cursor-pointer">
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 dark:border-slate-700 hover:border-slate-350 text-slate-500 hover:text-slate-800 dark:text-slate-200 flex items-center justify-center transition-all cursor-pointer">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -375,7 +375,7 @@ const EmergencyForm: React.FC<{ onClose: () => void; onSuccess: () => void }> = 
               <select
                 value={emergencyType}
                 onChange={e => setEmergencyType(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-rose-500/50"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-rose-500/50"
               >
                 <option value="BREAKDOWN">Vehicle Breakdown</option>
                 <option value="ACCIDENT">Road Collision/Accident</option>
@@ -391,7 +391,7 @@ const EmergencyForm: React.FC<{ onClose: () => void; onSuccess: () => void }> = 
                 value={contactPhone}
                 onChange={e => setContactPhone(e.target.value)}
                 placeholder="Active callback phone number..."
-                className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-rose-500/50"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-rose-500/50"
                 required
               />
             </div>
@@ -404,7 +404,7 @@ const EmergencyForm: React.FC<{ onClose: () => void; onSuccess: () => void }> = 
               value={bookingId}
               onChange={e => setBookingId(e.target.value)}
               placeholder="e.g. BK-DEV-CAR"
-              className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-rose-500/50"
+              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-rose-500/50"
             />
           </div>
 
@@ -415,14 +415,14 @@ const EmergencyForm: React.FC<{ onClose: () => void; onSuccess: () => void }> = 
               value={description}
               onChange={e => setDescription(e.target.value)}
               placeholder="Describe vehicle location, safety status, damage details..."
-              className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-rose-500/50 resize-none"
+              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-rose-500/50 resize-none"
               required
             />
           </div>
 
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose}
-              className="flex-1 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-500 font-bold text-xs uppercase tracking-widest hover:bg-slate-100 transition-all cursor-pointer">
+              className="flex-1 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-500 font-bold text-xs uppercase tracking-widest hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer">
               Cancel
             </button>
             <button type="submit" disabled={loading}
@@ -461,7 +461,7 @@ const MyTicketsPanel: React.FC<{ userId: string | null }> = ({ userId }) => {
 
   useEffect(() => { load(); }, [load]);  if (!userId) {
     return (
-      <div className="text-center py-12 text-slate-500 border border-slate-200 rounded-3xl bg-white/40">
+      <div className="text-center py-12 text-slate-500 border border-slate-200 dark:border-slate-700 rounded-3xl bg-white/40">
         <User className="w-10 h-10 mx-auto mb-3 opacity-30 text-amber-500" />
         <p className="font-bold text-xs uppercase tracking-wider">{t.help.signInToViewTickets || 'Sign in to view support tickets'}</p>
       </div>
@@ -469,7 +469,7 @@ const MyTicketsPanel: React.FC<{ userId: string | null }> = ({ userId }) => {
   }
 
   if (loading) {
-    return <div className="space-y-3">{[1,2,3].map(i => <Skeleton key={i} className="h-20 bg-slate-200/50 border-slate-100" />)}</div>;
+    return <div className="space-y-3">{[1,2,3].map(i => <Skeleton key={i} className="h-20 bg-slate-200/50 border-slate-100 dark:border-slate-800" />)}</div>;
   }
 
   if (error) {
@@ -486,7 +486,7 @@ const MyTicketsPanel: React.FC<{ userId: string | null }> = ({ userId }) => {
 
   if (tickets.length === 0) {
     return (
-      <div className="text-center py-12 text-slate-500 border border-slate-200 rounded-3xl bg-white/40">
+      <div className="text-center py-12 text-slate-500 border border-slate-200 dark:border-slate-700 rounded-3xl bg-white/40">
         <Ticket className="w-10 h-10 mx-auto mb-3 opacity-30 text-amber-500" />
         <p className="font-bold text-xs uppercase tracking-wider">{t.help.noTicketsYet || 'No support tickets yet'}</p>
         <p className="text-slate-500 text-xs mt-1">{t.help.submitBelowIfHelp || 'Submit a request below if you need help.'}</p>
@@ -498,7 +498,7 @@ const MyTicketsPanel: React.FC<{ userId: string | null }> = ({ userId }) => {
     <div className="space-y-3">
       {tickets.map(t => (
         <motion.div key={t.id} variants={fadeUp}
-          className="p-5 rounded-2xl border border-slate-200 bg-white/70 hover:border-slate-350 hover:bg-white transition-all flex justify-between items-center shadow-sm"
+          className="p-5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/70 hover:border-slate-350 hover:bg-white dark:bg-slate-900 transition-all flex justify-between items-center shadow-sm"
         >
           <div>
             <div className="flex items-center gap-2 mb-1.5">
@@ -508,7 +508,7 @@ const MyTicketsPanel: React.FC<{ userId: string | null }> = ({ userId }) => {
                 {t.category?.name || 'CLAIM'}
               </span>
             </div>
-            <p className="font-bold text-slate-800 text-sm">{t.subject}</p>
+            <p className="font-bold text-slate-800 dark:text-slate-200 text-sm">{t.subject}</p>
             <div className="flex items-center gap-1.5 mt-2 text-[10px] text-slate-550">
               <Clock className="w-3.5 h-3.5 text-slate-400" />
               <span>SLA: {new Date(t.slaDeadline).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ({new Date(t.slaDeadline).toLocaleDateString()})</span>
@@ -619,7 +619,7 @@ export const HelpPage: React.FC = () => {
   const selectedCategoryObj = categories.find(c => c.id === selectedCategoryId);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-amber-50/20 text-slate-800 pt-24 pb-20 relative overflow-hidden font-sans">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-amber-50/20 dark:from-slate-900 dark:via-slate-800 dark:to-amber-900/20 text-slate-800 dark:text-slate-200 pt-24 pb-20 relative overflow-hidden font-sans">
       
       {/* Background Ambient Glows */}
       <div className="absolute top-[-5%] left-[-10%] w-[50%] h-[50%] bg-gradient-to-tr from-amber-400/10 to-yellow-500/5 rounded-full blur-[140px] pointer-events-none" />
@@ -643,7 +643,7 @@ export const HelpPage: React.FC = () => {
           </motion.div>
 
           <motion.h1 variants={fadeUp}
-            className="font-black text-4xl md:text-6xl text-slate-800 mb-6 leading-tight tracking-tight bg-gradient-to-r from-slate-900 via-amber-800 to-amber-600 bg-clip-text text-transparent"
+            className="font-black text-4xl md:text-6xl text-slate-800 dark:text-slate-200 mb-6 leading-tight tracking-tight bg-gradient-to-r from-slate-900 via-amber-800 to-amber-600 bg-clip-text text-transparent"
           >
             {t.help.title || 'How can we help?'}
           </motion.h1>
@@ -664,7 +664,7 @@ export const HelpPage: React.FC = () => {
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder={t.help.searchPlaceholder || "Search help articles..."}
-              className="w-full pl-14 pr-14 py-4.5 rounded-2xl bg-white/85 border border-slate-200 text-slate-800 placeholder-slate-400 focus:outline-none focus:border-amber-500/60 focus:ring-1 focus:ring-amber-500/20 text-sm transition-all backdrop-blur-md"
+              className="w-full pl-14 pr-14 py-4.5 rounded-2xl bg-white/85 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:border-amber-500/60 focus:ring-1 focus:ring-amber-500/20 text-sm transition-all backdrop-blur-md"
             />
           </motion.div>
 
@@ -677,7 +677,7 @@ export const HelpPage: React.FC = () => {
                 exit={{ opacity: 0, y: -8 }}
                 className="relative max-w-xl mx-auto mt-3 z-40"
               >
-                <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden text-left max-h-80 overflow-y-auto">
+                <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden text-left max-h-80 overflow-y-auto">
                   {searchResults.length === 0 && !searchLoading && (
                     <p className="p-5 text-xs text-slate-500 text-center">No articles found for "{searchQuery}"</p>
                   )}
@@ -685,11 +685,11 @@ export const HelpPage: React.FC = () => {
                     <button
                       key={a.id}
                       onClick={() => { setViewingArticleSlug(a.slug); setSearchQuery(''); }}
-                      className="w-full flex items-start gap-4 px-6 py-4.5 hover:bg-amber-50/40 transition-colors border-b last:border-none border-slate-100 text-left"
+                      className="w-full flex items-start gap-4 px-6 py-4.5 hover:bg-amber-50/40 transition-colors border-b last:border-none border-slate-100 dark:border-slate-800 text-left"
                     >
                       <BookOpen className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
                       <div>
-                        <p className="text-xs font-bold text-slate-800 group-hover:text-amber-600 transition-colors">{a.title}</p>
+                        <p className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-amber-600 transition-colors">{a.title}</p>
                         <p className="text-[10px] text-slate-500 mt-1 line-clamp-1">{a.excerpt}</p>
                       </div>
                     </button>
@@ -741,13 +741,13 @@ export const HelpPage: React.FC = () => {
                 key={idx}
                 whileHover={{ y: -6, scale: 1.02 }}
                 onClick={srv.action}
-                className="bg-white/70 border border-slate-200/80 hover:border-amber-500/55 rounded-3xl p-6 text-left transition-all duration-300 flex items-start gap-5 shadow-[0_8px_30px_rgba(0,0,0,0.02)] hover:bg-white hover:shadow-[0_12px_40px_rgba(245,158,11,0.06)] cursor-pointer group"
+                className="bg-white/70 border border-slate-200 dark:border-slate-700/80 hover:border-amber-500/55 rounded-3xl p-6 text-left transition-all duration-300 flex items-start gap-5 shadow-[0_8px_30px_rgba(0,0,0,0.02)] hover:bg-white dark:bg-slate-900 hover:shadow-[0_12px_40px_rgba(245,158,11,0.06)] cursor-pointer group"
               >
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-slate-50 to-white border border-slate-200 group-hover:border-amber-500/40 flex items-center justify-center text-amber-550 group-hover:text-amber-600 shadow-sm transition-all duration-300">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-slate-50 to-white border border-slate-200 dark:border-slate-700 group-hover:border-amber-500/40 flex items-center justify-center text-amber-550 group-hover:text-amber-600 shadow-sm transition-all duration-300">
                   <Icon className="w-5 h-5 group-hover:scale-110 transition-transform" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-black text-slate-800 tracking-wider uppercase group-hover:text-amber-600 transition-colors">{srv.title}</h4>
+                  <h4 className="text-xs font-black text-slate-800 dark:text-slate-200 tracking-wider uppercase group-hover:text-amber-600 transition-colors">{srv.title}</h4>
                   <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">{srv.desc}</p>
                 </div>
               </motion.button>
@@ -784,7 +784,7 @@ export const HelpPage: React.FC = () => {
           </div>
 
           {/* Platform Status */}
-          <div className="border border-slate-200 bg-white/70 rounded-3xl p-6 flex flex-col justify-between h-[200px] shadow-sm">
+          <div className="border border-slate-200 dark:border-slate-700 bg-white/70 rounded-3xl p-6 flex flex-col justify-between h-[200px] shadow-sm">
             <div>
               <div className="flex items-center gap-2 text-amber-600">
                 <Activity className="w-4.5 h-4.5" />
@@ -796,14 +796,14 @@ export const HelpPage: React.FC = () => {
             </div>
             <a
               href="/help/status"
-              className="w-full py-2.5 bg-slate-50 hover:bg-slate-100 text-amber-650 font-extrabold text-[10px] uppercase tracking-widest rounded-xl transition-all text-center block border border-slate-200 cursor-pointer"
+              className="w-full py-2.5 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-amber-650 font-extrabold text-[10px] uppercase tracking-widest rounded-xl transition-all text-center block border border-slate-200 dark:border-slate-700 cursor-pointer"
             >
               Platform Health Status
             </a>
           </div>
 
           {/* Owner hub */}
-          <div className="border border-slate-200 bg-white/70 rounded-3xl p-6 flex flex-col justify-between h-[200px] shadow-sm">
+          <div className="border border-slate-200 dark:border-slate-700 bg-white/70 rounded-3xl p-6 flex flex-col justify-between h-[200px] shadow-sm">
             <div>
               <div className="flex items-center gap-2 text-amber-600">
                 <HeartHandshake className="w-4.5 h-4.5" />
@@ -815,7 +815,7 @@ export const HelpPage: React.FC = () => {
             </div>
             <a
               href="/help/owner-success"
-              className="w-full py-2.5 bg-slate-50 hover:bg-slate-100 text-amber-650 font-extrabold text-[10px] uppercase tracking-widest rounded-xl transition-all text-center block border border-slate-200 cursor-pointer"
+              className="w-full py-2.5 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-amber-650 font-extrabold text-[10px] uppercase tracking-widest rounded-xl transition-all text-center block border border-slate-200 dark:border-slate-700 cursor-pointer"
             >
               Host Success Dashboard
             </a>
@@ -826,11 +826,11 @@ export const HelpPage: React.FC = () => {
         {user?.role?.toUpperCase() === 'ADMIN' && (
           <div className="mb-14 border border-amber-300 bg-amber-50/50 rounded-3xl p-6 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-sm">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-amber-600">
+              <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-amber-600">
                 <BarChart3 className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="text-sm font-bold text-slate-800">Administrator Operations Dashboard</h4>
+                <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">Administrator Operations Dashboard</h4>
                 <p className="text-slate-500 text-xs mt-0.5">Access support tickets logs, agent statistics, and resolution rate metrics.</p>
               </div>
             </div>
@@ -846,7 +846,7 @@ export const HelpPage: React.FC = () => {
         {/* ============ DELIVERY TRACKER INTERACTIVE CONTAINER ============ */}
         <div id="delivery-tracking-section" className="mb-14 scroll-mt-24 space-y-5">
           <div>
-            <h3 className="text-lg font-black text-slate-800 tracking-wide uppercase flex items-center gap-2">
+            <h3 className="text-lg font-black text-slate-800 dark:text-slate-200 tracking-wide uppercase flex items-center gap-2">
               <Car className="w-5 h-5 text-amber-600" /> Live Vehicle Delivery Tracking
             </h3>
             <p className="text-slate-555 text-xs mt-1">If your vehicle delivery is en route, enter the Booking ID below to view Goong GPS telemetry.</p>
@@ -858,11 +858,11 @@ export const HelpPage: React.FC = () => {
               value={trackBookingId}
               onChange={e => setTrackBookingId(e.target.value)}
               placeholder="Enter Booking ID (e.g. BK-DEV-CAR or BK-DEV-MOTO)..."
-              className="flex-1 bg-white/80 border border-slate-200 text-slate-800 placeholder-slate-400 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-amber-500/50"
+              className="flex-1 bg-white/80 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 placeholder-slate-400 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-amber-500/50"
             />
             <button
               onClick={() => setActiveTrackingBookingId(trackBookingId.trim() || null)}
-              className="px-6 py-3 bg-white hover:bg-slate-50 text-amber-600 font-extrabold text-xs uppercase tracking-widest rounded-xl border border-slate-200 transition-all cursor-pointer"
+              className="px-6 py-3 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-amber-600 font-extrabold text-xs uppercase tracking-widest rounded-xl border border-slate-200 dark:border-slate-700 transition-all cursor-pointer"
             >
               Start Map Tracker
             </button>
@@ -875,7 +875,7 @@ export const HelpPage: React.FC = () => {
           )}
         </div>
         {/* ============ KNOWLEDGE TOPICS SECTION ============ */}
-        <div className="border-t border-slate-200 pt-10 mb-14">
+        <div className="border-t border-slate-200 dark:border-slate-700 pt-10 mb-14">
           <div className="mb-8 flex items-center justify-between">
             <div>
               <h2 className="font-extrabold text-2xl text-slate-850 uppercase tracking-wide">Help Center Articles</h2>
@@ -896,7 +896,7 @@ export const HelpPage: React.FC = () => {
             {/* Categories sidebar list */}
             <div className="space-y-2 lg:col-span-1">
               {catLoading ? (
-                Array(5).fill(0).map((_, i) => <Skeleton key={i} className="h-14 bg-slate-200/50 border-slate-100" />)
+                Array(5).fill(0).map((_, i) => <Skeleton key={i} className="h-14 bg-slate-200/50 border-slate-100 dark:border-slate-800" />)
               ) : (
                 categories.map(cat => (
                   <button
@@ -905,7 +905,7 @@ export const HelpPage: React.FC = () => {
                     className={`w-full flex items-center justify-between p-4 rounded-2xl border text-left transition-all ${
                       selectedCategoryId === cat.id
                         ? 'bg-gradient-to-r from-amber-500 to-amber-600 border-amber-500 text-white shadow-md shadow-amber-500/10'
-                        : 'bg-white/60 border-slate-200 text-slate-650 hover:text-slate-850 hover:border-slate-350 hover:bg-white'
+                        : 'bg-white/60 border-slate-200 dark:border-slate-700 text-slate-650 hover:text-slate-850 hover:border-slate-350 hover:bg-white dark:bg-slate-900'
                     }`}
                   >
                     <div className="flex items-center gap-3">
@@ -923,7 +923,7 @@ export const HelpPage: React.FC = () => {
               {selectedCategoryId ? (
                 <div className="space-y-3">
                   {artLoading ? (
-                    Array(3).fill(0).map((_, i) => <Skeleton key={i} className="h-16 bg-slate-200/50 border-slate-100" />)
+                    Array(3).fill(0).map((_, i) => <Skeleton key={i} className="h-16 bg-slate-200/50 border-slate-100 dark:border-slate-800" />)
                   ) : articles.length === 0 ? (
                     <p className="text-slate-500 text-xs italic">No articles listed in this category.</p>
                   ) : (
@@ -931,7 +931,7 @@ export const HelpPage: React.FC = () => {
                       <button
                         key={art.id}
                         onClick={() => setViewingArticleSlug(art.slug)}
-                        className="w-full p-5 bg-white/70 border border-slate-200 hover:border-amber-500/40 rounded-2xl text-left transition-all flex justify-between items-center group cursor-pointer shadow-sm"
+                        className="w-full p-5 bg-white/70 border border-slate-200 dark:border-slate-700 hover:border-amber-500/40 rounded-2xl text-left transition-all flex justify-between items-center group cursor-pointer shadow-sm"
                       >
                         <div>
                           <h4 className="text-xs font-bold text-slate-850 group-hover:text-amber-600 transition-colors">{art.title}</h4>
@@ -943,7 +943,7 @@ export const HelpPage: React.FC = () => {
                   )}
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center p-8 border border-slate-200 border-dashed rounded-3xl bg-white/40 text-center h-[200px] shadow-sm">
+                <div className="flex flex-col items-center justify-center p-8 border border-slate-200 dark:border-slate-700 border-dashed rounded-3xl bg-white/40 text-center h-[200px] shadow-sm">
                   <BookOpen className="w-10 h-10 text-slate-400 mb-3" />
                   <p className="text-slate-500 text-xs">Select a category on the left to read guides.</p>
                 </div>
@@ -954,10 +954,10 @@ export const HelpPage: React.FC = () => {
         </div>
 
         {/* ============ SUPPORT TICKET INFLOW & MY TICKETS ============ */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-14 border-t border-slate-200 pt-10">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-14 border-t border-slate-200 dark:border-slate-700 pt-10">
           
           {/* Submit ticket card */}
-          <div className="lg:col-span-1 bg-white/70 border border-slate-200 rounded-3xl p-6 flex flex-col justify-between h-[220px] shadow-sm">
+          <div className="lg:col-span-1 bg-white/70 border border-slate-200 dark:border-slate-700 rounded-3xl p-6 flex flex-col justify-between h-[220px] shadow-sm">
             <div>
               <div className="flex items-center gap-2 text-amber-655">
                 <Ticket className="w-4.5 h-4.5" />
@@ -981,7 +981,7 @@ export const HelpPage: React.FC = () => {
             ) : (
               <a
                 href="/auth/login"
-                className="w-full py-3 bg-slate-50 hover:bg-slate-100 text-amber-655 font-extrabold text-xs uppercase tracking-widest rounded-xl text-center block border border-slate-200 cursor-pointer"
+                className="w-full py-3 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-amber-655 font-extrabold text-xs uppercase tracking-widest rounded-xl text-center block border border-slate-200 dark:border-slate-700 cursor-pointer"
               >
                 Sign In to File Ticket
               </a>
@@ -1087,7 +1087,7 @@ const FaqSection: React.FC = () => {
   if (faqs.length === 0) return null;
 
   return (
-    <div className="border-t border-slate-200 pt-10">
+    <div className="border-t border-slate-200 dark:border-slate-700 pt-10">
       <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="mb-6">
         <h2 className="font-extrabold text-2xl text-slate-850 uppercase tracking-wide">Frequently Asked Questions</h2>
         <p className="text-slate-500 text-xs mt-1">Quick answers to the most common questions.</p>
@@ -1103,13 +1103,13 @@ const FaqSection: React.FC = () => {
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true }}
-              className="bg-white/70 rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:bg-white transition-all"
+              className="bg-white/70 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm hover:bg-white dark:bg-slate-900 transition-all"
             >
               <button
                 onClick={() => setOpenId(isOpen ? null : id)}
-                className="w-full flex items-center justify-between px-6 py-5 text-left hover:bg-slate-50 transition-colors cursor-pointer"
+                className="w-full flex items-center justify-between px-6 py-5 text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               >
-                <span className="font-bold text-slate-800 text-xs pr-4">{faq.q}</span>
+                <span className="font-bold text-slate-800 dark:text-slate-200 text-xs pr-4">{faq.q}</span>
                 <ChevronDown className={`w-4 h-4 text-slate-500 flex-shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180 text-amber-600' : ''}`} />
               </button>
               <AnimatePresence>

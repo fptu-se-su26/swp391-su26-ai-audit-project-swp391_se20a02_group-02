@@ -265,7 +265,7 @@ export const MyDocuments: React.FC = () => {
   const selfieCompleted = selfie && selfie.status !== 'FAILED';
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-10 min-h-screen bg-[#FAFAFA] text-slate-900 rounded-[2.5rem] shadow-sm border border-slate-100">
+    <div className="max-w-5xl mx-auto px-6 py-10 min-h-screen bg-[#FAFAFA] dark:bg-slate-950 text-slate-900 dark:text-slate-50 rounded-[2.5rem] shadow-sm border border-slate-100 dark:border-slate-800">
       <input 
         type="file" 
         ref={fileInputRef} 
@@ -279,14 +279,14 @@ export const MyDocuments: React.FC = () => {
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-xs font-semibold uppercase tracking-wider mb-3">
           <Shield className="w-3.5 h-3.5" /> Identity & Verification
         </div>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900">Vietnam Rental eKYC Upgrade</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50">Vietnam Rental eKYC Upgrade</h1>
         <p className="text-slate-500 mt-2 max-w-xl">
           Complete the 3-step verification process to unlock luxury vehicle rentals on the LuxeWay platform.
         </p>
       </div>
 
       {/* Profile Verification Banner Status */}
-      <div className="mb-8 p-6 rounded-2xl bg-white border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="mb-8 p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider">KYC Verification Status</div>
           <div className="flex items-center gap-3 mt-1">
@@ -336,12 +336,12 @@ export const MyDocuments: React.FC = () => {
             onClick={() => setActiveStep(s.step)}
             className={`p-4 rounded-2xl text-left border transition-all duration-200 relative overflow-hidden ${
               activeStep === s.step 
-                ? 'bg-white border-indigo-650 shadow-md ring-1 ring-indigo-650' 
-                : 'bg-white border-slate-100 hover:border-slate-200 shadow-sm'
+                ? 'bg-white dark:bg-slate-900 border-indigo-650 shadow-md ring-1 ring-indigo-650' 
+                : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:border-slate-700 shadow-sm'
             }`}
           >
             <div className="flex items-center justify-between mb-2">
-              <div className={`p-2 rounded-xl ${activeStep === s.step ? 'bg-indigo-50 text-indigo-650' : 'bg-slate-50 text-slate-400'}`}>
+              <div className={`p-2 rounded-xl ${activeStep === s.step ? 'bg-indigo-50 text-indigo-650' : 'bg-slate-50 dark:bg-slate-900 text-slate-400'}`}>
                 <s.icon className="w-5 h-5" />
               </div>
               {s.completed ? (
@@ -352,13 +352,13 @@ export const MyDocuments: React.FC = () => {
                 <span className="text-xs font-semibold text-slate-400">Step {s.step}</span>
               )}
             </div>
-            <div className="font-bold text-sm text-slate-900">{s.label}</div>
+            <div className="font-bold text-sm text-slate-900 dark:text-slate-50">{s.label}</div>
           </button>
         ))}
       </div>
 
       {/* Step Panels */}
-      <div className="bg-white border border-slate-100 rounded-3xl p-8 shadow-sm mb-8">
+      <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-8 shadow-sm mb-8">
         <AnimatePresence mode="wait">
           {activeStep === 1 && (
             <motion.div
@@ -369,23 +369,23 @@ export const MyDocuments: React.FC = () => {
               className="space-y-6"
             >
               <div>
-                <h3 className="text-lg font-bold text-slate-900">Step 1: Citizen ID Card (CCCD)</h3>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-50">Step 1: Citizen ID Card (CCCD)</h3>
                 <p className="text-sm text-slate-400">Upload high-resolution images of both the front and back of your citizen ID card.</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Front Side */}
-                <div className="border border-slate-100 rounded-2xl p-6 bg-slate-50/50 flex flex-col items-center justify-center text-center min-h-[260px] relative">
+                <div className="border border-slate-100 dark:border-slate-800 rounded-2xl p-6 bg-slate-50 dark:bg-slate-900/50 flex flex-col items-center justify-center text-center min-h-[260px] relative">
                   {cccdFront ? (
                     <div className="w-full flex flex-col items-center">
                       <img 
                         src={resolveUrl(cccdFront.url)} 
                         alt="CCCD Front" 
-                        className="w-full max-h-40 object-cover rounded-xl border border-slate-200 mb-4"
+                        className="w-full max-h-40 object-cover rounded-xl border border-slate-200 dark:border-slate-700 mb-4"
                       />
                       <div className="text-xs text-slate-400 mb-2">CCCD FRONT SIDE</div>
                       {cccdFront.ekycFullName && (
-                        <div className="p-3 bg-white rounded-xl border border-slate-100 text-left w-full text-xs space-y-1">
+                        <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 text-left w-full text-xs space-y-1">
                           <div><strong>Name:</strong> {cccdFront.ekycFullName}</div>
                           <div><strong>ID:</strong> {cccdFront.ekycIdNumber}</div>
                           <div><strong>DOB:</strong> {cccdFront.ekycDob}</div>
@@ -419,16 +419,16 @@ export const MyDocuments: React.FC = () => {
                 </div>
 
                 {/* Back Side */}
-                <div className="border border-slate-100 rounded-2xl p-6 bg-slate-50/50 flex flex-col items-center justify-center text-center min-h-[260px] relative">
+                <div className="border border-slate-100 dark:border-slate-800 rounded-2xl p-6 bg-slate-50 dark:bg-slate-900/50 flex flex-col items-center justify-center text-center min-h-[260px] relative">
                   {cccdBack ? (
                     <div className="w-full flex flex-col items-center">
                       <img 
                         src={resolveUrl(cccdBack.url)} 
                         alt="CCCD Back" 
-                        className="w-full max-h-40 object-cover rounded-xl border border-slate-200 mb-4"
+                        className="w-full max-h-40 object-cover rounded-xl border border-slate-200 dark:border-slate-700 mb-4"
                       />
                       <div className="text-xs text-slate-400 mb-2">CCCD BACK SIDE</div>
-                      <div className="p-3 bg-white rounded-xl border border-slate-100 text-left w-full text-xs text-slate-400 text-center">
+                      <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 text-left w-full text-xs text-slate-400 text-center">
                         Image scanned and uploaded.
                       </div>
                       {user?.kycStatus !== 'PENDING' && (
@@ -481,23 +481,23 @@ export const MyDocuments: React.FC = () => {
               className="space-y-6"
             >
               <div>
-                <h3 className="text-lg font-bold text-slate-900">Step 2: Driver's License</h3>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-50">Step 2: Driver's License</h3>
                 <p className="text-sm text-slate-400">Upload your driving license. FPT AI will automatically detect the license class (A1/A2/B1/B2/C/D).</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Front Side */}
-                <div className="border border-slate-100 rounded-2xl p-6 bg-slate-50/50 flex flex-col items-center justify-center text-center min-h-[260px] relative">
+                <div className="border border-slate-100 dark:border-slate-800 rounded-2xl p-6 bg-slate-50 dark:bg-slate-900/50 flex flex-col items-center justify-center text-center min-h-[260px] relative">
                   {dlFront ? (
                     <div className="w-full flex flex-col items-center">
                       <img 
                         src={resolveUrl(dlFront.url)} 
                         alt="DL Front" 
-                        className="w-full max-h-40 object-cover rounded-xl border border-slate-200 mb-4"
+                        className="w-full max-h-40 object-cover rounded-xl border border-slate-200 dark:border-slate-700 mb-4"
                       />
                       <div className="text-xs text-slate-400 mb-2">LICENSE FRONT SIDE</div>
                       {dlFront.licenseNumber && (
-                        <div className="p-3 bg-white rounded-xl border border-slate-100 text-left w-full text-xs space-y-1">
+                        <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 text-left w-full text-xs space-y-1">
                           <div><strong>Name:</strong> {dlFront.licenseFullName}</div>
                           <div><strong>No:</strong> {dlFront.licenseNumber}</div>
                           <div><strong>Class:</strong> <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded font-bold">{dlFront.licenseClass}</span></div>
@@ -536,16 +536,16 @@ export const MyDocuments: React.FC = () => {
                 </div>
 
                 {/* Back Side */}
-                <div className="border border-slate-100 rounded-2xl p-6 bg-slate-50/50 flex flex-col items-center justify-center text-center min-h-[260px] relative">
+                <div className="border border-slate-100 dark:border-slate-800 rounded-2xl p-6 bg-slate-50 dark:bg-slate-900/50 flex flex-col items-center justify-center text-center min-h-[260px] relative">
                   {dlBack ? (
                     <div className="w-full flex flex-col items-center">
                       <img 
                         src={resolveUrl(dlBack.url)} 
                         alt="DL Back" 
-                        className="w-full max-h-40 object-cover rounded-xl border border-slate-200 mb-4"
+                        className="w-full max-h-40 object-cover rounded-xl border border-slate-200 dark:border-slate-700 mb-4"
                       />
                       <div className="text-xs text-slate-400 mb-2">LICENSE BACK SIDE</div>
-                      <div className="p-3 bg-white rounded-xl border border-slate-100 text-left w-full text-xs text-slate-400 text-center">
+                      <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 text-left w-full text-xs text-slate-400 text-center">
                         Image scanned and uploaded.
                       </div>
                       {user?.kycStatus !== 'PENDING' && (
@@ -579,7 +579,7 @@ export const MyDocuments: React.FC = () => {
               <div className="flex justify-between pt-4">
                 <button 
                   onClick={() => setActiveStep(1)}
-                  className="py-3 px-5 border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold rounded-xl text-xs transition-colors"
+                  className="py-3 px-5 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 font-semibold rounded-xl text-xs transition-colors"
                 >
                   Back to Step 1
                 </button>
@@ -604,11 +604,11 @@ export const MyDocuments: React.FC = () => {
               className="space-y-6"
             >
               <div>
-                <h3 className="text-lg font-bold text-slate-900">Step 3: Selfie Verification</h3>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-50">Step 3: Selfie Verification</h3>
                 <p className="text-sm text-slate-400">Take or upload a portrait photo. FPT AI will match the face similarity against your Citizen ID Front card image.</p>
               </div>
 
-              <div className="border border-slate-100 rounded-2xl p-6 bg-slate-50/50 flex flex-col items-center justify-center text-center min-h-[300px] relative max-w-md mx-auto">
+              <div className="border border-slate-100 dark:border-slate-800 rounded-2xl p-6 bg-slate-50 dark:bg-slate-900/50 flex flex-col items-center justify-center text-center min-h-[300px] relative max-w-md mx-auto">
                 {selfie ? (
                   <div className="w-full flex flex-col items-center">
                     <img 
@@ -622,14 +622,14 @@ export const MyDocuments: React.FC = () => {
                         try {
                           const parsed = JSON.parse(selfie.ocrData);
                           return (
-                            <div className="p-3 bg-white rounded-xl border border-slate-100 text-left w-full text-xs space-y-1">
+                            <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 text-left w-full text-xs space-y-1">
                               <div><strong>Face Match score:</strong> <span className="font-bold text-green-600">{parsed.similarity || parsed.score || '94.2'}%</span></div>
                               <div><strong>Liveness Check:</strong> <span className="font-bold text-indigo-600">Passed</span></div>
                             </div>
                           );
                         } catch {
                           return (
-                            <div className="p-3 bg-white rounded-xl border border-slate-100 text-left w-full text-xs space-y-1">
+                            <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 text-left w-full text-xs space-y-1">
                               <div><strong>Face Match status:</strong> <span className="font-bold text-green-600">Verified Match (94.2%)</span></div>
                             </div>
                           );
@@ -672,7 +672,7 @@ export const MyDocuments: React.FC = () => {
                       <button
                         onClick={stopCamera}
                         disabled={uploadingDoc === 'SELFIE'}
-                        className="py-2 px-4 border border-slate-200 hover:bg-slate-50 text-slate-600 text-xs font-semibold rounded-xl transition-colors"
+                        className="py-2 px-4 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 text-xs font-semibold rounded-xl transition-colors"
                       >
                         {isVi ? 'Hủy' : 'Cancel'}
                       </button>
@@ -703,7 +703,7 @@ export const MyDocuments: React.FC = () => {
                       <button 
                         disabled={user?.kycStatus === 'PENDING' || uploadingDoc === 'SELFIE' || !cccdFront}
                         onClick={() => triggerUpload('SELFIE')}
-                        className="py-2 px-4 border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl text-xs font-bold disabled:opacity-50 flex items-center justify-center gap-1.5"
+                        className="py-2 px-4 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 rounded-xl text-xs font-bold disabled:opacity-50 flex items-center justify-center gap-1.5"
                       >
                         <Upload className="w-3.5 h-3.5" /> {isVi ? 'Tải ảnh lên' : 'Upload Selfie Photo'}
                       </button>
@@ -715,7 +715,7 @@ export const MyDocuments: React.FC = () => {
               <div className="flex justify-between pt-4">
                 <button 
                   onClick={() => setActiveStep(2)}
-                  className="py-3 px-5 border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold rounded-xl text-xs transition-colors"
+                  className="py-3 px-5 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 font-semibold rounded-xl text-xs transition-colors"
                 >
                   Back to Step 2
                 </button>
@@ -736,7 +736,7 @@ export const MyDocuments: React.FC = () => {
                   <div className="w-16 h-16 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-4 animate-pulse">
                     <Loader2 className="w-8 h-8 animate-spin" />
                   </div>
-                  <h3 className="text-xl font-bold text-slate-900">Waiting for Approval</h3>
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-slate-50">Waiting for Approval</h3>
                   <p className="text-sm text-slate-500 font-semibold">
                     Your verification is waiting for admin approval.
                   </p>
@@ -749,7 +749,7 @@ export const MyDocuments: React.FC = () => {
                   <div className="w-16 h-16 rounded-full bg-green-500 text-white flex items-center justify-center mx-auto mb-4 shadow-md">
                     <Check className="w-8 h-8 stroke-[3]" />
                   </div>
-                  <h3 className="text-xl font-bold text-slate-900">Verification Approved</h3>
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-slate-50">Verification Approved</h3>
                   <p className="text-sm text-green-600 font-bold">
                     Your KYC has been approved. You can rent vehicles now.
                   </p>
@@ -762,7 +762,7 @@ export const MyDocuments: React.FC = () => {
                   <div className="w-16 h-16 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto mb-4">
                     <AlertCircle className="w-8 h-8" />
                   </div>
-                  <h3 className="text-xl font-bold text-slate-900">Verification Rejected</h3>
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-slate-50">Verification Rejected</h3>
                   <p className="text-sm text-rose-600 font-bold">
                     KYC rejected. Reason: {backendDocs.find(d => d.status === 'REJECTED')?.rejectionReason || 'Documents rejected by administrator'}
                   </p>
@@ -781,7 +781,7 @@ export const MyDocuments: React.FC = () => {
                   <div className="w-16 h-16 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto mb-4">
                     <AlertCircle className="w-8 h-8" />
                   </div>
-                  <h3 className="text-xl font-bold text-slate-900">Verification Failed</h3>
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-slate-50">Verification Failed</h3>
                   <p className="text-sm text-rose-600 font-bold">
                     Your identity document verification failed. Please upload again.
                   </p>
@@ -797,10 +797,10 @@ export const MyDocuments: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <div className="w-16 h-16 rounded-full bg-slate-50 text-slate-400 flex items-center justify-center mx-auto mb-4">
+                  <div className="w-16 h-16 rounded-full bg-slate-50 dark:bg-slate-900 text-slate-400 flex items-center justify-center mx-auto mb-4">
                     <Shield className="w-8 h-8" />
                   </div>
-                  <h3 className="text-xl font-bold text-slate-900">Submit for Approval</h3>
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-slate-50">Submit for Approval</h3>
                   <p className="text-sm text-slate-500">
                     All document steps are complete. Please submit your application for administrator review.
                   </p>
@@ -837,7 +837,7 @@ export const MyDocuments: React.FC = () => {
 
       {/* Action Footer */}
       {user?.kycStatus !== 'PENDING' && user?.kycStatus !== 'VERIFIED' && user?.kycStatus !== 'FAILED' && user?.kycStatus !== 'REJECTED' && (
-        <div className="flex items-center justify-between p-6 bg-slate-50 rounded-2xl border border-slate-100">
+        <div className="flex items-center justify-between p-6 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800">
           <div className="text-xs text-slate-400 max-w-md">
             Once you submit, your files will be locked and reviewed by an administrator. Review typically takes 5-10 minutes.
           </div>

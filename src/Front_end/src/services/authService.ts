@@ -56,6 +56,10 @@ export const authService = {
           badges: userInfo.badges || [],
           accountType: userInfo.accountType || 'INDIVIDUAL',
           preferredLanguage: userInfo.preferredLanguage || 'en',
+          kycStatus: userInfo.kycStatus,
+          driverLicenseStatus: userInfo.driverLicenseStatus,
+          licenseClass: userInfo.licenseClass,
+          licenseNumber: userInfo.licenseNumber,
         } as unknown as User;
         
         localStorage.setItem(USER_KEY, JSON.stringify(user));
@@ -111,6 +115,10 @@ export const authService = {
           badges: [],
           accountType: payload.accountType as any,
           preferredLanguage: userInfo.preferredLanguage || 'en',
+          kycStatus: userInfo.kycStatus,
+          driverLicenseStatus: userInfo.driverLicenseStatus,
+          licenseClass: userInfo.licenseClass,
+          licenseNumber: userInfo.licenseNumber,
         } as unknown as User;
         
         localStorage.setItem(USER_KEY, JSON.stringify(user));
@@ -191,6 +199,10 @@ export const authService = {
         badges: userInfo.badges || [],
         accountType: userInfo.accountType || 'INDIVIDUAL',
         preferredLanguage: userInfo.preferredLanguage || 'en',
+        kycStatus: userInfo.kycStatus,
+        driverLicenseStatus: userInfo.driverLicenseStatus,
+        licenseClass: userInfo.licenseClass,
+        licenseNumber: userInfo.licenseNumber,
       } as unknown as User;
       
       localStorage.setItem(USER_KEY, JSON.stringify(user));

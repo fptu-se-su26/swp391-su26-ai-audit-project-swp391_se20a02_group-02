@@ -71,10 +71,10 @@ public class Review {
     @Min(1) @Max(5)
     private Integer valueRating;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "NVARCHAR(MAX)")
     private String comment;
 
-    @Column(name = "owner_response", columnDefinition = "TEXT")
+    @Column(name = "owner_response", columnDefinition = "NVARCHAR(MAX)")
     private String ownerResponse;
 
     @Column

@@ -17,4 +17,5 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.SQLServerDialect
         format_sql: true
+        use_nationalized_character_data: true
     defer-datasource-initialization: true

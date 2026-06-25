@@ -27,7 +27,7 @@ public class NotificationLog {
     @Column(nullable = false, length = 200)
     private String title;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = false, columnDefinition = "NVARCHAR(MAX)")
     private String body;
 
     @Column(nullable = false, length = 20)
@@ -41,7 +41,7 @@ public class NotificationLog {
     @Builder.Default
     private LocalDateTime sentAt = LocalDateTime.now();
 
-    @Column(name = "error_message", columnDefinition = "TEXT")
+    @Column(name = "error_message", columnDefinition = "NVARCHAR(MAX)")
     private String errorMessage;
 
     @PrePersist

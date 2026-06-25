@@ -35,8 +35,8 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, label, classNa
       case 'failed':
       default:
         return {
-          wrapper: 'bg-slate-500/10 text-slate-500 border-slate-500/20 dark:bg-slate-900/20 dark:text-slate-400 dark:border-slate-800/30',
-          dot: 'bg-slate-400 dark:bg-slate-500',
+          wrapper: 'bg-slate-50 dark:bg-slate-9000/10 text-slate-500 border-slate-500/20 dark:bg-slate-900/20 dark:text-slate-400 dark:border-slate-800/30',
+          dot: 'bg-slate-400 dark:bg-slate-50 dark:bg-slate-9000',
           defaultLabel: 'Inactive',
         };
     }

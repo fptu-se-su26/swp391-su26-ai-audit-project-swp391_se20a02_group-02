@@ -95,11 +95,11 @@ public class SecurityConfig {
                     "/v3/api-docs/**",
                     // Actuator
                     "/actuator/**",
-                    // VNPay callbacks (must be public since VNPay server calls them)
-                    "/payments/vnpay/callback",
-                    "/payments/vnpay/return",
-                    "/api/v1/payments/vnpay/callback",
-                    "/api/v1/payments/vnpay/return",
+                    // MoMo callbacks (must be public since MoMo server calls IPN without auth)
+                    "/payments/momo/ipn",
+                    "/payments/momo/return",
+                    "/api/v1/payments/momo/ipn",
+                    "/api/v1/payments/momo/return",
                     // Static uploads
                     "/uploads/**",
                     "/api/v1/uploads/**",

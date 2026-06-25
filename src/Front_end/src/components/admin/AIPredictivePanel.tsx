@@ -33,7 +33,7 @@ const COLORS = ['#6366F1', '#10B981', '#F59E0B', '#EC4899', '#06B6D4', '#A855F7'
 const glassCard = (isDark: boolean) =>
   cn(
     'rounded-2xl border backdrop-blur-md transition-all duration-300',
-    isDark ? 'bg-slate-900/60 border-slate-700/40' : 'bg-white/80 border-slate-200'
+    isDark ? 'bg-slate-900/60 border-slate-700/40' : 'bg-white/80 border-slate-200 dark:border-slate-700'
   );
 
 // ─── Skeleton placeholder ──────────────────────────────────────────────────
@@ -68,12 +68,12 @@ const Section: React.FC<SectionProps> = ({ title, icon, isDark, children, onRefr
   return (
     <div className={cn(glassCard(isDark), 'overflow-hidden')}>
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200/10 dark:border-slate-700/30">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700/10 dark:border-slate-700/30">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-500">
             {icon}
           </div>
-          <h3 className={cn('font-black text-xs uppercase tracking-widest', isDark ? 'text-slate-200' : 'text-slate-800')}>
+          <h3 className={cn('font-black text-xs uppercase tracking-widest', isDark ? 'text-slate-200' : 'text-slate-800 dark:text-slate-200')}>
             {title}
           </h3>
           {badge}
@@ -85,7 +85,7 @@ const Section: React.FC<SectionProps> = ({ title, icon, isDark, children, onRefr
               disabled={isRefreshing}
               className={cn(
                 'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all',
-                isDark ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                isDark ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700' : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800'
               )}
             >
               <RefreshCw className={cn('w-3 h-3', isRefreshing && 'animate-spin')} />
@@ -94,7 +94,7 @@ const Section: React.FC<SectionProps> = ({ title, icon, isDark, children, onRefr
           )}
           <button
             onClick={() => setCollapsed(c => !c)}
-            className="p-1.5 rounded-lg hover:bg-slate-500/10 transition-all"
+            className="p-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-8000/10 transition-all"
           >
             {collapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
           </button>
@@ -289,7 +289,7 @@ const AIPredictivePanel: React.FC<AIPredictivePanelProps> = ({ isDark, currency 
       </span>
     );
     return (
-      <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase bg-slate-500/10 text-slate-400 border border-slate-500/20">
+      <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase bg-slate-50 dark:bg-slate-9000/10 text-slate-400 border border-slate-500/20">
         <Minus className="w-3 h-3" /> STABLE
       </span>
     );
@@ -318,7 +318,7 @@ const AIPredictivePanel: React.FC<AIPredictivePanelProps> = ({ isDark, currency 
           <div className="flex items-center gap-2 ml-2">
             {trendBadge(rev?.trend_direction)}
             {rev && (
-              <span className={cn('text-[9px] font-black uppercase px-2 py-1 rounded-full border', isDark ? 'border-slate-700 text-slate-400' : 'border-slate-200 text-slate-500')}>
+              <span className={cn('text-[9px] font-black uppercase px-2 py-1 rounded-full border', isDark ? 'border-slate-700 text-slate-400' : 'border-slate-200 dark:border-slate-700 text-slate-500')}>
                 R² {(rev.r2_score * 100).toFixed(1)}%
               </span>
             )}
@@ -398,7 +398,7 @@ const AIPredictivePanel: React.FC<AIPredictivePanelProps> = ({ isDark, currency 
                       'px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border',
                       isPeak
                         ? 'bg-indigo-600 text-white border-indigo-500'
-                        : isDark ? 'bg-slate-800 text-slate-400 border-slate-700' : 'bg-slate-50 text-slate-500 border-slate-200'
+                        : isDark ? 'bg-slate-800 text-slate-400 border-slate-700' : 'bg-slate-50 dark:bg-slate-900 text-slate-500 border-slate-200 dark:border-slate-700'
                     )}
                   >
                     {day.slice(0, 3)} {(weight * 100).toFixed(1)}%
@@ -484,7 +484,7 @@ const AIPredictivePanel: React.FC<AIPredictivePanelProps> = ({ isDark, currency 
                 key={c.user_id}
                 className={cn(
                   'flex items-center justify-between gap-3 p-3.5 rounded-2xl border',
-                  isDark ? 'bg-slate-800/40 border-slate-700/30' : 'bg-slate-50 border-slate-200/60'
+                  isDark ? 'bg-slate-800/40 border-slate-700/30' : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700/60'
                 )}
               >
                 <div className="flex items-center gap-3 min-w-0">
@@ -492,7 +492,7 @@ const AIPredictivePanel: React.FC<AIPredictivePanelProps> = ({ isDark, currency 
                     {i + 1}
                   </div>
                   <div className="min-w-0">
-                    <p className={cn('text-xs font-black truncate', isDark ? 'text-slate-200' : 'text-slate-800')}>
+                    <p className={cn('text-xs font-black truncate', isDark ? 'text-slate-200' : 'text-slate-800 dark:text-slate-200')}>
                       {c.display_name}
                     </p>
                     <p className="text-[9px] text-slate-400 truncate">{c.email}</p>
@@ -547,7 +547,7 @@ const AIPredictivePanel: React.FC<AIPredictivePanelProps> = ({ isDark, currency 
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
-                <tr className={cn('border-b', isDark ? 'border-slate-700' : 'border-slate-200')}>
+                <tr className={cn('border-b', isDark ? 'border-slate-700' : 'border-slate-200 dark:border-slate-700')}>
                   {['Date', 'Metric', 'Actual', 'Expected', 'Z-Score', 'Severity'].map(h => (
                     <th key={h} className="text-left py-2.5 px-3 font-black uppercase tracking-widest text-[9px] text-slate-400">{h}</th>
                   ))}
@@ -555,7 +555,7 @@ const AIPredictivePanel: React.FC<AIPredictivePanelProps> = ({ isDark, currency 
               </thead>
               <tbody>
                 {anomalies.map((a, i) => (
-                  <tr key={i} className={cn('border-b', isDark ? 'border-slate-800' : 'border-slate-100')}>
+                  <tr key={i} className={cn('border-b', isDark ? 'border-slate-800' : 'border-slate-100 dark:border-slate-800')}>
                     <td className="py-2.5 px-3 font-mono">{a.date}</td>
                     <td className="py-2.5 px-3 font-bold capitalize">{a.metric}</td>
                     <td className="py-2.5 px-3">{a.actual_value.toLocaleString()}</td>
@@ -608,7 +608,7 @@ const AIPredictivePanel: React.FC<AIPredictivePanelProps> = ({ isDark, currency 
                       ? 'bg-red-500/5 border-red-500/20'
                       : isWarning
                       ? 'bg-amber-500/5 border-amber-500/20'
-                      : isDark ? 'bg-slate-800/40 border-slate-700/30' : 'bg-slate-50 border-slate-200'
+                      : isDark ? 'bg-slate-800/40 border-slate-700/30' : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700'
                   )}
                 >
                   <div className="flex-shrink-0 mt-0.5">
@@ -623,7 +623,7 @@ const AIPredictivePanel: React.FC<AIPredictivePanelProps> = ({ isDark, currency 
                   <div className="min-w-0 flex-1">
                     <p className={cn(
                       'text-xs font-black mb-1',
-                      isCritical ? 'text-red-500' : isWarning ? 'text-amber-500' : isDark ? 'text-white' : 'text-slate-800'
+                      isCritical ? 'text-red-500' : isWarning ? 'text-amber-500' : isDark ? 'text-white' : 'text-slate-800 dark:text-slate-200'
                     )}>
                       {insight.title}
                     </p>

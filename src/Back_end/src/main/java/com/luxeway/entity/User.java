@@ -84,7 +84,7 @@ public class User implements UserDetails {
 
     @Column(name = "kyc_status", length = 20, nullable = false)
     @Builder.Default
-    private String kycStatus = "REJECTED";
+    private String kycStatus = "NOT_UPLOADED";
 
     @Column(name = "driver_license_status", length = 20, nullable = false)
     @Builder.Default
@@ -108,7 +108,7 @@ public class User implements UserDetails {
     @Builder.Default
     private Integer totalRentals = 0;
     
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "NVARCHAR(MAX)")
     private String bio;
     
     @Column(length = 200)

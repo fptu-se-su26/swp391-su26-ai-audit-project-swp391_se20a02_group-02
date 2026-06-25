@@ -22,9 +22,9 @@ const formatVND = (val: number) => {
 const CustomAnalyticsTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-white border border-slate-200 p-3.5 rounded-lg shadow-xl text-xs font-semibold text-slate-800">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-3.5 rounded-lg shadow-xl text-xs font-semibold text-slate-800 dark:text-slate-200">
         <p className="text-slate-550 font-bold mb-1">{label}</p>
-        <p className="text-slate-800 font-extrabold flex items-center gap-1.5">
+        <p className="text-slate-800 dark:text-slate-200 font-extrabold flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 bg-indigo-500 rounded-full inline-block" />
           Revenue: <span className="text-indigo-600">{formatVND(payload[0].value)}</span>
         </p>

@@ -109,6 +109,7 @@ public class VnptEkycService {
 
         // Mark user as KYC verified
         user.setKycVerified(true);
+        user.setKycStatus("VERIFIED");  // Also update kycStatus so booking checks pass
         userRepository.save(user);
 
         log.info("eKYC: User {} KYC verified successfully. CCCD: {}", userId, frontDoc.getEkycIdNumber());
@@ -227,15 +228,22 @@ public class VnptEkycService {
             EkycDTOs.IdCardData cardData = parseDlResponse(responseData, side);
 
             String documentType = "DL_FRONT".equals(side) ? "DRIVING_LICENSE_FRONT" : "DRIVING_LICENSE_BACK";
+            // cardData.getIdNumber() holds the license number from VNPT OCR
+            // cardData.getDocumentType() holds the license class (e.g. "B2") from VNPT OCR
             UserDocument doc = UserDocument.builder()
                     .user(user)
                     .documentType(documentType)
                     .url(imageUrl)
                     .status("PENDING")  // DL needs admin review
+                    .verificationStatus("UNDER_REVIEW")
                     .ekycRawData(responseData != null ? responseData.toString() : null)
                     .ekycIdNumber(cardData.getIdNumber())
                     .ekycFullName(cardData.getFullName())
                     .ekycDob(cardData.getDateOfBirth())
+                    .licenseNumber(cardData.getIdNumber())
+                    .licenseClass(cardData.getDocumentType())  // VNPT stores license class in documentType field
+                    .licenseFullName(cardData.getFullName())
+                    .licenseDateOfBirth(cardData.getDateOfBirth())
                     .build();
 
             doc = userDocumentRepository.save(doc);

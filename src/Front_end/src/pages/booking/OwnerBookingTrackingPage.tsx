@@ -373,7 +373,7 @@ export const OwnerBookingTrackingPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className={`min-h-screen pt-20 flex flex-col items-center justify-center ${isDark ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-900'}`}>
+      <div className={`min-h-screen pt-20 flex flex-col items-center justify-center ${isDark ? 'bg-slate-900 text-white' : 'bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-50'}`}>
         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500 mb-4" />
         <p className="text-sm font-bold uppercase tracking-wider">Loading GPS Simulator Control Console...</p>
       </div>
@@ -382,7 +382,7 @@ export const OwnerBookingTrackingPage: React.FC = () => {
 
   if (!bookingInfo) {
     return (
-      <div className={`min-h-screen pt-20 flex flex-col items-center justify-center p-4 ${isDark ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-900'}`}>
+      <div className={`min-h-screen pt-20 flex flex-col items-center justify-center p-4 ${isDark ? 'bg-slate-900 text-white' : 'bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-50'}`}>
         <div className="max-w-md text-center p-8 rounded-3xl bg-red-500/10 border border-red-500/20">
           <p className="text-sm font-bold text-red-500">Failed to retrieve coordinates for this booking or tracking is inactive.</p>
           <Link to="/owner/bookings" className="btn-primary mt-6 inline-block">Back to Host Bookings</Link>
@@ -392,7 +392,7 @@ export const OwnerBookingTrackingPage: React.FC = () => {
   }
 
   return (
-    <div className={`min-h-screen pt-16 flex flex-col ${isDark ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-900'}`}>
+    <div className={`min-h-screen pt-16 flex flex-col ${isDark ? 'bg-slate-950 text-white' : 'bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-50'}`}>
       
       {/* Upper Navigation Header */}
       <div className="p-4 flex items-center justify-between border-b border-white/5 bg-slate-900/60 backdrop-blur-md relative z-20">

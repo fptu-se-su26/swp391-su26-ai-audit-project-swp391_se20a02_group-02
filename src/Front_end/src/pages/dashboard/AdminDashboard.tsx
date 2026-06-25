@@ -844,7 +844,7 @@ export const AdminOverview: React.FC = () => {
               <div key={metric.label}>
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${metric.status === 'online' ? 'bg-emerald-400 animate-pulse' : metric.status === 'warning' ? 'bg-amber-400' : 'bg-slate-500'}`} />
+                    <div className={`w-2 h-2 rounded-full ${metric.status === 'online' ? 'bg-emerald-400 animate-pulse' : metric.status === 'warning' ? 'bg-amber-400' : 'bg-slate-50 dark:bg-slate-9000'}`} />
                     <span className="text-xs font-medium" style={{ color: 'rgba(148,163,184,0.8)' }}>{metric.label}</span>
                   </div>
                   <span className="text-xs font-bold text-white">{loading ? '...' : metric.latency}</span>

@@ -38,14 +38,27 @@ public class PaymentService {
     @org.springframework.context.annotation.Lazy
     private final BookingService bookingService;
 
-    @Value("${payment.vnpay.url:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}")
-    private String vnpayUrl;
+    // ====== MoMo Configuration ======
+    @Value("${payment.momo.partner-code:MOMO}")
+    private String momoPartnerCode;
 
-    @Value("${payment.vnpay.tmn-code:LUXEWAY1}")
-    private String vnpayTmnCode;
+    @Value("${payment.momo.access-key:F8BBA842ECF85}")
+    private String momoAccessKey;
 
-    @Value("${payment.vnpay.secret-key:IKGZVMMTMTUYKQLJILPBYXJVHOUCGFDF}")
-    private String vnpaySecretKey;
+    @Value("${payment.momo.secret-key:K951B6PE1waDMi640xX08PD3vg6EkVlz}")
+    private String momoSecretKey;
+
+    @Value("${payment.momo.endpoint:https://test-payment.momo.vn/v2/gateway/api/create}")
+    private String momoEndpoint;
+
+    @Value("${payment.momo.return-url:http://localhost:5173/payment/momo/return}")
+    private String momoReturnUrl;
+
+    @Value("${payment.momo.ipn-url:http://localhost:5101/api/payment/momo-ipn}")
+    private String momoIpnUrl;
+
+    @Value("${payment.momo.request-type:payWithMethod}")
+    private String momoRequestType;
 
     // ====== Create Payment ======
 
@@ -83,39 +96,36 @@ public class PaymentService {
             if (user.getWalletBalance().compareTo(req.getAmount()) < 0) {
                 throw new RuntimeException("Insufficient wallet balance. Please top up your LuxeWallet.");
             }
-            // Deduct balance
             user.setWalletBalance(user.getWalletBalance().subtract(req.getAmount()));
             userRepository.save(user);
 
-            // Complete payment
             payment.setStatus(PaymentStatus.SUCCEEDED);
             payment.setProcessedAt(LocalDateTime.now());
             paymentRepository.save(payment);
 
-            // Confirm booking and block availability calendar
             booking.setStatus(com.luxeway.enums.BookingStatus.CONFIRMED);
             bookingRepository.save(booking);
-            // BUG-07 FIX: Block availability calendar so vehicle no longer appears as available
             bookingService.blockAvailabilityCalendarPublic(booking);
 
             response = toResponse(payment);
             log.info("LuxeWallet payment successful: deducted {} from user {}", req.getAmount(), userId);
+
         } else if ("stripe".equalsIgnoreCase(req.getMethod()) || "card".equalsIgnoreCase(req.getMethod())) {
-            // Complete payment immediately for simulated flow
             payment.setStatus(PaymentStatus.SUCCEEDED);
             payment.setProcessedAt(LocalDateTime.now());
             paymentRepository.save(payment);
 
-            // Confirm booking and block availability calendar
             booking.setStatus(com.luxeway.enums.BookingStatus.CONFIRMED);
             bookingRepository.save(booking);
-            // BUG-07 FIX: Block availability calendar so vehicle no longer appears as available
             bookingService.blockAvailabilityCalendarPublic(booking);
 
             response = toResponse(payment);
             log.info("Stripe/Card payment successful immediately: {}", transactionId);
-        } else if ("vnpay".equalsIgnoreCase(req.getMethod())) {
-            String paymentUrl = buildVNPayUrl(payment, req.getReturnUrl());
+
+        } else if ("momo".equalsIgnoreCase(req.getMethod())) {
+            String returnUrl = req.getReturnUrl() != null && !req.getReturnUrl().isEmpty()
+                    ? req.getReturnUrl() : momoReturnUrl;
+            String paymentUrl = buildMoMoPaymentUrl(payment, returnUrl);
             response.setPaymentUrl(paymentUrl);
         }
 
@@ -145,19 +155,20 @@ public class PaymentService {
 
         PaymentDTOs.PaymentResponse response = toResponse(payment);
 
-        if ("vnpay".equalsIgnoreCase(req.getMethod())) {
-            String paymentUrl = buildVNPayUrl(payment, req.getReturnUrl());
+        if ("momo".equalsIgnoreCase(req.getMethod())) {
+            String returnUrl = req.getReturnUrl() != null && !req.getReturnUrl().isEmpty()
+                    ? req.getReturnUrl() : momoReturnUrl;
+            String paymentUrl = buildMoMoPaymentUrl(payment, returnUrl);
             response.setPaymentUrl(paymentUrl);
         } else {
             // Stripe or Credit Card top-up succeeds instantly
             payment.setStatus(PaymentStatus.SUCCEEDED);
             payment.setProcessedAt(LocalDateTime.now());
             paymentRepository.save(payment);
-            
-            // Add wallet balance
+
             user.setWalletBalance(user.getWalletBalance().add(req.getAmount()));
             userRepository.save(user);
-            
+
             response = toResponse(payment);
             log.info("LuxeWallet Top Up successful: user {} balance is now {}", userId, user.getWalletBalance());
         }
@@ -191,83 +202,129 @@ public class PaymentService {
                 .map(this::toResponse);
     }
 
-    // ====== Process VNPay callback ======
+    // ====== Process MoMo IPN (Instant Payment Notification) ======
 
+    /**
+     * MoMo IPN is sent as POST from MoMo server after payment.
+     * Verifies signature then updates payment & booking.
+     */
     @Transactional
-    public PaymentDTOs.PaymentResponse processVNPayCallback(Map<String, String> params) {
-        // Verify VNPay signature (strictly mandatory)
-        String secureHash = params.get("vnp_SecureHash");
-        if (secureHash == null || secureHash.trim().isEmpty()) {
-            log.error("VNPay payment secure hash signature is missing in callback");
-            throw new RuntimeException("VNPay payment secure hash signature is missing");
+    public PaymentDTOs.PaymentResponse processMoMoIpn(Map<String, String> params) {
+        String partnerCode  = params.getOrDefault("partnerCode", "");
+        String orderId      = params.getOrDefault("orderId", "");
+        String requestId    = params.getOrDefault("requestId", "");
+        String amount       = params.getOrDefault("amount", "0");
+        String orderInfo    = params.getOrDefault("orderInfo", "");
+        String orderType    = params.getOrDefault("orderType", "");
+        String transId      = params.getOrDefault("transId", "");
+        String resultCode   = params.getOrDefault("resultCode", "-1");
+        String message      = params.getOrDefault("message", "");
+        String payType      = params.getOrDefault("payType", "");
+        String responseTime = params.getOrDefault("responseTime", "");
+        String extraData    = params.getOrDefault("extraData", "");
+        String receivedSignature = params.getOrDefault("signature", "");
+
+        // Build signature string per MoMo spec (sorted key=value&... no trailing &)
+        String rawSignature = "accessKey=" + momoAccessKey
+                + "&amount=" + amount
+                + "&extraData=" + extraData
+                + "&message=" + message
+                + "&orderId=" + orderId
+                + "&orderInfo=" + orderInfo
+                + "&orderType=" + orderType
+                + "&partnerCode=" + partnerCode
+                + "&payType=" + payType
+                + "&requestId=" + requestId
+                + "&responseTime=" + responseTime
+                + "&resultCode=" + resultCode
+                + "&transId=" + transId;
+
+        String calculatedSignature = hmacSHA256(momoSecretKey, rawSignature);
+
+        if (!calculatedSignature.equals(receivedSignature)) {
+            log.error("MoMo IPN signature mismatch. Calculated: {}, Received: {}", calculatedSignature, receivedSignature);
+            throw new RuntimeException("MoMo IPN signature verification failed");
         }
 
-        Map<String, String> sortedParams = new java.util.TreeMap<>();
-        for (Map.Entry<String, String> entry : params.entrySet()) {
-            if (entry.getKey().startsWith("vnp_") && !entry.getKey().equals("vnp_SecureHash") && !entry.getKey().equals("vnp_SecureHashType")) {
-                sortedParams.put(entry.getKey(), entry.getValue());
-            }
-        }
+        // orderId == transactionId we sent when creating
+        Payment payment = paymentRepository.findByTransactionId(orderId)
+                .orElseThrow(() -> new RuntimeException("Payment not found for orderId: " + orderId));
 
-        StringBuilder hashData = new StringBuilder();
-        java.util.Iterator<Map.Entry<String, String>> itr = sortedParams.entrySet().iterator();
-        while (itr.hasNext()) {
-            Map.Entry<String, String> entry = itr.next();
-            hashData.append(entry.getKey()).append('=');
-            try {
-                hashData.append(java.net.URLEncoder.encode(entry.getValue(), java.nio.charset.StandardCharsets.US_ASCII.toString()));
-            } catch (Exception e) {
-                log.error("Encoding error in callback verification", e);
-            }
-            if (itr.hasNext()) {
-                hashData.append('&');
-            }
-        }
-
-        String calculatedHash = hmacSHA512(vnpaySecretKey, hashData.toString());
-        if (!calculatedHash.equalsIgnoreCase(secureHash)) {
-            log.error("VNPay signature verification failed. Calculated: {}, Received: {}", calculatedHash, secureHash);
-            throw new RuntimeException("VNPay payment signature verification failed");
-        }
-
-        String transactionId = params.get("vnp_TxnRef");
-        String responseCode = params.get("vnp_ResponseCode");
-
-        Payment payment = paymentRepository.findByTransactionId(transactionId)
-                .orElseThrow(() -> new RuntimeException("Payment not found for transaction: " + transactionId));
-
-        // Prevent double processing / replay attacks
         if (payment.getStatus() == PaymentStatus.SUCCEEDED) {
-            log.warn("VNPay callback ignored: Transaction {} is already SUCCEEDED", transactionId);
-            throw new RuntimeException("Transaction already processed successfully");
+            log.warn("MoMo IPN ignored: transaction {} already SUCCEEDED", orderId);
+            return toResponse(payment);
         }
 
-        if ("00".equals(responseCode)) {
-
+        if ("0".equals(resultCode)) {
+            // Success
             payment.setStatus(PaymentStatus.SUCCEEDED);
             payment.setProcessedAt(LocalDateTime.now());
-            
+
             if (payment.getBooking() == null) {
-                // Wallet top-up!
+                // Wallet top-up
                 User user = payment.getUser();
                 user.setWalletBalance(user.getWalletBalance().add(payment.getAmount()));
                 userRepository.save(user);
-                log.info("VNPay Top Up callback successful: user {} balance is now {}", user.getId(), user.getWalletBalance());
+                log.info("MoMo Top Up IPN success: user {} balance +{}", user.getId(), payment.getAmount());
             } else {
-                // Booking payment!
+                // Booking payment confirmed
                 Booking booking = payment.getBooking();
                 booking.setStatus(com.luxeway.enums.BookingStatus.CONFIRMED);
                 bookingRepository.save(booking);
-                // BUG-07 FIX: Block availability calendar on VNPay callback success
                 bookingService.blockAvailabilityCalendarPublic(booking);
-                log.info("VNPay booking payment callback completed and booking confirmed: {}", transactionId);
+                log.info("MoMo booking payment IPN confirmed: orderId={}", orderId);
             }
         } else {
             payment.setStatus(PaymentStatus.FAILED);
-            log.warn("VNPay payment failed: {} with code {}", transactionId, responseCode);
+            log.warn("MoMo IPN payment failed: orderId={}, resultCode={}, message={}", orderId, resultCode, message);
         }
 
         payment = paymentRepository.save(payment);
+        return toResponse(payment);
+    }
+
+    /**
+     * MoMo Return – user is redirected back to our site after payment.
+     * Same verification as IPN but called via GET/POST from browser redirect.
+     * We look up payment by orderId and return its current status.
+     */
+    @Transactional
+    public PaymentDTOs.PaymentResponse processMoMoReturn(Map<String, String> params) {
+        String orderId      = params.getOrDefault("orderId", "");
+        String resultCode   = params.getOrDefault("resultCode", "-1");
+
+        if (orderId.isEmpty()) {
+            throw new RuntimeException("Missing orderId in MoMo return params");
+        }
+
+        Payment payment = paymentRepository.findByTransactionId(orderId)
+                .orElseThrow(() -> new RuntimeException("Payment not found for orderId: " + orderId));
+
+        // If IPN hasn't fired yet, apply result from return params
+        if (payment.getStatus() == PaymentStatus.PENDING) {
+            if ("0".equals(resultCode)) {
+                payment.setStatus(PaymentStatus.SUCCEEDED);
+                payment.setProcessedAt(LocalDateTime.now());
+
+                if (payment.getBooking() == null) {
+                    User user = payment.getUser();
+                    user.setWalletBalance(user.getWalletBalance().add(payment.getAmount()));
+                    userRepository.save(user);
+                } else {
+                    Booking booking = payment.getBooking();
+                    booking.setStatus(com.luxeway.enums.BookingStatus.CONFIRMED);
+                    bookingRepository.save(booking);
+                    bookingService.blockAvailabilityCalendarPublic(booking);
+                }
+                payment = paymentRepository.save(payment);
+                log.info("MoMo return handled (IPN not yet received): orderId={}", orderId);
+            } else {
+                payment.setStatus(PaymentStatus.FAILED);
+                payment = paymentRepository.save(payment);
+                log.warn("MoMo return indicates failure: orderId={}, resultCode={}", orderId, resultCode);
+            }
+        }
+
         return toResponse(payment);
     }
 
@@ -291,99 +348,107 @@ public class PaymentService {
         return toResponse(payment);
     }
 
-    // ====== Build VNPay URL ======
+    // ====== Build MoMo Payment URL ======
 
-    private String buildVNPayUrl(Payment payment, String returnUrl) {
-        java.util.TimeZone vnTimeZone = java.util.TimeZone.getTimeZone("Asia/Ho_Chi_Minh");
-        java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat("yyyyMMddHHmmss");
-        formatter.setTimeZone(vnTimeZone);
+    private String buildMoMoPaymentUrl(Payment payment, String returnUrl) {
+        try {
+            String requestId = UUID.randomUUID().toString();
+            String orderId   = payment.getTransactionId();  // reuse our transactionId as orderId
+            long   amountVal = payment.getAmount().longValue();
+            String orderInfo = "LuxeWay payment " + orderId;
+            String extraData = "";  // base64 extra info (optional)
+            String ipnUrl    = momoIpnUrl;
 
-        java.util.Calendar cld = java.util.Calendar.getInstance(vnTimeZone);
-        String createDate = formatter.format(cld.getTime());
+            // Signature per MoMo v2 spec
+            String rawSignature = "accessKey=" + momoAccessKey
+                    + "&amount=" + amountVal
+                    + "&extraData=" + extraData
+                    + "&ipnUrl=" + ipnUrl
+                    + "&orderId=" + orderId
+                    + "&orderInfo=" + orderInfo
+                    + "&partnerCode=" + momoPartnerCode
+                    + "&redirectUrl=" + returnUrl
+                    + "&requestId=" + requestId
+                    + "&requestType=" + momoRequestType;
 
-        // Expire after 15 minutes
-        cld.add(java.util.Calendar.MINUTE, 15);
-        String expireDate = formatter.format(cld.getTime());
+            String signature = hmacSHA256(momoSecretKey, rawSignature);
 
-        // OrderInfo must be ASCII-safe for VNPay hash
-        String rawDesc = payment.getDescription() != null
-                ? payment.getDescription()
-                : "Payment " + payment.getTransactionId();
-        // Strip non-ASCII characters to ensure hash compatibility
-        String orderInfo = rawDesc.replaceAll("[^\\x20-\\x7E]", " ").trim();
-        if (orderInfo.isEmpty()) orderInfo = "Payment " + payment.getTransactionId();
-        // VNPay limits OrderInfo to 255 chars
-        if (orderInfo.length() > 255) orderInfo = orderInfo.substring(0, 255);
+            // Build JSON body for MoMo API
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
+            body.put("partnerCode", momoPartnerCode);
+            body.put("partnerName", "LuxeWay");
+            body.put("storeId", momoPartnerCode);
+            body.put("requestId", requestId);
+            body.put("amount", amountVal);
+            body.put("orderId", orderId);
+            body.put("orderInfo", orderInfo);
+            body.put("redirectUrl", returnUrl);
+            body.put("ipnUrl", ipnUrl);
+            body.put("lang", "vi");
+            body.put("requestType", momoRequestType);
+            body.put("autoCapture", true);
+            body.put("extraData", extraData);
+            body.put("signature", signature);
 
-        Map<String, String> vnp_Params = new java.util.TreeMap<>();  // Use TreeMap for automatic sorting
-        vnp_Params.put("vnp_Version", "2.1.0");
-        vnp_Params.put("vnp_Command", "pay");
-        vnp_Params.put("vnp_TmnCode", vnpayTmnCode);
-        vnp_Params.put("vnp_Amount", String.valueOf(payment.getAmount().multiply(BigDecimal.valueOf(100)).longValue()));
-        vnp_Params.put("vnp_CurrCode", "VND");
-        vnp_Params.put("vnp_TxnRef", payment.getTransactionId());
-        vnp_Params.put("vnp_OrderInfo", orderInfo);
-        vnp_Params.put("vnp_OrderType", "other");
-        vnp_Params.put("vnp_Locale", "vn");
-        vnp_Params.put("vnp_ReturnUrl", returnUrl != null && !returnUrl.isEmpty()
-                ? returnUrl : "http://localhost:5173/payment/vnpay/return");
-        vnp_Params.put("vnp_IpAddr", "127.0.0.1");
-        vnp_Params.put("vnp_CreateDate", createDate);
-        vnp_Params.put("vnp_ExpireDate", expireDate);
+            String jsonBody = mapper.writeValueAsString(body);
 
-        // Build hash data and query string from sorted params
-        StringBuilder hashData = new StringBuilder();
-        StringBuilder query = new StringBuilder();
-        java.util.Iterator<Map.Entry<String, String>> itr = vnp_Params.entrySet().iterator();
-        while (itr.hasNext()) {
-            Map.Entry<String, String> entry = itr.next();
-            String fieldName = entry.getKey();
-            String fieldValue = entry.getValue();
-            if (fieldValue != null && !fieldValue.isEmpty()) {
-                try {
-                    String encodedValue = java.net.URLEncoder.encode(fieldValue, java.nio.charset.StandardCharsets.UTF_8.toString())
-                            .replace("+", "%20");
-                    // Hash data uses raw value (not encoded) per VNPay spec
-                    hashData.append(fieldName).append('=').append(fieldValue);
-                    query.append(fieldName).append('=').append(encodedValue);
-                } catch (Exception e) {
-                    log.error("Error encoding VNPay parameter: {}", fieldName, e);
-                    hashData.append(fieldName).append('=').append(fieldValue);
-                    query.append(fieldName).append('=').append(fieldValue);
-                }
-                if (itr.hasNext()) {
-                    hashData.append('&');
-                    query.append('&');
-                }
+            // Call MoMo API to get payUrl
+            java.net.http.HttpClient httpClient = java.net.http.HttpClient.newBuilder()
+                    .connectTimeout(java.time.Duration.ofSeconds(15))
+                    .build();
+
+            java.net.http.HttpRequest httpRequest = java.net.http.HttpRequest.newBuilder()
+                    .uri(java.net.URI.create(momoEndpoint))
+                    .header("Content-Type", "application/json")
+                    .POST(java.net.http.HttpRequest.BodyPublishers.ofString(jsonBody))
+                    .timeout(java.time.Duration.ofSeconds(30))
+                    .build();
+
+            java.net.http.HttpResponse<String> httpResponse =
+                    httpClient.send(httpRequest, java.net.http.HttpResponse.BodyHandlers.ofString());
+
+            String responseBody = httpResponse.body();
+            log.info("MoMo create payment response (status {}): {}", httpResponse.statusCode(), responseBody);
+
+            java.util.Map<String, Object> momoResp = mapper.readValue(responseBody,
+                    new com.fasterxml.jackson.core.type.TypeReference<java.util.Map<String, Object>>() {});
+
+            int resultCode = (int) momoResp.getOrDefault("resultCode", -1);
+            if (resultCode == 0) {
+                String payUrl = (String) momoResp.get("payUrl");
+                log.info("MoMo payment URL created for txn {}: {}", orderId, payUrl);
+                return payUrl;
+            } else {
+                String errMsg = (String) momoResp.getOrDefault("message", "Unknown MoMo error");
+                log.error("MoMo create payment failed: resultCode={}, message={}", resultCode, errMsg);
+                throw new RuntimeException("MoMo payment creation failed: " + errMsg);
             }
+
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Error calling MoMo API", e);
+            throw new RuntimeException("Error creating MoMo payment: " + e.getMessage(), e);
         }
-
-        String queryUrl = query.toString();
-        String vnp_SecureHash = hmacSHA512(vnpaySecretKey, hashData.toString());
-        queryUrl += "&vnp_SecureHash=" + vnp_SecureHash;
-
-        log.info("VNPay URL built for txn: {}, amount: {}, returnUrl: {}",
-                payment.getTransactionId(), payment.getAmount(), returnUrl);
-        return vnpayUrl + "?" + queryUrl;
     }
 
-    private String hmacSHA512(String key, String data) {
+    // ====== HMAC-SHA256 (MoMo uses SHA256, not SHA512) ======
+
+    private String hmacSHA256(String key, String data) {
         try {
-            if (key == null || data == null) {
-                throw new NullPointerException();
-            }
-            javax.crypto.Mac hmac512 = javax.crypto.Mac.getInstance("HmacSHA512");
+            javax.crypto.Mac hmac = javax.crypto.Mac.getInstance("HmacSHA256");
             byte[] hmacKeyBytes = key.getBytes(java.nio.charset.StandardCharsets.UTF_8);
-            javax.crypto.spec.SecretKeySpec secretKey = new javax.crypto.spec.SecretKeySpec(hmacKeyBytes, "HmacSHA512");
-            hmac512.init(secretKey);
-            byte[] result = hmac512.doFinal(data.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            javax.crypto.spec.SecretKeySpec secretKey = new javax.crypto.spec.SecretKeySpec(hmacKeyBytes, "HmacSHA256");
+            hmac.init(secretKey);
+            byte[] result = hmac.doFinal(data.getBytes(java.nio.charset.StandardCharsets.UTF_8));
             StringBuilder sb = new StringBuilder(2 * result.length);
             for (byte b : result) {
                 sb.append(String.format("%02x", b & 0xff));
             }
             return sb.toString();
         } catch (Exception ex) {
-            log.error("Error in hmacSHA512 generation", ex);
+            log.error("Error in hmacSHA256 generation", ex);
             return "";
         }
     }

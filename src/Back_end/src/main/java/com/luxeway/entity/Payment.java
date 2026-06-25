@@ -60,7 +60,7 @@ public class Payment {
     @Column(name = "transaction_id", length = 200, unique = true)
     private String transactionId;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "NVARCHAR(MAX)")
     private String description;
 
     @Column(name = "refund_amount", precision = 12, scale = 0)

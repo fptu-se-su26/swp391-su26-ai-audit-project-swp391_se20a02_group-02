@@ -228,7 +228,7 @@ export const NavbarDropdown: React.FC<NavbarDropdownProps> = ({ isOpen, onClose 
             'absolute right-0 mt-3.5 w-76 rounded-[28px] border shadow-2xl overflow-hidden z-50 transition-colors duration-300',
             isDark
               ? 'bg-slate-950/95 border-slate-800/80 backdrop-blur-xl text-slate-100 shadow-[0_20px_50px_rgba(0,0,0,0.3)]'
-              : 'bg-white/95 border-slate-100 backdrop-blur-xl text-slate-800 shadow-[0_20px_50px_rgba(0,0,0,0.12)]'
+              : 'bg-white/95 border-slate-100 dark:border-slate-800 backdrop-blur-xl text-slate-800 dark:text-slate-200 shadow-[0_20px_50px_rgba(0,0,0,0.12)]'
           )}
         >
           {/* Top Gradient bar for a premium automotive feeling */}
@@ -238,7 +238,7 @@ export const NavbarDropdown: React.FC<NavbarDropdownProps> = ({ isOpen, onClose 
           <div
             className={cn(
               'p-6 border-b transition-colors duration-300',
-              isDark ? 'border-slate-800/80 bg-slate-900/30' : 'border-slate-100 bg-slate-50/50'
+              isDark ? 'border-slate-800/80 bg-slate-900/30' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50'
             )}
           >
             <div className="flex items-center gap-3.5">
@@ -264,7 +264,7 @@ export const NavbarDropdown: React.FC<NavbarDropdownProps> = ({ isOpen, onClose 
                   'flex items-center gap-3.5 px-4 py-3 rounded-2xl text-sm font-bold transition-all duration-200 group hover:translate-x-1.5',
                   isDark
                     ? 'text-slate-350 hover:bg-slate-900 hover:text-white'
-                    : 'text-slate-655 hover:bg-slate-50 hover:text-slate-950'
+                    : 'text-slate-655 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-950'
                 )}
               >
                 <item.icon className="w-5 h-5 text-slate-400 group-hover:text-indigo-550 transition-colors" />
@@ -275,7 +275,7 @@ export const NavbarDropdown: React.FC<NavbarDropdownProps> = ({ isOpen, onClose 
           </div>
 
           {/* Logout Button */}
-          <div className={cn('border-t p-3', isDark ? 'border-slate-800/80' : 'border-slate-100')}>
+          <div className={cn('border-t p-3', isDark ? 'border-slate-800/80' : 'border-slate-100 dark:border-slate-800')}>
             <button
               onClick={handleLogoutClick}
               className="flex items-center gap-3.5 w-full px-4 py-3 rounded-2xl text-sm font-black text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all duration-200"

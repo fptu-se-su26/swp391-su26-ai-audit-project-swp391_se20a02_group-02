@@ -168,11 +168,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ stats }) => {
           {/* Search card */}
           <motion.div
             variants={staggerItem}
-            className="w-full max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl p-2"
+            className="w-full max-w-4xl mx-auto bg-white dark:bg-slate-900 rounded-2xl shadow-2xl p-2"
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-1">
               {/* Location */}
-              <div className="lg:col-span-2 flex items-center gap-2 px-4 py-3 hover:bg-slate-50 rounded-xl transition-colors">
+              <div className="lg:col-span-2 flex items-center gap-2 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors">
                 <MapPin className="w-4 h-4 text-amber-500 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">Location</p>
@@ -181,41 +181,41 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ stats }) => {
                     value={location}
                     onChange={e => setLocation(e.target.value)}
                     placeholder="Ho Chi Minh, Ha Noi..."
-                    className="w-full text-sm font-medium text-slate-800 placeholder:text-slate-300 outline-none bg-transparent"
+                    className="w-full text-sm font-medium text-slate-800 dark:text-slate-200 placeholder:text-slate-300 outline-none bg-transparent"
                     onKeyDown={e => e.key === 'Enter' && handleSearch()}
                   />
                 </div>
               </div>
 
               {/* Pickup */}
-              <div className="flex items-center gap-2 px-4 py-3 border-l border-slate-100 hover:bg-slate-50 rounded-xl transition-colors">
+              <div className="flex items-center gap-2 px-4 py-3 border-l border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors">
                 <Calendar className="w-4 h-4 text-amber-500 flex-shrink-0" />
                 <div className="flex-1">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">Pick-up</p>
                   <input type="date" value={startDate} min={today}
                     onChange={e => setStartDate(e.target.value)}
-                    className="w-full text-sm font-medium text-slate-800 outline-none bg-transparent cursor-pointer" />
+                    className="w-full text-sm font-medium text-slate-800 dark:text-slate-200 outline-none bg-transparent cursor-pointer" />
                 </div>
               </div>
 
               {/* Return */}
-              <div className="flex items-center gap-2 px-4 py-3 border-l border-slate-100 hover:bg-slate-50 rounded-xl transition-colors">
+              <div className="flex items-center gap-2 px-4 py-3 border-l border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors">
                 <Calendar className="w-4 h-4 text-amber-500 flex-shrink-0" />
                 <div className="flex-1">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">Return</p>
                   <input type="date" value={endDate} min={startDate || today}
                     onChange={e => setEndDate(e.target.value)}
-                    className="w-full text-sm font-medium text-slate-800 outline-none bg-transparent cursor-pointer" />
+                    className="w-full text-sm font-medium text-slate-800 dark:text-slate-200 outline-none bg-transparent cursor-pointer" />
                 </div>
               </div>
 
               {/* Vehicle Type (optional, styled placeholder for 5th col) */}
-              <div className="flex items-center gap-2 px-4 py-3 border-l border-slate-100 hover:bg-slate-50 rounded-xl transition-colors">
+              <div className="flex items-center gap-2 px-4 py-3 border-l border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors">
                 <Car className="w-4 h-4 text-amber-500 flex-shrink-0" />
                 <div className="flex-1">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">Vehicle Type</p>
                   <select value={vehicleType} onChange={e => setVehicleType(e.target.value)}
-                    className="w-full text-sm font-medium text-slate-800 outline-none bg-transparent cursor-pointer">
+                    className="w-full text-sm font-medium text-slate-800 dark:text-slate-200 outline-none bg-transparent cursor-pointer">
                     <option value="">Any type</option>
                     <option value="economy">Economy Car</option>
                     <option value="suv">SUV / Family</option>

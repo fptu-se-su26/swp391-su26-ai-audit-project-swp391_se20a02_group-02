@@ -6,6 +6,10 @@
 
 USE car_rental_platform;
 GO
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_NULLS ON;
+GO
+
 
 -- Check if tables exist
 IF OBJECT_ID('users', 'U') IS NULL
@@ -14,7 +18,12 @@ BEGIN
     RETURN
 END
 
--- Clear existing data
+-- Clear existing data in reverse order of dependencies
+DELETE FROM car_booking_history;
+DELETE FROM car_bookings;
+DELETE FROM cars;
+DELETE FROM motorbike_bookings;
+DELETE FROM motorbikes;
 DELETE FROM vehicle_features;
 DELETE FROM vehicle_images;
 DELETE FROM vehicles;
@@ -24,7 +33,10 @@ DELETE FROM users;
 INSERT INTO users (id, email, password_hash, first_name, last_name, display_name, avatar, phone, role, verified, kyc_verified, driving_license_verified, rating, total_reviews, total_rentals, bio, location, account_type, company_name, stripe_customer_id, is_active, joined_at, last_active, created_at, updated_at) VALUES
 ('A1B2C3D4-E5F6-7890-ABCD-123456789012', 'admin@luxeway.vn', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', N'Admin', N'LuxeWay', N'Admin LuxeWay', 'https://ui-avatars.com/api/?name=Admin+LuxeWay&background=0F172A&color=fff&size=200', '0901234567', 'ADMIN', 1, 1, 1, 5.00, 0, 0, N'LuxeWay Platform Administrator', N'Hồ Chí Minh', 'INDIVIDUAL', NULL, NULL, 1, '2024-01-01 00:00:00', '2024-05-23 10:00:00', '2024-01-01 00:00:00', '2024-05-23 10:00:00'),
 ('B2C3D4E5-F6G7-8901-BCDE-234567890123', 'nguyen.van.a@gmail.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', N'Nguyễn', N'Văn A', N'Nguyễn Văn A', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop', '0901111111', 'CUSTOMER', 1, 1, 1, 4.80, 15, 8, N'Yêu thích du lịch và khám phá những địa điểm mới', N'Hà Nội', 'INDIVIDUAL', NULL, NULL, 1, '2024-02-15 08:30:00', '2024-05-23 09:45:00', '2024-02-15 08:30:00', '2024-05-23 09:45:00'),
-('E5F6G7H8-I9J0-1234-EFGH-567890123456', 'pham.minh.d@gmail.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', N'Phạm', N'Minh D', N'Phạm Minh D', 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop', '0904444444', 'OWNER', 1, 1, 1, 4.95, 45, 0, N'Chủ sở hữu 3 chiếc xe, cam kết chất lượng dịch vụ tốt nhất', N'Hà Nội', 'INDIVIDUAL', NULL, NULL, 1, '2024-01-20 09:15:00', '2024-05-23 07:20:00', '2024-01-20 09:15:00', '2024-05-23 07:20:00');
+('E5F6G7H8-I9J0-1234-EFGH-567890123456', 'pham.minh.d@gmail.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', N'Phạm', N'Minh D', N'Phạm Minh D', 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop', '0904444444', 'OWNER', 1, 1, 1, 4.95, 45, 0, N'Chủ sở hữu 3 chiếc xe, cam kết chất lượng dịch vụ tốt nhất', N'Hà Nội', 'INDIVIDUAL', NULL, NULL, 1, '2024-01-20 09:15:00', '2024-05-23 07:20:00', '2024-01-20 09:15:00', '2024-05-23 07:20:00'),
+('F6G7H8I9-J0K1-2345-FGHI-678901234567', 'hoang.thi.e@gmail.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', N'Hoàng', N'Thị E', N'Hoàng Thị E', 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop', '0905555555', 'OWNER', 1, 1, 1, 4.85, 38, 0, N'Chuyên cho thuê xe cao cấp, dịch vụ chuyên nghiệp', N'Hồ Chí Minh', 'INDIVIDUAL', NULL, NULL, 1, '2024-02-05 16:30:00', '2024-05-23 06:45:00', '2024-02-05 16:30:00', '2024-05-23 06:45:00'),
+('G7H8I9J0-K1L2-3456-GHIJ-789012345678', 'contact@saigoncarrental.vn', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', N'Nguyễn', N'Văn F', N'Saigon Car Rental', 'https://images.unsplash.com/photo-1544725176-7c40e5a71c5e?w=200&h=200&fit=crop', '0906666666', 'OWNER', 1, 1, 1, 4.92, 156, 0, N'Công ty cho thuê xe hàng đầu tại TP.HCM với đội xe đa dạng', N'Hồ Chí Minh', 'BUSINESS', N'Saigon Car Rental Co., Ltd', NULL, 1, '2023-12-01 08:00:00', '2024-05-23 05:30:00', '2023-12-01 08:00:00', '2024-05-23 05:30:00'),
+('H8I9J0K1-L2M3-4567-HIJK-890123456789', 'info@hanoiautorental.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', N'Trần', N'Văn G', N'Hanoi Auto Rental', 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&h=200&fit=crop', '0907777777', 'OWNER', 1, 1, 1, 4.88, 89, 0, N'Dịch vụ cho thuê xe tự lái uy tín tại Hà Nội', N'Hà Nội', 'BUSINESS', N'Hanoi Auto Rental JSC', NULL, 1, '2024-01-15 10:20:00', '2024-05-23 04:15:00', '2024-01-15 10:20:00', '2024-05-23 04:15:00');
 
 -- Insert Vehicles
 INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, description, thumbnail_url, price_per_day, price_per_week, deposit, city, country, address, latitude, longitude, horsepower, top_speed, acceleration, seats, doors, transmission, fuel_type, range_km, engine_size, color, license_plate, min_rental_days, max_rental_days, advance_booking_days, status, rating, total_reviews, total_bookings, is_verified, is_featured, instant_book, delivery_available, delivery_fee, created_at, updated_at) VALUES

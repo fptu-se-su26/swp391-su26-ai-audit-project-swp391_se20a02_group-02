@@ -41,7 +41,7 @@ public class UserDocument {
     @Column(name = "file_url", length = 500)
     private String fileUrl;
 
-    @Column(name = "ocr_data", columnDefinition = "TEXT")
+    @Column(name = "ocr_data", columnDefinition = "NVARCHAR(MAX)")
     private String ocrData;
 
     @Column(name = "verification_status", nullable = false, length = 20)
@@ -65,7 +65,7 @@ public class UserDocument {
     @Column(name = "verified_at")
     private LocalDateTime verifiedAt;
 
-    @Column(name = "rejection_reason", columnDefinition = "TEXT")
+    @Column(name = "rejection_reason", columnDefinition = "NVARCHAR(MAX)")
     private String rejectionReason;
 
     @Column(name = "license_class", length = 10)
@@ -96,7 +96,7 @@ public class UserDocument {
     @Column(name = "ekyc_dob", length = 20)
     private String ekycDob;
 
-    @Column(name = "ekyc_raw_data", columnDefinition = "TEXT")
+    @Column(name = "ekyc_raw_data", columnDefinition = "NVARCHAR(MAX)")
     private String ekycRawData;
 
     @PrePersist

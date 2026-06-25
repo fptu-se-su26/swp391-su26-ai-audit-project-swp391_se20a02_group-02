@@ -202,7 +202,7 @@ export const ReviewsPage: React.FC = () => {
   };
 
   return (
-    <div className={`min-h-screen pt-24 pb-20 transition-colors duration-300 ${isDark ? 'bg-slate-950 text-white' : 'bg-[#F8FAFC] text-slate-900'}`}>
+    <div className={`min-h-screen pt-24 pb-20 transition-colors duration-300 ${isDark ? 'bg-slate-950 text-white' : 'bg-[#F8FAFC] dark:bg-slate-950 text-slate-900 dark:text-slate-50'}`}>
       
       {/* BACKGROUND GRAPHIC ACCENTS */}
       <div className="absolute top-20 left-1/4 w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
@@ -220,7 +220,7 @@ export const ReviewsPage: React.FC = () => {
             <Sparkles size={12} />
             LuxeWay Trusted Platform
           </div>
-          <h1 className={`font-display text-4xl md:text-5xl font-black mb-3 tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+          <h1 className={`font-display text-4xl md:text-5xl font-black mb-3 tracking-tight ${isDark ? 'text-white' : 'text-slate-900 dark:text-slate-50'}`}>
             Guest Experiences & Reviews
           </h1>
           <p className={`text-sm md:text-base max-w-2xl leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
@@ -250,12 +250,12 @@ export const ReviewsPage: React.FC = () => {
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             className={`grid grid-cols-1 lg:grid-cols-3 gap-8 p-8 rounded-[2.5rem] border shadow-2xl mb-12 backdrop-blur-xl ${
-              isDark ? 'bg-slate-900/40 border-slate-800' : 'bg-white border-slate-100'
+              isDark ? 'bg-slate-900/40 border-slate-800' : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800'
             }`}
           >
             {/* COLUMN 1: Average & Verified Badge */}
             <div className="flex flex-col justify-center items-center lg:items-start text-center lg:text-left border-b lg:border-b-0 lg:border-r pb-8 lg:pb-0 lg:pr-8 border-slate-200 dark:border-slate-850">
-              <h3 className={`text-6xl md:text-7xl font-display font-black tracking-tighter ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              <h3 className={`text-6xl md:text-7xl font-display font-black tracking-tighter ${isDark ? 'text-white' : 'text-slate-900 dark:text-slate-50'}`}>
                 {stats.averageRating.toFixed(1)}
               </h3>
               
@@ -269,7 +269,7 @@ export const ReviewsPage: React.FC = () => {
               <div className={`inline-flex items-center gap-2.5 px-4.5 py-2.5 rounded-2xl border ${
                 isDark ? 'bg-emerald-950/20 border-emerald-900/35 text-emerald-400' : 'bg-emerald-50 border-emerald-100 text-emerald-700'
               }`}>
-                <CheckCircle2 size={18} className="fill-emerald-500 text-white dark:text-slate-900" />
+                <CheckCircle2 size={18} className="fill-emerald-500 text-white dark:text-slate-900 dark:text-slate-50" />
                 <div className="text-left">
                   <p className="text-xs font-bold uppercase tracking-wider">100% Verified Trips</p>
                   <p className="text-[10px] text-slate-400">Authentic client reviews only</p>
@@ -358,7 +358,7 @@ export const ReviewsPage: React.FC = () => {
           >
             <div className="flex items-center gap-2 mb-6">
               <Sparkles className="text-amber-500" size={20} />
-              <h3 className={`text-xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              <h3 className={`text-xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900 dark:text-slate-50'}`}>
                 Featured Guest Testimonials
               </h3>
             </div>
@@ -368,11 +368,11 @@ export const ReviewsPage: React.FC = () => {
                 <div 
                   key={`feat-${review.id}`}
                   className={`luxury-card p-6 border flex flex-col justify-between hover-lift relative overflow-hidden group min-h-[220px] ${
-                    isDark ? 'bg-slate-900/30 border-slate-800/80' : 'bg-white border-slate-100'
+                    isDark ? 'bg-slate-900/30 border-slate-800/80' : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800'
                   }`}
                 >
                   {/* Decorative quotes graphic */}
-                  <span className="absolute right-4 bottom-4 text-7xl font-serif text-slate-200 dark:text-slate-800/20 select-none pointer-events-none group-hover:scale-110 transition-transform">
+                  <span className="absolute right-4 bottom-4 text-7xl font-serif text-slate-200 dark:text-slate-800 dark:text-slate-200/20 select-none pointer-events-none group-hover:scale-110 transition-transform">
                     &ldquo;
                   </span>
 
@@ -415,7 +415,7 @@ export const ReviewsPage: React.FC = () => {
             
             {/* Title / Info */}
             <div>
-              <h3 className={`text-2xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              <h3 className={`text-2xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900 dark:text-slate-50'}`}>
                 {ratingFilter || debouncedSearch ? 'Filtered Reviews' : 'All Guest Reviews'}
               </h3>
               <p className="text-xs text-slate-400 mt-0.5">
@@ -436,7 +436,7 @@ export const ReviewsPage: React.FC = () => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className={`w-full text-xs py-2.5 pl-10 pr-4 rounded-xl border focus:outline-none focus:ring-1 focus:ring-amber-500 transition-all ${
-                    isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-800'
+                    isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200'
                   }`}
                 />
               </div>
@@ -451,7 +451,7 @@ export const ReviewsPage: React.FC = () => {
                     setCurrentPage(0);
                   }}
                   className={`text-xs px-3.5 py-2.5 rounded-xl border focus:outline-none appearance-none pr-8 font-semibold cursor-pointer ${
-                    isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-855'
+                    isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-855'
                   }`}
                 >
                   <option value="">All Ratings</option>
@@ -494,7 +494,7 @@ export const ReviewsPage: React.FC = () => {
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
               className={`p-16 rounded-[2.5rem] border text-center max-w-xl mx-auto flex flex-col items-center ${
-                isDark ? 'bg-slate-900/20 border-slate-850' : 'bg-white border-slate-100'
+                isDark ? 'bg-slate-900/20 border-slate-850' : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800'
               }`}
             >
               <div className="w-16 h-16 rounded-full bg-amber-400/10 flex items-center justify-center text-amber-500 mb-4">
@@ -504,7 +504,7 @@ export const ReviewsPage: React.FC = () => {
               <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
                 We couldn&apos;t find any reviews matching your criteria. Try adjusting the star rating filter or search keywords.
               </p>
-              <button onClick={clearFilters} className="btn-primary bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold px-6 py-2.5 rounded-xl text-xs uppercase tracking-wider">
+              <button onClick={clearFilters} className="btn-primary bg-amber-400 hover:bg-amber-500 text-slate-900 dark:text-slate-50 font-bold px-6 py-2.5 rounded-xl text-xs uppercase tracking-wider">
                 Clear all filters
               </button>
             </motion.div>
@@ -528,7 +528,7 @@ export const ReviewsPage: React.FC = () => {
                       variants={itemVariants}
                       layoutId={review.id}
                       className={`p-6 md:p-8 rounded-[2rem] border transition-all duration-300 shadow-md ${
-                        isDark ? 'bg-slate-900/30 border-slate-900 hover:border-slate-800/80' : 'bg-white border-slate-100 hover:border-slate-200'
+                        isDark ? 'bg-slate-900/30 border-slate-900 hover:border-slate-800/80' : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:border-slate-700'
                       }`}
                     >
                       <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
@@ -603,7 +603,7 @@ export const ReviewsPage: React.FC = () => {
                       {/* Reply from Owner / Admin */}
                       {review.ownerResponse && (
                         <div className={`mt-6 p-5 rounded-2xl border flex items-start gap-3.5 relative overflow-hidden ${
-                          isDark ? 'bg-slate-900/70 border-slate-800' : 'bg-slate-50 border-slate-200/60'
+                          isDark ? 'bg-slate-900/70 border-slate-800' : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700/60'
                         }`}>
                           <MessageSquare size={16} className="text-slate-400 flex-shrink-0 mt-0.5" />
                           <div>
@@ -652,7 +652,7 @@ export const ReviewsPage: React.FC = () => {
               onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
               disabled={currentPage === 0 || reviewsLoading}
               className={`p-2.5 rounded-xl border hover-lift disabled:opacity-50 disabled:pointer-events-none transition-all ${
-                isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-800'
+                isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200'
               }`}
             >
               <ChevronLeft size={16} />
@@ -665,10 +665,10 @@ export const ReviewsPage: React.FC = () => {
                 disabled={reviewsLoading}
                 className={`w-10 h-10 rounded-xl border font-bold text-xs transition-all ${
                   currentPage === i
-                    ? 'bg-amber-400 border-amber-400 text-slate-900 scale-105 shadow-md shadow-amber-400/10'
+                    ? 'bg-amber-400 border-amber-400 text-slate-900 dark:text-slate-50 scale-105 shadow-md shadow-amber-400/10'
                     : isDark
                     ? 'bg-slate-900 border-slate-850 hover:border-slate-700 text-white'
-                    : 'bg-white border-slate-200 hover:border-slate-350 text-slate-800'
+                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:border-slate-350 text-slate-800 dark:text-slate-200'
                 }`}
               >
                 {i + 1}
@@ -679,7 +679,7 @@ export const ReviewsPage: React.FC = () => {
               onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
               disabled={currentPage === totalPages - 1 || reviewsLoading}
               className={`p-2.5 rounded-xl border hover-lift disabled:opacity-50 disabled:pointer-events-none transition-all ${
-                isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-800'
+                isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200'
               }`}
             >
               <ChevronRight size={16} />

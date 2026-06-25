@@ -81,18 +81,18 @@ export const BusinessOverview: React.FC = () => {
             key={stat.label} 
             variants={staggerItem}
             className={`relative overflow-hidden rounded-[2.5rem] border backdrop-blur-md p-6 shadow-xl transition-all duration-300 ${
-              isDark ? 'bg-slate-900/60 border-slate-800/80' : 'bg-white border-slate-200/50 shadow-slate-100/50'
+              isDark ? 'bg-slate-900/60 border-slate-800/80' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/50 shadow-slate-100/50'
             }`}
           >
             <div className="flex items-center justify-between mb-4">
               <div className={`w-11 h-11 rounded-2xl flex items-center justify-center border shadow-inner ${stat.color}`}>
                 <stat.icon className="w-5 h-5" />
               </div>
-              <span className={`text-[8px] font-black tracking-widest px-2.5 py-1 rounded-xl uppercase ${isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-50 text-slate-500'}`}>
+              <span className={`text-[8px] font-black tracking-widest px-2.5 py-1 rounded-xl uppercase ${isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-50 dark:bg-slate-900 text-slate-500'}`}>
                 LIVE
               </span>
             </div>
-            <p className={`text-2xl font-black mb-1.5 tracking-tight ${stat.color.includes('emerald') ? 'text-emerald-500' : isDark ? 'text-white' : 'text-slate-900'}`}>
+            <p className={`text-2xl font-black mb-1.5 tracking-tight ${stat.color.includes('emerald') ? 'text-emerald-500' : isDark ? 'text-white' : 'text-slate-900 dark:text-slate-50'}`}>
               {stat.value}
             </p>
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
@@ -113,9 +113,9 @@ export const BusinessOverview: React.FC = () => {
       {/* Fleet Tracking Map visual & Shift analytics */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className={`lg:col-span-2 border rounded-[2.5rem] p-6 shadow-2xl ${
-          isDark ? 'bg-slate-900/60 border-slate-800/80 shadow-slate-950/40' : 'bg-white/70 border-slate-200/60 shadow-slate-200/30'
+          isDark ? 'bg-slate-900/60 border-slate-800/80 shadow-slate-950/40' : 'bg-white/70 border-slate-200 dark:border-slate-700/60 shadow-slate-200/30'
         }`}>
-          <div className="flex justify-between items-center mb-6 border-b pb-4 border-slate-200/40 dark:border-slate-800/60">
+          <div className="flex justify-between items-center mb-6 border-b pb-4 border-slate-200 dark:border-slate-700/40 dark:border-slate-800/60">
             <h3 className="font-sans text-xs font-black uppercase tracking-widest text-slate-800 dark:text-slate-200">
               Fleet Active GPS Tracking & Telemetry
             </h3>
@@ -129,7 +129,7 @@ export const BusinessOverview: React.FC = () => {
               <div 
                 key={item.car} 
                 className={`flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 border rounded-2xl transition-all duration-300 hover:scale-[1.01] ${
-                  isDark ? 'bg-slate-950/30 border-slate-850' : 'bg-slate-50/50 border-slate-150'
+                  isDark ? 'bg-slate-950/30 border-slate-850' : 'bg-slate-50 dark:bg-slate-900/50 border-slate-150'
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -150,7 +150,7 @@ export const BusinessOverview: React.FC = () => {
                   <span className={`text-[8px] font-black tracking-widest px-2 py-1 rounded-xl border ${
                     item.status === 'ON ROUTE' ? 'border-emerald-500/20 text-emerald-500 bg-emerald-500/5 animate-pulse' :
                     item.status === 'PARKED' ? 'border-indigo-500/20 text-indigo-500 bg-indigo-500/5' :
-                    'border-slate-500/20 text-slate-500 bg-slate-500/5'
+                    'border-slate-500/20 text-slate-500 bg-slate-50 dark:bg-slate-9000/5'
                   }`}>
                     {item.status}
                   </span>
@@ -166,10 +166,10 @@ export const BusinessOverview: React.FC = () => {
 
         {/* Corporate Reports Download Area */}
         <div className={`border rounded-[2.5rem] p-6 shadow-2xl flex flex-col justify-between ${
-          isDark ? 'bg-slate-900/60 border-slate-800/80 shadow-slate-950/40' : 'bg-white/70 border-slate-200/60 shadow-slate-200/30'
+          isDark ? 'bg-slate-900/60 border-slate-800/80 shadow-slate-950/40' : 'bg-white/70 border-slate-200 dark:border-slate-700/60 shadow-slate-200/30'
         }`}>
           <div>
-            <h3 className="font-sans text-xs font-black uppercase tracking-widest border-b pb-4 mb-5 border-slate-200/40 dark:border-slate-800/60 text-slate-800 dark:text-slate-200">
+            <h3 className="font-sans text-xs font-black uppercase tracking-widest border-b pb-4 mb-5 border-slate-200 dark:border-slate-700/40 dark:border-slate-800/60 text-slate-800 dark:text-slate-200">
               Corporate Reports
             </h3>
             <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 leading-relaxed mb-5">
@@ -179,7 +179,7 @@ export const BusinessOverview: React.FC = () => {
             <div className="space-y-3">
               {corporateReports.map(report => (
                 <div key={report.name} className={`p-3.5 border rounded-xl flex items-center justify-between ${
-                  isDark ? 'bg-slate-950/30 border-slate-850' : 'bg-slate-50 border-slate-150'
+                  isDark ? 'bg-slate-950/30 border-slate-850' : 'bg-slate-50 dark:bg-slate-900 border-slate-150'
                 }`}>
                   <div className="min-w-0">
                     <p className="text-xs font-black truncate text-slate-800 dark:text-slate-200" title={report.name}>{report.name}</p>
@@ -207,7 +207,7 @@ export const BusinessOverview: React.FC = () => {
 
       {/* Chart Section */}
       <div className={`border rounded-[2.5rem] p-6 shadow-2xl ${
-        isDark ? 'bg-slate-900/60 border-slate-800/80 shadow-slate-950/40' : 'bg-white/70 border-slate-200/60 shadow-slate-200/30'
+        isDark ? 'bg-slate-900/60 border-slate-800/80 shadow-slate-950/40' : 'bg-white/70 border-slate-200 dark:border-slate-700/60 shadow-slate-200/30'
       }`}>
         <h3 className="font-sans text-xs font-black uppercase tracking-widest mb-6 border-b pb-4 border-slate-250 dark:border-slate-800 text-slate-800 dark:text-slate-250">
           Weekly Corporate Revenue & Fleet Utility Rates
@@ -239,7 +239,7 @@ export const FleetManagementPage: React.FC = () => (
       <h2 className="text-xl font-black text-slate-855 dark:text-white uppercase tracking-wider">Fleet Management</h2>
       <p className="text-[10px] text-slate-400 dark:text-slate-500 font-black tracking-widest uppercase mt-0.5">Corporate fleet asset matrix and active statuses</p>
     </div>
-    <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] text-center text-slate-400">
+    <div className="glass border border-slate-200 dark:border-slate-700/50 dark:border-white/5 p-6 rounded-[2rem] text-center text-slate-400">
       <Car className="w-12 h-12 text-slate-300 dark:text-slate-700 mx-auto mb-3" />
       <p className="text-sm font-semibold">Active Fleet Matrix fully synchronized with Saigon Car Rental.</p>
     </div>
@@ -252,7 +252,7 @@ export const EmployeeManagementPage: React.FC = () => (
       <h2 className="text-xl font-black text-slate-855 dark:text-white uppercase tracking-wider">Employee Management</h2>
       <p className="text-[10px] text-slate-400 dark:text-slate-500 font-black tracking-widest uppercase mt-0.5">Rosters, permissions, and shift schedules</p>
     </div>
-    <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] text-center text-slate-400">
+    <div className="glass border border-slate-200 dark:border-slate-700/50 dark:border-white/5 p-6 rounded-[2rem] text-center text-slate-400">
       <Users className="w-12 h-12 text-slate-300 dark:text-slate-700 mx-auto mb-3" />
       <p className="text-sm font-semibold">Manager & Staff assignments are securely locked behind enterprise RBAC controls.</p>
     </div>
@@ -265,7 +265,7 @@ export const DriverManagementPage: React.FC = () => (
       <h2 className="text-xl font-black text-slate-855 dark:text-white uppercase tracking-wider">Driver Management</h2>
       <p className="text-[10px] text-slate-400 dark:text-slate-500 font-black tracking-widest uppercase mt-0.5">Assigned drivers, shift schedules, and safety ratings</p>
     </div>
-    <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] text-center text-slate-400">
+    <div className="glass border border-slate-200 dark:border-slate-700/50 dark:border-white/5 p-6 rounded-[2rem] text-center text-slate-400">
       <Briefcase className="w-12 h-12 text-slate-300 dark:text-slate-700 mx-auto mb-3" />
       <p className="text-sm font-semibold">Shift patterns, routes assignments, and telemetry profiles are fully synchronized.</p>
     </div>
@@ -278,7 +278,7 @@ export const FleetAnalyticsPage: React.FC = () => (
       <h2 className="text-xl font-black text-slate-855 dark:text-white uppercase tracking-wider">Fleet Analytics</h2>
       <p className="text-[10px] text-slate-400 dark:text-slate-500 font-black tracking-widest uppercase mt-0.5">Daily utility indexes, telemetry heatmaps, and aggregate margins</p>
     </div>
-    <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] text-center text-slate-400">
+    <div className="glass border border-slate-200 dark:border-slate-700/50 dark:border-white/5 p-6 rounded-[2rem] text-center text-slate-400">
       <BarChart3 className="w-12 h-12 text-slate-300 dark:text-slate-700 mx-auto mb-3" />
       <p className="text-sm font-semibold">Historical fleet telemetry aggregates are compiled daily at midnight.</p>
     </div>
@@ -291,7 +291,7 @@ export const CorporateReportsPage: React.FC = () => (
       <h2 className="text-xl font-black text-slate-855 dark:text-white uppercase tracking-wider">Corporate Reports</h2>
       <p className="text-[10px] text-slate-400 dark:text-slate-500 font-black tracking-widest uppercase mt-0.5">Compile audits, expense claims, and logistics ledgers</p>
     </div>
-    <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] text-center text-slate-400">
+    <div className="glass border border-slate-200 dark:border-slate-700/50 dark:border-white/5 p-6 rounded-[2rem] text-center text-slate-400">
       <FileText className="w-12 h-12 text-slate-300 dark:text-slate-700 mx-auto mb-3" />
       <p className="text-sm font-semibold">Corporate tax ledgers and audit records fully synchronized.</p>
     </div>
@@ -329,7 +329,7 @@ export const BusinessOwnerDashboardLayout: React.FC = () => {
   return (
     <div 
       className={`min-h-screen relative overflow-hidden transition-colors duration-500 font-sans ${
-        isDark ? 'bg-[#080d16] text-slate-100' : 'bg-[#f4f7fa] text-slate-800'
+        isDark ? 'bg-[#080d16] text-slate-100' : 'bg-[#f4f7fa] text-slate-800 dark:text-slate-200'
       }`}
       style={{
         backgroundImage: isDark
@@ -343,7 +343,7 @@ export const BusinessOwnerDashboardLayout: React.FC = () => {
       <div className="max-w-[1600px] mx-auto px-4 lg:px-8 py-6 relative z-10 flex flex-col lg:flex-row gap-6">
         
         {/* Sticky Left Sidebar */}
-        <aside className="w-66 flex-shrink-0 sticky top-6 h-[calc(100vh-3rem)] rounded-[2.5rem] glass dark:glass-dark border border-slate-200/50 dark:border-slate-800/80 p-6 flex flex-col justify-between hidden lg:flex relative overflow-hidden shadow-2xl">
+        <aside className="w-66 flex-shrink-0 sticky top-6 h-[calc(100vh-3rem)] rounded-[2.5rem] glass dark:glass-dark border border-slate-200 dark:border-slate-700/50 dark:border-slate-800/80 p-6 flex flex-col justify-between hidden lg:flex relative overflow-hidden shadow-2xl">
           <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-fuchsia-500/10 to-transparent pointer-events-none" />
           
           <div className="relative z-10 flex flex-col flex-1 min-h-0">
@@ -367,7 +367,7 @@ export const BusinessOwnerDashboardLayout: React.FC = () => {
               Corporate Account
             </div>
 
-            <hr className="border-slate-200/50 dark:border-slate-800/80 mb-6" />
+            <hr className="border-slate-200 dark:border-slate-700/50 dark:border-slate-800/80 mb-6" />
 
             {/* Links */}
             <nav className="space-y-1.5 flex-1 overflow-y-auto sidebar-scroll pr-1">
@@ -382,11 +382,11 @@ export const BusinessOwnerDashboardLayout: React.FC = () => {
                         ? 'bg-gradient-to-r from-fuchsia-600 to-indigo-600 text-white shadow-xl shadow-fuchsia-500/20' 
                         : isDark 
                           ? 'text-slate-400 hover:text-white hover:bg-slate-900/50' 
-                          : 'text-slate-655 hover:text-slate-900 hover:bg-slate-100/50'
+                          : 'text-slate-655 hover:text-slate-900 dark:text-slate-50 hover:bg-slate-100 dark:hover:bg-slate-800/50'
                     }`}
                   >
-                    {active && <span className="w-1 h-5 bg-white rounded-full absolute left-1" />}
-                    <link.icon className={`w-4.5 h-4.5 ${active ? 'text-white' : 'text-slate-450 group-hover:text-slate-800 dark:group-hover:text-white'}`} />
+                    {active && <span className="w-1 h-5 bg-white dark:bg-slate-900 rounded-full absolute left-1" />}
+                    <link.icon className={`w-4.5 h-4.5 ${active ? 'text-white' : 'text-slate-450 group-hover:text-slate-800 dark:text-slate-200 dark:group-hover:text-white'}`} />
                     <span>{link.label}</span>
                   </Link>
                 );
@@ -395,8 +395,8 @@ export const BusinessOwnerDashboardLayout: React.FC = () => {
           </div>
 
           {/* Bottom user card */}
-          <div className="relative z-10 mt-6 pt-5 border-t border-slate-200/50 dark:border-slate-800/80">
-            <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-100/50 dark:bg-slate-950/40 border border-slate-200/40 dark:border-slate-800/55 shadow-inner">
+          <div className="relative z-10 mt-6 pt-5 border-t border-slate-200 dark:border-slate-700/50 dark:border-slate-800/80">
+            <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-100/50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-700/40 dark:border-slate-800/55 shadow-inner">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-fuchsia-500 to-indigo-500 text-white text-xs font-black flex items-center justify-center shadow-inner">
                 {getInitials(user.displayName)}
               </div>
@@ -420,7 +420,7 @@ export const BusinessOwnerDashboardLayout: React.FC = () => {
           <header className={`rounded-[2rem] border backdrop-blur-xl transition-all duration-500 ${
             isDark 
               ? 'bg-slate-900/60 border-slate-800/80 shadow-2xl shadow-slate-950/30' 
-              : 'bg-white/80 border-slate-200/60 shadow-xl shadow-slate-200/40'
+              : 'bg-white/80 border-slate-200 dark:border-slate-700/60 shadow-xl shadow-slate-200/40'
           } p-6 flex items-center justify-between`}>
             
             <div className="flex items-center gap-3">
@@ -439,7 +439,7 @@ export const BusinessOwnerDashboardLayout: React.FC = () => {
 
             <div className="flex items-center gap-4">
               <div className={`hidden md:flex items-center gap-2.5 px-4.5 py-2.5 border rounded-2xl shadow-inner ${
-                isDark ? 'bg-slate-950/40 border-slate-800' : 'bg-slate-50 border-slate-200'
+                isDark ? 'bg-slate-950/40 border-slate-800' : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700'
               }`}>
                 <Clock className="w-4 h-4 text-fuchsia-500" />
                 <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">

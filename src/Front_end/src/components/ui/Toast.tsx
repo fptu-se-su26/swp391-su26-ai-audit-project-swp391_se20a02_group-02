@@ -6,10 +6,10 @@ import { cn } from '@/utils';
 import type { Toast } from '@/types';
 
 const toastConfig = {
-  success: { icon: CheckCircle, colors: 'bg-white border-green-200 text-green-700', iconColor: 'text-success', bar: 'bg-success' },
-  error: { icon: AlertCircle, colors: 'bg-white border-red-200 text-red-700', iconColor: 'text-danger', bar: 'bg-danger' },
-  warning: { icon: AlertTriangle, colors: 'bg-white border-yellow-200 text-yellow-700', iconColor: 'text-gold', bar: 'bg-gold' },
-  info: { icon: Info, colors: 'bg-white border-blue-200 text-blue-700', iconColor: 'text-accent', bar: 'bg-accent' },
+  success: { icon: CheckCircle, colors: 'bg-white dark:bg-slate-900 border-green-200 text-green-700', iconColor: 'text-success', bar: 'bg-success' },
+  error: { icon: AlertCircle, colors: 'bg-white dark:bg-slate-900 border-red-200 text-red-700', iconColor: 'text-danger', bar: 'bg-danger' },
+  warning: { icon: AlertTriangle, colors: 'bg-white dark:bg-slate-900 border-yellow-200 text-yellow-700', iconColor: 'text-gold', bar: 'bg-gold' },
+  info: { icon: Info, colors: 'bg-white dark:bg-slate-900 border-blue-200 text-blue-700', iconColor: 'text-accent', bar: 'bg-accent' },
 };
 
 const ToastItem: React.FC<{ toast: Toast }> = ({ toast }) => {
@@ -45,7 +45,7 @@ const ToastItem: React.FC<{ toast: Toast }> = ({ toast }) => {
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-[#0F172A]">{toast.title}</p>
+        <p className="text-sm font-semibold text-[#0F172A] dark:text-white">{toast.title}</p>
         {toast.description && (
           <p className="text-xs text-slate-500 mt-0.5">{toast.description}</p>
         )}
@@ -54,7 +54,7 @@ const ToastItem: React.FC<{ toast: Toast }> = ({ toast }) => {
       {/* Close Button */}
       <button
         onClick={() => removeToast(toast.id)}
-        className="absolute top-3 right-3 p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+        className="absolute top-3 right-3 p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
       >
         <X className="w-3.5 h-3.5" />
       </button>

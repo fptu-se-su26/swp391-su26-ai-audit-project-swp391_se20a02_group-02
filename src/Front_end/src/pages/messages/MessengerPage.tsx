@@ -125,17 +125,17 @@ const MessengerPage: React.FC = () => {
   });
 
   return (
-    <div className={cn('min-h-screen pt-20', isDark ? 'bg-slate-900' : 'bg-[#F8FAFC]')}>
+    <div className={cn('min-h-screen pt-20', isDark ? 'bg-slate-900' : 'bg-[#F8FAFC] dark:bg-slate-950')}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-[calc(100vh-80px)]">
         <div className={cn(
           'flex h-full rounded-3xl overflow-hidden border shadow-luxury my-4',
-          isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
+          isDark ? 'bg-slate-800 border-slate-700' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700'
         )}>
           {/* Sidebar */}
-          <div className={cn('w-80 flex-shrink-0 border-r flex flex-col', isDark ? 'border-slate-700' : 'border-slate-100')}>
+          <div className={cn('w-80 flex-shrink-0 border-r flex flex-col', isDark ? 'border-slate-700' : 'border-slate-100 dark:border-slate-800')}>
             {/* Header */}
-            <div className={cn('p-5 border-b', isDark ? 'border-slate-700' : 'border-slate-100')}>
-              <h2 className={cn('font-display text-xl font-bold mb-3', isDark ? 'text-white' : 'text-[#0F172A]')}>
+            <div className={cn('p-5 border-b', isDark ? 'border-slate-700' : 'border-slate-100 dark:border-slate-800')}>
+              <h2 className={cn('font-display text-xl font-bold mb-3', isDark ? 'text-white' : 'text-[#0F172A] dark:text-white')}>
                 {t.nav.messages}
               </h2>
               <div className="relative">
@@ -149,7 +149,7 @@ const MessengerPage: React.FC = () => {
                     'w-full pl-9 pr-4 py-2.5 rounded-xl text-sm outline-none transition-colors',
                     isDark
                       ? 'bg-slate-700 text-slate-200 placeholder:text-slate-500 focus:bg-slate-600'
-                      : 'bg-slate-50 text-slate-800 placeholder:text-slate-400 focus:bg-slate-100'
+                      : 'bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:bg-slate-100'
                   )}
                 />
               </div>
@@ -187,7 +187,7 @@ const MessengerPage: React.FC = () => {
                         'w-full flex items-center gap-3 p-4 text-left transition-colors',
                         isActive
                           ? isDark ? 'bg-blue-900/40' : 'bg-blue-50'
-                          : isDark ? 'hover:bg-slate-700' : 'hover:bg-slate-50'
+                          : isDark ? 'hover:bg-slate-700' : 'hover:bg-slate-50 dark:hover:bg-slate-800'
                       )}
                     >
                       <div className="relative">
@@ -200,7 +200,7 @@ const MessengerPage: React.FC = () => {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-baseline">
-                          <p className={cn('text-sm font-semibold truncate', isActive ? 'text-accent' : isDark ? 'text-slate-200' : 'text-[#0F172A]')}>
+                          <p className={cn('text-sm font-semibold truncate', isActive ? 'text-accent' : isDark ? 'text-slate-200' : 'text-[#0F172A] dark:text-white')}>
                             {other?.displayName || 'Unknown'}
                           </p>
                           <span className="text-[10px] text-slate-400 flex-shrink-0 ml-1">
@@ -230,7 +230,7 @@ const MessengerPage: React.FC = () => {
               {(() => {
                 const other = getOtherUser(activeConv);
                 return (
-                  <div className={cn('flex items-center justify-between px-5 py-4 border-b', isDark ? 'border-slate-700' : 'border-slate-100')}>
+                  <div className={cn('flex items-center justify-between px-5 py-4 border-b', isDark ? 'border-slate-700' : 'border-slate-100 dark:border-slate-800')}>
                     <div className="flex items-center gap-3">
                       {other?.avatar ? (
                         <img src={other.avatar} alt="" className="w-10 h-10 rounded-2xl object-cover" />
@@ -238,14 +238,14 @@ const MessengerPage: React.FC = () => {
                         <div className="avatar w-10 h-10 rounded-2xl text-sm">{getInitials(other?.displayName || 'U')}</div>
                       )}
                       <div>
-                        <p className={cn('font-semibold text-sm', isDark ? 'text-white' : 'text-[#0F172A]')}>{other?.displayName || 'User'}</p>
+                        <p className={cn('font-semibold text-sm', isDark ? 'text-white' : 'text-[#0F172A] dark:text-white')}>{other?.displayName || 'User'}</p>
                         <p className="text-xs text-success flex items-center gap-1"><Circle className="w-2 h-2 fill-current" /> Online</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <button className={cn('p-2 rounded-xl transition-colors', isDark ? 'text-slate-400 hover:bg-slate-700 hover:text-white' : 'text-slate-400 hover:bg-slate-100')}><Phone className="w-4 h-4" /></button>
-                      <button className={cn('p-2 rounded-xl transition-colors', isDark ? 'text-slate-400 hover:bg-slate-700 hover:text-white' : 'text-slate-400 hover:bg-slate-100')}><Video className="w-4 h-4" /></button>
-                      <button className={cn('p-2 rounded-xl transition-colors', isDark ? 'text-slate-400 hover:bg-slate-700 hover:text-white' : 'text-slate-400 hover:bg-slate-100')}><MoreVertical className="w-4 h-4" /></button>
+                      <button className={cn('p-2 rounded-xl transition-colors', isDark ? 'text-slate-400 hover:bg-slate-700 hover:text-white' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800')}><Phone className="w-4 h-4" /></button>
+                      <button className={cn('p-2 rounded-xl transition-colors', isDark ? 'text-slate-400 hover:bg-slate-700 hover:text-white' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800')}><Video className="w-4 h-4" /></button>
+                      <button className={cn('p-2 rounded-xl transition-colors', isDark ? 'text-slate-400 hover:bg-slate-700 hover:text-white' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800')}><MoreVertical className="w-4 h-4" /></button>
                     </div>
                   </div>
                 );
@@ -301,8 +301,8 @@ const MessengerPage: React.FC = () => {
               </div>
 
               {/* Input */}
-              <div className={cn('px-5 py-4 border-t', isDark ? 'border-slate-700' : 'border-slate-100')}>
-                <div className={cn('flex items-center gap-3 p-3 rounded-2xl', isDark ? 'bg-slate-700' : 'bg-slate-50')}>
+              <div className={cn('px-5 py-4 border-t', isDark ? 'border-slate-700' : 'border-slate-100 dark:border-slate-800')}>
+                <div className={cn('flex items-center gap-3 p-3 rounded-2xl', isDark ? 'bg-slate-700' : 'bg-slate-50 dark:bg-slate-900')}>
                   <button className={cn('p-1.5 rounded-xl transition-colors', isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-400 hover:text-slate-600')}>
                     <Image className="w-4 h-4" />
                   </button>
@@ -315,7 +315,7 @@ const MessengerPage: React.FC = () => {
                     onChange={e => setNewMessage(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
                     placeholder="Type a message..."
-                    className={cn('flex-1 bg-transparent text-sm outline-none', isDark ? 'text-slate-200 placeholder:text-slate-500' : 'text-[#0F172A] placeholder:text-slate-400')}
+                    className={cn('flex-1 bg-transparent text-sm outline-none', isDark ? 'text-slate-200 placeholder:text-slate-500' : 'text-[#0F172A] dark:text-white placeholder:text-slate-400')}
                   />
                   <motion.button
                     onClick={handleSend}
@@ -335,7 +335,7 @@ const MessengerPage: React.FC = () => {
                 <div className={cn('w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-4', isDark ? 'bg-slate-700' : 'bg-slate-100')}>
                   <Send className={cn('w-8 h-8', isDark ? 'text-slate-500' : 'text-slate-300')} />
                 </div>
-                <h3 className={cn('font-display text-xl font-bold mb-2', isDark ? 'text-white' : 'text-[#0F172A]')}>{t.nav.messages}</h3>
+                <h3 className={cn('font-display text-xl font-bold mb-2', isDark ? 'text-white' : 'text-[#0F172A] dark:text-white')}>{t.nav.messages}</h3>
                 <p className={cn('text-sm', isDark ? 'text-slate-500' : 'text-slate-400')}>Select a conversation to start chatting</p>
               </div>
             </div>

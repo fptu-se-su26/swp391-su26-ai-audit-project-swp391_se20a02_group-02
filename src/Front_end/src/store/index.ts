@@ -6,7 +6,7 @@ import { apiClient } from '@/services/api';
 import { faker } from '@faker-js/faker';
 
 export type Theme = 'light' | 'dark';
-export type Language = 'en' | 'vi' | 'ja' | 'ko' | 'zh' | 'fr' | 'de' | 'es';
+export type Language = 'en' | 'vi' | 'ja' | 'zh';
 
 
 // ====== AUTH STORE ======

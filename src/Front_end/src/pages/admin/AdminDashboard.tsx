@@ -31,7 +31,7 @@ const COLORS = ['#EAB308', '#6366F1', '#10B981', '#A855F7', '#06B6D4', '#EC4899'
 const AdminCustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-white border border-slate-200 p-3.5 rounded-lg shadow-xl text-xs font-semibold text-slate-800">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-3.5 rounded-lg shadow-xl text-xs font-semibold text-slate-800 dark:text-slate-200">
         <p className="text-slate-550 font-bold mb-1.5">{label}</p>
         {payload.map((item: any, idx: number) => (
           <p key={idx} className="font-extrabold flex items-center gap-2 text-xs mt-1" style={{ color: '#1e293b' }}>
@@ -77,7 +77,7 @@ const AdminSlideDrawer: React.FC<AdminSlideDrawerProps> = ({ isOpen, onClose, ti
             transition={{ type: 'spring', damping: 26, stiffness: 220 }}
             className={cn(
               "fixed right-0 top-0 bottom-0 z-50 w-full sm:w-[480px] md:w-[580px] shadow-2xl p-6 flex flex-col border-l backdrop-blur-xl",
-              isDark ? "bg-[#0b101c]/95 border-slate-800 text-slate-100" : "bg-white/95 border-slate-200 text-slate-800"
+              isDark ? "bg-[#0b101c]/95 border-slate-800 text-slate-100" : "bg-white/95 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200"
             )}
           >
             <div className="flex justify-between items-center border-b dark:border-slate-850 pb-4 mb-6">
@@ -88,7 +88,7 @@ const AdminSlideDrawer: React.FC<AdminSlideDrawerProps> = ({ isOpen, onClose, ti
               </div>
               <button 
                 onClick={onClose} 
-                className="p-2 hover:bg-slate-500/10 rounded-xl transition-all"
+                className="p-2 hover:bg-slate-50 dark:hover:bg-slate-8000/10 rounded-xl transition-all"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -928,7 +928,7 @@ const AdminDashboard: React.FC = () => {
                             <div className={cn("w-10 h-10 rounded-xl border flex items-center justify-center", kpi.style)}>
                               <kpi.icon className="w-5 h-5" />
                             </div>
-                            <span className="text-[8px] font-black uppercase tracking-widest bg-slate-500/5 px-2.5 py-1 rounded-lg border border-[var(--lw-border)] text-slate-500">
+                            <span className="text-[8px] font-black uppercase tracking-widest bg-slate-50 dark:bg-slate-9000/5 px-2.5 py-1 rounded-lg border border-[var(--lw-border)] text-slate-500">
                               {kpi.change}
                             </span>
                           </div>
@@ -973,13 +973,13 @@ const AdminDashboard: React.FC = () => {
                         <div>
                           <div className="flex justify-between items-center mb-5 border-b border-[var(--lw-border)] pb-4">
                             <h3 className="font-black text-xs uppercase tracking-widest text-slate-450">Fleet Split</h3>
-                            <div className="flex gap-1 bg-slate-100 p-0.5 rounded-xl border border-slate-200">
+                            <div className="flex gap-1 bg-slate-100 p-0.5 rounded-xl border border-slate-200 dark:border-slate-700">
                               <button 
                                 onClick={() => setFleetSplitType('ecosystem')}
                                 className={cn(
                                   "px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all",
                                   fleetSplitType === 'ecosystem' 
-                                    ? "bg-white shadow text-indigo-500 animate-fade-in" 
+                                    ? "bg-white dark:bg-slate-900 shadow text-indigo-500 animate-fade-in" 
                                     : "text-slate-400 hover:text-slate-600"
                                 )}
                               >
@@ -990,7 +990,7 @@ const AdminDashboard: React.FC = () => {
                                 className={cn(
                                   "px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all",
                                   fleetSplitType === 'category' 
-                                    ? "bg-white shadow text-indigo-500 animate-fade-in" 
+                                    ? "bg-white dark:bg-slate-900 shadow text-indigo-500 animate-fade-in" 
                                     : "text-slate-400 hover:text-slate-600"
                                 )}
                               >
@@ -1052,7 +1052,7 @@ const AdminDashboard: React.FC = () => {
                     ].map(card => (
                       <div key={card.label} className={cn(
                         "rounded-3xl border p-5 shadow-sm relative overflow-hidden",
-                        isDark ? "bg-slate-900/60 border-slate-800/80" : "bg-white border-slate-200/50"
+                        isDark ? "bg-slate-900/60 border-slate-800/80" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/50"
                       )}>
                         <div className="flex items-center gap-3.5">
                           <div className={cn("w-10 h-10 rounded-xl border flex items-center justify-center", card.style)}>
@@ -1070,18 +1070,18 @@ const AdminDashboard: React.FC = () => {
                   {/* Split Command View */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Top Performing Owners */}
-                    <div className={cn("border rounded-[2rem] p-6 shadow-2xl", isDark ? "bg-slate-900/60 border-slate-800/80" : "bg-white border-slate-200/60")}>
+                    <div className={cn("border rounded-[2rem] p-6 shadow-2xl", isDark ? "bg-slate-900/60 border-slate-800/80" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/60")}>
                       <h3 className="font-black text-xs uppercase tracking-widest text-slate-400 mb-5 border-b dark:border-slate-800 pb-4">Top Fleet Partners</h3>
                       <div className="space-y-3.5 max-h-[360px] overflow-y-auto pr-1 sidebar-scroll">
                         {users.filter(u => u.role === 'owner').slice(0, 5).map((partner, idx) => (
                           <div key={partner.id} className={cn(
                             "flex items-center gap-4 p-3.5 border rounded-2xl transition-all duration-300",
-                            isDark ? "bg-slate-950/30 border-slate-850" : "bg-slate-50 border-slate-200"
+                            isDark ? "bg-slate-950/30 border-slate-850" : "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700"
                           )}>
                             <div className="text-xs font-black text-slate-400 dark:text-slate-500 w-5">#0{idx+1}</div>
                             <Avatar src={partner.avatar} name={partner.displayName || 'Owner'} size="md" className="flex-shrink-0" />
                             <div className="flex-1 min-w-0">
-                              <p className={cn("text-xs font-black truncate", isDark ? "text-slate-200" : "text-slate-800")}>{partner.displayName}</p>
+                              <p className={cn("text-xs font-black truncate", isDark ? "text-slate-200" : "text-slate-800 dark:text-slate-200")}>{partner.displayName}</p>
                               <p className="text-[9px] font-semibold text-slate-400 mt-0.5">{partner.email}</p>
                             </div>
                             <div className="text-right">
@@ -1094,18 +1094,18 @@ const AdminDashboard: React.FC = () => {
                     </div>
 
                     {/* Most Booked Vehicles */}
-                    <div className={cn("border rounded-[2rem] p-6 shadow-2xl", isDark ? "bg-slate-900/60 border-slate-800/80" : "bg-white border-slate-200/60")}>
+                    <div className={cn("border rounded-[2rem] p-6 shadow-2xl", isDark ? "bg-slate-900/60 border-slate-800/80" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/60")}>
                       <h3 className="font-black text-xs uppercase tracking-widest text-slate-400 mb-5 border-b dark:border-slate-800 pb-4">Most Rented Fleet</h3>
                       <div className="space-y-3.5 max-h-[360px] overflow-y-auto pr-1 sidebar-scroll">
                         {vehicles.slice(0, 5).map((vehicle, idx) => (
                           <div key={vehicle.id} className={cn(
                             "flex items-center gap-4 p-3.5 border rounded-2xl transition-all duration-300",
-                            isDark ? "bg-slate-950/30 border-slate-850" : "bg-slate-50 border-slate-200"
+                            isDark ? "bg-slate-950/30 border-slate-850" : "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700"
                           )}>
                             <div className="text-xs font-black text-slate-400 dark:text-slate-500 w-5">#0{idx+1}</div>
                             <img src={vehicle.thumbnailUrl || 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=100&fit=crop'} className="w-14 h-10 rounded-xl object-cover" alt="" />
                             <div className="flex-1 min-w-0">
-                              <p className={cn("text-xs font-black truncate", isDark ? "text-slate-200" : "text-slate-800")}>{vehicle.name}</p>
+                              <p className={cn("text-xs font-black truncate", isDark ? "text-slate-200" : "text-slate-800 dark:text-slate-200")}>{vehicle.name}</p>
                               <p className="text-[9px] font-semibold text-slate-400 mt-0.5">{vehicle.brand} · <span className="text-emerald-500 font-extrabold">{formatCurrency(vehicle.pricePerDay)}</span>/day</p>
                             </div>
                             <div className="text-right">
@@ -1137,7 +1137,7 @@ const AdminDashboard: React.FC = () => {
                         onChange={e => setVehicleStatusFilter(e.target.value)}
                         className={cn(
                           "px-4 py-3 border rounded-xl text-xs outline-none transition-all duration-300",
-                          isDark ? "bg-slate-900 border-slate-800 text-slate-200 focus:border-indigo-500" : "bg-white border-slate-200 text-slate-800 focus:border-indigo-500"
+                          isDark ? "bg-slate-900 border-slate-800 text-slate-200 focus:border-indigo-500" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:border-indigo-500"
                         )}
                       >
                         <option value="ALL">All Statuses</option>
@@ -1154,7 +1154,7 @@ const AdminDashboard: React.FC = () => {
                           onChange={e => setVehicleSearch(e.target.value)}
                           className={cn(
                             "pl-11 pr-5 py-3 border rounded-xl text-xs placeholder:text-slate-450 outline-none w-72 transition-all duration-300",
-                            isDark ? "bg-slate-900 border-slate-800 text-slate-200 focus:border-indigo-500" : "bg-white border-slate-200 text-slate-800 focus:border-indigo-500"
+                            isDark ? "bg-slate-900 border-slate-800 text-slate-200 focus:border-indigo-500" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:border-indigo-500"
                           )}
                         />
                       </div>
@@ -1163,11 +1163,11 @@ const AdminDashboard: React.FC = () => {
 
                   <div className={cn(
                     "border rounded-[2rem] overflow-hidden shadow-2xl transition-all duration-500 w-full",
-                    isDark ? "bg-slate-900/60 border-slate-800/80 shadow-slate-950/40" : "bg-white border-slate-200/60"
+                    isDark ? "bg-slate-900/60 border-slate-800/80 shadow-slate-950/40" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/60"
                   )}>
                     <table className="w-full border-collapse">
                       <thead>
-                        <tr className={cn("border-b", isDark ? "bg-slate-950/40 border-slate-850" : "bg-slate-50 border-slate-150")}>
+                        <tr className={cn("border-b", isDark ? "bg-slate-950/40 border-slate-850" : "bg-slate-50 dark:bg-slate-900 border-slate-150")}>
                           {['Vehicle Model', 'Brand Info', 'Daily Cost Rate', 'Year Model', 'Registration Status', 'Rating Grade'].map(h => (
                             <th key={h} className="text-left px-6 py-4.5 text-[9px] font-black uppercase tracking-widest text-slate-400">{h}</th>
                           ))}
@@ -1183,13 +1183,13 @@ const AdminDashboard: React.FC = () => {
                               onClick={() => setSelectedVehicle(v)}
                               className={cn(
                                 "transition-all duration-200 cursor-pointer",
-                                selectedVehicle?.id === v.id ? (isDark ? "bg-indigo-500/10" : "bg-indigo-50") : (isDark ? "hover:bg-slate-900/30" : "hover:bg-slate-50/20")
+                                selectedVehicle?.id === v.id ? (isDark ? "bg-indigo-500/10" : "bg-indigo-50") : (isDark ? "hover:bg-slate-900/30" : "hover:bg-slate-50 dark:hover:bg-slate-800/20")
                               )}
                             >
                               <td className="px-6 py-4">
                                 <div className="flex items-center gap-3.5">
                                   <img src={v.thumbnailUrl || 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=100&fit=crop'} className="w-12 h-9 rounded-lg object-cover border dark:border-white/5 shadow-inner" alt="" />
-                                  <span className={cn("text-xs font-black uppercase tracking-wider", isDark ? "text-slate-200" : "text-slate-800")}>{v.name}</span>
+                                  <span className={cn("text-xs font-black uppercase tracking-wider", isDark ? "text-slate-200" : "text-slate-800 dark:text-slate-200")}>{v.name}</span>
                                 </div>
                               </td>
                               <td className="px-6 py-4 text-xs font-semibold text-slate-400">{v.brand}</td>
@@ -1225,7 +1225,7 @@ const AdminDashboard: React.FC = () => {
                         onChange={e => setKycStatusFilter(e.target.value)}
                         className={cn(
                           "px-4 py-3 border rounded-xl text-xs outline-none transition-all duration-300",
-                          isDark ? "bg-slate-900 border-slate-800 text-slate-200 focus:border-indigo-500" : "bg-white border-slate-200 text-slate-800 focus:border-indigo-500"
+                          isDark ? "bg-slate-900 border-slate-800 text-slate-200 focus:border-indigo-500" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:border-indigo-500"
                         )}
                       >
                         <option value="ALL">All KYC Statuses</option>
@@ -1242,7 +1242,7 @@ const AdminDashboard: React.FC = () => {
                           onChange={e => setKycSearch(e.target.value)}
                           className={cn(
                             "pl-11 pr-5 py-3 border rounded-xl text-xs placeholder:text-slate-450 outline-none w-72 transition-all duration-300",
-                            isDark ? "bg-slate-900 border-slate-800 text-slate-200 focus:border-indigo-500" : "bg-white border-slate-200 text-slate-800 focus:border-indigo-500"
+                            isDark ? "bg-slate-900 border-slate-800 text-slate-200 focus:border-indigo-500" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:border-indigo-500"
                           )}
                         />
                       </div>
@@ -1251,11 +1251,11 @@ const AdminDashboard: React.FC = () => {
 
                   <div className={cn(
                     "border rounded-[2rem] overflow-hidden shadow-2xl transition-all duration-500 w-full",
-                    isDark ? "bg-slate-900/60 border-slate-800/80 shadow-slate-950/40" : "bg-white border-slate-200/60"
+                    isDark ? "bg-slate-900/60 border-slate-800/80 shadow-slate-950/40" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/60"
                   )}>
                     <table className="w-full border-collapse">
                       <thead>
-                        <tr className={cn("border-b", isDark ? "bg-slate-950/40 border-slate-850" : "bg-slate-50 border-slate-150")}>
+                        <tr className={cn("border-b", isDark ? "bg-slate-950/40 border-slate-850" : "bg-slate-50 dark:bg-slate-900 border-slate-150")}>
                           {['Renter Guest', 'Email Address', 'Verification Status', 'Identity Score'].map(h => (
                             <th key={h} className="text-left px-6 py-4.5 text-[9px] font-black uppercase tracking-widest text-slate-400">{h}</th>
                           ))}
@@ -1271,13 +1271,13 @@ const AdminDashboard: React.FC = () => {
                               onClick={() => setSelectedKycUser(u)}
                               className={cn(
                                 "transition-all duration-200 cursor-pointer",
-                                selectedKycUser?.id === u.id ? (isDark ? "bg-indigo-500/10" : "bg-indigo-50") : (isDark ? "hover:bg-slate-900/30" : "hover:bg-slate-50/20")
+                                selectedKycUser?.id === u.id ? (isDark ? "bg-indigo-500/10" : "bg-indigo-50") : (isDark ? "hover:bg-slate-900/30" : "hover:bg-slate-50 dark:hover:bg-slate-800/20")
                               )}
                             >
                               <td className="px-6 py-4">
                                 <div className="flex items-center gap-3.5">
                                   <Avatar src={u.avatar} name={u.displayName || 'Customer'} size="sm" className="flex-shrink-0" />
-                                  <span className={cn("text-xs font-black uppercase tracking-wider", isDark ? "text-slate-200" : "text-slate-800")}>{u.displayName}</span>
+                                  <span className={cn("text-xs font-black uppercase tracking-wider", isDark ? "text-slate-200" : "text-slate-800 dark:text-slate-200")}>{u.displayName}</span>
                                 </div>
                               </td>
                               <td className="px-6 py-4 text-xs font-semibold text-slate-400">{u.email}</td>
@@ -1315,7 +1315,7 @@ const AdminDashboard: React.FC = () => {
                         onChange={e => setBookingSearch(e.target.value)}
                         className={cn(
                           "pl-11 pr-5 py-3 border rounded-xl text-xs placeholder:text-slate-450 outline-none w-72 transition-all duration-300",
-                          isDark ? "bg-slate-900 border-slate-800 text-slate-200 focus:border-indigo-500" : "bg-white border-slate-200 text-slate-800 focus:border-indigo-500"
+                          isDark ? "bg-slate-900 border-slate-800 text-slate-200 focus:border-indigo-500" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:border-indigo-500"
                         )}
                       />
                     </div>
@@ -1323,12 +1323,12 @@ const AdminDashboard: React.FC = () => {
 
                   <div className={cn(
                     "border rounded-[2rem] overflow-hidden shadow-2xl transition-all duration-500 w-full",
-                    isDark ? "bg-slate-900/60 border-slate-800/80 shadow-slate-950/40" : "bg-white border-slate-200/60"
+                    isDark ? "bg-slate-900/60 border-slate-800/80 shadow-slate-950/40" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/60"
                   )}>
                     <div className="overflow-x-auto">
                       <table className="w-full border-collapse">
                         <thead>
-                          <tr className={cn("border-b", isDark ? "bg-slate-950/40 border-slate-850" : "bg-slate-50 border-slate-150")}>
+                          <tr className={cn("border-b", isDark ? "bg-slate-950/40 border-slate-850" : "bg-slate-50 dark:bg-slate-900 border-slate-150")}>
                             {['Booking ID', 'Renter Guest', 'Owner Partner', 'Vehicle Reserved', 'Rental Dates', 'Charge Total', 'Status', 'Payments', 'Actions'].map(h => (
                               <th key={h} className="text-left px-6 py-4.5 text-[9px] font-black uppercase tracking-widest text-slate-400">{h}</th>
                             ))}
@@ -1342,7 +1342,7 @@ const AdminDashboard: React.FC = () => {
                               <tr 
                                 key={b.id} 
                                 onClick={() => setSelectedBooking(b)}
-                                className={cn("transition-colors duration-200 cursor-pointer", isDark ? "hover:bg-slate-900/30" : "hover:bg-slate-50/20")}
+                                className={cn("transition-colors duration-200 cursor-pointer", isDark ? "hover:bg-slate-900/30" : "hover:bg-slate-50 dark:hover:bg-slate-800/20")}
                               >
                                 <td className="py-4 px-6 font-mono text-xs font-black text-indigo-500">#{b.id.substring(0,8).toUpperCase()}</td>
                                 <td className="py-4 px-6 text-xs font-bold text-slate-450 dark:text-slate-400">{b.renter?.displayName || 'Customer'}</td>
@@ -1396,7 +1396,7 @@ const AdminDashboard: React.FC = () => {
                     ].map(card => (
                       <div key={card.label} className={cn(
                         "rounded-3xl border p-5 shadow-sm relative overflow-hidden",
-                        isDark ? "bg-slate-900/60 border-slate-800/80" : "bg-white border-slate-200/50"
+                        isDark ? "bg-slate-900/60 border-slate-800/80" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/50"
                       )}>
                         <div className="flex items-center gap-3.5">
                           <div className={cn("w-10 h-10 rounded-xl border flex items-center justify-center", card.color)}>
@@ -1414,11 +1414,11 @@ const AdminDashboard: React.FC = () => {
                   {/* Payment Table */}
                   <div className={cn(
                     "border rounded-[2rem] overflow-hidden shadow-2xl transition-all duration-500 w-full",
-                    isDark ? "bg-slate-900/60 border-slate-800/80 shadow-slate-950/40" : "bg-white border-slate-200/60"
+                    isDark ? "bg-slate-900/60 border-slate-800/80 shadow-slate-950/40" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/60"
                   )}>
                     <table className="w-full border-collapse">
                       <thead>
-                        <tr className={cn("border-b", isDark ? "bg-slate-950/40 border-slate-850" : "bg-slate-50 border-slate-150")}>
+                        <tr className={cn("border-b", isDark ? "bg-slate-950/40 border-slate-850" : "bg-slate-50 dark:bg-slate-900 border-slate-150")}>
                           {['Transaction Reference ID', 'Guest Renter', 'Amount', 'Currency', 'Gateway Method', 'Creation Date', 'State Status'].map(h => (
                             <th key={h} className="text-left px-6 py-4.5 text-[9px] font-black uppercase tracking-widest text-slate-400">{h}</th>
                           ))}
@@ -1429,13 +1429,13 @@ const AdminDashboard: React.FC = () => {
                           <tr><td colSpan={7} className="text-slate-400 text-xs font-black uppercase tracking-widest text-center py-20">No transaction parameters cataloged.</td></tr>
                         ) : (
                           filteredPayments.map(p => (
-                            <tr key={p.id} className={cn("transition-colors duration-200", isDark ? "hover:bg-slate-900/30" : "hover:bg-slate-50/20")}>
+                            <tr key={p.id} className={cn("transition-colors duration-200", isDark ? "hover:bg-slate-900/30" : "hover:bg-slate-50 dark:hover:bg-slate-800/20")}>
                               <td className="px-6 py-4 font-mono text-xs font-bold text-slate-450 dark:text-indigo-400">{p.transactionId}</td>
                               <td className="px-6 py-4 text-xs font-bold text-slate-450 dark:text-slate-400">{p.userId || 'Guest'}</td>
                               <td className="px-6 py-4 text-xs font-black text-emerald-500">{formatCurrency(p.amount)}</td>
                               <td className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">{p.currency || 'VND'}</td>
                               <td className="px-6 py-4">
-                                <span className="text-[9px] font-black px-2 py-0.5 bg-slate-500/10 rounded-lg uppercase tracking-wider">{p.method}</span>
+                                <span className="text-[9px] font-black px-2 py-0.5 bg-slate-50 dark:bg-slate-9000/10 rounded-lg uppercase tracking-wider">{p.method}</span>
                               </td>
                               <td className="px-6 py-4 text-xs font-bold text-slate-455">{formatDate(p.createdAt || new Date().toISOString())}</td>
                               <td className="px-6 py-4">
@@ -1463,11 +1463,11 @@ const AdminDashboard: React.FC = () => {
 
                   <div className={cn(
                     "border rounded-[2rem] overflow-hidden shadow-2xl transition-all duration-500 w-full",
-                    isDark ? "bg-slate-900/60 border-slate-800/80 shadow-slate-950/40" : "bg-white border-slate-200/60"
+                    isDark ? "bg-slate-900/60 border-slate-800/80 shadow-slate-950/40" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/60"
                   )}>
                     <table className="w-full border-collapse">
                       <thead>
-                        <tr className={cn("border-b", isDark ? "bg-slate-950/40 border-slate-850" : "bg-slate-50 border-slate-150")}>
+                        <tr className={cn("border-b", isDark ? "bg-slate-950/40 border-slate-850" : "bg-slate-50 dark:bg-slate-900 border-slate-150")}>
                           {['Dispute ID', 'Booking Reference', 'Conflict Reason', 'Current State', 'Creation Date'].map(h => (
                             <th key={h} className="text-left px-6 py-4.5 text-[9px] font-black uppercase tracking-widest text-slate-400">{h}</th>
                           ))}
@@ -1483,7 +1483,7 @@ const AdminDashboard: React.FC = () => {
                               onClick={() => setSelectedDispute(d)}
                               className={cn(
                                 "transition-all duration-200 cursor-pointer",
-                                selectedDispute?.id === d.id ? (isDark ? "bg-indigo-500/10" : "bg-indigo-50") : (isDark ? "hover:bg-slate-900/30" : "hover:bg-slate-50/20")
+                                selectedDispute?.id === d.id ? (isDark ? "bg-indigo-500/10" : "bg-indigo-50") : (isDark ? "hover:bg-slate-900/30" : "hover:bg-slate-50 dark:hover:bg-slate-800/20")
                               )}
                             >
                               <td className="px-6 py-4 font-mono text-xs font-bold text-slate-450 dark:text-indigo-400 font-black">#DISP-00{d.id}</td>
@@ -1519,7 +1519,7 @@ const AdminDashboard: React.FC = () => {
                         onChange={e => setUserRoleFilter(e.target.value)}
                         className={cn(
                           "px-4 py-3 border rounded-xl text-xs outline-none transition-all duration-300",
-                          isDark ? "bg-slate-900 border-slate-800 text-slate-200 focus:border-indigo-500" : "bg-white border-slate-200 text-slate-800 focus:border-indigo-500"
+                          isDark ? "bg-slate-900 border-slate-800 text-slate-200 focus:border-indigo-500" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:border-indigo-500"
                         )}
                       >
                         <option value="ALL">All Roles</option>
@@ -1533,7 +1533,7 @@ const AdminDashboard: React.FC = () => {
                         onChange={e => setUserKycStatusFilter(e.target.value)}
                         className={cn(
                           "px-4 py-3 border rounded-xl text-xs outline-none transition-all duration-300",
-                          isDark ? "bg-slate-900 border-slate-800 text-slate-200 focus:border-indigo-500" : "bg-white border-slate-200 text-slate-800 focus:border-indigo-500"
+                          isDark ? "bg-slate-900 border-slate-800 text-slate-200 focus:border-indigo-500" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:border-indigo-500"
                         )}
                       >
                         <option value="ALL">All KYC Statuses</option>
@@ -1550,7 +1550,7 @@ const AdminDashboard: React.FC = () => {
                           onChange={e => setUserSearch(e.target.value)}
                           className={cn(
                             "pl-11 pr-5 py-3 border rounded-xl text-xs placeholder:text-slate-450 outline-none w-72 transition-all duration-300",
-                            isDark ? "bg-slate-900 border-slate-800 text-slate-200 focus:border-indigo-500" : "bg-white border-slate-200 text-slate-800 focus:border-indigo-500"
+                            isDark ? "bg-slate-900 border-slate-800 text-slate-200 focus:border-indigo-500" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:border-indigo-500"
                           )}
                         />
                       </div>
@@ -1559,11 +1559,11 @@ const AdminDashboard: React.FC = () => {
 
                   <div className={cn(
                     "border rounded-[2rem] overflow-hidden shadow-2xl transition-all duration-500 w-full",
-                    isDark ? "bg-slate-900/60 border-slate-800/80 shadow-slate-950/40" : "bg-white border-slate-200/60"
+                    isDark ? "bg-slate-900/60 border-slate-800/80 shadow-slate-950/40" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/60"
                   )}>
                     <table className="w-full border-collapse">
                       <thead>
-                        <tr className={cn("border-b", isDark ? "bg-slate-950/40 border-slate-850" : "bg-slate-50 border-slate-150")}>
+                        <tr className={cn("border-b", isDark ? "bg-slate-950/40 border-slate-850" : "bg-slate-50 dark:bg-slate-900 border-slate-150")}>
                           {['User Account', 'Email Address', 'Platform Role', 'KYC Status', 'Account Status', 'Actions'].map(h => (
                             <th key={h} className="text-left px-6 py-4.5 text-[9px] font-black uppercase tracking-widest text-slate-400">{h}</th>
                           ))}
@@ -1576,11 +1576,11 @@ const AdminDashboard: React.FC = () => {
                           filteredUsers.map(u => {
                             const isUserActive = u.active !== false;
                             return (
-                              <tr key={u.id} className={cn("transition-colors duration-200", isDark ? "hover:bg-slate-900/30" : "hover:bg-slate-50/20")}>
+                              <tr key={u.id} className={cn("transition-colors duration-200", isDark ? "hover:bg-slate-900/30" : "hover:bg-slate-50 dark:hover:bg-slate-800/20")}>
                                 <td className="px-6 py-4">
                                   <div className="flex items-center gap-3.5">
                                     <Avatar src={u.avatar} name={u.displayName || 'User'} size="sm" className="flex-shrink-0" />
-                                    <span className={cn("text-xs font-black uppercase tracking-wider", isDark ? "text-slate-200" : "text-slate-800")}>{u.displayName}</span>
+                                    <span className={cn("text-xs font-black uppercase tracking-wider", isDark ? "text-slate-200" : "text-slate-800 dark:text-slate-200")}>{u.displayName}</span>
                                   </div>
                                 </td>
                                 <td className="px-6 py-4 text-xs font-semibold text-slate-400">{u.email}</td>
@@ -1641,7 +1641,7 @@ const AdminDashboard: React.FC = () => {
                     ].map(card => (
                       <div key={card.label} className={cn(
                         "rounded-3xl border p-5 shadow-sm relative overflow-hidden",
-                        isDark ? "bg-slate-900/60 border-slate-800/80" : "bg-white border-slate-200/50"
+                        isDark ? "bg-slate-900/60 border-slate-800/80" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/50"
                       )}>
                         <div className="flex items-center gap-3.5">
                           <div className={cn("w-10 h-10 rounded-xl border flex items-center justify-center", card.style)}>
@@ -1658,7 +1658,7 @@ const AdminDashboard: React.FC = () => {
 
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                     {/* Risk Scoring Engine */}
-                    <div className={cn("lg:col-span-2 border rounded-[2rem] overflow-hidden shadow-2xl p-6 flex flex-col gap-4", isDark ? "bg-slate-900/60 border-slate-800/80" : "bg-white border-slate-200/60")}>
+                    <div className={cn("lg:col-span-2 border rounded-[2rem] overflow-hidden shadow-2xl p-6 flex flex-col gap-4", isDark ? "bg-slate-900/60 border-slate-800/80" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/60")}>
                       <h3 className="font-black text-xs uppercase tracking-widest text-slate-450 border-b dark:border-slate-850 pb-3">Risk Scoring Engine</h3>
                       <div className="overflow-x-auto">
                         <table className="w-full border-collapse">
@@ -1673,7 +1673,7 @@ const AdminDashboard: React.FC = () => {
                             {fraudAlerts.map(alert => {
                               const scoreColor = alert.score >= 80 ? 'text-red-500' : alert.score >= 50 ? 'text-amber-500' : 'text-emerald-500';
                               return (
-                                <tr key={alert.id} className="transition-colors hover:bg-slate-500/5">
+                                <tr key={alert.id} className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-8000/5">
                                   <td className="py-4 px-2 text-xs font-black text-slate-200 uppercase">{alert.name}</td>
                                   <td className={cn("py-4 px-2 text-sm font-black", scoreColor)}>{alert.score} pts</td>
                                   <td className="py-4 px-2 text-[11px] text-slate-400 font-semibold max-w-[200px] truncate" title={alert.indicators}>{alert.indicators}</td>
@@ -1704,11 +1704,11 @@ const AdminDashboard: React.FC = () => {
                     </div>
 
                     {/* Hardware Fingerprint Graph list */}
-                    <div className={cn("border rounded-[2rem] p-6 shadow-2xl flex flex-col gap-4", isDark ? "bg-slate-900/60 border-slate-800/80" : "bg-white border-slate-200/60")}>
+                    <div className={cn("border rounded-[2rem] p-6 shadow-2xl flex flex-col gap-4", isDark ? "bg-slate-900/60 border-slate-800/80" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/60")}>
                       <h3 className="font-black text-xs uppercase tracking-widest text-slate-450 border-b dark:border-slate-850 pb-3">Duplicate Device Canvas Fingerprints</h3>
                       <div className="space-y-4 max-h-[350px] overflow-y-auto pr-1 sidebar-scroll">
                         {fingerprints.map(fp => (
-                          <div key={fp.hardwareHash} className="p-3.5 bg-slate-500/5 border dark:border-slate-850 rounded-2xl space-y-2">
+                          <div key={fp.hardwareHash} className="p-3.5 bg-slate-50 dark:bg-slate-9000/5 border dark:border-slate-850 rounded-2xl space-y-2">
                             <div className="flex justify-between items-center">
                               <span className="font-mono text-xs font-black text-indigo-500">{fp.hardwareHash}</span>
                               <span className="text-[8px] font-black bg-red-500/10 border border-red-500/20 text-red-500 px-2 py-0.5 rounded-lg">{fp.riskScore}% Co-relation</span>
@@ -1727,11 +1727,11 @@ const AdminDashboard: React.FC = () => {
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Suspicious Bookings */}
-                    <div className={cn("border rounded-[2rem] p-6 shadow-2xl flex flex-col gap-4", isDark ? "bg-slate-900/60 border-slate-800/80" : "bg-white border-slate-200/60")}>
+                    <div className={cn("border rounded-[2rem] p-6 shadow-2xl flex flex-col gap-4", isDark ? "bg-slate-900/60 border-slate-800/80" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/60")}>
                       <h3 className="font-black text-xs uppercase tracking-widest text-slate-450 border-b dark:border-slate-850 pb-3">Suspicious Transactions Feed</h3>
                       <div className="space-y-3">
                         {suspiciousBookings.map(sb => (
-                          <div key={sb.id} className="p-3.5 bg-slate-500/5 border dark:border-slate-850 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                          <div key={sb.id} className="p-3.5 bg-slate-50 dark:bg-slate-9000/5 border dark:border-slate-850 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                             <div className="space-y-1">
                               <div className="flex items-center gap-2">
                                 <span className="font-mono text-xs font-black text-red-400">{sb.id}</span>
@@ -1759,7 +1759,7 @@ const AdminDashboard: React.FC = () => {
                     </div>
 
                     {/* Chargeback Monitoring */}
-                    <div className={cn("border rounded-[2rem] p-6 shadow-2xl flex flex-col gap-4", isDark ? "bg-slate-900/60 border-slate-800/80" : "bg-white border-slate-200/60")}>
+                    <div className={cn("border rounded-[2rem] p-6 shadow-2xl flex flex-col gap-4", isDark ? "bg-slate-900/60 border-slate-800/80" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/60")}>
                       <h3 className="font-black text-xs uppercase tracking-widest text-slate-450 border-b dark:border-slate-850 pb-3">Chargeback disputes tracking</h3>
                       <div className="overflow-x-auto">
                         <table className="w-full border-collapse">
@@ -1772,7 +1772,7 @@ const AdminDashboard: React.FC = () => {
                           </thead>
                           <tbody className="divide-y dark:divide-slate-850">
                             {chargebacks.map(cb => (
-                              <tr key={cb.id} className="text-xs transition-colors hover:bg-slate-500/5">
+                              <tr key={cb.id} className="text-xs transition-colors hover:bg-slate-50 dark:hover:bg-slate-8000/5">
                                 <td className="py-3 px-1 font-mono font-bold text-indigo-400">{cb.transactionId}</td>
                                 <td className="py-3 px-1 font-semibold">{cb.provider}</td>
                                 <td className="py-3 px-1 font-black text-red-500">{formatCurrency(cb.amount)}</td>
@@ -1810,7 +1810,7 @@ const AdminDashboard: React.FC = () => {
                         onClick={() => handleExportData('CSV')} 
                         className={cn(
                           "flex items-center gap-2 px-4.5 py-2.5 border rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all duration-300 hover-lift shadow-sm",
-                          isDark ? "bg-slate-800 border-slate-700 hover:bg-slate-750 text-slate-300" : "bg-white border-slate-200 hover:bg-slate-50 text-slate-650"
+                          isDark ? "bg-slate-800 border-slate-700 hover:bg-slate-750 text-slate-300" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-650"
                         )}
                       >
                         <FileSpreadsheet className="w-4 h-4 text-emerald-500" />
@@ -1820,7 +1820,7 @@ const AdminDashboard: React.FC = () => {
                         onClick={() => handleExportData('Excel')} 
                         className={cn(
                           "flex items-center gap-2 px-4.5 py-2.5 border rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all duration-300 hover-lift shadow-sm",
-                          isDark ? "bg-slate-800 border-slate-700 hover:bg-slate-750 text-slate-300" : "bg-white border-slate-200 hover:bg-slate-50 text-slate-650"
+                          isDark ? "bg-slate-800 border-slate-700 hover:bg-slate-750 text-slate-300" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-650"
                         )}
                       >
                         <Share2 className="w-4 h-4 text-indigo-500" />
@@ -1830,7 +1830,7 @@ const AdminDashboard: React.FC = () => {
                         onClick={() => handleExportData('PDF')} 
                         className={cn(
                           "flex items-center gap-2 px-4.5 py-2.5 border rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all duration-300 hover-lift shadow-sm",
-                          isDark ? "bg-slate-800 border-slate-700 hover:bg-slate-750 text-slate-300" : "bg-white border-slate-200 hover:bg-slate-50 text-slate-650"
+                          isDark ? "bg-slate-800 border-slate-700 hover:bg-slate-750 text-slate-300" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-650"
                         )}
                       >
                         <Download className="w-4 h-4 text-rose-500" />
@@ -1851,7 +1851,7 @@ const AdminDashboard: React.FC = () => {
                       return (
                         <div key={card.label} className={cn(
                           "rounded-3xl border p-5 shadow-sm relative overflow-hidden",
-                          isDark ? "bg-slate-900/60 border-slate-800/80" : "bg-white border-slate-200/50"
+                          isDark ? "bg-slate-900/60 border-slate-800/80" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/50"
                         )}>
                           <div className="flex justify-between items-center mb-3">
                             <span className="text-[9px] font-black uppercase tracking-widest text-slate-450 dark:text-slate-550">{card.label}</span>
@@ -1866,7 +1866,7 @@ const AdminDashboard: React.FC = () => {
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Revenue Multi-Month Trend */}
-                    <div className={cn("border rounded-[2rem] p-6 shadow-2xl", isDark ? "bg-slate-900/60 border-slate-800/80" : "bg-white border-slate-200/60")}>
+                    <div className={cn("border rounded-[2rem] p-6 shadow-2xl", isDark ? "bg-slate-900/60 border-slate-800/80" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/60")}>
                       <h3 className="font-black text-xs uppercase tracking-widest text-slate-400 mb-5 border-b dark:border-slate-800 pb-4">Revenue Stream Timeline</h3>
                       <ResponsiveContainer width="100%" height={230}>
                         <LineChart data={chartRevenueData}>
@@ -1880,7 +1880,7 @@ const AdminDashboard: React.FC = () => {
                     </div>
 
                     {/* Bookings Volume Analysis */}
-                    <div className={cn("border rounded-[2rem] p-6 shadow-2xl", isDark ? "bg-slate-900/60 border-slate-800/80" : "bg-white border-slate-200/60")}>
+                    <div className={cn("border rounded-[2rem] p-6 shadow-2xl", isDark ? "bg-slate-900/60 border-slate-800/80" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/60")}>
                       <h3 className="font-black text-xs uppercase tracking-widest text-slate-400 mb-5 border-b dark:border-slate-800 pb-4">Checkouts Frequency Volume</h3>
                       <ResponsiveContainer width="100%" height={230}>
                         <BarChart data={chartRevenueData}>
@@ -1896,7 +1896,7 @@ const AdminDashboard: React.FC = () => {
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* CSS Animated Conversion Funnel */}
-                    <div className={cn("border rounded-[2rem] p-6 shadow-2xl flex flex-col gap-4", isDark ? "bg-slate-900/60 border-slate-800/80" : "bg-white border-slate-200/60")}>
+                    <div className={cn("border rounded-[2rem] p-6 shadow-2xl flex flex-col gap-4", isDark ? "bg-slate-900/60 border-slate-800/80" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/60")}>
                       <h3 className="font-black text-xs uppercase tracking-widest text-slate-450 border-b dark:border-slate-850 pb-3">Platform Conversion Funnel</h3>
                       <div className="space-y-4 py-2">
                         {[
@@ -1910,7 +1910,7 @@ const AdminDashboard: React.FC = () => {
                               <span className="text-slate-350">{item.step}</span>
                               <span className="text-slate-100">{item.val} ({item.ratio})</span>
                             </div>
-                            <div className="w-full h-7.5 bg-slate-500/10 rounded-xl overflow-hidden border dark:border-slate-850 shadow-inner flex items-center relative">
+                            <div className="w-full h-7.5 bg-slate-50 dark:bg-slate-9000/10 rounded-xl overflow-hidden border dark:border-slate-850 shadow-inner flex items-center relative">
                               <motion.div 
                                 initial={{ width: 0 }}
                                 animate={{ width: item.width }}
@@ -1924,7 +1924,7 @@ const AdminDashboard: React.FC = () => {
                     </div>
 
                     {/* Geographic Split */}
-                    <div className={cn("border rounded-[2rem] p-6 shadow-2xl flex flex-col gap-4", isDark ? "bg-slate-900/60 border-slate-800/80" : "bg-white border-slate-200/60")}>
+                    <div className={cn("border rounded-[2rem] p-6 shadow-2xl flex flex-col gap-4", isDark ? "bg-slate-900/60 border-slate-800/80" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/60")}>
                       <h3 className="font-black text-xs uppercase tracking-widest text-slate-455 border-b dark:border-slate-850 pb-3">Geographic Fleet Heatmap</h3>
                       <div className="space-y-3">
                         {[
@@ -1934,9 +1934,9 @@ const AdminDashboard: React.FC = () => {
                           { city: 'Nha Trang Hub', trips: 450, share: '9.9%', width: 'w-[9.9%]' },
                           { city: 'Phú Quốc Island', trips: 260, share: '5.8%', width: 'w-[5.8%]' },
                         ].map(geo => (
-                          <div key={geo.city} className="flex items-center justify-between gap-4 p-3 bg-slate-500/5 rounded-2xl border dark:border-slate-850">
+                          <div key={geo.city} className="flex items-center justify-between gap-4 p-3 bg-slate-50 dark:bg-slate-9000/5 rounded-2xl border dark:border-slate-850">
                             <span className="text-xs font-black text-slate-300 uppercase tracking-wider">{geo.city}</span>
-                            <div className="flex-1 max-w-[200px] h-2 bg-slate-500/10 rounded-full overflow-hidden">
+                            <div className="flex-1 max-w-[200px] h-2 bg-slate-50 dark:bg-slate-9000/10 rounded-full overflow-hidden">
                               <div className={cn("h-full bg-indigo-500 rounded-full", geo.width)} />
                             </div>
                             <span className="text-xs font-black text-indigo-400">{geo.trips} trips ({geo.share})</span>
@@ -1961,7 +1961,7 @@ const AdminDashboard: React.FC = () => {
 
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                     {/* Broadcast Dispatcher */}
-                    <div className={cn("lg:col-span-2 border rounded-[2rem] p-6 shadow-2xl flex flex-col gap-4", isDark ? "bg-slate-900/60 border-slate-800/80" : "bg-white border-slate-200/60")}>
+                    <div className={cn("lg:col-span-2 border rounded-[2rem] p-6 shadow-2xl flex flex-col gap-4", isDark ? "bg-slate-900/60 border-slate-800/80" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/60")}>
                       <h3 className="font-black text-xs uppercase tracking-widest text-slate-450 border-b dark:border-slate-850 pb-3">New Announcement Campaign</h3>
                       <form onSubmit={handleSendBroadcast} className="space-y-4">
                         <div className="space-y-1.5">
@@ -1972,7 +1972,7 @@ const AdminDashboard: React.FC = () => {
                             onChange={e => setAnnouncementTitle(e.target.value)}
                             className={cn(
                               "w-full px-4.5 py-3 border rounded-xl text-xs outline-none focus:border-indigo-500 transition-all",
-                              isDark ? "bg-slate-950/60 border-slate-850 text-slate-200" : "bg-slate-50 border-slate-200 text-slate-800"
+                              isDark ? "bg-slate-950/60 border-slate-850 text-slate-200" : "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200"
                             )}
                           />
                         </div>
@@ -1985,7 +1985,7 @@ const AdminDashboard: React.FC = () => {
                             rows={4}
                             className={cn(
                               "w-full px-4.5 py-3 border rounded-xl text-xs outline-none focus:border-indigo-500 transition-all resize-none",
-                              isDark ? "bg-slate-950/60 border-slate-850 text-slate-200" : "bg-slate-50 border-slate-200 text-slate-800"
+                              isDark ? "bg-slate-950/60 border-slate-850 text-slate-200" : "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200"
                             )}
                           />
                         </div>
@@ -1997,7 +1997,7 @@ const AdminDashboard: React.FC = () => {
                               onChange={e => setTargetSegment(e.target.value as any)}
                               className={cn(
                                 "w-full px-4 py-3 border rounded-xl text-xs font-bold outline-none",
-                                isDark ? "bg-slate-950/60 border-slate-850 text-indigo-400" : "bg-slate-50 border-slate-200 text-indigo-650"
+                                isDark ? "bg-slate-950/60 border-slate-850 text-indigo-400" : "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-indigo-650"
                               )}
                             >
                               <option value="all">All Platform Users</option>
@@ -2012,7 +2012,7 @@ const AdminDashboard: React.FC = () => {
                               onChange={e => setNotifyChannel(e.target.value as any)}
                               className={cn(
                                 "w-full px-4 py-3 border rounded-xl text-xs font-bold outline-none",
-                                isDark ? "bg-slate-950/60 border-slate-850 text-indigo-400" : "bg-slate-50 border-slate-200 text-indigo-650"
+                                isDark ? "bg-slate-950/60 border-slate-850 text-indigo-400" : "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-indigo-650"
                               )}
                             >
                               <option value="all">Push Notification & Email</option>
@@ -2029,11 +2029,11 @@ const AdminDashboard: React.FC = () => {
                     </div>
 
                     {/* Sent Campaigns Timeline */}
-                    <div className={cn("border rounded-[2rem] p-6 shadow-2xl flex flex-col gap-4", isDark ? "bg-slate-900/60 border-slate-800/80" : "bg-white border-slate-200/60")}>
+                    <div className={cn("border rounded-[2rem] p-6 shadow-2xl flex flex-col gap-4", isDark ? "bg-slate-900/60 border-slate-800/80" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/60")}>
                       <h3 className="font-black text-xs uppercase tracking-widest text-slate-450 border-b dark:border-slate-850 pb-3">Campaigns Logs</h3>
                       <div className="space-y-4 max-h-[360px] overflow-y-auto pr-1 sidebar-scroll">
                         {broadcasts.map(b => (
-                          <div key={b.id} className="p-3.5 bg-slate-500/5 border dark:border-slate-850 rounded-2xl space-y-2">
+                          <div key={b.id} className="p-3.5 bg-slate-50 dark:bg-slate-9000/5 border dark:border-slate-850 rounded-2xl space-y-2">
                             <div className="flex justify-between items-center">
                               <h4 className="text-xs font-black text-slate-200 truncate uppercase max-w-[180px]">{b.title}</h4>
                               <span className="text-[7.5px] font-black bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 px-2 py-0.5 rounded-lg">{b.status}</span>
@@ -2087,7 +2087,7 @@ const AdminDashboard: React.FC = () => {
                   {/* Telemetry charts row */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {/* CPU Utilization */}
-                    <div className={cn("border rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center gap-4 text-center", isDark ? "bg-slate-900/60 border-slate-800/80" : "bg-white border-slate-200/60")}>
+                    <div className={cn("border rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center gap-4 text-center", isDark ? "bg-slate-900/60 border-slate-800/80" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/60")}>
                       <h4 className="font-black text-xs uppercase tracking-widest text-slate-450 border-b dark:border-slate-850 pb-2 w-full">CPU Core Telemetry</h4>
                       <div className="relative w-32 h-32 flex items-center justify-center">
                         <svg className="w-full h-full transform -rotate-90">
@@ -2103,7 +2103,7 @@ const AdminDashboard: React.FC = () => {
                     </div>
 
                     {/* Memory Allocation */}
-                    <div className={cn("border rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center gap-4 text-center", isDark ? "bg-slate-900/60 border-slate-800/80" : "bg-white border-slate-200/60")}>
+                    <div className={cn("border rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center gap-4 text-center", isDark ? "bg-slate-900/60 border-slate-800/80" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/60")}>
                       <h4 className="font-black text-xs uppercase tracking-widest text-slate-450 border-b dark:border-slate-850 pb-2 w-full">Memory Allocations</h4>
                       <div className="relative w-32 h-32 flex items-center justify-center">
                         <svg className="w-full h-full transform -rotate-90">
@@ -2119,7 +2119,7 @@ const AdminDashboard: React.FC = () => {
                     </div>
 
                     {/* SSD Cluster Storage */}
-                    <div className={cn("border rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center gap-4 text-center", isDark ? "bg-slate-900/60 border-slate-800/80" : "bg-white border-slate-200/60")}>
+                    <div className={cn("border rounded-[2rem] p-6 shadow-2xl flex flex-col items-center justify-center gap-4 text-center", isDark ? "bg-slate-900/60 border-slate-800/80" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/60")}>
                       <h4 className="font-black text-xs uppercase tracking-widest text-slate-450 border-b dark:border-slate-850 pb-2 w-full">Storage Pool cluster</h4>
                       <div className="relative w-32 h-32 flex items-center justify-center">
                         <svg className="w-full h-full transform -rotate-90">
@@ -2138,11 +2138,11 @@ const AdminDashboard: React.FC = () => {
                   {/* Components Node Health Table */}
                   <div className={cn(
                     "border rounded-[2rem] overflow-hidden shadow-2xl transition-all duration-500 w-full",
-                    isDark ? "bg-slate-900/60 border-slate-800/80 shadow-slate-950/40" : "bg-white border-slate-200/60"
+                    isDark ? "bg-slate-900/60 border-slate-800/80 shadow-slate-950/40" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/60"
                   )}>
                     <table className="w-full border-collapse">
                       <thead>
-                        <tr className={cn("border-b", isDark ? "bg-slate-950/40 border-slate-850" : "bg-slate-50 border-slate-150")}>
+                        <tr className={cn("border-b", isDark ? "bg-slate-950/40 border-slate-850" : "bg-slate-50 dark:bg-slate-900 border-slate-150")}>
                           {['Component Service Node', 'Response Latency', 'Availability Rate', 'Uptime Rate', 'Error Rate', 'Health State'].map(h => (
                             <th key={h} className="text-left px-6 py-4.5 text-[9px] font-black uppercase tracking-widest text-slate-450">{h}</th>
                           ))}
@@ -2160,10 +2160,10 @@ const AdminDashboard: React.FC = () => {
                           { node: 'WebSocket STOMP Channel server', type: 'Spring Websocket Server broker', latency: `${healthSystem.wsLatency}ms`, availability: '99.99%', uptime: '99.99%', errorRate: '0.01%', status: 'ONLINE' },
                           { node: 'CDN Asset Cluster (Cloudflare)', type: 'Media Asset Storage & Delivery network', latency: '14ms', availability: '100%', uptime: '100%', errorRate: '0.00%', status: 'ONLINE' },
                         ].map(comp => (
-                          <tr key={comp.node} className={cn("transition-colors duration-200", isDark ? "hover:bg-slate-900/30" : "hover:bg-slate-50/20")}>
+                          <tr key={comp.node} className={cn("transition-colors duration-200", isDark ? "hover:bg-slate-900/30" : "hover:bg-slate-50 dark:hover:bg-slate-800/20")}>
                             <td className="px-6 py-4">
                               <div className="space-y-0.5">
-                                <span className={cn("text-xs font-black uppercase tracking-wider block", isDark ? "text-slate-200" : "text-slate-800")}>{comp.node}</span>
+                                <span className={cn("text-xs font-black uppercase tracking-wider block", isDark ? "text-slate-200" : "text-slate-800 dark:text-slate-200")}>{comp.node}</span>
                                 <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">{comp.type}</span>
                               </div>
                             </td>
@@ -2199,7 +2199,7 @@ const AdminDashboard: React.FC = () => {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className={cn("border rounded-[2rem] p-6 shadow-2xl flex flex-col gap-4", isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200")}>
+                    <div className={cn("border rounded-[2rem] p-6 shadow-2xl flex flex-col gap-4", isDark ? "bg-slate-900 border-slate-800" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700")}>
                       <h3 className="font-black text-xs uppercase tracking-widest text-slate-400 border-b dark:border-slate-800 pb-3">Financial Variables</h3>
                       {settings.length === 0 ? (
                         <div className="text-center py-6 text-slate-500">No active system settings retrieved.</div>
@@ -2207,7 +2207,7 @@ const AdminDashboard: React.FC = () => {
                         settings.map(s => (
                           <div key={s.settingKey} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-2 border-b dark:border-slate-850 last:border-0">
                             <div>
-                              <p className={cn("text-xs font-black capitalize", isDark ? "text-white" : "text-slate-800")}>{s.settingKey.replace(/_/g, ' ')}</p>
+                              <p className={cn("text-xs font-black capitalize", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>{s.settingKey.replace(/_/g, ' ')}</p>
                               <p className="text-[9px] text-slate-400 mt-0.5">Value Type: Float Decimal ratio</p>
                             </div>
                             <input
@@ -2215,7 +2215,7 @@ const AdminDashboard: React.FC = () => {
                               onBlur={e => handleUpdateSetting(s.settingKey, e.target.value)}
                               className={cn(
                                 "px-3.5 py-2 border rounded-xl text-xs font-black outline-none w-28 text-right focus:border-indigo-500",
-                                isDark ? "bg-slate-950/60 border-slate-850 text-indigo-400" : "bg-slate-50 border-slate-200 text-indigo-650"
+                                isDark ? "bg-slate-950/60 border-slate-850 text-indigo-400" : "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-indigo-650"
                               )}
                             />
                           </div>
@@ -2223,19 +2223,19 @@ const AdminDashboard: React.FC = () => {
                       )}
                     </div>
 
-                    <div className={cn("border rounded-[2rem] p-6 shadow-2xl flex flex-col gap-4", isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200")}>
+                    <div className={cn("border rounded-[2rem] p-6 shadow-2xl flex flex-col gap-4", isDark ? "bg-slate-900 border-slate-800" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700")}>
                       <h3 className="font-black text-xs uppercase tracking-widest text-slate-400 border-b dark:border-slate-800 pb-3">System Nodes Configuration</h3>
                       <div className="space-y-4">
                         <div className="flex justify-between items-center py-1">
                           <div>
-                            <p className={cn("text-xs font-black", isDark ? "text-white" : "text-slate-800")}>Active Database Node</p>
+                            <p className={cn("text-xs font-black", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>Active Database Node</p>
                             <p className="text-[9px] text-slate-400 mt-0.5">MS SQL Server AlwaysOn Replica Cluster</p>
                           </div>
                           <span className="text-[8px] font-black bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 px-2.5 py-1 rounded-xl">ACTIVE CONNECTED</span>
                         </div>
                         <div className="flex justify-between items-center py-1">
                           <div>
-                            <p className={cn("text-xs font-black", isDark ? "text-white" : "text-slate-800")}>Cache Server Session</p>
+                            <p className={cn("text-xs font-black", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>Cache Server Session</p>
                             <p className="text-[9px] text-slate-400 mt-0.5">Redis Cluster In-Memory Cache</p>
                           </div>
                           <span className="text-[8px] font-black bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 px-2.5 py-1 rounded-xl">ACTIVE CONNECTED</span>
@@ -2271,17 +2271,17 @@ const AdminDashboard: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-3.5">
-              <div className="p-3 bg-slate-500/5 rounded-xl border dark:border-slate-850">
+              <div className="p-3 bg-slate-50 dark:bg-slate-9000/5 rounded-xl border dark:border-slate-850">
                 <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Rate Per Day</span>
                 <p className="text-sm font-black text-emerald-505 mt-0.5">{formatCurrency(selectedVehicle.pricePerDay)}</p>
               </div>
-              <div className="p-3 bg-slate-500/5 rounded-xl border dark:border-slate-850">
+              <div className="p-3 bg-slate-50 dark:bg-slate-9000/5 rounded-xl border dark:border-slate-850">
                 <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Renter Rating</span>
                 <p className="text-sm font-black text-amber-500 mt-0.5">⭐ {selectedVehicle.rating?.toFixed(1) || '5.0'}</p>
               </div>
             </div>
 
-            <div className="p-4.5 bg-slate-500/5 rounded-2xl border dark:border-slate-855 space-y-2.5">
+            <div className="p-4.5 bg-slate-50 dark:bg-slate-9000/5 rounded-2xl border dark:border-slate-855 space-y-2.5">
               <h5 className="text-[9px] font-black uppercase tracking-widest text-indigo-400 border-b dark:border-slate-850 pb-1.5">Technical Specs Summary</h5>
               <p className="text-xs font-semibold text-slate-350"><span className="text-slate-400">Transmission:</span> {selectedVehicle.specs?.transmission || 'Automatic'}</p>
               <p className="text-xs font-semibold text-slate-350"><span className="text-slate-400">Fuel System:</span> {selectedVehicle.specs?.fuelType || 'Gasoline'}</p>
@@ -2297,7 +2297,7 @@ const AdminDashboard: React.FC = () => {
                   onChange={e => setRejectionReason(e.target.value)}
                   className={cn(
                     "w-full p-3.5 border rounded-xl text-xs outline-none resize-none h-20",
-                    isDark ? "bg-slate-950/60 border-slate-850 focus:border-indigo-500" : "bg-slate-50 border-slate-200 focus:border-indigo-500"
+                    isDark ? "bg-slate-950/60 border-slate-850 focus:border-indigo-500" : "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus:border-indigo-500"
                   )}
                 />
                 <div className="flex gap-2">
@@ -2319,10 +2319,10 @@ const AdminDashboard: React.FC = () => {
         {selectedKycUser && (
           <div className="space-y-6 text-sm">
             {/* User profile info */}
-            <div className="flex items-center gap-3 p-4 bg-slate-500/5 rounded-2xl border dark:border-slate-850">
+            <div className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-9000/5 rounded-2xl border dark:border-slate-850">
               <Avatar src={selectedKycUser.avatar} name={selectedKycUser.displayName || 'Customer'} size="lg" className="flex-shrink-0" />
               <div>
-                <h5 className={cn("text-xs font-black uppercase tracking-wider", isDark ? "text-white" : "text-slate-800")}>{selectedKycUser.displayName}</h5>
+                <h5 className={cn("text-xs font-black uppercase tracking-wider", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>{selectedKycUser.displayName}</h5>
                 <p className="text-[9px] font-semibold text-slate-400 mt-0.5">Phone: {selectedKycUser.phone || 'Not provided'}</p>
                 <p className="text-[9px] font-semibold text-slate-400">Email: {selectedKycUser.email}</p>
                 <div className="mt-1 flex items-center gap-1.5">
@@ -2395,7 +2395,7 @@ const AdminDashboard: React.FC = () => {
                         
                         <div className="grid grid-cols-2 gap-4">
                           {/* CCCD Front */}
-                          <div className="border dark:border-slate-850 rounded-xl overflow-hidden bg-slate-500/5 relative">
+                          <div className="border dark:border-slate-850 rounded-xl overflow-hidden bg-slate-50 dark:bg-slate-9000/5 relative">
                             <span className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white text-[8px] font-black uppercase px-2 py-0.5 rounded">CCCD Front</span>
                             {cccdFront ? (
                               <img src={resolveDocUrl(cccdFront.url)} className="w-full h-32 object-cover" alt="CCCD Front" />
@@ -2405,7 +2405,7 @@ const AdminDashboard: React.FC = () => {
                           </div>
 
                           {/* CCCD Back */}
-                          <div className="border dark:border-slate-850 rounded-xl overflow-hidden bg-slate-500/5 relative">
+                          <div className="border dark:border-slate-850 rounded-xl overflow-hidden bg-slate-50 dark:bg-slate-9000/5 relative">
                             <span className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white text-[8px] font-black uppercase px-2 py-0.5 rounded">CCCD Back</span>
                             {cccdBack ? (
                               <img src={resolveDocUrl(cccdBack.url)} className="w-full h-32 object-cover" alt="CCCD Back" />
@@ -2415,7 +2415,7 @@ const AdminDashboard: React.FC = () => {
                           </div>
 
                           {/* DL Front */}
-                          <div className="border dark:border-slate-850 rounded-xl overflow-hidden bg-slate-500/5 relative">
+                          <div className="border dark:border-slate-850 rounded-xl overflow-hidden bg-slate-50 dark:bg-slate-9000/5 relative">
                             <span className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white text-[8px] font-black uppercase px-2 py-0.5 rounded">DL Front</span>
                             {dlFront ? (
                               <img src={resolveDocUrl(dlFront.url)} className="w-full h-32 object-cover" alt="Driver License Front" />
@@ -2425,7 +2425,7 @@ const AdminDashboard: React.FC = () => {
                           </div>
 
                           {/* DL Back */}
-                          <div className="border dark:border-slate-850 rounded-xl overflow-hidden bg-slate-500/5 relative">
+                          <div className="border dark:border-slate-850 rounded-xl overflow-hidden bg-slate-50 dark:bg-slate-9000/5 relative">
                             <span className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white text-[8px] font-black uppercase px-2 py-0.5 rounded">DL Back</span>
                             {dlBack ? (
                               <img src={resolveDocUrl(dlBack.url)} className="w-full h-32 object-cover" alt="Driver License Back" />
@@ -2436,7 +2436,7 @@ const AdminDashboard: React.FC = () => {
                         </div>
 
                         {/* Selfie Image - Full Width */}
-                        <div className="border dark:border-slate-850 rounded-xl overflow-hidden bg-slate-500/5 relative">
+                        <div className="border dark:border-slate-850 rounded-xl overflow-hidden bg-slate-50 dark:bg-slate-9000/5 relative">
                           <span className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white text-[8px] font-black uppercase px-2 py-0.5 rounded">Selfie holding CCCD</span>
                           {selfie ? (
                             <img src={resolveDocUrl(selfie.url)} className="w-full h-40 object-cover" alt="Selfie" />
@@ -2451,7 +2451,7 @@ const AdminDashboard: React.FC = () => {
                         {/* CCCD OCR */}
                         <div className="space-y-2">
                           <span className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block font-display">CCCD OCR EXTRACTED DATA</span>
-                          <div className="p-3.5 bg-slate-500/5 rounded-xl border dark:border-slate-850 text-xs space-y-1.5 font-semibold text-slate-400">
+                          <div className="p-3.5 bg-slate-50 dark:bg-slate-9000/5 rounded-xl border dark:border-slate-850 text-xs space-y-1.5 font-semibold text-slate-400">
                             <div className="flex justify-between">
                               <span>Citizen Name:</span>
                               <span className="font-black text-slate-800 dark:text-slate-200">{cccdFront?.ekycFullName || 'N/A'}</span>
@@ -2474,7 +2474,7 @@ const AdminDashboard: React.FC = () => {
                         {/* Driver License OCR */}
                         <div className="space-y-2">
                           <span className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block font-display">DRIVING LICENSE OCR DATA</span>
-                          <div className="p-3.5 bg-slate-500/5 rounded-xl border dark:border-slate-850 text-xs space-y-1.5 font-semibold text-slate-400">
+                          <div className="p-3.5 bg-slate-50 dark:bg-slate-9000/5 rounded-xl border dark:border-slate-850 text-xs space-y-1.5 font-semibold text-slate-400">
                             <div className="flex justify-between">
                               <span>License Name:</span>
                               <span className="font-black text-slate-800 dark:text-slate-200">{dlFront?.licenseFullName || 'N/A'}</span>
@@ -2493,7 +2493,7 @@ const AdminDashboard: React.FC = () => {
                         {/* Face Matching & Liveness */}
                         <div className="space-y-2">
                           <span className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block font-display">Face Comparison Metrics</span>
-                          <div className="p-3.5 bg-slate-500/5 rounded-xl border dark:border-slate-850 text-xs space-y-1.5 font-semibold text-slate-400">
+                          <div className="p-3.5 bg-slate-50 dark:bg-slate-9000/5 rounded-xl border dark:border-slate-850 text-xs space-y-1.5 font-semibold text-slate-400">
                             <div className="flex justify-between">
                               <span>Face Similarity Score:</span>
                               <span className="font-black text-slate-800 dark:text-slate-200">{similarity}</span>
@@ -2520,7 +2520,7 @@ const AdminDashboard: React.FC = () => {
                       onChange={e => setRejectionReason(e.target.value)}
                       className={cn(
                         "w-full p-3.5 border rounded-xl text-xs outline-none resize-none h-20",
-                        isDark ? "bg-slate-950/60 border-slate-850 focus:border-indigo-500" : "bg-slate-50 border-slate-200 focus:border-indigo-500"
+                        isDark ? "bg-slate-950/60 border-slate-850 focus:border-indigo-500" : "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus:border-indigo-500"
                       )}
                     />
                     <div className="flex gap-2">
@@ -2555,7 +2555,7 @@ const AdminDashboard: React.FC = () => {
           <div className="space-y-5 text-sm">
             <div>
               <span className="text-[8px] font-black text-slate-450 uppercase tracking-widest">Reason / Conflict Claim</span>
-              <p className={cn("text-xs font-extrabold mt-1", isDark ? "text-white" : "text-slate-800")}>{selectedDispute.reason}</p>
+              <p className={cn("text-xs font-extrabold mt-1", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>{selectedDispute.reason}</p>
             </div>
 
             <div>
@@ -2566,7 +2566,7 @@ const AdminDashboard: React.FC = () => {
             {selectedDispute.evidenceUrl && (
               <div>
                 <span className="text-[8px] font-black text-slate-455 uppercase tracking-widest">Evidence image attachments</span>
-                <div className="h-40 rounded-xl border dark:border-slate-850 overflow-hidden mt-1 shadow-inner bg-slate-500/10 flex items-center justify-center">
+                <div className="h-40 rounded-xl border dark:border-slate-850 overflow-hidden mt-1 shadow-inner bg-slate-50 dark:bg-slate-9000/10 flex items-center justify-center">
                   <img src={selectedDispute.evidenceUrl} className="w-full h-full object-cover" alt="Evidence" />
                 </div>
               </div>
@@ -2580,7 +2580,7 @@ const AdminDashboard: React.FC = () => {
                   onChange={e => setDisputeDecision(e.target.value)}
                   className={cn(
                     "w-full p-3.5 border rounded-xl text-xs outline-none resize-none h-20",
-                    isDark ? "bg-slate-950/60 border-slate-850 focus:border-indigo-500" : "bg-slate-50 border-slate-200 focus:border-indigo-500"
+                    isDark ? "bg-slate-950/60 border-slate-850 focus:border-indigo-500" : "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus:border-indigo-500"
                   )}
                 />
                 <div className="flex gap-2">
@@ -2589,7 +2589,7 @@ const AdminDashboard: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <div className="p-3.5 bg-slate-500/5 rounded-xl border dark:border-slate-850 mt-2">
+              <div className="p-3.5 bg-slate-50 dark:bg-slate-9000/5 rounded-xl border dark:border-slate-850 mt-2">
                 <span className="text-[8px] font-black text-slate-450 uppercase tracking-widest">Resolution decision</span>
                 <p className="text-xs font-bold text-indigo-505 mt-1">{selectedDispute.adminDecision || 'Case closed without notes.'}</p>
               </div>
@@ -2640,7 +2640,7 @@ const AdminDashboard: React.FC = () => {
             {/* Vehicle Details */}
             <div>
               <span className="text-[8px] font-black text-slate-500 block mb-1.5">RESERVED VEHICLE</span>
-              <div className="flex items-center gap-3 p-3 bg-slate-500/5 rounded-2xl border dark:border-slate-850">
+              <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-9000/5 rounded-2xl border dark:border-slate-850">
                 <img src={selectedBooking.vehicle?.thumbnailUrl || 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=100&fit=crop'} className="w-14 h-10 rounded-xl object-cover" alt="" />
                 <div>
                   <p className="text-xs font-black text-slate-200">{selectedBooking.vehicle?.name}</p>
@@ -2664,7 +2664,7 @@ const AdminDashboard: React.FC = () => {
             <hr className="border-slate-850" />
 
             {/* Financial Ledger details */}
-            <div className="p-4 bg-slate-500/5 rounded-2xl border dark:border-slate-850 space-y-2">
+            <div className="p-4 bg-slate-50 dark:bg-slate-9000/5 rounded-2xl border dark:border-slate-850 space-y-2">
               <h5 className="text-[9px] font-black uppercase tracking-widest text-indigo-400 border-b dark:border-slate-850 pb-1.5">Checkout Price Breakdown</h5>
               <div className="flex justify-between text-xs">
                 <span className="text-slate-400">Daily Rental Fee Split:</span>
@@ -2699,7 +2699,7 @@ const AdminDashboard: React.FC = () => {
                       setSelectedBooking(null);
                       setActiveTab('disputes');
                     }}
-                    className="flex-1 border dark:border-slate-700 hover:bg-slate-500/10 text-slate-300 font-black py-3 rounded-xl uppercase text-[9px] tracking-widest"
+                    className="flex-1 border dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-8000/10 text-slate-300 font-black py-3 rounded-xl uppercase text-[9px] tracking-widest"
                   >
                     Escalate Case
                   </button>

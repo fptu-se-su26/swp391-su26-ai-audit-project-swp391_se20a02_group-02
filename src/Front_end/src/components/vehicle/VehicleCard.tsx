@@ -90,7 +90,7 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
     convertible: 'bg-orange-500/10 text-orange-500 border border-orange-500/20',
     classic: 'bg-amber-500/10 text-amber-500 border border-amber-500/20',
     electric: 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20',
-    van: 'bg-slate-500/10 text-slate-500 border border-slate-500/20',
+    van: 'bg-slate-50 dark:bg-slate-9000/10 text-slate-500 border border-slate-500/20',
     motorbike: 'bg-indigo-500/10 text-indigo-500 border border-indigo-500/20',
     economy: 'bg-sky-500/10 text-sky-500 border border-sky-500/20',
     family: 'bg-teal-500/10 text-teal-500 border border-teal-500/20',
@@ -154,7 +154,7 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
                     key={idx} 
                     className={cn(
                       "w-1.5 h-1.5 rounded-full transition-all",
-                      idx === currentImgIdx ? "bg-white w-3" : "bg-white/50"
+                      idx === currentImgIdx ? "bg-white dark:bg-slate-900 w-3" : "bg-white/50"
                     )}
                   />
                 ))}
@@ -335,7 +335,7 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
                   key={idx} 
                   className={cn(
                     "w-1.5 h-1.5 rounded-full transition-all",
-                    idx === currentImgIdx ? "bg-white w-2.5" : "bg-white/40"
+                    idx === currentImgIdx ? "bg-white dark:bg-slate-900 w-2.5" : "bg-white/40"
                   )}
                 />
               ))}

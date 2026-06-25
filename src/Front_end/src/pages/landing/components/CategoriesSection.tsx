@@ -51,7 +51,7 @@ const CategoryGrid: React.FC<CategoryGridProps> = ({ categories, counts, title }
             variants={staggerItem}
             whileHover={{ y: -6 }}
             transition={{ type: 'spring', damping: 18 }}
-            className="relative rounded-[2rem] overflow-hidden h-56 cursor-pointer group shadow-lg border border-slate-100/10 dark:border-slate-800/80 bg-slate-900"
+            className="relative rounded-[2rem] overflow-hidden h-56 cursor-pointer group shadow-lg border border-slate-100 dark:border-slate-800/10 dark:border-slate-800/80 bg-slate-900"
             onClick={() => navigate(`/marketplace?category=${cat.key}`)}
           >
             <img src={cat.image} alt={cat.label} loading="lazy" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />

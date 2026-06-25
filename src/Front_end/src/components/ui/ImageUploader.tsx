@@ -131,7 +131,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
   return (
     <div className={`relative font-sans ${className}`}>
       {preview ? (
-        <div className="relative rounded-[2rem] overflow-hidden border border-slate-200/50 dark:border-slate-800/80 shadow-2xl group transition-all duration-300">
+        <div className="relative rounded-[2rem] overflow-hidden border border-slate-200 dark:border-slate-700/50 dark:border-slate-800/80 shadow-2xl group transition-all duration-300">
           <img
             src={preview}
             alt="Vehicle preview"
@@ -140,7 +140,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
           
           {/* Dark Glass Hover Overlay */}
           <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all duration-500 flex items-center justify-center gap-4">
-            <label className="cursor-pointer px-6 py-3.5 bg-white text-indigo-950 text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-slate-50 transition-all shadow-xl hover-lift flex items-center gap-2 border-0">
+            <label className="cursor-pointer px-6 py-3.5 bg-white dark:bg-slate-900 text-indigo-950 text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-xl hover-lift flex items-center gap-2 border-0">
               <Upload className="w-4 h-4" />
               Change Photo
               <input
@@ -200,7 +200,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
               ? 'border-indigo-500 bg-indigo-500/5 dark:bg-indigo-500/10 scale-[1.03] shadow-2xl ring-4 ring-indigo-500/5'
               : isDark
                 ? 'border-slate-800 bg-slate-900/40 hover:border-indigo-500/40 hover:bg-slate-900/60 hover:shadow-2xl'
-                : 'border-slate-250 bg-white/70 backdrop-blur-md hover:border-indigo-500/40 hover:bg-white hover:shadow-2xl'
+                : 'border-slate-250 bg-white/70 backdrop-blur-md hover:border-indigo-500/40 hover:bg-white dark:bg-slate-900 hover:shadow-2xl'
             }
           `}
         >

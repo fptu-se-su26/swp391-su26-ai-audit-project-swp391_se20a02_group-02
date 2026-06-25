@@ -344,10 +344,12 @@ public class UserController {
                     }
                     
                     String clazz = ocrResult.getLicenseClass().trim().toUpperCase();
-                    boolean isValidClass = clazz.equals("A") || clazz.equals("A1") ||
-                                           clazz.equals("B") || clazz.equals("B1") ||
-                                           clazz.equals("C") || clazz.equals("C1") ||
-                                           clazz.equals("D");
+                    boolean isValidClass = clazz.startsWith("A") ||
+                                           clazz.startsWith("B") ||
+                                           clazz.startsWith("C") ||
+                                           clazz.startsWith("D") ||
+                                           clazz.startsWith("E") ||
+                                           clazz.startsWith("F");
                     if (!isValidClass) {
                         throw new RuntimeException("Invalid license class: " + clazz);
                     }

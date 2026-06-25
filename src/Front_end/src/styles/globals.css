@@ -243,6 +243,48 @@
   min-height: 100vh;
 }
 
+/* --- DARK MODE DASHBOARDS --- */
+html.dark .theme-owner {
+  --lw-bg-primary: #0B1221;
+  --lw-bg-secondary: #131F35;
+  --lw-bg-card: #1A2740;
+  --lw-bg-card-hover: #2A3F5F;
+  --lw-border: rgba(255,255,255,0.1);
+  --lw-border-strong: rgba(245,158,11,0.4);
+  --lw-text-primary: #F8FAFC;
+  --lw-text-secondary: #CBD5E1;
+  --lw-text-muted: #94A3B8;
+  --lw-sidebar-bg: linear-gradient(180deg, #131F35 0%, #0B1221 100%);
+}
+
+html.dark .theme-customer {
+  --lw-bg-primary: #0B1221;
+  --lw-bg-secondary: #131F35;
+  --lw-bg-card: #1A2740;
+  --lw-bg-card-hover: #2A3F5F;
+  --lw-border: rgba(255,255,255,0.1);
+  --lw-border-strong: rgba(37,99,235,0.4);
+  --lw-text-primary: #F8FAFC;
+  --lw-text-secondary: #CBD5E1;
+  --lw-text-muted: #94A3B8;
+  --lw-sidebar-bg: linear-gradient(180deg, #131F35 0%, #0B1221 100%);
+  --glass-bg: rgba(26, 39, 64, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+html.dark .theme-admin {
+  --lw-bg-primary: #0B1221;
+  --lw-bg-secondary: #131F35;
+  --lw-bg-card: #1A2740;
+  --lw-bg-card-hover: #2A3F5F;
+  --lw-border: rgba(255,255,255,0.1);
+  --lw-border-strong: rgba(99,102,241,0.4);
+  --lw-text-primary: #F8FAFC;
+  --lw-text-secondary: #CBD5E1;
+  --lw-text-muted: #94A3B8;
+  --lw-sidebar-bg: linear-gradient(180deg, #131F35 0%, #0B1221 100%);
+}
+
 /* ============================================================
    TYPOGRAPHY SCALE
    ============================================================ */

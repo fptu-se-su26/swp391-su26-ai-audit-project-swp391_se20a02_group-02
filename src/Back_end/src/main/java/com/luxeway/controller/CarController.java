@@ -51,6 +51,7 @@ public class CarController {
             response.put("totalPages", cars.getTotalPages());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
+            e.printStackTrace();
             Map<String, Object> error = new HashMap<>();
             error.put("error", "Failed to search cars");
             error.put("message", e.getMessage());

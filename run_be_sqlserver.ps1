@@ -37,6 +37,7 @@ Write-Host "Jar path: $shortJar" -ForegroundColor Cyan
   "-DJWT_REFRESH_EXPIRATION=604800000" `
   "-DMAIL_USERNAME=dev@luxeway.vn" `
   "-DMAIL_PASSWORD=dev_mail_password" `
+  "-Dspring.mail.host=smtp.gmail.com" `
   "-DGOOGLE_CLIENT_ID=dev-google-client-id.apps.googleusercontent.com" `
   "-DGOOGLE_CLIENT_SECRET=dev-google-client-secret" `
   "-DVNPAY_TMN_CODE=LUXEWAY01" `

@@ -38,7 +38,7 @@ public class Notification {
     @NotBlank
     private String title;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = false, columnDefinition = "NVARCHAR(MAX)")
     @NotBlank
     private String body;
 

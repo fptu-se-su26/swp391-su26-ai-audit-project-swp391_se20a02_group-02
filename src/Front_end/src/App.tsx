@@ -30,7 +30,7 @@ import MotorbikeMarketplace from '@/pages/marketplace/MotorbikeMarketplace';
 import CarDetails from '@/pages/marketplace/CarDetails';
 import MotorbikeDetails from '@/pages/marketplace/MotorbikeDetails';
 import BookingWizardPage from '@/pages/booking/BookingWizardPage';
-import VNPayReturnPage from '@/pages/booking/VNPayReturnPage';
+import MoMoReturnPage from '@/pages/booking/MoMoReturnPage';
 import HelpPage from '@/pages/help/HelpPage';
 import { OwnerSuccessHub } from '@/pages/help/OwnerSuccessHub';
 import { PlatformStatus } from '@/pages/help/PlatformStatus';
@@ -90,7 +90,7 @@ class ConciergeErrorBoundary extends Component<{ children: React.ReactNode }, { 
 const PageLoader: React.FC = () => {
   const { theme } = useUIStore();
   return (
-    <div className={`min-h-screen flex items-center justify-center ${theme === 'dark' ? 'bg-slate-900' : 'bg-[#F8FAFC]'}`}>
+    <div className={`min-h-screen flex items-center justify-center ${theme === 'dark' ? 'bg-slate-900' : 'bg-[#F8FAFC] dark:bg-slate-950'}`}>
       <motion.div
         animate={{ rotate: 360 }}
         transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
@@ -154,7 +154,7 @@ const ForbiddenPage: React.FC = () => {
   };
 
   return (
-    <div className={`min-h-screen flex items-center justify-center px-4 ${isDark ? 'bg-slate-950 text-white' : 'bg-[#F8FAFC] text-[#0F172A]'}`}>
+    <div className={`min-h-screen flex items-center justify-center px-4 ${isDark ? 'bg-slate-950 text-white' : 'bg-[#F8FAFC] dark:bg-slate-950 text-[#0F172A] dark:text-white'}`}>
       <div className="text-center max-w-md p-8 rounded-[2rem] glass dark:glass-dark border border-red-500/20 shadow-2xl relative overflow-hidden">
         <div className="absolute -top-12 -right-12 w-32 h-32 bg-red-500/10 rounded-full blur-2xl pointer-events-none" />
         
@@ -180,10 +180,10 @@ const NotFoundPage: React.FC = () => {
   const { theme } = useUIStore();
   const isDark = theme === 'dark';
   return (
-    <div className={`min-h-screen flex items-center justify-center px-4 ${isDark ? 'bg-slate-900' : 'bg-[#F8FAFC]'}`}>
+    <div className={`min-h-screen flex items-center justify-center px-4 ${isDark ? 'bg-slate-900' : 'bg-[#F8FAFC] dark:bg-slate-950'}`}>
       <div className="text-center">
-        <div className={`text-8xl font-display font-bold mb-4 ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>404</div>
-        <h1 className={`text-2xl font-semibold mb-2 ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>Page not found</h1>
+        <div className={`text-8xl font-display font-bold mb-4 ${isDark ? 'text-white' : 'text-[#0F172A] dark:text-white'}`}>404</div>
+        <h1 className={`text-2xl font-semibold mb-2 ${isDark ? 'text-white' : 'text-[#0F172A] dark:text-white'}`}>Page not found</h1>
         <p className="text-slate-500 mb-8">The page you&apos;re looking for doesn&apos;t exist.</p>
         <a href="/" className="btn-primary">{t.landing.howItWorks.btn}</a>
       </div>
@@ -210,7 +210,7 @@ const WishlistPage: React.FC = () => {
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
-        <h1 className={`font-display text-2xl font-bold ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>{t.dashboard.wishlist}</h1>
+        <h1 className={`font-display text-2xl font-bold ${isDark ? 'text-white' : 'text-[#0F172A] dark:text-white'}`}>{t.dashboard.wishlist}</h1>
         {!loading && vehicles.length > 0 && (
           <span className="px-3 py-1 bg-accent/10 text-accent font-semibold rounded-full text-sm">
             {vehicles.length} saved
@@ -278,7 +278,7 @@ const NotificationsPage: React.FC = () => {
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
-        <h1 className={`font-display text-2xl font-bold ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>{t.dashboard.notifications}</h1>
+        <h1 className={`font-display text-2xl font-bold ${isDark ? 'text-white' : 'text-[#0F172A] dark:text-white'}`}>{t.dashboard.notifications}</h1>
         <button onClick={() => notificationService.markAllRead(user?.id || '')} className="text-sm text-accent font-medium">
           Mark all read
         </button>
@@ -292,7 +292,7 @@ const NotificationsPage: React.FC = () => {
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className={`text-sm font-semibold ${!n.read ? 'text-accent' : isDark ? 'text-white' : 'text-[#0F172A]'}`}>{translateNotification(n.title)}</p>
+                <p className={`text-sm font-semibold ${!n.read ? 'text-accent' : isDark ? 'text-white' : 'text-[#0F172A] dark:text-white'}`}>{translateNotification(n.title)}</p>
                 <p className="text-sm text-slate-500 mt-0.5">{translateNotification(n.body)}</p>
               </div>
               {!n.read && <div className="w-2.5 h-2.5 bg-accent rounded-full flex-shrink-0 mt-1" />}
@@ -388,19 +388,19 @@ const OTPPage: React.FC = () => {
   };
 
   return (
-    <div className={`min-h-screen flex items-center justify-center p-6 ${isDark ? 'bg-slate-900' : 'bg-[#F8FAFC]'}`}>
+    <div className={`min-h-screen flex items-center justify-center p-6 ${isDark ? 'bg-slate-900' : 'bg-[#F8FAFC] dark:bg-slate-950'}`}>
       <div className="w-full max-w-md luxury-card p-8 text-center">
         {success ? (
           <div>
             <div className="w-16 h-16 bg-green-100 dark:bg-green-950/30 rounded-full flex items-center justify-center mx-auto mb-4">
               <span className="text-3xl">✅</span>
             </div>
-            <h2 className={`font-display text-2xl font-bold ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>{t.auth.welcomeBack}</h2>
+            <h2 className={`font-display text-2xl font-bold ${isDark ? 'text-white' : 'text-[#0F172A] dark:text-white'}`}>{t.auth.welcomeBack}</h2>
             <p className="text-slate-500 mt-2">{t.auth.signInSuccess}</p>
           </div>
         ) : step === 'otp' ? (
           <>
-            <h1 className={`font-display text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>Enter OTP</h1>
+            <h1 className={`font-display text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-[#0F172A] dark:text-white'}`}>Enter OTP</h1>
             <p className="text-slate-500 text-sm mb-4">Enter the 6-digit verification code sent to <strong>{email || 'your email'}</strong></p>
             <div className="flex gap-3 justify-center mb-6">
               {code.map((c, i) => (
@@ -428,7 +428,7 @@ const OTPPage: React.FC = () => {
           </>
         ) : (
           <form onSubmit={handleResetPassword} className="space-y-4 text-left">
-            <h1 className={`font-display text-2xl font-bold text-center mb-2 ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>Reset Password</h1>
+            <h1 className={`font-display text-2xl font-bold text-center mb-2 ${isDark ? 'text-white' : 'text-[#0F172A] dark:text-white'}`}>Reset Password</h1>
             <p className="text-slate-500 text-sm text-center mb-6">Create a strong new password for your account.</p>
             
             <div>
@@ -475,12 +475,12 @@ const BookingSuccessPage: React.FC = () => {
   const t = useT();
   const isDark = theme === 'dark';
   return (
-    <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-slate-900' : 'bg-[#F8FAFC]'}`}>
+    <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-slate-900' : 'bg-[#F8FAFC] dark:bg-slate-950'}`}>
       <div className="text-center">
         <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
           <span className="text-4xl">✅</span>
         </div>
-        <h1 className={`font-display text-3xl font-bold mb-3 ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>{t.booking.bookingConfirmed}</h1>
+        <h1 className={`font-display text-3xl font-bold mb-3 ${isDark ? 'text-white' : 'text-[#0F172A] dark:text-white'}`}>{t.booking.bookingConfirmed}</h1>
         <p className="text-slate-500 mb-8">{t.booking.insurance}</p>
         <a href="/" className="btn-primary px-8 py-3">{t.landing.howItWorks.btn}</a>
       </div>
@@ -493,7 +493,7 @@ const NotificationsPageWrapper: React.FC = () => {
   const { theme } = useUIStore();
   const isDark = theme === 'dark';
   return (
-    <div className={`min-h-screen pt-20 ${isDark ? 'bg-slate-900' : 'bg-[#F8FAFC]'}`}>
+    <div className={`min-h-screen pt-20 ${isDark ? 'bg-slate-900' : 'bg-[#F8FAFC] dark:bg-slate-950'}`}>
       <NotificationsPage />
     </div>
   );
@@ -546,8 +546,8 @@ const App: React.FC = () => {
             <Route path="payment/:bookingId" element={
               <ProtectedRoute><BookingWizardPage /></ProtectedRoute>
             } />
-            <Route path="payment/vnpay/return" element={
-              <ProtectedRoute><VNPayReturnPage /></ProtectedRoute>
+            <Route path="payment/momo/return" element={
+              <ProtectedRoute><MoMoReturnPage /></ProtectedRoute>
             } />
             <Route path="success" element={<BookingSuccessPage />} />
             <Route path="bookings/:bookingId" element={

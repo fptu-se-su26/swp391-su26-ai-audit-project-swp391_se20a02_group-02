@@ -31,7 +31,7 @@ export const ThemeToggle: React.FC<{ className?: string }> = ({ className = '' }
       {/* Sliding background */}
       <motion.div
         className={`absolute inset-1 rounded-full ${
-          isDark ? 'bg-slate-600' : 'bg-white'
+          isDark ? 'bg-slate-600' : 'bg-white dark:bg-slate-900'
         }`}
         initial={false}
         animate={{
@@ -71,7 +71,7 @@ export const ThemeToggle: React.FC<{ className?: string }> = ({ className = '' }
 
       {/* Sliding toggle */}
       <motion.div
-        className="absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow-lg flex items-center justify-center"
+        className="absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white dark:bg-slate-900 shadow-lg flex items-center justify-center"
         initial={false}
         animate={{
           x: isDark ? 28 : 0,

@@ -42,18 +42,20 @@ const CAR_CATEGORIES: { value: VehicleCategory; label: string; icon: string }[] 
 
 const CAR_BRANDS = ['Toyota', 'Honda', 'Mazda', 'Hyundai', 'Kia', 'Ford', 'Mitsubishi', 'VinFast', 'Mercedes-Benz', 'BMW', 'Audi', 'Porsche'];
 
-const SORT_OPTIONS = [
-  { value: 'popular', label: 'Phổ biến nhất' },
-  { value: 'rating', label: 'Đánh giá cao' },
-  { value: 'price_asc', label: 'Giá thấp → cao' },
-  { value: 'price_desc', label: 'Giá cao → thấp' },
-  { value: 'newest', label: 'Mới nhất' },
+const getSortOptions = (t: any) => [
+  { value: 'popular', label: t.marketplace?.mostPopular || 'Phổ biến nhất' },
+  { value: 'rating', label: t.marketplace?.highestRated || 'Đánh giá cao' },
+  { value: 'price_asc', label: t.marketplace?.priceLowHigh || 'Giá thấp → cao' },
+  { value: 'price_desc', label: t.marketplace?.priceHighLow || 'Giá cao → thấp' },
+  { value: 'newest', label: t.marketplace?.newestFirst || 'Mới nhất' },
 ];
 
 
 
 // ====== CAR FILTER PANEL ======
 const CarFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: VehicleFilters) => void; onClose?: () => void }> = ({ filters, onChange, onClose }) => {
+  const t = useT();
+  const language = useUIStore((s: any) => s.language) || 'en';
   const [priceRange, setPriceRange] = useState<[number, number]>([filters.minPrice ?? 0, filters.maxPrice ?? 5000000]);
 
   const toggle = (key: keyof VehicleFilters, val: any) => {
@@ -69,10 +71,10 @@ const CarFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: VehicleF
     <div className="space-y-6 max-h-[80vh] overflow-y-auto pr-2 pb-6">
       <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
         <h3 className="font-display font-bold text-foreground text-base flex items-center gap-2">
-          <Car className="w-4 h-4 text-blue-550" /> Lọc Xe Ô Tô
+          <Car className="w-4 h-4 text-blue-550" /> {t.marketplace?.category || 'Lọc Xe Ô Tô'}
         </h3>
         <div className="flex gap-2">
-          <button onClick={() => onChange({ vehicleType: 'car' })} className="text-xs text-blue-500 hover:underline font-bold">Xóa lọc</button>
+          <button onClick={() => onChange({ vehicleType: 'car' })} className="text-xs text-blue-500 hover:underline font-bold">{t.marketplace?.clearFilters || 'Xóa lọc'}</button>
           {onClose && <button onClick={onClose} className="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800"><X className="w-4 h-4 text-slate-400" /></button>}
         </div>
       </div>
@@ -97,7 +99,7 @@ const CarFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: VehicleF
       {/* Price range for cars */}
       <div>
         <div className="flex justify-between items-center mb-3">
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Giá / Ngày</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-400">{t.marketplace?.price || 'Giá / Ngày'}</p>
           <span className="text-xs font-bold text-foreground">{formatVND(priceRange[0])} – {formatVND(priceRange[1])}</span>
         </div>
         <input type="range" min={0} max={5000000} step={50000} value={priceRange[0]}
@@ -135,15 +137,15 @@ const CarFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: VehicleF
 
       {/* Transmission */}
       <div>
-        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Hộp Số</p>
+        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">{t.marketplace?.transmission || 'Hộp Số'}</p>
         <div className="flex gap-2">
-          {(['automatic', 'manual'] as const).map(t => {
-            const sel = (filters.transmission || []).includes(t);
+          {(['automatic', 'manual'] as const).map(trans => {
+            const sel = (filters.transmission || []).includes(trans);
             return (
-              <button key={t} onClick={() => { onChange({ ...filters, transmission: sel ? undefined : [t] }); }}
+              <button key={trans} onClick={() => { onChange({ ...filters, transmission: sel ? undefined : [trans] }); }}
                 className={cn("flex-1 py-2 rounded-xl text-xs font-bold border transition-all capitalize",
                   sel ? "border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400" : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400")}>
-                {t === 'automatic' ? 'Tự Động' : 'Số Sàn'}
+                {trans === 'automatic' ? t.marketplace?.automatic || 'Tự Động' : t.marketplace?.manual || 'Số Sàn'}
               </button>
             );
           })}
@@ -193,11 +195,11 @@ const CarFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: VehicleF
         <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Tính Năng & Dịch Vụ</p>
         <div className="space-y-2">
           {[
-            { key: 'hasChauffeur', icon: <UserCircle className="w-3.5 h-3.5" />, label: 'Có Tài Xế Riêng' },
-            { key: 'airportDelivery', icon: <Plane className="w-3.5 h-3.5" />, label: 'Giao Xe Sân Bay' },
+            { key: 'hasChauffeur', icon: <UserCircle className="w-3.5 h-3.5" />, label: language === 'vi' ? 'Có Tài Xế Riêng' : 'Chauffeur' },
+            { key: 'airportDelivery', icon: <Plane className="w-3.5 h-3.5" />, label: language === 'vi' ? 'Giao Xe Sân Bay' : 'Airport Delivery' },
             { key: 'weddingRental', icon: <Heart className="w-3.5 h-3.5" />, label: 'Phục Vụ Đám Cưới' },
-            { key: 'businessRental', icon: <Briefcase className="w-3.5 h-3.5" />, label: 'Xe Doanh Nghiệp' },
-            { key: 'instantBook', icon: <Zap className="w-3.5 h-3.5" />, label: 'Đặt Ngay' },
+            { key: 'businessRental', icon: <Briefcase className="w-3.5 h-3.5" />, label: language === 'vi' ? 'Xe Doanh Nghiệp' : 'Business Rental' },
+            { key: 'instantBook', icon: <Zap className="w-3.5 h-3.5" />, label: t.marketplace?.instantBook || 'Đặt Ngay' },
           ].map(f => (
             <label key={f.key} className="flex items-center gap-2.5 cursor-pointer group">
               <input type="checkbox" checked={!!(filters as any)[f.key]} onChange={() => toggleBool(f.key as keyof VehicleFilters)} className="rounded text-blue-500 accent-blue-500 w-4 h-4" />
@@ -211,7 +213,7 @@ const CarFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: VehicleF
 
       {/* Rating */}
       <div>
-        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Đánh Giá Tối Thiểu</p>
+        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">{t.marketplace?.rating || 'Đánh Giá Tối Thiểu'}</p>
         <div className="flex gap-2">
           {[4.0, 4.5, 4.8].map(r => (
             <button key={r} onClick={() => onChange({ ...filters, minRating: filters.minRating === r ? undefined : r })}
@@ -352,7 +354,7 @@ export const CarsMarketplace: React.FC = () => {
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="🚗 Tìm xe ô tô... Camry, Mazda 3, Ford Ranger, VinFast VF8..."
-                className="w-full pl-10 pr-10 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm outline-none text-foreground focus:border-blue-500 focus:bg-white dark:focus:bg-slate-950 transition-all font-semibold"
+                className="w-full pl-10 pr-10 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm outline-none text-foreground focus:border-blue-500 focus:bg-white dark:bg-slate-900 dark:focus:bg-slate-950 transition-all font-semibold"
               />
               {searchQuery && (
                 <button onClick={() => setSearchQuery('')} className="absolute right-3.5 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400">
@@ -369,7 +371,7 @@ export const CarsMarketplace: React.FC = () => {
               )}
             >
               <SlidersHorizontal className="w-4 h-4" />
-              <span className="hidden sm:inline">Lọc</span>
+              <span className="hidden sm:inline">{t.marketplace?.filters || 'Lọc'}</span>
               {activeFilterCount > 0 && (
                 <span className="w-5 h-5 text-white text-[10px] font-extrabold rounded-full flex items-center justify-center bg-blue-500">
                   {activeFilterCount}
@@ -385,14 +387,14 @@ export const CarsMarketplace: React.FC = () => {
                 onChange={e => handleFilterChange({ ...filters, sortBy: e.target.value as VehicleFilters['sortBy'] })}
                 className="appearance-none pl-4 pr-10 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-bold outline-none text-slate-600 dark:text-slate-300 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-850 transition-colors"
               >
-                {SORT_OPTIONS.map(opt => (
+                {getSortOptions(t).map(opt => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
               </select>
               <ArrowUpDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
             </div>
 
-            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 rounded-2xl p-1 border border-slate-200/40 dark:border-slate-800/40">
+            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 rounded-2xl p-1 border border-slate-200 dark:border-slate-700/40 dark:border-slate-800/40">
               {(['grid', 'list'] as const).map(mode => (
                 <button key={mode} onClick={() => setViewMode(mode)}
                   className={cn("p-2 rounded-xl transition-all", viewMode === mode ? "bg-white dark:bg-slate-800 shadow-sm text-foreground font-bold" : "text-slate-450 hover:text-foreground")}>
@@ -502,7 +504,7 @@ export const CarsMarketplace: React.FC = () => {
                   <div className="flex justify-center gap-2 mt-12">
                     <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
                       className="px-5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 text-sm font-bold disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
-                      ← Trước
+                      ← {language === 'vi' ? 'Trước' : 'Prev'}
                     </button>
                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                       const pageNum = Math.max(1, Math.min(page - 2, totalPages - 4)) + i;
@@ -516,7 +518,7 @@ export const CarsMarketplace: React.FC = () => {
                     })}
                     <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
                       className="px-5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 text-sm font-bold disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
-                      Sau →
+                      {language === 'vi' ? 'Sau' : 'Next'} →
                     </button>
                   </div>
                 )}

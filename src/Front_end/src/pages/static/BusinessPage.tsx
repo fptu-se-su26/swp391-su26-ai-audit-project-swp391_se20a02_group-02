@@ -117,7 +117,7 @@ const BusinessPage: React.FC = () => {
   const { theme } = useUIStore();
   const isDark = theme === 'dark';
   return (
-    <div className={`min-h-screen ${isDark ? 'bg-slate-900' : 'bg-[#F8FAFC]'}`}>
+    <div className={`min-h-screen ${isDark ? 'bg-slate-900' : 'bg-[#F8FAFC] dark:bg-slate-950'}`}>
       {/* Hero */}
       <section className="relative overflow-hidden pt-32 pb-24 bg-gradient-to-br from-[#0F172A] via-[#1E3A5F] to-[#0F172A]">
         {/* Animated grid background */}
@@ -181,7 +181,7 @@ const BusinessPage: React.FC = () => {
         <div className="container-lux">
           <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-14">
             <span className="text-label text-gold mb-2 block">Why LuxeWay Business?</span>
-            <h2 className={`font-display text-4xl md:text-5xl font-bold mb-4 ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
+            <h2 className={`font-display text-4xl md:text-5xl font-bold mb-4 ${isDark ? 'text-white' : 'text-[#0F172A] dark:text-white'}`}>
               Everything Your Business Needs
             </h2>
             <p className="text-slate-500 max-w-2xl mx-auto text-lg">
@@ -206,7 +206,7 @@ const BusinessPage: React.FC = () => {
                 <div className={`w-14 h-14 ${f.bg} rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300`}>
                   <f.icon className={`w-7 h-7 ${f.iconColor}`} />
                 </div>
-                <h3 className={`font-display text-xl font-bold mb-2 ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>{f.title}</h3>
+                <h3 className={`font-display text-xl font-bold mb-2 ${isDark ? 'text-white' : 'text-[#0F172A] dark:text-white'}`}>{f.title}</h3>
                 <p className="text-slate-500 text-sm leading-relaxed">{f.desc}</p>
               </motion.div>
             ))}
@@ -215,11 +215,11 @@ const BusinessPage: React.FC = () => {
       </section>
 
       {/* Pricing */}
-      <section className={`section ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
+      <section className={`section ${isDark ? 'bg-slate-800' : 'bg-slate-50 dark:bg-slate-900'}`}>
         <div className="container-lux">
           <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-14">
             <span className="text-label text-gold mb-2 block">Transparent Pricing</span>
-            <h2 className="font-display text-4xl md:text-5xl font-bold text-[#0F172A] mb-4">
+            <h2 className="font-display text-4xl md:text-5xl font-bold text-[#0F172A] dark:text-white mb-4">
               Choose Your Plan
             </h2>
             <p className="text-slate-500 text-lg">All plans include a 14-day free trial. No credit card required.</p>
@@ -249,9 +249,9 @@ const BusinessPage: React.FC = () => {
                   </div>
                 )}
                 <div className="mb-6">
-                  <h3 className="font-display text-2xl font-bold text-[#0F172A] mb-2">{plan.name}</h3>
+                  <h3 className="font-display text-2xl font-bold text-[#0F172A] dark:text-white mb-2">{plan.name}</h3>
                   <div className="flex items-end gap-1">
-                    <span className="text-3xl font-bold text-[#0F172A]">
+                    <span className="text-3xl font-bold text-[#0F172A] dark:text-white">
                       {plan.price === 'Custom' ? 'Custom' : `₫${plan.price}`}
                     </span>
                     {plan.period && <span className="text-slate-400 text-sm pb-1">{plan.period}</span>}
@@ -271,7 +271,7 @@ const BusinessPage: React.FC = () => {
                   className={`block text-center py-3 rounded-2xl font-semibold text-sm transition-all duration-200 ${
                     plan.highlight
                       ? 'bg-accent text-white hover:bg-blue-700'
-                      : 'bg-slate-100 text-[#0F172A] hover:bg-slate-200'
+                      : 'bg-slate-100 text-[#0F172A] dark:text-white hover:bg-slate-200'
                   }`}
                 >
                   {plan.name === 'Enterprise' ? 'Contact Sales' : 'Start Free Trial'}
@@ -287,7 +287,7 @@ const BusinessPage: React.FC = () => {
         <div className="container-lux">
           <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-14">
             <span className="text-label text-gold mb-2 block">Trusted by Leaders</span>
-            <h2 className="font-display text-4xl md:text-5xl font-bold text-[#0F172A] mb-4">
+            <h2 className="font-display text-4xl md:text-5xl font-bold text-[#0F172A] dark:text-white mb-4">
               What Business Clients Say
             </h2>
           </motion.div>
@@ -309,7 +309,7 @@ const BusinessPage: React.FC = () => {
                     {t.avatar}
                   </div>
                   <div>
-                    <p className="font-semibold text-sm text-[#0F172A]">{t.name}</p>
+                    <p className="font-semibold text-sm text-[#0F172A] dark:text-white">{t.name}</p>
                     <p className="text-xs text-slate-400">{t.role}</p>
                   </div>
                 </div>

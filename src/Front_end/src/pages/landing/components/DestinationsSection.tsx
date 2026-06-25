@@ -37,7 +37,7 @@ export const DestinationsSection: React.FC<DestinationsSectionProps> = ({ destin
             <span className="text-xs font-bold tracking-widest uppercase text-amber-500 mb-2 block">Top Destinations</span>
             <h2 className="font-bold text-3xl md:text-5xl text-slate-900 dark:text-white">Where Do You Want to Go?</h2>
           </div>
-          <Link to="/marketplace" className="text-sm font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-amber-450 flex items-center gap-1.5 transition-colors">
+          <Link to="/marketplace" className="text-sm font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-50 dark:hover:text-amber-450 flex items-center gap-1.5 transition-colors">
             All Cities <ArrowRight className="w-4 h-4" />
           </Link>
         </motion.div>
@@ -52,7 +52,7 @@ export const DestinationsSection: React.FC<DestinationsSectionProps> = ({ destin
             <motion.div key={dest?.city ?? i} variants={staggerItem}
               whileHover={{ y: -6 }}
               transition={{ type: 'spring', damping: 18 }}
-              className="relative rounded-[2rem] overflow-hidden h-80 cursor-pointer group shadow-lg hover:shadow-2xl border border-slate-100/10 dark:border-slate-800/80 bg-slate-950 transition-all duration-300"
+              className="relative rounded-[2rem] overflow-hidden h-80 cursor-pointer group shadow-lg hover:shadow-2xl border border-slate-100 dark:border-slate-800/10 dark:border-slate-800/80 bg-slate-950 transition-all duration-300"
               onClick={() => dest && navigate(`/marketplace?location=${encodeURIComponent(dest.city)}`)}>
               {dest ? (
                 <>

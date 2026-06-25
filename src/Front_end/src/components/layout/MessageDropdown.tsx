@@ -72,11 +72,11 @@ export const MessageDropdown: React.FC<MessageDropdownProps> = ({ isOpen, onClos
             'absolute right-0 mt-3.5 w-80 sm:w-96 rounded-[28px] border shadow-2xl overflow-hidden z-50 transition-colors duration-300',
             isDark
               ? 'bg-slate-950/95 border-slate-800/80 backdrop-blur-xl text-slate-100 shadow-[0_20px_50px_rgba(0,0,0,0.3)]'
-              : 'bg-white/95 border-slate-100 backdrop-blur-xl text-slate-800 shadow-[0_20px_50px_rgba(0,0,0,0.12)]'
+              : 'bg-white/95 border-slate-100 dark:border-slate-800 backdrop-blur-xl text-slate-800 dark:text-slate-200 shadow-[0_20px_50px_rgba(0,0,0,0.12)]'
           )}
         >
           {/* Header */}
-          <div className={cn('p-4 border-b flex items-center justify-between', isDark ? 'border-slate-800/80' : 'border-slate-100')}>
+          <div className={cn('p-4 border-b flex items-center justify-between', isDark ? 'border-slate-800/80' : 'border-slate-100 dark:border-slate-800')}>
             <h3 className="font-bold text-sm flex items-center gap-2">
               <MessageSquare className="w-4 h-4 text-indigo-500" />
               {t.nav?.messages || 'Messages'}
@@ -110,7 +110,7 @@ export const MessageDropdown: React.FC<MessageDropdownProps> = ({ isOpen, onClos
                     onClick={handleMessageClick}
                     className={cn(
                       'p-3 rounded-2xl cursor-pointer transition-all duration-200 flex gap-3',
-                      isDark ? 'hover:bg-slate-900/60' : 'hover:bg-slate-50',
+                      isDark ? 'hover:bg-slate-900/60' : 'hover:bg-slate-50 dark:hover:bg-slate-800',
                       unread > 0 ? (isDark ? 'bg-indigo-950/20' : 'bg-indigo-50/50') : ''
                     )}
                   >
@@ -132,7 +132,7 @@ export const MessageDropdown: React.FC<MessageDropdownProps> = ({ isOpen, onClos
                     
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-baseline">
-                        <p className={cn('text-sm font-bold truncate', unread > 0 ? (isDark ? 'text-white' : 'text-slate-900') : (isDark ? 'text-slate-300' : 'text-slate-700'))}>
+                        <p className={cn('text-sm font-bold truncate', unread > 0 ? (isDark ? 'text-white' : 'text-slate-900 dark:text-slate-50') : (isDark ? 'text-slate-300' : 'text-slate-700'))}>
                           {other?.displayName || 'Unknown'}
                         </p>
                         <span className="text-[10px] text-slate-400 flex-shrink-0 ml-1">
@@ -150,13 +150,13 @@ export const MessageDropdown: React.FC<MessageDropdownProps> = ({ isOpen, onClos
           </div>
 
           {/* Footer */}
-          <div className={cn('p-2 border-t', isDark ? 'border-slate-800/80' : 'border-slate-100')}>
+          <div className={cn('p-2 border-t', isDark ? 'border-slate-800/80' : 'border-slate-100 dark:border-slate-800')}>
             <Link 
               to="/messages" 
               onClick={onClose}
               className={cn(
                 'block w-full py-2.5 text-center text-xs font-bold rounded-xl transition-colors',
-                isDark ? 'hover:bg-slate-900 text-indigo-400' : 'hover:bg-slate-50 text-indigo-600'
+                isDark ? 'hover:bg-slate-900 text-indigo-400' : 'hover:bg-slate-50 dark:hover:bg-slate-800 text-indigo-600'
               )}
             >
               Open Messenger <ArrowRight className="w-3 h-3 inline-block ml-1" />

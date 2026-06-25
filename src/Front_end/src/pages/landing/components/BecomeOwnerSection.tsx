@@ -24,7 +24,7 @@ export const BecomeOwnerSection: React.FC<BecomeOwnerSectionProps> = ({ ownerSta
   const estimatedRevenue = Math.round(days * pricePerDay * 0.8);
 
   return (
-    <section className="py-20 bg-white">
+    <section className="py-20 bg-white dark:bg-slate-900">
       <div className="max-w-7xl mx-auto px-6">
         <div className="rounded-3xl overflow-hidden bg-[#0F172A] flex flex-col lg:flex-row border border-white/5">
           {/* Left */}

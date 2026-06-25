@@ -28,7 +28,7 @@ public class OwnerProfile {
     @JsonIgnore
     private User user;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "NVARCHAR(MAX)")
     private String bio;
 
     @Column(name = "account_type", nullable = false, length = 20)

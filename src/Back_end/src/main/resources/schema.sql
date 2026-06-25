@@ -539,19 +539,16 @@ GO
 IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'analytics')
 BEGIN
 CREATE TABLE analytics (
-    id          NVARCHAR(36)    NOT NULL PRIMARY KEY,
-    entity_type NVARCHAR(20)    NOT NULL CONSTRAINT CHK_analytics_entity CHECK (entity_type IN ('vehicle','user','booking','platform')),
-    entity_id   NVARCHAR(36),
-    metric_type NVARCHAR(50)    NOT NULL,
-    period      NVARCHAR(10)    NOT NULL CONSTRAINT CHK_analytics_period CHECK (period IN ('day','week','month','year')),
-    date        DATE            NOT NULL,
-    value       DECIMAL(15,2)   NOT NULL,
-    metadata    NVARCHAR(MAX),
-    created_at  DATETIME2       NOT NULL DEFAULT GETDATE()
+    id              NVARCHAR(36)    NOT NULL PRIMARY KEY,
+    record_date     DATE            NOT NULL UNIQUE,
+    revenue         DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
+    bookings_count  INT             NOT NULL DEFAULT 0,
+    active_rentals  INT             NOT NULL DEFAULT 0,
+    new_users       INT             NOT NULL DEFAULT 0,
+    new_vehicles    INT             NOT NULL DEFAULT 0,
+    created_at      DATETIME2       NOT NULL DEFAULT GETDATE()
 );
-CREATE INDEX IDX_analytics_entity ON analytics(entity_type, entity_id);
-CREATE INDEX IDX_analytics_metric ON analytics(metric_type);
-CREATE INDEX IDX_analytics_date   ON analytics(date);
+CREATE INDEX IDX_analytics_date   ON analytics(record_date);
 END
 GO
 

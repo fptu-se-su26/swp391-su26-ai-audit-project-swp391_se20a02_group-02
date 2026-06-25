@@ -17,7 +17,7 @@ public class FAQ {
     @Column(nullable = false, length = 500)
     private String question;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = false, columnDefinition = "NVARCHAR(MAX)")
     private String answer;
 
     @Column(name = "is_active", nullable = false)

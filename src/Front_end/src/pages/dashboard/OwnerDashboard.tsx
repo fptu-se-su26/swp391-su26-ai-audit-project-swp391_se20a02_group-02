@@ -33,9 +33,9 @@ import {
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-white border border-slate-200 p-3.5 rounded-lg shadow-xl text-xs font-semibold text-slate-800">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-3.5 rounded-lg shadow-xl text-xs font-semibold text-slate-800 dark:text-slate-200">
         <p className="text-slate-555 font-bold mb-1">{label}</p>
-        <p className="text-slate-800 font-extrabold flex items-center gap-1.5">
+        <p className="text-slate-800 dark:text-slate-200 font-extrabold flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" />
           Revenue: <span className="text-amber-600">{formatCurrency(payload[0].value)}</span>
         </p>
@@ -410,7 +410,7 @@ export const OwnerOverview: React.FC = () => {
           <div className="space-y-2.5">
             {tasks.map((task, i) => (
               <Link key={i} to={task.href}
-                className="flex items-center gap-3 p-3.5 rounded-2xl transition-all duration-200 group hover:bg-slate-50 dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
+                className="flex items-center gap-3 p-3.5 rounded-2xl transition-all duration-200 group hover:bg-slate-50 dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:border-slate-700 dark:hover:border-slate-700"
                 style={{
                   opacity: task.done ? 0.6 : 1,
                 }}>
@@ -505,7 +505,7 @@ export const VehicleManagePage: React.FC = () => {
           {[...Array(4)].map((_, i) => <div key={i} className="skeleton h-56 rounded-3xl animate-pulse" />)}
         </div>
       ) : vehicles.length === 0 ? (
-        <div className="glass border border-slate-200/50 dark:border-white/5 text-center py-20 rounded-[2.5rem] shadow-sm">
+        <div className="glass border border-slate-200 dark:border-slate-700/50 dark:border-white/5 text-center py-20 rounded-[2.5rem] shadow-sm">
           <Car className="w-16 h-16 text-slate-300 dark:text-slate-700 mx-auto mb-4 animate-bounce" />
           <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-2 text-lg">{t.ownerDashboard.noVehiclesYet}</h3>
           <p className="text-slate-400 text-sm font-medium mb-6">{isVi ? 'Bắt đầu kiếm thu nhập bằng cách đăng ký chiếc xe cao cấp đầu tiên của bạn ngay.' : 'Start earning by listing your first luxury vehicle today.'}</p>
@@ -519,7 +519,7 @@ export const VehicleManagePage: React.FC = () => {
           className="grid grid-cols-1 md:grid-cols-2 gap-6"
         >
           {vehicles.map(vehicle => (
-            <motion.div key={vehicle.id} variants={staggerItem} className="glass border border-slate-200/50 dark:border-white/5 overflow-hidden rounded-[2rem] hover-lift hover-glow shadow-md group transition-all duration-300 relative">
+            <motion.div key={vehicle.id} variants={staggerItem} className="glass border border-slate-200 dark:border-slate-700/50 dark:border-white/5 overflow-hidden rounded-[2rem] hover-lift hover-glow shadow-md group transition-all duration-300 relative">
               <div className="relative h-48 overflow-hidden">
                 <img src={vehicle.thumbnailUrl} alt={vehicle.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent" />
@@ -530,20 +530,20 @@ export const VehicleManagePage: React.FC = () => {
                 </div>
               </div>
               <div className="p-5.5">
-                <div className="flex items-start justify-between mb-4 border-b border-slate-200/10 dark:border-white/5 pb-3.5">
+                <div className="flex items-start justify-between mb-4 border-b border-slate-200 dark:border-slate-700/10 dark:border-white/5 pb-3.5">
                   <div>
                     <h4 className="font-bold text-base text-slate-800 dark:text-slate-100 tracking-tight">{vehicle.name}</h4>
                     <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-1">{vehicle.location.city} · <span className="text-gold font-extrabold">{formatCurrency(vehicle.pricePerDay)}</span>{t.marketplace.perDay}</p>
                   </div>
-                  <div className="flex items-center gap-1 text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-500/5 dark:bg-white/5 border border-slate-200/10 dark:border-white/10 px-2.5 py-1 rounded-lg shadow-sm">
+                  <div className="flex items-center gap-1 text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-9000/5 dark:bg-white/5 border border-slate-200 dark:border-slate-700/10 dark:border-white/10 px-2.5 py-1 rounded-lg shadow-sm">
                     <span className="text-amber-500">⭐</span> {vehicle.rating?.toFixed(1) ?? '5.0'}
                   </div>
                 </div>
                 <div className="flex gap-2.5">
-                  <Link to={`/vehicles/${vehicle.id}`} className="btn-ghost border border-slate-200/60 dark:border-white/10 text-xs px-4 py-2.5 rounded-xl flex items-center gap-1.5 font-extrabold text-slate-600 dark:text-slate-300 hover:border-gold hover:text-gold transition-colors">
+                  <Link to={`/vehicles/${vehicle.id}`} className="btn-ghost border border-slate-200 dark:border-slate-700/60 dark:border-white/10 text-xs px-4 py-2.5 rounded-xl flex items-center gap-1.5 font-extrabold text-slate-600 dark:text-slate-300 hover:border-gold hover:text-gold transition-colors">
                     <Eye className="w-4 h-4" /> {isVi ? 'Xem Tin Đăng' : 'View Listing'}
                   </Link>
-                  <Link to={`/owner/vehicles/${vehicle.id}/edit`} className="btn-ghost border border-slate-200/60 dark:border-white/10 text-xs px-4 py-2.5 rounded-xl flex items-center gap-1.5 font-extrabold text-slate-600 dark:text-slate-300 hover:border-blue-500 hover:text-blue-500 transition-colors">
+                  <Link to={`/owner/vehicles/${vehicle.id}/edit`} className="btn-ghost border border-slate-200 dark:border-slate-700/60 dark:border-white/10 text-xs px-4 py-2.5 rounded-xl flex items-center gap-1.5 font-extrabold text-slate-600 dark:text-slate-300 hover:border-blue-500 hover:text-blue-500 transition-colors">
                     <Edit className="w-4 h-4" /> {t.common.edit}
                   </Link>
                   <button
@@ -813,10 +813,10 @@ export const VehicleFormPage: React.FC = () => {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="glass border border-slate-200/50 dark:border-white/5 p-6 md:p-8 rounded-[2rem] shadow-md">
+      <form onSubmit={handleSubmit} className="glass border border-slate-200 dark:border-slate-700/50 dark:border-white/5 p-6 md:p-8 rounded-[2rem] shadow-md">
         {step === 1 && (
           <motion.div variants={fadeUp} initial="hidden" animate="visible" className="space-y-6">
-            <h3 className="font-display text-xl font-bold text-slate-800 dark:text-white border-b border-slate-200/10 dark:border-white/5 pb-3">{isVi ? 'Thông Tin Cơ Bản' : isJa ? '基本情報' : 'Basic Information'}</h3>
+            <h3 className="font-display text-xl font-bold text-slate-800 dark:text-white border-b border-slate-200 dark:border-slate-700/10 dark:border-white/5 pb-3">{isVi ? 'Thông Tin Cơ Bản' : isJa ? '基本情報' : 'Basic Information'}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="lw-form-group">
                 <label className="lw-form-label">{isVi ? 'Tên Xe *' : isJa ? '車両名 *' : 'Vehicle Name *'}</label>
@@ -855,7 +855,7 @@ export const VehicleFormPage: React.FC = () => {
  
         {step === 2 && (
           <motion.div variants={fadeUp} initial="hidden" animate="visible" className="space-y-6">
-            <h3 className="font-display text-xl font-bold text-slate-800 dark:text-white border-b border-slate-200/10 dark:border-white/5 pb-3">{isVi ? 'Thông Số & Tiện Nghi' : isJa ? 'スペック・装備' : 'Specs & Features'}</h3>
+            <h3 className="font-display text-xl font-bold text-slate-800 dark:text-white border-b border-slate-200 dark:border-slate-700/10 dark:border-white/5 pb-3">{isVi ? 'Thông Số & Tiện Nghi' : isJa ? 'スペック・装備' : 'Specs & Features'}</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="lw-form-group">
                 <label className="lw-form-label">{isVi ? 'Số Chỗ' : isJa ? '座席数' : 'Seats'}</label>
@@ -884,7 +884,7 @@ export const VehicleFormPage: React.FC = () => {
             </div>
             <div className="mt-4">
               <label className="lw-form-label mb-3">{isVi ? 'Hình Ảnh Xe' : isJa ? '車両画像' : 'Vehicle Image'}</label>
-              <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-gold rounded-3xl p-7 text-center transition-colors cursor-pointer relative bg-slate-500/5 hover:bg-slate-500/10 group animate-fade-in">
+              <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-gold rounded-3xl p-7 text-center transition-colors cursor-pointer relative bg-slate-50 dark:bg-slate-9000/5 hover:bg-slate-50 dark:hover:bg-slate-8000/10 group animate-fade-in">
                 <input
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
@@ -920,7 +920,7 @@ export const VehicleFormPage: React.FC = () => {
                   </div>
                 ) : (
                   <div>
-                    <div className="w-14 h-14 bg-slate-100 dark:bg-slate-800/80 rounded-2.5xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300 shadow-sm border border-slate-200/10">
+                    <div className="w-14 h-14 bg-slate-100 dark:bg-slate-800/80 rounded-2.5xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300 shadow-sm border border-slate-200 dark:border-slate-700/10">
                       <span className="text-2xl">📷</span>
                     </div>
                     <p className="text-sm font-bold text-slate-800 dark:text-white mb-1.5">{isVi ? 'Nhấp hoặc kéo thả để tải lên ảnh xe' : 'Click or drag to upload vehicle image'}</p>
@@ -935,7 +935,7 @@ export const VehicleFormPage: React.FC = () => {
  
         {step === 3 && (
           <motion.div variants={fadeUp} initial="hidden" animate="visible" className="space-y-6">
-            <h3 className="font-display text-xl font-bold text-slate-800 dark:text-white border-b border-slate-200/10 dark:border-white/5 pb-3">{isVi ? 'Giá Cả & Địa Điểm' : isJa ? '料金・所在地' : 'Pricing & Location'}</h3>
+            <h3 className="font-display text-xl font-bold text-slate-800 dark:text-white border-b border-slate-200 dark:border-slate-700/10 dark:border-white/5 pb-3">{isVi ? 'Giá Cả & Địa Điểm' : isJa ? '料金・所在地' : 'Pricing & Location'}</h3>
             <div className="lw-form-group">
               <label className="lw-form-label">{isVi ? `Giá Thuê Hàng Ngày (${currency}) *` : isJa ? `一日あたりの料金（${currency}） *` : `Daily Rate (${currency}) *`}</label>
               <div className="relative">
@@ -988,7 +988,7 @@ export const VehicleFormPage: React.FC = () => {
           </motion.div>
         )}
 
-        <div className="flex gap-4 mt-8 pt-6 border-t border-slate-200/10 dark:border-white/5">
+        <div className="flex gap-4 mt-8 pt-6 border-t border-slate-200 dark:border-slate-700/10 dark:border-white/5">
           {step > 1 && (
             <button type="button" onClick={() => { setStep(s => s - 1); window.scrollTo(0, 0); }} className="btn-ghost border border-slate-200 dark:border-white/10 px-6 py-3 rounded-xl font-extrabold text-slate-600 dark:text-slate-300 hover:text-[#EAB308] transition-colors">
               {isVi ? 'Quay Lại' : isJa ? '戻る' : 'Back'}
@@ -1067,7 +1067,7 @@ export const OwnerCalendarPage: React.FC = () => {
           <select 
             value={selectedVehicle} 
             onChange={(e) => setSelectedVehicle(e.target.value)}
-            className="lux-input py-2.5 bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-white/5 text-slate-800 dark:text-white font-extrabold min-w-[220px] rounded-xl focus:border-gold/50"
+            className="lux-input py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/50 dark:border-white/5 text-slate-800 dark:text-white font-extrabold min-w-[220px] rounded-xl focus:border-gold/50"
           >
             <option value="all">All Fleet Vehicles</option>
             {vehicles.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
@@ -1075,24 +1075,24 @@ export const OwnerCalendarPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="glass border border-slate-200/50 dark:border-white/5 rounded-[2.5rem] shadow-md overflow-hidden">
+      <div className="glass border border-slate-200 dark:border-slate-700/50 dark:border-white/5 rounded-[2.5rem] shadow-md overflow-hidden">
         {/* Calendar Header */}
-        <div className="p-4 sm:p-5 border-b border-slate-200/25 dark:border-white/5 flex items-center justify-between bg-slate-500/5">
+        <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-700/25 dark:border-white/5 flex items-center justify-between bg-slate-50 dark:bg-slate-9000/5">
           <h2 className="font-display text-lg font-extrabold text-slate-800 dark:text-white tracking-tight">
             {new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long', year: 'numeric' })}
           </h2>
           <div className="flex gap-2">
-            <button onClick={prevMonth} className="p-2.5 rounded-xl border border-slate-200/50 dark:border-white/10 hover:bg-slate-500/10 transition-all font-extrabold text-slate-600 dark:text-slate-300 text-sm hover:text-gold hover-lift">
+            <button onClick={prevMonth} className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700/50 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-slate-8000/10 transition-all font-extrabold text-slate-600 dark:text-slate-300 text-sm hover:text-gold hover-lift">
               ←
             </button>
-            <button onClick={nextMonth} className="p-2.5 rounded-xl border border-slate-200/50 dark:border-white/10 hover:bg-slate-500/10 transition-all font-extrabold text-slate-600 dark:text-slate-300 text-sm hover:text-gold hover-lift">
+            <button onClick={nextMonth} className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700/50 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-slate-8000/10 transition-all font-extrabold text-slate-600 dark:text-slate-300 text-sm hover:text-gold hover-lift">
               →
             </button>
           </div>
         </div>
 
         {/* Days of Week */}
-        <div className="grid grid-cols-7 border-b border-slate-200/25 dark:border-white/5 bg-slate-500/3">
+        <div className="grid grid-cols-7 border-b border-slate-200 dark:border-slate-700/25 dark:border-white/5 bg-slate-50 dark:bg-slate-9000/3">
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
             <div key={d} className="p-3.5 text-center text-xs font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
               {d}
@@ -1103,7 +1103,7 @@ export const OwnerCalendarPage: React.FC = () => {
         {/* Calendar Grid */}
         <div className="p-4 sm:p-6">
           <div className="grid grid-cols-7 gap-2 sm:gap-3">
-            {paddingDays.map(i => <div key={`pad-${i}`} className="h-24 rounded-2xl bg-slate-500/3 border border-slate-200/5 dark:border-white/3 opacity-30" />)}
+            {paddingDays.map(i => <div key={`pad-${i}`} className="h-24 rounded-2xl bg-slate-50 dark:bg-slate-9000/3 border border-slate-200 dark:border-slate-700/5 dark:border-white/3 opacity-30" />)}
             
             {days.map(day => {
               const dayBookings = getBookingsForDay(day);
@@ -1115,7 +1115,7 @@ export const OwnerCalendarPage: React.FC = () => {
                   className={`h-24 rounded-2xl border p-2 flex flex-col transition-all duration-300 relative group ${
                     isToday 
                       ? 'border-[#EAB308] bg-yellow-500/10 ring-2 ring-[#EAB308]/20 shadow-md shadow-[#EAB308]/15' 
-                      : 'border-slate-200/30 dark:border-white/5 hover:border-gold/30 bg-slate-500/5 hover:bg-slate-500/8'
+                      : 'border-slate-200 dark:border-slate-700/30 dark:border-white/5 hover:border-gold/30 bg-slate-50 dark:bg-slate-9000/5 hover:bg-slate-50 dark:hover:bg-slate-8000/8'
                   }`}
                 >
                   <span className={`text-xs font-extrabold ${isToday ? 'text-gold' : 'text-slate-600 dark:text-slate-300'}`}>{day}</span>
@@ -1187,7 +1187,7 @@ export const OwnerBookingsPage: React.FC = () => {
             className={`px-4.5 py-2.5 rounded-xl text-xs font-extrabold whitespace-nowrap border transition-all duration-300 hover-lift ${
               filter === status 
                 ? 'border-gold bg-yellow-500/10 text-gold shadow-sm shadow-gold/20' 
-                : 'border-slate-200/50 dark:border-white/5 text-slate-500 dark:text-slate-400 bg-slate-500/5 hover:border-slate-300 dark:hover:border-white/10'
+                : 'border-slate-200 dark:border-slate-700/50 dark:border-white/5 text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-9000/5 hover:border-slate-300 dark:hover:border-white/10'
             }`}
           >
             {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -1204,7 +1204,7 @@ export const OwnerBookingsPage: React.FC = () => {
       {loading ? (
         <div className="space-y-4">{[...Array(4)].map((_, i) => <div key={i} className="skeleton h-32 rounded-[2rem] animate-pulse" />)}</div>
       ) : filtered.length === 0 ? (
-        <div className="glass border border-slate-200/50 dark:border-white/5 text-center py-20 rounded-[2.5rem] shadow-sm">
+        <div className="glass border border-slate-200 dark:border-slate-700/50 dark:border-white/5 text-center py-20 rounded-[2.5rem] shadow-sm">
           <Calendar className="w-14 h-14 text-slate-300 dark:text-slate-700 mx-auto mb-4 animate-pulse" />
           <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-1 text-lg">No {filter !== 'all' ? filter : ''} bookings</h3>
           <p className="text-slate-400 text-xs font-semibold">Bookings for your vehicles will appear here</p>
@@ -1214,10 +1214,10 @@ export const OwnerBookingsPage: React.FC = () => {
           {filtered.map(booking => {
             const isPending = booking.status === 'pending';
             return (
-              <motion.div key={booking.id} variants={staggerItem} className="glass border border-slate-200/50 dark:border-white/5 p-5.5 rounded-[2rem] hover-lift hover-glow shadow-sm transition-all duration-300 relative group">
+              <motion.div key={booking.id} variants={staggerItem} className="glass border border-slate-200 dark:border-slate-700/50 dark:border-white/5 p-5.5 rounded-[2rem] hover-lift hover-glow shadow-sm transition-all duration-300 relative group">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-slate-500/5 dark:bg-white/5 rounded-2xl flex items-center justify-center flex-shrink-0 border border-slate-200/20 dark:border-white/10 shadow-sm">
+                    <div className="w-12 h-12 bg-slate-50 dark:bg-slate-9000/5 dark:bg-white/5 rounded-2xl flex items-center justify-center flex-shrink-0 border border-slate-200 dark:border-slate-700/20 dark:border-white/10 shadow-sm">
                       <Calendar className="w-6 h-6 text-slate-400 dark:text-slate-500" />
                     </div>
                     <div className="min-w-0">
@@ -1333,7 +1333,7 @@ export const FleetManagementPage: React.FC = () => {
           { label: 'Currently Rented', value: stats.rented, icon: Users, color: 'bg-purple-500/10 text-purple-500 ring-1 ring-purple-500/20', sub: `${utilizationRate}% utilization` },
           { label: 'In Maintenance', value: stats.maintenance, icon: Shield, color: 'bg-amber-500/10 text-amber-500 ring-1 ring-amber-500/20', sub: 'Under service' },
         ].map(stat => (
-          <motion.div key={stat.label} variants={staggerItem} className="stat-card glass hover-lift hover-glow border border-slate-200/50 dark:border-white/5 p-5.5 rounded-3xl relative overflow-hidden shadow-sm">
+          <motion.div key={stat.label} variants={staggerItem} className="stat-card glass hover-lift hover-glow border border-slate-200 dark:border-slate-700/50 dark:border-white/5 p-5.5 rounded-3xl relative overflow-hidden shadow-sm">
             <div className={`w-11 h-11 rounded-2xl flex items-center justify-center mb-4.5 ${stat.color} shadow-sm`}>
               <stat.icon className="w-5.5 h-5.5" />
             </div>
@@ -1345,12 +1345,12 @@ export const FleetManagementPage: React.FC = () => {
       </motion.div>
 
       {/* Utilization Bar */}
-      <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm">
+      <div className="glass border border-slate-200 dark:border-slate-700/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm">
         <div className="flex items-center justify-between mb-3">
           <p className="text-sm font-bold text-slate-800 dark:text-white">Fleet Utilization Rate</p>
           <span className="text-sm font-extrabold text-gold">{utilizationRate}%</span>
         </div>
-        <div className="h-3.5 bg-slate-200/40 dark:bg-slate-800/80 rounded-full overflow-hidden border border-slate-200/10">
+        <div className="h-3.5 bg-slate-200/40 dark:bg-slate-800/80 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700/10">
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${utilizationRate}%` }}
@@ -1370,7 +1370,7 @@ export const FleetManagementPage: React.FC = () => {
             className={`px-4.5 py-2.5 rounded-xl text-xs font-extrabold whitespace-nowrap border transition-all duration-300 hover-lift ${
               selectedStatus === s 
                 ? 'border-gold bg-yellow-500/10 text-gold shadow-sm shadow-gold/20' 
-                : 'border-slate-200/50 dark:border-white/5 text-slate-500 dark:text-slate-400 bg-slate-500/5 hover:border-slate-300 dark:hover:border-white/10'
+                : 'border-slate-200 dark:border-slate-700/50 dark:border-white/5 text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-9000/5 hover:border-slate-300 dark:hover:border-white/10'
             }`}
           >
             {s.charAt(0).toUpperCase() + s.slice(1).replace('_', ' ')}
@@ -1383,15 +1383,15 @@ export const FleetManagementPage: React.FC = () => {
       {loading ? (
         <div className="space-y-3.5">{[...Array(5)].map((_, i) => <div key={i} className="skeleton h-16 rounded-2xl animate-pulse" />)}</div>
       ) : filtered.length === 0 ? (
-        <div className="glass border border-slate-200/50 dark:border-white/5 text-center py-16 rounded-[2rem] shadow-sm">
+        <div className="glass border border-slate-200 dark:border-slate-700/50 dark:border-white/5 text-center py-16 rounded-[2rem] shadow-sm">
           <Car className="w-14 h-14 text-slate-300 dark:text-slate-700 mx-auto mb-3 animate-pulse" />
           <p className="text-slate-400 text-sm font-semibold">No vehicles with status: {selectedStatus}</p>
         </div>
       ) : (
-        <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="glass border border-slate-200/50 dark:border-white/5 rounded-[2rem] overflow-hidden shadow-md">
+        <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="glass border border-slate-200 dark:border-slate-700/50 dark:border-white/5 rounded-[2rem] overflow-hidden shadow-md">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-slate-500/5 border-b border-slate-200/25 dark:border-white/5">
+              <thead className="bg-slate-50 dark:bg-slate-9000/5 border-b border-slate-200 dark:border-slate-700/25 dark:border-white/5">
                 <tr>
                   {['Vehicle', 'Status', 'Price/Day', 'Rating', 'Location', 'Actions'].map(h => (
                     <th key={h} className="py-4 px-4 text-left text-xs font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-widest first:pl-6">{h}</th>
@@ -1400,10 +1400,10 @@ export const FleetManagementPage: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-slate-200/10 dark:divide-white/5">
                 {filtered.map(vehicle => (
-                  <motion.tr key={vehicle.id} variants={staggerItem} className="hover:bg-slate-500/3 transition-colors">
+                  <motion.tr key={vehicle.id} variants={staggerItem} className="hover:bg-slate-50 dark:hover:bg-slate-8000/3 transition-colors">
                     <td className="py-4 px-4 pl-6">
                       <div className="flex items-center gap-3.5">
-                        <img src={vehicle.thumbnailUrl} alt={vehicle.name} className="w-14 h-10 object-cover rounded-xl flex-shrink-0 border border-slate-200/25 shadow-sm" />
+                        <img src={vehicle.thumbnailUrl} alt={vehicle.name} className="w-14 h-10 object-cover rounded-xl flex-shrink-0 border border-slate-200 dark:border-slate-700/25 shadow-sm" />
                         <div>
                           <p className="font-bold text-sm text-slate-800 dark:text-slate-100 tracking-tight">{vehicle.name}</p>
                           <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold">{vehicle.brand} · {vehicle.year}</p>
@@ -1425,10 +1425,10 @@ export const FleetManagementPage: React.FC = () => {
                     <td className="py-4 px-4 text-sm text-slate-500 dark:text-slate-400 font-semibold">{vehicle.location?.city ?? '—'}</td>
                     <td className="py-4 px-4">
                       <div className="flex items-center gap-2">
-                        <Link to={`/vehicles/${vehicle.id}`} className="p-2 rounded-xl hover:bg-slate-500/5 text-slate-400 hover:text-gold transition-colors border border-transparent hover:border-slate-200/20 shadow-sm" title="View Listing">
+                        <Link to={`/vehicles/${vehicle.id}`} className="p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-8000/5 text-slate-400 hover:text-gold transition-colors border border-transparent hover:border-slate-200 dark:border-slate-700/20 shadow-sm" title="View Listing">
                           <Eye className="w-4 h-4" />
                         </Link>
-                        <Link to={`/owner/vehicles/${vehicle.id}/edit`} className="p-2 rounded-xl hover:bg-slate-500/5 text-slate-400 hover:text-blue-500 transition-colors border border-transparent hover:border-slate-200/20 shadow-sm" title="Edit Vehicle">
+                        <Link to={`/owner/vehicles/${vehicle.id}/edit`} className="p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-8000/5 text-slate-400 hover:text-blue-500 transition-colors border border-transparent hover:border-slate-200 dark:border-slate-700/20 shadow-sm" title="Edit Vehicle">
                           <Edit className="w-4 h-4" />
                         </Link>
                       </div>
@@ -1521,7 +1521,7 @@ export const EmployeeManagementPage: React.FC = () => {
     const r = (role || '').toLowerCase();
     if (r === 'driver') return 'bg-blue-500/10 text-blue-500 border-blue-200/20';
     if (r === 'manager') return 'bg-purple-500/10 text-purple-550 border-purple-200/20';
-    return 'bg-slate-500/5 text-slate-500 border-slate-200/20';
+    return 'bg-slate-50 dark:bg-slate-9000/5 text-slate-500 border-slate-200 dark:border-slate-700/20';
   };
 
   const breadcrumbItems = [
@@ -1546,7 +1546,7 @@ export const EmployeeManagementPage: React.FC = () => {
           { label: 'Active Roster', value: employees.filter(e => e.status.toUpperCase() === 'ACTIVE').length, color: 'text-emerald-500' },
           { label: 'Drivers', value: employees.filter(e => e.role.toLowerCase() === 'driver').length, color: 'text-purple-500' },
         ].map(s => (
-          <motion.div key={s.label} variants={staggerItem} className="glass border border-slate-200/50 dark:border-white/5 p-4.5 rounded-[1.5rem] text-center shadow-sm hover-lift">
+          <motion.div key={s.label} variants={staggerItem} className="glass border border-slate-200 dark:border-slate-700/50 dark:border-white/5 p-4.5 rounded-[1.5rem] text-center shadow-sm hover-lift">
             <p className={`text-3xl font-extrabold tracking-tight ${s.color}`}>{s.value}</p>
             <p className="text-[10px] text-slate-450 dark:text-slate-500 font-extrabold uppercase tracking-widest mt-1.5">{s.label}</p>
           </motion.div>
@@ -1555,15 +1555,15 @@ export const EmployeeManagementPage: React.FC = () => {
 
       {/* Add Employee Form */}
       {showAddForm && (
-        <motion.div variants={fadeUp} initial="hidden" animate="visible" className="glass border border-slate-200/50 dark:border-white/5 p-6 mb-6 rounded-[2rem] shadow-md animate-fade-in">
-          <h3 className="font-display text-lg font-bold text-slate-800 dark:text-white mb-4 border-b border-slate-200/10 dark:border-white/5 pb-2.5">Add New Employee</h3>
+        <motion.div variants={fadeUp} initial="hidden" animate="visible" className="glass border border-slate-200 dark:border-slate-700/50 dark:border-white/5 p-6 mb-6 rounded-[2rem] shadow-md animate-fade-in">
+          <h3 className="font-display text-lg font-bold text-slate-800 dark:text-white mb-4 border-b border-slate-200 dark:border-slate-700/10 dark:border-white/5 pb-2.5">Add New Employee</h3>
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div>
               <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Full Name *</label>
               <input
                 value={newEmployee.name}
                 onChange={e => setNewEmployee(p => ({ ...p, name: e.target.value }))}
-                className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-850 dark:text-white rounded-xl px-4 py-2.5 text-sm focus:border-gold/50"
+                className="lux-input bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/30 dark:border-white/5 text-slate-850 dark:text-white rounded-xl px-4 py-2.5 text-sm focus:border-gold/50"
                 placeholder="Nguyen Van A"
               />
             </div>
@@ -1573,7 +1573,7 @@ export const EmployeeManagementPage: React.FC = () => {
                 type="email"
                 value={newEmployee.email}
                 onChange={e => setNewEmployee(p => ({ ...p, email: e.target.value }))}
-                className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-850 dark:text-white rounded-xl px-4 py-2.5 text-sm focus:border-gold/50"
+                className="lux-input bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/30 dark:border-white/5 text-slate-850 dark:text-white rounded-xl px-4 py-2.5 text-sm focus:border-gold/50"
                 placeholder="employee@example.com"
               />
             </div>
@@ -1582,7 +1582,7 @@ export const EmployeeManagementPage: React.FC = () => {
               <input
                 value={newEmployee.phone}
                 onChange={e => setNewEmployee(p => ({ ...p, phone: e.target.value }))}
-                className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-850 dark:text-white rounded-xl px-4 py-2.5 text-sm focus:border-gold/50"
+                className="lux-input bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/30 dark:border-white/5 text-slate-850 dark:text-white rounded-xl px-4 py-2.5 text-sm focus:border-gold/50"
                 placeholder="0912345678"
               />
             </div>
@@ -1591,7 +1591,7 @@ export const EmployeeManagementPage: React.FC = () => {
               <select
                 value={newEmployee.role}
                 onChange={e => setNewEmployee(p => ({ ...p, role: e.target.value }))}
-                className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-850 dark:text-white rounded-xl px-4 py-2.5 text-sm focus:border-gold/50"
+                className="lux-input bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/30 dark:border-white/5 text-slate-850 dark:text-white rounded-xl px-4 py-2.5 text-sm focus:border-gold/50"
               >
                 <option value="driver">Driver</option>
                 <option value="manager">Manager</option>
@@ -1607,10 +1607,10 @@ export const EmployeeManagementPage: React.FC = () => {
       )}
 
       {/* Employee Table */}
-      <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="glass border border-slate-200/50 dark:border-white/5 rounded-[2rem] overflow-hidden shadow-md">
+      <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="glass border border-slate-200 dark:border-slate-700/50 dark:border-white/5 rounded-[2rem] overflow-hidden shadow-md">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-slate-500/5 border-b border-slate-200/25 dark:border-white/5">
+            <thead className="bg-slate-50 dark:bg-slate-9000/5 border-b border-slate-200 dark:border-slate-700/25 dark:border-white/5">
               <tr>
                 {['Employee', 'Role', 'Assigned Vehicles', 'Joined Date', 'Status', 'Actions'].map(h => (
                   <th key={h} className="py-4 px-4 text-left text-xs font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-widest first:pl-6">{h}</th>
@@ -1628,10 +1628,10 @@ export const EmployeeManagementPage: React.FC = () => {
                 </tr>
               ) : (
                 employees.map(emp => (
-                  <motion.tr key={emp.id} variants={staggerItem} className="hover:bg-slate-500/3 transition-colors">
+                  <motion.tr key={emp.id} variants={staggerItem} className="hover:bg-slate-50 dark:hover:bg-slate-8000/3 transition-colors">
                     <td className="py-4 px-4 pl-6">
                       <div className="flex items-center gap-3.5">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gold to-yellow-600 flex items-center justify-center text-slate-900 text-sm font-extrabold flex-shrink-0 border-2 border-white/10 shadow-sm">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gold to-yellow-600 flex items-center justify-center text-slate-900 dark:text-slate-50 text-sm font-extrabold flex-shrink-0 border-2 border-white/10 shadow-sm">
                           {emp.name ? emp.name.charAt(0).toUpperCase() : 'E'}
                         </div>
                         <div>
@@ -1658,7 +1658,7 @@ export const EmployeeManagementPage: React.FC = () => {
                       <span className={`badge text-[9px] font-extrabold uppercase tracking-widest border-2 px-2.5 py-0.5 rounded-lg ${
                         emp.status.toUpperCase() === 'ACTIVE' 
                           ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' 
-                          : 'bg-slate-500/5 text-slate-450 border-slate-200/20'
+                          : 'bg-slate-50 dark:bg-slate-9000/5 text-slate-450 border-slate-200 dark:border-slate-700/20'
                       }`}>
                         {emp.status}
                       </span>
@@ -1666,7 +1666,7 @@ export const EmployeeManagementPage: React.FC = () => {
                     <td className="py-4 px-4">
                       <button
                         onClick={() => toggleStatus(emp)}
-                        className="text-[10px] font-extrabold px-3 py-2 rounded-lg border border-slate-200/60 dark:border-white/10 text-slate-600 dark:text-slate-350 hover:border-gold hover:text-gold hover:bg-yellow-500/5 transition-all shadow-sm"
+                        className="text-[10px] font-extrabold px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700/60 dark:border-white/10 text-slate-600 dark:text-slate-350 hover:border-gold hover:text-gold hover:bg-yellow-500/5 transition-all shadow-sm"
                       >
                         {emp.status.toUpperCase() === 'ACTIVE' ? 'Deactivate' : 'Activate'}
                       </button>

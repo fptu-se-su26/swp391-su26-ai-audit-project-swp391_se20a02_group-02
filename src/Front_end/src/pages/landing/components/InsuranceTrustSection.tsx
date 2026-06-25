@@ -12,7 +12,7 @@ const staggerItem = {
 };
 
 export const InsuranceTrustSection: React.FC = () => (
-  <section className="py-24 bg-white">
+  <section className="py-24 bg-white dark:bg-slate-900">
     <div className="max-w-7xl mx-auto px-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
         {/* Left content */}
@@ -20,7 +20,7 @@ export const InsuranceTrustSection: React.FC = () => (
           <motion.span variants={staggerItem} className="text-xs font-bold tracking-widest uppercase text-emerald-500 mb-3 block">
             Your Safety First
           </motion.span>
-          <motion.h2 variants={staggerItem} className="font-bold text-3xl md:text-4xl text-[#0F172A] mb-4">
+          <motion.h2 variants={staggerItem} className="font-bold text-3xl md:text-4xl text-[#0F172A] dark:text-white mb-4">
             Insurance & Protection<br />Built Into Every Trip
           </motion.h2>
           <motion.p variants={staggerItem} className="text-slate-500 mb-8 leading-relaxed">
@@ -38,7 +38,7 @@ export const InsuranceTrustSection: React.FC = () => (
                   <Icon className={`w-7 h-7 ${color}`} />
                 </div>
                 <div>
-                  <p className="font-extrabold text-[#0F172A] text-base md:text-lg mb-1">{title}</p>
+                  <p className="font-extrabold text-[#0F172A] dark:text-white text-base md:text-lg mb-1">{title}</p>
                   <p className="text-slate-500 text-sm md:text-base leading-relaxed">{desc}</p>
                 </div>
               </motion.div>
@@ -63,10 +63,10 @@ export const InsuranceTrustSection: React.FC = () => (
             <motion.div
               key={label}
               variants={staggerItem}
-              className="p-8 bg-slate-50 rounded-3xl border border-slate-100 hover:border-emerald-200 transition-colors"
+              className="p-8 bg-slate-50 dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 hover:border-emerald-200 transition-colors"
             >
-              <p className="font-black text-3xl md:text-5xl text-[#0F172A] mb-2 tracking-tight">{value}</p>
-              <p className="font-bold text-slate-800 text-sm md:text-base mb-1">{label}</p>
+              <p className="font-black text-3xl md:text-5xl text-[#0F172A] dark:text-white mb-2 tracking-tight">{value}</p>
+              <p className="font-bold text-slate-800 dark:text-slate-200 text-sm md:text-base mb-1">{label}</p>
               <p className="text-slate-400 text-xs md:text-sm">{sub}</p>
             </motion.div>
           ))}

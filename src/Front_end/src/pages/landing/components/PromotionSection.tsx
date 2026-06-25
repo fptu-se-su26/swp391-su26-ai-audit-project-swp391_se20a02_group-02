@@ -39,14 +39,14 @@ export const PromotionSection: React.FC<PromotionSectionProps> = ({ promotions, 
   if (!loading && promotions.length === 0) return null;
 
   return (
-    <section className="py-24 bg-slate-50 overflow-hidden">
+    <section className="py-24 bg-slate-50 dark:bg-slate-900 overflow-hidden">
       <div className="max-w-7xl mx-auto px-6">
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="flex justify-between items-end mb-10">
           <div>
             <span className="text-xs font-bold tracking-widest uppercase text-amber-500 mb-2 block">Current Offers</span>
-            <h2 className="font-bold text-3xl md:text-5xl text-[#0F172A]">Deals & Promotions</h2>
+            <h2 className="font-bold text-3xl md:text-5xl text-[#0F172A] dark:text-white">Deals & Promotions</h2>
           </div>
-          <Link to="/marketplace" className="text-sm font-semibold text-slate-500 hover:text-[#0F172A] flex items-center gap-1 transition-colors">
+          <Link to="/marketplace" className="text-sm font-semibold text-slate-500 hover:text-[#0F172A] dark:text-white flex items-center gap-1 transition-colors">
             View All <ArrowRight className="w-4 h-4" />
           </Link>
         </motion.div>
