@@ -1,0 +1,161 @@
+version: "3.9"
+
+services:
+  # ── Databases & Infrastructure ──────────────────────────────────────────────
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: luxeway-sqlserver
+    ports:
+      - "1433:1433"
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${DB_PASSWORD:-123456}"
+      MSSQL_PID: "Developer"
+    healthcheck:
+      test: [ "CMD", "/opt/mssql-tools/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "${DB_PASSWORD:-12345678aA@}", "-Q", "SELECT 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - luxeway-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: luxeway-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --save 60 1 --loglevel warning
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    volumes:
+      - redis-data:/data
+    networks:
+      - luxeway-network
+
+  # ── Core Services ────────────────────────────────────────────────────────────
+  spring-backend:
+    build:
+      context: ./src/Back_end
+      dockerfile: Dockerfile
+    container_name: luxeway-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=sqlserver
+      - DB_HOST=sqlserver
+      - DB_PORT=1433
+      - DB_NAME=luxeway
+      - DB_USERNAME=sa
+      - DB_PASSWORD=${DB_PASSWORD:-12345678aA@}
+      - JWT_SECRET=${JWT_SECRET_KEY:-default_secret_key_change_me_in_prod}
+      - FRONTEND_URL=http://localhost:5173
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    networks:
+      - luxeway-network
+
+  frontend:
+    build:
+      context: ./src/Front_end
+      dockerfile: Dockerfile
+    container_name: luxeway-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8080/api/v1
+    networks:
+      - luxeway-network
+
+  # ── Agent & ML Services ──────────────────────────────────────────────────────
+  ml-sidecar:
+    build:
+      context: ./src/ml_service
+      dockerfile: Dockerfile
+    container_name: luxeway-ml-sidecar
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - luxeway-network
+
+  agent-service:
+    build:
+      context: ./agent-layer
+      dockerfile: Dockerfile
+    container_name: luxeway-agent-service
+    ports:
+      - "8001:8001"
+    environment:
+      - ENVIRONMENT=production
+      - ML_SERVICE_URL=http://ml-sidecar:8000
+      - BACKEND_URL=http://spring-backend:8080
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-default_secret_key_change_me_in_prod}
+      - AGENT_API_KEY=${AGENT_API_KEY:-default_agent_key}
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=mssql+pyodbc://sa:${DB_PASSWORD:-12345678aA@}@sqlserver:1433/luxeway?driver=ODBC+Driver+17+for+SQL+Server
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    depends_on:
+      ml-sidecar:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      spring-backend:
+        condition: service_started
+    networks:
+      - luxeway-network
+
+  # ── Observability ────────────────────────────────────────────────────────────
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.13.0
+    container_name: luxeway-mlflow
+    ports:
+      - "5000:5000"
+    command: >
+      mlflow server --backend-store-uri sqlite:///mlflow.db --default-artifact-root /mlflow/artifacts --host 0.0.0.0 --port 5000
+    volumes:
+      - mlflow-data:/mlflow
+    networks:
+      - luxeway-network
+
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    container_name: luxeway-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./agent-layer/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - luxeway-network
+
+  grafana:
+    image: grafana/grafana:10.4.0
+    container_name: luxeway-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+    volumes:
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - luxeway-network
+
+volumes:
+  redis-data:
+  mlflow-data:
+  grafana-data:
+
+networks:
+  luxeway-network:
+    driver: bridge
