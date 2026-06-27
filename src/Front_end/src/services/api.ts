@@ -151,7 +151,14 @@ class ApiClient {
             });
           }
         }
-        throw new Error(`HTTP error! status: ${response.status}`);
+        
+        let errorMsg = `HTTP error! status: ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorMsg = errorData.message || errorData.error || JSON.stringify(errorData);
+        } catch (e) {}
+        
+        throw new Error(errorMsg);
       }
       
       const contentType = response.headers.get('content-type');

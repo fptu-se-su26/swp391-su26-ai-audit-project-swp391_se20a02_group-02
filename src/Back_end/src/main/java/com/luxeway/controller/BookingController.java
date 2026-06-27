@@ -32,6 +32,15 @@ public class BookingController {
                 .body(ApiResponse.success("Booking created successfully", booking));
     }
 
+    @PostMapping("/validate-pre-book")
+    @Operation(summary = "Validate booking criteria before proceeding to checkout")
+    public ResponseEntity<ApiResponse<java.util.Map<String, Object>>> validatePreBook(
+            @AuthenticationPrincipal User user,
+            @Valid @RequestBody BookingDTOs.CreateBookingRequest request) {
+        bookingService.validatePreBook(user.getId(), request);
+        return ResponseEntity.ok(ApiResponse.success("Validation successful", java.util.Map.of("valid", true)));
+    }
+
     @GetMapping
     @Operation(summary = "Get bookings for the authenticated user (as renter)")
     public ResponseEntity<ApiResponse<Page<BookingDTOs.BookingResponse>>> getMyBookings(

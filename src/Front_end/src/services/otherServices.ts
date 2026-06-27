@@ -1,6 +1,5 @@
 import apiClient from './api';
 import type { Review, Notification, Message, Conversation } from '@/types';
-import { faker } from '@faker-js/faker';
 
 // Helper function to map backend review DTO to frontend Review interface
 const mapReview = (r: any): Review => {
@@ -141,9 +140,29 @@ export const notificationService = {
   async getByUser(userId: string): Promise<Notification[]> {
     try {
       const response = await apiClient.get<any>('/notifications?page=0&size=50');
-      return response.data?.content || [];
+      // ApiResponse wrapper: actual page is at response.data?.data
+      const pageData = response.data?.data || response.data;
+      const items = pageData?.content || [];
+      // Map backend field `isRead` → frontend field `read`
+      return items.map((n: any) => ({
+        ...n,
+        read: n.isRead ?? n.read ?? false,
+      })) as Notification[];
     } catch (error) {
       return [];
+    }
+  },
+
+  async getUnreadCount(): Promise<number> {
+    try {
+      const response = await apiClient.get<any>('/notifications/unread-count');
+      // ApiResponse<UnreadCountResponse>: actual value is response.data?.data?.unreadCount
+      const inner = response.data?.data ?? response.data;
+      if (typeof inner?.unreadCount === 'number') return inner.unreadCount;
+      if (typeof inner === 'number') return inner;
+      return 0;
+    } catch (error) {
+      return 0;
     }
   },
 
@@ -164,11 +183,7 @@ export const notificationService = {
   },
 
   async create(data: Partial<Notification>): Promise<Notification> {
-    return { ...data, id: `notif-${faker.string.uuid()}`, read: false, createdAt: new Date().toISOString() } as Notification;
-  },
-
-  getUnreadCount(userId: string): number {
-    return 0; // Front-end will calculate from getByUser response
+    return { ...data, id: `notif-${Date.now()}`, read: false, createdAt: new Date().toISOString() } as Notification;
   },
 };
 

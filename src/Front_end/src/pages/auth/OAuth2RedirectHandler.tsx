@@ -6,8 +6,21 @@ import { useToast } from '@/components/ui/Toast';
 import { Loader2, AlertCircle } from 'lucide-react';
 import type { User } from '@/types';
 
-// Redirect logged-in users to Homepage to show logged-in state after Google login
+// Redirect logged-in users to their role-specific dashboards or homepage after Google login
 const getRoleBasedDashboard = (user: User | null): string => {
+  if (!user) return '/';
+  const role = user.role?.toLowerCase();
+  const accountType = user.accountType?.toUpperCase();
+
+  if (role === 'admin' || role === 'super_admin') {
+    return '/admin';
+  }
+  if (role === 'owner') {
+    if (accountType === 'BUSINESS') {
+      return '/business';
+    }
+    return '/owner';
+  }
   return '/';
 };
 

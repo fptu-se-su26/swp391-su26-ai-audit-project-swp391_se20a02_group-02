@@ -118,7 +118,7 @@ public class AdminService {
     public Page<VehicleDTOs.VehicleResponse> listPendingVehicles(int page, int size) {
         // Do NOT add Sort here - 'OrderByCreatedAtDesc' in method name already handles ordering
         Pageable pageable = PageRequest.of(page, size);
-        return vehicleRepository.findByStatusOrderByCreatedAtDesc(VehicleStatus.PENDING_APPROVAL, pageable)
+        return vehicleRepository.findByApprovalStatusOrderByCreatedAtDesc(VehicleStatus.PENDING_APPROVAL, pageable)
                 .map(vehicleService::toResponse);
     }
 
@@ -145,16 +145,36 @@ public class AdminService {
         return vehicleRepository.findAll(pageable).map(vehicleService::toResponse);
     }
 
-    @Transactional
-    public VehicleDTOs.VehicleResponse approveVehicle(String vehicleId) {
+    @Transactional(rollbackFor = Exception.class)
+    public VehicleDTOs.VehicleResponse approveVehicle(String vehicleId, String adminId) {
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
                 .orElseThrow(() -> new RuntimeException("Vehicle not found"));
 
+        if (vehicle.getApprovalStatus() != VehicleStatus.PENDING_APPROVAL) {
+            throw new IllegalStateException("Vehicle is not pending approval");
+        }
+
         vehicle.setStatus(VehicleStatus.AVAILABLE);
+        vehicle.setApprovalStatus(VehicleStatus.APPROVED);
+        vehicle.setApprovedBy(adminId);
+        vehicle.setApprovedAt(java.time.LocalDateTime.now());
         vehicle.setIsVerified(true);
         vehicle = vehicleRepository.save(vehicle);
 
-        log.info("Vehicle {} approved by admin", vehicleId);
+        log.info("Vehicle {} approved by admin {}", vehicleId, adminId);
+        
+        try {
+            notificationService.createNotification(
+                vehicle.getOwner().getId(),
+                "VEHICLE_APPROVED",
+                "Your vehicle has been approved.",
+                "Your vehicle " + vehicle.getName() + " has been approved.",
+                "/owner/vehicles"
+            );
+        } catch (Exception e) {
+            log.warn("Failed to send vehicle approval in-app notification: {}", e.getMessage());
+        }
+
         try {
             emailService.sendVehicleApprovalStatus(vehicle.getOwner().getEmail(), vehicle, "AVAILABLE", null);
         } catch (Exception e) {
@@ -163,15 +183,34 @@ public class AdminService {
         return vehicleService.toResponse(vehicle);
     }
 
-    @Transactional
-    public VehicleDTOs.VehicleResponse rejectVehicle(String vehicleId, String reason) {
+    @Transactional(rollbackFor = Exception.class)
+    public VehicleDTOs.VehicleResponse rejectVehicle(String vehicleId, String reason, String adminId) {
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
                 .orElseThrow(() -> new RuntimeException("Vehicle not found"));
 
+        if (vehicle.getApprovalStatus() != VehicleStatus.PENDING_APPROVAL) {
+            throw new IllegalStateException("Vehicle is not pending approval");
+        }
+
         vehicle.setStatus(VehicleStatus.REJECTED);
+        vehicle.setApprovalStatus(VehicleStatus.REJECTED);
+        vehicle.setApprovalNote(reason);
         vehicle = vehicleRepository.save(vehicle);
 
-        log.info("Vehicle {} rejected: {}", vehicleId, reason);
+        log.info("Vehicle {} rejected by admin {}: {}", vehicleId, adminId, reason);
+        
+        try {
+            notificationService.createNotification(
+                vehicle.getOwner().getId(),
+                "VEHICLE_REJECTED",
+                "Vehicle Rejected",
+                "Vehicle rejected. Reason: " + reason,
+                "/owner/vehicles"
+            );
+        } catch (Exception e) {
+            log.warn("Failed to send vehicle rejection in-app notification: {}", e.getMessage());
+        }
+
         try {
             emailService.sendVehicleApprovalStatus(vehicle.getOwner().getEmail(), vehicle, "REJECTED", reason);
         } catch (Exception e) {
@@ -221,7 +260,7 @@ public class AdminService {
     }
 
     public java.util.List<UserDTOs.UserProfileResponse> getPendingKycUsers() {
-        return userRepository.findByKycStatus("PENDING").stream()
+        return userRepository.findByKycStatus("PENDING_APPROVAL").stream()
                 .map(userService::toProfileResponse)
                 .collect(java.util.stream.Collectors.toList());
     }
@@ -283,10 +322,14 @@ public class AdminService {
         return userService.toDocumentResponse(doc);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public UserDTOs.UserProfileResponse approveUserKyc(String userId, String adminId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!"PENDING_APPROVAL".equalsIgnoreCase(user.getKycStatus())) {
+            throw new IllegalStateException("User KYC is not in PENDING_APPROVAL status");
+        }
 
         user.setKycStatus("VERIFIED");
         user.setKycVerified(true);
@@ -329,7 +372,7 @@ public class AdminService {
                 userId,
                 "KYC",
                 "KYC Approved",
-                "Your KYC has been approved. You can rent vehicles now.",
+                "KYC approved. You can rent vehicles now.",
                 "/dashboard/documents"
             );
         } catch (Exception e) {
@@ -345,10 +388,14 @@ public class AdminService {
         return userService.toProfileResponse(user);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public UserDTOs.UserProfileResponse rejectUserKyc(String userId, String reason, String adminId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!"PENDING_APPROVAL".equalsIgnoreCase(user.getKycStatus())) {
+            throw new IllegalStateException("User KYC is not in PENDING_APPROVAL status");
+        }
 
         user.setKycStatus("REJECTED");
         user.setDriverLicenseStatus("REJECTED");

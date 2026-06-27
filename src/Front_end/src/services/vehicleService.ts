@@ -1,53 +1,11 @@
 import apiClient from './api';
-import type { Vehicle, VehicleFilters, ApiResponse } from '@/types';
+import type { Vehicle, VehicleFilters, ApiResponse, VehicleLocationResponse } from '@/types';
 import { carService } from './carService';
 import { motorbikeService } from './motorbikeService';
+import { resolveImageUrl } from '@/utils';
 
 // Storage key for wishlist fallback since backend may not have a dedicated endpoint yet
 const WISHLIST_KEY = 'luxeway_wishlist';
-
-const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8080';
-
-const getVehicleFallbackImage = (url: string | null | undefined): string => {
-  if (!url) return '';
-  const lower = url.toLowerCase();
-  if (lower.includes('honda_city')) return 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=800&auto=format&fit=crop&q=80';
-  if (lower.includes('toyota_vios')) return 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?w=800&auto=format&fit=crop&q=80';
-  if (lower.includes('honda_airblade')) return 'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=800&auto=format&fit=crop&q=80';
-  if (lower.includes('mercedes_c200')) return 'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=800&auto=format&fit=crop&q=80';
-  if (lower.includes('bmw_x3')) return 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&auto=format&fit=crop&q=80';
-  if (lower.includes('toyota_camry')) return 'https://images.unsplash.com/photo-1621007947382-cc34aa864ee3?w=800&auto=format&fit=crop&q=80';
-  if (lower.includes('honda_crv')) return 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=800&auto=format&fit=crop&q=80';
-  if (lower.includes('vinfast_vf8')) return 'https://images.unsplash.com/photo-1563720223185-11003d516935?w=800&auto=format&fit=crop&q=80';
-  if (lower.includes('mazda_cx5')) return 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=800&auto=format&fit=crop&q=80';
-  if (lower.includes('hyundai_tucson')) return 'https://images.unsplash.com/photo-1567818735868-e71b99932e29?w=800&auto=format&fit=crop&q=80';
-  if (lower.includes('kia_morning')) return 'https://images.unsplash.com/photo-1590362891991-f776e747a588?w=800&auto=format&fit=crop&q=80';
-  if (lower.includes('ford_everest')) return 'https://images.unsplash.com/photo-1533513780-f38b4d4f0f00?w=800&auto=format&fit=crop&q=80';
-  return '';
-};
-
-const resolveImageUrl = (url: string | null | undefined): string => {
-  if (!url) return '';
-  const fallback = getVehicleFallbackImage(url);
-  if (fallback) return fallback;
-  // Handle backend-uploaded images served by Spring Boot
-  if (url.startsWith('/uploads') || url.startsWith('uploads')) {
-    const cleanUrl = url.startsWith('/') ? url : '/' + url;
-    return `${API_BASE}${cleanUrl}`;
-  }
-  // Handle scraped local images in /images/cars/ (served by Vite public folder)
-  // Encode spaces and special chars in filename to avoid broken URLs
-  if (url.startsWith('/images/')) {
-    const parts = url.split('/');
-    const encodedParts = parts.map((p, i) => i === parts.length - 1 ? encodeURIComponent(p) : p);
-    return encodedParts.join('/');
-  }
-  // Handle absolute URLs (Mioto CDN, unsplash, etc.)
-  if (url.startsWith('http://') || url.startsWith('https://')) {
-    return url;
-  }
-  return url;
-};
 
 // Helper function to map flat backend vehicle DTO to nested frontend Vehicle type
 const mapVehicle = (v: any): Vehicle => {
@@ -283,6 +241,9 @@ export const vehicleService = {
         if (filters.deliveryAvailable) queryParams.append('deliveryAvailable', 'true');
         if (filters.isFeatured) queryParams.append('isFeatured', 'true');
         if (filters.sortBy) queryParams.append('sortBy', filters.sortBy);
+        if (filters.keyword) queryParams.append('keyword', filters.keyword);
+        if (filters.userLat !== undefined) queryParams.append('userLat', filters.userLat.toString());
+        if (filters.userLng !== undefined) queryParams.append('userLng', filters.userLng.toString());
         if (filters.startDate) queryParams.append('startDate', filters.startDate);
         if (filters.endDate) queryParams.append('endDate', filters.endDate);
         // Motorbike-specific filters
@@ -316,6 +277,63 @@ export const vehicleService = {
     }
   },
 
+  async getMapVehicles(filters?: VehicleFilters, signal?: AbortSignal): Promise<VehicleLocationResponse[]> {
+    try {
+      const queryParams = new URLSearchParams();
+      
+      if (filters) {
+        if (filters.status) queryParams.append('status', filters.status);
+        if (filters.location) queryParams.append('location', filters.location);
+        if (filters.keyword) queryParams.append('keyword', filters.keyword);
+        if (filters.userLat !== undefined) queryParams.append('userLat', filters.userLat.toString());
+        if (filters.userLng !== undefined) queryParams.append('userLng', filters.userLng.toString());
+        if (filters.vehicleType) queryParams.append('vehicleType', filters.vehicleType.toUpperCase());
+        if (filters.category && filters.category.length > 0) {
+          filters.category.forEach(cat => queryParams.append('category', cat.toUpperCase()));
+        }
+        if (filters.brands && filters.brands.length > 0) {
+          filters.brands.forEach(b => queryParams.append('brand', b.toLowerCase()));
+        }
+        if (filters.minPrice !== undefined && filters.minPrice > 0) queryParams.append('minPrice', filters.minPrice.toString());
+        if (filters.maxPrice !== undefined) queryParams.append('maxPrice', filters.maxPrice.toString());
+        if (filters.minSeats !== undefined) queryParams.append('minSeats', filters.minSeats.toString());
+        if (filters.transmission && filters.transmission.length > 0) {
+          queryParams.append('transmission', filters.transmission[0]);
+        }
+        if (filters.fuelType && filters.fuelType.length > 0) {
+          queryParams.append('fuelType', filters.fuelType[0]);
+        }
+        if (filters.minRating !== undefined) queryParams.append('minRating', filters.minRating.toString());
+        if (filters.instantBook) queryParams.append('instantBook', 'true');
+        if (filters.deliveryAvailable) queryParams.append('deliveryAvailable', 'true');
+        if (filters.isFeatured) queryParams.append('isFeatured', 'true');
+        if (filters.sortBy) queryParams.append('sortBy', filters.sortBy);
+        if (filters.startDate) queryParams.append('startDate', filters.startDate);
+        if (filters.endDate) queryParams.append('endDate', filters.endDate);
+        if (filters.minEngineCc !== undefined) queryParams.append('minEngineCc', filters.minEngineCc.toString());
+        if (filters.maxEngineCc !== undefined) queryParams.append('maxEngineCc', filters.maxEngineCc.toString());
+        if (filters.hasHelmet) queryParams.append('hasHelmet', 'true');
+        if (filters.hasPhoneHolder) queryParams.append('hasPhoneHolder', 'true');
+        if (filters.hasRaincoat) queryParams.append('hasRaincoat', 'true');
+        if (filters.hasTouringPackage) queryParams.append('hasTouringPackage', 'true');
+        if (filters.hasChauffeur) queryParams.append('hasChauffeur', 'true');
+        if (filters.airportDelivery) queryParams.append('airportDelivery', 'true');
+        if (filters.weddingRental) queryParams.append('weddingRental', 'true');
+        if (filters.businessRental) queryParams.append('businessRental', 'true');
+      }
+      
+      const response = await apiClient.get<any>(`/vehicles/map?${queryParams.toString()}`, { signal });
+      const list = Array.isArray(response) ? response : response?.data || [];
+      return list;
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw error;
+      }
+      console.error('Failed to get map vehicles', error);
+      return [];
+    }
+  },
+
   async getById(id: string): Promise<Vehicle | null> {
     try {
       if (id.startsWith('CAR-') || id.toLowerCase().includes('car')) {
@@ -344,10 +362,20 @@ export const vehicleService = {
         const bike = await motorbikeService.getById(id);
         if (bike) return bike;
       } catch (_) {}
-
       return null;
     } catch (error) {
       console.error(`Failed to get vehicle ${id}`, error);
+      return null;
+    }
+  },
+
+  async getVehicleDetail(id: string): Promise<Vehicle | null> {
+    try {
+      const response = await apiClient.get<any>(`/vehicles/${id}/detail`);
+      const v = response.data || response;
+      return v ? mapVehicle(v) : null;
+    } catch (error) {
+      console.error(`Failed to get vehicle detail ${id}`, error);
       return null;
     }
   },

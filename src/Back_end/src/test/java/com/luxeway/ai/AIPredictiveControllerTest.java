@@ -72,7 +72,7 @@ class AIPredictiveControllerTest {
     @WithMockUser(roles = "ADMIN")
     void getDashboard_returns200() throws Exception {
         when(cacheService.getCached()).thenReturn(AIPredictiveDashboardDTO.builder().build());
-        mockMvc.perform(get("/admin/ai/dashboard"))
+        mockMvc.perform(get("/api/v1/admin/ai/dashboard"))
                 .andExpect(status().isOk());
     }
 
@@ -80,7 +80,7 @@ class AIPredictiveControllerTest {
     @WithMockUser(roles = "ADMIN")
     void revenueForecast_horizon7_returns200WithPredictions() throws Exception {
         when(mlSidecarClient.forecastRevenue(anyList(), eq(7))).thenReturn(stubRevenue(7));
-        mockMvc.perform(post("/admin/ai/revenue/forecast?horizon=7").with(csrf()))
+        mockMvc.perform(post("/api/v1/admin/ai/revenue/forecast?horizon=7").with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.predictions").isArray())
                 .andExpect(jsonPath("$.predictions.length()").value(7));
@@ -89,14 +89,14 @@ class AIPredictiveControllerTest {
     @Test
     @WithMockUser(roles = "ADMIN")
     void revenueForecast_horizon0_returns400() throws Exception {
-        mockMvc.perform(post("/admin/ai/revenue/forecast?horizon=0").with(csrf()))
+        mockMvc.perform(post("/api/v1/admin/ai/revenue/forecast?horizon=0").with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     @WithMockUser(roles = "ADMIN")
     void revenueForecast_horizon31_returns400() throws Exception {
-        mockMvc.perform(post("/admin/ai/revenue/forecast?horizon=31").with(csrf()))
+        mockMvc.perform(post("/api/v1/admin/ai/revenue/forecast?horizon=31").with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -107,7 +107,7 @@ class AIPredictiveControllerTest {
         fallbackResult.setWarningFlag(true);
         when(mlSidecarClient.forecastRevenue(anyList(), anyInt())).thenReturn(fallbackResult);
 
-        mockMvc.perform(post("/admin/ai/revenue/forecast?horizon=7").with(csrf()))
+        mockMvc.perform(post("/api/v1/admin/ai/revenue/forecast?horizon=7").with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.warning_flag").value(true));
     }
@@ -124,7 +124,7 @@ class AIPredictiveControllerTest {
         when(bookingRepository.findAll()).thenReturn(Collections.emptyList());
         when(mlSidecarClient.scoreChurn(any(), anyDouble(), anyDouble())).thenReturn(stubChurn);
 
-        mockMvc.perform(get("/admin/ai/users/churn"))
+        mockMvc.perform(get("/api/v1/admin/ai/users/churn"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$[0].churn_score").value(72.5));
@@ -136,10 +136,10 @@ class AIPredictiveControllerTest {
         when(mlSidecarClient.forecastRevenue(anyList(), anyInt())).thenReturn(stubRevenue(1));
 
         for (int i = 0; i < 10; i++) {
-            mockMvc.perform(post("/admin/ai/revenue/forecast?horizon=1").with(csrf()))
+            mockMvc.perform(post("/api/v1/admin/ai/revenue/forecast?horizon=1").with(csrf()))
                     .andExpect(status().isOk());
         }
-        mockMvc.perform(post("/admin/ai/revenue/forecast?horizon=1").with(csrf()))
+        mockMvc.perform(post("/api/v1/admin/ai/revenue/forecast?horizon=1").with(csrf()))
                 .andExpect(status().isTooManyRequests());
     }
 }

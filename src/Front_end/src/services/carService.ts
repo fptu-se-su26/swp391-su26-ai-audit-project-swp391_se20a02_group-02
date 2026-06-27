@@ -1,16 +1,6 @@
 import apiClient from './api';
 import type { Vehicle, VehicleFilters, ApiResponse } from '@/types';
-
-const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8080';
-
-const resolveImageUrl = (url: string | null | undefined): string => {
-  if (!url) return '';
-  if (url.startsWith('/uploads') || url.startsWith('uploads')) {
-    const cleanUrl = url.startsWith('/') ? url : '/' + url;
-    return `${API_BASE}${cleanUrl}`;
-  }
-  return url;
-};
+import { resolveImageUrl } from '@/utils';
 
 const mapCar = (v: any): Vehicle => {
   if (!v) return v;
@@ -139,7 +129,7 @@ export const carService = {
 
   async getById(id: string): Promise<Vehicle | null> {
     try {
-      const endpoint = id.startsWith('VC-') ? `/vehicles/${id}` : `/cars/${id}`;
+      const endpoint = id.startsWith('VC-') || id.startsWith('V-') ? `/vehicles/${id}` : `/cars/${id}`;
       const response = await apiClient.get<any>(endpoint);
       return response.vehicle ? mapCar(response.vehicle) : null;
     } catch (error) {

@@ -37,7 +37,16 @@ public interface VehicleRepository extends JpaRepository<Vehicle, String> {
     
     Page<Vehicle> findByStatusOrderByCreatedAtDesc(VehicleStatus status, Pageable pageable);
     
-    List<Vehicle> findByIsFeaturedTrueAndStatusOrderByRatingDesc(VehicleStatus status);
+    Page<Vehicle> findByApprovalStatusOrderByCreatedAtDesc(VehicleStatus approvalStatus, Pageable pageable);
+    
+    @Query("SELECT v FROM Vehicle v WHERE v.status = :status AND v.approvalStatus = :approvalStatus")
+    Page<Vehicle> findByStatusAndApprovalStatus(@Param("status") VehicleStatus status, @Param("approvalStatus") VehicleStatus approvalStatus, Pageable pageable);
+    
+    @Query("SELECT v FROM Vehicle v WHERE v.isFeatured = true AND v.status = :status AND v.approvalStatus = 'APPROVED' ORDER BY v.rating DESC")
+    List<Vehicle> findFeaturedApproved(@Param("status") VehicleStatus status);
+    
+    boolean existsByLicensePlate(String licensePlate);
+    boolean existsByLicensePlateAndIdNot(String licensePlate, String id);
     
     // Pessimistic lock — dùng trước khi tạo booking để tránh double-booking race condition
     @Lock(LockModeType.PESSIMISTIC_WRITE)
@@ -53,7 +62,7 @@ public interface VehicleRepository extends JpaRepository<Vehicle, String> {
     Page<Vehicle> findByCategoryAndStatus(VehicleCategory category, VehicleStatus status, Pageable pageable);
     
     // Price range
-    @Query("SELECT v FROM Vehicle v WHERE v.pricePerDay BETWEEN :minPrice AND :maxPrice AND v.status = :status")
+    @Query("SELECT v FROM Vehicle v WHERE v.pricePerDay BETWEEN :minPrice AND :maxPrice AND v.status = :status AND v.approvalStatus = 'APPROVED'")
     Page<Vehicle> findByPriceRange(@Param("minPrice") BigDecimal minPrice, 
                                    @Param("maxPrice") BigDecimal maxPrice, 
                                    @Param("status") VehicleStatus status, 
@@ -64,7 +73,7 @@ public interface VehicleRepository extends JpaRepository<Vehicle, String> {
            "(LOWER(v.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "LOWER(v.brand) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "LOWER(v.model) LIKE LOWER(CONCAT('%', :keyword, '%'))) AND " +
-           "v.status = :status")
+           "v.status = :status AND v.approvalStatus = 'APPROVED'")
     Page<Vehicle> searchVehicles(@Param("keyword") String keyword, 
                                 @Param("status") VehicleStatus status, 
                                 Pageable pageable);
@@ -88,7 +97,7 @@ public interface VehicleRepository extends JpaRepository<Vehicle, String> {
            "(:isFeatured = false OR v.isFeatured = :isFeatured) AND " +
            "(:instantBook = false OR v.instantBook = :instantBook) AND " +
            "(:deliveryAvailable = false OR v.deliveryAvailable = :deliveryAvailable) AND " +
-           "v.status = 'AVAILABLE'")
+           "v.status = 'AVAILABLE' AND v.approvalStatus = 'APPROVED'")
     Page<Vehicle> filterVehicles(@Param("location") String location,
                                  @Param("category") VehicleCategory category,
                                  @Param("minPrice") BigDecimal minPrice,
@@ -132,7 +141,7 @@ public interface VehicleRepository extends JpaRepository<Vehicle, String> {
            "  b.status IN (com.luxeway.enums.BookingStatus.PENDING, com.luxeway.enums.BookingStatus.CONFIRMED, com.luxeway.enums.BookingStatus.ACTIVE) AND " +
            "  b.startDate <= :endDate AND b.endDate >= :startDate" +
            ")) AND " +
-           "v.status = 'AVAILABLE'")
+           "v.status = 'AVAILABLE' AND v.approvalStatus = 'APPROVED'")
     Page<Vehicle> filterVehiclesMulti(@Param("location") String location,
                                       @Param("categories") List<VehicleCategory> categories,
                                       @Param("brands") List<String> brands,
@@ -170,9 +179,13 @@ public interface VehicleRepository extends JpaRepository<Vehicle, String> {
     @Query("SELECT COUNT(v) FROM Vehicle v WHERE v.owner.id = :ownerId AND v.status = :status")
     long countByOwnerIdAndStatus(@Param("ownerId") String ownerId, @Param("status") VehicleStatus status);
 
-    @Query("SELECT COUNT(DISTINCT v.city) FROM Vehicle v")
+    long countByCategoryAndStatusAndApprovalStatus(VehicleCategory category, VehicleStatus status, VehicleStatus approvalStatus);
+    
+    long countByStatusAndApprovalStatus(VehicleStatus status, VehicleStatus approvalStatus);
+
+    @Query("SELECT COUNT(DISTINCT v.city) FROM Vehicle v WHERE v.status = 'AVAILABLE' AND v.approvalStatus = 'APPROVED'")
     long countDistinctCity();
 
-    @Query("SELECT v.city, COUNT(v) FROM Vehicle v GROUP BY v.city ORDER BY COUNT(v) DESC")
+    @Query("SELECT v.city, COUNT(v) FROM Vehicle v WHERE v.status = 'AVAILABLE' AND v.approvalStatus = 'APPROVED' GROUP BY v.city ORDER BY COUNT(v) DESC")
     List<Object[]> findTopCities(Pageable pageable);
 }

@@ -17,6 +17,9 @@ export const MyDocuments: React.FC = () => {
   const [backendDocs, setBackendDocs] = useState<any[]>([]);
   const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
   
+  const isKycPending = user?.kycStatus === 'PENDING' || user?.kycStatus === 'PENDING_APPROVAL';
+  const isDlPending = user?.driverLicenseStatus === 'PENDING' || user?.driverLicenseStatus === 'PENDING_APPROVAL';
+  
   // Local file refs
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [currentUploadType, setCurrentUploadType] = useState<string | null>(null);
@@ -38,7 +41,7 @@ export const MyDocuments: React.FC = () => {
   // Real-time polling when PENDING
   useEffect(() => {
     let interval: any;
-    if (user?.kycStatus === 'PENDING') {
+    if (isKycPending) {
       interval = setInterval(async () => {
         await initAuth();
         await fetchDocuments();
@@ -51,7 +54,7 @@ export const MyDocuments: React.FC = () => {
 
   // Direct route to step 4 when not in default upload flow
   useEffect(() => {
-    if (user?.kycStatus === 'PENDING' || user?.kycStatus === 'VERIFIED' || user?.kycStatus === 'FAILED' || user?.kycStatus === 'REJECTED') {
+    if (isKycPending || user?.kycStatus === 'VERIFIED' || user?.kycStatus === 'FAILED' || user?.kycStatus === 'REJECTED') {
       setActiveStep(4);
     }
   }, [user?.kycStatus]);
@@ -292,14 +295,14 @@ export const MyDocuments: React.FC = () => {
           <div className="flex items-center gap-3 mt-1">
             <span className={`px-3 py-1 text-xs font-black rounded-full uppercase ${
               user?.kycStatus === 'VERIFIED' ? 'bg-green-50 text-green-700 border border-green-200' :
-              user?.kycStatus === 'PENDING' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+              isKycPending ? 'bg-amber-50 text-amber-700 border border-amber-200' :
               'bg-rose-50 text-rose-700 border border-rose-200'
             }`}>
               Identity: {user?.kycStatus || 'UNVERIFIED'}
             </span>
             <span className={`px-3 py-1 text-xs font-black rounded-full uppercase ${
               user?.driverLicenseStatus === 'VERIFIED' ? 'bg-green-50 text-green-700 border border-green-200' :
-              user?.driverLicenseStatus === 'PENDING' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+              isDlPending ? 'bg-amber-50 text-amber-700 border border-amber-200' :
               'bg-rose-50 text-rose-700 border border-rose-200'
             }`}>
               License: {user?.driverLicenseStatus || 'UNVERIFIED'}
@@ -311,7 +314,7 @@ export const MyDocuments: React.FC = () => {
           <div className="flex items-center gap-2 text-green-600 font-bold text-sm bg-green-50/50 px-4 py-2 rounded-xl border border-green-100">
             <CheckCircle2 className="w-5 h-5" /> Account fully verified. Safe travels!
           </div>
-        ) : user?.kycStatus === 'PENDING' ? (
+        ) : isKycPending ? (
           <div className="text-sm text-slate-500 flex items-center gap-2">
             <Loader2 className="w-4 h-4 animate-spin text-indigo-500" /> Documents are currently being reviewed by an admin.
           </div>
@@ -332,7 +335,7 @@ export const MyDocuments: React.FC = () => {
         ].map((s) => (
           <button
             key={s.step}
-            disabled={s.step === 4 || user?.kycStatus === 'PENDING'}
+            disabled={s.step === 4 || isKycPending}
             onClick={() => setActiveStep(s.step)}
             className={`p-4 rounded-2xl text-left border transition-all duration-200 relative overflow-hidden ${
               activeStep === s.step 
@@ -391,7 +394,7 @@ export const MyDocuments: React.FC = () => {
                           <div><strong>DOB:</strong> {cccdFront.ekycDob}</div>
                         </div>
                       )}
-                      {user?.kycStatus !== 'PENDING' && (
+                      {!isKycPending && (
                         <button 
                           onClick={() => deleteDocument(cccdFront.id)}
                           className="absolute top-4 right-4 p-2 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-100 transition-colors"
@@ -408,7 +411,7 @@ export const MyDocuments: React.FC = () => {
                       <h4 className="font-bold text-sm">CCCD Front Side</h4>
                       <p className="text-xs text-slate-400 mt-1 max-w-xs">Scan front side portrait details with FPT AI OCR checking.</p>
                       <button 
-                        disabled={user?.kycStatus === 'PENDING' || uploadingDoc === 'CCCD_FRONT'}
+                        disabled={isKycPending || uploadingDoc === 'CCCD_FRONT'}
                         onClick={() => triggerUpload('CCCD_FRONT')}
                         className="btn-primary mt-4 py-2 px-4 bg-indigo-650 hover:bg-indigo-750 text-white rounded-xl text-xs"
                       >
@@ -431,7 +434,7 @@ export const MyDocuments: React.FC = () => {
                       <div className="p-3 bg-white rounded-xl border border-slate-100 text-left w-full text-xs text-slate-400 text-center">
                         Image scanned and uploaded.
                       </div>
-                      {user?.kycStatus !== 'PENDING' && (
+                      {!isKycPending && (
                         <button 
                           onClick={() => deleteDocument(cccdBack.id)}
                           className="absolute top-4 right-4 p-2 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-100 transition-colors"
@@ -448,7 +451,7 @@ export const MyDocuments: React.FC = () => {
                       <h4 className="font-bold text-sm">CCCD Back Side</h4>
                       <p className="text-xs text-slate-400 mt-1 max-w-xs">Scan back side qr code and seal details.</p>
                       <button 
-                        disabled={user?.kycStatus === 'PENDING' || uploadingDoc === 'CCCD_BACK'}
+                        disabled={isKycPending || uploadingDoc === 'CCCD_BACK'}
                         onClick={() => triggerUpload('CCCD_BACK')}
                         className="btn-primary mt-4 py-2 px-4 bg-indigo-650 hover:bg-indigo-750 text-white rounded-xl text-xs"
                       >
@@ -508,7 +511,7 @@ export const MyDocuments: React.FC = () => {
                           </div>
                         </div>
                       )}
-                      {user?.kycStatus !== 'PENDING' && (
+                      {!isKycPending && (
                         <button 
                           onClick={() => deleteDocument(dlFront.id)}
                           className="absolute top-4 right-4 p-2 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-100 transition-colors"
@@ -525,7 +528,7 @@ export const MyDocuments: React.FC = () => {
                       <h4 className="font-bold text-sm">License Front Side</h4>
                       <p className="text-xs text-slate-400 mt-1 max-w-xs">Upload front to scan class, name, and license details.</p>
                       <button 
-                        disabled={user?.kycStatus === 'PENDING' || uploadingDoc === 'DRIVER_LICENSE_FRONT'}
+                        disabled={isKycPending || uploadingDoc === 'DRIVER_LICENSE_FRONT'}
                         onClick={() => triggerUpload('DRIVER_LICENSE_FRONT')}
                         className="btn-primary mt-4 py-2 px-4 bg-indigo-650 hover:bg-indigo-750 text-white rounded-xl text-xs"
                       >
@@ -548,7 +551,7 @@ export const MyDocuments: React.FC = () => {
                       <div className="p-3 bg-white rounded-xl border border-slate-100 text-left w-full text-xs text-slate-400 text-center">
                         Image scanned and uploaded.
                       </div>
-                      {user?.kycStatus !== 'PENDING' && (
+                      {!isKycPending && (
                         <button 
                           onClick={() => deleteDocument(dlBack.id)}
                           className="absolute top-4 right-4 p-2 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-100 transition-colors"
@@ -565,7 +568,7 @@ export const MyDocuments: React.FC = () => {
                       <h4 className="font-bold text-sm">License Back Side</h4>
                       <p className="text-xs text-slate-400 mt-1 max-w-xs">Upload back to verify stamps and barcodes.</p>
                       <button 
-                        disabled={user?.kycStatus === 'PENDING' || uploadingDoc === 'DRIVER_LICENSE_BACK'}
+                        disabled={isKycPending || uploadingDoc === 'DRIVER_LICENSE_BACK'}
                         onClick={() => triggerUpload('DRIVER_LICENSE_BACK')}
                         className="btn-primary mt-4 py-2 px-4 bg-indigo-650 hover:bg-indigo-750 text-white rounded-xl text-xs"
                       >
@@ -636,7 +639,7 @@ export const MyDocuments: React.FC = () => {
                         }
                       })()
                     ) : null}
-                    {user?.kycStatus !== 'PENDING' && (
+                    {!isKycPending && (
                       <button 
                         onClick={() => deleteDocument(selfie.id)}
                         className="absolute top-4 right-4 p-2 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-100 transition-colors"
@@ -694,14 +697,14 @@ export const MyDocuments: React.FC = () => {
                     
                     <div className="flex flex-col sm:flex-row gap-2 mt-5 w-full justify-center">
                       <button 
-                        disabled={user?.kycStatus === 'PENDING' || uploadingDoc === 'SELFIE' || !cccdFront}
+                        disabled={isKycPending || uploadingDoc === 'SELFIE' || !cccdFront}
                         onClick={startCamera}
                         className="py-2 px-4 bg-indigo-600 hover:bg-indigo-750 text-white rounded-xl text-xs font-bold disabled:opacity-50 flex items-center justify-center gap-1.5"
                       >
                         <Camera className="w-3.5 h-3.5" /> {isVi ? 'Mở Camera quét mặt' : 'Open Camera Scan'}
                       </button>
                       <button 
-                        disabled={user?.kycStatus === 'PENDING' || uploadingDoc === 'SELFIE' || !cccdFront}
+                        disabled={isKycPending || uploadingDoc === 'SELFIE' || !cccdFront}
                         onClick={() => triggerUpload('SELFIE')}
                         className="py-2 px-4 border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl text-xs font-bold disabled:opacity-50 flex items-center justify-center gap-1.5"
                       >
@@ -731,7 +734,7 @@ export const MyDocuments: React.FC = () => {
               exit={{ opacity: 0, y: -15 }}
               className="space-y-6 text-center py-10 max-w-md mx-auto"
             >
-              {user?.kycStatus === 'PENDING' ? (
+              {isKycPending ? (
                 <>
                   <div className="w-16 h-16 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-4 animate-pulse">
                     <Loader2 className="w-8 h-8 animate-spin" />
@@ -783,7 +786,7 @@ export const MyDocuments: React.FC = () => {
                   </div>
                   <h3 className="text-xl font-bold text-slate-900">Verification Failed</h3>
                   <p className="text-sm text-rose-600 font-bold">
-                    Your identity document verification failed. Please upload again.
+                    Verification failed. Please upload again
                   </p>
                   <p className="text-xs text-slate-400 mt-2">
                     FPT AI failed to scan or verify the validity of your uploaded documents.
@@ -836,7 +839,7 @@ export const MyDocuments: React.FC = () => {
       )}
 
       {/* Action Footer */}
-      {user?.kycStatus !== 'PENDING' && user?.kycStatus !== 'VERIFIED' && user?.kycStatus !== 'FAILED' && user?.kycStatus !== 'REJECTED' && (
+      {!isKycPending && user?.kycStatus !== 'VERIFIED' && user?.kycStatus !== 'FAILED' && user?.kycStatus !== 'REJECTED' && (
         <div className="flex items-center justify-between p-6 bg-slate-50 rounded-2xl border border-slate-100">
           <div className="text-xs text-slate-400 max-w-md">
             Once you submit, your files will be locked and reviewed by an administrator. Review typically takes 5-10 minutes.

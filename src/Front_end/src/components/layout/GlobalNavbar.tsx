@@ -14,6 +14,7 @@ import NotificationDropdown from './NotificationDropdown';
 import MessageDropdown from './MessageDropdown';
 import Avatar from '@/components/ui/Avatar';
 import logoImage from '../../image/logo.png';
+import { notificationService } from '@/services/otherServices';
 
 const LANGS = [
   { code: 'en' as const, label: 'English', flag: '🇺🇸' },
@@ -241,6 +242,22 @@ export const GlobalNavbar: React.FC = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Fetch & poll unread notification count from the real backend
+  const { setUnreadCount } = useNotificationStore();
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setUnreadCount(0);
+      return;
+    }
+    // Fetch immediately on login/mount
+    notificationService.getUnreadCount().then(setUnreadCount);
+    // Poll every 60 seconds to stay in sync
+    const timer = setInterval(() => {
+      notificationService.getUnreadCount().then(setUnreadCount);
+    }, 60_000);
+    return () => clearInterval(timer);
+  }, [isAuthenticated, setUnreadCount]);
 
   const isActive = (path: string) => {
     if (path === '/marketplace') {

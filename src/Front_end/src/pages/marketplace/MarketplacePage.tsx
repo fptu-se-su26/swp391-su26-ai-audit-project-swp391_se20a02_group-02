@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
@@ -12,7 +12,8 @@ import { vehicleService } from '@/services/vehicleService';
 import { VehicleCard } from '@/components/vehicle/VehicleCard';
 import { VehicleCardSkeleton } from '@/components/ui/Skeleton';
 import { LuxeWayMap } from '@/components/map/LuxeWayMap';
-import type { Vehicle, VehicleFilters, VehicleCategory, VehicleType } from '@/types';
+import { useUIStore } from '@/store';
+import type { Vehicle, VehicleFilters, VehicleCategory, VehicleType, VehicleLocationResponse } from '@/types';
 import { formatCurrency, debounce, cn } from '@/utils';
 import { fadeUp, staggerContainer, staggerItem } from '@/animations/variants';
 import { useT } from '@/i18n/translations';
@@ -63,11 +64,83 @@ const MOTO_BRANDS = ['Honda', 'Yamaha', 'Suzuki', 'VinFast', 'Kawasaki', 'Piaggi
 
 const SORT_OPTIONS = [
   { value: 'popular', label: 'Phổ biến nhất' },
+  { value: 'nearest', label: 'Gần tôi nhất' },
   { value: 'rating', label: 'Đánh giá cao' },
   { value: 'price_asc', label: 'Giá thấp → cao' },
   { value: 'price_desc', label: 'Giá cao → thấp' },
   { value: 'newest', label: 'Mới nhất' },
 ];
+
+// ====== COMPACT SIDEBAR CARD FOR MAP VIEW ======
+interface CompactSidebarCardProps {
+  vehicle: Vehicle;
+  isSelected: boolean;
+  hovered: boolean;
+  locationText: string;
+}
+
+const CompactSidebarCard: React.FC<CompactSidebarCardProps> = ({
+  vehicle,
+  isSelected,
+  hovered,
+  locationText
+}) => {
+  const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=800';
+  const thumbnailSrc = vehicle.images?.[0] || vehicle.thumbnailUrl || FALLBACK_IMAGE;
+  
+  const finalPrice = vehicle.pricePerDay;
+  const finalPriceText = finalPrice >= 1000 ? `${(finalPrice / 1000).toLocaleString('en-US', { maximumFractionDigits: 0 })}K` : `${finalPrice}`;
+  
+  const distanceText = (vehicle as any).distanceKm !== undefined 
+    ? `${Number((vehicle as any).distanceKm).toFixed(1)} km`
+    : `${(Math.random() * 8 + 1.2).toFixed(1)} km`;
+
+  return (
+    <div className={cn(
+      "flex gap-3.5 p-3.5 bg-white dark:bg-slate-900 border rounded-3xl transition-all duration-200 select-none shadow-sm hover:shadow-md",
+      isSelected ? "border-emerald-500 bg-emerald-50/5 dark:bg-emerald-950/10" : "border-slate-150 dark:border-slate-800",
+      hovered ? "border-emerald-400" : ""
+    )}>
+      {/* Thumbnail */}
+      <div className="w-24 h-20 sm:w-28 sm:h-24 rounded-2xl overflow-hidden flex-shrink-0 bg-slate-100 dark:bg-slate-800 relative">
+        <img src={thumbnailSrc} alt={vehicle.name} className="w-full h-full object-cover" />
+        <div className="absolute top-1.5 left-1.5 bg-amber-500 text-white w-4.5 h-4.5 rounded-full flex items-center justify-center text-[9px] shadow-md z-10">
+          <svg className="w-2.5 h-2.5 fill-current" viewBox="0 0 24 24">
+            <path d="M13 10V3L4 14h9v7l9-11h-9z" />
+          </svg>
+        </div>
+      </div>
+
+      {/* Info */}
+      <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+        <div>
+          <h4 className="font-extrabold text-xs sm:text-sm text-slate-850 dark:text-white truncate leading-snug">
+            {vehicle.name}
+          </h4>
+          
+          {/* Rating */}
+          <div className="flex items-center gap-1 mt-1 text-[10px] text-slate-500 dark:text-slate-405 font-bold">
+            <span className="text-amber-500 text-xs">★</span>
+            <span>{vehicle.rating ? Number(vehicle.rating).toFixed(1) : '5.0'}</span>
+            <span>({vehicle.totalReviews || 12} chuyến)</span>
+          </div>
+
+          {/* Location */}
+          <div className="flex items-center gap-1.5 mt-1 text-[10px] text-slate-450 truncate">
+            <span className="text-xs">📍</span>
+            <span className="truncate">{(vehicle as any).address || locationText}</span>
+          </div>
+        </div>
+
+        {/* Distance & Price */}
+        <div className="flex items-center justify-between mt-2 border-t border-slate-100 dark:border-slate-800/80 pt-1.5">
+          <span className="text-[10px] font-bold text-slate-450 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg">{distanceText}</span>
+          <span className="text-xs sm:text-sm font-black text-emerald-500 dark:text-emerald-400">{finalPriceText}/ngày</span>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 
 
@@ -402,16 +475,63 @@ const MotorbikeFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: Ve
   );
 };
 
+// ====== GEOCODE DATABASE FOR VIETNAMESE HOTSPOTS ======
+const GEOCODE_DATABASE: Record<string, { lat: number; lng: number }> = {
+  'hồ chí minh': { lat: 10.762, lng: 106.660 },
+  'ho chi minh': { lat: 10.762, lng: 106.660 },
+  'hà nội': { lat: 21.0285, lng: 105.8542 },
+  'ha noi': { lat: 21.0285, lng: 105.8542 },
+  'đà nẵng': { lat: 16.0544, lng: 108.2022 },
+  'da nang': { lat: 16.0544, lng: 108.2022 },
+  'nha trang': { lat: 12.2451, lng: 109.1943 },
+  'đà lạt': { lat: 11.9404, lng: 108.4583 },
+  'da lat': { lat: 11.9404, lng: 108.4583 },
+  'thủ đức': { lat: 10.8501, lng: 106.7712 },
+  'thu duc': { lat: 10.8501, lng: 106.7712 },
+  'quận 1': { lat: 10.7756, lng: 106.7004 },
+  'quan 1': { lat: 10.7756, lng: 106.7004 },
+  'quận 7': { lat: 10.7323, lng: 106.7176 },
+  'quan 7': { lat: 10.7323, lng: 106.7176 },
+  'phú quốc': { lat: 10.2186, lng: 103.9607 },
+  'phu quoc': { lat: 10.2186, lng: 103.9607 },
+  'vũng tàu': { lat: 10.3458, lng: 107.0843 },
+  'vung tau': { lat: 10.3458, lng: 107.0843 },
+};
+
 // ====== MAIN MARKETPLACE PAGE ======
-const MarketplacePage: React.FC = () => {
+interface MarketplacePageProps {
+  forceMapOpen?: boolean;
+}
+
+const MarketplacePage: React.FC<MarketplacePageProps> = ({ forceMapOpen = false }) => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { language } = useUIStore();
+  const isVi = language === 'vi';
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [mapVehicles, setMapVehicles] = useState<VehicleLocationResponse[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mapLoading, setMapLoading] = useState(false);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [showFilters, setShowFilters] = useState(false);
-  const [mapOpen, setMapOpen] = useState(true);
+  const [mobileViewMode, setMobileViewMode] = useState<'list' | 'map'>(() => {
+    return (forceMapOpen || searchParams.get('map') === 'true') ? 'map' : 'list';
+  });
+  const [showFilters, setShowFilters] = useState<boolean>(false);
+  const [mapOpen, setMapOpen] = useState<boolean>(() => {
+    return forceMapOpen || searchParams.get('map') === 'true';
+  });
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+  const [mapSelectedVehicles, setMapSelectedVehicles] = useState<any[]>([]);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(true);
+
+  const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=800';
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   const [hoveredVehicleId, setHoveredVehicleId] = useState<string | null>(null);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
@@ -430,54 +550,141 @@ const MarketplacePage: React.FC = () => {
       sortBy: (searchParams.get('sort') as VehicleFilters['sortBy']) || 'popular',
       startDate: searchParams.get('startDate') || undefined,
       endDate: searchParams.get('endDate') || undefined,
+      keyword: searchParams.get('q') || undefined,
     };
   });
 
   const loadVehicles = useCallback(async (f: VehicleFilters, p: number) => {
     setLoading(true);
-    const result = await vehicleService.getAll(f, p, 12);
-    setVehicles(result.data);
-    setTotal(result.meta?.total || 0);
-    setTotalPages(result.meta?.totalPages || 1);
-    setLoading(false);
+    try {
+      const result = await vehicleService.getAll(f, p, 12);
+      setVehicles(result.data);
+      setTotal(result.meta?.total || 0);
+      setTotalPages(result.meta?.totalPages || 1);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const debouncedSearch = useCallback(
-    debounce(async (q: string) => {
-      if (q.trim()) {
-        setLoading(true);
-        const results = await vehicleService.search(q);
-        
-        // Client-side filter to respect active ecosystem tab
-        const filteredResults = filters.vehicleType
-          ? results.filter(v => v.vehicleType?.toLowerCase() === filters.vehicleType?.toLowerCase())
-          : results;
+  const mapAbortControllerRef = useRef<AbortController | null>(null);
 
-        setVehicles(filteredResults);
-        setTotal(filteredResults.length);
-        setTotalPages(1);
-        setLoading(false);
-      } else {
-        loadVehicles(filters, page);
+  const loadMapVehicles = useCallback(async (f: VehicleFilters) => {
+    if (mapAbortControllerRef.current) {
+      mapAbortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    mapAbortControllerRef.current = controller;
+
+    setMapLoading(true);
+    try {
+      const results = await vehicleService.getMapVehicles(f, controller.signal);
+      setMapVehicles(results);
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        return;
       }
-    }, 400),
-    [filters, page, loadVehicles]
-  );
+      console.error(err);
+    } finally {
+      if (mapAbortControllerRef.current === controller) {
+        setMapLoading(false);
+      }
+    }
+  }, []);
 
+  // Debounced search query sync to filter keyword
   useEffect(() => {
-    if (searchQuery) debouncedSearch(searchQuery);
-    else loadVehicles(filters, page);
-  }, [filters, page, searchQuery]);
+    const timer = setTimeout(() => {
+      setFilters(prev => {
+        if (prev.keyword === searchQuery) return prev;
+        return { ...prev, keyword: searchQuery || undefined };
+      });
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Sync geocoded location string to coordinate filters
+  useEffect(() => {
+    const locLower = (filters.location || '').toLowerCase().trim();
+    if (locLower) {
+      const matched = Object.entries(GEOCODE_DATABASE).find(([k]) => locLower.includes(k) || k.includes(locLower));
+      if (matched) {
+        const coords = matched[1];
+        setFilters(prev => {
+          if (prev.userLat === coords.lat && prev.userLng === coords.lng) return prev;
+          return {
+            ...prev,
+            userLat: coords.lat,
+            userLng: coords.lng
+          };
+        });
+      }
+    }
+  }, [filters.location]);
+
+  // Load active lists
+  useEffect(() => {
+    loadVehicles(filters, page);
+  }, [filters, page, loadVehicles]);
+
+  // Load map markers only when map is toggled open or active in mobile view
+  useEffect(() => {
+    if (mapOpen || mobileViewMode === 'map') {
+      loadMapVehicles(filters);
+    }
+  }, [filters, mapOpen, mobileViewMode, loadMapVehicles]);
+
+  // Sync map open state from URL search parameters (?map=true)
+  useEffect(() => {
+    const showMap = forceMapOpen || searchParams.get('map') === 'true';
+    if (showMap) {
+      setMapOpen(true);
+      setMobileViewMode('map');
+    } else {
+      setMapOpen(false);
+      setMobileViewMode('list');
+    }
+  }, [searchParams, forceMapOpen]);
+
+  // Clear map selection when filters change or map is closed
+  useEffect(() => {
+    setMapSelectedVehicles([]);
+  }, [filters, mapOpen]);
 
   const handleTypeSwitch = (type: VehicleType | 'all') => {
     setActiveType(type);
     setPage(1);
-    setFilters({ vehicleType: type === 'all' ? undefined : type, sortBy: filters.sortBy });
+    setFilters(prev => ({
+      ...prev,
+      vehicleType: type === 'all' ? undefined : type,
+    }));
   };
 
   const handleFilterChange = (newFilters: VehicleFilters) => {
     setFilters({ ...newFilters, vehicleType: activeType === 'all' ? undefined : activeType });
     setPage(1);
+  };
+
+  const handleSortChange = (newSort: string) => {
+    if (newSort === 'nearest' && (!filters.userLat || !filters.userLng)) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          handleFilterChange({
+            ...filters,
+            sortBy: 'nearest',
+            userLat: position.coords.latitude,
+            userLng: position.coords.longitude
+          });
+        },
+        (error) => {
+          alert('Không thể xác định vị trí của bạn. Vui lòng chọn thành phố hoặc nhập từ khóa tìm kiếm để tìm xe gần bạn nhất.');
+        },
+        { enableHighAccuracy: true }
+      );
+    } else {
+      handleFilterChange({ ...filters, sortBy: newSort as any });
+    }
   };
 
   const activeFilterCount = useMemo(() => {
@@ -604,7 +811,7 @@ const MarketplacePage: React.FC = () => {
             <div className="relative">
               <select
                 value={filters.sortBy || 'popular'}
-                onChange={e => handleFilterChange({ ...filters, sortBy: e.target.value as VehicleFilters['sortBy'] })}
+                onChange={e => handleSortChange(e.target.value)}
                 className="appearance-none pl-4 pr-10 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-bold outline-none text-slate-600 dark:text-slate-300 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-850 transition-colors"
               >
                 {SORT_OPTIONS.map(opt => (
@@ -624,7 +831,13 @@ const MarketplacePage: React.FC = () => {
             </div>
 
             <button
-              onClick={() => setMapOpen(!mapOpen)}
+              onClick={() => {
+                if (window.innerWidth < 1024) {
+                  setMobileViewMode(prev => prev === 'list' ? 'map' : 'list');
+                } else {
+                  setMapOpen(!mapOpen);
+                }
+              }}
               className={cn("hidden lg:flex items-center gap-2 px-4 py-2.5 rounded-2xl border text-xs font-bold transition-all",
                 mapOpen ? "bg-accent/15 border-accent text-accent" : "border-slate-200 dark:border-slate-800 text-slate-500")}>
               <Map className="w-4 h-4" />
@@ -658,18 +871,28 @@ const MarketplacePage: React.FC = () => {
           </AnimatePresence>
 
           {/* Catalog */}
-          <div className="flex-1 min-w-0">
+          <div className={cn(
+            "flex-1 min-w-0 transition-all duration-300 flex flex-col h-[calc(100vh-220px)]",
+            mapOpen && (isSidebarCollapsed ? "hidden lg:w-0 overflow-hidden pr-0" : "lg:w-[380px] xl:w-[420px] flex-shrink-0 border-r border-slate-100 dark:border-slate-800 pr-4 overflow-y-auto"),
+            mobileViewMode === 'map' ? 'hidden lg:block' : 'block'
+          )}>
             {/* Result count + active filters */}
-            <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center justify-between mb-5 flex-shrink-0">
               <div className="flex items-center gap-3">
                 <p className="text-sm font-medium text-slate-450">
-                  {loading ? 'Đang tải...' : (
-                    <>Tìm thấy <span className="font-extrabold text-foreground">{total}</span>
-                      {' '}{activeType === 'motorbike' ? 'xe máy' : activeType === 'car' ? 'ô tô' : 'xe'}
-                    </>
+                  {mapOpen ? (
+                    <span className="font-extrabold text-slate-800 dark:text-white text-base">
+                      Danh sách xe gần bạn ({total} xe)
+                    </span>
+                  ) : (
+                    loading ? 'Đang tải...' : (
+                      <>Tìm thấy <span className="font-extrabold text-foreground">{total}</span>
+                        {' '}{activeType === 'motorbike' ? 'xe máy' : activeType === 'car' ? 'ô tô' : 'xe'}
+                      </>
+                    )
                   )}
                 </p>
-                {filters.location && (
+                {!mapOpen && filters.location && (
                   <div className="flex items-center gap-1.5 text-xs font-bold text-accent bg-accent/10 px-3 py-1.5 rounded-xl">
                     <MapPin className="w-3.5 h-3.5" />
                     {filters.location}
@@ -680,18 +903,24 @@ const MarketplacePage: React.FC = () => {
                 )}
               </div>
 
-              {/* Active type badge */}
-              {activeType !== 'all' && (
-                <div className={cn("flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border", accentClass)}>
-                  {activeType === 'motorbike' ? <Bike className="w-3.5 h-3.5" /> : <Car className="w-3.5 h-3.5" />}
-                  {activeType === 'motorbike' ? 'Xe Máy' : 'Ô Tô'}
+              {mapOpen ? (
+                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-xl cursor-pointer">
+                  <span>Gần tôi nhất</span>
+                  <ChevronDown className="w-3.5 h-3.5" />
                 </div>
+              ) : (
+                activeType !== 'all' && (
+                  <div className={cn("flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border", accentClass)}>
+                    {activeType === 'motorbike' ? <Bike className="w-3.5 h-3.5" /> : <Car className="w-3.5 h-3.5" />}
+                    {activeType === 'motorbike' ? 'Xe Máy' : 'Ô Tô'}
+                  </div>
+                )
               )}
             </div>
 
             {/* Vehicle Grid */}
             {loading ? (
-              <div className={cn(viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6' : 'space-y-6')}>
+              <div className={cn(mapOpen ? 'space-y-4' : viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6' : 'space-y-6')}>
                 {Array.from({ length: 6 }).map((_, i) => <VehicleCardSkeleton key={i} />)}
               </div>
             ) : vehicles.length === 0 ? (
@@ -707,9 +936,12 @@ const MarketplacePage: React.FC = () => {
               <>
                 <motion.div
                   variants={staggerContainer} initial="hidden" animate="visible"
-                  className={cn(viewMode === 'grid'
-                    ? mapOpen ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-6' : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6'
-                    : 'space-y-6'
+                  className={cn(
+                    mapOpen 
+                      ? 'space-y-4 pr-1 pb-4' 
+                      : viewMode === 'grid'
+                      ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6'
+                      : 'space-y-6'
                   )}
                 >
                   {vehicles.map(vehicle => (
@@ -718,19 +950,49 @@ const MarketplacePage: React.FC = () => {
                       id={`vehicle-card-${vehicle.id}`}
                       onMouseEnter={() => setHoveredVehicleId(vehicle.id)}
                       onMouseLeave={() => setHoveredVehicleId(null)}
-                      onClick={() => setSelectedVehicleId(vehicle.id)}
+                      onClick={() => {
+                        setSelectedVehicleId(vehicle.id);
+                        const mapLoc = mapVehicles.find(mv => mv.id === vehicle.id);
+                        if (mapLoc && (window as any).luxewayMapInstance) {
+                          (window as any).luxewayMapInstance.flyTo({
+                            center: [mapLoc.longitude, mapLoc.latitude],
+                            zoom: 14.5,
+                            duration: 1000
+                          });
+                        }
+                      }}
                       className={cn("transition-all duration-300 rounded-3xl cursor-pointer",
                         hoveredVehicleId === vehicle.id ? "ring-2 ring-accent" : "",
                         selectedVehicleId === vehicle.id ? "ring-2 ring-accent bg-accent/5 dark:bg-accent/10" : ""
                       )}
                     >
-                      <VehicleCard vehicle={vehicle} variant={viewMode} />
+                      {mapOpen ? (
+                        <CompactSidebarCard
+                          vehicle={vehicle}
+                          isSelected={selectedVehicleId === vehicle.id}
+                          hovered={hoveredVehicleId === vehicle.id}
+                          locationText={filters.location || 'Phường 14, Quận Bình Thạnh'}
+                        />
+                      ) : (
+                        <VehicleCard vehicle={vehicle} variant={viewMode} />
+                      )}
                     </motion.div>
                   ))}
                 </motion.div>
 
+                {/* Collapse Link inside sidebar */}
+                {mapOpen && !isSidebarCollapsed && (
+                  <button
+                    onClick={() => setIsSidebarCollapsed(true)}
+                    className="mt-auto flex items-center justify-center gap-1.5 w-full py-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-bold text-slate-500 hover:text-slate-700 transition-all select-none flex-shrink-0"
+                  >
+                    <span>Thu gọn danh sách</span>
+                    <span>←</span>
+                  </button>
+                )}
+
                 {/* Pagination */}
-                {totalPages > 1 && (
+                {!mapOpen && totalPages > 1 && (
                   <div className="flex justify-center gap-2 mt-12">
                     <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
                       className="px-5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 text-sm font-bold disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
@@ -758,29 +1020,243 @@ const MarketplacePage: React.FC = () => {
 
           {/* Map Panel */}
           <AnimatePresence>
-            {mapOpen && (
+            {(mapOpen || mobileViewMode === 'map') && (
               <motion.div
-                initial={{ width: 0, opacity: 0 }}
-                animate={{ width: '420px', opacity: 1 }}
-                exit={{ width: 0, opacity: 0 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
                 transition={{ duration: 0.3 }}
-                className="hidden lg:block flex-shrink-0 sticky top-52 overflow-hidden"
+                className={cn(
+                  "flex-1 sticky top-52 overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg relative bg-slate-50 dark:bg-slate-950",
+                  mobileViewMode === 'map' ? 'w-full block' : 'hidden lg:block'
+                )}
                 style={{ height: 'calc(100vh - 220px)' }}
               >
-                <LuxeWayMap
-                  vehicles={vehicles}
-                  selectedVehicleId={selectedVehicleId}
-                  hoveredVehicleId={hoveredVehicleId || undefined}
-                  onVehicleClick={v => {
-                    setSelectedVehicleId(v.id);
-                    document.getElementById(`vehicle-card-${v.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  }}
-                  height="100%"
-                />
+                <div className="relative w-full h-full">
+                  <LuxeWayMap
+                    vehicles={mapVehicles}
+                    selectedVehicleId={selectedVehicleId}
+                    hoveredVehicleId={hoveredVehicleId || undefined}
+                    onSelectionChange={setMapSelectedVehicles}
+                    onVehicleClick={v => {
+                      setSelectedVehicleId(v.id);
+                      setTimeout(() => {
+                        const card = document.getElementById(`vehicle-card-${v.id}`);
+                        if (card) {
+                          card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                      }, 100);
+                    }}
+                    onUserLocationChange={(lat, lng) => {
+                      handleFilterChange({
+                        ...filters,
+                        userLat: lat,
+                        userLng: lng
+                      });
+                    }}
+                    height="100%"
+                  />
+
+                  {/* Floating Action Buttons (Right side overlay) */}
+                  <div className="absolute top-4 right-4 z-20 flex flex-col gap-2">
+                    <button
+                      onClick={() => {
+                        if (navigator.geolocation) {
+                          navigator.geolocation.getCurrentPosition((pos) => {
+                            const lat = pos.coords.latitude;
+                            const lng = pos.coords.longitude;
+                            (window as any).luxewayMapInstance?.flyTo({
+                              center: [lng, lat],
+                              zoom: 14,
+                              duration: 1200
+                            });
+                          });
+                        }
+                      }}
+                      className="w-10 h-10 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-350 shadow-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all flex items-center justify-center cursor-pointer active:scale-95 duration-200"
+                      title="Vị trí của tôi"
+                    >
+                      <Compass className="w-5 h-5 text-emerald-500" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (mapVehicles.length > 0) {
+                          const avgLat = mapVehicles.reduce((sum, v) => sum + (v.latitude || 0), 0) / mapVehicles.length;
+                          const avgLng = mapVehicles.reduce((sum, v) => sum + (v.longitude || 0), 0) / mapVehicles.length;
+                          (window as any).luxewayMapInstance?.flyTo({
+                            center: [avgLng, avgLat],
+                            zoom: 12.5,
+                            duration: 1200
+                          });
+                        }
+                      }}
+                      className="w-10 h-10 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-350 shadow-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all flex items-center justify-center cursor-pointer active:scale-95 duration-200"
+                      title="Xe gần tôi"
+                    >
+                      <Car className="w-5 h-5 text-emerald-500" />
+                    </button>
+                  </div>
+
+                  {/* Map Legend (Bottom Right overlay) */}
+                  <div className="absolute bottom-4 right-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur border border-slate-200 dark:border-slate-800 px-3.5 py-2.5 rounded-2xl shadow-2xl z-20 flex flex-col gap-2 text-[10px] font-bold text-slate-600 dark:text-slate-350 select-none leading-none">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                      <span>Xe sẵn sàng</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-blue-500 border border-white" />
+                      <span>Vị trí của bạn</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-blue-600 flex items-center justify-center text-white text-[7px]">25</span>
+                      <span>Cụm xe (zoom để xem)</span>
+                    </div>
+                  </div>
+
+                  {/* Floating Open Sidebar Button (Bottom Left overlay) */}
+                  {mapOpen && isSidebarCollapsed && (
+                    <button
+                      onClick={() => setIsSidebarCollapsed(false)}
+                      className="absolute bottom-20 left-4 z-40 flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-neutral-900 border border-neutral-800 text-white font-bold text-xs shadow-2xl hover:bg-neutral-950 transition-all active:scale-95 duration-200 cursor-pointer"
+                    >
+                      <span>Mở danh sách xe</span>
+                      <span>→</span>
+                    </button>
+                  )}
+
+                  {/* Floating selected vehicle cards at the bottom of the map */}
+                  <AnimatePresence>
+                    {mapSelectedVehicles.length > 0 && (
+                      <motion.div
+                        initial={{ y: 50, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: 50, opacity: 0 }}
+                        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                        className="absolute bottom-20 left-4 right-4 z-40 flex gap-4 overflow-x-auto pb-3 pt-1 px-1 scrollbar-none snap-x snap-mandatory"
+                      >
+                        {mapSelectedVehicles.map(v => {
+                          const thumbnailSrc = v.image || v.thumbnail || FALLBACK_IMAGE;
+                          const finalPrice = v.pricePerDay;
+                          const originalPrice = v.pricePerDay * 1.12; // 12% discount mockup
+                          const finalPriceText = finalPrice >= 1000 ? `${(finalPrice / 1000).toLocaleString('en-US', { maximumFractionDigits: 0 })}K` : `${finalPrice}`;
+                          const originalPriceText = originalPrice >= 1000 ? `${(originalPrice / 1000).toLocaleString('en-US', { maximumFractionDigits: 0 })}K` : `${originalPrice}`;
+                          
+                          // Determine location text
+                          const locationText = filters.location || 'Phường 14, Quận Bình Thạnh';
+
+                          return (
+                            <div
+                              key={v.id}
+                              onClick={() => {
+                                const startDate = searchParams.get('startDate') || '';
+                                const endDate = searchParams.get('endDate') || '';
+                                const dateParams = (startDate && endDate) ? `?startDate=${startDate}&endDate=${endDate}` : '';
+                                window.location.href = `/marketplace/vehicles/${v.id}${dateParams}`;
+                              }}
+                              className="w-[280px] sm:w-[330px] flex-shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-2.5 shadow-2xl flex gap-3 snap-start relative cursor-pointer hover:border-emerald-500 transition-all select-none duration-250 active:scale-98"
+                            >
+                              {/* Image section */}
+                              <div className="w-24 h-20 sm:w-28 sm:h-24 rounded-2xl overflow-hidden flex-shrink-0 relative bg-slate-100 dark:bg-slate-800">
+                                <img
+                                  src={thumbnailSrc}
+                                  alt={v.name}
+                                  className="w-full h-full object-cover"
+                                />
+                                {/* Zap icon badge */}
+                                <div className="absolute top-1.5 left-1.5 bg-amber-500 text-white w-4.5 h-4.5 rounded-full flex items-center justify-center text-[9px] shadow-md z-10">
+                                  <svg className="w-2.5 h-2.5 fill-current" viewBox="0 0 24 24">
+                                    <path d="M13 10V3L4 14h9v7l9-11h-9z" />
+                                  </svg>
+                                </div>
+                              </div>
+
+                              {/* Info section */}
+                              <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+                                <div>
+                                  <h4 className="font-extrabold text-xs sm:text-sm text-slate-800 dark:text-white truncate leading-snug">
+                                    {v.name}
+                                  </h4>
+                                  
+                                  {/* Rating & Trips */}
+                                  <div className="flex items-center gap-1 mt-1 text-[10px] text-slate-500 dark:text-slate-400 font-bold">
+                                    <span className="text-amber-500 text-xs leading-none">★</span>
+                                    <span>{v.rating ? Number(v.rating).toFixed(1) : '5.0'}</span>
+                                    <span>•</span>
+                                    <span>{v.totalReviews || 12} chuyến</span>
+                                  </div>
+
+                                  {/* Address */}
+                                  <div className="flex items-center gap-1 mt-1.5 text-[9px] sm:text-[10px] text-slate-450">
+                                    <span className="text-xs">📍</span>
+                                    <span className="truncate">{locationText}</span>
+                                  </div>
+                                </div>
+
+                                {/* Price */}
+                                <div className="flex items-baseline gap-1.5 mt-1 border-t border-slate-100 dark:border-slate-800/80 pt-1.5">
+                                  <span className="text-[10px] text-slate-400 line-through font-medium">{originalPriceText}</span>
+                                  <span className="text-xs sm:text-sm font-black text-emerald-500 dark:text-emerald-400">{finalPriceText}</span>
+                                  <span className="text-[9px] text-slate-500 font-bold">/ngày</span>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Loading Overlay */}
+                  {mapLoading && (
+                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-20 transition-all duration-300">
+                      <div className="bg-slate-950/90 border border-slate-800 px-6 py-4 rounded-2xl flex items-center gap-3 shadow-2xl">
+                        <div className="w-5 h-5 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                        <span className="text-sm font-bold text-white">Đang tìm xe gần bạn...</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Empty Overlay */}
+                  {!mapLoading && mapVehicles.length === 0 && (
+                    <div className="absolute inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center z-20 transition-all duration-350">
+                      <div className="bg-slate-950/95 border border-slate-800 p-6 rounded-3xl text-center max-w-xs shadow-2xl">
+                        <span className="text-4xl block mb-2">📍</span>
+                        <h4 className="font-extrabold text-sm text-white mb-1">Không tìm thấy xe trong khu vực</h4>
+                        <p className="text-xs text-slate-400">Hãy thử đổi vị trí hoặc mở rộng phạm vi tìm kiếm.</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
+      </div>
+
+      {/* Floating Toggle Button for both Desktop and Mobile */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
+        <button
+          onClick={() => {
+            if (isMobile) {
+              setMobileViewMode(prev => prev === 'list' ? 'map' : 'list');
+            } else {
+              setMapOpen(!mapOpen);
+            }
+          }}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-full shadow-2xl font-bold text-sm text-white bg-neutral-900 border border-neutral-800 hover:bg-neutral-950 transition-all active:scale-95 duration-200 select-none"
+        >
+          {(isMobile ? mobileViewMode === 'map' : mapOpen) ? (
+            <>
+              <span>{isVi ? 'Danh sách' : 'List View'}</span>
+              <List className="w-4 h-4 ml-1" />
+            </>
+          ) : (
+            <>
+              <span>{isVi ? 'Bản đồ' : 'Map View'}</span>
+              <Map className="w-4 h-4 ml-1" />
+            </>
+          )}
+        </button>
       </div>
     </div>
   );

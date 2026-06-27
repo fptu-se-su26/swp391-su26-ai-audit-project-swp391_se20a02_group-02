@@ -48,6 +48,11 @@ public class VehicleController {
             @RequestParam(required = false) String status,
             @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate startDate,
             @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate endDate,
+            // GPS coords / Keyword parameters
+            @RequestParam(required = false) Double userLat,
+            @RequestParam(required = false) Double userLng,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String q,
             // Ecosystem specific params
             @RequestParam(required = false) String vehicleType,
             @RequestParam(required = false) Integer minEngineCc,
@@ -73,8 +78,10 @@ public class VehicleController {
                 response.put("currentPage", vehicles.getNumber());
                 response.put("totalItems", vehicles.getTotalElements());
                 response.put("totalPages", vehicles.getTotalPages());
-                response.put("hasNext", vehicles.hasNext());
-                response.put("hasPrevious", vehicles.hasPrevious());
+                {
+                    response.put("hasNext", vehicles.hasNext());
+                    response.put("hasPrevious", vehicles.hasPrevious());
+                }
                 
                 return ResponseEntity.ok(response);
             }
@@ -107,6 +114,11 @@ public class VehicleController {
             filter.setSize(size);
             filter.setStartDate(startDate);
             filter.setEndDate(endDate);
+            
+            // Set coordinates and keyword filters
+            filter.setUserLat(userLat);
+            filter.setUserLng(userLng);
+            filter.setKeyword(keyword != null && !keyword.isEmpty() ? keyword : q);
             
             // Map ecosystem params
             filter.setVehicleType(vehicleType);
@@ -141,12 +153,111 @@ public class VehicleController {
             return ResponseEntity.status(500).body(errorResponse);
         }
     }
+
+    @GetMapping("/map")
+    public ResponseEntity<List<VehicleDTOs.VehicleLocationResponse>> getVehiclesForMap(
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) String city,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) Double userLat,
+            @RequestParam(required = false) Double userLng,
+            @RequestParam(required = false) List<String> category,
+            @RequestParam(required = false) List<String> brand,
+            @RequestParam(required = false) java.math.BigDecimal minPrice,
+            @RequestParam(required = false) java.math.BigDecimal maxPrice,
+            @RequestParam(required = false) Integer minSeats,
+            @RequestParam(required = false) String transmission,
+            @RequestParam(required = false) String fuelType,
+            @RequestParam(required = false) Double minRating,
+            @RequestParam(defaultValue = "false") boolean instantBook,
+            @RequestParam(defaultValue = "false") boolean deliveryAvailable,
+            @RequestParam(defaultValue = "false") boolean isFeatured,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate startDate,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate endDate,
+            @RequestParam(required = false) String vehicleType,
+            @RequestParam(required = false) Integer minEngineCc,
+            @RequestParam(required = false) Integer maxEngineCc,
+            @RequestParam(required = false) Boolean hasHelmet,
+            @RequestParam(required = false) Boolean hasPhoneHolder,
+            @RequestParam(required = false) Boolean hasRaincoat,
+            @RequestParam(required = false) Boolean hasTouringPackage,
+            @RequestParam(required = false) Boolean hasChauffeur,
+            @RequestParam(required = false) Boolean airportDelivery,
+            @RequestParam(required = false) Boolean weddingRental,
+            @RequestParam(required = false) Boolean businessRental) {
+        
+        try {
+            com.luxeway.dto.vehicle.VehicleDTOs.VehicleFilterRequest filter = new com.luxeway.dto.vehicle.VehicleDTOs.VehicleFilterRequest();
+            
+            // Support both location and city parameters
+            String targetLocation = (location != null && !location.isEmpty()) ? location : city;
+            filter.setLocation(targetLocation);
+            
+            // Support keyword/q parameters
+            String targetKeyword = (keyword != null && !keyword.isEmpty()) ? keyword : q;
+            filter.setKeyword(targetKeyword);
+            
+            filter.setUserLat(userLat);
+            filter.setUserLng(userLng);
+            
+            if (category != null && !category.isEmpty()) {
+                filter.setCategories(category);
+                filter.setCategory(category.get(0));
+            }
+            if (brand != null && !brand.isEmpty()) {
+                filter.setBrands(brand.stream()
+                    .map(String::toLowerCase)
+                    .collect(java.util.stream.Collectors.toList()));
+            }
+            filter.setMinPrice(minPrice);
+            filter.setMaxPrice(maxPrice);
+            filter.setMinSeats(minSeats);
+            filter.setTransmission(transmission);
+            filter.setFuelType(fuelType);
+            filter.setMinRating(minRating);
+            filter.setInstantBook(instantBook);
+            filter.setDeliveryAvailable(deliveryAvailable);
+            filter.setFeatured(isFeatured);
+            filter.setSortBy(sortBy);
+            filter.setStartDate(startDate);
+            filter.setEndDate(endDate);
+            
+            filter.setVehicleType(vehicleType);
+            filter.setMinEngineCc(minEngineCc);
+            filter.setMaxEngineCc(maxEngineCc);
+            filter.setHasHelmet(hasHelmet);
+            filter.setHasPhoneHolder(hasPhoneHolder);
+            filter.setHasRaincoat(hasRaincoat);
+            filter.setHasTouringPackage(hasTouringPackage);
+            filter.setHasChauffeur(hasChauffeur);
+            filter.setAirportDelivery(airportDelivery);
+            filter.setWeddingRental(weddingRental);
+            filter.setBusinessRental(businessRental);
+            
+            List<com.luxeway.dto.vehicle.VehicleDTOs.VehicleLocationResponse> locations = vehicleService.getVehiclesForMap(filter);
+            return ResponseEntity.ok(locations);
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).build();
+        }
+    }
     
     @GetMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> getVehicleById(@PathVariable String id) {
+    public ResponseEntity<Map<String, Object>> getVehicleById(@PathVariable String id, @AuthenticationPrincipal com.luxeway.entity.User user) {
         try {
             // Use vehicleService to get properly mapped DTO (includes owner, images, features)
             VehicleDTOs.VehicleResponse vehicle = vehicleService.getById(id);
+            
+            if (!"available".equalsIgnoreCase(vehicle.getStatus())) {
+                boolean isOwner = user != null && user.getId().equals(vehicle.getOwner().getId());
+                boolean isAdmin = user != null && ("admin".equalsIgnoreCase(user.getRole().name()) || "super_admin".equalsIgnoreCase(user.getRole().name()));
+                if (!isOwner && !isAdmin) {
+                     return ResponseEntity.status(403).body(Map.of("error", "Access denied to unapproved vehicle"));
+                }
+            }
 
             Map<String, Object> response = new HashMap<>();
             response.put("vehicle", vehicle);
@@ -168,6 +279,7 @@ public class VehicleController {
     @GetMapping("/search")
     public ResponseEntity<Map<String, Object>> searchVehicles(
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String q,
             @RequestParam(required = false) String brand,
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String location,
@@ -175,6 +287,9 @@ public class VehicleController {
             @RequestParam(defaultValue = "12") int size) {
         
         try {
+            // Support both 'keyword' and 'q' parameter names from the frontend
+            String resolvedKeyword = (keyword != null && !keyword.isEmpty()) ? keyword : (q != null ? q : "");
+            
             // Use advanced filter if brand/category/location provided
             if ((brand != null && !brand.isEmpty()) || 
                 (category != null && !category.isEmpty()) || 
@@ -185,7 +300,7 @@ public class VehicleController {
                 filter.setPage(page);
                 filter.setSize(size);
                 
-                if (keyword != null && !keyword.isEmpty()) {
+                if (!resolvedKeyword.isEmpty()) {
                     // keyword will be used by getVehicles for name search
                     filter.setLocation(location);
                 }
@@ -208,20 +323,19 @@ public class VehicleController {
                 response.put("currentPage", vehiclesPage.getNumber());
                 response.put("totalItems", vehiclesPage.getTotalElements());
                 response.put("totalPages", vehiclesPage.getTotalPages());
-                if (keyword != null) response.put("keyword", keyword);
+                if (!resolvedKeyword.isEmpty()) response.put("keyword", resolvedKeyword);
                 
                 return ResponseEntity.ok(response);
             }
             
             // Basic keyword search
-            String searchTerm = (keyword != null && !keyword.isEmpty()) ? keyword : "";
             Pageable pageable = PageRequest.of(page, size);
             Page<Vehicle> vehicles;
             
-            if (!searchTerm.isEmpty()) {
-                vehicles = vehicleRepository.searchVehicles(searchTerm, VehicleStatus.AVAILABLE, pageable);
+            if (!resolvedKeyword.isEmpty()) {
+                vehicles = vehicleRepository.searchVehicles(resolvedKeyword, VehicleStatus.AVAILABLE, pageable);
             } else {
-                vehicles = vehicleRepository.findByStatus(VehicleStatus.AVAILABLE, pageable);
+                vehicles = vehicleRepository.findByStatusAndApprovalStatus(VehicleStatus.AVAILABLE, VehicleStatus.APPROVED, pageable);
             }
             
             Map<String, Object> response = new HashMap<>();
@@ -231,7 +345,7 @@ public class VehicleController {
             response.put("currentPage", vehicles.getNumber());
             response.put("totalItems", vehicles.getTotalElements());
             response.put("totalPages", vehicles.getTotalPages());
-            response.put("keyword", searchTerm);
+            response.put("keyword", resolvedKeyword);
             
             return ResponseEntity.ok(response);
             
@@ -303,6 +417,11 @@ public class VehicleController {
             Map<String, Object> response = new HashMap<>();
             response.put("vehicle", vehicle);
             return ResponseEntity.ok(response);
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Access denied");
+            errorResponse.put("message", e.getMessage());
+            return ResponseEntity.status(403).body(errorResponse);
         } catch (Exception e) {
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("error", "Failed to create vehicle");
@@ -323,6 +442,11 @@ public class VehicleController {
             Map<String, Object> response = new HashMap<>();
             response.put("vehicle", vehicle);
             return ResponseEntity.ok(response);
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Access denied");
+            errorResponse.put("message", e.getMessage());
+            return ResponseEntity.status(403).body(errorResponse);
         } catch (Exception e) {
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("error", "Failed to update vehicle");
@@ -343,6 +467,11 @@ public class VehicleController {
             response.put("success", true);
             response.put("message", "Vehicle deleted successfully");
             return ResponseEntity.ok(response);
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Access denied");
+            errorResponse.put("message", e.getMessage());
+            return ResponseEntity.status(403).body(errorResponse);
         } catch (Exception e) {
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("error", "Failed to delete vehicle");

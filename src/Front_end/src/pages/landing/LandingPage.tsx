@@ -606,6 +606,119 @@ const TrendingSection: React.FC<{ vehicles: TrendingVehicle[]; loading: boolean 
 };
 
 // =====================================================
+// LATEST VEHICLES CAROUSEL (Newly Approved)
+// =====================================================
+const LatestSection: React.FC<{ vehicles: TrendingVehicle[]; loading: boolean }> = ({ vehicles, loading }) => {
+  const navigate = useNavigate();
+  const t = useT();
+  const language = useUIStore((s: any) => s.language);
+  const ref = useRef<HTMLDivElement>(null);
+  const scroll = (dir: number) => ref.current?.scrollBy({ left: dir * 340, behavior: 'smooth' });
+
+  return (
+    <section className="py-16 bg-slate-50 overflow-hidden">
+      <div className="max-w-7xl mx-auto px-6">
+        <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="flex justify-between items-end mb-8">
+          <div>
+            <span className="text-xs font-bold tracking-widest uppercase text-amber-500 mb-2 block">{language === 'vi' ? 'Mới Nhất' : 'New Additions'}</span>
+            <h2 className="font-bold text-3xl md:text-4xl text-[#0F172A]">{language === 'vi' ? 'Xe Vừa Được Kiểm Duyệt' : 'Latest Approved Vehicles'}</h2>
+            <p className="text-slate-500 mt-1 text-sm">{language === 'vi' ? 'Khám phá các dòng xe vừa được đưa lên hệ thống và kiểm duyệt chất lượng' : 'Explore the newly verified premium vehicles added to our fleet'}</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button onClick={() => scroll(-1)} className="w-9 h-9 rounded-full border border-slate-200 flex items-center justify-center hover:border-[#0F172A] transition-colors">
+              <ChevronLeft className="w-4 h-4 text-slate-600" />
+            </button>
+            <button onClick={() => scroll(1)} className="w-9 h-9 rounded-full border border-slate-200 flex items-center justify-center hover:border-[#0F172A] transition-colors">
+              <ChevronRight className="w-4 h-4 text-slate-600" />
+            </button>
+          </div>
+        </motion.div>
+
+        <div ref={ref} className="flex gap-5 overflow-x-auto pb-6 scroll-smooth" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          {loading
+            ? Array(5).fill(0).map((_, i) => <Skeleton key={i} className="flex-shrink-0 w-80 h-[410px] rounded-3xl" />)
+            : (vehicles && vehicles.length > 0 ? (
+              vehicles.map((v) => (
+                <motion.div
+                  key={v.id}
+                  whileHover={{ y: -8, scale: 1.015 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                  className="flex-shrink-0 w-80 bg-white border border-slate-100 rounded-3xl overflow-hidden cursor-pointer group shadow-luxury hover:shadow-luxury-lg transition-all duration-300"
+                  onClick={() => navigate(`/vehicles/${v.id}`)}
+                >
+                  <div className="relative h-52 overflow-hidden bg-slate-100">
+                    {v.thumbnailUrl ? (
+                      <img src={v.thumbnailUrl} alt={v.name} loading="lazy"
+                        className="w-full h-full object-cover transition-transform duration-750 group-hover:scale-105" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        {v.vehicleType === 'motorbike' ? (
+                          <Bike className="w-12 h-12 text-slate-300" />
+                        ) : (
+                          <Car className="w-12 h-12 text-slate-300" />
+                        )}
+                      </div>
+                    )}
+                    {/* Badges */}
+                    <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+                      {v.isOwnerVerified && (
+                        <span className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500 text-white text-[10px] font-extrabold uppercase tracking-wider shadow-sm">
+                          <BadgeCheck className="w-3.5 h-3.5" /> KYC
+                        </span>
+                      )}
+                      {v.instantBook && (
+                        <span className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-400 text-black text-[10px] font-extrabold uppercase tracking-wider shadow-sm">
+                          <Zap className="w-3.5 h-3.5" /> {language === 'vi' ? 'Đặt Nhanh' : 'Instant'}
+                        </span>
+                      )}
+                    </div>
+                    <div className="absolute top-3 right-3 px-3 py-1.5 bg-slate-900/90 backdrop-blur-md rounded-xl border border-white/10 shadow-lg">
+                      <p className="text-white text-sm font-extrabold flex items-baseline gap-0.5">
+                        <span className="text-amber-400 font-mono text-base">{formatCurrency(v.pricePerDay)}</span>
+                        <span className="text-white/60 text-[10px] font-medium">/{t.landingPage.destinations.perDay}</span>
+                      </p>
+                    </div>
+                  </div>
+                  <div className="p-5">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <p className="text-xs text-slate-400 font-extrabold uppercase tracking-widest">{v.brand}</p>
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-50 border border-slate-100 text-[10px] font-bold text-slate-500">
+                        {v.vehicleType === 'motorbike' ? (language === 'vi' ? '🏍️ Xe máy' : '🏍️ Motorbike') : (language === 'vi' ? '🚗 Ô tô' : '🚗 Car')}
+                      </span>
+                    </div>
+                    <h3 className="font-extrabold text-[#0F172A] text-lg leading-tight mb-2 truncate group-hover:text-amber-500 transition-colors">{v.name}</h3>
+                    <p className="text-xs text-slate-500 mb-4 flex items-center gap-1.5 font-medium">
+                      <MapPin className="w-3.5 h-3.5 text-slate-400" /> {v.city}
+                    </p>
+                    <div className="flex items-center justify-between pt-3.5 border-t border-slate-100">
+                      <div className="flex items-center gap-1">
+                        <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                        <span className="text-sm font-bold text-slate-700">{Number(v.rating).toFixed(1)}</span>
+                        <span className="text-xs text-slate-400">({v.totalReviews})</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-slate-500 text-xs font-semibold">
+                        <TrendingUp className="w-3.5 h-3.5 text-amber-500" />
+                        <span>{v.totalBookings} {t.landingPage.trending.bookings}</span>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              ))
+            ) : (
+              <div className="w-full text-center py-8 text-slate-400 font-medium">
+                {language === 'vi' ? 'Không có xe mới nào.' : 'No new vehicles found.'}
+              </div>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+  );
+};
+
+// =====================================================
+
+// =====================================================
 // 5. VEHICLE CATEGORIES
 // =====================================================
 import * as LucideIcons from 'lucide-react';
@@ -1782,6 +1895,7 @@ const LandingPage: React.FC = () => {
   const [statsError, setStatsError] = useState<string | null>(null);
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [trending, setTrending] = useState<TrendingVehicle[]>([]);
+  const [latest, setLatest] = useState<TrendingVehicle[]>([]);
   const [categories, setCategories] = useState<CategoryData | null>(null);
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const [testimonials, setTestimonials] = useState<TestimonialsData | null>(null);
@@ -1816,7 +1930,13 @@ const LandingPage: React.FC = () => {
   useEffect(() => {
     loadStats();
     homeService.getPromotions().then(d => { setPromotions(d ?? []); setLoadingPromos(false); });
-    homeService.getTrending().then(d => { setTrending(d ?? []); setLoadingTrending(false); });
+    homeService.getHomeVehicles().then(d => {
+      if (d) {
+        setTrending(d.popular ?? []);
+        setLatest(d.latest ?? []);
+      }
+      setLoadingTrending(false);
+    });
     homeService.getDestinations().then(d => { setDestinations(d ?? []); setLoadingDests(false); });
     homeService.getTestimonials().then(d => { setTestimonials(d ?? null); setLoadingTestimonials(false); });
     homeService.getFaqs().then(d => { setFaqs(d ?? []); setLoadingFaqs(false); });
@@ -1839,6 +1959,7 @@ const LandingPage: React.FC = () => {
       <VehicleTypeShowcase />
       <PromotionSection promotions={promotions} loading={loadingPromos} />
       <TrendingSection vehicles={trending} loading={loadingTrending} />
+      <LatestSection vehicles={latest} loading={loadingTrending} />
       <CategoriesSection data={categories} />
       <DestinationsSection destinations={destinations} loading={loadingDests} />
       <LiveActivitySection />

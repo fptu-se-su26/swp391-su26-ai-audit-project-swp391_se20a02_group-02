@@ -35,6 +35,8 @@ public class Vehicle {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id", nullable = false)
     @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private User owner;
     
     @Column(nullable = false, length = 200)
@@ -205,6 +207,20 @@ public class Vehicle {
     @Builder.Default
     private VehicleStatus status = VehicleStatus.PENDING_APPROVAL;
     
+    @Enumerated(EnumType.STRING)
+    @Column(name = "approval_status", nullable = false)
+    @Builder.Default
+    private VehicleStatus approvalStatus = VehicleStatus.PENDING_APPROVAL;
+
+    @Column(name = "approval_note", length = 500)
+    private String approvalNote;
+
+    @Column(name = "approved_by", length = 36)
+    private String approvedBy;
+
+    @Column(name = "approved_at")
+    private LocalDateTime approvedAt;
+    
     @Column(precision = 3, scale = 2)
     @Builder.Default
     private BigDecimal rating = BigDecimal.ZERO;
@@ -247,27 +263,41 @@ public class Vehicle {
     
     // Relationships
     @OneToOne(mappedBy = "vehicle", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private VehicleSpecification specification;
 
     @OneToOne(mappedBy = "vehicle", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private VehicleLocation location;
 
     @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Set<VehicleAvailability> availabilities;
 
     @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Set<VehiclePricingRule> pricingRules;
 
     @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Set<VehicleImage> images;
     
     @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Set<VehicleFeature> features;
     
     @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Set<Booking> bookings;
     
     // Helper methods

@@ -89,7 +89,9 @@ public class SecurityIntegrationTest {
                 .verified(true)
                 .isActive(true)
                 .kycVerified(kyc)
+                .kycStatus(kyc ? "VERIFIED" : "NOT_UPLOADED")
                 .drivingLicenseVerified(driving)
+                .licenseClass(driving ? "B" : "")
                 .walletBalance(BigDecimal.ZERO)
                 .build();
         return userRepository.save(user);
@@ -105,33 +107,33 @@ public class SecurityIntegrationTest {
     @Test
     public void testAdminEndpointsRestricted() throws Exception {
         // GET /users restricted to ADMIN
-        mockMvc.perform(get("/users"))
+        mockMvc.perform(get("/api/v1/users"))
                 .andExpect(status().isUnauthorized()); // Unauthenticated
 
-        mockMvc.perform(addAuth(get("/users"), customerUser1))
+        mockMvc.perform(addAuth(get("/api/v1/users"), customerUser1))
                 .andExpect(status().isForbidden()); // Customer forbidden
 
-        mockMvc.perform(addAuth(get("/users"), adminUser))
+        mockMvc.perform(addAuth(get("/api/v1/users"), adminUser))
                 .andExpect(status().isOk()); // Admin OK
 
         // GET /test/health restricted to ADMIN
-        mockMvc.perform(get("/test/health"))
+        mockMvc.perform(get("/api/v1/test/health"))
                 .andExpect(status().isUnauthorized()); // Unauthenticated
 
-        mockMvc.perform(addAuth(get("/test/health"), customerUser1))
+        mockMvc.perform(addAuth(get("/api/v1/test/health"), customerUser1))
                 .andExpect(status().isForbidden()); // Customer forbidden
 
-        mockMvc.perform(addAuth(get("/test/health"), adminUser))
+        mockMvc.perform(addAuth(get("/api/v1/test/health"), adminUser))
                 .andExpect(status().isOk()); // Admin OK
 
         // GET /admin/dashboard restricted to ADMIN
-        mockMvc.perform(get("/admin/dashboard"))
+        mockMvc.perform(get("/api/v1/admin/dashboard"))
                 .andExpect(status().isUnauthorized());
 
-        mockMvc.perform(addAuth(get("/admin/dashboard"), customerUser1))
+        mockMvc.perform(addAuth(get("/api/v1/admin/dashboard"), customerUser1))
                 .andExpect(status().isForbidden());
 
-        mockMvc.perform(addAuth(get("/admin/dashboard"), adminUser))
+        mockMvc.perform(addAuth(get("/api/v1/admin/dashboard"), adminUser))
                 .andExpect(status().isOk());
     }
 
@@ -145,11 +147,11 @@ public class SecurityIntegrationTest {
                 "%PDF-1.4 mock content".getBytes(StandardCharsets.US_ASCII)
         );
 
-        mockMvc.perform(multipart("/upload").file(mockFile))
+        mockMvc.perform(multipart("/api/v1/upload").file(mockFile))
                 .andExpect(status().isUnauthorized());
 
         // Authenticated customer upload allowed (returns 200)
-        mockMvc.perform(addAuth(multipart("/upload").file(mockFile), customerUser1))
+        mockMvc.perform(addAuth(multipart("/api/v1/upload").file(mockFile), customerUser1))
                 .andExpect(status().isOk());
 
         // Executable/illegal upload denied by Tika magic check (returns 400 Bad Request)
@@ -157,7 +159,7 @@ public class SecurityIntegrationTest {
                 "file", "malicious.exe", "application/x-msdownload",
                 "MZ\u0090\u0000\u0003\u0000\u0000\u0000".getBytes(StandardCharsets.US_ASCII) // MZ header for exe
         );
-        mockMvc.perform(addAuth(multipart("/upload").file(executableFile), customerUser1))
+        mockMvc.perform(addAuth(multipart("/api/v1/upload").file(executableFile), customerUser1))
                 .andExpect(status().isBadRequest());
     }
 
@@ -180,8 +182,8 @@ public class SecurityIntegrationTest {
                 .build();
         invoice = invoiceRepository.save(invoice);
 
-        String invoiceUrl = "/invoices/" + invoice.getId();
-        String downloadUrl = "/invoices/download/" + invoice.getId();
+        String invoiceUrl = "/api/v1/invoices/" + invoice.getId();
+        String downloadUrl = "/api/v1/invoices/download/" + invoice.getId();
 
         // 1. Renter (customerUser1) should be allowed
         mockMvc.perform(addAuth(get(invoiceUrl), customerUser1))
@@ -215,7 +217,7 @@ public class SecurityIntegrationTest {
         Vehicle vehicle = createTestVehicle(ownerUser1);
         Booking booking = createTestBooking(vehicle, customerUser1, ownerUser1);
 
-        String contractUrl = "/contracts/booking/" + booking.getId();
+        String contractUrl = "/api/v1/contracts/booking/" + booking.getId();
 
         // Initially no contract exists
         mockMvc.perform(addAuth(get(contractUrl), customerUser1))
@@ -226,13 +228,13 @@ public class SecurityIntegrationTest {
                 "bookingId", booking.getId(),
                 "documentUrl", "http://example.com/contract.pdf"
         );
-        mockMvc.perform(addAuth(post("/contracts")
+        mockMvc.perform(addAuth(post("/api/v1/contracts")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(payload)), customerUser2))
                 .andExpect(status().isForbidden());
 
         // Allowed to create by renter (customerUser1)
-        mockMvc.perform(addAuth(post("/contracts")
+        mockMvc.perform(addAuth(post("/api/v1/contracts")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(payload)), customerUser1))
                 .andExpect(status().isOk());
@@ -260,7 +262,7 @@ public class SecurityIntegrationTest {
     @Test
     public void testEmployeeSecurityAndOwnershipIsolation() throws Exception {
         // Customer cannot access employee routes
-        mockMvc.perform(addAuth(get("/employees"), customerUser1))
+        mockMvc.perform(addAuth(get("/api/v1/employees"), customerUser1))
                 .andExpect(status().isForbidden());
 
         // Owner 1 creates employee
@@ -274,7 +276,7 @@ public class SecurityIntegrationTest {
                 .build();
         employee = employeeRepository.save(employee);
 
-        String empUrl = "/employees/" + employee.getId();
+        String empUrl = "/api/v1/employees/" + employee.getId();
 
         // Owner 1 can view employee details
         mockMvc.perform(addAuth(get(empUrl), ownerUser1))

@@ -209,7 +209,7 @@ export const Navbar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuthStore();
-  const { isScrolled, setScrolled, mobileMenuOpen, setMobileMenuOpen, theme } = useUIStore();
+  const { isScrolled, setScrolled, mobileMenuOpen, setMobileMenuOpen, theme, language } = useUIStore();
   const { unreadCount, setUnreadCount } = useNotificationStore();
   const [userMenuOpen, setUserMenuOpen] = React.useState(false);
   const userMenuRef = React.useRef<HTMLDivElement>(null);
@@ -224,8 +224,7 @@ export const Navbar: React.FC = () => {
 
   React.useEffect(() => {
     if (user) {
-      const count = notificationService.getUnreadCount(user.id);
-      setUnreadCount(count);
+      notificationService.getUnreadCount().then(setUnreadCount);
     }
   }, [user, setUnreadCount]);
 
@@ -249,6 +248,7 @@ export const Navbar: React.FC = () => {
 
   const navLinks = [
     { href: '/marketplace', label: t.nav.marketplace },
+    { href: '/map', label: language === 'vi' ? 'Bản đồ' : 'Map' },
     { href: '/reviews', label: t.nav.reviews },
     { href: '/help', label: t.nav.help },
   ];
@@ -302,13 +302,18 @@ export const Navbar: React.FC = () => {
                   key={link.href}
                   to={link.href}
                   className={cn(
-                    'px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200',
+                    'px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 flex items-center',
                     isActive(link.href)
                       ? 'bg-[#0F172A] text-white'
                       : cn(textColor, hoverBg)
                   )}
                 >
-                  {link.label}
+                  <span>{link.label}</span>
+                  {link.href === '/map' && (
+                    <span className="ml-1.5 px-1.5 py-0.5 text-[9px] font-bold text-white bg-red-500 rounded-full leading-none">
+                      25
+                    </span>
+                  )}
                 </Link>
               ))}
             </div>
@@ -513,13 +518,18 @@ export const Navbar: React.FC = () => {
                     to={link.href}
                     onClick={() => setMobileMenuOpen(false)}
                     className={cn(
-                      'flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors',
+                      'flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-colors',
                       isActive(link.href)
                         ? 'bg-[#0F172A] text-white'
                         : isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-100'
                     )}
                   >
-                    {link.label}
+                    <span>{link.label}</span>
+                    {link.href === '/map' && (
+                      <span className="px-1.5 py-0.5 text-[9px] font-bold text-white bg-red-500 rounded-full leading-none">
+                        25
+                      </span>
+                    )}
                   </Link>
                 ))}
                 {!isAuthenticated && (

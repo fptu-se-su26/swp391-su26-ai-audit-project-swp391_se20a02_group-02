@@ -52,11 +52,16 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ isOp
     setUnreadCount(Math.max(0, unreadCount - 1));
   };
 
-  const handleNotificationClick = (id: string) => {
-    notificationService.markRead(id);
-    setUnreadCount(Math.max(0, unreadCount - 1));
+  const handleNotificationClick = (n: Notification) => {
+    notificationService.markRead(n.id).then(() => {
+      // Refresh the unread count from backend for accuracy
+      notificationService.getUnreadCount().then(setUnreadCount);
+    });
+    setNotifications(prev => prev.map(item => item.id === n.id ? { ...item, read: true } : item));
     onClose();
-    navigate('/notifications');
+    // Navigate to the notification-specific link, fallback to /notifications
+    const target = n.link && n.link.trim() ? n.link.trim() : '/notifications';
+    navigate(target);
   };
 
   if (!user) return null;
@@ -108,7 +113,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ isOp
               notifications.map((n) => (
                 <div
                   key={n.id}
-                  onClick={() => handleNotificationClick(n.id)}
+                  onClick={() => handleNotificationClick(n)}
                   className={cn(
                     'p-3 rounded-2xl cursor-pointer transition-all duration-200 flex gap-3',
                     isDark ? 'hover:bg-slate-900/60' : 'hover:bg-slate-50',

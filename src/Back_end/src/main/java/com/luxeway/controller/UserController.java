@@ -265,6 +265,19 @@ public class UserController {
         com.luxeway.entity.User user = userRepository.findById(authUser.getId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        String currentStatus = user.getKycStatus();
+        if (currentStatus != null && !"NOT_UPLOADED".equalsIgnoreCase(currentStatus) 
+                && !"VERIFYING".equalsIgnoreCase(currentStatus) 
+                && !"FAILED".equalsIgnoreCase(currentStatus) 
+                && !"REJECTED".equalsIgnoreCase(currentStatus)) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Cannot upload documents when KYC status is " + currentStatus);
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+
+        user.setKycStatus("VERIFYING");
+        userRepository.save(user);
+
         if (file.isEmpty()) {
             Map<String, String> errorResponse = new HashMap<>();
             errorResponse.put("error", "No file provided");
@@ -314,7 +327,7 @@ public class UserController {
             if ("CCCD_FRONT".equalsIgnoreCase(documentType)) {
                 com.luxeway.service.FptAiEkycService.CccdOcrResult ocrResult;
                 try {
-                    ocrResult = fptAiEkycService.scanCccd(filePath.toAbsolutePath());
+                    ocrResult = fptAiEkycService.verifyCCCD(filePath.toAbsolutePath());
                     if (ocrResult == null || ocrResult.getCitizenId() == null || ocrResult.getFullName() == null 
                             || ocrResult.getDateOfBirth() == null || ocrResult.getAddress() == null) {
                         throw new RuntimeException("OCR fields are empty");
@@ -325,8 +338,20 @@ public class UserController {
                     
                     userService.uploadCccdFront(user.getId(), fileUrl, new com.luxeway.service.FptAiEkycService.CccdOcrResult());
                     
+                    try {
+                        notificationService.createNotification(
+                            user.getId(),
+                            "KYC",
+                            "Verification failed. Please upload again",
+                            "CCCD verification failed. Please upload again.",
+                            "/dashboard/documents"
+                        );
+                    } catch (Exception notifEx) {
+                        log.warn("Failed to send KYC failure notification: {}", notifEx.getMessage());
+                    }
+
                     Map<String, String> errorResponse = new HashMap<>();
-                    errorResponse.put("error", "Your identity document verification failed. Please upload again.");
+                    errorResponse.put("error", "CCCD verification failed. Please upload again.");
                     errorResponse.put("message", ex.getMessage());
                     return ResponseEntity.badRequest().body(errorResponse);
                 }
@@ -338,7 +363,7 @@ public class UserController {
             } else if ("DRIVER_LICENSE_FRONT".equalsIgnoreCase(documentType)) {
                 com.luxeway.service.FptAiEkycService.DlOcrResult ocrResult;
                 try {
-                    ocrResult = fptAiEkycService.scanDriverLicense(filePath.toAbsolutePath());
+                    ocrResult = fptAiEkycService.verifyDriverLicense(filePath.toAbsolutePath());
                     if (ocrResult == null || ocrResult.getLicenseClass() == null || ocrResult.getLicenseNumber() == null) {
                         throw new RuntimeException("OCR fields are empty");
                     }
@@ -358,6 +383,18 @@ public class UserController {
                     
                     userService.uploadDriverLicenseFront(user.getId(), fileUrl, new com.luxeway.service.FptAiEkycService.DlOcrResult());
                     
+                    try {
+                        notificationService.createNotification(
+                            user.getId(),
+                            "KYC",
+                            "Verification failed. Please upload again",
+                            "Your driving license verification failed. Please upload again.",
+                            "/dashboard/documents"
+                        );
+                    } catch (Exception notifEx) {
+                        log.warn("Failed to send KYC failure notification: {}", notifEx.getMessage());
+                    }
+
                     Map<String, String> errorResponse = new HashMap<>();
                     errorResponse.put("error", "Your driving license verification failed. Please upload again.");
                     errorResponse.put("message", ex.getMessage());
@@ -382,28 +419,73 @@ public class UserController {
                 }
                 
                 com.luxeway.service.FptAiEkycService.FaceMatchResult faceResult;
+                com.luxeway.service.FptAiEkycService.LivenessResult livenessResult;
                 try {
                     String cccdUrl = cccdDocs.get(0).getUrl();
-                    java.nio.file.Path cccdPath = java.nio.file.Paths.get(cccdUrl.substring(1));
-                    faceResult = fptAiEkycService.matchFaces(cccdPath.toAbsolutePath(), filePath.toAbsolutePath());
+                    String filename = cccdUrl;
+                    if (cccdUrl.contains("/")) {
+                        filename = cccdUrl.substring(cccdUrl.lastIndexOf("/") + 1);
+                    }
+                    java.nio.file.Path cccdPath = java.nio.file.Paths.get(uploadDir).resolve(filename).toAbsolutePath();
+                    if (!java.nio.file.Files.exists(cccdPath)) {
+                        java.nio.file.Path alternativePath = java.nio.file.Paths.get("src/Back_end/uploads").resolve(filename).toAbsolutePath();
+                        if (java.nio.file.Files.exists(alternativePath)) {
+                            cccdPath = alternativePath;
+                        } else {
+                            alternativePath = java.nio.file.Paths.get("uploads").resolve(filename).toAbsolutePath();
+                            if (java.nio.file.Files.exists(alternativePath)) {
+                                cccdPath = alternativePath;
+                            }
+                        }
+                    }
+                    if (!java.nio.file.Files.exists(cccdPath)) {
+                        java.nio.file.Files.createDirectories(cccdPath.getParent());
+                        java.nio.file.Files.write(cccdPath, new byte[]{0});
+                    }
+
+                    faceResult = fptAiEkycService.verifyFaceMatch(cccdPath.toAbsolutePath(), filePath.toAbsolutePath());
+                    livenessResult = fptAiEkycService.verifyLiveness(filePath.toAbsolutePath());
                     
-                    boolean isLivenessPass = "PASS".equalsIgnoreCase(faceResult.getLivenessResult()) || "Passed".equalsIgnoreCase(faceResult.getLivenessResult());
+                    boolean isLivenessPass = "LIVE".equalsIgnoreCase(livenessResult.getResult()) || "Passed".equalsIgnoreCase(livenessResult.getResult()) || "PASS".equalsIgnoreCase(livenessResult.getResult());
                     if (faceResult.getSimilarity() < 70.0 || !isLivenessPass) {
-                        throw new RuntimeException("Face similarity: " + faceResult.getSimilarity() + "%, Liveness: " + faceResult.getLivenessResult());
+                        throw new RuntimeException("Face similarity: " + faceResult.getSimilarity() + "%, Liveness: " + livenessResult.getResult());
                     }
                 } catch (Exception ex) {
                     user.setKycStatus("FAILED");
                     userRepository.save(user);
                     
-                    userService.uploadSelfie(user.getId(), fileUrl, new com.luxeway.service.FptAiEkycService.FaceMatchResult());
+                    com.luxeway.service.FptAiEkycService.FaceMatchResult failResult = new com.luxeway.service.FptAiEkycService.FaceMatchResult();
+                    failResult.setSimilarity(0.0);
+                    failResult.setMatch(false);
+                    failResult.setLivenessResult("FAILED");
+                    failResult.setRawResponse("{\"similarity\":0.0,\"isMatch\":false,\"liveness\":\"FAILED\",\"error\":\"" + ex.getMessage() + "\"}");
+                    userService.uploadSelfie(user.getId(), fileUrl, failResult);
                     
+                    try {
+                        notificationService.createNotification(
+                            user.getId(),
+                            "KYC",
+                            "Verification failed. Please upload again",
+                            "Verification failed. Please upload documents again.",
+                            "/dashboard/documents"
+                        );
+                    } catch (Exception notifEx) {
+                        log.warn("Failed to send KYC failure notification: {}", notifEx.getMessage());
+                    }
+
                     Map<String, String> errorResponse = new HashMap<>();
-                    errorResponse.put("error", "Face verification failed. Require customer retry.");
+                    errorResponse.put("error", "Verification failed. Please upload documents again.");
                     errorResponse.put("message", ex.getMessage());
                     return ResponseEntity.badRequest().body(errorResponse);
                 }
                 
-                docResp = userService.uploadSelfie(user.getId(), fileUrl, faceResult);
+                com.luxeway.service.FptAiEkycService.FaceMatchResult successResult = new com.luxeway.service.FptAiEkycService.FaceMatchResult();
+                successResult.setSimilarity(faceResult.getSimilarity());
+                successResult.setMatch(true);
+                successResult.setLivenessResult("Passed");
+                successResult.setRawResponse(faceResult.getRawResponse());
+                
+                docResp = userService.uploadSelfie(user.getId(), fileUrl, successResult);
                 
             } else {
                 Map<String, String> errorResponse = new HashMap<>();
@@ -456,8 +538,8 @@ public class UserController {
         com.luxeway.dto.user.UserDTOs.UserProfileResponse resp = userService.submitKycForReview(user.getId());
 
         String title = "New KYC Verification Request";
-        String content = "Customer " + user.getDisplayName() + " submitted documents.";
-        String link = "/admin/kyc/" + user.getId();
+        String content = "New KYC request from " + user.getDisplayName();
+        String link = "/admin?tab=kyc";
 
         try {
             java.util.List<User> admins = userRepository.findByRole(com.luxeway.enums.UserRole.ADMIN);

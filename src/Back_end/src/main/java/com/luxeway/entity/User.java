@@ -84,11 +84,11 @@ public class User implements UserDetails {
 
     @Column(name = "kyc_status", length = 20, nullable = false)
     @Builder.Default
-    private String kycStatus = "REJECTED";
+    private String kycStatus = "NOT_UPLOADED";
 
     @Column(name = "driver_license_status", length = 20, nullable = false)
     @Builder.Default
-    private String driverLicenseStatus = "NONE";
+    private String driverLicenseStatus = "NOT_UPLOADED";
 
     @Column(name = "license_class", length = 10)
     private String licenseClass;
@@ -155,22 +155,32 @@ public class User implements UserDetails {
     
     // Relationships
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private OwnerProfile ownerProfile;
 
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Set<Vehicle> vehicles;
     
     @OneToMany(mappedBy = "renter", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Set<Booking> rentals;
     
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Set<Booking> bookingsAsOwner;
     
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Set<UserDocument> documents;
     
     // UserDetails implementation

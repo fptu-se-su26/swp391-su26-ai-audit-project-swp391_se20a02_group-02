@@ -29,6 +29,7 @@ public interface BookingRepository extends JpaRepository<Booking, String> {
 
     // By vehicle
     List<Booking> findByVehicleIdAndStatusIn(String vehicleId, List<BookingStatus> statuses);
+    boolean existsByVehicleIdAndStatusIn(String vehicleId, List<BookingStatus> statuses);
 
     // Conflict detection: check if any active booking overlaps the requested dates
     @Query("SELECT COUNT(b) > 0 FROM Booking b WHERE b.vehicle.id = :vehicleId " +
@@ -58,6 +59,8 @@ public interface BookingRepository extends JpaRepository<Booking, String> {
 
     // Statistics
     long countByStatus(BookingStatus status);
+
+    long countByOwnerId(String ownerId);
 
     @Query("SELECT COUNT(b) FROM Booking b WHERE b.owner.id = :ownerId AND b.status = :status")
     long countByOwnerIdAndStatus(@Param("ownerId") String ownerId, @Param("status") BookingStatus status);

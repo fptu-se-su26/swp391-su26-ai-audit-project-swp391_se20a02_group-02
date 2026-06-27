@@ -1,21 +1,11 @@
 import apiClient, { ApiResponse } from './api';
 import type { User, RegisterData } from '@/types';
+import { resolveImageUrl } from '@/utils';
 
 // Storage keys
 const TOKEN_KEY = 'luxeway_access_token';
 const REFRESH_TOKEN_KEY = 'luxeway_refresh_token';
 const USER_KEY = 'luxeway_user';
-
-const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8080';
-
-const resolveImageUrl = (url: string | null | undefined): string => {
-  if (!url) return '';
-  if (url.startsWith('/uploads') || url.startsWith('uploads')) {
-    const cleanUrl = url.startsWith('/') ? url : '/' + url;
-    return `${API_BASE}${cleanUrl}`;
-  }
-  return url;
-};
 
 // ====== REAL BACKEND AUTH SERVICE ======
 export const authService = {

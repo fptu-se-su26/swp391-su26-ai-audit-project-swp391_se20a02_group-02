@@ -6,7 +6,7 @@ import {
   ChevronLeft, Car, MapPin, Clock, Tag, Loader2, ArrowRight,
   Zap, Lock, Star, Package, Truck, X, Wallet, Building2,
   AlertTriangle, Info, Sparkles, UserCircle, Heart, Briefcase,
-  Check, CloudRain, Smartphone
+  Check, CloudRain, Smartphone, Camera
 } from 'lucide-react';
 import { vehicleService } from '@/services/vehicleService';
 import { bookingService, paymentService, paymentMethodService } from '@/services/bookingService';
@@ -329,9 +329,74 @@ const BookingWizardPage: React.FC = () => {
   const navigate = useNavigate();
   const t = useT();
   const toast = useToast();
-  const { user } = useAuthStore();
+  const { user, updateUser } = useAuthStore();
   const wizard = useBookingWizardStore();
   const isVi = t.common.loading.includes('Đang');
+
+  // States for driving license verification form
+  const [gplxNumber, setGplxNumber] = useState(user?.licenseNumber || '');
+  const [gplxName, setGplxName] = useState(user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : '');
+  const [gplxClass, setGplxClass] = useState(user?.licenseClass || 'B2');
+  const [isSubmittingLicense, setIsSubmittingLicense] = useState(false);
+  const [frontImageMock, setFrontImageMock] = useState<string | null>(null);
+  const [backImageMock, setBackImageMock] = useState<string | null>(null);
+
+  const checkLocalLicenseCompatibility = (selectedClass: string) => {
+    if (!vehicle) return true;
+    const cls = selectedClass.toUpperCase();
+    if (vehicle.vehicleType === 'motorbike') {
+      return cls === 'A1' || cls === 'A';
+    } else if (vehicle.vehicleType === 'car') {
+      return cls.startsWith('B') || 
+             cls.startsWith('C') || 
+             cls.startsWith('D') || 
+             cls.startsWith('E') || 
+             cls.startsWith('F');
+    }
+    return false;
+  };
+
+  const isLocalCompatible = checkLocalLicenseCompatibility(gplxClass);
+
+  const handleVerifyLicense = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!gplxNumber.trim()) {
+      toast.warning(isVi ? 'Nhập số GPLX' : 'Enter License Number', isVi ? 'Vui lòng điền số bằng lái xe của bạn.' : 'Please enter your driving license number.');
+      return;
+    }
+    if (gplxNumber.trim().length !== 12) {
+      toast.warning(isVi ? 'Số GPLX không hợp lệ' : 'Invalid License Number', isVi ? 'Số GPLX của Việt Nam phải có độ dài đúng 12 chữ số.' : 'Vietnamese driving license must be exactly 12 digits.');
+      return;
+    }
+    if (!gplxName.trim()) {
+      toast.warning(isVi ? 'Nhập họ tên' : 'Enter Full Name', isVi ? 'Vui lòng điền tên chủ bằng lái.' : 'Please enter the license holder name.');
+      return;
+    }
+    if (!isLocalCompatible) {
+      toast.error(isVi ? 'Hạng bằng không tương thích' : 'Incompatible License', isVi ? 'Hạng bằng lái này không đủ điều kiện thuê xe.' : 'This license class is not compatible with the vehicle.');
+      return;
+    }
+    
+    setIsSubmittingLicense(true);
+    try {
+      const nameParts = gplxName.trim().split(/\s+/);
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+      
+      await updateUser({
+        licenseClass: gplxClass,
+        licenseNumber: gplxNumber.trim(),
+        firstName,
+        lastName
+      });
+      
+      toast.success(isVi ? 'Xác thực thành công' : 'Verification Successful', isVi ? 'Thông tin bằng lái của bạn đã được cập nhật thành công!' : 'Your driving license details have been verified successfully.');
+    } catch (err: any) {
+      toast.error(isVi ? 'Lỗi xác thực' : 'Verification Error', err.message || (isVi ? 'Không thể cập nhật bằng lái.' : 'Failed to update driving license.'));
+    } finally {
+      setIsSubmittingLicense(false);
+    }
+  };
 
   // Enforce KYC verification & license class matching
   const isKycVerified = user?.role === 'admin' || user?.kycStatus === 'VERIFIED';
@@ -358,7 +423,7 @@ const BookingWizardPage: React.FC = () => {
   const getBlockingReason = () => {
     if (user?.role === 'admin') return null;
     if (user?.kycStatus !== 'VERIFIED') {
-      if (user?.kycStatus === 'PENDING') {
+      if (user?.kycStatus === 'PENDING' || user?.kycStatus === 'PENDING_APPROVAL') {
         return {
           title: isVi ? 'Hồ sơ KYC đang chờ duyệt' : 'KYC Verification Pending',
           description: isVi 
@@ -378,7 +443,7 @@ const BookingWizardPage: React.FC = () => {
       };
     }
     if (user?.driverLicenseStatus !== 'VERIFIED') {
-      if (user?.driverLicenseStatus === 'PENDING') {
+      if (user?.driverLicenseStatus === 'PENDING' || user?.driverLicenseStatus === 'PENDING_APPROVAL') {
         return {
           title: isVi ? 'Bằng lái xe đang chờ duyệt' : 'Driving License Review Pending',
           description: isVi 
@@ -1578,83 +1643,250 @@ const BookingWizardPage: React.FC = () => {
         </div>
       </div>
       {isBlocked && blockReason && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[999] flex items-end justify-center">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[999] flex items-end justify-center md:items-center p-0 md:p-4 overflow-y-auto">
           <motion.div 
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
+            initial={{ y: '100%', scale: 0.95 }}
+            animate={{ y: 0, scale: 1 }}
+            exit={{ y: '100%', scale: 0.95 }}
             transition={{ type: 'spring', damping: 25, stiffness: 180 }}
-            className="w-full max-w-3xl bg-white rounded-t-[2.5rem] shadow-[0_-15px_30px_rgba(0,0,0,0.15)] border-t border-slate-100 p-8 select-none relative pb-10"
+            className="w-full max-w-3xl bg-white rounded-t-[2.5rem] md:rounded-[2.5rem] shadow-[0_-15px_30px_rgba(0,0,0,0.15)] border border-slate-100 p-6 md:p-8 select-none relative pb-10 max-h-[90vh] overflow-y-auto"
           >
             {/* Top Drag Indicator Line */}
-            <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6" />
+            <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6 md:hidden" />
 
             <div className="flex items-start gap-5 mb-6">
-              <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-500 flex-shrink-0 shadow-sm animate-pulse">
+              <div className="w-14 h-14 rounded-2xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-500 flex-shrink-0 shadow-sm animate-pulse">
                 <Shield className="w-7 h-7" />
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-3">
-                  <h3 className="text-xl font-bold text-slate-800">{blockReason.title}</h3>
+                  <h3 className="text-xl font-bold text-slate-800">
+                    {blockReason.status === 'incompatible' 
+                      ? (isVi ? 'Yêu cầu bằng lái tương thích' : 'Compatible License Required')
+                      : (isVi ? 'Cập nhật bằng lái xe (GPLX)' : 'Driving License Required')
+                    }
+                  </h3>
                   <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                     blockReason.status === 'pending' 
                       ? 'bg-amber-100 text-amber-800' 
                       : blockReason.status === 'incompatible' 
                       ? 'bg-red-100 text-red-800' 
-                      : 'bg-slate-100 text-slate-800'
+                      : 'bg-indigo-100 text-indigo-850'
                   }`}>
                     {blockReason.badge}
                   </span>
                 </div>
                 <p className="text-sm text-slate-500 mt-2 leading-relaxed">
-                  {blockReason.description}
+                  {blockReason.status === 'incompatible'
+                    ? (isVi 
+                        ? `Xe này yêu cầu bằng lái ô tô (hạng B1, B2, C, D...). Bằng lái hiện tại của bạn là hạng [${licenseClass || 'Chưa cập nhật'}]. Vui lòng cập nhật bằng lái phù hợp.`
+                        : `This vehicle requires a car driving license (B1, B2, C, D...). Your current license class is [${licenseClass || 'N/A'}]. Please update your license.`)
+                    : (isVi 
+                        ? 'Để tiếp tục đặt xe, vui lòng cập nhật thông tin giấy phép lái xe hợp lệ của bạn dưới đây.'
+                        : 'To proceed with this booking, please update and verify your driving license details below.')
+                  }
                 </p>
               </div>
             </div>
 
             {/* Check Details Container */}
-            <div className="bg-slate-50 rounded-2xl p-5 border border-slate-250/60 mb-6 space-y-4">
-              <div className="flex justify-between items-center text-sm py-1 border-b border-slate-200/50 pb-3">
+            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 mb-6 space-y-3">
+              <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-200/50">
                 <span className="text-slate-500 font-semibold">{isVi ? '1. Định danh cá nhân (KYC)' : '1. Identity KYC Status'}</span>
                 <span className={`font-bold ${user?.kycStatus === 'VERIFIED' ? 'text-emerald-600' : user?.kycStatus === 'PENDING' ? 'text-amber-500' : 'text-slate-400'}`}>
                   {user?.kycStatus === 'VERIFIED' ? '✓ VERIFIED' : user?.kycStatus === 'PENDING' ? '⏳ PENDING REVIEW' : '✗ NOT VERIFIED'}
                 </span>
               </div>
-              <div className="flex justify-between items-center text-sm py-1 border-b border-slate-200/50 pb-3">
+              <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-200/50">
                 <span className="text-slate-500 font-semibold">{isVi ? '2. Bằng lái xe (Driver License)' : '2. Driving License Status'}</span>
                 <span className={`font-bold ${user?.driverLicenseStatus === 'VERIFIED' ? 'text-emerald-600' : user?.driverLicenseStatus === 'PENDING' ? 'text-amber-500' : 'text-slate-400'}`}>
                   {user?.driverLicenseStatus === 'VERIFIED' ? '✓ VERIFIED' : user?.driverLicenseStatus === 'PENDING' ? '⏳ PENDING REVIEW' : '✗ NOT VERIFIED'}
                 </span>
               </div>
-              <div className="flex justify-between items-center text-sm py-1">
-                <span className="text-slate-500 font-semibold">{isVi ? '3. Hạng bằng lái / Loại xe' : '3. License Compatibility'}</span>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-slate-500 font-semibold">{isVi ? '3. Hạng bằng lái hiện tại' : '3. Current License Class'}</span>
                 <span className={`font-bold ${isLicenseCompatible ? 'text-emerald-600' : 'text-red-500'}`}>
-                  {isLicenseCompatible 
-                    ? `✓ COMPATIBLE (${user?.licenseClass || 'N/A'} for ${vehicle.vehicleType?.toUpperCase()})` 
-                    : `✗ INCOMPATIBLE (${user?.licenseClass || 'None'} for ${vehicle.vehicleType?.toUpperCase()})`
-                  }
+                  {user?.licenseClass ? `${user?.licenseClass} (${isLicenseCompatible ? 'COMPATIBLE' : 'INCOMPATIBLE'})` : 'None'}
                 </span>
               </div>
             </div>
 
-            {/* Actions */}
-            <div className="flex flex-col sm:flex-row gap-3">
-              {blockReason.status !== 'pending' && (
+            {/* Form Section */}
+            {blockReason.status === 'pending' ? (
+              <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200 mb-6 text-center">
+                <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center text-amber-600 mx-auto mb-3 animate-spin">
+                  <Loader2 className="w-6 h-6" />
+                </div>
+                <h4 className="font-bold text-slate-800 mb-2">{isVi ? 'Đang chờ xét duyệt' : 'Under Review'}</h4>
+                <p className="text-xs text-slate-500 max-w-md mx-auto">
+                  {blockReason.description}
+                </p>
                 <button
-                  onClick={() => navigate('/dashboard/documents')}
-                  className="flex-1 py-3.5 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-600/10 flex items-center justify-center gap-2 cursor-pointer transition-colors"
+                  type="button"
+                  onClick={() => navigate(-1)}
+                  className="mt-4 px-6 py-2 border border-slate-200 text-slate-650 hover:bg-slate-100 font-bold rounded-xl text-xs transition-colors cursor-pointer"
                 >
-                  <Lock className="w-4 h-4" />
-                  {isVi ? 'Xác thực tài liệu ngay' : 'Verify My Documents'}
+                  {isVi ? 'Quay lại cửa hàng' : 'Back to Marketplace'}
                 </button>
-              )}
-              <button
-                onClick={() => navigate(-1)}
-                className="flex-1 py-3.5 px-6 border-2 border-slate-200 text-slate-600 hover:bg-slate-50 font-bold rounded-2xl transition-colors cursor-pointer flex items-center justify-center gap-2"
-              >
-                {isVi ? 'Quay lại cửa hàng' : 'Back to Marketplace'}
-              </button>
-            </div>
+              </div>
+            ) : (
+              <form onSubmit={handleVerifyLicense} className="space-y-5 mb-6">
+                <h4 className="text-sm font-black text-slate-700 tracking-wide uppercase">{isVi ? 'Nhập thông tin GPLX của bạn' : 'Enter Driving License Details'}</h4>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Left Column: Inputs */}
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 mb-1">{isVi ? 'Họ và tên chủ bằng' : 'License Holder Name'}</label>
+                      <input
+                        type="text"
+                        value={gplxName}
+                        onChange={(e) => setGplxName(e.target.value.toUpperCase())}
+                        placeholder={isVi ? 'VD: GIANG NGUYỄN' : 'e.g. GIANG NGUYEN'}
+                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 mb-1">{isVi ? 'Số GPLX' : 'License Number'}</label>
+                      <input
+                        type="text"
+                        value={gplxNumber}
+                        onChange={(e) => setGplxNumber(e.target.value.replace(/\D/g, ''))}
+                        placeholder={isVi ? 'Nhập 12 chữ số' : 'Enter 12 digits'}
+                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all"
+                        maxLength={12}
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 mb-1">{isVi ? 'Hạng bằng lái (GPLX)' : 'GPLX Class'}</label>
+                      <select
+                        value={gplxClass}
+                        onChange={(e) => setGplxClass(e.target.value)}
+                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all cursor-pointer"
+                      >
+                        <option value="A1">{isVi ? 'Hạng A1 (Xe máy <= 175cc)' : 'Class A1 (Motorcycle <= 175cc)'}</option>
+                        <option value="A">{isVi ? 'Hạng A / A2 (Xe máy lớn)' : 'Class A / A2 (Big Motorcycle)'}</option>
+                        <option value="B1">{isVi ? 'Hạng B1 (Ô tô số tự động)' : 'Class B1 (Automatic Car)'}</option>
+                        <option value="B2">{isVi ? 'Hạng B2 (Ô tô số sàn & số tự động)' : 'Class B2 (Manual & Auto Car)'}</option>
+                        <option value="C">{isVi ? 'Hạng C (Xe tải > 3.500kg)' : 'Class C (Trucks)'}</option>
+                        <option value="D">{isVi ? 'Hạng D / E / F (Xe khách, tải nặng)' : 'Class D / E / F (Heavy Vehicles)'}</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Right Column: Photo Uploads */}
+                  <div className="space-y-3">
+                    <label className="block text-xs font-bold text-slate-500">{isVi ? 'Ảnh chụp bằng lái' : 'GPLX Photos'}</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      {/* Front Side */}
+                      <div 
+                        onClick={() => setFrontImageMock('front_uploaded')}
+                        className={`aspect-[1.58] border-2 border-dashed rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all ${
+                          frontImageMock 
+                            ? 'bg-emerald-50/50 border-emerald-300 text-emerald-600 font-bold' 
+                            : 'bg-slate-50 hover:bg-slate-100/70 border-slate-200 hover:border-slate-300 text-slate-400'
+                        }`}
+                      >
+                        {frontImageMock ? (
+                          <>
+                            <Check className="w-6 h-6 mb-1 text-emerald-500" />
+                            <span className="text-[10px]">{isVi ? 'Mặt trước ✓' : 'Front Side ✓'}</span>
+                          </>
+                        ) : (
+                          <>
+                            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center mb-1 text-slate-500">
+                              <Camera className="w-4 h-4" />
+                            </div>
+                            <span className="text-[10px] font-bold">{isVi ? 'Mặt trước' : 'Front Side'}</span>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Back Side */}
+                      <div 
+                        onClick={() => setBackImageMock('back_uploaded')}
+                        className={`aspect-[1.58] border-2 border-dashed rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all ${
+                          backImageMock 
+                            ? 'bg-emerald-50/50 border-emerald-300 text-emerald-600 font-bold' 
+                            : 'bg-slate-50 hover:bg-slate-100/70 border-slate-200 hover:border-slate-300 text-slate-400'
+                        }`}
+                      >
+                        {backImageMock ? (
+                          <>
+                            <Check className="w-6 h-6 mb-1 text-emerald-500" />
+                            <span className="text-[10px]">{isVi ? 'Mặt sau ✓' : 'Back Side ✓'}</span>
+                          </>
+                        ) : (
+                          <>
+                            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center mb-1 text-slate-500">
+                              <Camera className="w-4 h-4" />
+                            </div>
+                            <span className="text-[10px] font-bold">{isVi ? 'Mặt sau' : 'Back Side'}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-slate-400 text-center leading-relaxed">
+                      {isVi 
+                        ? 'Click vào khung để mô phỏng tải lên hình ảnh bằng lái.' 
+                        : 'Click on a frame to simulate driving license image upload.'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Validation message */}
+                {!isLocalCompatible && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-4 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-3 text-red-700 text-xs leading-relaxed"
+                  >
+                    <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-bold">{isVi ? 'Bằng lái xe không hợp lệ để thuê ô tô' : 'Incompatible Driving License'}</p>
+                      <p className="mt-1">
+                        {isVi 
+                          ? `Hạng bằng lái xe máy (A1/A) không được phép lái xe ô tô. Bạn bắt buộc phải cập nhật bằng lái hạng ô tô (B1, B2, C, D...) mới có thể thuê xe này.`
+                          : `Motorcycle driving license (A1/A) cannot be used to drive cars. You must possess a B1, B2, C, or D class license to rent this car.`
+                        }
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Actions */}
+                <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                  <button
+                    type="submit"
+                    disabled={isSubmittingLicense || !isLocalCompatible}
+                    className="flex-1 py-3.5 px-6 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white font-bold rounded-2xl shadow-lg shadow-indigo-600/10 flex items-center justify-center gap-2 cursor-pointer transition-colors"
+                  >
+                    {isSubmittingLicense ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        {isVi ? 'Đang cập nhật...' : 'Updating...'}
+                      </>
+                    ) : (
+                      <>
+                        <Check className="w-4 h-4" />
+                        {isVi ? 'Xác nhận & Cập nhật' : 'Confirm & Update'}
+                      </>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate(-1)}
+                    className="flex-1 py-3.5 px-6 border-2 border-slate-200 text-slate-650 hover:bg-slate-50 font-bold rounded-2xl transition-colors cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    {isVi ? 'Quay lại cửa hàng' : 'Back to Marketplace'}
+                  </button>
+                </div>
+              </form>
+            )}
           </motion.div>
         </div>
       )}

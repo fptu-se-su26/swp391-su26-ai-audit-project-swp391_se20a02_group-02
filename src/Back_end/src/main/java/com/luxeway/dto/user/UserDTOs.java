@@ -31,6 +31,9 @@ public class UserDTOs {
         private String companyName;
 
         private String preferredLanguage;
+
+        private String licenseClass;
+        private String licenseNumber;
     }
 
     @Data

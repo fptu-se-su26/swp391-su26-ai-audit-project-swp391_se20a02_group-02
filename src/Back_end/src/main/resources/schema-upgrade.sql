@@ -399,3 +399,20 @@ BEGIN
     ALTER TABLE user_documents ADD verified_by_admin NVARCHAR(36) NULL;
 END
 GO
+
+-- 10. VEHICLE APPROVAL WORKFLOW UPGRADE
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('vehicles') AND name = 'approval_status')
+BEGIN
+    ALTER TABLE vehicles ADD approval_status VARCHAR(30) NOT NULL DEFAULT 'PENDING_APPROVAL';
+    ALTER TABLE vehicles ADD CONSTRAINT CHK_vehicles_approval_status CHECK (approval_status IN ('DRAFT','PENDING_APPROVAL','APPROVED','REJECTED','BLOCKED'));
+END
+GO
+
+IF EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CHK_notif_type' AND parent_object_id = OBJECT_ID('notifications'))
+BEGIN
+    ALTER TABLE notifications DROP CONSTRAINT CHK_notif_type;
+END
+GO
+ALTER TABLE notifications ADD CONSTRAINT CHK_notif_type CHECK (type IN ('booking','payment','message','review','system','promotion', 'VEHICLE_APPROVAL', 'VEHICLE_APPROVED', 'VEHICLE_REJECTED'));
+GO
+

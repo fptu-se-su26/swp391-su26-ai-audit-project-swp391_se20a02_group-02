@@ -65,4 +65,10 @@ public class HomeController {
     public ResponseEntity<List<Map<String, Object>>> getFaqs() {
         return ResponseEntity.ok(homeService.getFAQs());
     }
+
+    @GetMapping("/vehicles")
+    @Operation(summary = "Get home page vehicles: latest approved and popular/trending vehicles")
+    public ResponseEntity<Map<String, Object>> getHomeVehicles() {
+        return ResponseEntity.ok(homeService.getHomeVehicles());
+    }
 }

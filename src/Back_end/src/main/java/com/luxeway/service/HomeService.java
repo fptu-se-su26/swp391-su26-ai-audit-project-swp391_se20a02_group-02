@@ -32,7 +32,7 @@ public class HomeService {
     public Map<String, Object> getStats() {
         Map<String, Object> stats = new HashMap<>();
         try {
-            long totalVehicles = vehicleRepository.countByStatus(VehicleStatus.AVAILABLE);
+            long totalVehicles = vehicleRepository.countByStatusAndApprovalStatus(VehicleStatus.AVAILABLE, VehicleStatus.APPROVED);
             long totalCustomers = userRepository.count();
             long totalBookings = bookingRepository.count();
             Double avgRating = reviewRepository.getAverageRating();
@@ -50,7 +50,7 @@ public class HomeService {
             Map<String, Long> categoryCounts = new HashMap<>();
             for (VehicleCategory cat : VehicleCategory.values()) {
                 categoryCounts.put(cat.name().toLowerCase(),
-                    vehicleRepository.countByCategoryAndStatus(cat, VehicleStatus.AVAILABLE));
+                    vehicleRepository.countByCategoryAndStatusAndApprovalStatus(cat, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED));
             }
             stats.put("categoryCounts", categoryCounts);
         } catch (Exception e) {
@@ -98,7 +98,7 @@ public class HomeService {
                 Sort.Order.desc("totalBookings"),
                 Sort.Order.desc("rating")
             ));
-            var vehicles = vehicleRepository.findByStatus(VehicleStatus.AVAILABLE, pageable);
+            var vehicles = vehicleRepository.findByStatusAndApprovalStatus(VehicleStatus.AVAILABLE, VehicleStatus.APPROVED, pageable);
             return vehicles.getContent().stream().map(v -> {
                 Map<String, Object> m = new HashMap<>();
                 m.put("id", v.getId());
@@ -129,20 +129,20 @@ public class HomeService {
         Map<String, Object> result = new HashMap<>();
         try {
             Map<String, Object> cars = new LinkedHashMap<>();
-            cars.put("economy", vehicleRepository.countByCategoryAndStatus(VehicleCategory.ECONOMY, VehicleStatus.AVAILABLE));
-            cars.put("family", vehicleRepository.countByCategoryAndStatus(VehicleCategory.FAMILY, VehicleStatus.AVAILABLE));
-            cars.put("suv", vehicleRepository.countByCategoryAndStatus(VehicleCategory.SUV, VehicleStatus.AVAILABLE));
-            cars.put("business", vehicleRepository.countByCategoryAndStatus(VehicleCategory.BUSINESS, VehicleStatus.AVAILABLE));
-            cars.put("electric", vehicleRepository.countByCategoryAndStatus(VehicleCategory.ELECTRIC, VehicleStatus.AVAILABLE));
-            cars.put("tourism", vehicleRepository.countByCategoryAndStatus(VehicleCategory.TOURISM, VehicleStatus.AVAILABLE));
+            cars.put("economy", vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.ECONOMY, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED));
+            cars.put("family", vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.FAMILY, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED));
+            cars.put("suv", vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.SUV, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED));
+            cars.put("business", vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.BUSINESS, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED));
+            cars.put("electric", vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.ELECTRIC, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED));
+            cars.put("tourism", vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.TOURISM, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED));
 
             Map<String, Object> motorbikes = new LinkedHashMap<>();
-            motorbikes.put("motorbike", vehicleRepository.countByCategoryAndStatus(VehicleCategory.MOTORBIKE, VehicleStatus.AVAILABLE));
-            motorbikes.put("city_car", vehicleRepository.countByCategoryAndStatus(VehicleCategory.CITY_CAR, VehicleStatus.AVAILABLE));
+            motorbikes.put("motorbike", vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.MOTORBIKE, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED));
+            motorbikes.put("city_car", vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.CITY_CAR, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED));
 
             result.put("cars", cars);
             result.put("motorbikes", motorbikes);
-            result.put("total", vehicleRepository.countByStatus(VehicleStatus.AVAILABLE));
+            result.put("total", vehicleRepository.countByStatusAndApprovalStatus(VehicleStatus.AVAILABLE, VehicleStatus.APPROVED));
         } catch (Exception e) {
             log.error("Error fetching categories: {}", e.getMessage());
             result.put("cars", new HashMap<>());
@@ -192,7 +192,7 @@ public class HomeService {
                 try {
                     String normCity = normalizeCityName(d.getCity());
                     long liveCount = vehicleRepository.findByCityContainingIgnoreCase(normCity)
-                        .stream().filter(v -> v.getStatus() == VehicleStatus.AVAILABLE).count();
+                        .stream().filter(v -> v.getStatus() == VehicleStatus.AVAILABLE && v.getApprovalStatus() == VehicleStatus.APPROVED).count();
                     m.put("vehicleCount", liveCount);
                 } catch (Exception ex) {
                     m.put("vehicleCount", 0L);
@@ -358,7 +358,7 @@ public class HomeService {
             try {
                 String normCity = normalizeCityName(d[0]);
                 liveCount = vehicleRepository.findByCityContainingIgnoreCase(normCity)
-                    .stream().filter(v -> v.getStatus() == VehicleStatus.AVAILABLE).count();
+                    .stream().filter(v -> v.getStatus() == VehicleStatus.AVAILABLE && v.getApprovalStatus() == VehicleStatus.APPROVED).count();
             } catch (Exception ex) {
                 // Ignore - leave as 0
             }
@@ -369,5 +369,68 @@ public class HomeService {
             dests.add(m);
         }
         return dests;
+    }
+
+    // ====== /api/home/vehicles ======
+    public Map<String, Object> getHomeVehicles() {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            // Popular (trending) vehicles (sorted by totalBookings desc, rating desc)
+            var pageablePopular = PageRequest.of(0, 8, Sort.by(
+                Sort.Order.desc("totalBookings"),
+                Sort.Order.desc("rating")
+            ));
+            var popularVehicles = vehicleRepository.findByStatusAndApprovalStatus(VehicleStatus.AVAILABLE, VehicleStatus.APPROVED, pageablePopular);
+            List<Map<String, Object>> popular = popularVehicles.getContent().stream().map(v -> {
+                Map<String, Object> m = new HashMap<>();
+                m.put("id", v.getId());
+                m.put("name", v.getName());
+                m.put("brand", v.getBrand());
+                m.put("model", v.getModel());
+                m.put("year", v.getYear());
+                m.put("category", v.getCategory() != null ? v.getCategory().name().toLowerCase() : "economy");
+                m.put("thumbnailUrl", v.getThumbnailUrl());
+                m.put("pricePerDay", v.getPricePerDay());
+                m.put("rating", v.getRating());
+                m.put("totalReviews", v.getTotalReviews());
+                m.put("totalBookings", v.getTotalBookings());
+                m.put("isVerified", v.getIsVerified());
+                m.put("instantBook", v.getInstantBook());
+                m.put("city", v.getCity());
+                m.put("isOwnerVerified", v.getOwner() != null && Boolean.TRUE.equals(v.getOwner().getKycVerified()));
+                return m;
+            }).collect(Collectors.toList());
+
+            // Latest approved vehicles (sorted by createdAt desc)
+            var pageableLatest = PageRequest.of(0, 8, Sort.by(Sort.Order.desc("createdAt")));
+            var latestVehicles = vehicleRepository.findByStatusAndApprovalStatus(VehicleStatus.AVAILABLE, VehicleStatus.APPROVED, pageableLatest);
+            List<Map<String, Object>> latest = latestVehicles.getContent().stream().map(v -> {
+                Map<String, Object> m = new HashMap<>();
+                m.put("id", v.getId());
+                m.put("name", v.getName());
+                m.put("brand", v.getBrand());
+                m.put("model", v.getModel());
+                m.put("year", v.getYear());
+                m.put("category", v.getCategory() != null ? v.getCategory().name().toLowerCase() : "economy");
+                m.put("thumbnailUrl", v.getThumbnailUrl());
+                m.put("pricePerDay", v.getPricePerDay());
+                m.put("rating", v.getRating());
+                m.put("totalReviews", v.getTotalReviews());
+                m.put("totalBookings", v.getTotalBookings());
+                m.put("isVerified", v.getIsVerified());
+                m.put("instantBook", v.getInstantBook());
+                m.put("city", v.getCity());
+                m.put("isOwnerVerified", v.getOwner() != null && Boolean.TRUE.equals(v.getOwner().getKycVerified()));
+                return m;
+            }).collect(Collectors.toList());
+
+            result.put("popular", popular);
+            result.put("latest", latest);
+        } catch (Exception e) {
+            log.error("Error fetching home vehicles: {}", e.getMessage());
+            result.put("popular", List.of());
+            result.put("latest", List.of());
+        }
+        return result;
     }
 }

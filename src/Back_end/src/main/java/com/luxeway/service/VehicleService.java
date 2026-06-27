@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -41,6 +42,7 @@ public class VehicleService {
     private final TranslationService translationService;
     private final BookingRepository bookingRepository;
     private final VehicleAvailabilityRepository vehicleAvailabilityRepository;
+    private final NotificationService notificationService;
 
     // ====== Get all (with filters) ======
 
@@ -91,6 +93,10 @@ public class VehicleService {
             catch (IllegalArgumentException ignored) {}
         }
 
+        boolean isNearestSort = "nearest".equalsIgnoreCase(filter.getSortBy()) && filter.getUserLat() != null && filter.getUserLng() != null;
+        boolean needsManualProcessing = isNearestSort || (filter.getKeyword() != null && !filter.getKeyword().isBlank());
+        Pageable queryPageable = needsManualProcessing ? PageRequest.of(0, 10000) : pageable;
+
         Page<Vehicle> page = vehicleRepository.filterVehiclesMulti(
             resolvedLocation,
             categoryList,
@@ -117,10 +123,53 @@ public class VehicleService {
             filter.getBusinessRental() != null ? filter.getBusinessRental() : false,
             filter.getStartDate(),
             filter.getEndDate(),
-            pageable
+            queryPageable
         );
 
-        return page.map(this::toResponse);
+        List<Vehicle> list = page.getContent();
+
+        // 1. Filter by keyword in Java
+        if (filter.getKeyword() != null && !filter.getKeyword().isBlank()) {
+            String kw = filter.getKeyword().toLowerCase().trim();
+            list = list.stream()
+                .filter(v -> (v.getName() != null && v.getName().toLowerCase().contains(kw)) ||
+                             (v.getBrand() != null && v.getBrand().toLowerCase().contains(kw)) ||
+                             (v.getModel() != null && v.getModel().toLowerCase().contains(kw)))
+                .collect(Collectors.toList());
+        }
+
+        // 2. Map and calculate distance
+        List<VehicleDTOs.VehicleResponse> responses = list.stream().map(v -> {
+            VehicleDTOs.VehicleResponse r = toResponse(v);
+            if (filter.getUserLat() != null && filter.getUserLng() != null && v.getLatitude() != null && v.getLongitude() != null) {
+                r.setDistanceKm(calculateHaversineDistance(filter.getUserLat(), filter.getUserLng(), v.getLatitude().doubleValue(), v.getLongitude().doubleValue()));
+            }
+            return r;
+        }).collect(Collectors.toList());
+
+        // 3. Sort by distance in Java if requested
+        if (isNearestSort) {
+            responses.sort((r1, r2) -> {
+                Double d1 = r1.getDistanceKm();
+                Double d2 = r2.getDistanceKm();
+                if (d1 == null && d2 == null) return 0;
+                if (d1 == null) return 1;
+                if (d2 == null) return -1;
+                return d1.compareTo(d2);
+            });
+        }
+
+        // 4. Paginate manually in Java if manual processing was performed
+        if (needsManualProcessing) {
+            int start = filter.getPage() * filter.getSize();
+            int end = Math.min(start + filter.getSize(), responses.size());
+            List<VehicleDTOs.VehicleResponse> pagedList = (start < responses.size())
+                ? responses.subList(start, end)
+                : List.of();
+            return new PageImpl<>(pagedList, pageable, responses.size());
+        }
+
+        return new PageImpl<>(responses, pageable, page.getTotalElements());
     }
 
     /**
@@ -163,7 +212,7 @@ public class VehicleService {
     @Transactional(readOnly = true)
     public Page<VehicleDTOs.VehicleResponse> search(String query, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        return vehicleRepository.searchVehicles(query, pageable).map(this::toResponse);
+        return vehicleRepository.searchVehicles(query, VehicleStatus.AVAILABLE, pageable).map(this::toResponse);
     }
 
     // ====== Get by ID ======
@@ -180,7 +229,7 @@ public class VehicleService {
     @Transactional(readOnly = true)
     public List<VehicleDTOs.VehicleResponse> getFeatured() {
         return vehicleRepository
-                .findByIsFeaturedTrueAndStatusOrderByRatingDesc(VehicleStatus.AVAILABLE)
+                .findFeaturedApproved(VehicleStatus.AVAILABLE)
                 .stream()
                 .limit(9)
                 .map(this::toResponse)
@@ -202,11 +251,52 @@ public class VehicleService {
         User owner = userRepository.findById(ownerId)
                 .orElseThrow(() -> new RuntimeException("Owner not found"));
 
-        com.luxeway.enums.VehicleType vehicleType = com.luxeway.enums.VehicleType.CAR;
-        if (req.getVehicleType() != null) {
-            try {
-                vehicleType = com.luxeway.enums.VehicleType.valueOf(req.getVehicleType().toUpperCase());
-            } catch (IllegalArgumentException ignored) {}
+
+
+        if (req.getBrand() == null || req.getBrand().isBlank()) {
+            throw new IllegalArgumentException("Brand is required");
+        }
+        if (req.getModel() == null || req.getModel().isBlank()) {
+            throw new IllegalArgumentException("Model is required");
+        }
+        int currentYear = java.time.LocalDate.now().getYear();
+        if (req.getYear() == null || req.getYear() < 1950 || req.getYear() > currentYear + 1) {
+            throw new IllegalArgumentException("Invalid year. Must be between 1950 and " + (currentYear + 1));
+        }
+        if (req.getPricePerDay() == null || req.getPricePerDay().compareTo(java.math.BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Price per day must be positive");
+        }
+        if (req.getLicensePlate() == null || req.getLicensePlate().isBlank()) {
+            throw new IllegalArgumentException("License plate is required");
+        }
+        if (vehicleRepository.existsByLicensePlate(req.getLicensePlate())) {
+            throw new IllegalArgumentException("License plate already exists");
+        }
+        if (req.getImageUrls() == null || req.getImageUrls().size() < 3 || req.getImageUrls().stream().anyMatch(String::isBlank)) {
+            throw new IllegalArgumentException("At least three vehicle images are required");
+        }
+        if (req.getVehicleType() == null || req.getVehicleType().isBlank()) {
+            throw new IllegalArgumentException("Vehicle type is required");
+        }
+        if (req.getCity() == null || req.getCity().isBlank()) {
+            throw new IllegalArgumentException("Location is required");
+        }
+
+        com.luxeway.enums.VehicleType vehicleType;
+        try {
+            vehicleType = com.luxeway.enums.VehicleType.valueOf(req.getVehicleType().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid vehicle type. Must be CAR or MOTORBIKE");
+        }
+
+        boolean isOwnerAdmin = owner.getRole() != null && owner.getRole().hasAdminAccess();
+        if (!isOwnerAdmin) {
+            String statusStr = req.getStatus();
+            String approvalStatusStr = req.getApprovalStatus();
+            if ((statusStr != null && (statusStr.equalsIgnoreCase("APPROVED") || statusStr.equalsIgnoreCase("AVAILABLE") || statusStr.equalsIgnoreCase("BLOCKED"))) ||
+                (approvalStatusStr != null && (approvalStatusStr.equalsIgnoreCase("APPROVED") || approvalStatusStr.equalsIgnoreCase("AVAILABLE") || approvalStatusStr.equalsIgnoreCase("BLOCKED")))) {
+                throw new org.springframework.security.access.AccessDeniedException("Not authorized to set status to APPROVED, AVAILABLE, or BLOCKED");
+            }
         }
 
         Vehicle vehicle = Vehicle.builder()
@@ -251,6 +341,7 @@ public class VehicleService {
                 .deliveryAvailable(req.getDeliveryAvailable())
                 .deliveryFee(req.getDeliveryFee())
                 .status(VehicleStatus.PENDING_APPROVAL)
+                .approvalStatus(VehicleStatus.PENDING_APPROVAL)
                 .build();
 
         vehicle = vehicleRepository.save(vehicle);
@@ -294,6 +385,23 @@ public class VehicleService {
         } catch (Exception e) {
             log.warn("Failed to send admin notification email for new vehicle creation: {}", e.getMessage());
         }
+
+        // Create notifications for all admins
+        try {
+            List<User> admins = userRepository.findByRole(com.luxeway.enums.UserRole.ADMIN);
+            for (User admin : admins) {
+                notificationService.createNotification(
+                    admin.getId(),
+                    "VEHICLE_APPROVAL",
+                    "New Vehicle Listing Pending Approval",
+                    "Vehicle: " + vehicle.getBrand() + " " + vehicle.getModel() + " (" + vehicle.getLicensePlate() + ") has been submitted by Owner: " + owner.getDisplayName(),
+                    "/admin?tab=vehicles"
+                );
+            }
+        } catch (Exception e) {
+            log.warn("Failed to create notifications for admin: {}", e.getMessage());
+        }
+
         return toResponse(vehicle);
     }
 
@@ -306,7 +414,188 @@ public class VehicleService {
                 .orElseThrow(() -> new RuntimeException("Vehicle not found"));
 
         if (!isAdmin && !vehicle.getOwner().getId().equals(ownerId)) {
-            throw new org.springframework.security.access.AccessDeniedException("Not authorized to update this vehicle");
+            throw new org.springframework.security.access.AccessDeniedException("Unauthorized vehicle access");
+        }
+
+        // Validations
+        if (req.getBrand() == null || req.getBrand().isBlank()) {
+            throw new IllegalArgumentException("Brand is required");
+        }
+        if (req.getModel() == null || req.getModel().isBlank()) {
+            throw new IllegalArgumentException("Model is required");
+        }
+        int currentYear = java.time.LocalDate.now().getYear();
+        if (req.getYear() == null || req.getYear() < 1950 || req.getYear() > currentYear + 1) {
+            throw new IllegalArgumentException("Invalid year. Must be between 1950 and " + (currentYear + 1));
+        }
+        if (req.getPricePerDay() == null || req.getPricePerDay().compareTo(java.math.BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Price per day must be positive");
+        }
+        if (req.getLicensePlate() == null || req.getLicensePlate().isBlank()) {
+            throw new IllegalArgumentException("License plate is required");
+        }
+        if (vehicleRepository.existsByLicensePlateAndIdNot(req.getLicensePlate(), vehicleId)) {
+            throw new IllegalArgumentException("License plate already exists");
+        }
+        if (req.getImageUrls() == null || req.getImageUrls().isEmpty() || req.getImageUrls().stream().allMatch(String::isBlank)) {
+            throw new IllegalArgumentException("At least one vehicle image is required");
+        }
+        if (req.getVehicleType() == null || req.getVehicleType().isBlank()) {
+            throw new IllegalArgumentException("Vehicle type is required");
+        }
+        try {
+            com.luxeway.enums.VehicleType.valueOf(req.getVehicleType().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid vehicle type. Must be CAR or MOTORBIKE");
+        }
+
+        // Access check for status manual changes and core details transitions
+        if (!isAdmin) {
+            String statusStr = req.getStatus();
+            String approvalStatusStr = req.getApprovalStatus();
+            if ((statusStr != null && (statusStr.equalsIgnoreCase("APPROVED") || statusStr.equalsIgnoreCase("AVAILABLE") || statusStr.equalsIgnoreCase("BLOCKED"))) ||
+                (approvalStatusStr != null && (approvalStatusStr.equalsIgnoreCase("APPROVED") || approvalStatusStr.equalsIgnoreCase("AVAILABLE") || approvalStatusStr.equalsIgnoreCase("BLOCKED")))) {
+                throw new org.springframework.security.access.AccessDeniedException("Not authorized to set status to APPROVED, AVAILABLE, or BLOCKED");
+            }
+
+            VehicleStatus currentStatus = vehicle.getStatus();
+            VehicleStatus currentApprovalStatus = vehicle.getApprovalStatus();
+
+            if (currentStatus == VehicleStatus.AVAILABLE || currentApprovalStatus == VehicleStatus.APPROVED) {
+                boolean coreDetailsChanged = false;
+                
+                if (req.getPricePerDay() != null && vehicle.getPricePerDay().compareTo(req.getPricePerDay()) != 0) {
+                    coreDetailsChanged = true;
+                }
+                if (!java.util.Objects.equals(vehicle.getDescription(), req.getDescription())) {
+                    coreDetailsChanged = true;
+                }
+                List<String> oldImages = vehicle.getImagesList();
+                List<String> newImages = req.getImageUrls() != null ? req.getImageUrls() : new java.util.ArrayList<>();
+                if (!oldImages.equals(newImages)) {
+                    coreDetailsChanged = true;
+                }
+                if (vehicle.getTransmission() != req.getTransmission() ||
+                    vehicle.getFuelType() != req.getFuelType() ||
+                    (req.getVehicleType() != null && !vehicle.getVehicleType().name().equalsIgnoreCase(req.getVehicleType())) ||
+                    !java.util.Objects.equals(vehicle.getSeats(), req.getSeats()) ||
+                    !java.util.Objects.equals(vehicle.getDoors(), req.getDoors()) ||
+                    !java.util.Objects.equals(vehicle.getHorsepower(), req.getHorsepower()) ||
+                    !java.util.Objects.equals(vehicle.getTopSpeed(), req.getTopSpeed()) ||
+                    !java.util.Objects.equals(vehicle.getEngineCc(), req.getEngineCc()) ||
+                    !java.util.Objects.equals(vehicle.getYear(), req.getYear()) ||
+                    !java.util.Objects.equals(vehicle.getBrand(), req.getBrand()) ||
+                    !java.util.Objects.equals(vehicle.getModel(), req.getModel()) ||
+                    !java.util.Objects.equals(vehicle.getHasHelmet(), req.getHasHelmet()) ||
+                    !java.util.Objects.equals(vehicle.getHasPhoneHolder(), req.getHasPhoneHolder()) ||
+                    !java.util.Objects.equals(vehicle.getHasRaincoat(), req.getHasRaincoat()) ||
+                    !java.util.Objects.equals(vehicle.getHasTouringPackage(), req.getHasTouringPackage()) ||
+                    !java.util.Objects.equals(vehicle.getHasChauffeur(), req.getHasChauffeur()) ||
+                    !java.util.Objects.equals(vehicle.getAirportDelivery(), req.getAirportDelivery()) ||
+                    !java.util.Objects.equals(vehicle.getWeddingRental(), req.getWeddingRental()) ||
+                    !java.util.Objects.equals(vehicle.getBusinessRental(), req.getBusinessRental())) {
+                    coreDetailsChanged = true;
+                }
+
+                if (coreDetailsChanged) {
+                    vehicle.setStatus(VehicleStatus.PENDING_APPROVAL);
+                    vehicle.setApprovalStatus(VehicleStatus.PENDING_APPROVAL);
+                    
+                    try {
+                        List<User> admins = userRepository.findByRole(com.luxeway.enums.UserRole.ADMIN);
+                        List<User> superAdmins = userRepository.findByRole(com.luxeway.enums.UserRole.SUPER_ADMIN);
+                        for (User admin : admins) {
+                            notificationService.createNotification(
+                                admin.getId(),
+                                "VEHICLE_APPROVAL",
+                                "Vehicle update requires approval",
+                                "Vehicle: " + req.getBrand() + " " + req.getModel() + " has been updated by Owner and needs re-approval.",
+                                "/admin?tab=vehicles"
+                            );
+                        }
+                        for (User superAdmin : superAdmins) {
+                            notificationService.createNotification(
+                                superAdmin.getId(),
+                                "VEHICLE_APPROVAL",
+                                "Vehicle update requires approval",
+                                "Vehicle: " + req.getBrand() + " " + req.getModel() + " has been updated by Owner and needs re-approval.",
+                                "/admin?tab=vehicles"
+                            );
+                        }
+                        notificationService.createNotification(
+                            vehicle.getOwner().getId(),
+                            "VEHICLE_APPROVAL",
+                            "Vehicle update pending approval",
+                            "Your vehicle " + req.getBrand() + " " + req.getModel() + " has been set to pending approval due to core changes.",
+                            "/owner/vehicles"
+                        );
+                    } catch (Exception e) {
+                        log.warn("Failed to notify admins of vehicle update: {}", e.getMessage());
+                    }
+                } else {
+                    vehicle.setStatus(currentStatus);
+                    vehicle.setApprovalStatus(currentApprovalStatus);
+                }
+            } else if (currentStatus == VehicleStatus.DRAFT) {
+                vehicle.setStatus(VehicleStatus.PENDING_APPROVAL);
+                vehicle.setApprovalStatus(VehicleStatus.PENDING_APPROVAL);
+                
+                try {
+                    List<User> admins = userRepository.findByRole(com.luxeway.enums.UserRole.ADMIN);
+                    List<User> superAdmins = userRepository.findByRole(com.luxeway.enums.UserRole.SUPER_ADMIN);
+                    for (User admin : admins) {
+                        notificationService.createNotification(
+                            admin.getId(),
+                            "VEHICLE_APPROVAL",
+                            "New vehicle waiting for approval",
+                            "Vehicle: " + req.getBrand() + " " + req.getModel() + " has been resubmitted from Draft.",
+                            "/admin?tab=vehicles"
+                        );
+                    }
+                    for (User superAdmin : superAdmins) {
+                        notificationService.createNotification(
+                            superAdmin.getId(),
+                            "VEHICLE_APPROVAL",
+                            "New vehicle waiting for approval",
+                            "Vehicle: " + req.getBrand() + " " + req.getModel() + " has been resubmitted from Draft.",
+                            "/admin?tab=vehicles"
+                        );
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to notify admins of vehicle update: {}", e.getMessage());
+                }
+            } else if (currentStatus == VehicleStatus.REJECTED || currentApprovalStatus == VehicleStatus.REJECTED) {
+                vehicle.setStatus(VehicleStatus.PENDING_APPROVAL);
+                vehicle.setApprovalStatus(VehicleStatus.PENDING_APPROVAL);
+                
+                try {
+                    List<User> admins = userRepository.findByRole(com.luxeway.enums.UserRole.ADMIN);
+                    List<User> superAdmins = userRepository.findByRole(com.luxeway.enums.UserRole.SUPER_ADMIN);
+                    for (User admin : admins) {
+                        notificationService.createNotification(
+                            admin.getId(),
+                            "VEHICLE_APPROVAL",
+                            "New vehicle waiting for approval",
+                            "Vehicle: " + req.getBrand() + " " + req.getModel() + " has been edited by Owner and resubmitted.",
+                            "/admin?tab=vehicles"
+                        );
+                    }
+                    for (User superAdmin : superAdmins) {
+                        notificationService.createNotification(
+                            superAdmin.getId(),
+                            "VEHICLE_APPROVAL",
+                            "New vehicle waiting for approval",
+                            "Vehicle: " + req.getBrand() + " " + req.getModel() + " has been edited by Owner and resubmitted.",
+                            "/admin?tab=vehicles"
+                        );
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to notify admins of vehicle update: {}", e.getMessage());
+                }
+            } else {
+                vehicle.setStatus(currentStatus);
+                vehicle.setApprovalStatus(currentApprovalStatus);
+            }
         }
 
         vehicle.setName(req.getName());
@@ -408,12 +697,42 @@ public class VehicleService {
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
                 .orElseThrow(() -> new RuntimeException("Vehicle not found"));
 
-        if (!isAdmin && !vehicle.getOwner().getId().equals(requesterId)) {
-            throw new org.springframework.security.access.AccessDeniedException("Not authorized to delete this vehicle");
+        if (!isAdmin) {
+            if (!vehicle.getOwner().getId().equals(requesterId)) {
+                throw new org.springframework.security.access.AccessDeniedException("Unauthorized vehicle access");
+            }
+            if (vehicle.getApprovalStatus() != VehicleStatus.DRAFT && vehicle.getApprovalStatus() != VehicleStatus.REJECTED) {
+                throw new RuntimeException("Only vehicles in DRAFT or REJECTED status can be deleted");
+            }
+        }
+
+        if (vehicle.getStatus() == VehicleStatus.RENTED) {
+            throw new RuntimeException("Cannot delete currently rented vehicle");
+        }
+
+        boolean hasActiveBooking = bookingRepository.existsByVehicleIdAndStatusIn(
+            vehicleId, 
+            List.of(com.luxeway.enums.BookingStatus.ACTIVE, com.luxeway.enums.BookingStatus.CONFIRMED, com.luxeway.enums.BookingStatus.PENDING)
+        );
+        if (hasActiveBooking) {
+            throw new RuntimeException("Cannot delete vehicle with active bookings");
         }
 
         vehicleRepository.delete(vehicle);
         log.info("Vehicle deleted: {}", vehicleId);
+    }
+
+    @Transactional(readOnly = true)
+    public VehicleDTOs.VehicleResponse getVehicleDetail(String id) {
+        Vehicle vehicle = vehicleRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Vehicle not found: " + id));
+
+        // Constraint: Only return AVAILABLE and APPROVED vehicles
+        if (vehicle.getStatus() != VehicleStatus.AVAILABLE || vehicle.getApprovalStatus() != VehicleStatus.APPROVED) {
+            throw new org.springframework.security.access.AccessDeniedException("This vehicle is currently unavailable or unapproved");
+        }
+
+        return toResponse(vehicle);
     }
 
     // ====== Map to response DTO ======
@@ -445,6 +764,10 @@ public class VehicleService {
         r.setColor(v.getColor());
         r.setLicensePlate(v.getLicensePlate());
         r.setStatus(v.getStatus().name().toLowerCase());
+        r.setApprovalStatus(v.getApprovalStatus() != null ? v.getApprovalStatus().name().toLowerCase() : null);
+        r.setApprovalNote(v.getApprovalNote());
+        r.setApprovedBy(v.getApprovedBy());
+        r.setApprovedAt(v.getApprovedAt() != null ? v.getApprovedAt().toString() : null);
         r.setRating(v.getRating() != null ? v.getRating().doubleValue() : 0.0);
         r.setTotalReviews(v.getTotalReviews());
         r.setTotalBookings(v.getTotalBookings());
@@ -469,12 +792,73 @@ public class VehicleService {
         r.setWeddingRental(v.getWeddingRental());
         r.setBusinessRental(v.getBusinessRental());
 
-        // Images
-        if (v.getImages() != null) {
-            r.setImages(v.getImages().stream()
-                    .sorted(java.util.Comparator.comparing(i -> !i.getIsPrimary()))
+        // seatNumber & location
+        r.setSeatNumber(v.getSeats());
+        r.setLocation(v.getAddress() != null && !v.getAddress().isBlank() 
+                      ? v.getAddress() + ", " + v.getCity() 
+                      : v.getCity());
+
+        // Discount and final price calculation
+        BigDecimal discount = BigDecimal.ZERO;
+        if (Boolean.TRUE.equals(v.getIsFeatured())) {
+            discount = BigDecimal.valueOf(10); // 10% discount for featured
+        }
+        r.setDiscount(discount);
+        BigDecimal price = v.getPricePerDay();
+        BigDecimal finalPrice = price;
+        if (discount.compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal discountAmt = price.multiply(discount).divide(BigDecimal.valueOf(100));
+            finalPrice = price.subtract(discountAmt);
+        }
+        r.setFinalPrice(finalPrice);
+
+        // Images mapping priority: vehicle_images table -> primary image -> gallery
+        if (v.getImages() != null && !v.getImages().isEmpty()) {
+            List<VehicleImage> sortedImages = v.getImages().stream()
+                    .sorted(java.util.Comparator.comparing(VehicleImage::getIsPrimary, java.util.Comparator.reverseOrder())
+                            .thenComparing(VehicleImage::getId))
+                    .collect(Collectors.toList());
+            List<String> imgUrls = sortedImages.stream()
                     .map(VehicleImage::getUrl)
-                    .collect(Collectors.toList()));
+                    .collect(Collectors.toList());
+            r.setPrimaryImage(imgUrls.get(0));
+            if (imgUrls.size() > 1) {
+                r.setGalleryImages(imgUrls.subList(1, imgUrls.size()));
+            } else {
+                r.setGalleryImages(new ArrayList<>());
+            }
+            r.setVehicleImages(imgUrls);
+            r.setThumbnailUrl(imgUrls.get(0));
+        } else {
+            // Fallback only if empty
+            if (v.getThumbnailUrl() != null && !v.getThumbnailUrl().isBlank()) {
+                r.setPrimaryImage(v.getThumbnailUrl());
+                r.setGalleryImages(new ArrayList<>());
+                r.setVehicleImages(List.of(v.getThumbnailUrl()));
+                r.setThumbnailUrl(v.getThumbnailUrl());
+            } else {
+                r.setPrimaryImage("");
+                r.setGalleryImages(new ArrayList<>());
+                r.setVehicleImages(new ArrayList<>());
+                r.setThumbnailUrl("");
+            }
+        }
+
+        // Policies mapping based on vehicleType
+        if (v.getVehicleType() == com.luxeway.enums.VehicleType.CAR) {
+            r.setRequiredDocuments("GPLX hạng B1/B2 trở lên + CCCD hoặc Hộ chiếu (bản gốc/quét)");
+            r.setBasicInsurance("Bảo hiểm bắt buộc trách nhiệm dân sự. Khách hàng tự chi trả tối đa 10,000,000đ/vụ cho bảo hiểm vật chất xe.");
+            r.setExtraInsurance("Bảo hiểm vật chất xe nâng cao (Miễn thường tối đa 2,000,000đ/vụ, phí 15% giá thuê/ngày).");
+            r.setCancellationPolicy("Miễn phí hủy chuyến trong vòng 1 giờ sau khi đặt. Trước 24h nhận xe, hoàn tiền 100%. Hủy chuyến muộn hơn phạt 1 ngày tiền thuê xe.");
+            r.setDepositPolicy(v.getDeposit().compareTo(BigDecimal.ZERO) == 0 ? "Không cần đặt cọc" : "Đặt cọc tài sản trị giá " + v.getDeposit().longValue() + "đ hoặc tiền mặt khi nhận xe.");
+            r.setRentalRules("Vui lòng giữ gìn xe sạch sẽ. Không hút thuốc trong xe. Không sử dụng xe vào mục đích vi phạm pháp luật. Trả xe đúng hẹn.");
+        } else {
+            r.setRequiredDocuments("GPLX hạng A1/A2 trở lên + CCCD hoặc Hộ chiếu (bản gốc/quét)");
+            r.setBasicInsurance("Bảo hiểm bắt buộc trách nhiệm dân sự chủ xe cơ giới.");
+            r.setExtraInsurance("Bảo hiểm tai nạn người ngồi trên xe.");
+            r.setCancellationPolicy("Miễn phí hủy chuyến trong vòng 1 giờ sau khi đặt. Trước 24h nhận xe, hoàn tiền 100%. Hủy chuyến muộn hơn phạt 1 ngày tiền thuê xe.");
+            r.setDepositPolicy(v.getDeposit().compareTo(BigDecimal.ZERO) == 0 ? "Không cần đặt cọc" : "Thế chấp xe máy trị giá " + v.getDeposit().longValue() + "đ hoặc đặt cọc tiền mặt tương đương.");
+            r.setRentalRules("Chấp hành đúng luật giao thông đường bộ. Trả xe đúng giờ. Giữ gìn xe sạch sẽ.");
         }
 
         // Features
@@ -496,6 +880,29 @@ public class VehicleService {
             ownerInfo.setVerified(o.getVerified());
             ownerInfo.setAccountType(o.getAccountType());
             ownerInfo.setCompanyName(o.getCompanyName());
+
+            // Detailed host statistics mapping (Mioto Style)
+            ownerInfo.setOwnerId(o.getId());
+            ownerInfo.setOwnerName(o.getDisplayName());
+            ownerInfo.setApprovalBadge(o.getVerified());
+
+            long totalTrips = bookingRepository.countByOwnerId(o.getId());
+            ownerInfo.setTotalTrips((int) totalTrips);
+
+            double responseRate = 100.0;
+            int responseTime = 15;
+            if (o.getOwnerProfile() != null && o.getOwnerProfile().getRating() != null) {
+                com.luxeway.entity.OwnerRating ownerRating = o.getOwnerProfile().getRating();
+                if (ownerRating.getResponseRate() != null) {
+                    responseRate = ownerRating.getResponseRate().doubleValue();
+                }
+                if (ownerRating.getAvgResponseTimeMinutes() != null) {
+                    responseTime = ownerRating.getAvgResponseTimeMinutes();
+                }
+            }
+            ownerInfo.setResponseRate(responseRate);
+            ownerInfo.setResponseTime(responseTime);
+
             r.setOwner(ownerInfo);
         }
 
@@ -610,5 +1017,174 @@ public class VehicleService {
             }
         }
         return result;
+    }
+
+    private double calculateHaversineDistance(double lat1, double lon1, double lat2, double lon2) {
+        double R = 6371; // Earth radius in km
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                   Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
+                   Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+    }
+
+    public VehicleDTOs.VehicleLocationResponse toLocationResponse(Vehicle v) {
+        String lang = "vi";
+        VehicleDTOs.VehicleLocationResponse r = new VehicleDTOs.VehicleLocationResponse();
+        r.setId(v.getId());
+        
+        String name = translationService.translateVehicle(v.getId(), lang, v.getName(), v.getDescription(), v.getCity(), v.getAddress(), "name");
+        r.setName(name);
+        r.setBrand(v.getBrand());
+        r.setType(v.getVehicleType() != null ? v.getVehicleType().name() : null);
+        
+        // Thumbnail url mapping priority
+        if (v.getImages() != null && !v.getImages().isEmpty()) {
+            Optional<VehicleImage> primary = v.getImages().stream()
+                    .filter(img -> Boolean.TRUE.equals(img.getIsPrimary()))
+                    .findFirst();
+            if (primary.isPresent()) {
+                r.setThumbnail(primary.get().getUrl());
+            } else {
+                r.setThumbnail(v.getImages().iterator().next().getUrl());
+            }
+        } else {
+            r.setThumbnail(v.getThumbnailUrl());
+        }
+        
+        r.setPricePerDay(v.getPricePerDay());
+        
+        BigDecimal discount = BigDecimal.ZERO;
+        if (Boolean.TRUE.equals(v.getIsFeatured())) {
+            discount = BigDecimal.valueOf(10);
+        }
+        r.setDiscount(discount);
+        
+        BigDecimal price = v.getPricePerDay();
+        BigDecimal finalPrice = price;
+        if (discount.compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal discountAmt = price.multiply(discount).divide(BigDecimal.valueOf(100));
+            finalPrice = price.subtract(discountAmt);
+        }
+        r.setFinalPrice(finalPrice);
+        
+        r.setRating(v.getRating() != null ? v.getRating().doubleValue() : 5.0);
+        r.setTotalTrips(v.getTotalBookings());
+        
+        r.setAddress(translationService.translateVehicle(v.getId(), lang, v.getName(), v.getDescription(), v.getCity(), v.getAddress(), "address"));
+        r.setCity(translationService.translateVehicle(v.getId(), lang, v.getName(), v.getDescription(), v.getCity(), v.getAddress(), "city"));
+        
+        r.setLatitude(v.getLatitude() != null ? v.getLatitude().doubleValue() : null);
+        r.setLongitude(v.getLongitude() != null ? v.getLongitude().doubleValue() : null);
+        r.setAvailable(v.getStatus() == com.luxeway.enums.VehicleStatus.AVAILABLE);
+        r.setOwnerName(v.getOwner() != null ? v.getOwner().getDisplayName() : null);
+        
+        return r;
+    }
+
+    @Transactional(readOnly = true)
+    public List<VehicleDTOs.VehicleLocationResponse> getVehiclesForMap(VehicleDTOs.VehicleFilterRequest filter) {
+        // Query maximum 10000 vehicles
+        Pageable pageable = PageRequest.of(0, 10000);
+
+        String resolvedLocation = resolveLocation(filter.getLocation());
+
+        List<VehicleCategory> categoryList = null;
+        if (filter.getCategories() != null && !filter.getCategories().isEmpty()) {
+            categoryList = filter.getCategories().stream()
+                .map(c -> {
+                    try { return VehicleCategory.valueOf(c.toUpperCase()); }
+                    catch (IllegalArgumentException e) { return null; }
+                })
+                .filter(c -> c != null)
+                .collect(Collectors.toList());
+        } else if (filter.getCategory() != null && !filter.getCategory().isBlank()) {
+            try {
+                categoryList = List.of(VehicleCategory.valueOf(filter.getCategory().toUpperCase()));
+            } catch (IllegalArgumentException ignored) {}
+        }
+
+        List<String> brandList = (filter.getBrands() != null && !filter.getBrands().isEmpty())
+            ? filter.getBrands().stream().map(String::toLowerCase).collect(Collectors.toList())
+            : null;
+
+        TransmissionType transmission = null;
+        if (filter.getTransmission() != null && !filter.getTransmission().isBlank()) {
+            try { transmission = TransmissionType.valueOf(filter.getTransmission().toUpperCase()); }
+            catch (IllegalArgumentException ignored) {}
+        }
+
+        FuelType fuelType = null;
+        if (filter.getFuelType() != null && !filter.getFuelType().isBlank()) {
+            try { fuelType = FuelType.valueOf(filter.getFuelType().toUpperCase()); }
+            catch (IllegalArgumentException ignored) {}
+        }
+
+        com.luxeway.enums.VehicleType vehicleType = null;
+        if (filter.getVehicleType() != null && !filter.getVehicleType().isBlank()) {
+            try { vehicleType = com.luxeway.enums.VehicleType.valueOf(filter.getVehicleType().toUpperCase()); }
+            catch (IllegalArgumentException ignored) {}
+        }
+
+        Page<Vehicle> page = vehicleRepository.filterVehiclesMulti(
+            resolvedLocation,
+            categoryList,
+            brandList,
+            filter.getMinPrice(),
+            filter.getMaxPrice(),
+            filter.getMinSeats(),
+            transmission,
+            fuelType,
+            filter.getMinRating(),
+            filter.isFeatured(),
+            filter.isInstantBook(),
+            filter.isDeliveryAvailable(),
+            vehicleType,
+            filter.getMinEngineCc(),
+            filter.getMaxEngineCc(),
+            filter.getHasHelmet() != null ? filter.getHasHelmet() : false,
+            filter.getHasPhoneHolder() != null ? filter.getHasPhoneHolder() : false,
+            filter.getHasRaincoat() != null ? filter.getHasRaincoat() : false,
+            filter.getHasTouringPackage() != null ? filter.getHasTouringPackage() : false,
+            filter.getHasChauffeur() != null ? filter.getHasChauffeur() : false,
+            filter.getAirportDelivery() != null ? filter.getAirportDelivery() : false,
+            filter.getWeddingRental() != null ? filter.getWeddingRental() : false,
+            filter.getBusinessRental() != null ? filter.getBusinessRental() : false,
+            filter.getStartDate(),
+            filter.getEndDate(),
+            pageable
+        );
+
+        List<Vehicle> list = page.getContent();
+
+        // Safety Coordinate Filter: Only include valid coords inside range
+        list = list.stream().filter(v -> {
+            if (v.getLatitude() == null || v.getLongitude() == null) return false;
+            double lat = v.getLatitude().doubleValue();
+            double lng = v.getLongitude().doubleValue();
+            if (lat == 0 || lng == 0) return false;
+            return lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+        }).collect(Collectors.toList());
+
+        // Keyword filter in Java
+        if (filter.getKeyword() != null && !filter.getKeyword().isBlank()) {
+            String kw = filter.getKeyword().toLowerCase().trim();
+            list = list.stream()
+                .filter(v -> (v.getName() != null && v.getName().toLowerCase().contains(kw)) ||
+                             (v.getBrand() != null && v.getBrand().toLowerCase().contains(kw)) ||
+                             (v.getModel() != null && v.getModel().toLowerCase().contains(kw)))
+                .collect(Collectors.toList());
+        }
+
+        // Map responses
+        return list.stream().map(v -> {
+            VehicleDTOs.VehicleLocationResponse r = toLocationResponse(v);
+            if (filter.getUserLat() != null && filter.getUserLng() != null && v.getLatitude() != null && v.getLongitude() != null) {
+                r.setDistanceKm(calculateHaversineDistance(filter.getUserLat(), filter.getUserLng(), v.getLatitude().doubleValue(), v.getLongitude().doubleValue()));
+            }
+            return r;
+        }).collect(Collectors.toList());
     }
 }

@@ -1,5 +1,6 @@
 // ====== HOME SERVICE – Landing Page API Client ======
 import apiClient from './api';
+import { resolveImageUrl } from '@/utils';
 
 const BASE = '/home';
 
@@ -115,48 +116,7 @@ async function fetchWithDiagnostics<T>(endpoint: string): Promise<T | null> {
   }
 }
 
-const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8080';
 
-const getVehicleFallbackImage = (url: string | null | undefined): string => {
-  if (!url) return '';
-  const lower = url.toLowerCase();
-  if (lower.includes('honda_city')) return 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=800&auto=format&fit=crop&q=80';
-  if (lower.includes('toyota_vios')) return 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?w=800&auto=format&fit=crop&q=80';
-  if (lower.includes('honda_airblade')) return 'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=800&auto=format&fit=crop&q=80';
-  if (lower.includes('mercedes_c200')) return 'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=800&auto=format&fit=crop&q=80';
-  if (lower.includes('bmw_x3')) return 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&auto=format&fit=crop&q=80';
-  if (lower.includes('toyota_camry')) return 'https://images.unsplash.com/photo-1621007947382-cc34aa864ee3?w=800&auto=format&fit=crop&q=80';
-  if (lower.includes('honda_crv')) return 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=800&auto=format&fit=crop&q=80';
-  if (lower.includes('vinfast_vf8')) return 'https://images.unsplash.com/photo-1563720223185-11003d516935?w=800&auto=format&fit=crop&q=80';
-  if (lower.includes('mazda_cx5')) return 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=800&auto=format&fit=crop&q=80';
-  if (lower.includes('hyundai_tucson')) return 'https://images.unsplash.com/photo-1567818735868-e71b99932e29?w=800&auto=format&fit=crop&q=80';
-  if (lower.includes('kia_morning')) return 'https://images.unsplash.com/photo-1590362891991-f776e747a588?w=800&auto=format&fit=crop&q=80';
-  if (lower.includes('ford_everest')) return 'https://images.unsplash.com/photo-1533513780-f38b4d4f0f00?w=800&auto=format&fit=crop&q=80';
-  return '';
-};
-
-const resolveImageUrl = (url: string | null | undefined): string => {
-  if (!url) return '';
-  const fallback = getVehicleFallbackImage(url);
-  if (fallback) return fallback;
-  // Handle backend-uploaded images served by Spring Boot
-  if (url.startsWith('/uploads') || url.startsWith('uploads')) {
-    const cleanUrl = url.startsWith('/') ? url : '/' + url;
-    return `${API_BASE}${cleanUrl}`;
-  }
-  // Handle scraped local images in /images/cars/ (served by Vite public folder)
-  // Encode spaces and special chars in filename to avoid broken URLs
-  if (url.startsWith('/images/')) {
-    const parts = url.split('/');
-    const encodedParts = parts.map((p, i) => i === parts.length - 1 ? encodeURIComponent(p) : p);
-    return encodedParts.join('/');
-  }
-  // Handle absolute URLs (Mioto CDN, unsplash, etc.)
-  if (url.startsWith('http://') || url.startsWith('https://')) {
-    return url;
-  }
-  return url;
-};
 
 // ======= Service methods — return null on failure (no fake zeros) =======
 export const homeService = {
@@ -221,6 +181,21 @@ export const homeService = {
 
   getFaqs: (): Promise<FAQ[] | null> =>
     fetchWithDiagnostics<FAQ[]>(`${BASE}/faqs`),
+
+  getHomeVehicles: async (): Promise<{ popular: TrendingVehicle[]; latest: TrendingVehicle[] } | null> => {
+    const data = await fetchWithDiagnostics<{ popular: TrendingVehicle[]; latest: TrendingVehicle[] }>(`${BASE}/vehicles`);
+    if (!data) return null;
+    return {
+      popular: (data.popular || []).map(v => ({
+        ...v,
+        thumbnailUrl: resolveImageUrl(v.thumbnailUrl)
+      })),
+      latest: (data.latest || []).map(v => ({
+        ...v,
+        thumbnailUrl: resolveImageUrl(v.thumbnailUrl)
+      }))
+    };
+  },
 };
 
 export default homeService;

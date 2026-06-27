@@ -133,7 +133,7 @@ const AdminDashboard: React.FC = () => {
 
   const [userRoleFilter, setUserRoleFilter] = useState('ALL');
   const [userKycStatusFilter, setUserKycStatusFilter] = useState('ALL');
-  const [vehicleStatusFilter, setVehicleStatusFilter] = useState('ALL');
+  const [vehicleStatusFilter, setVehicleStatusFilter] = useState('PENDING_APPROVAL');
   
   // KYC specific states
   const [kycUsers, setKycUsers] = useState<any[]>([]);
@@ -449,7 +449,7 @@ const AdminDashboard: React.FC = () => {
     try {
       await adminService.approveVehicle(id);
       toast.success('Listing Approved', 'The premium vehicle is now live on the marketplace.');
-      setVehicles(prev => prev.map(v => v.id === id ? { ...v, status: 'available' } : v));
+      setVehicles(prev => prev.map(v => v.id === id ? { ...v, status: 'available', approvalStatus: 'approved' } : v));
       setSelectedVehicle(null);
       setLogs(prev => [
         { id: String(prev.length + 1), action: 'VEHICLE_APPROVE', admin: user?.displayName || 'Admin', target: `Vehicle ID ${id.substring(0,8)}`, status: 'SUCCESS', time: new Date().toISOString(), ip: '127.0.0.1', type: 'VEHICLE' },
@@ -469,7 +469,7 @@ const AdminDashboard: React.FC = () => {
     try {
       await adminService.rejectVehicle(id, rejectionReason);
       toast.success('Listing Rejected', 'Listing request was declined and owner was notified.');
-      setVehicles(prev => prev.map(v => v.id === id ? { ...v, status: 'rejected' } : v));
+      setVehicles(prev => prev.map(v => v.id === id ? { ...v, status: 'rejected', approvalStatus: 'rejected', approvalNote: rejectionReason } : v));
       setSelectedVehicle(null);
       setRejectionReason('');
       setLogs(prev => [
@@ -1196,7 +1196,7 @@ const AdminDashboard: React.FC = () => {
                               <td className="px-6 py-4 text-xs font-black text-emerald-500">{formatCurrency(v.pricePerDay)}</td>
                               <td className="px-6 py-4 text-xs font-semibold text-slate-400">{v.year || 2024}</td>
                               <td className="px-6 py-4">
-                                <StatusBadge status={v.status} label={v.status?.replace(/_/g, ' ').toUpperCase()} />
+                                <StatusBadge status={v.approvalStatus || v.status} label={(v.approvalStatus || v.status)?.replace(/_/g, ' ').toUpperCase()} />
                               </td>
                               <td className="px-6 py-4 text-xs font-black text-amber-500">⭐ {v.rating?.toFixed(1) || '5.0'}</td>
                             </tr>

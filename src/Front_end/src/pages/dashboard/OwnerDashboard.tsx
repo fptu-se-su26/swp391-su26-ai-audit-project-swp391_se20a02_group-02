@@ -513,49 +513,86 @@ export const VehicleManagePage: React.FC = () => {
         </div>
       ) : (
         <motion.div
-          variants={staggerContainer}
+          variants={fadeUp}
           initial="hidden"
           animate="visible"
-          className="grid grid-cols-1 md:grid-cols-2 gap-6"
+          className="overflow-x-auto bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-white/5 rounded-3xl shadow-sm"
         >
-          {vehicles.map(vehicle => (
-            <motion.div key={vehicle.id} variants={staggerItem} className="glass border border-slate-200/50 dark:border-white/5 overflow-hidden rounded-[2rem] hover-lift hover-glow shadow-md group transition-all duration-300 relative">
-              <div className="relative h-48 overflow-hidden">
-                <img src={vehicle.thumbnailUrl} alt={vehicle.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent" />
-                <div className="absolute bottom-4 left-4">
-                  <span className={`badge text-[9px] font-extrabold uppercase tracking-widest border-2 px-2.5 py-1 rounded-lg ${getStatusColor(vehicle.status)}`}>
-                    {vehicle.status.replace('_', ' ')}
-                  </span>
-                </div>
-              </div>
-              <div className="p-5.5">
-                <div className="flex items-start justify-between mb-4 border-b border-slate-200/10 dark:border-white/5 pb-3.5">
-                  <div>
-                    <h4 className="font-bold text-base text-slate-800 dark:text-slate-100 tracking-tight">{vehicle.name}</h4>
-                    <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-1">{vehicle.location.city} · <span className="text-gold font-extrabold">{formatCurrency(vehicle.pricePerDay)}</span>{t.marketplace.perDay}</p>
-                  </div>
-                  <div className="flex items-center gap-1 text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-500/5 dark:bg-white/5 border border-slate-200/10 dark:border-white/10 px-2.5 py-1 rounded-lg shadow-sm">
-                    <span className="text-amber-500">⭐</span> {vehicle.rating?.toFixed(1) ?? '5.0'}
-                  </div>
-                </div>
-                <div className="flex gap-2.5">
-                  <Link to={`/vehicles/${vehicle.id}`} className="btn-ghost border border-slate-200/60 dark:border-white/10 text-xs px-4 py-2.5 rounded-xl flex items-center gap-1.5 font-extrabold text-slate-600 dark:text-slate-300 hover:border-gold hover:text-gold transition-colors">
-                    <Eye className="w-4 h-4" /> {isVi ? 'Xem Tin Đăng' : 'View Listing'}
-                  </Link>
-                  <Link to={`/owner/vehicles/${vehicle.id}/edit`} className="btn-ghost border border-slate-200/60 dark:border-white/10 text-xs px-4 py-2.5 rounded-xl flex items-center gap-1.5 font-extrabold text-slate-600 dark:text-slate-300 hover:border-blue-500 hover:text-blue-500 transition-colors">
-                    <Edit className="w-4 h-4" /> {t.common.edit}
-                  </Link>
-                  <button
-                    onClick={() => handleDelete(vehicle.id, vehicle.name)}
-                    className="text-xs font-extrabold px-4 py-2.5 text-red-500 hover:bg-red-500/10 rounded-xl border border-red-500/20 hover:border-red-500/40 transition-all flex items-center gap-1.5 ml-auto shadow-sm"
-                  >
-                    <Trash2 className="w-4 h-4" /> {t.common.delete}
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          ))}
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                <th className="p-4 pl-6">Image</th>
+                <th className="p-4">Name</th>
+                <th className="p-4">Type</th>
+                <th className="p-4">Price</th>
+                <th className="p-4">Status</th>
+                <th className="p-4">Approval Note</th>
+                <th className="p-4 pr-6 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200/50 dark:divide-white/5 text-sm">
+              {vehicles.map(vehicle => {
+                const statusLower = (vehicle.approvalStatus || vehicle.status || '').toLowerCase();
+                const displayStatus = statusLower === 'approved' ? 'AVAILABLE' : statusLower.toUpperCase();
+                return (
+                  <tr key={vehicle.id} className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
+                    <td className="p-4 pl-6">
+                      <img 
+                        src={vehicle.thumbnailUrl || 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=120&q=80'} 
+                        alt={vehicle.name} 
+                        className="w-16 h-12 rounded-xl object-cover shadow-sm border border-slate-100 dark:border-slate-800"
+                      />
+                    </td>
+                    <td className="p-4 font-bold text-slate-800 dark:text-slate-100">
+                      {vehicle.name}
+                    </td>
+                    <td className="p-4 font-semibold text-xs text-slate-500 uppercase">
+                      {vehicle.vehicleType || 'CAR'}
+                    </td>
+                    <td className="p-4 font-bold text-slate-900 dark:text-slate-100">
+                      {formatCurrency(vehicle.pricePerDay)}
+                    </td>
+                    <td className="p-4">
+                      <span className={`px-2.5 py-1 text-[10px] font-black rounded-lg border uppercase tracking-wider ${
+                        displayStatus === 'AVAILABLE' || displayStatus === 'APPROVED' ? 'bg-green-50 text-green-700 border-green-200' :
+                        displayStatus === 'PENDING_APPROVAL' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                        displayStatus === 'REJECTED' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                        'bg-slate-50 text-slate-700 border-slate-200'
+                      }`}>
+                        {displayStatus}
+                      </span>
+                    </td>
+                    <td className="p-4 text-xs text-slate-500 max-w-[200px] truncate">
+                      {displayStatus === 'REJECTED' && vehicle.approvalNote ? (
+                        <span className="text-rose-600 font-medium">{vehicle.approvalNote}</span>
+                      ) : (
+                        <span className="text-slate-400">—</span>
+                      )}
+                    </td>
+                    <td className="p-4 pr-6 text-right">
+                      <div className="flex gap-2 justify-end">
+                        <Link to={`/vehicles/${vehicle.id}`} title={isVi ? 'Xem Tin Đăng' : 'View Listing'} className="p-2 border border-slate-200 dark:border-white/10 hover:border-gold hover:text-gold text-slate-500 rounded-lg transition-colors">
+                          <Eye className="w-4 h-4" />
+                        </Link>
+                        <Link to={`/owner/vehicles/${vehicle.id}/edit`} title={t.common.edit} className="p-2 border border-slate-200 dark:border-white/10 hover:border-blue-500 hover:text-blue-500 text-slate-500 rounded-lg transition-colors">
+                          <Edit className="w-4 h-4" />
+                        </Link>
+                        {(!vehicle.approvalStatus || vehicle.approvalStatus === 'draft' || vehicle.approvalStatus === 'rejected' || vehicle.approvalStatus === 'pending_approval') && (
+                          <button
+                            onClick={() => handleDelete(vehicle.id, vehicle.name)}
+                            title={t.common.delete}
+                            className="p-2 border border-red-500/20 hover:border-red-500 hover:text-red-500 text-red-500 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </motion.div>
       )}
     </div>
@@ -732,7 +769,7 @@ export const VehicleFormPage: React.FC = () => {
         timezone: 'Asia/Ho_Chi_Minh'
       },
       model: 'Custom',
-      deposit: 0,
+      deposit: parseFloat(form.pricePerDay.toString()) * 0.1 || 500000,
       totalReviews: 0,
       totalBookings: 0,
       isVerified: false,
@@ -761,8 +798,12 @@ export const VehicleFormPage: React.FC = () => {
         );
       }
       navigate('/owner/vehicles');
-    } catch (error) {
-      toast.error(isVi ? 'Không thể lưu thông tin xe.' : 'Failed to save vehicle listing.');
+    } catch (error: any) {
+      const errMsg = error?.message || '';
+      toast.error(
+        isVi ? 'Không thể lưu thông tin xe.' : 'Failed to save vehicle listing.',
+        errMsg ? errMsg : undefined
+      );
       console.error(error);
     } finally {
       setLoading(false);

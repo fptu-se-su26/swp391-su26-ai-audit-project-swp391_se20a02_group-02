@@ -30,14 +30,18 @@ public class SeedingService {
     private final MotorbikeModelRepository motorbikeModelRepository;
     private final MotorbikeRepository motorbikeRepository;
 
+    // Unified vehicles table — used by all public APIs
+    private final VehicleRepository vehicleRepository;
+
     private static final String[] CITIES = {"Ho Chi Minh", "Ha Noi", "Da Nang", "Nha Trang", "Da Lat", "Hue"};
+    private static final String[] CITIES_VI = {"Hồ Chí Minh", "Hà Nội", "Đà Nẵng", "Nha Trang", "Đà Lạt", "Huế"};
     
     @Transactional
     public void seedAll() {
         log.info("Starting enterprise data seeding...");
         User owner = getOrCreateDefaultOwner();
 
-        // 1. Seed Cars (120+ records)
+        // 1. Seed Cars (120+ records) into legacy cars table
         if (carRepository.count() < 120) {
             log.info("Seeding 120+ real Vietnam market cars...");
             seedCars(owner);
@@ -45,7 +49,7 @@ public class SeedingService {
             log.info("Car repository already has {} records, skipping seeding.", carRepository.count());
         }
 
-        // 2. Seed Motorbikes (80+ records)
+        // 2. Seed Motorbikes (80+ records) into legacy motorbikes table
         if (motorbikeRepository.count() < 80) {
             log.info("Seeding 80+ real Vietnam market motorbikes...");
             seedMotorbikes(owner);
@@ -53,7 +57,249 @@ public class SeedingService {
             log.info("Motorbike repository already has {} records, skipping seeding.", motorbikeRepository.count());
         }
 
+        // 3. Seed unified vehicles table — required for all public APIs (HomeService, VehicleService)
+        seedVehicles(owner);
+
         log.info("Enterprise database seeding completed successfully.");
+    }
+
+    /**
+     * Seeds the unified `vehicles` table which is used by:
+     * - HomeService (landing page stats, trending, categories, destinations)
+     * - VehicleService (marketplace browse, search, filter)
+     * - VehicleRepository (all public queries)
+     *
+     * Data includes both cars and motorbikes with status=AVAILABLE and approvalStatus=APPROVED
+     * so they appear on the public listing immediately.
+     */
+    @Transactional
+    public void seedVehicles(User owner) {
+        // Ensure all existing vehicles are approved and available so they are visible on the UI
+        try {
+            log.info("Ensuring all existing vehicles are approved and available...");
+            List<Vehicle> allVehicles = vehicleRepository.findAll();
+            boolean updated = false;
+            for (Vehicle v : allVehicles) {
+                boolean needsSave = false;
+                
+                // Fix pricePerDay if invalid (must be positive)
+                if (v.getPricePerDay() == null || v.getPricePerDay().compareTo(java.math.BigDecimal.ZERO) <= 0) {
+                    v.setPricePerDay(new java.math.BigDecimal("1000000")); // 1M VND default
+                    needsSave = true;
+                }
+                
+                // Fix deposit if invalid (must be positive)
+                if (v.getDeposit() == null || v.getDeposit().compareTo(java.math.BigDecimal.ZERO) <= 0) {
+                    v.setDeposit(v.getPricePerDay().multiply(new java.math.BigDecimal("3"))); // 3x pricePerDay
+                    needsSave = true;
+                }
+                
+                // Fix status and approval
+                if (v.getStatus() != VehicleStatus.AVAILABLE || v.getApprovalStatus() != VehicleStatus.APPROVED) {
+                    v.setStatus(VehicleStatus.AVAILABLE);
+                    v.setApprovalStatus(VehicleStatus.APPROVED);
+                    needsSave = true;
+                }
+                
+                if (needsSave) {
+                    vehicleRepository.save(v);
+                    updated = true;
+                }
+            }
+            if (updated) {
+                log.info("Successfully approved and activated all existing vehicles.");
+            }
+        } catch (Exception e) {
+            log.error("Failed to update existing vehicles status: {}", e.getMessage());
+        }
+
+        long existing = vehicleRepository.count();
+        if (existing >= 100) {
+            log.info("Unified vehicles table already has {} records, skipping vehicle seeding.", existing);
+            return;
+        }
+        log.info("Seeding unified vehicles table (current count: {})...", existing);
+
+        // ====== CAR IMAGES (Unsplash photos per brand) ======
+        Map<String, String> carThumbnails = new HashMap<>();
+        carThumbnails.put("Toyota",        "https://images.unsplash.com/photo-1621007947382-cc34aa864ee3?q=80&w=800&auto=format&fit=crop");
+        carThumbnails.put("Mazda",         "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?q=80&w=800&auto=format&fit=crop");
+        carThumbnails.put("Mercedes-Benz", "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?q=80&w=800&auto=format&fit=crop");
+        carThumbnails.put("VinFast",       "https://images.unsplash.com/photo-1563720223185-11003d516935?q=80&w=800&auto=format&fit=crop");
+        carThumbnails.put("BMW",           "https://images.unsplash.com/photo-1555215695-3004980ad54e?q=80&w=800&auto=format&fit=crop");
+        carThumbnails.put("Audi",          "https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?q=80&w=800&auto=format&fit=crop");
+        carThumbnails.put("Porsche",       "https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?q=80&w=800&auto=format&fit=crop");
+        carThumbnails.put("Hyundai",       "https://images.unsplash.com/photo-1567818735868-e71b99932e29?q=80&w=800&auto=format&fit=crop");
+        carThumbnails.put("Honda",         "https://images.unsplash.com/photo-1549399542-7e3f8b79c341?q=80&w=800&auto=format&fit=crop");
+        carThumbnails.put("Kia",           "https://images.unsplash.com/photo-1590362891991-f776e747a588?q=80&w=800&auto=format&fit=crop");
+        carThumbnails.put("Ford",          "https://images.unsplash.com/photo-1533513780-f38b4d4f0f00?q=80&w=800&auto=format&fit=crop");
+        carThumbnails.put("Mitsubishi",    "https://images.unsplash.com/photo-1617814076367-b759c7d7e738?q=80&w=800&auto=format&fit=crop");
+        carThumbnails.put("Lexus",         "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=800&auto=format&fit=crop");
+        carThumbnails.put("Nissan",        "https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?q=80&w=800&auto=format&fit=crop");
+        carThumbnails.put("DEFAULT_CAR",   "https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=800&auto=format&fit=crop");
+
+        // ====== CAR DATA (brand → models) ======
+        // Format: modelName:CategoryEnum:minPrice:maxPrice:seats
+        Map<String, String[]> carData = new LinkedHashMap<>();
+        carData.put("Toyota",        new String[]{"Vios:ECONOMY:500000:800000:5", "Camry:SEDAN:1200000:1800000:5", "Fortuner:SUV:1200000:1800000:7", "Innova:FAMILY:800000:1200000:7"});
+        carData.put("Mazda",         new String[]{"Mazda 3:SEDAN:700000:900000:5", "CX-5:SUV:1000000:1300000:5", "CX-8:SUV:1300000:1700000:7"});
+        carData.put("Mercedes-Benz", new String[]{"C200:BUSINESS:2200000:2800000:5", "E300:BUSINESS:3500000:4500000:5", "GLC300:BUSINESS:3000000:4000000:5"});
+        carData.put("VinFast",       new String[]{"Fadil:ECONOMY:450000:600000:5", "VF8:ELECTRIC:1500000:2000000:5", "VF9:ELECTRIC:2200000:3000000:7"});
+        carData.put("BMW",           new String[]{"320i:BUSINESS:1800000:2400000:5", "520i:BUSINESS:2500000:3200000:5", "X5:SUV:3500000:4500000:7"});
+        carData.put("Audi",          new String[]{"A4:BUSINESS:1800000:2300000:5", "Q5:SUV:2500000:3200000:5"});
+        carData.put("Porsche",       new String[]{"Macan:BUSINESS:4500000:6000000:5", "Cayenne:BUSINESS:6000000:8500000:5"});
+        carData.put("Hyundai",       new String[]{"Accent:ECONOMY:500000:700000:5", "Tucson:SUV:900000:1200000:5", "Santa Fe:SUV:1200000:1700000:7"});
+        carData.put("Honda",         new String[]{"City:SEDAN:500000:700000:5", "CR-V:SUV:1100000:1500000:7"});
+        carData.put("Kia",           new String[]{"Morning:ECONOMY:400000:550000:5", "Sorento:SUV:1100000:1500000:7", "Carnival:FAMILY:1800000:2500000:7"});
+        carData.put("Ford",          new String[]{"Ranger:ECONOMY:900000:1300000:5", "Everest:SUV:1200000:1800000:7"});
+        carData.put("Mitsubishi",    new String[]{"Xpander:FAMILY:700000:950000:7", "Outlander:SUV:1000000:1300000:7"});
+        carData.put("Lexus",         new String[]{"ES250:BUSINESS:2500000:3200000:5", "RX350:BUSINESS:4000000:5500000:5"});
+        carData.put("Nissan",        new String[]{"Almera:ECONOMY:500000:700000:5", "Navara:ECONOMY:850000:1200000:5"});
+
+        // ====== MOTORBIKE DATA ======
+        String motoThumbnail = "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?q=80&w=800&auto=format&fit=crop";
+        Map<String, String[]> motoData = new LinkedHashMap<>();
+        motoData.put("Honda",  new String[]{"Vision:SCOOTER:120000:150000:110", "Air Blade:SCOOTER:150000:200000:125", "SH 150i:SCOOTER:350000:500000:150", "Winner X:MANUAL_MOTORCYCLE:150000:180000:150"});
+        motoData.put("Yamaha", new String[]{"Sirius:MANUAL_MOTORCYCLE:100000:130000:110", "Exciter 155:MANUAL_MOTORCYCLE:160000:200000:155", "Grande:SCOOTER:150000:180000:125", "NVX 155:SCOOTER:180000:220000:155"});
+        motoData.put("Vespa",  new String[]{"Sprint:SCOOTER:300000:400000:125", "Primavera:SCOOTER:280000:350000:125"});
+        motoData.put("Kawasaki", new String[]{"Ninja 400:SPORT_BIKE:800000:1100000:399", "Z400:SPORT_BIKE:750000:1000000:399"});
+        motoData.put("KTM",    new String[]{"Duke 390:SPORT_BIKE:800000:1100000:373", "Adventure 390:ADVENTURE_BIKE:900000:1200000:373"});
+        motoData.put("BMW Motorrad", new String[]{"G310GS:ADVENTURE_BIKE:900000:1200000:313"});
+        motoData.put("Royal Enfield", new String[]{"Classic 350:CLASSIC_BIKE:700000:900000:349", "Himalayan:ADVENTURE_BIKE:800000:1000000:411"});
+        motoData.put("SYM",   new String[]{"Attila:SCOOTER:110000:140000:125"});
+
+        int idx = 0;
+
+        // Seed cars into vehicles table
+        for (Map.Entry<String, String[]> entry : carData.entrySet()) {
+            String brandName = entry.getKey();
+            String thumbnail = carThumbnails.getOrDefault(brandName, carThumbnails.get("DEFAULT_CAR"));
+            for (String modelStr : entry.getValue()) {
+                String[] parts = modelStr.split(":");
+                String modelName = parts[0];
+                VehicleCategory cat;
+                try { cat = VehicleCategory.valueOf(parts[1]); } catch (Exception e) { cat = VehicleCategory.ECONOMY; }
+                long minP = Long.parseLong(parts[2]);
+                long maxP = Long.parseLong(parts[3]);
+                int seats = Integer.parseInt(parts[4]);
+
+                String city = CITIES_VI[idx % CITIES_VI.length];
+                BigDecimal price = new BigDecimal(minP + (idx % 3) * (maxP - minP) / 2);
+                BigDecimal deposit = price.multiply(new BigDecimal("3"));
+                String plate = "51A-V" + String.format("%04d", idx + 1000);
+
+                // Skip if license plate already exists
+                if (vehicleRepository.existsByLicensePlate(plate)) { idx++; continue; }
+
+                Vehicle v = Vehicle.builder()
+                    .owner(owner)
+                    .name(brandName + " " + modelName)
+                    .brand(brandName)
+                    .model(modelName)
+                    .year(2019 + (idx % 6))
+                    .category(cat)
+                    .vehicleType(VehicleType.CAR)
+                    .description(brandName + " " + modelName + " - Xe cao cấp, tình trạng tốt, sẵn sàng cho thuê.")
+                    .pricePerDay(price)
+                    .deposit(deposit)
+                    .city(city)
+                    .country("Vietnam")
+                    .address((100 + idx) + " Đường LuxeWay, " + city)
+                    .latitude(new BigDecimal("10.762622").add(new BigDecimal(idx % 10).multiply(new BigDecimal("0.01"))))
+                    .longitude(new BigDecimal("106.660172").add(new BigDecimal(idx % 10).multiply(new BigDecimal("0.01"))))
+                    .seats(seats)
+                    .doors(seats == 2 ? 2 : 4)
+                    .transmission(idx % 2 == 0 ? TransmissionType.AUTOMATIC : TransmissionType.MANUAL)
+                    .fuelType(cat == VehicleCategory.ELECTRIC ? FuelType.ELECTRIC : (idx % 4 == 0 ? FuelType.DIESEL : FuelType.GASOLINE))
+                    .licensePlate(plate)
+                    .thumbnailUrl(thumbnail)
+                    .status(VehicleStatus.AVAILABLE)
+                    .approvalStatus(VehicleStatus.APPROVED)
+                    .isVerified(true)
+                    .isFeatured(idx % 8 == 0)
+                    .instantBook(idx % 3 == 0)
+                    .deliveryAvailable(idx % 4 == 0)
+                    .deliveryFee(idx % 4 == 0 ? new BigDecimal("50000") : BigDecimal.ZERO)
+                    .rating(new BigDecimal(4.0 + (idx % 11) * 0.09).setScale(2, java.math.RoundingMode.HALF_UP))
+                    .totalReviews(idx % 20)
+                    .totalBookings(idx % 30 + 5)
+                    .hasChauffeur(idx % 7 == 0)
+                    .airportDelivery(idx % 5 == 0)
+                    .weddingRental(idx % 9 == 0)
+                    .businessRental(idx % 6 == 0)
+                    .build();
+
+                vehicleRepository.save(v);
+                idx++;
+            }
+        }
+
+        // Seed motorbikes into vehicles table
+        for (Map.Entry<String, String[]> entry : motoData.entrySet()) {
+            String brandName = entry.getKey();
+            for (String modelStr : entry.getValue()) {
+                String[] parts = modelStr.split(":");
+                String modelName = parts[0];
+                VehicleCategory cat;
+                try { cat = VehicleCategory.valueOf(parts[1]); } catch (Exception e) { cat = VehicleCategory.SCOOTER; }
+                long minP = Long.parseLong(parts[2]);
+                long maxP = Long.parseLong(parts[3]);
+                int engineCc = Integer.parseInt(parts[4]);
+
+                String city = CITIES_VI[idx % CITIES_VI.length];
+                BigDecimal price = new BigDecimal(minP + (idx % 3) * (maxP - minP) / 2);
+                BigDecimal deposit = price.multiply(new BigDecimal("2"));
+                String plate = "29H1-M" + String.format("%04d", idx + 2000);
+
+                if (vehicleRepository.existsByLicensePlate(plate)) { idx++; continue; }
+
+                boolean isScooter = cat == VehicleCategory.SCOOTER || cat == VehicleCategory.AUTOMATIC_SCOOTER;
+
+                Vehicle v = Vehicle.builder()
+                    .owner(owner)
+                    .name(brandName + " " + modelName)
+                    .brand(brandName)
+                    .model(modelName)
+                    .year(2019 + (idx % 6))
+                    .category(cat)
+                    .vehicleType(VehicleType.MOTORBIKE)
+                    .description(brandName + " " + modelName + " - Xe máy chất lượng cao, đã được kiểm định.")
+                    .pricePerDay(price)
+                    .deposit(deposit)
+                    .city(city)
+                    .country("Vietnam")
+                    .address((50 + idx) + " Đường Motorway, " + city)
+                    .latitude(new BigDecimal("10.762622").add(new BigDecimal(idx % 8).multiply(new BigDecimal("0.005"))))
+                    .longitude(new BigDecimal("106.660172").add(new BigDecimal(idx % 8).multiply(new BigDecimal("0.005"))))
+                    .seats(2)
+                    .doors(0)
+                    .transmission(isScooter ? TransmissionType.AUTOMATIC : TransmissionType.MANUAL)
+                    .fuelType(FuelType.GASOLINE)
+                    .engineCc(engineCc)
+                    .licensePlate(plate)
+                    .thumbnailUrl(motoThumbnail)
+                    .status(VehicleStatus.AVAILABLE)
+                    .approvalStatus(VehicleStatus.APPROVED)
+                    .isVerified(true)
+                    .isFeatured(idx % 8 == 0)
+                    .instantBook(idx % 4 == 0)
+                    .deliveryAvailable(idx % 3 == 0)
+                    .deliveryFee(idx % 3 == 0 ? new BigDecimal("30000") : BigDecimal.ZERO)
+                    .rating(new BigDecimal(4.2 + (idx % 9) * 0.09).setScale(2, java.math.RoundingMode.HALF_UP))
+                    .totalReviews(idx % 15)
+                    .totalBookings(idx % 22 + 2)
+                    .hasHelmet(true)
+                    .hasPhoneHolder(idx % 2 == 0)
+                    .hasRaincoat(idx % 3 == 0)
+                    .hasTouringPackage(idx % 5 == 0)
+                    .build();
+
+                vehicleRepository.save(v);
+                idx++;
+            }
+        }
+
+        log.info("Unified vehicles table seeded with {} vehicles (cars + motorbikes).", vehicleRepository.count());
     }
 
     private User getOrCreateDefaultOwner() {

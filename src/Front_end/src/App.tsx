@@ -30,6 +30,7 @@ import MotorbikeMarketplace from '@/pages/marketplace/MotorbikeMarketplace';
 import CarDetails from '@/pages/marketplace/CarDetails';
 import MotorbikeDetails from '@/pages/marketplace/MotorbikeDetails';
 import BookingWizardPage from '@/pages/booking/BookingWizardPage';
+import BookingCheckoutPage from '@/pages/booking/BookingCheckoutPage';
 import VNPayReturnPage from '@/pages/booking/VNPayReturnPage';
 import HelpPage from '@/pages/help/HelpPage';
 import { OwnerSuccessHub } from '@/pages/help/OwnerSuccessHub';
@@ -535,13 +536,14 @@ const App: React.FC = () => {
             <Route path="marketplace" element={<MarketplacePage />} />
             <Route path="vehicles" element={<MarketplacePage />} />
             <Route path="search" element={<MarketplacePage />} />
+            <Route path="map" element={<MarketplacePage forceMapOpen={true} />} />
             <Route path="vehicles/:id" element={<VehicleDetailPage />} />
             <Route path="cars" element={<CarsMarketplace />} />
             <Route path="motorbikes" element={<MotorbikeMarketplace />} />
-            <Route path="cars/:id" element={<CarDetails />} />
-            <Route path="motorbikes/:id" element={<MotorbikeDetails />} />
+            <Route path="cars/:id" element={<VehicleDetailPage />} />
+            <Route path="motorbikes/:id" element={<VehicleDetailPage />} />
             <Route path="booking/:vehicleId" element={
-              <ProtectedRoute><BookingWizardPage /></ProtectedRoute>
+              <ProtectedRoute><BookingCheckoutPage /></ProtectedRoute>
             } />
             <Route path="payment/:bookingId" element={
               <ProtectedRoute><BookingWizardPage /></ProtectedRoute>

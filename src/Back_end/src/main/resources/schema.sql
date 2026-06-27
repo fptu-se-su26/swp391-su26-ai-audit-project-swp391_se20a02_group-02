@@ -110,7 +110,7 @@ CREATE TABLE vehicles (
     brand                   NVARCHAR(100)   NOT NULL,
     model                   NVARCHAR(100)   NOT NULL,
     year                    INT             NOT NULL,
-    category                NVARCHAR(20)    NOT NULL CONSTRAINT CHK_vehicles_category CHECK (category IN ('ECONOMY','FAMILY','BUSINESS','ELECTRIC','MOTORBIKE','SUV','CITY_CAR','TOURISM')),
+    category                NVARCHAR(20)    NOT NULL,
     description             NVARCHAR(MAX),
     thumbnail_url           NVARCHAR(500),
     price_per_day           DECIMAL(12,0)   NOT NULL,
@@ -136,6 +136,10 @@ CREATE TABLE vehicles (
     max_rental_days         INT             NOT NULL DEFAULT 30,
     advance_booking_days    INT             NOT NULL DEFAULT 365,
     status                  NVARCHAR(20)    NOT NULL DEFAULT 'PENDING_APPROVAL' CONSTRAINT CHK_vehicles_status CHECK (status IN ('AVAILABLE','RENTED','MAINTENANCE','PENDING_APPROVAL','REJECTED','INACTIVE')),
+    approval_status         NVARCHAR(30)    NOT NULL DEFAULT 'PENDING_APPROVAL' CONSTRAINT CHK_vehicles_approval_status CHECK (approval_status IN ('DRAFT','PENDING_APPROVAL','APPROVED','REJECTED','BLOCKED')),
+    approval_note           NVARCHAR(500),
+    approved_by             NVARCHAR(36),
+    approved_at             DATETIME2,
     rating                  DECIMAL(3,2)    NOT NULL DEFAULT 0.00,
     total_reviews           INT             NOT NULL DEFAULT 0,
     total_bookings          INT             NOT NULL DEFAULT 0,
@@ -451,7 +455,7 @@ BEGIN
 CREATE TABLE notifications (
     id          NVARCHAR(36)    NOT NULL PRIMARY KEY,
     user_id     NVARCHAR(36)    NOT NULL,
-    type        NVARCHAR(20)    NOT NULL CONSTRAINT CHK_notif_type CHECK (type IN ('booking','payment','message','review','system','promotion')),
+    type        NVARCHAR(20)    NOT NULL CONSTRAINT CHK_notif_type CHECK (type IN ('booking','payment','message','review','system','promotion', 'VEHICLE_APPROVAL', 'VEHICLE_APPROVED', 'VEHICLE_REJECTED')),
     title       NVARCHAR(200)   NOT NULL,
     body        NVARCHAR(MAX)   NOT NULL,
     icon        NVARCHAR(100),
@@ -539,19 +543,16 @@ GO
 IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'analytics')
 BEGIN
 CREATE TABLE analytics (
-    id          NVARCHAR(36)    NOT NULL PRIMARY KEY,
-    entity_type NVARCHAR(20)    NOT NULL CONSTRAINT CHK_analytics_entity CHECK (entity_type IN ('vehicle','user','booking','platform')),
-    entity_id   NVARCHAR(36),
-    metric_type NVARCHAR(50)    NOT NULL,
-    period      NVARCHAR(10)    NOT NULL CONSTRAINT CHK_analytics_period CHECK (period IN ('day','week','month','year')),
-    date        DATE            NOT NULL,
-    value       DECIMAL(15,2)   NOT NULL,
-    metadata    NVARCHAR(MAX),
-    created_at  DATETIME2       NOT NULL DEFAULT GETDATE()
+    id              NVARCHAR(36)    NOT NULL PRIMARY KEY,
+    record_date     DATE            NOT NULL UNIQUE,
+    revenue         DECIMAL(18,2)   NOT NULL DEFAULT 0,
+    bookings_count  INT             NOT NULL DEFAULT 0,
+    active_rentals  INT             NOT NULL DEFAULT 0,
+    new_users       INT             NOT NULL DEFAULT 0,
+    new_vehicles    INT             NOT NULL DEFAULT 0,
+    created_at      DATETIME2       NOT NULL DEFAULT GETDATE()
 );
-CREATE INDEX IDX_analytics_entity ON analytics(entity_type, entity_id);
-CREATE INDEX IDX_analytics_metric ON analytics(metric_type);
-CREATE INDEX IDX_analytics_date   ON analytics(date);
+CREATE INDEX IDX_analytics_record_date ON analytics(record_date);
 END
 GO
 

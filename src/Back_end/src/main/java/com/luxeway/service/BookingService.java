@@ -49,75 +49,84 @@ public class BookingService {
     @Value("${business.pricing.tax-rate:0.08}")
     private double taxRate;
 
-    // ====== Create Booking ======
+    // ====== Shared Booking Validation ======
 
-    @Transactional
-    public BookingDTOs.BookingResponse createBooking(String renterId, BookingDTOs.CreateBookingRequest req) {
-
-        // Validate dates (BR-1: endDate must be >= startDate; BR-2: min 1 day = same-day allowed)
-        if (req.getStartDate() == null || req.getEndDate() == null) {
+    public void validateBookingEligibility(User renter, Vehicle vehicle, LocalDate startDate, LocalDate endDate) {
+        if (startDate == null || endDate == null) {
             throw new RuntimeException("Start date and end date are required");
         }
-        if (req.getEndDate().isBefore(req.getStartDate())) {
-            throw new RuntimeException("End date must be on or after start date");
+        if (!startDate.isBefore(endDate)) {
+            throw new RuntimeException("Start date must be before end date");
         }
-        if (req.getStartDate().isBefore(LocalDate.now())) {
+        if (startDate.isBefore(LocalDate.now())) {
             throw new RuntimeException("Start date cannot be in the past");
         }
 
-        // Acquire PESSIMISTIC WRITE lock on the vehicle row to prevent race condition:
-        // If two users try to book the same vehicle simultaneously, only one can hold the lock.
-        Vehicle vehicle = vehicleRepository.findByIdForUpdate(req.getVehicleId())
-                .orElseThrow(() -> new RuntimeException("Vehicle not found: " + req.getVehicleId()));
-
         if (vehicle.getStatus() != VehicleStatus.AVAILABLE) {
-            throw new RuntimeException("Vehicle is not available for booking (status: " + vehicle.getStatus() + ")");
+            throw new RuntimeException("This vehicle is currently unavailable");
         }
 
         // Check for overlapping bookings (PENDING, CONFIRMED, ACTIVE overlap with requested dates)
-        if (bookingRepository.hasConflictingBooking(req.getVehicleId(), req.getStartDate(), req.getEndDate())) {
+        if (bookingRepository.hasConflictingBooking(vehicle.getId(), startDate, endDate)) {
             throw new RuntimeException(
-                "Vehicle is already booked for dates " + req.getStartDate() + " to " + req.getEndDate() +
+                "Vehicle is already booked for dates " + startDate + " to " + endDate +
                 ". Please choose different dates."
             );
         }
 
         // Check for temporary locks preventing double booking
         List<VehicleAvailability> conflictingLocks = vehicleAvailabilityRepository.findConflictingLocks(
-            req.getVehicleId(), req.getStartDate(), req.getEndDate(), java.time.LocalDateTime.now(), renterId
+            vehicle.getId(), startDate, endDate, java.time.LocalDateTime.now(), renter.getId()
         );
         if (!conflictingLocks.isEmpty()) {
             throw new RuntimeException("Vehicle is temporarily locked or unavailable for these dates. Please choose different dates.");
         }
 
-        User renter = userRepository.findById(renterId)
-                .orElseThrow(() -> new RuntimeException("Renter not found"));
-
         // Enforce KYC verification & license class matching
         if (renter.getRole() != com.luxeway.enums.UserRole.ADMIN) {
             if (!"VERIFIED".equals(renter.getKycStatus())) {
-                throw new RuntimeException("Please complete KYC verification first.");
+                throw new RuntimeException("Please complete identity verification first");
             }
 
             String licenseClass = renter.getLicenseClass() != null ? renter.getLicenseClass().trim().toUpperCase() : "";
             if (vehicle.getVehicleType() == com.luxeway.enums.VehicleType.MOTORBIKE) {
                 boolean isMotorbikeLicense = licenseClass.equals("A") || licenseClass.equals("A1");
                 if (!isMotorbikeLicense) {
-                    throw new RuntimeException("Your driving license does not support motorcycle rental.");
+                    throw new RuntimeException("Your driving license does not support this vehicle type");
                 }
             } else if (vehicle.getVehicleType() == com.luxeway.enums.VehicleType.CAR) {
                 boolean isCarLicense = licenseClass.equals("B") || licenseClass.equals("B1") ||
                                        licenseClass.equals("C") || licenseClass.equals("C1") ||
                                        licenseClass.equals("D");
                 if (!isCarLicense) {
-                    if (licenseClass.equals("A") || licenseClass.equals("A1")) {
-                        throw new RuntimeException("Your driving license only supports motorcycle rental.");
-                    } else {
-                        throw new RuntimeException("Your driving license does not support car rental.");
-                    }
+                    throw new RuntimeException("Your driving license does not support this vehicle type");
                 }
             }
         }
+    }
+
+    @Transactional(readOnly = true)
+    public void validatePreBook(String renterId, BookingDTOs.CreateBookingRequest req) {
+        User renter = userRepository.findById(renterId)
+                .orElseThrow(() -> new RuntimeException("Renter not found"));
+        Vehicle vehicle = vehicleRepository.findById(req.getVehicleId())
+                .orElseThrow(() -> new RuntimeException("Vehicle not found: " + req.getVehicleId()));
+        validateBookingEligibility(renter, vehicle, req.getStartDate(), req.getEndDate());
+    }
+
+    // ====== Create Booking ======
+
+    @Transactional
+    public BookingDTOs.BookingResponse createBooking(String renterId, BookingDTOs.CreateBookingRequest req) {
+
+        // Acquire PESSIMISTIC WRITE lock on the vehicle row to prevent race condition:
+        Vehicle vehicle = vehicleRepository.findByIdForUpdate(req.getVehicleId())
+                .orElseThrow(() -> new RuntimeException("Vehicle not found: " + req.getVehicleId()));
+
+        User renter = userRepository.findById(renterId)
+                .orElseThrow(() -> new RuntimeException("Renter not found"));
+
+        validateBookingEligibility(renter, vehicle, req.getStartDate(), req.getEndDate());
 
         // Calculate pricing using Pricing Engine
         long totalDays = ChronoUnit.DAYS.between(req.getStartDate(), req.getEndDate()) + 1;
@@ -184,14 +193,47 @@ public class BookingService {
             blockAvailabilityCalendar(booking);
         }
 
-        // Notify owner
-        notificationService.createNotification(
-            booking.getOwner().getId(),
-            "booking",
-            "notification.booking.new.title",
-            "notification.booking.new.body|renter=" + renter.getDisplayName() + "|vehicle=" + vehicle.getName(),
-            "/owner/bookings/" + booking.getId()
-        );
+        // Notify Customer
+        try {
+            notificationService.createNotification(
+                renterId,
+                "booking",
+                "Booking created successfully",
+                "Your booking request for " + vehicle.getName() + " has been submitted successfully.",
+                "/dashboard/bookings"
+            );
+        } catch (Exception e) {
+            log.error("Failed to notify customer: {}", e.getMessage());
+        }
+
+        // Notify Owner
+        try {
+            notificationService.createNotification(
+                booking.getOwner().getId(),
+                "booking",
+                "You received a new booking request",
+                renter.getDisplayName() + " has requested to book " + vehicle.getName() + ".",
+                "/owner/bookings"
+            );
+        } catch (Exception e) {
+            log.error("Failed to notify owner: {}", e.getMessage());
+        }
+
+        // Notify Admin
+        try {
+            List<User> admins = userRepository.findByRole(com.luxeway.enums.UserRole.ADMIN);
+            for (User admin : admins) {
+                notificationService.createNotification(
+                    admin.getId(),
+                    "booking",
+                    "New booking created",
+                    "Renter " + renter.getDisplayName() + " booked " + vehicle.getName() + " owned by " + vehicle.getOwner().getDisplayName() + ".",
+                    "/admin/bookings"
+                );
+            }
+        } catch (Exception e) {
+            log.error("Failed to notify admins: {}", e.getMessage());
+        }
 
         log.info("Booking created: {} for vehicle {} by renter {}", booking.getId(), vehicle.getId(), renterId);
         

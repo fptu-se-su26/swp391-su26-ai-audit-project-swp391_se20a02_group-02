@@ -78,6 +78,8 @@ public class SecurityConfig {
                 })
             )
             .authorizeHttpRequests(auth -> auth
+                // Allow all CORS preflight OPTIONS requests
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 // ======== Public endpoints ========
                 // BUG-11 FIX: Controllers map to /auth/**, /vehicles/**, etc. (no /api/v1/ prefix).
                 // Keeping /api/v1/** variants for forward compatibility, but also adding unprefixed paths.

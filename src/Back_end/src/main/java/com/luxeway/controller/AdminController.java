@@ -111,8 +111,11 @@ public class AdminController {
 
     @PutMapping("/vehicles/{id}/approve")
     @Operation(summary = "Approve a vehicle listing")
-    public ResponseEntity<ApiResponse<VehicleDTOs.VehicleResponse>> approveVehicle(@PathVariable String id) {
-        VehicleDTOs.VehicleResponse vehicle = adminService.approveVehicle(id);
+    public ResponseEntity<ApiResponse<VehicleDTOs.VehicleResponse>> approveVehicle(
+            @PathVariable String id,
+            @AuthenticationPrincipal User admin) {
+        String adminId = admin != null ? admin.getId() : "SYSTEM";
+        VehicleDTOs.VehicleResponse vehicle = adminService.approveVehicle(id, adminId);
         return ResponseEntity.ok(ApiResponse.success("Vehicle approved", vehicle));
     }
 
@@ -120,9 +123,11 @@ public class AdminController {
     @Operation(summary = "Reject a vehicle listing")
     public ResponseEntity<ApiResponse<VehicleDTOs.VehicleResponse>> rejectVehicle(
             @PathVariable String id,
-            @RequestBody(required = false) AdminDTOs.ApproveVehicleRequest request) {
+            @RequestBody(required = false) AdminDTOs.ApproveVehicleRequest request,
+            @AuthenticationPrincipal User admin) {
         String reason = request != null ? request.getReason() : "Does not meet platform standards";
-        VehicleDTOs.VehicleResponse vehicle = adminService.rejectVehicle(id, reason);
+        String adminId = admin != null ? admin.getId() : "SYSTEM";
+        VehicleDTOs.VehicleResponse vehicle = adminService.rejectVehicle(id, reason, adminId);
         return ResponseEntity.ok(ApiResponse.success("Vehicle rejected", vehicle));
     }
 

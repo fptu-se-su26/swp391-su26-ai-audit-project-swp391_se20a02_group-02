@@ -939,6 +939,34 @@ Trong giai đoạn này (Phase 6.0), mình đã cùng Antigravity triển khai h
 
 ---
 
+## Reflection — Phase 6.1: Driver License Constraints & Mioto Map Discovery System (2026-06-27)
+
+### Tóm tắt
+
+Trong giai đoạn này (Phase 6.1), mình đã cùng Antigravity hoàn thiện trang khám phá xe tương tác cao cấp theo phong cách Mioto. Hệ thống cho phép hiển thị các xe đơn lẻ mặc định dưới dạng số lượng `'1 xe'`, click lần 1 hiện nhãn giá tiền, click lần 2 làm nổi bật nhãn màu xanh lá cây và trượt lên khay xe booking dưới đáy bản đồ. Đồng thời xây dựng layout co giãn split-panel (35% list xe / 65% map), tích hợp la bàn định vị GPS, map legend và nút center cụm xe.
+
+### Những điều học được
+
+```text
+1. Phòng tránh Stale Closures trong React Map Listeners:
+   Khi gán event listeners của Mapbox/MapLibre trực tiếp lúc khởi tạo marker, các callback này sẽ đóng kín (closure) trạng thái ban đầu của React component. Để cập nhật nhãn marker động mà không bị stale data, việc lưu các biến trạng thái vào React Refs (selectedVehicleIdRef, revealedPriceVehicleIdsRef) là kỹ năng cốt lõi bắt buộc.
+
+2. Cân bằng trải nghiệm Split-Panel & Full-Screen:
+   Thiết kế sidebar list ẩn mặc định trên Desktop giúp bản đồ có độ rộng 100% thoáng mắt như mockup Mioto. Khách hàng có thể linh hoạt bấm "Mở danh sách xe" để mở rộng split-panel 35%/65% hoặc bấm nút nổi "Danh sách ☰" ở đáy bản đồ để chuyển sang grid view truyền thống.
+```
+
+### Tự đánh giá Phase 6.1
+
+| Tiêu chí | Điểm | Ghi chú |
+|---|:---:|---|
+| Hiểu vấn đề trước khi fix | 5 | Hiểu rõ cơ chế state-driven map marker rendering và event callbacks |
+| Fix đúng nguyên nhân gốc | 5 | Tái cấu trúc thành công logic updateMarkers và refs synchronization |
+| Kiểm chứng sau fix | 5 | Khởi động thực tế 0 lỗi runtime, compile build frontend Vite thành công |
+| Ghi lại đầy đủ | 5 | Cập nhật đầy đủ 4 files audit trong NguyenVanDang folder |
+| Sử dụng AI có trách nhiệm | 5 | Tự làm chủ mã nguồn, tùy chỉnh vị trí text/icon và design system class |
+
+---
+
 ## 17. Cam kết Reflection
 
 Em/nhóm cam kết rằng nội dung reflection này phản ánh trung thực quá trình sử dụng AI và quá trình học tập trong bài tập/project.
@@ -952,5 +980,5 @@ Sinh viên/nhóm hiểu rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-06-20 |
+| Nguyễn Văn Dạng - DE190324 | 2026-06-27 |
 

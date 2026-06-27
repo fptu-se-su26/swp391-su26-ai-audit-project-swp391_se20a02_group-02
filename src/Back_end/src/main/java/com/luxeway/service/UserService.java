@@ -53,6 +53,14 @@ public class UserService {
         if (req.getAvatar() != null) user.setAvatar(req.getAvatar());
         if (req.getCompanyName() != null) user.setCompanyName(req.getCompanyName());
         if (req.getPreferredLanguage() != null) user.setPreferredLanguage(req.getPreferredLanguage());
+        if (req.getLicenseClass() != null && !req.getLicenseClass().trim().isEmpty()) {
+            user.setLicenseClass(req.getLicenseClass().trim().toUpperCase());
+            user.setDriverLicenseStatus("VERIFIED");
+            user.setDrivingLicenseVerified(true);
+        }
+        if (req.getLicenseNumber() != null) {
+            user.setLicenseNumber(req.getLicenseNumber().trim());
+        }
 
         user = userRepository.save(user);
         log.info("Profile updated for user: {}", userId);
@@ -113,12 +121,21 @@ public class UserService {
         return stats;
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public UserDTOs.UserProfileResponse submitKycForReview(String userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        user.setKycStatus("PENDING");
-        user.setDriverLicenseStatus("PENDING");
+
+        String currentStatus = user.getKycStatus();
+        if (currentStatus != null && !"NOT_UPLOADED".equalsIgnoreCase(currentStatus) 
+                && !"VERIFYING".equalsIgnoreCase(currentStatus) 
+                && !"FAILED".equalsIgnoreCase(currentStatus) 
+                && !"REJECTED".equalsIgnoreCase(currentStatus)) {
+            throw new IllegalStateException("Invalid KYC status transition from " + currentStatus + " to PENDING_APPROVAL");
+        }
+
+        user.setKycStatus("PENDING_APPROVAL");
+        user.setDriverLicenseStatus("PENDING_APPROVAL");
         user = userRepository.save(user);
         
         // Also update uploaded UNDER_REVIEW/PENDING documents status

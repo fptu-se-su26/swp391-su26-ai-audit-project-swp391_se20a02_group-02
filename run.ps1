@@ -107,9 +107,36 @@ $javaCmd = "java " +
   "-DPORT=`"$port`" " +
   "-jar `"$shortJar`" --spring.profiles.active=sqlserver"
 
+# Clean up processes on ports 8080 (backend) and 5173 (frontend) to prevent locks and port conflicts
+Write-Host "  Checking and clearing ports 8080 and 5173..." -ForegroundColor Gray
+$ports = @(8080, 5173)
+foreach ($p in $ports) {
+    $connections = Get-NetTCPConnection -LocalPort $p -ErrorAction SilentlyContinue
+    if ($connections) {
+        foreach ($conn in $connections) {
+            $procId = $conn.OwningProcess
+            if ($procId) {
+                $proc = Get-Process -Id $procId -ErrorAction SilentlyContinue
+                if ($proc -and $proc.Name -ne "Idle") {
+                    Write-Host "  Stopping process $($proc.Name) (PID: $procId) on port $p..." -ForegroundColor Yellow
+                    Stop-Process -Id $procId -Force -ErrorAction SilentlyContinue
+                }
+            }
+        }
+    }
+}
+
 # Kill old java
 Get-Process java -ErrorAction SilentlyContinue | Stop-Process -Force
 Start-Sleep -Seconds 1
+
+# Clear existing Vite cache folder to prevent EPERM errors
+$viteCache = "$frontendPath\node_modules\.vite"
+if (Test-Path $viteCache) {
+    Write-Host "  Clearing old Vite cache..." -ForegroundColor Gray
+    Remove-Item -Recurse -Force $viteCache -ErrorAction SilentlyContinue
+}
+
 
 # Start Backend
 Write-Host "  [1/2] Starting Backend (Spring Boot)..." -ForegroundColor Cyan
