@@ -125,7 +125,7 @@ public class BookingService {
         }
 
         // Calculate pricing using Pricing Engine
-        long totalDays = ChronoUnit.DAYS.between(req.getStartDate(), req.getEndDate()) + 1;
+        long totalDays = Math.max(1, ChronoUnit.DAYS.between(req.getStartDate(), req.getEndDate()));
         BigDecimal basePrice = pricingEngine.calculateBasePriceForPeriod(vehicle, req.getStartDate(), req.getEndDate());
         BigDecimal insuranceFee = req.isIncludeInsurance()
                 ? vehicle.getPricePerDay().multiply(BigDecimal.valueOf(0.15)).multiply(BigDecimal.valueOf(totalDays))

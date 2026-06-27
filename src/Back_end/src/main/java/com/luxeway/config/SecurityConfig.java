@@ -98,8 +98,12 @@ public class SecurityConfig {
                     // MoMo callbacks (must be public since MoMo server calls IPN without auth)
                     "/payments/momo/ipn",
                     "/payments/momo/return",
+                    "/payments/payos/webhook",
+                    "/payments/payos/return",
                     "/api/v1/payments/momo/ipn",
                     "/api/v1/payments/momo/return",
+                    "/api/v1/payments/payos/webhook",
+                    "/api/v1/payments/payos/return",
                     // Static uploads
                     "/uploads/**",
                     "/api/v1/uploads/**",
@@ -242,4 +246,3 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 }
-

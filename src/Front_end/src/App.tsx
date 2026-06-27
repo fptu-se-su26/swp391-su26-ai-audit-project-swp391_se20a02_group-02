@@ -31,6 +31,7 @@ import CarDetails from '@/pages/marketplace/CarDetails';
 import MotorbikeDetails from '@/pages/marketplace/MotorbikeDetails';
 import BookingWizardPage from '@/pages/booking/BookingWizardPage';
 import MoMoReturnPage from '@/pages/booking/MoMoReturnPage';
+import PayOSReturnPage from '@/pages/booking/PayOSReturnPage';
 import HelpPage from '@/pages/help/HelpPage';
 import { OwnerSuccessHub } from '@/pages/help/OwnerSuccessHub';
 import { PlatformStatus } from '@/pages/help/PlatformStatus';
@@ -548,6 +549,9 @@ const App: React.FC = () => {
             } />
             <Route path="payment/momo/return" element={
               <ProtectedRoute><MoMoReturnPage /></ProtectedRoute>
+            } />
+            <Route path="payment/payos/return" element={
+              <ProtectedRoute><PayOSReturnPage /></ProtectedRoute>
             } />
             <Route path="success" element={<BookingSuccessPage />} />
             <Route path="bookings/:bookingId" element={

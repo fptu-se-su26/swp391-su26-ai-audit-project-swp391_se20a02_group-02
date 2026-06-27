@@ -577,7 +577,7 @@ const BookingWizardPage: React.FC = () => {
         );
 
         // 2. Process payment
-        const returnUrl = `${window.location.origin}/payment/momo/return`;
+        const returnUrl = `${window.location.origin}/payment/${paymentMethod === 'payos' ? 'payos' : 'momo'}/return`;
         const paymentResult = await paymentService.processPayment(
           booking.id,
           paymentMethod,
@@ -1216,6 +1216,15 @@ const BookingWizardPage: React.FC = () => {
                       badge={isVi ? 'Phổ biến' : 'Popular'}
                     />
                     <PaymentMethodCard
+                      id="payos"
+                      label="PayOS"
+                      sublabel={isVi ? 'Thanh toán QR/ngân hàng thực' : 'Real QR/bank payment'}
+                      icon={<Building2 className="w-5 h-5 text-sky-600" />}
+                      selected={paymentMethod === 'payos'}
+                      onClick={() => setPaymentMethod('payos')}
+                      badge={isVi ? 'Thực' : 'Live'}
+                    />
+                    <PaymentMethodCard
                       id="wallet"
                       label={isVi ? 'LuxeWallet' : 'LuxeWallet'}
                       sublabel={`${isVi ? 'Số dư:' : 'Balance:'} ${formatCurrency(user?.walletBalance || 0)}`}
@@ -1260,6 +1269,30 @@ const BookingWizardPage: React.FC = () => {
                       <div className="flex gap-2 flex-wrap">
                         {['QR Code', 'ATM', isVi ? 'Thẻ tín dụng' : 'Credit Card', isVi ? 'Liên kết ngân hàng' : 'Bank Link'].map(m => (
                           <span key={m} className="px-2.5 py-1 bg-white dark:bg-slate-900 rounded-lg text-xs font-semibold shadow-sm" style={{ color: '#BE185D', border: '1px solid #F9A8D4' }}>
+                            {m}
+                          </span>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                  {paymentMethod === 'payos' && (
+                    <motion.div variants={fadeUp} initial="hidden" animate="visible"
+                      className="p-5 rounded-2xl mb-4"
+                      style={{ background: 'linear-gradient(135deg, #EFF6FF, #E0F2FE)', border: '1px solid #7DD3FC' }}>
+                      <div className="flex items-center gap-3 mb-3">
+                        <Building2 className="w-6 h-6 text-sky-700" />
+                        <p className="font-bold text-sky-800">
+                          {isVi ? 'Thanh toán qua PayOS' : 'Pay with PayOS'}
+                        </p>
+                      </div>
+                      <p className="text-sm mb-3 text-sky-900">
+                        {isVi
+                          ? 'Bạn sẽ được chuyển hướng tới cổng PayOS thật để thanh toán bằng mã QR hoặc ngân hàng.'
+                          : "You'll be redirected to the live PayOS checkout for QR or bank payment."}
+                      </p>
+                      <div className="flex gap-2 flex-wrap">
+                        {['VietQR', 'Bank Transfer', isVi ? 'Môi trường thực' : 'Live Gateway'].map(m => (
+                          <span key={m} className="px-2.5 py-1 bg-white dark:bg-slate-900 rounded-lg text-xs font-semibold shadow-sm text-sky-800 border border-sky-200">
                             {m}
                           </span>
                         ))}

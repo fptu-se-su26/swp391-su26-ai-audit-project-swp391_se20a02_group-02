@@ -1471,7 +1471,7 @@ export const PaymentHistoryPage: React.FC = () => {
     return 'text-red-700 bg-red-500/10 border-red-200/20';
   };
 
-  const methodIcon = (m: string) => ({ card: '💳', vnpay: '🏦', stripe: '🔵', wallet: '💰' }[m] || '💳');
+  const methodIcon = (m: string) => ({ card: '💳', vnpay: '🏦', stripe: '🔵', wallet: '💰', momo: '💜', payos: '🏦' }[m] || '💳');
 
   const totalPaid = paymentData.filter((p: any) => p.status === 'succeeded').reduce((s: number, p: any) => s + p.amount, 0);
   const totalRefunded = paymentData.filter((p: any) => p.status === 'refunded').reduce((s: number, p: any) => s + p.amount, 0);
@@ -1723,7 +1723,7 @@ export const LuxeWalletPage: React.FC = () => {
   const toast = useToast();
   const [topUpAmount, setTopUpAmount] = useState<number>(100000);
   const [customAmount, setCustomAmount] = useState<string>('100000');
-  const [method, setMethod] = useState<'card' | 'stripe' | 'momo'>('card');
+  const [method, setMethod] = useState<'card' | 'stripe' | 'momo' | 'payos'>('card');
   const [processing, setProcessing] = useState(false);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [txLoading, setTxLoading] = useState(true);
@@ -1764,7 +1764,7 @@ export const LuxeWalletPage: React.FC = () => {
     }
     setProcessing(true);
     try {
-      const returnUrl = window.location.origin + '/payment/momo/return';
+      const returnUrl = window.location.origin + `/payment/${method === 'payos' ? 'payos' : 'momo'}/return`;
       const result = await paymentService.topUpWallet(topUpAmount, method, returnUrl);
       if (result.success) {
         if (result.paymentUrl) {
@@ -1910,11 +1910,12 @@ export const LuxeWalletPage: React.FC = () => {
                 <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2.5">
                   {t.wallet.selectMethod}
                 </label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   {[
                     { id: 'card', label: 'Credit Card', desc: 'Simulated 100% success', icon: '💳' },
                     { id: 'stripe', label: 'Stripe', desc: 'Simulated 100% success', icon: '🔵' },
                     { id: 'momo', label: 'MoMo Sandbox', desc: 'Real MoMo Gateway Redirect', icon: '💜' },
+                    { id: 'payos', label: 'PayOS Live', desc: 'Real QR / bank checkout', icon: '🏦' },
                   ].map(m => (
                     <button
                       key={m.id}

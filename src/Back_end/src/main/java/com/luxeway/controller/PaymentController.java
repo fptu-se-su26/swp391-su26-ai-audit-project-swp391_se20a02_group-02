@@ -102,6 +102,36 @@ public class PaymentController {
         return ResponseEntity.ok(ApiResponse.success("MoMo payment return processed", payment));
     }
 
+    /**
+     * PayOS webhook endpoint - called by PayOS after payment status changes.
+     * Must be publicly accessible because PayOS calls without user JWT.
+     * Path: POST /payments/payos/webhook
+     */
+    @PostMapping("/payos/webhook")
+    @Operation(summary = "Handle PayOS webhook - public endpoint")
+    public ResponseEntity<Map<String, Object>> payosWebhook(@RequestBody Map<String, Object> payload) {
+        try {
+            paymentService.processPayOSWebhook(payload);
+            return ResponseEntity.ok(Map.of("success", true));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    /**
+     * PayOS Return endpoint - user browser is redirected here after payment.
+     * The backend verifies the real payment status with PayOS before updating local state.
+     * Path: GET|POST /payments/payos/return
+     */
+    @RequestMapping(value = "/payos/return", method = {RequestMethod.GET, RequestMethod.POST})
+    @Operation(summary = "Handle PayOS return redirect - public endpoint")
+    public ResponseEntity<ApiResponse<PaymentDTOs.PaymentResponse>> payosReturn(
+            @RequestParam Map<String, String> params) {
+        PaymentDTOs.PaymentResponse payment = paymentService.processPayOSReturn(params);
+        return ResponseEntity.ok(ApiResponse.success("PayOS payment return processed", payment));
+    }
+
     @PostMapping("/wallet/topup")
     @Operation(summary = "Top up LuxeWallet balance")
     public ResponseEntity<ApiResponse<PaymentDTOs.PaymentResponse>> topUpWallet(

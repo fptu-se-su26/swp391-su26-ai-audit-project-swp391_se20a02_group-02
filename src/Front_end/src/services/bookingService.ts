@@ -249,7 +249,7 @@ export const paymentService = {
         method: method.toUpperCase(),
         amount,
         currency: 'VND',
-        returnUrl: returnUrl || `${window.location.origin}/payment/momo/return`,
+        returnUrl: returnUrl || `${window.location.origin}/payment/${method.toLowerCase() === 'payos' ? 'payos' : 'momo'}/return`,
         description: `Payment for booking ${bookingId}`,
       };
       // apiClient.post returns the full response body from backend
@@ -259,12 +259,16 @@ export const paymentService = {
 
       const isSuccess = response.success === true || response.status === 'ok';
       const paymentData = response.data;
+      const gatewayRequiresRedirect = ['momo', 'payos'].includes(method.toLowerCase());
+      const missingGatewayUrl = isSuccess && gatewayRequiresRedirect && !paymentData?.paymentUrl;
 
       return {
-        success: isSuccess,
+        success: isSuccess && !missingGatewayUrl,
         transactionId: paymentData?.transactionId || '',
         paymentUrl: paymentData?.paymentUrl || undefined,
-        errorMessage: !isSuccess ? (response.message || 'Payment failed') : undefined,
+        errorMessage: missingGatewayUrl
+          ? `${method.toUpperCase()} checkout URL was not returned by backend`
+          : (!isSuccess ? (response.message || 'Payment failed') : undefined),
       };
     } catch (error: any) {
       console.error('Payment processing failed', error);
@@ -287,14 +291,18 @@ export const paymentService = {
         amount,
         method: method.toUpperCase(),
         currency: 'VND',
-        returnUrl: returnUrl || `${window.location.origin}/payment/momo/return`,
+        returnUrl: returnUrl || `${window.location.origin}/payment/${method.toLowerCase() === 'payos' ? 'payos' : 'momo'}/return`,
       };
       const response = await apiClient.post<any>('/payments/wallet/topup', payload);
       const isSuccess = response.success === true;
+      const gatewayRequiresRedirect = ['momo', 'payos'].includes(method.toLowerCase());
+      const missingGatewayUrl = isSuccess && gatewayRequiresRedirect && !response.data?.paymentUrl;
       return {
-        success: isSuccess,
+        success: isSuccess && !missingGatewayUrl,
         paymentUrl: response.data?.paymentUrl || undefined,
-        errorMessage: !isSuccess ? (response.message || 'Top up failed') : undefined,
+        errorMessage: missingGatewayUrl
+          ? `${method.toUpperCase()} checkout URL was not returned by backend`
+          : (!isSuccess ? (response.message || 'Top up failed') : undefined),
       };
     } catch (error: any) {
       console.error('Wallet top-up failed', error);

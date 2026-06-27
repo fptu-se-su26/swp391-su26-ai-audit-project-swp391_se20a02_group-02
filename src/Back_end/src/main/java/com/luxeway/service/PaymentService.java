@@ -60,10 +60,30 @@ public class PaymentService {
     @Value("${payment.momo.request-type:payWithMethod}")
     private String momoRequestType;
 
+    // ====== PayOS Configuration ======
+    @Value("${payment.payos.client-id:}")
+    private String payosClientId;
+
+    @Value("${payment.payos.api-key:}")
+    private String payosApiKey;
+
+    @Value("${payment.payos.checksum-key:}")
+    private String payosChecksumKey;
+
+    @Value("${payment.payos.endpoint:https://api-merchant.payos.vn/v2/payment-requests}")
+    private String payosEndpoint;
+
+    @Value("${payment.payos.return-url:http://localhost:5173/payment/payos/return}")
+    private String payosReturnUrl;
+
+    @Value("${payment.payos.cancel-url:http://localhost:5173/payment/payos/return}")
+    private String payosCancelUrl;
+
     // ====== Create Payment ======
 
     @Transactional
     public PaymentDTOs.PaymentResponse createPayment(String userId, PaymentDTOs.CreatePaymentRequest req) {
+        String method = req.getMethod() != null ? req.getMethod().trim() : "";
         Booking booking = bookingRepository.findById(req.getBookingId())
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
 
@@ -74,7 +94,9 @@ public class PaymentService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        String transactionId = "TXN" + UUID.randomUUID().toString().replace("-", "").substring(0, 17).toUpperCase();
+        String transactionId = "payos".equalsIgnoreCase(method)
+                ? generatePayOSOrderCode()
+                : "TXN" + UUID.randomUUID().toString().replace("-", "").substring(0, 17).toUpperCase();
 
         Payment payment = Payment.builder()
                 .booking(booking)
@@ -82,7 +104,7 @@ public class PaymentService {
                 .amount(req.getAmount())
                 .currency(req.getCurrency() != null ? req.getCurrency() : "VND")
                 .status(PaymentStatus.PENDING)
-                .method(req.getMethod().toUpperCase())
+                .method(method.toUpperCase())
                 .transactionId(transactionId)
                 .description(req.getDescription() != null ? req.getDescription() :
                         "Payment for booking " + booking.getId())
@@ -92,7 +114,7 @@ public class PaymentService {
 
         PaymentDTOs.PaymentResponse response = toResponse(payment);
 
-        if ("wallet".equalsIgnoreCase(req.getMethod())) {
+        if ("wallet".equalsIgnoreCase(method)) {
             if (user.getWalletBalance().compareTo(req.getAmount()) < 0) {
                 throw new RuntimeException("Insufficient wallet balance. Please top up your LuxeWallet.");
             }
@@ -110,7 +132,7 @@ public class PaymentService {
             response = toResponse(payment);
             log.info("LuxeWallet payment successful: deducted {} from user {}", req.getAmount(), userId);
 
-        } else if ("stripe".equalsIgnoreCase(req.getMethod()) || "card".equalsIgnoreCase(req.getMethod())) {
+        } else if ("stripe".equalsIgnoreCase(method) || "card".equalsIgnoreCase(method)) {
             payment.setStatus(PaymentStatus.SUCCEEDED);
             payment.setProcessedAt(LocalDateTime.now());
             paymentRepository.save(payment);
@@ -122,11 +144,18 @@ public class PaymentService {
             response = toResponse(payment);
             log.info("Stripe/Card payment successful immediately: {}", transactionId);
 
-        } else if ("momo".equalsIgnoreCase(req.getMethod())) {
+        } else if ("momo".equalsIgnoreCase(method)) {
             String returnUrl = req.getReturnUrl() != null && !req.getReturnUrl().isEmpty()
                     ? req.getReturnUrl() : momoReturnUrl;
             String paymentUrl = buildMoMoPaymentUrl(payment, returnUrl);
             response.setPaymentUrl(paymentUrl);
+        } else if ("payos".equalsIgnoreCase(method)) {
+            String returnUrl = req.getReturnUrl() != null && !req.getReturnUrl().isEmpty()
+                    ? req.getReturnUrl() : payosReturnUrl;
+            String paymentUrl = buildPayOSPaymentUrl(payment, returnUrl, payosCancelUrl);
+            response.setPaymentUrl(paymentUrl);
+        } else {
+            throw new RuntimeException("Unsupported payment method: " + method);
         }
 
         log.info("Payment created: {} for booking {} by user {}", payment.getId(), req.getBookingId(), userId);
@@ -135,10 +164,13 @@ public class PaymentService {
 
     @Transactional
     public PaymentDTOs.PaymentResponse topUpWallet(String userId, PaymentDTOs.TopUpRequest req) {
+        String method = req.getMethod() != null ? req.getMethod().trim() : "";
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        String transactionId = "TOPUP" + UUID.randomUUID().toString().replace("-", "").substring(0, 15).toUpperCase();
+        String transactionId = "payos".equalsIgnoreCase(method)
+                ? generatePayOSOrderCode()
+                : "TOPUP" + UUID.randomUUID().toString().replace("-", "").substring(0, 15).toUpperCase();
 
         Payment payment = Payment.builder()
                 .booking(null)
@@ -146,7 +178,7 @@ public class PaymentService {
                 .amount(req.getAmount())
                 .currency("VND")
                 .status(PaymentStatus.PENDING)
-                .method(req.getMethod().toUpperCase())
+                .method(method.toUpperCase())
                 .transactionId(transactionId)
                 .description("LuxeWallet Top Up: " + req.getAmount() + " VND")
                 .build();
@@ -155,12 +187,17 @@ public class PaymentService {
 
         PaymentDTOs.PaymentResponse response = toResponse(payment);
 
-        if ("momo".equalsIgnoreCase(req.getMethod())) {
+        if ("momo".equalsIgnoreCase(method)) {
             String returnUrl = req.getReturnUrl() != null && !req.getReturnUrl().isEmpty()
                     ? req.getReturnUrl() : momoReturnUrl;
             String paymentUrl = buildMoMoPaymentUrl(payment, returnUrl);
             response.setPaymentUrl(paymentUrl);
-        } else {
+        } else if ("payos".equalsIgnoreCase(method)) {
+            String returnUrl = req.getReturnUrl() != null && !req.getReturnUrl().isEmpty()
+                    ? req.getReturnUrl() : payosReturnUrl;
+            String paymentUrl = buildPayOSPaymentUrl(payment, returnUrl, payosCancelUrl);
+            response.setPaymentUrl(paymentUrl);
+        } else if ("stripe".equalsIgnoreCase(method) || "card".equalsIgnoreCase(method)) {
             // Stripe or Credit Card top-up succeeds instantly
             payment.setStatus(PaymentStatus.SUCCEEDED);
             payment.setProcessedAt(LocalDateTime.now());
@@ -171,6 +208,8 @@ public class PaymentService {
 
             response = toResponse(payment);
             log.info("LuxeWallet Top Up successful: user {} balance is now {}", userId, user.getWalletBalance());
+        } else {
+            throw new RuntimeException("Unsupported top-up method: " + method);
         }
 
         return response;
@@ -328,6 +367,67 @@ public class PaymentService {
         return toResponse(payment);
     }
 
+    // ====== Process PayOS Webhook / Return ======
+
+    @Transactional
+    public PaymentDTOs.PaymentResponse processPayOSWebhook(Map<String, Object> payload) {
+        Object dataObject = payload.get("data");
+        if (!(dataObject instanceof Map<?, ?> rawData)) {
+            throw new RuntimeException("Missing PayOS webhook data");
+        }
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> data = (Map<String, Object>) rawData;
+        String receivedSignature = String.valueOf(payload.getOrDefault("signature", ""));
+        String calculatedSignature = buildPayOSSignature(data);
+
+        if (!constantTimeEquals(calculatedSignature, receivedSignature)) {
+            log.error("PayOS webhook signature mismatch. Calculated: {}, Received: {}", calculatedSignature, receivedSignature);
+            throw new RuntimeException("PayOS webhook signature verification failed");
+        }
+
+        String orderCode = String.valueOf(data.getOrDefault("orderCode", ""));
+        if (orderCode.isBlank()) {
+            throw new RuntimeException("Missing orderCode in PayOS webhook data");
+        }
+
+        Payment payment = paymentRepository.findByTransactionId(orderCode)
+                .orElseThrow(() -> new RuntimeException("Payment not found for PayOS orderCode: " + orderCode));
+
+        if (payment.getStatus() == PaymentStatus.SUCCEEDED) {
+            log.warn("PayOS webhook ignored: transaction {} already SUCCEEDED", orderCode);
+            return toResponse(payment);
+        }
+
+        boolean success = "00".equals(String.valueOf(data.getOrDefault("code", "")));
+        payment = completeGatewayPayment(payment, success, "PayOS webhook");
+        return toResponse(payment);
+    }
+
+    @Transactional
+    public PaymentDTOs.PaymentResponse processPayOSReturn(Map<String, String> params) {
+        String orderCode = params.getOrDefault("orderCode", "");
+        if (orderCode.isBlank()) {
+            throw new RuntimeException("Missing orderCode in PayOS return params");
+        }
+
+        Payment payment = paymentRepository.findByTransactionId(orderCode)
+                .orElseThrow(() -> new RuntimeException("Payment not found for PayOS orderCode: " + orderCode));
+
+        if (payment.getStatus() == PaymentStatus.PENDING) {
+            String gatewayStatus = getPayOSPaymentStatus(orderCode);
+            if ("PAID".equalsIgnoreCase(gatewayStatus)) {
+                payment = completeGatewayPayment(payment, true, "PayOS return");
+            } else if ("CANCELLED".equalsIgnoreCase(gatewayStatus) || "EXPIRED".equalsIgnoreCase(gatewayStatus)) {
+                payment = completeGatewayPayment(payment, false, "PayOS return: " + gatewayStatus);
+            } else {
+                log.info("PayOS return checked but payment is still {}: orderCode={}", gatewayStatus, orderCode);
+            }
+        }
+
+        return toResponse(payment);
+    }
+
     // ====== Refund payment ======
 
     @Transactional
@@ -431,6 +531,172 @@ public class PaymentService {
             log.error("Error calling MoMo API", e);
             throw new RuntimeException("Error creating MoMo payment: " + e.getMessage(), e);
         }
+    }
+
+    private String buildPayOSPaymentUrl(Payment payment, String returnUrl, String cancelUrl) {
+        ensurePayOSConfigured();
+        try {
+            long orderCode = Long.parseLong(payment.getTransactionId());
+            int amount = payment.getAmount().setScale(0, java.math.RoundingMode.HALF_UP).intValueExact();
+            String description = "LuxeWay " + orderCode;
+
+            java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
+            body.put("orderCode", orderCode);
+            body.put("amount", amount);
+            body.put("description", description);
+            body.put("returnUrl", returnUrl);
+            body.put("cancelUrl", cancelUrl != null && !cancelUrl.isBlank() ? cancelUrl : returnUrl);
+            body.put("items", java.util.List.of(java.util.Map.of(
+                    "name", payment.getBooking() == null ? "LuxeWallet Top Up" : "LuxeWay Booking",
+                    "quantity", 1,
+                    "price", amount
+            )));
+            body.put("signature", buildPayOSCreateSignature(orderCode, amount, description,
+                    String.valueOf(body.get("cancelUrl")), returnUrl));
+
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            String jsonBody = mapper.writeValueAsString(body);
+
+            java.net.http.HttpClient httpClient = java.net.http.HttpClient.newBuilder()
+                    .connectTimeout(java.time.Duration.ofSeconds(15))
+                    .build();
+
+            java.net.http.HttpRequest httpRequest = java.net.http.HttpRequest.newBuilder()
+                    .uri(java.net.URI.create(payosEndpoint))
+                    .header("Content-Type", "application/json")
+                    .header("x-client-id", payosClientId)
+                    .header("x-api-key", payosApiKey)
+                    .POST(java.net.http.HttpRequest.BodyPublishers.ofString(jsonBody))
+                    .timeout(java.time.Duration.ofSeconds(30))
+                    .build();
+
+            java.net.http.HttpResponse<String> httpResponse =
+                    httpClient.send(httpRequest, java.net.http.HttpResponse.BodyHandlers.ofString());
+
+            String responseBody = httpResponse.body();
+            log.info("PayOS create payment response (status {}): {}", httpResponse.statusCode(), responseBody);
+
+            java.util.Map<String, Object> payosResp = mapper.readValue(responseBody,
+                    new com.fasterxml.jackson.core.type.TypeReference<java.util.Map<String, Object>>() {});
+
+            String code = String.valueOf(payosResp.getOrDefault("code", ""));
+            if ("00".equals(code)) {
+                @SuppressWarnings("unchecked")
+                java.util.Map<String, Object> data = (java.util.Map<String, Object>) payosResp.get("data");
+                String checkoutUrl = data != null ? String.valueOf(data.getOrDefault("checkoutUrl", "")) : "";
+                if (checkoutUrl.isBlank()) {
+                    throw new RuntimeException("PayOS did not return checkoutUrl");
+                }
+                log.info("PayOS payment URL created for orderCode {}: {}", orderCode, checkoutUrl);
+                return checkoutUrl;
+            }
+
+            String errMsg = String.valueOf(payosResp.getOrDefault("desc", "Unknown PayOS error"));
+            log.error("PayOS create payment failed: code={}, desc={}", code, errMsg);
+            throw new RuntimeException("PayOS payment creation failed: " + errMsg);
+
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Error calling PayOS API", e);
+            throw new RuntimeException("Error creating PayOS payment: " + e.getMessage(), e);
+        }
+    }
+
+    private String getPayOSPaymentStatus(String orderCode) {
+        ensurePayOSConfigured();
+        try {
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            java.net.http.HttpClient httpClient = java.net.http.HttpClient.newBuilder()
+                    .connectTimeout(java.time.Duration.ofSeconds(15))
+                    .build();
+
+            java.net.http.HttpRequest httpRequest = java.net.http.HttpRequest.newBuilder()
+                    .uri(java.net.URI.create(payosEndpoint + "/" + orderCode))
+                    .header("x-client-id", payosClientId)
+                    .header("x-api-key", payosApiKey)
+                    .GET()
+                    .timeout(java.time.Duration.ofSeconds(30))
+                    .build();
+
+            java.net.http.HttpResponse<String> httpResponse =
+                    httpClient.send(httpRequest, java.net.http.HttpResponse.BodyHandlers.ofString());
+            java.util.Map<String, Object> payosResp = mapper.readValue(httpResponse.body(),
+                    new com.fasterxml.jackson.core.type.TypeReference<java.util.Map<String, Object>>() {});
+
+            if (!"00".equals(String.valueOf(payosResp.getOrDefault("code", "")))) {
+                throw new RuntimeException("PayOS status check failed: " + payosResp.getOrDefault("desc", "Unknown error"));
+            }
+
+            @SuppressWarnings("unchecked")
+            java.util.Map<String, Object> data = (java.util.Map<String, Object>) payosResp.get("data");
+            return data != null ? String.valueOf(data.getOrDefault("status", "UNKNOWN")) : "UNKNOWN";
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Error checking PayOS payment status", e);
+            throw new RuntimeException("Error checking PayOS payment status: " + e.getMessage(), e);
+        }
+    }
+
+    private Payment completeGatewayPayment(Payment payment, boolean success, String source) {
+        if (success) {
+            payment.setStatus(PaymentStatus.SUCCEEDED);
+            payment.setProcessedAt(LocalDateTime.now());
+
+            if (payment.getBooking() == null) {
+                User user = payment.getUser();
+                user.setWalletBalance(user.getWalletBalance().add(payment.getAmount()));
+                userRepository.save(user);
+                log.info("{} top-up success: user {} balance +{}", source, user.getId(), payment.getAmount());
+            } else {
+                Booking booking = payment.getBooking();
+                booking.setStatus(com.luxeway.enums.BookingStatus.CONFIRMED);
+                bookingRepository.save(booking);
+                bookingService.blockAvailabilityCalendarPublic(booking);
+                log.info("{} booking payment confirmed: transactionId={}", source, payment.getTransactionId());
+            }
+        } else {
+            payment.setStatus(PaymentStatus.FAILED);
+            log.warn("{} payment failed: transactionId={}", source, payment.getTransactionId());
+        }
+
+        return paymentRepository.save(payment);
+    }
+
+    private String generatePayOSOrderCode() {
+        long epochPart = System.currentTimeMillis() % 1_000_000_000L;
+        int randomPart = java.util.concurrent.ThreadLocalRandom.current().nextInt(100, 999);
+        return String.valueOf(epochPart * 1_000L + randomPart);
+    }
+
+    private void ensurePayOSConfigured() {
+        if (payosClientId.isBlank() || payosApiKey.isBlank() || payosChecksumKey.isBlank()) {
+            throw new RuntimeException("PayOS is not configured. Please set PAYOS_CLIENT_ID, PAYOS_API_KEY, and PAYOS_CHECKSUM_KEY.");
+        }
+    }
+
+    private String buildPayOSCreateSignature(long orderCode, int amount, String description, String cancelUrl, String returnUrl) {
+        String data = "amount=" + amount
+                + "&cancelUrl=" + cancelUrl
+                + "&description=" + description
+                + "&orderCode=" + orderCode
+                + "&returnUrl=" + returnUrl;
+        return hmacSHA256(payosChecksumKey, data);
+    }
+
+    private String buildPayOSSignature(Map<String, Object> data) {
+        return hmacSHA256(payosChecksumKey, data.entrySet().stream()
+                .filter(entry -> entry.getValue() != null)
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry -> entry.getKey() + "=" + entry.getValue())
+                .collect(Collectors.joining("&")));
+    }
+
+    private boolean constantTimeEquals(String expected, String actual) {
+        return java.security.MessageDigest.isEqual(
+                expected.getBytes(java.nio.charset.StandardCharsets.UTF_8),
+                actual.getBytes(java.nio.charset.StandardCharsets.UTF_8));
     }
 
     // ====== HMAC-SHA256 (MoMo uses SHA256, not SHA512) ======

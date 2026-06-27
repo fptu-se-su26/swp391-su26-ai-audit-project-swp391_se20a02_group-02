@@ -21,11 +21,13 @@ public class PricingEngine {
 
         if (rules == null || rules.isEmpty()) {
             // No custom pricing rules, use standard daily rate
-            long days = java.time.temporal.ChronoUnit.DAYS.between(start, end) + 1;
+            long days = Math.max(1, java.time.temporal.ChronoUnit.DAYS.between(start, end));
             return base.multiply(BigDecimal.valueOf(days));
         }
 
-        for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
+        long days = Math.max(1, java.time.temporal.ChronoUnit.DAYS.between(start, end));
+        for (long offset = 0; offset < days; offset++) {
+            LocalDate date = start.plusDays(offset);
             BigDecimal dayMultiplier = BigDecimal.ONE;
 
             // 1. Check Holiday/Seasonal rules (Precise Overrides)

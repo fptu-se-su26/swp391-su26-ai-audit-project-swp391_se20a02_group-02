@@ -70,7 +70,7 @@ public class MotorbikeBookingService {
             }
         }
 
-        long totalDays = ChronoUnit.DAYS.between(req.getStartDate(), req.getEndDate()) + 1;
+        long totalDays = Math.max(1, ChronoUnit.DAYS.between(req.getStartDate(), req.getEndDate()));
         BigDecimal basePrice = motorbike.getPricePerDay().multiply(BigDecimal.valueOf(totalDays));
         
         BigDecimal insuranceFee = req.isIncludeInsurance()

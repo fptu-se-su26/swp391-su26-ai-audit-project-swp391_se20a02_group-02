@@ -78,7 +78,7 @@ public class CarBookingService {
             }
         }
 
-        long totalDays = ChronoUnit.DAYS.between(req.getStartDate(), req.getEndDate()) + 1;
+        long totalDays = Math.max(1, ChronoUnit.DAYS.between(req.getStartDate(), req.getEndDate()));
         BigDecimal basePrice = car.getPricePerDay().multiply(BigDecimal.valueOf(totalDays));
         
         BigDecimal insuranceFee = req.isIncludeInsurance()
@@ -98,7 +98,7 @@ public class CarBookingService {
                 .car(car)
                 .renter(renter)
                 .owner(car.getOwner())
-                .status(BookingStatus.CONFIRMED)
+                .status(BookingStatus.PENDING)
                 .startDate(req.getStartDate())
                 .endDate(req.getEndDate())
                 .totalDays((int) totalDays)
