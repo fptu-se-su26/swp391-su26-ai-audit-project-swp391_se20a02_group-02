@@ -12,7 +12,7 @@
 | Tên sinh viên / Nhóm | Hồ Thành Trung - Nhóm 2 |
 | MSSV / Danh sách MSSV | DE190928 |
 | Giảng viên hướng dẫn | (Giảng viên môn SWP391) |
-| Ngày hoàn thành reflection | 2026-06-21 |
+| Ngày hoàn thành reflection | 2026-06-28 |
 
 ---
 
@@ -159,4 +159,4 @@ Em/nhóm cam kết rằng nội dung reflection này phản ánh trung thực qu
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Hồ Thành Trung - DE190928 | 2026-06-21 |
+| Hồ Thành Trung - DE190928 | 2026-06-28 |
