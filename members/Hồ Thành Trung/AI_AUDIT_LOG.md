@@ -13,7 +13,7 @@
 | MSSV / Danh sách MSSV | DE190928 |
 | Giảng viên hướng dẫn | (Giảng viên môn SWP391) |
 | Ngày bắt đầu | 2026-05-30 |
-| Ngày hoàn thành | 2026-06-21 |
+| Ngày hoàn thành | 2026-06-28 |
 
 ---
 
@@ -99,6 +99,20 @@ Cụ thể:
 - **Human Decision:** Làm theo các đề xuất giải quyết conflict, cập nhật code backend/frontend, chạy các lệnh kiểm tra và tiến hành khởi chạy thực tế hệ thống.
 - **Applied To:** File cấu hình bảo mật, pom.xml, các file Repository xe, EmailService, api.ts, enterpriseService.ts.
 - **Verification:** Lệnh `mvn compile` và `npm run build` hoàn thành không lỗi. Khi khởi chạy, backend tự động cập nhật schema DB eKYC và seed dữ liệu mẫu thành công.
+
+---
+
+## Log #04
+
+- **Date:** 2026-06-28
+- **Author:** HoThanhTrung (DE190928)
+- **AI Tool:** Antigravity
+- **Purpose:** Nạp data cho phần motorbike và fix lỗi eKYC
+- **Prompt Reference:** PROMPTS.md#prompt-04
+- **AI Output Summary:** Hỗ trợ nạp dữ liệu phần motorbike, sửa lỗi eKYC. Cấu hình lại kết nối database SQL Server (chọn đúng `Car_rental_DB`), vô hiệu hóa script seed dữ liệu bị thiếu cột timestamp để backend chạy thành công trên cổng 8080. Khởi động lại Frontend.
+- **Human Decision:** Xác nhận thông tin server, kết nối SSMS và cung cấp yêu cầu cấu hình.
+- **Applied To:** `application-sqlserver.yml`
+- **Verification:** Backend kết nối SQL Server thành công. Frontend hoạt động bình thường.
 
 ---
 
