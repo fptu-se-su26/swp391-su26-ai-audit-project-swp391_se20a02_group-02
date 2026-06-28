@@ -26,7 +26,7 @@ public class CarLocation {
     @Column(nullable = false, length = 100)
     private String city;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = false, columnDefinition = "NVARCHAR(MAX)")
     private String address;
 
     @Column(precision = 10, scale = 8)

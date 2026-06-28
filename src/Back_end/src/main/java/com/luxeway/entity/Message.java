@@ -29,7 +29,7 @@ public class Message {
     @Builder.Default
     private String type = "text";
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = false, columnDefinition = "NVARCHAR(MAX)")
     private String content;
 
     @Column(name = "is_read", nullable = false)

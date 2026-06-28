@@ -336,7 +336,7 @@ export const vehicleService = {
   getMotorbikeBrands(): string[] {
     return [
       'Honda', 'Yamaha', 'Suzuki', 'VinFast',
-      'Kawasaki', 'Piaggio', 'Vespa', 'SYM',
+      'Kawasaki', 'Piaggio', 'Vespa', 'SYM', 'Ducati', 'Triumph', 'BMW Motorrad', 'KTM', 'Harley-Davidson', 'Royal Enfield'
     ];
   },
 
@@ -344,5 +344,3 @@ export const vehicleService = {
     return ['Hồ Chí Minh', 'Hà Nội', 'Đà Nẵng', 'Nha Trang', 'Đà Lạt', 'Phú Quốc', 'Huế', 'Hội An'];
   },
 };
-
-

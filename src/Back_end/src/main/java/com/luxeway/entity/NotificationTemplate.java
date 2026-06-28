@@ -21,7 +21,7 @@ public class NotificationTemplate {
     @Column(nullable = false, length = 200)
     private String subject;
 
-    @Column(name = "body_template", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "body_template", nullable = false, columnDefinition = "NVARCHAR(MAX)")
     private String bodyTemplate;
 
     @Column(nullable = false, length = 20)

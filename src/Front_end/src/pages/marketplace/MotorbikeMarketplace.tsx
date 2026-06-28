@@ -37,7 +37,7 @@ const MOTORBIKE_CATEGORIES: { value: VehicleCategory; label: string; icon: strin
   { value: 'electric_bike', label: 'Electric', icon: '⚡' },
 ];
 
-const MOTO_BRANDS = ['Honda', 'Yamaha', 'Suzuki', 'VinFast', 'Kawasaki', 'Piaggio', 'Vespa', 'SYM'];
+const MOTO_BRANDS = ['Honda', 'Yamaha', 'Suzuki', 'VinFast', 'Kawasaki', 'Piaggio', 'Vespa', 'SYM', 'Ducati', 'Triumph', 'BMW Motorrad', 'KTM', 'Harley-Davidson', 'Royal Enfield'];
 
 const SORT_OPTIONS = [
   { value: 'popular', label: 'Phổ biến nhất' },
@@ -245,11 +245,12 @@ const MotorbikeFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: Ve
         <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Dung Tích Máy (CC)</p>
         <div className="grid grid-cols-3 gap-2">
           {[
-            { label: '50cc', min: 50, max: 110 },
-            { label: '110cc', min: 110, max: 125 },
-            { label: '125cc', min: 125, max: 150 },
-            { label: '150cc', min: 150, max: 175 },
-            { label: '175cc', min: 175, max: 300 },
+            { label: '< 50cc (Điện)', min: 0, max: 49 },
+            { label: '50cc - 110cc', min: 50, max: 110 },
+            { label: '110cc - 125cc', min: 110, max: 125 },
+            { label: '125cc - 150cc', min: 125, max: 150 },
+            { label: '150cc - 175cc', min: 150, max: 175 },
+            { label: '175cc - 300cc', min: 175, max: 300 },
             { label: '300cc+', min: 300, max: 9999 },
           ].map(cc => {
             const sel = filters.minEngineCc === cc.min;

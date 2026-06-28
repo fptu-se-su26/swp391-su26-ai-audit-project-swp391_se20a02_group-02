@@ -34,7 +34,7 @@ public class InsuranceClaim {
     private BigDecimal claimAmount;
 
     @NotBlank
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = false, columnDefinition = "NVARCHAR(MAX)")
     private String description;
 
     @Column(nullable = false, length = 20)

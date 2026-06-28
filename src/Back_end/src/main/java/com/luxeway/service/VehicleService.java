@@ -32,6 +32,7 @@ public class VehicleService {
 
     // ====== Get all (with filters) ======
 
+    @Transactional(readOnly = true)
     public Page<VehicleDTOs.VehicleResponse> getVehicles(VehicleDTOs.VehicleFilterRequest filter) {
         Pageable pageable = buildPageable(filter.getSortBy(), filter.getPage(), filter.getSize());
 
@@ -147,6 +148,7 @@ public class VehicleService {
 
     // ====== Search ======
 
+    @Transactional(readOnly = true)
     public Page<VehicleDTOs.VehicleResponse> search(String query, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         return vehicleRepository.searchVehicles(query, pageable).map(this::toResponse);
@@ -154,6 +156,7 @@ public class VehicleService {
 
     // ====== Get by ID ======
 
+    @Transactional(readOnly = true)
     public VehicleDTOs.VehicleResponse getById(String id) {
         Vehicle vehicle = vehicleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Vehicle not found: " + id));
@@ -162,6 +165,7 @@ public class VehicleService {
 
     // ====== Featured vehicles ======
 
+    @Transactional(readOnly = true)
     public List<VehicleDTOs.VehicleResponse> getFeatured() {
         return vehicleRepository
                 .findByIsFeaturedTrueAndStatusOrderByRatingDesc(VehicleStatus.AVAILABLE)
@@ -173,6 +177,7 @@ public class VehicleService {
 
     // ====== Get vehicles by owner ======
 
+    @Transactional(readOnly = true)
     public List<VehicleDTOs.VehicleResponse> getByOwner(String ownerId) {
         return vehicleRepository.findByOwnerIdOrderByCreatedAtDesc(ownerId)
                 .stream().map(this::toResponse).collect(Collectors.toList());

@@ -52,12 +52,12 @@ public class UserDocument {
     @Column(name = "verified_at")
     private LocalDateTime verifiedAt;
 
-    @Column(name = "rejection_reason", columnDefinition = "TEXT")
+    @Column(name = "rejection_reason", columnDefinition = "NVARCHAR(MAX)")
     private String rejectionReason;
 
     // ===== eKYC fields =====
 
-    @Column(name = "ekyc_raw_data", columnDefinition = "TEXT")
+    @Column(name = "ekyc_raw_data", columnDefinition = "NVARCHAR(MAX)")
     private String ekycRawData;
 
     @Column(name = "ekyc_id_number", length = 20)

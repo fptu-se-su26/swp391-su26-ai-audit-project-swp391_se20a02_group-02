@@ -21,6 +21,12 @@ public class WebConfig implements WebMvcConfigurer {
 
         registry.addResourceHandler("/uploads/**", "/api/v1/uploads/**")
                 .addResourceLocations(uploadUri);
+
+        // Serve motorbike images from motor/ directory
+        Path motorPath = Paths.get("motor").toAbsolutePath().normalize();
+        String motorUri = motorPath.toUri().toString();
+        registry.addResourceHandler("/motor/**")
+                .addResourceLocations(motorUri);
     }
 
     // @Override

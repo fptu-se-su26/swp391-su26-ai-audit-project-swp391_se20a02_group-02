@@ -21,7 +21,9 @@ import java.util.Set;
 
 @Entity
 @Table(name = "vehicles")
-@Data
+@Getter
+@Setter
+@EqualsAndHashCode(of = "id")
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -57,12 +59,12 @@ public class Vehicle {
     @Column(nullable = false)
     private VehicleCategory category;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "NVARCHAR(MAX)")
     private String description;
 
     // ====== VEHICLE TYPE DISCRIMINATOR (CAR vs MOTORBIKE) ======
     @Enumerated(EnumType.STRING)
-    @Column(name = "vehicle_type", nullable = false)
+    @Column(name = "vehicle_type")
     @Builder.Default
     private VehicleType vehicleType = VehicleType.CAR;
 
@@ -130,7 +132,7 @@ public class Vehicle {
     @Builder.Default
     private String country = "Vietnam";
     
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "NVARCHAR(MAX)")
     private String address;
     
     @Column(precision = 10, scale = 8)

@@ -20,7 +20,7 @@ public class JpaAuditingConfig {
             if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
                 return Optional.of(auth.getName());
             }
-            return Optional.of("system");
+            return Optional.of("system");   
         };
     }
 }

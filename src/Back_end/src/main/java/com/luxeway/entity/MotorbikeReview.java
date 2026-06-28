@@ -43,7 +43,7 @@ public class MotorbikeReview {
     @Column(name = "value_rating", nullable = false)
     private Integer valueRating;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "NVARCHAR(MAX)")
     private String comment;
 
     @Column(name = "created_at", nullable = false)

@@ -35,7 +35,7 @@ public class Dispute {
     @Column(nullable = false, length = 100)
     private String reason;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = false, columnDefinition = "NVARCHAR(MAX)")
     private String description;
 
     @Column(name = "evidence_url", length = 500)
@@ -45,7 +45,7 @@ public class Dispute {
     @Builder.Default
     private String status = "OPEN"; // OPEN, INVESTIGATING, RESOLVED, REJECTED
 
-    @Column(name = "admin_decision", columnDefinition = "TEXT")
+    @Column(name = "admin_decision", columnDefinition = "NVARCHAR(MAX)")
     private String adminDecision;
 
     @Column(name = "created_at", updatable = false)

@@ -27,7 +27,7 @@ public class VehicleAddon {
     @NotBlank(message = "Addon name is required")
     private String name;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "NVARCHAR(MAX)")
     private String description;
 
     @Column(name = "price_per_day", nullable = false, precision = 10, scale = 0)

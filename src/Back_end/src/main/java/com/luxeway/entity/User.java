@@ -95,7 +95,7 @@ public class User implements UserDetails {
     @Builder.Default
     private Integer totalRentals = 0;
     
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "NVARCHAR(MAX)")
     private String bio;
     
     @Column(length = 200)

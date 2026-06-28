@@ -25,7 +25,7 @@ public class SearchLog {
     @Column(name = "query_string", length = 255)
     private String queryString;
 
-    @Column(name = "filter_json", columnDefinition = "TEXT")
+    @Column(name = "filter_json", columnDefinition = "NVARCHAR(MAX)")
     private String filterJson;
 
     @CreationTimestamp

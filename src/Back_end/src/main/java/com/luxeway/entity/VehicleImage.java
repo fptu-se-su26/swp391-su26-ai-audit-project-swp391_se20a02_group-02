@@ -11,7 +11,10 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "vehicle_images")
-@Data
+@Getter
+@Setter
+@EqualsAndHashCode(exclude = "vehicle")
+@ToString(exclude = "vehicle")
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

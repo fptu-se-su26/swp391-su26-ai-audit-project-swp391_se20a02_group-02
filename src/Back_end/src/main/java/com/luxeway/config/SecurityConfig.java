@@ -104,6 +104,8 @@ public class SecurityConfig {
                     // Static uploads
                     "/uploads/**",
                     "/api/v1/uploads/**",
+                    // Motor images (static)
+                    "/motor/**",
                     // Public pages
                     "/stats/**",
                     "/stats",

@@ -105,7 +105,8 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; requiredRole?: 'cust
     } else if (requiredRole === 'owner') {
       authorized = roleUpper === 'OWNER' && !userIsBusiness;
     } else if (requiredRole === 'customer') {
-      authorized = roleUpper === 'CUSTOMER';
+      // FIX: All authenticated users (Admin, Owner, Business, Customer) can access customer routes (Profile, Wishlist, etc)
+      authorized = true;
     }
     
     if (!authorized) {

@@ -48,6 +48,14 @@ export const ekycService = {
     return response as any;
   },
 
+  async scanFaceMatch(frontFile: File, selfieFile: File): Promise<EkycScanResponse> {
+    const formData = new FormData();
+    formData.append('frontFile', frontFile);
+    formData.append('selfieFile', selfieFile);
+    const response = await apiClient.postForm<EkycScanResponse>('/ekyc/scan/face', formData);
+    return response as any;
+  },
+
   async verifyEkyc(frontDocumentId: string, backDocumentId: string): Promise<EkycScanResponse> {
     const response = await apiClient.post<EkycScanResponse>('/ekyc/verify', {
       frontDocumentId,

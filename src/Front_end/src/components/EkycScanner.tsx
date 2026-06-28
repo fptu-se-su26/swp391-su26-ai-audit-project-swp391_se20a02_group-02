@@ -11,11 +11,14 @@ interface EkycScannerProps {
 }
 
 export const EkycScanner: React.FC<EkycScannerProps> = ({ onComplete, onCancel }) => {
-  const [step, setStep] = useState<'front' | 'back' | 'verify' | 'success'>('front');
+  const [step, setStep] = useState<'front' | 'back' | 'face' | 'verify' | 'success'>('front');
   const [frontImage, setFrontImage] = useState<File | null>(null);
   const [frontPreview, setFrontPreview] = useState<string | null>(null);
   const [backImage, setBackImage] = useState<File | null>(null);
   const [backPreview, setBackPreview] = useState<string | null>(null);
+  const [selfieImage, setSelfieImage] = useState<File | null>(null);
+  const [selfiePreview, setSelfiePreview] = useState<string | null>(null);
+  const [isCameraActive, setIsCameraActive] = useState(false);
   
   const [frontData, setFrontData] = useState<EkycScanResponse | null>(null);
   const [backData, setBackData] = useState<EkycScanResponse | null>(null);
@@ -24,6 +27,9 @@ export const EkycScanner: React.FC<EkycScannerProps> = ({ onComplete, onCancel }
   
   const frontInputRef = useRef<HTMLInputElement>(null);
   const backInputRef = useRef<HTMLInputElement>(null);
+  const selfieInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const toast = useToast();
   const { refreshUser } = useAuthStore();
 
@@ -31,10 +37,55 @@ export const EkycScanner: React.FC<EkycScannerProps> = ({ onComplete, onCancel }
     return () => {
       if (frontPreview) URL.revokeObjectURL(frontPreview);
       if (backPreview) URL.revokeObjectURL(backPreview);
+      if (selfiePreview) URL.revokeObjectURL(selfiePreview);
+      stopCamera(); // Stop camera on unmount if active
     };
-  }, [frontPreview, backPreview]);
+  }, [frontPreview, backPreview, selfiePreview]);
 
-  const handleImageChange = (side: 'front' | 'back', e: React.ChangeEvent<HTMLInputElement>) => {
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+      if (videoRef.current) {
+         videoRef.current.srcObject = stream;
+      }
+      setIsCameraActive(true);
+      setSelfieImage(null);
+      setSelfiePreview(null);
+    } catch (err) {
+      toast.error('Camera Access Denied', 'Please allow camera access to take a selfie.');
+    }
+  };
+
+  const stopCamera = () => {
+    if (videoRef.current && videoRef.current.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach(track => track.stop());
+    }
+    setIsCameraActive(false);
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const file = new File([blob], "selfie.jpg", { type: "image/jpeg" });
+            setSelfieImage(file);
+            setSelfiePreview(URL.createObjectURL(file));
+            stopCamera();
+          }
+        }, 'image/jpeg', 0.9);
+      }
+    }
+  };
+
+  const handleImageChange = (side: 'front' | 'back' | 'face', e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -48,9 +99,12 @@ export const EkycScanner: React.FC<EkycScannerProps> = ({ onComplete, onCancel }
     if (side === 'front') {
       setFrontImage(file);
       setFrontPreview(preview);
-    } else {
+    } else if (side === 'back') {
       setBackImage(file);
       setBackPreview(preview);
+    } else {
+      setSelfieImage(file);
+      setSelfiePreview(preview);
     }
   };
 
@@ -80,13 +134,32 @@ export const EkycScanner: React.FC<EkycScannerProps> = ({ onComplete, onCancel }
       const response = await ekycService.scanBackId(backImage);
       if (response && response.success) {
         setBackData(response);
-        setStep('verify');
+        setStep('face');
+        startCamera(); // Auto-start camera when reaching face step
         toast.success('Back side scanned successfully');
       } else {
         toast.error('Scan failed', response?.message || 'Could not extract information from the back side.');
       }
     } catch (error: any) {
       toast.error('Scan failed', error.message || 'An error occurred during scanning.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleScanFace = async () => {
+    if (!frontImage || !selfieImage) return;
+    setLoading(true);
+    try {
+      const response = await ekycService.scanFaceMatch(frontImage, selfieImage);
+      if (response && response.success) {
+        setStep('verify');
+        toast.success('Face matched successfully');
+      } else {
+        toast.error('Verification failed', response?.message || 'Face does not match the ID.');
+      }
+    } catch (error: any) {
+      toast.error('Face match failed', error.message || 'An error occurred during face matching.');
     } finally {
       setLoading(false);
     }
@@ -135,7 +208,7 @@ export const EkycScanner: React.FC<EkycScannerProps> = ({ onComplete, onCancel }
           <div 
             className="h-full bg-accent rounded-full transition-all duration-500"
             style={{ 
-              width: step === 'front' ? '0%' : step === 'back' ? '33%' : step === 'verify' ? '66%' : '100%' 
+              width: step === 'front' ? '0%' : step === 'back' ? '25%' : step === 'face' ? '50%' : step === 'verify' ? '75%' : '100%' 
             }}
           />
         </div>
@@ -143,11 +216,12 @@ export const EkycScanner: React.FC<EkycScannerProps> = ({ onComplete, onCancel }
         {[
           { id: 'front', label: 'Front Side', num: 1 },
           { id: 'back', label: 'Back Side', num: 2 },
-          { id: 'verify', label: 'Confirm', num: 3 },
-          { id: 'success', label: 'Complete', num: 4 }
+          { id: 'face', label: 'Face Match', num: 3 },
+          { id: 'verify', label: 'Confirm', num: 4 },
+          { id: 'success', label: 'Complete', num: 5 }
         ].map((s, i) => {
           const isActive = step === s.id;
-          const isPassed = ['front', 'back', 'verify', 'success'].indexOf(step) > i;
+          const isPassed = ['front', 'back', 'face', 'verify', 'success'].indexOf(step) > i;
           
           return (
             <div key={s.id} className="relative z-10 flex flex-col items-center">
@@ -293,6 +367,76 @@ export const EkycScanner: React.FC<EkycScannerProps> = ({ onComplete, onCancel }
           </motion.div>
         )}
 
+        {step === 'face' && (
+          <motion.div
+            key="face"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="space-y-6"
+          >
+            <div className="text-center">
+              <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-1">Take a Selfie</h3>
+              <p className="text-xs text-slate-500">Please look straight into the camera to capture your face.</p>
+            </div>
+
+            {!selfiePreview ? (
+              <div className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-900 aspect-[1.33] flex flex-col items-center justify-center">
+                {!isCameraActive && (
+                  <button onClick={startCamera} className="btn-primary px-6 py-3 rounded-xl font-bold text-sm mb-4">
+                    Enable Camera
+                  </button>
+                )}
+                <video 
+                  ref={videoRef} 
+                  autoPlay 
+                  playsInline 
+                  muted 
+                  className={`w-full h-full object-cover ${!isCameraActive ? 'hidden' : ''}`} 
+                />
+                <canvas ref={canvasRef} className="hidden" />
+                
+                {isCameraActive && (
+                  <div className="absolute bottom-6 left-0 w-full flex justify-center">
+                    <button 
+                      onClick={capturePhoto}
+                      className="w-16 h-16 bg-white rounded-full border-4 border-slate-300 shadow-xl hover:scale-105 active:scale-95 transition-transform flex items-center justify-center"
+                    >
+                      <div className="w-12 h-12 bg-accent rounded-full"></div>
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 aspect-[1.33]">
+                <img src={selfiePreview} alt="Selfie" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                  <button 
+                    onClick={startCamera}
+                    className="btn-glass px-4 py-2 font-bold text-sm flex items-center gap-2"
+                  >
+                    <Camera className="w-4 h-4" /> Retake Photo
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-between items-center pt-4">
+              <button onClick={() => { stopCamera(); setStep('back'); }} className="btn-ghost px-6 py-3 rounded-xl font-bold text-sm">
+                Back
+              </button>
+              <button 
+                onClick={handleScanFace} 
+                disabled={!selfieImage || loading}
+                className="btn-primary px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2"
+              >
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Match Face'}
+                {!loading && <ArrowRight className="w-4 h-4" />}
+              </button>
+            </div>
+          </motion.div>
+        )}
+
         {step === 'verify' && frontData?.data && (
           <motion.div
             key="verify"
@@ -361,7 +505,7 @@ export const EkycScanner: React.FC<EkycScannerProps> = ({ onComplete, onCancel }
             </div>
 
             <div className="flex justify-between items-center pt-4">
-              <button onClick={() => setStep('back')} className="btn-ghost px-6 py-3 rounded-xl font-bold text-sm">
+              <button onClick={() => setStep('face')} className="btn-ghost px-6 py-3 rounded-xl font-bold text-sm">
                 Go Back
               </button>
               <button 

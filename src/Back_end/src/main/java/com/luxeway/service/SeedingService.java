@@ -9,9 +9,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.file.*;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +31,8 @@ public class SeedingService {
     private final MotorbikeBrandRepository motorbikeBrandRepository;
     private final MotorbikeModelRepository motorbikeModelRepository;
     private final MotorbikeRepository motorbikeRepository;
+
+    private final VehicleRepository vehicleRepository;
 
     private static final String[] CITIES = {"Ho Chi Minh", "Ha Noi", "Da Nang", "Nha Trang", "Da Lat", "Hue"};
     
@@ -50,6 +55,15 @@ public class SeedingService {
             seedMotorbikes(owner);
         } else {
             log.info("Motorbike repository already has {} records, skipping seeding.", motorbikeRepository.count());
+        }
+
+        // 3. Seed Vehicles (Motorbike type) with real images for frontend
+        long motorbikeVehicleCount = vehicleRepository.countByVehicleType(VehicleType.MOTORBIKE);
+        if (motorbikeVehicleCount < 40) {
+            log.info("Seeding motorbikes into vehicles table with real images (current: {})...", motorbikeVehicleCount);
+            seedVehicleMotorbikes(owner);
+        } else {
+            log.info("Vehicle repository already has {} records, skipping vehicle-motorbike seeding.", vehicleRepository.count());
         }
 
         log.info("Enterprise database seeding completed successfully.");
@@ -330,6 +344,222 @@ public class SeedingService {
         log.info("Successfully seeded {} motorbikes", bikeIndex);
     }
 
+    /**
+     * Seeds motorbikes into the unified 'vehicles' table with real images from motor/ folder.
+     * The frontend queries /vehicles?vehicleType=MOTORBIKE, so data must be in this table.
+     */
+    private void seedVehicleMotorbikes(User owner) {
+        // Define all motorbike models with real image folder paths
+        // Format: "Brand|Model|FolderPath|Category|EngineCc|MinPrice|MaxPrice|Transmission|FuelType|Year|Seats"
+        List<String[]> motorbikeData = new ArrayList<>();
+
+        // Honda
+        motorbikeData.add(new String[]{"Honda", "Vision", "Honda/Vision", "SCOOTER", "110", "120000", "150000", "AUTOMATIC", "GASOLINE", "2024", "2"});
+        motorbikeData.add(new String[]{"Honda", "Air Blade 125i", "Honda/Air_Blade/125i", "SCOOTER", "125", "150000", "200000", "AUTOMATIC", "GASOLINE", "2024", "2"});
+        motorbikeData.add(new String[]{"Honda", "Air Blade 160i", "Honda/Air_Blade/160i", "SCOOTER", "160", "180000", "250000", "AUTOMATIC", "GASOLINE", "2024", "2"});
+        motorbikeData.add(new String[]{"Honda", "SH 125i", "Honda/SH/SH_125i", "SCOOTER", "125", "300000", "400000", "AUTOMATIC", "GASOLINE", "2024", "2"});
+        motorbikeData.add(new String[]{"Honda", "SH 150i", "Honda/SH/SH_150i", "SCOOTER", "150", "350000", "500000", "AUTOMATIC", "GASOLINE", "2024", "2"});
+        motorbikeData.add(new String[]{"Honda", "SH 160i", "Honda/SH/SH_160i", "SCOOTER", "160", "400000", "550000", "AUTOMATIC", "GASOLINE", "2024", "2"});
+        motorbikeData.add(new String[]{"Honda", "SH 350i", "Honda/SH/SH_350i", "SCOOTER", "350", "600000", "800000", "AUTOMATIC", "GASOLINE", "2024", "2"});
+        motorbikeData.add(new String[]{"Honda", "SH Mode", "Honda/SH_Mode", "SCOOTER", "125", "200000", "280000", "AUTOMATIC", "GASOLINE", "2024", "2"});
+        motorbikeData.add(new String[]{"Honda", "Lead", "Honda/Lead", "SCOOTER", "125", "130000", "170000", "AUTOMATIC", "GASOLINE", "2024", "2"});
+        motorbikeData.add(new String[]{"Honda", "Wave Alpha", "Honda/Wave_Alpha", "MANUAL_MOTORCYCLE", "110", "80000", "110000", "MANUAL", "GASOLINE", "2024", "2"});
+        motorbikeData.add(new String[]{"Honda", "Future", "Honda/Future", "MANUAL_MOTORCYCLE", "125", "100000", "140000", "MANUAL", "GASOLINE", "2024", "2"});
+        motorbikeData.add(new String[]{"Honda", "Winner X", "Honda/Winner_X", "MANUAL_MOTORCYCLE", "150", "150000", "200000", "MANUAL", "GASOLINE", "2024", "2"});
+
+        // Yamaha
+        motorbikeData.add(new String[]{"Yamaha", "Exciter 155", "Yamaha/Exciter", "MANUAL_MOTORCYCLE", "155", "160000", "220000", "MANUAL", "GASOLINE", "2024", "2"});
+        motorbikeData.add(new String[]{"Yamaha", "Grande", "Yamaha/Grande", "SCOOTER", "125", "150000", "190000", "AUTOMATIC", "GASOLINE", "2024", "2"});
+        motorbikeData.add(new String[]{"Yamaha", "Janus", "Yamaha/Janus", "SCOOTER", "125", "130000", "160000", "AUTOMATIC", "GASOLINE", "2024", "2"});
+        motorbikeData.add(new String[]{"Yamaha", "NVX 155", "Yamaha/NVX_155", "SCOOTER", "155", "180000", "250000", "AUTOMATIC", "GASOLINE", "2024", "2"});
+        motorbikeData.add(new String[]{"Yamaha", "Sirius", "Yamaha/Sirius", "MANUAL_MOTORCYCLE", "110", "90000", "120000", "MANUAL", "GASOLINE", "2024", "2"});
+
+        // Vespa
+        motorbikeData.add(new String[]{"Vespa", "Sprint 125", "Vespa/Sprint", "SCOOTER", "125", "300000", "400000", "AUTOMATIC", "GASOLINE", "2024", "2"});
+        motorbikeData.add(new String[]{"Vespa", "Primavera 125", "Vespa/Primavera", "SCOOTER", "125", "280000", "370000", "AUTOMATIC", "GASOLINE", "2024", "2"});
+        motorbikeData.add(new String[]{"Vespa", "GTS 300", "Vespa/GTS_300", "SCOOTER", "300", "600000", "850000", "AUTOMATIC", "GASOLINE", "2024", "2"});
+
+        // Ducati
+        motorbikeData.add(new String[]{"Ducati", "Monster 797", "Ducati/Monster_797", "SPORT_BIKE", "803", "1200000", "1600000", "MANUAL", "GASOLINE", "2023", "2"});
+        motorbikeData.add(new String[]{"Ducati", "Scrambler 400x", "Ducati/Scrambler_400x", "CLASSIC_BIKE", "399", "1000000", "1400000", "MANUAL", "GASOLINE", "2024", "2"});
+
+        // Triumph
+        motorbikeData.add(new String[]{"Triumph", "Trident 660", "Triumph/Trident_660", "CLASSIC_BIKE", "660", "1200000", "1600000", "MANUAL", "GASOLINE", "2024", "2"});
+        motorbikeData.add(new String[]{"Triumph", "Bonneville T120", "Triumph/Bonneville_T120", "CLASSIC_BIKE", "1200", "1800000", "2500000", "MANUAL", "GASOLINE", "2024", "2"});
+
+        // Suzuki
+        motorbikeData.add(new String[]{"Suzuki", "Raider R150", "Suzuki/Raider(Raider_R150)", "MANUAL_MOTORCYCLE", "150", "150000", "190000", "MANUAL", "GASOLINE", "2024", "2"});
+        motorbikeData.add(new String[]{"Suzuki", "Satria F150", "Suzuki/Satria_F150", "MANUAL_MOTORCYCLE", "150", "160000", "200000", "MANUAL", "GASOLINE", "2024", "2"});
+
+        // Kawasaki
+        motorbikeData.add(new String[]{"Kawasaki", "Ninja 400", "Kawasaki/Ninja_400", "SPORT_BIKE", "399", "800000", "1100000", "MANUAL", "GASOLINE", "2024", "2"});
+        motorbikeData.add(new String[]{"Kawasaki", "Z400", "Kawasaki/Z400", "SPORT_BIKE", "399", "750000", "1050000", "MANUAL", "GASOLINE", "2024", "2"});
+        motorbikeData.add(new String[]{"Kawasaki", "Versys X300", "Kawasaki/Versys_X300", "ADVENTURE_BIKE", "296", "700000", "950000", "MANUAL", "GASOLINE", "2024", "2"});
+
+        // BMW Motorrad
+        motorbikeData.add(new String[]{"BMW Motorrad", "G310GS", "BMW_Motorrad/G310GS", "ADVENTURE_BIKE", "313", "900000", "1250000", "MANUAL", "GASOLINE", "2024", "2"});
+        motorbikeData.add(new String[]{"BMW Motorrad", "R1250GS", "BMW_Motorrad/R1250GS", "ADVENTURE_BIKE", "1254", "2200000", "3200000", "MANUAL", "GASOLINE", "2024", "2"});
+
+        // KTM
+        motorbikeData.add(new String[]{"KTM", "Duke 390", "KTM/Duke_390", "SPORT_BIKE", "373", "800000", "1100000", "MANUAL", "GASOLINE", "2024", "2"});
+        motorbikeData.add(new String[]{"KTM", "Adventure 390", "KTM/Adventure_390", "ADVENTURE_BIKE", "373", "900000", "1250000", "MANUAL", "GASOLINE", "2024", "2"});
+
+        // SYM
+        motorbikeData.add(new String[]{"SYM", "Attila", "SYM/Attila", "SCOOTER", "125", "110000", "140000", "AUTOMATIC", "GASOLINE", "2024", "2"});
+        motorbikeData.add(new String[]{"SYM", "Galaxy", "SYM/Galaxy", "MANUAL_MOTORCYCLE", "110", "100000", "130000", "MANUAL", "GASOLINE", "2024", "2"});
+
+        // Harley-Davidson
+        motorbikeData.add(new String[]{"Harley-Davidson", "Iron 883", "Harley_Davidson/Iron_883", "CLASSIC_BIKE", "883", "1600000", "2200000", "MANUAL", "GASOLINE", "2023", "2"});
+
+        // Royal Enfield
+        motorbikeData.add(new String[]{"Royal Enfield", "Classic 350", "Royal_Enfield/Classic_350", "CLASSIC_BIKE", "349", "700000", "950000", "MANUAL", "GASOLINE", "2024", "2"});
+        motorbikeData.add(new String[]{"Royal Enfield", "Himalayan", "Royal_Enfield/Himalayan", "ADVENTURE_BIKE", "411", "800000", "1100000", "MANUAL", "GASOLINE", "2024", "2"});
+
+        // Piaggio
+        motorbikeData.add(new String[]{"Piaggio", "Liberty", "Piaggio/Liberty", "SCOOTER", "125", "140000", "180000", "AUTOMATIC", "GASOLINE", "2024", "2"});
+        motorbikeData.add(new String[]{"Piaggio", "Medley", "Piaggio/Medley", "SCOOTER", "150", "200000", "280000", "AUTOMATIC", "GASOLINE", "2024", "2"});
+
+        // VinFast (Electric)
+        motorbikeData.add(new String[]{"VinFast", "EVO 200", "VinFast(Xe m\u00e1y \u0111i\u1ec7n)/EVO(Evo200)", "ELECTRIC_BIKE", "0", "80000", "120000", "AUTOMATIC", "ELECTRIC", "2024", "2"});
+        motorbikeData.add(new String[]{"VinFast", "Feliz S", "VinFast(Xe m\u00e1y \u0111i\u1ec7n)/Feliz(Feliz_S)", "ELECTRIC_BIKE", "0", "100000", "140000", "AUTOMATIC", "ELECTRIC", "2024", "2"});
+        motorbikeData.add(new String[]{"VinFast", "Klara S", "VinFast(Xe m\u00e1y \u0111i\u1ec7n)/Klara(Klara_S)", "ELECTRIC_BIKE", "0", "120000", "170000", "AUTOMATIC", "ELECTRIC", "2024", "2"});
+        motorbikeData.add(new String[]{"VinFast", "Theon", "VinFast(Xe m\u00e1y \u0111i\u1ec7n)/Theon", "ELECTRIC_BIKE", "0", "150000", "220000", "AUTOMATIC", "ELECTRIC", "2024", "2"});
+        motorbikeData.add(new String[]{"VinFast", "Vento", "VinFast(Xe m\u00e1y \u0111i\u1ec7n)/Vento", "ELECTRIC_BIKE", "0", "90000", "130000", "AUTOMATIC", "ELECTRIC", "2024", "2"});
+
+        int vehicleIndex = 0;
+        int duplicateRound = 0;
+        int targetCount = 85;
+
+        while (vehicleIndex < targetCount) {
+            for (String[] data : motorbikeData) {
+                if (vehicleIndex >= targetCount) break;
+
+                String brand = data[0];
+                String model = data[1];
+                String folderPath = data[2];
+                String categoryStr = data[3];
+                int engineCc = Integer.parseInt(data[4]);
+                long minPrice = Long.parseLong(data[5]);
+                long maxPrice = Long.parseLong(data[6]);
+                String transmissionStr = data[7];
+                String fuelStr = data[8];
+                int year = Integer.parseInt(data[9]);
+                int seats = Integer.parseInt(data[10]);
+
+                VehicleCategory category = VehicleCategory.valueOf(categoryStr);
+                TransmissionType transmission = TransmissionType.valueOf(transmissionStr);
+                FuelType fuelType = FuelType.valueOf(fuelStr);
+
+                String city = CITIES[vehicleIndex % CITIES.length];
+                String licensePlate = generateVehicleBikePlate(vehicleIndex);
+                String vehicleName = brand + " " + model;
+                if (duplicateRound > 0) {
+                    vehicleName += " #" + (duplicateRound + 1);
+                    licensePlate = generateVehicleBikePlate(vehicleIndex + 500 * duplicateRound);
+                }
+
+                BigDecimal pricePerDay = new BigDecimal(minPrice + (vehicleIndex % 3) * (maxPrice - minPrice) / 2);
+                BigDecimal deposit = pricePerDay.multiply(new BigDecimal("2"));
+
+                // Find images from motor/ folder
+                List<String> imageUrls = getMotorImages(folderPath);
+                String thumbnailUrl = imageUrls.isEmpty() ? null : imageUrls.get(0);
+
+                Vehicle vehicle = Vehicle.builder()
+                        .owner(owner)
+                        .name(vehicleName)
+                        .brand(brand)
+                        .model(model)
+                        .year(year)
+                        .category(category)
+                        .vehicleType(VehicleType.MOTORBIKE)
+                        .engineCc(engineCc > 0 ? engineCc : null)
+                        .hasHelmet(true)
+                        .hasPhoneHolder(vehicleIndex % 2 == 0)
+                        .hasRaincoat(true)
+                        .hasTouringPackage(categoryStr.contains("ADVENTURE") || categoryStr.contains("TOURING"))
+                        .description("Cho thu\u00ea " + vehicleName + " t\u1ea1i " + city + ". Xe \u0111\u1eb9p, m\u00e1y t\u1ed1t, gi\u00e1 r\u1ebb. Ph\u00f9 h\u1ee3p du l\u1ecbch, di chuy\u1ec3n h\u00e0ng ng\u00e0y.")
+                        .thumbnailUrl(thumbnailUrl)
+                        .pricePerDay(pricePerDay)
+                        .deposit(deposit)
+                        .city(city)
+                        .country("Vietnam")
+                        .address((50 + vehicleIndex) + " Motorway Avenue, " + city)
+                        .latitude(new BigDecimal(10.762622 + (vehicleIndex % 10) * 0.008))
+                        .longitude(new BigDecimal(106.660172 + (vehicleIndex % 10) * 0.008))
+                        .seats(seats)
+                        .doors(0)
+                        .transmission(transmission)
+                        .fuelType(fuelType)
+                        .licensePlate(licensePlate)
+                        .status(VehicleStatus.AVAILABLE)
+                        .rating(new BigDecimal(4.0 + (vehicleIndex % 10) * 0.1))
+                        .totalReviews(vehicleIndex % 15 + 1)
+                        .totalBookings(vehicleIndex % 25 + 3)
+                        .isVerified(true)
+                        .isFeatured(vehicleIndex % 6 == 0)
+                        .instantBook(vehicleIndex % 3 == 0)
+                        .deliveryAvailable(vehicleIndex % 4 == 0)
+                        .build();
+
+                vehicle = vehicleRepository.save(vehicle);
+
+                // Add images
+                if (!imageUrls.isEmpty()) {
+                    Set<VehicleImage> vehicleImages = new HashSet<>();
+                    for (int imgIdx = 0; imgIdx < imageUrls.size(); imgIdx++) {
+                        VehicleImage img = VehicleImage.builder()
+                                .vehicle(vehicle)
+                                .url(imageUrls.get(imgIdx))
+                                .isPrimary(imgIdx == 0)
+                                .sortOrder(imgIdx)
+                                .build();
+                        vehicleImages.add(img);
+                    }
+                    vehicle.setImages(vehicleImages);
+                    vehicleRepository.save(vehicle);
+                }
+
+                vehicleIndex++;
+            }
+            duplicateRound++;
+        }
+
+        log.info("Successfully seeded {} vehicle-motorbikes with real images", vehicleIndex);
+    }
+
+    /**
+     * Scans the motor/ folder for images and returns URL paths.
+     */
+    private List<String> getMotorImages(String folderPath) {
+        List<String> urls = new ArrayList<>();
+        try {
+            Path motorDir = Paths.get("motor", folderPath.split("/")).toAbsolutePath().normalize();
+            if (Files.exists(motorDir) && Files.isDirectory(motorDir)) {
+                List<Path> imageFiles = Files.list(motorDir)
+                        .filter(p -> {
+                            String name = p.getFileName().toString().toLowerCase();
+                            return name.endsWith(".jpg") || name.endsWith(".jpeg") ||
+                                   name.endsWith(".png") || name.endsWith(".webp") || name.endsWith(".gif");
+                        })
+                        .sorted()
+                        .collect(Collectors.toList());
+
+                for (Path imgPath : imageFiles) {
+                    // Build relative URL: /motor/Honda/SH/SH_150i/filename.webp
+                    Path motorRoot = Paths.get("motor").toAbsolutePath().normalize();
+                    String relativePath = motorRoot.relativize(imgPath).toString().replace("\\", "/");
+                    urls.add("/motor/" + relativePath);
+                }
+            } else {
+                log.warn("Motor image folder not found: {}", motorDir);
+            }
+        } catch (IOException e) {
+            log.warn("Error reading motor images from {}: {}", folderPath, e.getMessage());
+        }
+        return urls;
+    }
+
     private String generateCarPlate(int index) {
         // Generates plates like 51A-900.00 to 51A-999.99
         int num = 90000 + index;
@@ -342,5 +572,12 @@ public class SeedingService {
         int num = 80000 + index;
         String formatted = String.format("%05d", num);
         return "29-H1 " + formatted.substring(0, 3) + "." + formatted.substring(3);
+    }
+
+    private String generateVehicleBikePlate(int index) {
+        // Generates plates like 59-V1 700.00
+        int num = 70000 + index;
+        String formatted = String.format("%05d", num);
+        return "59-V1 " + formatted.substring(0, 3) + "." + formatted.substring(3);
     }
 }

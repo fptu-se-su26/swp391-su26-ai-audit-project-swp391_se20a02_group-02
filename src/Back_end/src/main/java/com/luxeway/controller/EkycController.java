@@ -2,7 +2,7 @@ package com.luxeway.controller;
 
 import com.luxeway.dto.ekyc.EkycDTOs;
 import com.luxeway.entity.User;
-import com.luxeway.service.VnptEkycService;
+import com.luxeway.service.FptEkycService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +24,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class EkycController {
 
-    private final VnptEkycService vnptEkycService;
+    private final FptEkycService fptEkycService;
 
     /**
      * Scan the FRONT side of a CCCD/CMND.
@@ -48,7 +48,7 @@ public class EkycController {
         }
 
         log.info("eKYC: User {} requesting FRONT side scan", user.getId());
-        EkycDTOs.EkycScanResponse response = vnptEkycService.scanFrontId(user.getId(), imageFile);
+        EkycDTOs.EkycScanResponse response = fptEkycService.scanFrontId(user.getId(), imageFile);
 
         if (response.isSuccess()) {
             return ResponseEntity.ok(response);
@@ -79,7 +79,7 @@ public class EkycController {
         }
 
         log.info("eKYC: User {} requesting BACK side scan", user.getId());
-        EkycDTOs.EkycScanResponse response = vnptEkycService.scanBackId(user.getId(), imageFile);
+        EkycDTOs.EkycScanResponse response = fptEkycService.scanBackId(user.getId(), imageFile);
 
         if (response.isSuccess()) {
             return ResponseEntity.ok(response);
@@ -105,7 +105,7 @@ public class EkycController {
         }
 
         log.info("eKYC: User {} requesting KYC verification", user.getId());
-        EkycDTOs.EkycScanResponse response = vnptEkycService.verifyEkyc(user.getId(), request);
+        EkycDTOs.EkycScanResponse response = fptEkycService.verifyEkyc(user.getId(), request);
 
         if (response.isSuccess()) {
             return ResponseEntity.ok(response);
@@ -123,7 +123,7 @@ public class EkycController {
             return unauthorized();
         }
 
-        EkycDTOs.EkycStatusResponse status = vnptEkycService.getEkycStatus(user.getId());
+        EkycDTOs.EkycStatusResponse status = fptEkycService.getEkycStatus(user.getId());
         return ResponseEntity.ok(status);
     }
 
@@ -140,7 +140,7 @@ public class EkycController {
         if (imageFile.getSize() > 10 * 1024 * 1024) return badRequest("Image size exceeds 10MB limit");
 
         log.info("eKYC: User {} requesting DL FRONT scan", user.getId());
-        EkycDTOs.EkycScanResponse response = vnptEkycService.scanFrontDrivingLicense(user.getId(), imageFile);
+        EkycDTOs.EkycScanResponse response = fptEkycService.scanFrontId(user.getId(), imageFile);
         return response.isSuccess() ? ResponseEntity.ok(response) : ResponseEntity.status(422).body(response);
     }
 
@@ -157,7 +157,23 @@ public class EkycController {
         if (imageFile.getSize() > 10 * 1024 * 1024) return badRequest("Image size exceeds 10MB limit");
 
         log.info("eKYC: User {} requesting DL BACK scan", user.getId());
-        EkycDTOs.EkycScanResponse response = vnptEkycService.scanBackDrivingLicense(user.getId(), imageFile);
+        EkycDTOs.EkycScanResponse response = fptEkycService.scanBackId(user.getId(), imageFile);
+        return response.isSuccess() ? ResponseEntity.ok(response) : ResponseEntity.status(422).body(response);
+    }
+
+    /**
+     * Face match between ID and Selfie
+     */
+    @PostMapping("/scan/face")
+    public ResponseEntity<?> scanFaceMatch(
+            @AuthenticationPrincipal User user,
+            @RequestParam("frontFile") MultipartFile frontFile,
+            @RequestParam("selfieFile") MultipartFile selfieFile) {
+
+        if (user == null) return unauthorized();
+        if (frontFile == null || selfieFile == null) return badRequest("Both ID and selfie files are required");
+
+        EkycDTOs.EkycScanResponse response = fptEkycService.scanFaceMatch(user.getId(), frontFile, selfieFile);
         return response.isSuccess() ? ResponseEntity.ok(response) : ResponseEntity.status(422).body(response);
     }
 

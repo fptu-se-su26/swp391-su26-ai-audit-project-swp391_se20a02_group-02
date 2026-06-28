@@ -117,16 +117,16 @@ public class Booking {
     @Builder.Default
     private Boolean includeDelivery = false;
     
-    @Column(name = "delivery_address", columnDefinition = "TEXT")
+    @Column(name = "delivery_address", columnDefinition = "NVARCHAR(MAX)")
     private String deliveryAddress;
     
     @Column(name = "pickup_location", length = 500)
     private String pickupLocation;
     
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "NVARCHAR(MAX)")
     private String notes;
     
-    @Column(name = "owner_notes", columnDefinition = "TEXT")
+    @Column(name = "owner_notes", columnDefinition = "NVARCHAR(MAX)")
     private String ownerNotes;
     
     // Tracking
@@ -136,13 +136,13 @@ public class Booking {
     @Column(name = "check_out_odometer")
     private Integer checkOutOdometer;
     
-    @Column(name = "damage_report", columnDefinition = "TEXT")
+    @Column(name = "damage_report", columnDefinition = "NVARCHAR(MAX)")
     private String damageReport;
     
     @Column(name = "cancelled_at")
     private LocalDateTime cancelledAt;
     
-    @Column(name = "cancellation_reason", columnDefinition = "TEXT")
+    @Column(name = "cancellation_reason", columnDefinition = "NVARCHAR(MAX)")
     private String cancellationReason;
 
     @Column(name = "coupon_code", length = 50)

@@ -27,10 +27,10 @@ public class AuditLog {
     @Column(name = "target_id", length = 36)
     private String targetId;
 
-    @Column(name = "old_values", columnDefinition = "TEXT")
+    @Column(name = "old_values", columnDefinition = "NVARCHAR(MAX)")
     private String oldValues;
 
-    @Column(name = "new_values", columnDefinition = "TEXT")
+    @Column(name = "new_values", columnDefinition = "NVARCHAR(MAX)")
     private String newValues;
 
     @Column(name = "ip_address", length = 45)

@@ -33,7 +33,7 @@ public class VehicleLocation {
     private String country = "Vietnam";
 
     @NotBlank
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = false, columnDefinition = "NVARCHAR(MAX)")
     private String address;
 
     @NotNull
