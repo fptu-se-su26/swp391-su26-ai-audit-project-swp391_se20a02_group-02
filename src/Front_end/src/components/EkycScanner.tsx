@@ -22,6 +22,7 @@ export const EkycScanner: React.FC<EkycScannerProps> = ({ onComplete, onCancel }
   
   const [frontData, setFrontData] = useState<EkycScanResponse | null>(null);
   const [backData, setBackData] = useState<EkycScanResponse | null>(null);
+  const [faceMatchMessage, setFaceMatchMessage] = useState<string | null>(null);
   
   const [loading, setLoading] = useState(false);
   
@@ -154,6 +155,7 @@ export const EkycScanner: React.FC<EkycScannerProps> = ({ onComplete, onCancel }
       const response = await ekycService.scanFaceMatch(frontImage, selfieImage);
       if (response && response.success) {
         setStep('verify');
+        setFaceMatchMessage(response.message);
         toast.success('Face matched successfully');
       } else {
         toast.error('Verification failed', response?.message || 'Face does not match the ID.');
@@ -492,6 +494,12 @@ export const EkycScanner: React.FC<EkycScannerProps> = ({ onComplete, onCancel }
                   <div className="md:col-span-2">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Đặc điểm nhận dạng / Features</span>
                     <p className="font-bold text-slate-800 dark:text-white text-sm">{backData.data.personalIdentification}</p>
+                  </div>
+                )}
+                {(faceMatchMessage) && (
+                  <div className="md:col-span-2 mt-2 p-3 bg-green-500/10 border border-green-500/20 rounded-xl">
+                    <span className="text-[10px] font-bold text-green-600 uppercase tracking-wider block mb-1">Face Match Result</span>
+                    <p className="font-bold text-green-700 text-sm">{faceMatchMessage}</p>
                   </div>
                 )}
               </div>
