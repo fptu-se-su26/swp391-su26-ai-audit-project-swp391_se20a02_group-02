@@ -816,12 +816,26 @@ Audit LuxeWay Car Rental Platform:
 
 ## Log #30
 
-- **Date:** 2026-06-21
+- **Date:** 2026-06-22
 - **Author:** Lê Văn Hậu (DE190968)
 - **AI Tool:** Antigravity
-- **Purpose:** Xây dựng AI Copilot Widget, AI Predictive Dashboard và Agent Layer Client. Xử lý conflict khi merge nhánh tính năng xe.
+- **Purpose:** Xây dựng nền tảng kiểm thử MASTP (Multi-Agent Software Testing Platform)
 - **Prompt Reference:** N/A
-- **AI Output Summary:** Cung cấp mã nguồn các component React (AICopilotWidget, AIPredictivePanel), cấu trúc DTOs, Controllers (AICopilotController, AIPredictiveController) và kịch bản seed SQL Analytics (ai_analytics_seed_v2.sql).
-- **Human Decision:** Review code UI/UX của Dashboard, tinh chỉnh thiết kế Agent Client cho Spring Boot, và chủ động giải quyết các xung đột merge (conflict) với cấu trúc Vehicle cũ và mới.
-- **Applied To:** `src/Back_end/`, `src/Front_end/src/components/admin/`, `src/Front_end/src/pages/admin/`
-- **Verification:** Build project backend và frontend thành công. Test API Dashboard trả về dữ liệu predictive analytics và widget AI hoạt động mượt mà trên giao diện Admin.
+- **AI Output Summary:** Đề xuất kiến trúc MASTP v3 với 5 Agent (Extraction, Generation, Deduction, ...), cấu hình retry logic, LLM batching, và xuất báo cáo coverage.
+- **Human Decision:** Phê duyệt thiết kế và tích hợp Groq/xAI. Tối ưu hóa LLM test case generation batching.
+- **Applied To:** Các module liên quan tới test và `mastp`
+- **Verification:** Chạy thành công quy trình sinh test case tự động qua Quality Gate V3.2 Enterprise Grade.
+
+---
+
+## Log #31
+
+- **Date:** 2026-06-25
+- **Author:** Lê Văn Hậu (DE190968)
+- **AI Tool:** Antigravity
+- **Purpose:** Hợp nhất môi trường phát triển với Docker Compose
+- **Prompt Reference:** N/A
+- **AI Output Summary:** Cung cấp file `docker-compose.yml` thống nhất cho các services bao gồm backend, frontend, ML, và databases.
+- **Human Decision:** Áp dụng thiết lập để đồng bộ hóa môi trường triển khai local, giải quyết xung đột kiến trúc Vehicle trước đó.
+- **Applied To:** `docker-compose.yml`
+- **Verification:** Có thể khởi tạo toàn bộ project backend, frontend, ML, database thông qua Docker Compose.

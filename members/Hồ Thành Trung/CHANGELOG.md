@@ -26,6 +26,7 @@ File này dùng để ghi lại các thay đổi quan trọng trong quá trình 
 | Phase 01 | 2026-05-30 | Khởi tạo project, cấu trúc repo | Completed |
 | Phase 02 | 2026-06-16 | Thiết kế Schema & eKYC feature | Completed |
 | Phase 03 | 2026-06-21 | Gộp code main và sửa lỗi biên dịch | Completed |
+| Phase 04 | 2026-06-28 | Nạp data motorbike & Fix lỗi cấu hình eKYC DB | Completed |
 
 ---
 
@@ -110,4 +111,43 @@ AI hỗ trợ chỉ ra các lỗi biên dịch, gợi ý nâng cấp thư viện
 
 ```text
 Mã nguồn đã biên dịch sạch sẽ và khởi chạy thành công ở local.
+```
+
+---
+
+# [Phase 04] Nạp data motorbike & Fix lỗi cấu hình eKYC DB
+
+## Ngày thực hiện
+
+```text
+2026-06-28
+```
+
+## Đã hoàn thành
+
+- [x] Nạp data cho phần motorbike.
+- [x] Fix lỗi kết nối cơ sở dữ liệu eKYC (cấu hình lại `Car_rental_DB`).
+- [x] Tắt file seed data bị lỗi.
+
+## Thay đổi chi tiết
+
+| STT | Nội dung thay đổi | Người thực hiện | File/Module liên quan | Minh chứng |
+|---:|---|---|---|---|
+| 1 | Nạp data cho phần motorbike và sửa lỗi eKYC | Hồ Thành Trung | application-sqlserver.yml | Backend chạy OK |
+
+## AI có hỗ trợ không?
+
+- [x] Có
+- [ ] Không
+
+Nếu có, mô tả AI đã hỗ trợ phần nào:
+
+```text
+AI hỗ trợ cấu hình lại file yml để trỏ đúng vào Car_rental_DB và vô hiệu hóa script seed bị thiếu trường created_at giúp Spring Boot khởi động thành công.
+```
+
+## Ghi chú
+
+```text
+Hệ thống đã chạy ổn định cả Backend lẫn Frontend.
 ```

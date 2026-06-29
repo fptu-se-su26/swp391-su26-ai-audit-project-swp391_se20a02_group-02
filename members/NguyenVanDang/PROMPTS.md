@@ -1783,13 +1783,80 @@ Tích hợp stepper và drawer review hoàn hảo, compile backend thành công 
 - [x] Cần tự kiểm tra và chỉnh sửa nhiều
 - [ ] Kết quả AI có lỗi hoặc chưa chính xác
 
+| File liên quan | `MyDocuments.tsx`, `AdminDashboard.tsx`, `CarBookingService.java`, `MotorbikeBookingService.java`, `types/index.ts` |
+| Kết quả chạy/test | `./gradlew bootJar` thành công, `npm run build` thành công 100% |
+| Link commit | `feat: implement production-level Vietnam vehicle rental KYC verification system with FPT AI OCR and license class validation` |
+
+---
+
+### Prompt số 23
+
+| Nội dung | Thông tin |
+|---|---|
+| Ngày sử dụng | 2026-06-27 |
+| Công cụ AI | Antigravity |
+| Mục đích | Triển khai Driver License Constraints & Mioto Map Discovery System. |
+| Phần việc liên quan | Fullstack / Map & UI/UX |
+| Mức độ sử dụng | Thiết kế tương tác & Code |
+
+#### 5.1. Prompt nguyên văn
+
+```text
+1. How can I resolve the CHK_vehicles_category check constraint error on startup so Java Enum values like SEDAN/MPV seed correctly?
+2. Set up a dedicated /map page route in App.tsx and dynamic map badge in Navbar.tsx displaying nearby available vehicles count.
+3. How can I implement a collapsible left sidebar list panel and a 3-tier MapLibre map marker interactive system in LuxeWayMap.tsx and MarketplacePage.tsx?
+- Level 1: Default markers show count "1 xe".
+- Level 2: Click once to reveal price tag (e.g. 680K).
+- Level 3: Click price tag again to select and highlight in green, sliding up bottom horizontal cards. Click background to reset.
+Avoid React stale closure warnings in map event listeners.
+```
+
+#### 5.2. Bối cảnh khi viết prompt
+
+```text
+Cần triển khai hệ thống bản đồ khám phá xe cao cấp tương thích với mockup Mioto, cho phép hiển thị vị trí chuẩn xác, nhãn xe linh hoạt, la bàn định vị GPS và khay trượt ngang thông tin chi tiết xe.
+```
+
+#### 5.3. Kết quả AI trả về
+
+```text
+AI cung cấp:
+- Hướng dẫn xóa CHECK constraint CHK_vehicles_category trong schema.sql.
+- Cấu hình route /map trong App.tsx và logic hiển thị badge [25] màu đỏ trong Navbar.tsx.
+- Cấu trúc state-driven updateMarkers trong LuxeWayMap.tsx sử dụng React refs để tránh stale closures, đồng thời thiết kế layout Flex co giãn cho MarketplacePage.tsx khi sidebar ẩn/hiện.
+```
+
+#### 5.4. Kết quả đã áp dụng vào bài
+
+```text
+Bản đồ được tích hợp thành công, tương tác 3 cấp hoạt động mượt mà, build check front-end đạt 100% thành công.
+```
+
+#### 5.5. Phần sinh viên/nhóm đã chỉnh sửa hoặc cải tiến
+
+```text
+- Tự thiết kế và căn chỉnh màu sắc cho các trạng thái nhãn ghim (xanh lá cây khi select, trắng chữ đen khi revealed, xám khi default).
+- Căn chỉnh vị trí icon trong nút nổi toggle bottom center sang bên phải đúng mockup "Danh sách ☰".
+```
+
+#### 5.6. Đánh giá chất lượng prompt
+
+- [x] Prompt rõ ràng
+- [x] Prompt có đủ bối cảnh
+- [ ] Prompt còn thiếu thông tin
+- [x] Prompt tạo ra kết quả tốt
+- [ ] Prompt tạo ra kết quả chưa phù hợp
+- [ ] Cần hỏi lại AI nhiều lần
+- [x] Cần tự kiểm tra và chỉnh sửa nhiều
+- [ ] Kết quả AI có lỗi hoặc chưa chính xác
+
 #### 5.7. Minh chứng liên quan
 
 | Loại minh chứng | Nội dung |
 |---|---|
-| File liên quan | `MyDocuments.tsx`, `AdminDashboard.tsx`, `CarBookingService.java`, `MotorbikeBookingService.java`, `types/index.ts` |
-| Kết quả chạy/test | `./gradlew bootJar` thành công, `npm run build` thành công 100% |
-| Link commit | `feat: implement production-level Vietnam vehicle rental KYC verification system with FPT AI OCR and license class validation` |
+| File liên quan | `App.tsx`, `Navbar.tsx`, `LuxeWayMap.tsx`, `MarketplacePage.tsx`, `schema.sql` |
+| Kết quả chạy/test | npm run build thành công, map chạy thực tế 0 lỗi |
+| Link commit | `feat: implement Vietnam vehicle rental map discovery page with collapsible list and 3-tier marker interactions` |
 
 ---
 
@@ -1805,5 +1872,5 @@ Sinh viên/nhóm cam kết rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-06-20 |
+| Nguyễn Văn Dạng - DE190324 | 2026-06-27 |
 

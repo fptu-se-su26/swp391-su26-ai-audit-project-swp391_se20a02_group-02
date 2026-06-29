@@ -13,7 +13,7 @@
 | MSSV / Danh sách MSSV | DE190928 |
 | Giảng viên hướng dẫn | (Giảng viên môn SWP391) |
 | Ngày bắt đầu | 2026-05-30 |
-| Ngày cập nhật gần nhất | 2026-06-21 |
+| Ngày cập nhật gần nhất | 2026-06-28 |
 
 ---
 
@@ -45,6 +45,7 @@ File này ghi lại các prompt quan trọng đã sử dụng trong quá trình 
 | 1 | 2026-06-16 | Antigravity | Push code lên nhánh | "cập nhật code lên nhánh, chỉ làm trong nhánh của tôi, không được push lên main" | Gỡ lỗi push file binary, tạo commit chuẩn | Có | Lịch sử Git |
 | 2 | 2026-06-16 | Antigravity | Format tài liệu AI Audit Log | "dựa theo form làm AI Auditlog cho tôi" | 4 file docs theo chuẩn form | Có | Thư mục members/Hồ Thành Trung |
 | 3 | 2026-06-21 | Antigravity | Gộp code main và sửa lỗi biên dịch | "lấy code từ nhánh main về rồi gộp code hiện tại vào code vừa lấy về fix lại tất cả..." | Gộp code thành công, sửa toàn bộ lỗi compile của BE/FE | Có | Lịch sử Git nhánh `merge/main-into-ekyc` |
+| 4 | 2026-06-28 | Antigravity | Nạp data motorbike và fix lỗi khởi động backend eKYC | "cập nhật lại 4 file audit log trên ... tuần này đã nạp data cho phần motorbike và fix lỗi eKYC" | Cấu hình lại `Car_rental_DB`, tắt file SQL lỗi `created_at`, backend boot thành công | Có | File `application-sqlserver.yml` |
 
 ---
 
@@ -176,6 +177,49 @@ AI thực hiện tạo nhánh local phụ `merge/main-into-ekyc` để merge an 
 
 ```text
 Dự án được gộp thành công, biên dịch thành công ở cả Frontend và Backend, chạy thực tế kết nối cơ sở dữ liệu SQL Server ổn định.
+```
+
+#### 5.5. Đánh giá chất lượng prompt
+
+- [x] Prompt rõ ràng
+- [x] Prompt có đủ bối cảnh
+- [x] Prompt tạo ra kết quả tốt
+
+---
+
+### Prompt số 4
+
+| Nội dung | Thông tin |
+|---|---|
+| Ngày sử dụng | 2026-06-28 |
+| Công cụ AI | Antigravity |
+| Mục đích | Fix lỗi eKYC Database và viết AI Audit Log |
+| Phần việc liên quan | Backend Configuration & Báo cáo |
+| Mức độ sử dụng | Hỏi thao tác / Sinh báo cáo |
+
+#### 5.1. Prompt nguyên văn
+
+```text
+ok cập nhật lại 4 file audit log trên https://github.com/fptu-se-su26/swp391-su26-ai-audit-project-swp391_se20a02_group-02/tree/feature-de190928/eKYC-scan-CCCD-CMT
+ Tuần này đã làm gì thì cập nhật vào, tuần này đã nạp data cho phần motorbike và fix lỗi eKYC
+```
+
+#### 5.2. Bối cảnh khi viết prompt
+
+```text
+Gặp lỗi backend không khởi động được do script SQL chèn dữ liệu motorbike/brands bị thiếu trường `created_at`. Ngoài ra, cần đẩy các báo cáo AI Audit Log lên Github nhánh eKYC.
+```
+
+#### 5.3. Kết quả AI trả về
+
+```text
+AI giúp phát hiện ra nguyên nhân sập backend (thiếu cột timestamp ở file SQL mẫu), vô hiệu hóa file SQL này trong `application-sqlserver.yml` và cấu hình lại tên database thành `Car_rental_DB` để backend tự tạo bảng trơn tru. AI tự động ghi nhật ký vào 4 file markdown AI Audit Log và Changelog theo form chuẩn.
+```
+
+#### 5.4. Kết quả đã áp dụng vào bài
+
+```text
+Spring Boot kết nối SQL Server hoàn tất, backend lên port 8080 thành công, frontend gọi API ổn định.
 ```
 
 #### 5.5. Đánh giá chất lượng prompt

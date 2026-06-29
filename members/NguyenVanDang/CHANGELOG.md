@@ -42,7 +42,9 @@ Nguyên tắc ghi changelog:
 | Phase 03 | 2026-05-14 | Thiết kế hệ thống, thiết kế UI/UX Frontend | Completed |
 | Phase 04 | 2026-05-14 đến 2026-05-25 | Implementation (Frontend & Backend Advanced) | Completed |
 | Phase 05 | 2026-06-06 đến 2026-06-12 | Refactoring, Premium UI/UX & Design System components | Completed |
-| Phase 06 | (Chưa bắt đầu) | Hoàn thiện báo cáo và demo | In Progress |
+| Phase 06.0 | 2026-06-20 | Vietnam Vehicle Rental KYC Verification System | Completed |
+| Phase 06.1 | 2026-06-27 | Driver License Constraints & Mioto Map Discovery System | Completed |
+| Phase 07 | (Chưa bắt đầu) | Hoàn thiện báo cáo và demo | In Progress |
 
 ---
 
@@ -1254,6 +1256,63 @@ AI (Antigravity) hỗ trợ:
 Branch: main
 Commit: feat: implement production-level Vietnam vehicle rental KYC verification system with FPT AI OCR and license class validation
 ```
+---
+
+# [Phase 06.1] Driver License Constraints & Mioto Map Discovery System
+
+## Ngày thực hiện
+
+```text
+2026-06-27
+```
+
+## Đã hoàn thành
+
+- [x] **Loại bỏ ràng buộc dư thừa cơ sở dữ liệu**:
+  - Gỡ bỏ `CHK_vehicles_category` check constraint trong SQL schema để khớp với các lớp Java Enums (`SEDAN`, `MPV`, `SUV`, v.v.) giúp seed dữ liệu xe chạy độc lập.
+- [x] **Xây dựng trang Bản đồ độc lập (`/map`)**:
+  - Đăng ký route mới trong `App.tsx` trỏ trực tiếp đến `MarketplacePage` ở chế độ mở bản đồ mặc định (`forceMapOpen={true}`).
+  - Tích hợp liên kết menu **Bản đồ** kèm badge đếm xe trực quan màu đỏ nổi bật `[25]` cạnh chữ ở cả Desktop và Mobile Navbar.
+- [x] **Cải tiến Layout Bản đồ chia đôi viewport và Collapsible Sidebar**:
+  - Phân vùng Desktop thành hai bên rõ rệt: 35% danh sách xe và 65% tương tác bản đồ.
+  - Hỗ trợ trạng thái mở rộng bản đồ 100% full-screen mặc định trên load, thu gọn sidebar xe bằng nút "Thu gọn danh sách", và mở ra bằng nút nổi "Mở danh sách xe".
+- [x] **Hệ thống Marker 3 cấp tương tác cao cấp (Mioto Style)**:
+  - Cấp 1: Các nhãn xe đơn lẻ hiển thị mặc định dưới dạng `'1 xe'` để bản đồ sạch thoáng.
+  - Cấp 2: Click vào nhãn hiển thị nhãn giá tiền màu trắng tương ứng (ví dụ: `680K`).
+  - Cấp 3: Click tiếp vào nhãn giá tiền sẽ highlight màu xanh lá cây đậm và kéo trượt ngang khay xe booking dưới đáy bản đồ lên. Click ra ngoài nền bản đồ để reset.
+- [x] **Các nút công cụ Map Widgets**:
+  - Tích hợp nút compass định vị GPS hiện vị trí người dùng và nút ô tô center toàn bộ xe đang ghim.
+  - Bổ sung chú thích map legend rõ ràng ở góc dưới bên phải.
+
+## Thay đổi chi tiết - Nguyễn Văn Dạng (DE190324)
+
+| STT | Nội dung thay đổi | Người thực hiện | File/Module liên quan | Minh chứng |
+|---:|---|---|---|---|
+| 1 | Xóa check constraint CHK_vehicles_category | Nguyễn Văn Dạng | `schema.sql`, `V0.1__schema.sql` | Script SQL |
+| 2 | Đăng ký route /map và Badge Navbar | Nguyễn Văn Dạng | `App.tsx`, `Navbar.tsx` | Badge [25] màu đỏ |
+| 3 | Triển khai 3-tier Map Marker và collapse sidebar | Nguyễn Văn Dạng | `LuxeWayMap.tsx`, `MarketplacePage.tsx` | Nhãn '1 xe' -> Giá -> Green box |
+| 4 | Fix các lỗi TypeScript liên quan đến typecast | Nguyễn Văn Dạng | `MarketplacePage.tsx`, `LuxeWayMap.tsx` | npm run build thành công |
+
+## AI có hỗ trợ không?
+
+- [x] Có
+- [ ] Không
+
+Nếu có, mô tả AI đã hỗ trợ phần nào:
+
+```text
+AI (Antigravity) hỗ trợ:
+- Gợi ý cơ chế sử dụng state & react refs (selectedVehicleIdRef, revealedPriceVehicleIdsRef) để loại bỏ stale closures khi cập nhật style marker trong MapLibre event listeners.
+- Tái cấu trúc layout CSS Grid/Flexbox điều chỉnh co giãn của Map Panel khi Sidebar ẩn/hiện.
+- Khắc phục các lỗi typescript compiler liên quan đến optional fields.
+```
+
+## Commit/Screenshot minh chứng
+
+```text
+Branch: main
+Commit: feat: implement Vietnam vehicle rental map discovery page with collapsible list and 3-tier marker interactions
+```
 
 ---
 
@@ -1263,5 +1322,5 @@ Sinh viên/nhóm cam kết rằng nội dung changelog phản ánh đúng các t
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-06-20 |
+| Nguyễn Văn Dạng - DE190324 | 2026-06-27 |
 

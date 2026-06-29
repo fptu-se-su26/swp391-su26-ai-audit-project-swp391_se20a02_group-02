@@ -777,6 +777,21 @@ Audit LuxeWay Car Rental Platform:
 - **Verification:** `./gradlew compileJava` thành công, `npm run build` thành công 100% không còn warning/error.
 
 ---
+---
+
+## Log #22
+
+- **Date:** 2026-06-27
+- **Author:** Nguyễn Văn Dạng (DE190324)
+- **AI Tool:** Antigravity
+- **Purpose:** Triển khai Driver License Constraints & Mioto Map Discovery System.
+- **Prompt Reference:** PROMPTS.md#prompt-23
+- **AI Output Summary:** Gợi ý cách sửa lỗi database check constraint `CHK_vehicles_category`; hướng dẫn cấu hình `/map` route và Navbar đếm badge; cung cấp code update logic `updateMarkers` trong `LuxeWayMap.tsx` để hỗ trợ 3-tier marker interaction (`1 xe` -> white price tag -> green box) cùng collapsible sidebar xe bên trái.
+- **Human Decision:** Áp dụng toàn bộ logic refactoring map markers, tự cấu hình style class và icons cho toggle floating button ở đáy bản đồ, sửa lỗi typecast TypeScript.
+- **Applied To:** `schema.sql`, `V0.1__schema.sql`, `App.tsx`, `Navbar.tsx`, `LuxeWayMap.tsx`, `MarketplacePage.tsx`.
+- **Verification:** Chạy build frontend và gradle compile backend hoàn toàn sạch lỗi, chạy runtime trang `/map` hiển thị bản đồ toàn màn hình cùng các chức năng click zoom/selection chính xác.
+
+---
 
 ## 10. Cam kết học thuật
 
@@ -790,5 +805,5 @@ Sinh viên/nhóm cam kết rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-06-20 |
+| Nguyễn Văn Dạng - DE190324 | 2026-06-27 |
 
