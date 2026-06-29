@@ -69,6 +69,9 @@ Sinh viên/nhóm cần ghi lại:
 | 15 | 2026-06-06 | Antigravity | Tách thực thể Vehicle thành Car và Motorbike chuyên biệt | Hỏi về cách phân chia Vehicle thành Car và Motorbike | Tạo các thực thể Car/Motorbike riêng, các API service/controller tương ứng ở backend và các page marketplace riêng ở frontend | Có | src/Back_end/, src/Front_end/ |
 | 16 | 2026-06-07 | Antigravity | Redesign Landing Page Premium, promotions table, và translate notifications | Hỏi redesign Landing Page premium, promotions DB table và dịch notifications song ngữ | LiveActivitySection, RevenueCalculator, promotions migration và translateNotification | Có | LandingPage.tsx, translations.ts |
 | 17 | 2026-06-12 | Antigravity | Tối ưu hóa UI/UX Dashboard, Design System components | Hỏi đại tu giao diện Dashboard, tạo Avatar, StatusBadge, Breadcrumbs, và shimmer skeletons | globals.css, dashboards (Customer, Owner, Admin), Avatar, StatusBadge, Breadcrumbs, Skeleton | Có | dashboards, globals.css, components/ui/ |
+| 18 | 2026-06-20 | Antigravity | Hệ thống eKYC & Ràng buộc bằng lái xe | Hỏi cách tích hợp FPT.AI eKYC API, xử lý stepper 4 bước và cấu hình ràng buộc bằng lái xe máy/ô tô ở Backend | VnptEkycService, EkycScanner, BookingService checks, Admin KYC reviews tab | Có | src/Back_end/, MyDocuments.tsx |
+| 19 | 2026-06-27 | Antigravity | Bản đồ tìm xe & Marker 3 cấp | Hỏi cách sửa lỗi CHK_vehicles_category constraint, đăng ký route /map và thiết kế 3-tier markers tương tác | CHK_category fix, /map route, red Navbar badge, 3-tier Map marker handlers | Có | LuxeWayMap.tsx, MarketplacePage.tsx |
+| 20 | 2026-06-29 | Antigravity | Overhaul Map Full-Screen & Advanced Filters Drawer | Hỏi cách cập nhật FPT.AI API Key mới, đồng bộ kycStatus ở /auth/me, chặn xe máy thuê ô tô và overhaul map 100% có drawer lọc nâng cao | .env key update, Auth DTOs sync, strict license check error, w-full map with filters drawer, scroll-hiding button | Có | .env, BookingService.java, MarketplacePage.tsx |
 
 ---
 
@@ -1860,6 +1863,75 @@ Bản đồ được tích hợp thành công, tương tác 3 cấp hoạt độ
 
 ---
 
+### Prompt số 20
+
+| Nội dung | Thông tin |
+|---|---|
+| Ngày sử dụng | 2026-06-29 |
+| Công cụ AI | Antigravity |
+| Mục đích | Overhaul bản đồ full-screen, sửa lỗi kẹt trạng thái KYC và chặn bằng xe máy thuê ô tô |
+| Phần việc liên quan | Frontend UI/UX & Backend Core Validation |
+| Mức độ sử dụng | Thiết kế tương tác & Code |
+
+#### 5.1. Prompt nguyên văn
+
+```text
+1. I need to update the FPT.AI API key to "jTvJG13HCzWUlM5ZIt4oZdP7t2EChMhP" in .env and run-be.bat.
+2. Map the kycStatus and driverLicenseStatus properties in AuthDTOs and /auth/me profile responses so the frontend store is in sync.
+3. Ensure a motorbike license class (starts with A) blocks car booking and throws a clear Vietnamese error message: "Bằng lái xe máy hạng A1 không được phép thuê xe ô tô. Vui lòng sử dụng bằng lái xe ô tô (B1, B2, C...)".
+4. Redesign the marketplace map layout on desktop to be a full-screen toggle instead of split screen. Add a sliding Advanced Filters drawer overlay and implement scroll-aware hiding logic on the floating toggle button.
+```
+
+#### 5.2. Bối cảnh khi viết prompt
+
+```text
+Cần tinh chỉnh toàn bộ luồng eKYC và giao diện bản đồ cho khớp hoàn toàn với trải nghiệm cao cấp của ứng dụng thuê xe thực tế Mioto tại Việt Nam.
+```
+
+#### 5.3. Kết quả AI trả về
+
+```text
+AI cung cấp:
+- Hướng dẫn cấu hình FPTAI_API_KEY mới.
+- Code sửa đổi DTO và endpoints /auth/me ở Backend cùng authService ở Frontend.
+- Logic kiểm tra phân hạng bằng lái xe máy/ô tô tại BookingService.java.
+- Tái cấu trúc class JSX và CSS của MarketplacePage.tsx để ẩn/hiện full-screen bản đồ, tạo Drawer bộ lọc nâng cao trượt Framer Motion và scroll listener ẩn nút.
+```
+
+#### 5.4. Kết quả đã áp dụng vào bài
+
+```text
+Tích hợp thành công 100%. Bản đồ tự động toggle toàn màn hình, nút bấm tự động ẩn khi cuộn xuống và trượt lên khi cuộn lên rất mượt mà.
+```
+
+#### 5.5. Phần sinh viên/nhóm đã chỉnh sửa hoặc cải tiến
+
+```text
+- Căn chỉnh thiết kế ngăn lọc Drawer và overlay màu tối mờ (backdrop-blur-sm) khớp chuẩn với giao diện chung.
+- Sửa lỗi điều hướng đường dẫn card xe trên bản đồ khớp với luồng /cars/ và /motorbikes/.
+```
+
+#### 5.6. Đánh giá chất lượng prompt
+
+- [x] Prompt rõ ràng
+- [x] Prompt có đủ bối cảnh
+- [ ] Prompt còn thiếu thông tin
+- [x] Prompt tạo ra kết quả tốt
+- [ ] Prompt tạo ra kết quả chưa phù hợp
+- [ ] Cần hỏi lại AI nhiều lần
+- [x] Cần tự kiểm tra và chỉnh sửa nhiều
+- [ ] Kết quả AI có lỗi hoặc chưa chính xác
+
+#### 5.7. Minh chứng liên quan
+
+| Loại minh chứng | Nội dung |
+|---|---|
+| File liên quan | `.env`, `BookingService.java`, `MarketplacePage.tsx`, `AuthController.java`, `AuthService.java` |
+| Kết quả chạy/test | npm run build thành công 0 lỗi, gradle build compile backend 0 lỗi |
+| Link commit | `feat: implement premium full-screen Mioto-style map toggle layout with advanced filters drawer and scroll-aware button` |
+
+---
+
 ## 11. Cam kết sử dụng prompt minh bạch
 
 Sinh viên/nhóm cam kết rằng:
@@ -1872,5 +1944,5 @@ Sinh viên/nhóm cam kết rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-06-27 |
+| Nguyễn Văn Dạng - DE190324 | 2026-06-29 |
 

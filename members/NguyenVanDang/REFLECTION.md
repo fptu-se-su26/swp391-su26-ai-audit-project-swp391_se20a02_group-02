@@ -967,6 +967,37 @@ Trong giai đoạn này (Phase 6.1), mình đã cùng Antigravity hoàn thiện 
 
 ---
 
+## Reflection — Phase 6.2: Advanced eKYC & Mioto Full-Screen Map UI Refinement (2026-06-29)
+
+### Tóm tắt
+
+Trong giai đoạn này (Phase 6.2), mình đã cùng Antigravity hoàn thiện các cơ chế xác thực nâng cao và tinh chỉnh giao diện bản đồ tìm xe full-screen. Các thay đổi bao gồm cập nhật FPT.AI API key, sửa lỗi đồng bộ trạng thái eKYC giữa BE và FE qua endpoint `/auth/me`, triển khai ràng buộc phân hạng bằng lái xe máy/ô tô chặt chẽ tại `BookingService.java` để ngăn chặn hành vi lách luật đặt xe, và overhaul giao diện bản đồ full-screen (Mioto style layout) có khay trượt bộ lọc nâng cao thời gian thực và nút chuyển đổi thông minh tự động ẩn/hiện khi cuộn trang.
+
+### Những điều học được
+
+```text
+1. Thiết kế DTO và REST Endpoint đồng nhất (DTO Consistency):
+   Việc chỉ cập nhật trạng thái trong cơ sở dữ liệu khi reset KYC là chưa đủ. Nếu API kiểm tra phiên đăng nhập hiện tại (/auth/me) không trả về kycStatus trong DTO UserInfo, Frontend sẽ liên tục hiển thị sai lệch trạng thái người dùng dẫn đến xung đột tải lên. Cần đảm bảo đồng nhất truyền tải dữ liệu qua tất cả các Auth endpoints.
+
+2. Áp dụng quy tắc nghiệp vụ thực tế (Strict Business Validation):
+   Sự khác biệt giữa bằng lái xe máy (A1, A2...) và ô tô (B1, B2, C...) cần được phân loại chặt chẽ trong lõi Backend BookingService. Sửa lỗi này giúp ngăn chặn triệt để lỗ hổng nghiệp vụ pháp lý, đảm bảo an toàn giao thông cho LuxeWay.
+
+3. Tối ưu hóa UI/UX toàn màn hình và Tương tác Động:
+   Overhaul giao diện sang dạng 100% full-screen map loại bỏ hoàn toàn sự lộn xộn của split-screen cũ. Khay bộ lọc Drawer overlay trượt mượt mà và nút điều hướng tự động ẩn khi lướt xuống (Scroll Down) để đọc danh sách và hiện lại khi cuộn lên (Scroll Up) đem lại cảm giác ứng dụng di động bản địa (native-like UX), nâng tầm trải nghiệm của LuxeWay lên phân khúc premium.
+```
+
+### Tự đánh giá Phase 6.2
+
+| Tiêu chí | Điểm | Ghi chú |
+|---|:---:|---|
+| Hiểu vấn đề trước khi fix | 5 | Xác định đúng lỗi mất đồng bộ token state và bug điều hướng bản đồ |
+| Fix đúng nguyên nhân gốc | 5 | Thiết kế drawer overlay, scroll direction detector và update BookingService |
+| Kiểm chứng sau fix | 5 | Biên dịch Gradle Backend 0 lỗi, build Vite Frontend 0 lỗi |
+| Ghi lại đầy đủ | 5 | Cập nhật đầy đủ 4 files audit trong NguyenVanDang folder |
+| Sử dụng AI có trách nhiệm | 5 | Tự thiết kế logic Framer Motion, kiểm tra cấu hình kỹ lưỡng trước khi chạy |
+
+---
+
 ## 17. Cam kết Reflection
 
 Em/nhóm cam kết rằng nội dung reflection này phản ánh trung thực quá trình sử dụng AI và quá trình học tập trong bài tập/project.
@@ -980,5 +1011,5 @@ Sinh viên/nhóm hiểu rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-06-27 |
+| Nguyễn Văn Dạng - DE190324 | 2026-06-29 |
 

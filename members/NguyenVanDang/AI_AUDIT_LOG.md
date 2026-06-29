@@ -793,6 +793,22 @@ Audit LuxeWay Car Rental Platform:
 
 ---
 
+## Log #23
+
+- **Date:** 2026-06-29
+- **Author:** Nguyễn Văn Dạng (DE190324)
+- **AI Tool:** Antigravity
+- **Purpose:** Cập nhật FPT.AI API Key, đồng bộ trạng thái eKYC giữa BE/FE, chặn bằng xe máy đặt ô tô và overhaul bản đồ full-screen (Mioto style) có Advanced Filters Drawer.
+- **Prompt Reference:** PROMPTS.md#prompt-20
+- **AI Output Summary:** Gợi ý cấu hình FPTAI_API_KEY mới, code chỉnh sửa DTO và endpoints ở backend cùng authService ở frontend, logic validation hạng bằng lái trong `BookingService.java`, và UI/UX cho bản đồ full-screen toggle, ngăn lọc trượt drawer và scroll auto-hide button ở `MarketplacePage.tsx`.
+- **Human Decision:** Áp dụng các thay đổi cấu hình API, DTO mapping và các validation rules. Thiết kế và tối ưu ngăn lọc Drawer overlay đè bản đồ full-screen, sửa lỗi link card trên bản đồ sang `/cars/` và `/motorbikes/`.
+- **Applied To:**
+  - Backend: [`.env`](file:///d:/Project_ALL_Mon/swp391-su26-ai-audit-project-swp391_se20a02_group-02/.env), [`run-be.bat`](file:///d:/Project_ALL_Mon/swp391-su26-ai-audit-project-swp391_se20a02_group-02/run-be.bat), [`AuthDTOs.java`](file:///d:/Project_ALL_Mon/swp391-su26-ai-audit-project-swp391_se20a02_group-02/src/Back_end/src/main/java/com/luxeway/dto/auth/AuthDTOs.java), [`AuthController.java`](file:///d:/Project_ALL_Mon/swp391-su26-ai-audit-project-swp391_se20a02_group-02/src/Back_end/src/main/java/com/luxeway/controller/AuthController.java), [`AuthService.java`](file:///d:/Project_ALL_Mon/swp391-su26-ai-audit-project-swp391_se20a02_group-02/src/Back_end/src/main/java/com/luxeway/service/AuthService.java), [`UserController.java`](file:///d:/Project_ALL_Mon/swp391-su26-ai-audit-project-swp391_se20a02_group-02/src/Back_end/src/main/java/com/luxeway/controller/UserController.java), [`BookingService.java`](file:///d:/Project_ALL_Mon/swp391-su26-ai-audit-project-swp391_se20a02_group-02/src/Back_end/src/main/java/com/luxeway/service/BookingService.java).
+  - Frontend: [`authService.ts`](file:///d:/Project_ALL_Mon/swp391-su26-ai-audit-project-swp391_se20a02_group-02/src/Front_end/src/services/authService.ts), [`MarketplacePage.tsx`](file:///d:/Project_ALL_Mon/swp391-su26-ai-audit-project-swp391_se20a02_group-02/src/Front_end/src/pages/marketplace/MarketplacePage.tsx).
+- **Verification:** Biên dịch Gradle Backend thành công, build Vite Frontend thành công 0 lỗi. Chạy thử nghiệm quét tài liệu bằng API key mới thành công, hiển thị chính xác trạng thái KYC VERIFIED, chặn đặt xe ô tô bằng bằng lái xe máy và bản đồ trượt bộ lọc drawer hoạt động hoàn hảo.
+
+---
+
 ## 10. Cam kết học thuật
 
 Sinh viên/nhóm cam kết rằng:
@@ -805,5 +821,5 @@ Sinh viên/nhóm cam kết rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-06-27 |
+| Nguyễn Văn Dạng - DE190324 | 2026-06-29 |
 
