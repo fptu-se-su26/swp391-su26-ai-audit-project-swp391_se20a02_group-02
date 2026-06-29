@@ -204,9 +204,8 @@ export const NavbarDropdown: React.FC<NavbarDropdownProps> = ({ isOpen, onClose 
   } else {
     // Customer
     menuItems = [
-      { icon: Calendar, label: l.myBookings, href: '/dashboard/bookings' },
-      { icon: Heart, label: l.favorites, href: '/dashboard/wishlist' },
-      { icon: User, label: l.profile, href: '/dashboard/profile' },
+      { icon: Calendar, label: 'Dashboard', href: '/dashboard' },
+      { icon: User, label: 'Profile', href: '/dashboard/profile' },
     ];
   }
 
@@ -281,7 +280,7 @@ export const NavbarDropdown: React.FC<NavbarDropdownProps> = ({ isOpen, onClose 
               className="flex items-center gap-3.5 w-full px-4 py-3 rounded-2xl text-sm font-black text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all duration-200"
             >
               <LogOut className="w-5 h-5" />
-              <span>{l.logout}</span>
+              <span>Logout</span>
             </button>
           </div>
         </motion.div>

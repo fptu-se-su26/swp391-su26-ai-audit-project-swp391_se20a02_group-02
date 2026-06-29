@@ -308,6 +308,8 @@ public class AuthService {
         userInfo.setKycVerified(user.getKycVerified());
         userInfo.setWalletBalance(user.getWalletBalance());
         userInfo.setPreferredLanguage(user.getPreferredLanguage());
+        userInfo.setKycStatus(user.getKycStatus());
+        userInfo.setDriverLicenseStatus(user.getDriverLicenseStatus());
 
         AuthDTOs.AuthResponse response = new AuthDTOs.AuthResponse();
         response.setAccessToken(accessToken);

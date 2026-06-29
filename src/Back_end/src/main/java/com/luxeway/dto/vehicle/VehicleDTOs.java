@@ -42,6 +42,7 @@ public class VehicleDTOs {
         private String engineSize;
         private String color;
         private String licensePlate;
+        private String vin;
         private String status;
         private String approvalStatus;
 
@@ -97,6 +98,8 @@ public class VehicleDTOs {
         private String fuelType;
         private String color;
         private String licensePlate;
+        private String vin;
+        private Boolean isLocked;
         private String status;
         private String approvalStatus;
         private String approvalNote;

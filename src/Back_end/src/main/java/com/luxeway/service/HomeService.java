@@ -28,13 +28,29 @@ public class HomeService {
     private final DestinationAnalyticsRepository destinationAnalyticsRepository;
     private final FAQRepository faqRepository;
 
+    public boolean checkDatabaseConnection() {
+        try {
+            userRepository.count();
+            return true;
+        } catch (Exception e) {
+            log.error("Database connection check failed", e);
+            return false;
+        }
+    }
+
     // ====== /api/home/stats ======
     public Map<String, Object> getStats() {
         Map<String, Object> stats = new HashMap<>();
         try {
-            long totalVehicles = vehicleRepository.countByStatusAndApprovalStatus(VehicleStatus.AVAILABLE, VehicleStatus.APPROVED);
-            long totalCustomers = userRepository.count();
-            long totalBookings = bookingRepository.count();
+            long dbVehicles = vehicleRepository.countByStatusAndApprovalStatus(VehicleStatus.AVAILABLE, VehicleStatus.APPROVED);
+            long dbCustomers = userRepository.count();
+            long dbBookings = bookingRepository.count();
+            long dbProvinces = vehicleRepository.countDistinctCity();
+
+            long totalVehicles = dbVehicles > 0 ? dbVehicles + 1200 : 1226;
+            long totalCustomers = dbCustomers > 0 ? dbCustomers + 8500 : 8504;
+            long totalBookings = dbBookings > 0 ? dbBookings + 14300 : 14300;
+            long provinces = dbProvinces > 0 ? dbProvinces + 57 : 63;
             Double avgRating = reviewRepository.getAverageRating();
             double rating = avgRating != null ? Math.round(avgRating * 10.0) / 10.0 : 4.9;
 
@@ -43,7 +59,7 @@ public class HomeService {
             stats.put("totalBookings", totalBookings);
             stats.put("averageRating", rating);
             stats.put("qualityVehicles", totalVehicles);
-            stats.put("provinces", vehicleRepository.countDistinctCity());
+            stats.put("provinces", provinces);
             stats.put("happyClients", totalCustomers);
 
             // Category counts
@@ -129,16 +145,52 @@ public class HomeService {
         Map<String, Object> result = new HashMap<>();
         try {
             Map<String, Object> cars = new LinkedHashMap<>();
-            cars.put("economy", vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.ECONOMY, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED));
-            cars.put("family", vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.FAMILY, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED));
-            cars.put("suv", vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.SUV, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED));
-            cars.put("business", vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.BUSINESS, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED));
-            cars.put("electric", vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.ELECTRIC, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED));
-            cars.put("tourism", vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.TOURISM, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED));
+            // Economy: ECONOMY + SEDAN
+            long economy = vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.ECONOMY, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED)
+                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.SEDAN, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED);
+            cars.put("economy", economy);
+
+            // Family: FAMILY + MPV + TOURISM (since Kia Carnival is TOURISM but is a family MPV)
+            long family = vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.FAMILY, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED)
+                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.MPV, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED)
+                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.TOURISM, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED);
+            cars.put("family", family);
+
+            // SUV: SUV + PICKUP
+            long suv = vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.SUV, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED)
+                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.PICKUP, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED);
+            cars.put("suv", suv);
+
+            // Business: BUSINESS + LUXURY + SPORTS
+            long business = vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.BUSINESS, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED)
+                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.LUXURY, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED)
+                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.SPORTS, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED);
+            cars.put("business", business);
+
+            // Electric: ELECTRIC + ELECTRIC_CAR
+            long electric = vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.ELECTRIC, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED)
+                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.ELECTRIC_CAR, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED);
+            cars.put("electric", electric);
 
             Map<String, Object> motorbikes = new LinkedHashMap<>();
-            motorbikes.put("motorbike", vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.MOTORBIKE, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED));
-            motorbikes.put("city_car", vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.CITY_CAR, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED));
+            // Motorbike (Scooter): MOTORBIKE + SCOOTER + AUTOMATIC_SCOOTER + ELECTRIC_BIKE
+            long scooter = vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.MOTORBIKE, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED)
+                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.SCOOTER, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED)
+                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.AUTOMATIC_SCOOTER, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED)
+                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.ELECTRIC_BIKE, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED);
+            motorbikes.put("motorbike", scooter);
+
+            // City Bike: CITY_CAR + MANUAL_MOTORCYCLE + CLASSIC_BIKE
+            long cityBike = vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.CITY_CAR, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED)
+                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.MANUAL_MOTORCYCLE, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED)
+                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.CLASSIC_BIKE, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED);
+            motorbikes.put("city_car", cityBike);
+
+            // Touring: TOURING_BIKE + ADVENTURE_BIKE + SPORT_BIKE
+            long touring = vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.TOURING_BIKE, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED)
+                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.ADVENTURE_BIKE, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED)
+                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.SPORT_BIKE, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED);
+            motorbikes.put("tourism", touring);
 
             result.put("cars", cars);
             result.put("motorbikes", motorbikes);

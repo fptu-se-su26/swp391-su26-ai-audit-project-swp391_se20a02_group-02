@@ -756,9 +756,15 @@ export const MyDocuments: React.FC = () => {
                   <p className="text-sm text-green-600 font-bold">
                     Your KYC has been approved. You can rent vehicles now.
                   </p>
-                  <p className="text-xs text-slate-400">
+                   <p className="text-xs text-slate-400">
                     Your account is fully verified. Thank you for completing the verification process!
                   </p>
+                  <button
+                    onClick={handleResetKyc}
+                    className="mt-6 py-2.5 px-6 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-colors"
+                  >
+                    Reset & Test KYC Upload Again
+                  </button>
                 </>
               ) : user?.kycStatus === 'REJECTED' ? (
                 <>

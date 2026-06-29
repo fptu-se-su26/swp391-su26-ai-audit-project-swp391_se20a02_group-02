@@ -8,7 +8,7 @@ import {
 import type { Vehicle } from '@/types';
 import { useVehicleStore, useAuthStore } from '@/store';
 import { useToast } from '@/components/ui/Toast';
-import { cn, formatCurrency } from '@/utils';
+import { cn, formatCurrency, resolveImageUrl } from '@/utils';
 import { cardHoverVariants } from '@/animations/variants';
 import { useT } from '@/i18n/translations';
 
@@ -37,9 +37,9 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
 
   const wishlisted = isWishlisted(vehicle.id);
 
-  const images = vehicle.images && vehicle.images.length > 0 
+  const images = (vehicle.images && vehicle.images.length > 0 
     ? vehicle.images 
-    : [vehicle.thumbnailUrl || FALLBACK_IMAGE];
+    : [vehicle.thumbnailUrl || FALLBACK_IMAGE]).map(img => resolveImageUrl(img || FALLBACK_IMAGE));
 
   const handleWishlist = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -125,6 +125,9 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
                 imageLoaded ? 'opacity-100' : 'opacity-80'
               )}
               onLoad={() => setImageLoaded(true)}
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src = FALLBACK_IMAGE;
+              }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
 
@@ -306,6 +309,9 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
               imageLoaded ? 'opacity-100' : 'opacity-80'
             )}
             onLoad={() => setImageLoaded(true)}
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).src = FALLBACK_IMAGE;
+            }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
 

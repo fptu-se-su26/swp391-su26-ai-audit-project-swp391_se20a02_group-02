@@ -506,7 +506,7 @@ const BookingWizardPage: React.FC = () => {
   const [couponLoading, setCouponLoading] = useState(false);
 
   // Payment state
-  const [paymentMethod, setPaymentMethod] = useState('vnpay');
+  const [paymentMethod, setPaymentMethod] = useState('momo');
   const [cardNumber, setCardNumber] = useState('');
   const [cardExpiry, setCardExpiry] = useState('');
   const [cardCVC, setCardCVC] = useState('');
@@ -635,7 +635,7 @@ const BookingWizardPage: React.FC = () => {
         );
 
         // 2. Process payment
-        const returnUrl = `${window.location.origin}/payment/vnpay/return`;
+        const returnUrl = `${window.location.origin}/payment/${paymentMethod.toLowerCase()}/return`;
         const paymentResult = await paymentService.processPayment(
           booking.id,
           paymentMethod,
@@ -1265,13 +1265,29 @@ const BookingWizardPage: React.FC = () => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
                     <PaymentMethodCard
+                      id="momo"
+                      label="MoMo"
+                      sublabel={isVi ? 'Ví điện tử MoMo' : 'MoMo e-Wallet'}
+                      icon={<span className="text-pink-650 font-black">M</span>}
+                      selected={paymentMethod === 'momo'}
+                      onClick={() => setPaymentMethod('momo')}
+                      badge={isVi ? 'Khuyên dùng' : 'Recommended'}
+                    />
+                    <PaymentMethodCard
+                      id="payos"
+                      label="PayOS"
+                      sublabel={isVi ? 'Chuyển khoản nhanh 24/7' : 'Quick QR Transfer'}
+                      icon={<Zap className="w-5 h-5 text-emerald-500" />}
+                      selected={paymentMethod === 'payos'}
+                      onClick={() => setPaymentMethod('payos')}
+                    />
+                    <PaymentMethodCard
                       id="vnpay"
                       label="VNPay"
                       sublabel={isVi ? 'Ngân hàng VN, QR Pay' : 'Vietnam Banks, QR Pay'}
                       icon={<span>🏦</span>}
                       selected={paymentMethod === 'vnpay'}
                       onClick={() => setPaymentMethod('vnpay')}
-                      badge={isVi ? 'Phổ biến' : 'Popular'}
                     />
                     <PaymentMethodCard
                       id="wallet"
@@ -1299,10 +1315,44 @@ const BookingWizardPage: React.FC = () => {
                     />
                   </div>
 
+                  {/* MoMo info */}
+                  {paymentMethod === 'momo' && (
+                    <motion.div variants={fadeUp} initial="hidden" animate="visible"
+                      className="p-5 rounded-2xl mb-4 font-sans"
+                      style={{ background: 'linear-gradient(135deg, #FFF0F6, #FFF5F9)', border: '1px solid #FBCFE8' }}>
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className="w-5 h-5 rounded bg-pink-500 text-white font-bold flex items-center justify-center text-xs">M</span>
+                        <p className="font-bold text-pink-800">{isVi ? 'Thanh toán qua MoMo' : 'Pay with MoMo e-Wallet'}</p>
+                      </div>
+                      <p className="text-sm text-pink-700">
+                        {isVi
+                          ? 'Bạn sẽ được chuyển hướng tới cổng thanh toán MoMo để thực hiện giao dịch.'
+                          : "You'll be redirected to MoMo's secure payment gateway."}
+                      </p>
+                    </motion.div>
+                  )}
+
+                  {/* PayOS info */}
+                  {paymentMethod === 'payos' && (
+                    <motion.div variants={fadeUp} initial="hidden" animate="visible"
+                      className="p-5 rounded-2xl mb-4 font-sans"
+                      style={{ background: 'linear-gradient(135deg, #ECFDF5, #F0FDF4)', border: '1px solid #A7F3D0' }}>
+                      <div className="flex items-center gap-3 mb-3">
+                        <Zap className="w-5 h-5 text-emerald-500" />
+                        <p className="font-bold text-emerald-800">{isVi ? 'Thanh toán qua PayOS' : 'Pay with PayOS'}</p>
+                      </div>
+                      <p className="text-sm text-emerald-700">
+                        {isVi
+                          ? 'Quét mã QR chuyển khoản ngân hàng nhanh 24/7 qua cổng PayOS.'
+                          : 'Scan the QR code to complete a quick 24/7 bank transfer via PayOS.'}
+                      </p>
+                    </motion.div>
+                  )}
+
                   {/* VNPay info */}
                   {paymentMethod === 'vnpay' && (
                     <motion.div variants={fadeUp} initial="hidden" animate="visible"
-                      className="p-5 rounded-2xl mb-4"
+                      className="p-5 rounded-2xl mb-4 font-sans"
                       style={{ background: 'linear-gradient(135deg, #EEF2FF, #F5F3FF)', border: '1px solid #C7D2FE' }}>
                       <div className="flex items-center gap-3 mb-3">
                         <Building2 className="w-5 h-5 text-indigo-500" />

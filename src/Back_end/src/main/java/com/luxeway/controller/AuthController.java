@@ -59,6 +59,8 @@ public class AuthController {
         info.setVerified(user.getVerified());
         info.setKycVerified(user.getKycVerified());
         info.setWalletBalance(user.getWalletBalance());
+        info.setKycStatus(user.getKycStatus());
+        info.setDriverLicenseStatus(user.getDriverLicenseStatus());
         return ResponseEntity.ok(ApiResponse.success(info));
     }
 

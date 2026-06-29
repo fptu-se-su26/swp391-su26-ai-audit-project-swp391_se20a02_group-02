@@ -663,20 +663,17 @@ const AdminDashboard: React.FC = () => {
   const activeFraudAlertsCount = fraudAlerts.filter(f => f.status === 'pending').length;
 
   const menuItems = [
-    { id: 'overview', label: t.adminDashboard.overview, icon: BarChart2, badge: 0 },
-    { id: 'marketplace', label: t.adminDashboard.marketplace, icon: Globe, badge: 0 },
-    { id: 'vehicles', label: t.adminDashboard.vehicles, icon: Car, badge: pendingApprovalsCount },
-    { id: 'kyc', label: t.adminDashboard.kyc, icon: Shield, badge: pendingKycCount },
-    { id: 'bookings', label: t.adminDashboard.bookings, icon: Calendar, badge: 0 },
-    { id: 'payments', label: t.adminDashboard.payments, icon: DollarSign, badge: failedPaymentsCount },
-    { id: 'disputes', label: t.adminDashboard.disputes, icon: Scale, badge: openDisputesCount },
-    { id: 'users', label: t.adminDashboard.users, icon: Users, badge: 0 },
-    { id: 'fraud', label: t.adminDashboard.fraud, icon: ShieldAlert, badge: activeFraudAlertsCount },
-    { id: 'analytics', label: t.adminDashboard.analytics, icon: TrendingUp, badge: 0 },
-    { id: 'notifications', label: t.adminDashboard.notifications, icon: Bell, badge: 0 },
-    { id: 'logs', label: t.adminDashboard.logs, icon: FileText, badge: 0 },
-    { id: 'health', label: t.adminDashboard.health, icon: Activity, badge: 0 },
-    { id: 'settings', label: t.adminDashboard.settings, icon: Settings, badge: 0 },
+    { id: 'overview', label: 'Overview', icon: BarChart2, badge: 0 },
+    { id: 'users', label: 'User Management', icon: Users, badge: 0 },
+    { id: 'vehicles', label: 'Vehicle Approval', icon: Car, badge: pendingApprovalsCount },
+    { id: 'kyc', label: 'KYC Review', icon: Shield, badge: pendingKycCount },
+    { id: 'bookings', label: 'Bookings', icon: Calendar, badge: 0 },
+    { id: 'payments', label: 'Payments', icon: DollarSign, badge: failedPaymentsCount },
+    { id: 'disputes', label: 'Disputes', icon: Scale, badge: openDisputesCount },
+    { id: 'fraud', label: 'Fraud Center', icon: ShieldAlert, badge: activeFraudAlertsCount },
+    { id: 'analytics', label: 'Analytics', icon: TrendingUp, badge: 0 },
+    { id: 'logs', label: 'Audit Logs', icon: FileText, badge: 0 },
+    { id: 'health', label: 'System Health', icon: Activity, badge: 0 },
   ] as const;
 
   // Search filter calculations

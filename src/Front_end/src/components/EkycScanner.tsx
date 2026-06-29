@@ -112,28 +112,28 @@ export const EkycScanner: React.FC<EkycScannerProps> = ({ onComplete, onCancel }
   };
 
   return (
-    <div className="glass border border-slate-200/50 dark:border-white/5 rounded-[2rem] p-6 lg:p-8 shadow-xl max-w-3xl mx-auto w-full relative overflow-hidden">
+    <div className="bg-white dark:bg-[#131F35] border border-slate-200 dark:border-[#1E2D45] rounded-md p-6 lg:p-8 shadow-sm max-w-3xl mx-auto w-full relative overflow-hidden font-sans">
       <button 
         onClick={onCancel}
-        className="absolute top-6 right-6 p-2 rounded-full hover:bg-slate-500/10 transition-colors"
+        className="absolute top-6 right-6 p-2 rounded-md hover:bg-slate-500/10 transition-colors"
       >
         <X className="w-5 h-5 text-slate-500" />
       </button>
 
       <div className="mb-8">
-        <h2 className="text-2xl font-display font-extrabold text-slate-800 dark:text-white mb-2">
+        <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-2 display-font">
           eKYC Identity Verification
         </h2>
-        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+        <p className="text-xs text-slate-500 dark:text-slate-400">
           We use VNPT eKYC IDCheck to verify your Vietnamese Citizen Identity Card (CCCD) quickly and securely.
         </p>
       </div>
 
       {/* Progress Steps */}
       <div className="flex items-center justify-between mb-8 relative">
-        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-slate-200 dark:bg-slate-700 rounded-full z-0">
+        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-[2px] bg-slate-200 dark:bg-slate-700 z-0">
           <div 
-            className="h-full bg-accent rounded-full transition-all duration-500"
+            className="h-full bg-[#D4AF37] transition-all duration-500"
             style={{ 
               width: step === 'front' ? '0%' : step === 'back' ? '33%' : step === 'verify' ? '66%' : '100%' 
             }}
@@ -151,15 +151,15 @@ export const EkycScanner: React.FC<EkycScannerProps> = ({ onComplete, onCancel }
           
           return (
             <div key={s.id} className="relative z-10 flex flex-col items-center">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${
+              <div className={`w-7 h-7 rounded-sm flex items-center justify-center font-bold text-xs transition-all duration-300 ${
                 isActive || isPassed 
-                  ? 'bg-accent text-white shadow-lg shadow-blue-500/30 ring-4 ring-blue-500/20 dark:ring-blue-500/10' 
-                  : 'bg-slate-200 dark:bg-slate-800 text-slate-500'
+                  ? 'bg-[#D4AF37] text-[#0B1221]' 
+                  : 'bg-slate-200 dark:bg-slate-850 text-slate-500'
               }`}>
-                {isPassed ? <CheckCircle className="w-4 h-4" /> : s.num}
+                {isPassed ? <CheckCircle className="w-4 h-4 text-[#0B1221]" /> : s.num}
               </div>
-              <span className={`text-[10px] font-bold uppercase tracking-wider mt-2 ${
-                isActive || isPassed ? 'text-slate-800 dark:text-white' : 'text-slate-400'
+              <span className={`text-[9px] font-bold uppercase tracking-wider mt-2 ${
+                isActive || isPassed ? 'text-slate-850 dark:text-white' : 'text-slate-400'
               }`}>
                 {s.label}
               </span>
@@ -178,8 +178,8 @@ export const EkycScanner: React.FC<EkycScannerProps> = ({ onComplete, onCancel }
             className="space-y-6"
           >
             <div className="text-center">
-              <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-1">Upload CCCD Front Side</h3>
-              <p className="text-xs text-slate-500">Please make sure the image is clear and all text is readable.</p>
+              <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-1">Upload CCCD Front Side</h3>
+              <p className="text-[11px] text-slate-500">Please make sure the image is clear and all text is readable.</p>
             </div>
 
             <input 
@@ -193,21 +193,21 @@ export const EkycScanner: React.FC<EkycScannerProps> = ({ onComplete, onCancel }
             {!frontPreview ? (
               <div 
                 onClick={() => frontInputRef.current?.click()}
-                className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-2xl p-10 flex flex-col items-center justify-center cursor-pointer hover:border-accent hover:bg-blue-500/5 transition-all group"
+                className="border border-dashed border-slate-300 dark:border-slate-700 rounded-md p-10 flex flex-col items-center justify-center cursor-pointer hover:border-[#D4AF37] transition-all group"
               >
-                <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <UploadCloud className="w-8 h-8 text-slate-400 group-hover:text-accent" />
+                <div className="w-12 h-12 bg-slate-100 dark:bg-[#1E2D45] rounded-md flex items-center justify-center mb-4 transition-transform">
+                  <UploadCloud className="w-6 h-6 text-slate-400 group-hover:text-[#D4AF37]" />
                 </div>
-                <p className="font-bold text-slate-700 dark:text-slate-300 mb-1">Click to upload or drag and drop</p>
-                <p className="text-xs text-slate-500">SVG, PNG, JPG or GIF (max. 10MB)</p>
+                <p className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Click to upload or drag and drop</p>
+                <p className="text-[10px] text-slate-500">SVG, PNG, JPG or GIF (max. 10MB)</p>
               </div>
             ) : (
-              <div className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 aspect-[1.6]">
+              <div className="relative rounded-md overflow-hidden border border-slate-200 dark:border-[#1E2D45] aspect-[1.6]">
                 <img src={frontPreview} alt="CCCD Front" className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                   <button 
                     onClick={() => frontInputRef.current?.click()}
-                    className="btn-glass px-4 py-2 font-bold text-sm"
+                    className="bg-white/90 text-black rounded-md px-4 py-2 text-xs uppercase tracking-wider font-bold"
                   >
                     Change Image
                   </button>
@@ -216,15 +216,15 @@ export const EkycScanner: React.FC<EkycScannerProps> = ({ onComplete, onCancel }
             )}
 
             <div className="flex justify-end gap-3 pt-4">
-              <button onClick={onCancel} className="btn-ghost px-6 py-3 rounded-xl font-bold text-sm">
+              <button onClick={onCancel} className="px-6 py-3 border border-slate-200 dark:border-[#1E2D45] hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md font-bold text-xs uppercase tracking-wider transition-all">
                 Cancel
               </button>
               <button 
                 onClick={handleScanFront} 
                 disabled={!frontImage || loading}
-                className="btn-primary px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2"
+                className="bg-[#D4AF37] hover:bg-[#E5C158] text-[#0B1221] px-6 py-3 rounded-md font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2"
               >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Scan Front Side'}
+                {loading ? <Loader2 className="w-4 h-4 animate-spin text-[#0B1221]" /> : 'Scan Front Side'}
                 {!loading && <ArrowRight className="w-4 h-4" />}
               </button>
             </div>
@@ -240,8 +240,8 @@ export const EkycScanner: React.FC<EkycScannerProps> = ({ onComplete, onCancel }
             className="space-y-6"
           >
             <div className="text-center">
-              <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-1">Upload CCCD Back Side</h3>
-              <p className="text-xs text-slate-500">Please provide the back side of the same identity card.</p>
+              <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-1">Upload CCCD Back Side</h3>
+              <p className="text-[11px] text-slate-500">Please provide the back side of the same identity card.</p>
             </div>
 
             <input 
@@ -255,21 +255,21 @@ export const EkycScanner: React.FC<EkycScannerProps> = ({ onComplete, onCancel }
             {!backPreview ? (
               <div 
                 onClick={() => backInputRef.current?.click()}
-                className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-2xl p-10 flex flex-col items-center justify-center cursor-pointer hover:border-accent hover:bg-blue-500/5 transition-all group"
+                className="border border-dashed border-slate-300 dark:border-slate-700 rounded-md p-10 flex flex-col items-center justify-center cursor-pointer hover:border-[#D4AF37] transition-all group"
               >
-                <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <UploadCloud className="w-8 h-8 text-slate-400 group-hover:text-accent" />
+                <div className="w-12 h-12 bg-slate-100 dark:bg-[#1E2D45] rounded-md flex items-center justify-center mb-4 transition-transform">
+                  <UploadCloud className="w-6 h-6 text-slate-400 group-hover:text-[#D4AF37]" />
                 </div>
-                <p className="font-bold text-slate-700 dark:text-slate-300 mb-1">Click to upload or drag and drop</p>
-                <p className="text-xs text-slate-500">SVG, PNG, JPG or GIF (max. 10MB)</p>
+                <p className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Click to upload or drag and drop</p>
+                <p className="text-[10px] text-slate-500">SVG, PNG, JPG or GIF (max. 10MB)</p>
               </div>
             ) : (
-              <div className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 aspect-[1.6]">
+              <div className="relative rounded-md overflow-hidden border border-slate-200 dark:border-[#1E2D45] aspect-[1.6]">
                 <img src={backPreview} alt="CCCD Back" className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                   <button 
                     onClick={() => backInputRef.current?.click()}
-                    className="btn-glass px-4 py-2 font-bold text-sm"
+                    className="bg-white/90 text-black rounded-md px-4 py-2 text-xs uppercase tracking-wider font-bold"
                   >
                     Change Image
                   </button>
@@ -278,15 +278,15 @@ export const EkycScanner: React.FC<EkycScannerProps> = ({ onComplete, onCancel }
             )}
 
             <div className="flex justify-between items-center pt-4">
-              <button onClick={() => setStep('front')} className="btn-ghost px-6 py-3 rounded-xl font-bold text-sm">
+              <button onClick={() => setStep('front')} className="px-6 py-3 border border-slate-200 dark:border-[#1E2D45] hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md font-bold text-xs uppercase tracking-wider transition-all">
                 Back
               </button>
               <button 
                 onClick={handleScanBack} 
                 disabled={!backImage || loading}
-                className="btn-primary px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2"
+                className="bg-[#D4AF37] hover:bg-[#E5C158] text-[#0B1221] px-6 py-3 rounded-md font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2"
               >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Scan Back Side'}
+                {loading ? <Loader2 className="w-4 h-4 animate-spin text-[#0B1221]" /> : 'Scan Back Side'}
                 {!loading && <ArrowRight className="w-4 h-4" />}
               </button>
             </div>
@@ -296,80 +296,80 @@ export const EkycScanner: React.FC<EkycScannerProps> = ({ onComplete, onCancel }
         {step === 'verify' && frontData?.data && (
           <motion.div
             key="verify"
-            initial={{ opacity: 0, scale: 0.95 }}
+            initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
+            exit={{ opacity: 0, scale: 0.98 }}
             className="space-y-6"
           >
             <div className="text-center">
-              <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-1">Confirm Information</h3>
-              <p className="text-xs text-slate-500">Please review the extracted information carefully before submitting.</p>
+              <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-1">Confirm Information</h3>
+              <p className="text-[11px] text-slate-500">Please review the extracted information carefully before submitting.</p>
             </div>
 
-            <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
+            <div className="bg-slate-50/50 dark:bg-[#1E2D45]/30 rounded-md p-6 border border-slate-200 dark:border-[#1E2D45]">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-6">
                 <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Họ và tên / Full Name</span>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Họ và tên / Full Name</span>
                   <p className="font-bold text-slate-800 dark:text-white text-sm">{frontData.data.fullName || '-'}</p>
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Số CCCD / ID Number</span>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Số CCCD / ID Number</span>
                   <p className="font-bold text-slate-800 dark:text-white text-sm">{frontData.data.idNumber || '-'}</p>
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Ngày sinh / Date of Birth</span>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Ngày sinh / Date of Birth</span>
                   <p className="font-bold text-slate-800 dark:text-white text-sm">{frontData.data.dateOfBirth || '-'}</p>
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Giới tính / Gender</span>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Giới tính / Gender</span>
                   <p className="font-bold text-slate-800 dark:text-white text-sm">{frontData.data.gender || '-'}</p>
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Quốc tịch / Nationality</span>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Quốc tịch / Nationality</span>
                   <p className="font-bold text-slate-800 dark:text-white text-sm">{frontData.data.nationality || '-'}</p>
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Ngày hết hạn / Expiry Date</span>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Ngày hết hạn / Expiry Date</span>
                   <p className="font-bold text-slate-800 dark:text-white text-sm">{frontData.data.expiryDate || '-'}</p>
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Quê quán / Place of Origin</span>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Quê quán / Place of Origin</span>
                   <p className="font-bold text-slate-800 dark:text-white text-sm">{frontData.data.placeOfOrigin || '-'}</p>
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Ngày cấp / Issue Date</span>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Ngày cấp / Issue Date</span>
                   <p className="font-bold text-slate-800 dark:text-white text-sm">{(backData?.data?.issueDate) || '-'}</p>
                 </div>
                 <div className="md:col-span-2">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Nơi thường trú / Place of Residence</span>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Nơi thường trú / Place of Residence</span>
                   <p className="font-bold text-slate-800 dark:text-white text-sm">{frontData.data.placeOfResidence || '-'}</p>
                 </div>
                 {(backData?.data?.personalIdentification) && (
                   <div className="md:col-span-2">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Đặc điểm nhận dạng / Features</span>
+                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Đặc điểm nhận dạng / Features</span>
                     <p className="font-bold text-slate-800 dark:text-white text-sm">{backData.data.personalIdentification}</p>
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/30 rounded-xl p-4 flex gap-3">
-              <AlertCircle className="w-5 h-5 text-blue-500 flex-shrink-0" />
-              <p className="text-xs text-blue-800 dark:text-blue-300">
+            <div className="bg-slate-50 dark:bg-[#1E2D45]/30 border border-slate-200 dark:border-[#1E2D45] rounded-md p-4 flex gap-3">
+              <AlertCircle className="w-5 h-5 text-[#D4AF37] flex-shrink-0" />
+              <p className="text-[11px] text-slate-600 dark:text-slate-300">
                 By clicking "Verify & Complete", you confirm that the information above is accurate and belongs to you.
               </p>
             </div>
 
             <div className="flex justify-between items-center pt-4">
-              <button onClick={() => setStep('back')} className="btn-ghost px-6 py-3 rounded-xl font-bold text-sm">
+              <button onClick={() => setStep('back')} className="px-6 py-3 border border-slate-200 dark:border-[#1E2D45] hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md font-bold text-xs uppercase tracking-wider transition-all">
                 Go Back
               </button>
               <button 
                 onClick={handleVerify} 
                 disabled={loading}
-                className="btn-primary px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2"
+                className="bg-[#D4AF37] hover:bg-[#E5C158] text-[#0B1221] px-6 py-3 rounded-md font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2"
               >
-                {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+                {loading && <Loader2 className="w-4 h-4 animate-spin text-[#0B1221]" />}
                 {loading ? 'Verifying...' : 'Verify & Complete'}
               </button>
             </div>
@@ -379,22 +379,22 @@ export const EkycScanner: React.FC<EkycScannerProps> = ({ onComplete, onCancel }
         {step === 'success' && (
           <motion.div
             key="success"
-            initial={{ opacity: 0, scale: 0.9 }}
+            initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
             className="text-center py-8"
           >
-            <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-              <CheckCircle className="w-10 h-10 text-success" />
+            <div className="w-14 h-14 bg-emerald-500/10 rounded-md flex items-center justify-center mx-auto mb-6">
+              <CheckCircle className="w-8 h-8 text-emerald-500" />
             </div>
-            <h3 className="text-2xl font-display font-extrabold text-slate-800 dark:text-white mb-2">
+            <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2 display-font">
               Verification Successful!
             </h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto mb-8">
+            <p className="text-xs text-slate-550 dark:text-slate-400 max-w-sm mx-auto mb-8">
               Your identity has been verified through VNPT eKYC. Your account is now fully active for all services.
             </p>
             <button 
               onClick={onComplete}
-              className="btn-primary px-8 py-3 rounded-xl font-bold text-sm"
+              className="bg-[#D4AF37] hover:bg-[#E5C158] text-[#0B1221] px-8 py-3 rounded-md font-bold text-xs uppercase tracking-wider transition-all"
             >
               Return to Dashboard
             </button>

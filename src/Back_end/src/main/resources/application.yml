@@ -105,9 +105,24 @@ payment:
     return-url: ${FRONTEND_URL}/payment/vnpay/return
     # VNPay callback IP whitelist for security (comma-separated)
     allowed-ips: ${VNPAY_ALLOWED_IPS:203.171.19.146,203.171.19.147,203.171.19.148}
+  momo:
+    partner-code: ${MOMO_PARTNER_CODE:MOMO}
+    access-key: ${MOMO_ACCESS_KEY:F8BBA842ECF85}
+    secret-key: ${MOMO_SECRET_KEY:K951B6PE1waDMi640xX08PD3vg6EkVlz}
+    endpoint: ${MOMO_ENDPOINT:https://test-payment.momo.vn/v2/gateway/api/create}
+    return-url: ${MOMO_RETURN_URL:http://localhost:5173/payment/momo/return}
+    ipn-url: ${MOMO_IPN_URL:http://localhost:5101/api/payment/momo-ipn}
+    request-type: ${MOMO_REQUEST_TYPE:payWithMethod}
+  payos:
+    client-id: ${PAYOS_CLIENT_ID:df05a25a-08ed-4ca8-b98a-8d41530faba0}
+    api-key: ${PAYOS_API_KEY:df869361-323d-4db6-89d8-8f3b04e9bc91}
+    checksum-key: ${PAYOS_CHECKSUM_KEY:5863a512571ebfbde1321dbce7d57d1f9bd1e80f680d2c2172aef87d919fe1fa}
+    endpoint: ${PAYOS_ENDPOINT:https://api-merchant.payos.vn/v2/payment-requests}
+    return-url: ${PAYOS_RETURN_URL:http://localhost:5173/payment/payos/return}
+    cancel-url: ${PAYOS_CANCEL_URL:http://localhost:5173/payment/payos/return}
   stripe:
-    public-key: ${STRIPE_PUBLIC_KEY}
-    secret-key: ${STRIPE_SECRET_KEY}
+    public-key: ${STRIPE_PUBLIC_KEY:pk_test_mock}
+    secret-key: ${STRIPE_SECRET_KEY:sk_test_mock}
 
 # Business Rules
 business:
@@ -123,7 +138,7 @@ business:
 
 gemini:
   api-key: ${GEMINI_API_KEY:mock_key}
-  model: ${GEMINI_MODEL:gemini-1.5-flash}
+  model: ${GEMINI_MODEL:gemini-2.5-flash}
 
 goong:
   api-key: ${GOONG_API_KEY:mock_goong_key}

@@ -47,8 +47,15 @@ const mapVehicle = (v: any): Vehicle => {
     advanceBookingDays: 1
   };
 
-  const resolvedThumbnailUrl = resolveImageUrl(v.thumbnailUrl);
-  const resolvedImages = (v.images || []).map((img: string) => resolveImageUrl(img));
+  // Backend may return images in vehicleImages/galleryImages in addition to images
+  const rawImages = v.images?.length ? v.images 
+    : v.vehicleImages?.length ? v.vehicleImages
+    : v.galleryImages?.length ? [v.primaryImage, ...v.galleryImages].filter(Boolean)
+    : v.primaryImage ? [v.primaryImage]
+    : v.thumbnailUrl ? [v.thumbnailUrl]
+    : [];
+  const resolvedThumbnailUrl = resolveImageUrl(v.thumbnailUrl || v.primaryImage || rawImages[0] || '');
+  const resolvedImages = rawImages.map((img: string) => resolveImageUrl(img)).filter(Boolean);
   const resolvedOwner = v.owner ? {
     ...v.owner,
     avatar: resolveImageUrl(v.owner.avatar)
@@ -111,6 +118,7 @@ const transformToBackendPayload = (data: Partial<Vehicle>): any => {
     name: data.name,
     brand: data.brand,
     model: data.model,
+    vin: data.vin,
     year: data.year ? parseInt(data.year as any, 10) : undefined,
     category: data.category ? data.category.toUpperCase() : undefined,
     description: data.description,
@@ -372,8 +380,9 @@ export const vehicleService = {
   async getVehicleDetail(id: string): Promise<Vehicle | null> {
     try {
       const response = await apiClient.get<any>(`/vehicles/${id}/detail`);
-      const v = response.data || response;
-      return v ? mapVehicle(v) : null;
+      // Backend wraps in { vehicle: {...} }
+      const v = response.vehicle || response.data?.vehicle || response.data || response;
+      return v && v.id ? mapVehicle(v) : null;
     } catch (error) {
       console.error(`Failed to get vehicle detail ${id}`, error);
       return null;
@@ -440,6 +449,24 @@ export const vehicleService = {
       return response.vehicle ? mapVehicle(response.vehicle) : null;
     } catch (error) {
       return null;
+    }
+  },
+
+  async controlLock(id: string): Promise<{ success: boolean; isLocked: boolean; message: string }> {
+    try {
+      const response = await apiClient.post<any>(`/vehicles/${id}/control-lock`, {});
+      return response;
+    } catch (error) {
+      return { success: false, isLocked: true, message: 'Failed to lock vehicle' };
+    }
+  },
+
+  async controlUnlock(id: string): Promise<{ success: boolean; isLocked: boolean; message: string }> {
+    try {
+      const response = await apiClient.post<any>(`/vehicles/${id}/control-unlock`, {});
+      return response;
+    } catch (error) {
+      return { success: false, isLocked: false, message: 'Failed to unlock vehicle' };
     }
   },
 

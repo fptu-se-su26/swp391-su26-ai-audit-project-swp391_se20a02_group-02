@@ -4,8 +4,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 import org.springframework.stereotype.Component;
+import java.util.Objects;
 
 @Slf4j
 @Component
@@ -18,6 +21,29 @@ public class DatabaseMigration implements CommandLineRunner {
     @Override
     public void run(String... args) {
         log.info("Running custom database migrations...");
+
+        // Programmatically run sample data seeding if database is empty
+        try {
+            Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'users'", Integer.class);
+            if (count != null && count > 0) {
+                Integer userCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM users WHERE email = 'admin@luxeway.vn'", Integer.class);
+                if (userCount == null || userCount == 0) {
+                    log.info("No sample data detected. Seeding database using import-data.sql...");
+                    ResourceDatabasePopulator populator = new ResourceDatabasePopulator(
+                        new ClassPathResource("import-data.sql")
+                    );
+                    populator.execute(Objects.requireNonNull(jdbcTemplate.getDataSource()));
+                    log.info("Database successfully seeded with sample data.");
+                } else {
+                    log.info("Sample data already exists. Skipping import-data.sql seeding.");
+                }
+            } else {
+                log.warn("users table does not exist yet! Skipping import-data.sql seeding.");
+            }
+        } catch (Exception e) {
+            log.error("Failed to seed database using import-data.sql: {}", e.getMessage(), e);
+        }
 
         // Fix CHK_user_docs_type check constraint to include 'SELFIE'
         try {

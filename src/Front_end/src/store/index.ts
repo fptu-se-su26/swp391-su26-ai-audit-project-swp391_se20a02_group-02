@@ -271,7 +271,7 @@ export const useUIStore = create<UIStore>()(
           if (lang && ['en', 'vi', 'ja', 'ko', 'zh', 'fr', 'de', 'es'].includes(lang)) return lang as Language;
         } catch {}
         return 'en';
-      })() as Language,
+      })(),
       currency: (() => {
         try {
           const curr = localStorage.getItem('currency');
@@ -308,15 +308,31 @@ export const useUIStore = create<UIStore>()(
       },
 
       setLanguage: (lang) => {
+        const currentLang = get().language;
+        if (currentLang === lang) return;
+
         set({ language: lang });
-        // Sync with i18n (uses 'language' key in localStorage)
         try { localStorage.setItem('language', lang); } catch {}
         import('@/i18n/config').then(m => m.default.changeLanguage(lang));
 
-        // Sync with database if logged in
-        const authUser = useAuthStore.getState().user;
-        if (authUser && authUser.preferredLanguage !== lang) {
-          useAuthStore.getState().updateUser({ preferredLanguage: lang });
+        // Sync to backend user profile if logged in and language is different
+        const authStore = useAuthStore.getState();
+        if (authStore.user && authStore.user.preferredLanguage !== lang) {
+          const updatedUser = { ...authStore.user, preferredLanguage: lang };
+          useAuthStore.setState({ user: updatedUser });
+          localStorage.setItem('luxeway_user', JSON.stringify(updatedUser));
+
+          apiClient.put(`/users/${authStore.user.id}`, {
+            firstName: authStore.user.firstName,
+            lastName: authStore.user.lastName,
+            phone: authStore.user.phone,
+            bio: authStore.user.bio,
+            location: authStore.user.location,
+            avatar: authStore.user.avatar,
+            preferredLanguage: lang,
+            licenseClass: authStore.user.licenseClass,
+            licenseNumber: authStore.user.licenseNumber
+          }).catch(err => console.warn('Failed to sync language to backend', err));
         }
       },
 

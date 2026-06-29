@@ -116,11 +116,10 @@ public class GeminiService {
         String aiResponse = "";
         String rawResponse = "";
 
-        // Check if API Key is mock or empty or invalid (doesn't start with AIzaSy)
-        if (apiKey == null || apiKey.trim().isEmpty() || "mock_key".equals(apiKey) || !apiKey.startsWith("AIzaSy")) {
-            log.info("Gemini API key is mock, empty, or invalid. Using luxury concierge mock response logic.");
+        if (!hasConfiguredGeminiKey()) {
+            log.info("Gemini API key is missing or placeholder. Using luxury concierge mock response logic.");
             aiResponse = generateMockResponse(userMessage, user, recentBookings, contextBooking, contextVehicle);
-            rawResponse = "{\"mock\": true, \"reason\": \"API key is not configured or mock_key or invalid\"}";
+            rawResponse = "{\"mock\": true, \"reason\": \"API key is not configured or is still a placeholder\"}";
         } else {
             try {
                 // Call Google Generative AI API
@@ -168,6 +167,17 @@ public class GeminiService {
         return result;
     }
 
+
+    private boolean hasConfiguredGeminiKey() {
+        if (apiKey == null) return false;
+        String key = apiKey.trim();
+        if (key.isEmpty()) return false;
+        String lowerKey = key.toLowerCase(Locale.ROOT);
+        return !lowerKey.equals("mock_key")
+                && !lowerKey.contains("your-gemini-api-key")
+                && !lowerKey.contains("placeholder")
+                && !lowerKey.contains("change_me");
+    }
     private String buildSystemPrompt(User user, List<Booking> recentBookings, Booking contextBooking, Vehicle contextVehicle) {
         StringBuilder sb = new StringBuilder();
         sb.append("You are the LuxeWay AI Concierge, a luxury enterprise customer support agent for LuxeWay.\n");

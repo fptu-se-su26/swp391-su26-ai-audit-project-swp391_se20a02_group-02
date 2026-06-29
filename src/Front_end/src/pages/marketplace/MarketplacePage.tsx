@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import {
   Search, SlidersHorizontal, Grid3X3, List, X, ChevronDown,
   MapPin, Sparkles, ArrowUpDown, Shield, Car, Bike,
@@ -33,42 +33,32 @@ const formatVND = (amount: number): string => {
 
 // ====== CAR CATEGORIES ======
 const CAR_CATEGORIES: { value: VehicleCategory; label: string; icon: string }[] = [
-  { value: 'economy', label: 'Economy', icon: '🚗' },
   { value: 'sedan', label: 'Sedan', icon: '🚘' },
   { value: 'suv', label: 'SUV', icon: '🚙' },
-  { value: 'mpv', label: 'MPV', icon: '🚐' },
   { value: 'luxury', label: 'Luxury', icon: '💎' },
-  { value: 'business', label: 'Business', icon: '💼' },
   { value: 'electric_car', label: 'Electric', icon: '⚡' },
-  { value: 'sports', label: 'Sports', icon: '🏎️' },
-  { value: 'pickup', label: 'Pickup', icon: '🛻' },
 ];
 
 // ====== MOTORBIKE CATEGORIES ======
 const MOTORBIKE_CATEGORIES: { value: VehicleCategory; label: string; icon: string }[] = [
   { value: 'scooter', label: 'Scooter', icon: '🛵' },
-  { value: 'automatic_scooter', label: 'Auto Scooter', icon: '🛵' },
   { value: 'manual_motorcycle', label: 'Manual', icon: '🏍️' },
   { value: 'sport_bike', label: 'Sport Bike', icon: '🏍️' },
-  { value: 'touring_bike', label: 'Touring', icon: '🏕️' },
-  { value: 'adventure_bike', label: 'Adventure', icon: '🌄' },
-  { value: 'classic_bike', label: 'Classic', icon: '🏛️' },
-  { value: 'electric_bike', label: 'Electric', icon: '⚡' },
 ];
 
 // ====== CAR BRANDS ======
-const CAR_BRANDS = ['Toyota', 'Honda', 'Mazda', 'Hyundai', 'Kia', 'Ford', 'Mitsubishi', 'VinFast', 'Mercedes-Benz', 'BMW', 'Audi', 'Porsche'];
+const CAR_BRANDS = ['Toyota', 'BMW', 'Mercedes-Benz', 'VinFast', 'Honda'];
 
 // ====== MOTORBIKE BRANDS ======
-const MOTO_BRANDS = ['Honda', 'Yamaha', 'Suzuki', 'VinFast', 'Kawasaki', 'Piaggio', 'Vespa', 'SYM'];
+const MOTO_BRANDS = ['Honda', 'Yamaha', 'VinFast'];
 
 const SORT_OPTIONS = [
-  { value: 'popular', label: 'Phổ biến nhất' },
-  { value: 'nearest', label: 'Gần tôi nhất' },
-  { value: 'rating', label: 'Đánh giá cao' },
-  { value: 'price_asc', label: 'Giá thấp → cao' },
-  { value: 'price_desc', label: 'Giá cao → thấp' },
-  { value: 'newest', label: 'Mới nhất' },
+  { value: 'popular', label: 'Most Popular' },
+  { value: 'nearest', label: 'Nearest to me' },
+  { value: 'rating', label: 'Highest Rated' },
+  { value: 'price_asc', label: 'Price: Low to High' },
+  { value: 'price_desc', label: 'Price: High to Low' },
+  { value: 'newest', label: 'Newest First' },
 ];
 
 // ====== COMPACT SIDEBAR CARD FOR MAP VIEW ======
@@ -85,6 +75,8 @@ const CompactSidebarCard: React.FC<CompactSidebarCardProps> = ({
   hovered,
   locationText
 }) => {
+  const { language } = useUIStore();
+  const isVi = language === 'vi';
   const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=800';
   const thumbnailSrc = vehicle.images?.[0] || vehicle.thumbnailUrl || FALLBACK_IMAGE;
   
@@ -122,7 +114,7 @@ const CompactSidebarCard: React.FC<CompactSidebarCardProps> = ({
           <div className="flex items-center gap-1 mt-1 text-[10px] text-slate-500 dark:text-slate-405 font-bold">
             <span className="text-amber-500 text-xs">★</span>
             <span>{vehicle.rating ? Number(vehicle.rating).toFixed(1) : '5.0'}</span>
-            <span>({vehicle.totalReviews || 12} chuyến)</span>
+            <span>({vehicle.totalReviews || 12} {isVi ? 'chuyến' : 'trips'})</span>
           </div>
 
           {/* Location */}
@@ -135,7 +127,7 @@ const CompactSidebarCard: React.FC<CompactSidebarCardProps> = ({
         {/* Distance & Price */}
         <div className="flex items-center justify-between mt-2 border-t border-slate-100 dark:border-slate-800/80 pt-1.5">
           <span className="text-[10px] font-bold text-slate-450 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg">{distanceText}</span>
-          <span className="text-xs sm:text-sm font-black text-emerald-500 dark:text-emerald-400">{finalPriceText}/ngày</span>
+          <span className="text-xs sm:text-sm font-black text-emerald-500 dark:text-emerald-400">{finalPriceText}/{isVi ? 'ngày' : 'day'}</span>
         </div>
       </div>
     </div>
@@ -161,17 +153,17 @@ const CarFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: VehicleF
     <div className="space-y-6 max-h-[80vh] overflow-y-auto pr-2 pb-6">
       <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
         <h3 className="font-display font-bold text-foreground text-base flex items-center gap-2">
-          <Car className="w-4 h-4 text-blue-500" /> Lọc Xe Ô Tô
+          <Car className="w-4 h-4 text-blue-500" /> Car Filters
         </h3>
         <div className="flex gap-2">
-          <button onClick={() => onChange({ vehicleType: 'car' })} className="text-xs text-accent hover:underline font-bold">Xóa lọc</button>
+          <button onClick={() => onChange({ vehicleType: 'car' })} className="text-xs text-accent hover:underline font-bold">Clear Filters</button>
           {onClose && <button onClick={onClose} className="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800"><X className="w-4 h-4 text-slate-400" /></button>}
         </div>
       </div>
 
       {/* Categories */}
       <div>
-        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Loại Xe</p>
+        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Category</p>
         <div className="grid grid-cols-2 gap-2">
           {CAR_CATEGORIES.map(cat => {
             const sel = (filters.category || []).includes(cat.value);
@@ -189,7 +181,7 @@ const CarFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: VehicleF
       {/* Price */}
       <div>
         <div className="flex justify-between items-center mb-3">
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Giá / Ngày</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Price / Day</p>
           <span className="text-xs font-bold text-foreground">{formatVND(priceRange[0])} – {formatVND(priceRange[1])}</span>
         </div>
         <input type="range" min={0} max={15000000} step={100000} value={priceRange[0]}
@@ -202,13 +194,13 @@ const CarFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: VehicleF
 
       {/* Seats */}
       <div>
-        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Số Ghế</p>
+        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Seats</p>
         <div className="flex gap-2">
           {[4, 5, 7, 9].map(s => (
             <button key={s} onClick={() => onChange({ ...filters, minSeats: filters.minSeats === s ? undefined : s })}
               className={cn("flex-1 py-2 rounded-xl text-xs font-bold border transition-all",
                 filters.minSeats === s ? "border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400" : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400")}>
-              {s} chỗ
+              {s} seats
             </button>
           ))}
         </div>
@@ -216,7 +208,7 @@ const CarFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: VehicleF
 
       {/* Transmission */}
       <div>
-        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Hộp Số</p>
+        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Transmission</p>
         <div className="flex gap-2">
           {(['automatic', 'manual'] as const).map(t => {
             const sel = (filters.transmission || []).includes(t);
@@ -224,7 +216,7 @@ const CarFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: VehicleF
               <button key={t} onClick={() => { onChange({ ...filters, transmission: sel ? undefined : [t] }); }}
                 className={cn("flex-1 py-2 rounded-xl text-xs font-bold border transition-all capitalize",
                   sel ? "border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400" : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400")}>
-                {t === 'automatic' ? 'Tự Động' : 'Số Sàn'}
+                {t === 'automatic' ? 'Automatic' : 'Manual'}
               </button>
             );
           })}
@@ -233,9 +225,9 @@ const CarFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: VehicleF
 
       {/* Fuel */}
       <div>
-        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Nhiên Liệu</p>
+        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Fuel Type</p>
         <div className="grid grid-cols-2 gap-2">
-          {[{ v: 'gasoline', l: '⛽ Xăng' }, { v: 'diesel', l: '🛢️ Dầu' }, { v: 'hybrid', l: '🌿 Hybrid' }, { v: 'electric', l: '⚡ Điện' }].map(f => {
+          {[{ v: 'gasoline', l: '⛽ Gasoline' }, { v: 'diesel', l: '🛢️ Diesel' }, { v: 'hybrid', l: '🌿 Hybrid' }, { v: 'electric', l: '⚡ Electric' }].map(f => {
             const sel = (filters.fuelType || []).includes(f.v as any);
             return (
               <button key={f.v} onClick={() => { onChange({ ...filters, fuelType: sel ? undefined : [f.v as any] }); }}
@@ -250,7 +242,7 @@ const CarFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: VehicleF
 
       {/* Brands */}
       <div>
-        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Thương Hiệu</p>
+        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Brands</p>
         <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
           {CAR_BRANDS.map(brand => {
             const checked = (filters.brands || []).includes(brand);
@@ -266,15 +258,15 @@ const CarFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: VehicleF
 
       {/* Car-specific services */}
       <div>
-        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Dịch Vụ Đặc Biệt</p>
+        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Special Services</p>
         <div className="space-y-2">
           {[
-            { key: 'hasChauffeur', icon: <UserCircle className="w-3.5 h-3.5" />, label: 'Có Tài Xế Riêng' },
-            { key: 'airportDelivery', icon: <Plane className="w-3.5 h-3.5" />, label: 'Giao Xe Sân Bay' },
-            { key: 'weddingRental', icon: <Heart className="w-3.5 h-3.5" />, label: 'Xe Đám Cưới' },
-            { key: 'businessRental', icon: <Briefcase className="w-3.5 h-3.5" />, label: 'Xe Doanh Nghiệp' },
-            { key: 'deliveryAvailable', icon: <MapPin className="w-3.5 h-3.5" />, label: 'Giao Xe Tận Nơi' },
-            { key: 'instantBook', icon: <Zap className="w-3.5 h-3.5" />, label: 'Đặt Ngay' },
+            { key: 'hasChauffeur', icon: <UserCircle className="w-3.5 h-3.5" />, label: 'Chauffeur Included' },
+            { key: 'airportDelivery', icon: <Plane className="w-3.5 h-3.5" />, label: 'Airport Delivery' },
+            { key: 'weddingRental', icon: <Heart className="w-3.5 h-3.5" />, label: 'Wedding Rental' },
+            { key: 'businessRental', icon: <Briefcase className="w-3.5 h-3.5" />, label: 'Business Rental' },
+            { key: 'deliveryAvailable', icon: <MapPin className="w-3.5 h-3.5" />, label: 'Door Delivery' },
+            { key: 'instantBook', icon: <Zap className="w-3.5 h-3.5" />, label: 'Instant Book' },
           ].map(f => (
             <label key={f.key} className="flex items-center gap-2.5 cursor-pointer group">
               <input type="checkbox" checked={!!(filters as any)[f.key]} onChange={() => toggleBool(f.key as keyof VehicleFilters)} className="rounded text-blue-500 accent-blue-500 w-4 h-4" />
@@ -288,7 +280,7 @@ const CarFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: VehicleF
 
       {/* Rating */}
       <div>
-        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Đánh Giá Tối Thiểu</p>
+        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Minimum Rating</p>
         <div className="flex gap-2">
           {[4.0, 4.5, 4.8].map(r => (
             <button key={r} onClick={() => onChange({ ...filters, minRating: filters.minRating === r ? undefined : r })}
@@ -320,17 +312,17 @@ const MotorbikeFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: Ve
     <div className="space-y-6 max-h-[80vh] overflow-y-auto pr-2 pb-6">
       <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
         <h3 className="font-display font-bold text-foreground text-base flex items-center gap-2">
-          <Bike className="w-4 h-4 text-orange-500" /> Lọc Xe Máy
+          <Bike className="w-4 h-4 text-orange-500" /> Motorbike Filters
         </h3>
         <div className="flex gap-2">
-          <button onClick={() => onChange({ vehicleType: 'motorbike' })} className="text-xs text-orange-500 hover:underline font-bold">Xóa lọc</button>
+          <button onClick={() => onChange({ vehicleType: 'motorbike' })} className="text-xs text-orange-500 hover:underline font-bold">Clear Filters</button>
           {onClose && <button onClick={onClose} className="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800"><X className="w-4 h-4 text-slate-400" /></button>}
         </div>
       </div>
 
       {/* Motorbike categories */}
       <div>
-        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Loại Xe Máy</p>
+        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Motorbike Category</p>
         <div className="grid grid-cols-2 gap-2">
           {MOTORBIKE_CATEGORIES.map(cat => {
             const sel = (filters.category || []).includes(cat.value);
@@ -348,7 +340,7 @@ const MotorbikeFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: Ve
       {/* Price range for motorbikes */}
       <div>
         <div className="flex justify-between items-center mb-3">
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Giá / Ngày</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Price / Day</p>
           <span className="text-xs font-bold text-foreground">{formatVND(priceRange[0])} – {formatVND(priceRange[1])}</span>
         </div>
         <input type="range" min={0} max={1500000} step={10000} value={priceRange[0]}
@@ -364,15 +356,12 @@ const MotorbikeFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: Ve
 
       {/* Engine CC */}
       <div>
-        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Dung Tích Máy (CC)</p>
+        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Engine Size (CC)</p>
         <div className="grid grid-cols-3 gap-2">
           {[
-            { label: '50cc', min: 50, max: 110 },
-            { label: '110cc', min: 110, max: 125 },
-            { label: '125cc', min: 125, max: 150 },
-            { label: '150cc', min: 150, max: 175 },
-            { label: '175cc', min: 175, max: 300 },
-            { label: '300cc+', min: 300, max: 9999 },
+            { label: '<125cc', min: 0, max: 125 },
+            { label: '125-200cc', min: 125, max: 200 },
+            { label: '200cc+', min: 200, max: 9999 },
           ].map(cc => {
             const sel = filters.minEngineCc === cc.min;
             return (
@@ -388,9 +377,9 @@ const MotorbikeFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: Ve
 
       {/* Transmission */}
       <div>
-        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Hộp Số</p>
+        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Transmission</p>
         <div className="flex gap-2">
-          {[{ v: 'automatic', l: '🔄 Tự Động' }, { v: 'manual', l: '⚙️ Số Côn' }].map(t => {
+          {[{ v: 'automatic', l: '🔄 Automatic' }, { v: 'manual', l: '⚙️ Manual' }].map(t => {
             const sel = (filters.transmission || []).includes(t.v as any);
             return (
               <button key={t.v} onClick={() => onChange({ ...filters, transmission: sel ? undefined : [t.v as any] })}
@@ -405,9 +394,9 @@ const MotorbikeFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: Ve
 
       {/* Fuel Type */}
       <div>
-        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Nhiên Liệu</p>
+        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Fuel Type</p>
         <div className="flex gap-2">
-          {[{ v: 'gasoline', l: '⛽ Xăng' }, { v: 'electric', l: '⚡ Điện' }].map(f => {
+          {[{ v: 'gasoline', l: '⛽ Gasoline' }, { v: 'electric', l: '⚡ Electric' }].map(f => {
             const sel = (filters.fuelType || []).includes(f.v as any);
             return (
               <button key={f.v} onClick={() => onChange({ ...filters, fuelType: sel ? undefined : [f.v as any] })}
@@ -422,7 +411,7 @@ const MotorbikeFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: Ve
 
       {/* Brands */}
       <div>
-        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Thương Hiệu</p>
+        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Brands</p>
         <div className="flex flex-wrap gap-2">
           {MOTO_BRANDS.map(brand => {
             const sel = (filters.brands || []).includes(brand);
@@ -439,14 +428,14 @@ const MotorbikeFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: Ve
 
       {/* Motorbike accessories */}
       <div>
-        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Trang Bị Kèm</p>
+        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Included Equipment</p>
         <div className="space-y-2">
           {[
-            { key: 'hasHelmet', icon: '🪖', label: 'Mũ Bảo Hiểm' },
-            { key: 'hasPhoneHolder', icon: '📱', label: 'Giá Đỡ Điện Thoại' },
-            { key: 'hasRaincoat', icon: '🌧️', label: 'Áo Mưa' },
-            { key: 'hasTouringPackage', icon: '🧳', label: 'Gói Touring' },
-            { key: 'instantBook', icon: '⚡', label: 'Đặt Ngay' },
+            { key: 'hasHelmet', icon: '🪖', label: 'Helmets' },
+            { key: 'hasPhoneHolder', icon: '📱', label: 'Phone Holder' },
+            { key: 'hasRaincoat', icon: '🌧️', label: 'Raincoat' },
+            { key: 'hasTouringPackage', icon: '🧳', label: 'Touring Package' },
+            { key: 'instantBook', icon: '⚡', label: 'Instant Book' },
           ].map(f => (
             <label key={f.key} className="flex items-center gap-2.5 cursor-pointer group">
               <input type="checkbox" checked={!!(filters as any)[f.key]} onChange={() => toggleBool(f.key as keyof VehicleFilters)} className="rounded text-orange-500 accent-orange-500 w-4 h-4" />
@@ -505,6 +494,7 @@ interface MarketplacePageProps {
 
 const MarketplacePage: React.FC<MarketplacePageProps> = ({ forceMapOpen = false }) => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { language } = useUIStore();
   const isVi = language === 'vi';
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -527,11 +517,34 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ forceMapOpen = false 
 
   const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=800';
 
+  const [showFloatingButton, setShowFloatingButton] = useState(true);
+  const lastScrollYRef = useRef(0);
+
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 1024);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      if (currentScrollY < 50) {
+        setShowFloatingButton(true);
+        lastScrollYRef.current = currentScrollY;
+        return;
+      }
+      if (currentScrollY > lastScrollYRef.current) {
+        setShowFloatingButton(false);
+      } else {
+        setShowFloatingButton(true);
+      }
+      lastScrollYRef.current = currentScrollY;
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const [hoveredVehicleId, setHoveredVehicleId] = useState<string | null>(null);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
@@ -708,9 +721,9 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ forceMapOpen = false 
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-1 py-3 overflow-x-auto scrollbar-hide">
             {[
-              { type: 'all' as const, label: 'Tất Cả Xe', icon: <Sparkles className="w-4 h-4" />, count: null },
-              { type: 'car' as const, label: 'Ô Tô', icon: <Car className="w-4 h-4" />, count: null },
-              { type: 'motorbike' as const, label: 'Xe Máy', icon: <Bike className="w-4 h-4" />, count: null },
+              { type: 'all' as const, label: isVi ? 'Tất Cả Xe' : 'All Vehicles', icon: <Sparkles className="w-4 h-4" />, count: null },
+              { type: 'car' as const, label: isVi ? 'Ô Tô' : 'Cars', icon: <Car className="w-4 h-4" />, count: null },
+              { type: 'motorbike' as const, label: isVi ? 'Xe Máy' : 'Motorbikes', icon: <Bike className="w-4 h-4" />, count: null },
             ].map(tab => (
               <button
                 key={tab.type}
@@ -777,7 +790,7 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ forceMapOpen = false 
                 type="text"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                placeholder={activeType === 'motorbike' ? '🏍️ Tìm xe máy... Vision, Exciter, SH...' : activeType === 'car' ? '🚗 Tìm ô tô... Vios, Camry, CX5...' : '🔍 Tìm xe... Honda, Toyota, VinFast...'}
+                placeholder={activeType === 'motorbike' ? '🏍️ Find motorbikes... Vision, Exciter, SH...' : activeType === 'car' ? '🚗 Find cars... Vios, Camry, CX5...' : '🔍 Find vehicles... Honda, Toyota, VinFast...'}
                 className="w-full pl-10 pr-10 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm outline-none text-foreground focus:border-accent focus:bg-white dark:focus:bg-slate-950 transition-all font-semibold"
               />
               {searchQuery && (
@@ -797,7 +810,7 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ forceMapOpen = false 
               )}
             >
               <SlidersHorizontal className="w-4 h-4" />
-              <span className="hidden sm:inline">Lọc</span>
+              <span className="hidden sm:inline">Filters</span>
               {activeFilterCount > 0 && (
                 <span className={cn("w-5 h-5 text-white text-[10px] font-extrabold rounded-full flex items-center justify-center",
                   activeType === 'motorbike' ? "bg-orange-500" : "bg-blue-500")}>
@@ -841,7 +854,7 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ forceMapOpen = false 
               className={cn("hidden lg:flex items-center gap-2 px-4 py-2.5 rounded-2xl border text-xs font-bold transition-all",
                 mapOpen ? "bg-accent/15 border-accent text-accent" : "border-slate-200 dark:border-slate-800 text-slate-500")}>
               <Map className="w-4 h-4" />
-              <span>Bản Đồ</span>
+              <span>Map</span>
             </button>
           </div>
         </div>
@@ -851,7 +864,7 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ forceMapOpen = false 
         <div className="flex gap-6 items-start">
           {/* Filter Sidebar */}
           <AnimatePresence>
-            {showFilters && (
+            {showFilters && !mapOpen && (
               <motion.aside
                 initial={{ width: 0, opacity: 0 }}
                 animate={{ width: 300, opacity: 1 }}
@@ -870,11 +883,9 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ forceMapOpen = false 
             )}
           </AnimatePresence>
 
-          {/* Catalog */}
           <div className={cn(
             "flex-1 min-w-0 transition-all duration-300 flex flex-col h-[calc(100vh-220px)]",
-            mapOpen && (isSidebarCollapsed ? "hidden lg:w-0 overflow-hidden pr-0" : "lg:w-[380px] xl:w-[420px] flex-shrink-0 border-r border-slate-100 dark:border-slate-800 pr-4 overflow-y-auto"),
-            mobileViewMode === 'map' ? 'hidden lg:block' : 'block'
+            (mapOpen || mobileViewMode === 'map') ? "hidden" : "block"
           )}>
             {/* Result count + active filters */}
             <div className="flex items-center justify-between mb-5 flex-shrink-0">
@@ -882,12 +893,12 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ forceMapOpen = false 
                 <p className="text-sm font-medium text-slate-450">
                   {mapOpen ? (
                     <span className="font-extrabold text-slate-800 dark:text-white text-base">
-                      Danh sách xe gần bạn ({total} xe)
+                      Vehicles near you ({total})
                     </span>
                   ) : (
-                    loading ? 'Đang tải...' : (
-                      <>Tìm thấy <span className="font-extrabold text-foreground">{total}</span>
-                        {' '}{activeType === 'motorbike' ? 'xe máy' : activeType === 'car' ? 'ô tô' : 'xe'}
+                    loading ? 'Loading...' : (
+                      <>Found <span className="font-extrabold text-foreground">{total}</span>
+                        {' '}{activeType === 'motorbike' ? 'motorbikes' : activeType === 'car' ? 'cars' : 'vehicles'}
                       </>
                     )
                   )}
@@ -905,14 +916,14 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ forceMapOpen = false 
 
               {mapOpen ? (
                 <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-xl cursor-pointer">
-                  <span>Gần tôi nhất</span>
+                  <span>Nearest to me</span>
                   <ChevronDown className="w-3.5 h-3.5" />
                 </div>
               ) : (
                 activeType !== 'all' && (
                   <div className={cn("flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border", accentClass)}>
                     {activeType === 'motorbike' ? <Bike className="w-3.5 h-3.5" /> : <Car className="w-3.5 h-3.5" />}
-                    {activeType === 'motorbike' ? 'Xe Máy' : 'Ô Tô'}
+                    {activeType === 'motorbike' ? 'Motorbikes' : 'Cars'}
                   </div>
                 )
               )}
@@ -927,10 +938,10 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ forceMapOpen = false 
               <motion.div variants={fadeUp} initial="hidden" animate="visible"
                 className="text-center py-24 bg-card border border-slate-100 dark:border-slate-800 rounded-3xl shadow-sm">
                 <div className="text-7xl mb-4">{activeType === 'motorbike' ? '🏍️' : '🚗'}</div>
-                <h3 className="font-display text-2xl font-bold text-foreground mb-2">Không tìm thấy xe phù hợp</h3>
-                <p className="text-slate-500 mb-6 max-w-md mx-auto">Thử điều chỉnh bộ lọc hoặc tìm kiếm với từ khóa khác.</p>
+                <h3 className="font-display text-2xl font-bold text-foreground mb-2">No vehicles found</h3>
+                <p className="text-slate-500 mb-6 max-w-md mx-auto">Try adjusting the filters or searching with different keywords.</p>
                 <button onClick={() => { setFilters({ vehicleType: activeType === 'all' ? undefined : activeType }); setSearchQuery(''); }}
-                  className="btn-primary px-6 py-2.5">Xóa Bộ Lọc</button>
+                  className="btn-primary px-6 py-2.5">Clear Filters</button>
               </motion.div>
             ) : (
               <>
@@ -940,7 +951,7 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ forceMapOpen = false 
                     mapOpen 
                       ? 'space-y-4 pr-1 pb-4' 
                       : viewMode === 'grid'
-                      ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6'
+                      ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-6'
                       : 'space-y-6'
                   )}
                 >
@@ -1074,7 +1085,7 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ forceMapOpen = false 
                         }
                       }}
                       className="w-10 h-10 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-350 shadow-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all flex items-center justify-center cursor-pointer active:scale-95 duration-200"
-                      title="Vị trí của tôi"
+                      title="My Location"
                     >
                       <Compass className="w-5 h-5 text-emerald-500" />
                     </button>
@@ -1091,7 +1102,7 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ forceMapOpen = false 
                         }
                       }}
                       className="w-10 h-10 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-350 shadow-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all flex items-center justify-center cursor-pointer active:scale-95 duration-200"
-                      title="Xe gần tôi"
+                      title="Vehicles Near Me"
                     >
                       <Car className="w-5 h-5 text-emerald-500" />
                     </button>
@@ -1101,15 +1112,15 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ forceMapOpen = false 
                   <div className="absolute bottom-4 right-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur border border-slate-200 dark:border-slate-800 px-3.5 py-2.5 rounded-2xl shadow-2xl z-20 flex flex-col gap-2 text-[10px] font-bold text-slate-600 dark:text-slate-350 select-none leading-none">
                     <div className="flex items-center gap-2">
                       <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                      <span>Xe sẵn sàng</span>
+                      <span>Available</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="w-2.5 h-2.5 rounded-full bg-blue-500 border border-white" />
-                      <span>Vị trí của bạn</span>
+                      <span>Your Location</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="w-2.5 h-2.5 rounded-full bg-blue-600 flex items-center justify-center text-white text-[7px]">25</span>
-                      <span>Cụm xe (zoom để xem)</span>
+                      <span>Cluster (zoom)</span>
                     </div>
                   </div>
 
@@ -1119,7 +1130,7 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ forceMapOpen = false 
                       onClick={() => setIsSidebarCollapsed(false)}
                       className="absolute bottom-20 left-4 z-40 flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-neutral-900 border border-neutral-800 text-white font-bold text-xs shadow-2xl hover:bg-neutral-950 transition-all active:scale-95 duration-200 cursor-pointer"
                     >
-                      <span>Mở danh sách xe</span>
+                      <span>Show List</span>
                       <span>→</span>
                     </button>
                   )}
@@ -1151,7 +1162,8 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ forceMapOpen = false 
                                 const startDate = searchParams.get('startDate') || '';
                                 const endDate = searchParams.get('endDate') || '';
                                 const dateParams = (startDate && endDate) ? `?startDate=${startDate}&endDate=${endDate}` : '';
-                                window.location.href = `/marketplace/vehicles/${v.id}${dateParams}`;
+                                const detailPath = v.vehicleType === 'motorbike' ? `/motorbikes/${v.id}` : `/cars/${v.id}`;
+                                navigate(`${detailPath}${dateParams}`);
                               }}
                               className="w-[280px] sm:w-[330px] flex-shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-2.5 shadow-2xl flex gap-3 snap-start relative cursor-pointer hover:border-emerald-500 transition-all select-none duration-250 active:scale-98"
                             >
@@ -1182,7 +1194,7 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ forceMapOpen = false 
                                     <span className="text-amber-500 text-xs leading-none">★</span>
                                     <span>{v.rating ? Number(v.rating).toFixed(1) : '5.0'}</span>
                                     <span>•</span>
-                                    <span>{v.totalReviews || 12} chuyến</span>
+                                    <span>{v.totalReviews || 12} {isVi ? 'chuyến' : 'trips'}</span>
                                   </div>
 
                                   {/* Address */}
@@ -1196,7 +1208,7 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ forceMapOpen = false 
                                 <div className="flex items-baseline gap-1.5 mt-1 border-t border-slate-100 dark:border-slate-800/80 pt-1.5">
                                   <span className="text-[10px] text-slate-400 line-through font-medium">{originalPriceText}</span>
                                   <span className="text-xs sm:text-sm font-black text-emerald-500 dark:text-emerald-400">{finalPriceText}</span>
-                                  <span className="text-[9px] text-slate-500 font-bold">/ngày</span>
+                                  <span className="text-[9px] text-slate-500 font-bold">/{isVi ? 'ngày' : 'day'}</span>
                                 </div>
                               </div>
                             </div>
@@ -1211,7 +1223,7 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ forceMapOpen = false 
                     <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-20 transition-all duration-300">
                       <div className="bg-slate-950/90 border border-slate-800 px-6 py-4 rounded-2xl flex items-center gap-3 shadow-2xl">
                         <div className="w-5 h-5 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-                        <span className="text-sm font-bold text-white">Đang tìm xe gần bạn...</span>
+                        <span className="text-sm font-bold text-white">{isVi ? 'Đang tìm xe gần bạn...' : 'Searching for vehicles near you...'}</span>
                       </div>
                     </div>
                   )}
@@ -1221,8 +1233,8 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ forceMapOpen = false 
                     <div className="absolute inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center z-20 transition-all duration-350">
                       <div className="bg-slate-950/95 border border-slate-800 p-6 rounded-3xl text-center max-w-xs shadow-2xl">
                         <span className="text-4xl block mb-2">📍</span>
-                        <h4 className="font-extrabold text-sm text-white mb-1">Không tìm thấy xe trong khu vực</h4>
-                        <p className="text-xs text-slate-400">Hãy thử đổi vị trí hoặc mở rộng phạm vi tìm kiếm.</p>
+                        <h4 className="font-extrabold text-sm text-white mb-1">{isVi ? 'Không tìm thấy xe trong khu vực' : 'No vehicles found in this area'}</h4>
+                        <p className="text-xs text-slate-400">{isVi ? 'Hãy thử đổi vị trí hoặc mở rộng phạm vi tìm kiếm.' : 'Try changing the location or expanding your search range.'}</p>
                       </div>
                     </div>
                   )}
@@ -1234,30 +1246,107 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ forceMapOpen = false 
       </div>
 
       {/* Floating Toggle Button for both Desktop and Mobile */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-        <button
-          onClick={() => {
-            if (isMobile) {
-              setMobileViewMode(prev => prev === 'list' ? 'map' : 'list');
-            } else {
-              setMapOpen(!mapOpen);
-            }
-          }}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-full shadow-2xl font-bold text-sm text-white bg-neutral-900 border border-neutral-800 hover:bg-neutral-950 transition-all active:scale-95 duration-200 select-none"
-        >
-          {(isMobile ? mobileViewMode === 'map' : mapOpen) ? (
-            <>
-              <span>{isVi ? 'Danh sách' : 'List View'}</span>
-              <List className="w-4 h-4 ml-1" />
-            </>
-          ) : (
-            <>
-              <span>{isVi ? 'Bản đồ' : 'Map View'}</span>
-              <Map className="w-4 h-4 ml-1" />
-            </>
-          )}
-        </button>
-      </div>
+      <AnimatePresence>
+        {showFloatingButton && (
+          <motion.div
+            initial={{ y: 80, x: '-50%', opacity: 0 }}
+            animate={{ y: 0, x: '-50%', opacity: 1 }}
+            exit={{ y: 80, x: '-50%', opacity: 0 }}
+            transition={{ duration: 0.25, ease: 'easeInOut' }}
+            className="fixed bottom-6 left-1/2 z-50"
+          >
+            <button
+              onClick={() => {
+                if (isMobile) {
+                  setMobileViewMode(prev => prev === 'list' ? 'map' : 'list');
+                } else {
+                  setMapOpen(!mapOpen);
+                }
+              }}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-full shadow-2xl font-bold text-sm text-white bg-neutral-900 border border-neutral-800 hover:bg-neutral-950 transition-all active:scale-95 duration-200 select-none"
+            >
+              {(isMobile ? mobileViewMode === 'map' : mapOpen) ? (
+                <>
+                  <span>{isVi ? 'Danh sách' : 'List View'}</span>
+                  <List className="w-4 h-4 ml-1" />
+                </>
+              ) : (
+                <>
+                  <span>{isVi ? 'Bản đồ' : 'Map View'}</span>
+                  <Map className="w-4 h-4 ml-1" />
+                </>
+              )}
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Map Advanced Filters Overlay Drawer (Mioto Style) */}
+      <AnimatePresence>
+        {mapOpen && showFilters && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowFilters(false)}
+              className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 transition-all duration-300"
+            />
+            {/* Drawer */}
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 26, stiffness: 220 }}
+              className="fixed right-0 top-0 bottom-0 w-full sm:w-[350px] bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl z-[100] p-6 overflow-y-auto flex flex-col"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800 mb-6 flex-shrink-0">
+                <h3 className="font-extrabold text-sm text-slate-800 dark:text-white flex items-center gap-2">
+                  <SlidersHorizontal className="w-4 h-4 text-accent" />
+                  {isVi ? 'Bộ Lọc Nâng Cao' : 'Advanced Filters'}
+                </h3>
+                <button
+                  onClick={() => setShowFilters(false)}
+                  className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-foreground hover:bg-slate-250 transition-all cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Filter Panel Content */}
+              <div className="flex-1 overflow-y-auto pr-1">
+                {activeType === 'motorbike' ? (
+                  <MotorbikeFilterPanel filters={filters} onChange={handleFilterChange} onClose={() => setShowFilters(false)} />
+                ) : (
+                  <CarFilterPanel filters={filters} onChange={handleFilterChange} onClose={() => setShowFilters(false)} />
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-800 mt-6 flex gap-3 flex-shrink-0">
+                <button
+                  onClick={() => {
+                    setFilters({ vehicleType: activeType === 'all' ? undefined : activeType });
+                    setSearchQuery('');
+                    setShowFilters(false);
+                  }}
+                  className="flex-1 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                >
+                  {isVi ? 'Thiết lập lại' : 'Reset'}
+                </button>
+                <button
+                  onClick={() => setShowFilters(false)}
+                  className="flex-1 py-2.5 rounded-2xl bg-accent text-white text-xs font-bold hover:bg-accent-hover transition-colors shadow-lg"
+                >
+                  {isVi ? 'Áp dụng' : 'Apply'}
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

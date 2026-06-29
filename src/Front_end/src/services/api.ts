@@ -1,5 +1,5 @@
 // API Configuration for LuxeWay Backend
-const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8080';
+const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8080/api/v1';
 
 // Token storage keys (must match authService.ts)
 const TOKEN_KEY = 'luxeway_access_token';
@@ -210,7 +210,7 @@ class ApiClient {
 
   // Health Check
   async healthCheck() {
-    return this.request('/test/health');
+    return this.request('/home/health');
   }
 
   // Database Info

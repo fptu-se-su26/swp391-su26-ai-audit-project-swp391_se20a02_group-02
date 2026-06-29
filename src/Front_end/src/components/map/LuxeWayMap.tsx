@@ -52,6 +52,7 @@ export interface LuxeWayMapProps {
   pickupCoords?: [number, number];
   destCoords?: [number, number];
   interactive?: boolean;
+  disableAutoPan?: boolean;
 }
 
 export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
@@ -65,7 +66,8 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
   routePolyline,
   pickupCoords,
   destCoords,
-  interactive = true
+  interactive = true,
+  disableAutoPan = false
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -95,7 +97,13 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
   }, [revealedPriceVehicleIds]);
 
   useEffect(() => {
-    updateMarkers();
+    // Sync ref immediately so updateMarkers always has fresh data
+    vehiclesRef.current = vehicles;
+    selectedVehicleIdRef.current = selectedVehicleId;
+    // Defer to allow DOM to settle, then render markers
+    const t1 = setTimeout(() => updateMarkers(), 50);
+    const t2 = setTimeout(() => updateMarkers(), 400);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [vehicles, selectedVehicleId, revealedPriceVehicleIds]);
 
   const resolveCoords = (v: any, index: number): [number, number] | null => {
@@ -103,7 +111,7 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
     let lng = v.longitude !== undefined ? v.longitude : v.location?.lng;
     
     if (typeof lat !== 'number' || typeof lng !== 'number' || lat === 0 || lng === 0 || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-      if (vehicles.length === 1) {
+      if (vehiclesRef.current.length === 1) {
         return getCoordinates(v, index);
       }
       return null;
@@ -115,91 +123,131 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
     const map = mapRef.current;
     if (!map || !isMapLoadedRef.current) return;
 
-    const features = map.queryRenderedFeatures({ layers: ['unclustered-point', 'clusters'] });
+    // Use ref to avoid stale closures in map event listeners
+    const currentVehicles = vehiclesRef.current;
+    if (currentVehicles.length === 0) return;
+
+    // Dynamic threshold for JS-based spatial clustering based on zoom level
+    const currentZoom = map.getZoom();
+    const threshold = currentZoom < 8 ? 0.35 : currentZoom < 10 ? 0.16 : currentZoom < 12 ? 0.08 : currentZoom < 13.5 ? 0.03 : 0.005;
+
+    interface MapCluster {
+      id: string;
+      lat: number;
+      lng: number;
+      count: number;
+      vehicles: any[];
+    }
+
+    const clusters: MapCluster[] = [];
+
+    currentVehicles.forEach((v, index) => {
+      const coords = resolveCoords(v, index);
+      if (!coords) return;
+      const [lat, lng] = coords;
+
+      let found = false;
+      for (const c of clusters) {
+        const dist = Math.sqrt(Math.pow(c.lat - lat, 2) + Math.pow(c.lng - lng, 2));
+        if (dist < threshold) {
+          c.vehicles.push(v);
+          c.count++;
+          // Weighted average coordinates for cluster center
+          c.lat = (c.lat * (c.count - 1) + lat) / c.count;
+          c.lng = (c.lng * (c.count - 1) + lng) / c.count;
+          found = true;
+          break;
+        }
+      }
+
+      if (!found) {
+        clusters.push({
+          id: `cluster-${v.id}`,
+          lat,
+          lng,
+          count: 1,
+          vehicles: [v]
+        });
+      }
+    });
+
     const visibleIds = new Set<string>();
 
-    features.forEach((feature) => {
-      const props = feature.properties;
-      const isCluster = props && props.point_count !== undefined;
-      const id = isCluster ? `cluster-${props.cluster_id}` : props.id;
+    clusters.forEach(c => {
+      const isCluster = c.count > 1;
+      const id = isCluster ? c.id : c.vehicles[0].id;
       visibleIds.add(id);
 
-      const coords = (feature.geometry as any).coordinates;
       let marker = activeMarkersRef.current.get(id);
       let markerEl: HTMLDivElement;
 
       if (!marker) {
         markerEl = document.createElement('div');
         marker = new maplibregl.Marker({ element: markerEl })
-          .setLngLat([coords[0], coords[1]])
+          .setLngLat([c.lng, c.lat])
           .addTo(map);
         activeMarkersRef.current.set(id, marker);
 
         if (isCluster) {
           markerEl.addEventListener('click', (e) => {
             e.stopPropagation();
-            const source = map.getSource('vehicles-source') as maplibregl.GeoJSONSource;
-            source.getClusterLeaves(props.cluster_id, 100, 0)
-              .then((leaves: any[]) => {
-                if (!leaves) return;
-                if (onSelectionChange) {
-                  onSelectionChange(leaves.map((leaf: any) => leaf.properties));
-                  return;
-                }
-              })
-              .catch((err: any) => console.error(err));
+            // Zoom in slightly on click
+            map.easeTo({
+              center: [c.lng, c.lat],
+              zoom: Math.min(16, map.getZoom() + 1.8),
+              duration: 500
+            });
+            if (onSelectionChange) {
+              onSelectionChange(c.vehicles);
+            }
           });
         } else {
+          const singleVehicle = c.vehicles[0];
           markerEl.addEventListener('click', (e) => {
             e.stopPropagation();
-            if (!revealedPriceVehicleIdsRef.current.has(id)) {
-              setRevealedPriceVehicleIds(prev => {
-                const next = new Set(prev);
-                next.add(id);
-                return next;
-              });
-              return;
-            }
             if (onSelectionChange) {
-              onSelectionChange([props]);
+              onSelectionChange([singleVehicle]);
             }
             if (onVehicleClick) {
-              const orig = vehiclesRef.current.find(v => v.id === id);
-              if (orig) {
-                onVehicleClick(orig);
-              }
+              onVehicleClick(singleVehicle);
             }
           });
         }
       } else {
         markerEl = marker.getElement() as HTMLDivElement;
+        marker.setLngLat([c.lng, c.lat]);
       }
 
-      // Dynamic render styling
+      // Render styling
       if (isCluster) {
-        markerEl.className = 'px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-md font-extrabold text-xs text-slate-850 dark:text-slate-100 cursor-pointer hover:scale-105 transition-all select-none leading-none z-30 flex items-center justify-center';
-        markerEl.innerText = `${props.point_count} xe`;
+        markerEl.className = 'px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-205 dark:border-slate-800 rounded-full shadow-md font-extrabold text-xs text-slate-800 dark:text-slate-100 cursor-pointer hover:scale-105 transition-all select-none leading-none z-35 flex items-center justify-center';
+        markerEl.innerText = `${c.count} xe`;
       } else {
-        const isSelected = selectedVehicleIdRef.current === id;
-        const isPriceRevealed = revealedPriceVehicleIdsRef.current.has(id);
-        
-        const pricePerDay = props.pricePerDay;
+        const singleVehicle = c.vehicles[0];
+        const isSelected = selectedVehicleIdRef.current === singleVehicle.id;
+        const pricePerDay = singleVehicle.pricePerDay;
         const displayPrice = pricePerDay >= 1000 
           ? `${(pricePerDay / 1000).toLocaleString('en-US', { maximumFractionDigits: 0 })}K`
           : `${pricePerDay}`;
 
+        markerEl.className = 'relative cursor-pointer transition-all duration-200 hover:scale-110 select-none flex flex-col items-center group z-30';
+        
         if (isSelected) {
-          // Highlighted selected price state: green price badge (image 2/3)
-          markerEl.className = 'px-3 py-1.5 bg-emerald-500 border border-emerald-400 text-white rounded-xl shadow-xl font-extrabold text-xs cursor-pointer hover:scale-110 transition-all select-none leading-none z-45 flex items-center justify-center';
-          markerEl.innerText = displayPrice;
-        } else if (isPriceRevealed) {
-          // Price revealed state: standard white price box (image 1)
-          markerEl.className = 'px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-850 shadow-md font-extrabold text-xs text-slate-805 dark:text-slate-100 cursor-pointer hover:scale-105 transition-all select-none leading-none z-30 flex items-center justify-center';
-          markerEl.innerText = displayPrice;
+          // Selected price marker: primary emerald background
+          markerEl.innerHTML = `
+            <div class="px-2.5 py-1.5 bg-emerald-600 dark:bg-emerald-700 text-white font-extrabold rounded-full shadow-lg border border-white/20 text-[11px] whitespace-nowrap leading-none flex items-center gap-1">
+              <span>₫${displayPrice}</span>
+            </div>
+            <div class="w-1.5 h-1.5 bg-emerald-600 dark:bg-emerald-700 rotate-45 -mt-0.5 shadow-sm"></div>
+          `;
         } else {
-          // Default unselected state: count badge ("1 xe")
-          markerEl.className = 'px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 rounded-xl shadow-sm font-bold text-xs text-slate-500 dark:text-slate-400 cursor-pointer hover:scale-105 transition-all select-none leading-none z-30 flex items-center justify-center';
-          markerEl.innerText = '1 xe';
+          // Normal price marker: white background with gold/dark border
+          markerEl.innerHTML = `
+            <div class="px-2.5 py-1.5 bg-white dark:bg-[#131F35] text-[#0B1221] dark:text-white font-extrabold rounded-full shadow-md border border-slate-200 dark:border-slate-800 text-[11px] whitespace-nowrap leading-none hover:border-[#D4AF37] dark:hover:border-[#D4AF37] transition-all">
+              <span>₫${displayPrice}</span>
+            </div>
+            <div class="w-1.5 h-1.5 bg-white dark:bg-[#131F35] rotate-45 -mt-0.5 border-r border-b border-slate-200 dark:border-slate-800 transition-all"></div>
+          `;
         }
       }
     });
@@ -251,9 +299,9 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
       features
     });
 
-    setTimeout(() => {
-      updateMarkers();
-    }, 100);
+    // Staggered delay: allow MapLibre to render tiles before computing JS clusters
+    setTimeout(() => updateMarkers(), 150);
+    setTimeout(() => updateMarkers(), 600);
   };
 
   // 1. Initialize Map
@@ -446,9 +494,11 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
 
       isMapLoadedRef.current = true;
       syncGeoJson();
+      // Extra initial marker pass after style is stable
+      setTimeout(() => updateMarkers(), 800);
 
-      // Real-time 100% geolocation auto-centering on load
-      if (navigator.geolocation) {
+      // Real-time geolocation auto-centering: only on full map pages, not embeds
+      if (!disableAutoPan && navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
             const lat = position.coords.latitude;
@@ -516,6 +566,7 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
   useEffect(() => {
     const map = mapRef.current;
     if (!map || vehicles.length === 0) return;
+    if (disableAutoPan) return;
 
     if (selectedVehicleId) {
       const selected = vehicles.find(v => v.id === selectedVehicleId);
@@ -535,11 +586,11 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
             }
 
             const popupContent = document.createElement('div');
-            popupContent.className = 'flex gap-3 p-3 select-none items-center font-sans max-w-[280px] bg-slate-900 border border-slate-800 rounded-2xl text-white shadow-2xl';
+            popupContent.className = 'flex gap-3 p-3 select-none items-center font-sans max-w-[280px] bg-[#0B1120] border border-[#1E2D45] rounded-2xl text-white shadow-2xl';
             
             const distanceKm = (selected as any).distanceKm;
             const distText = distanceKm !== null && distanceKm !== undefined
-              ? `<span><i class="fa-solid fa-location-arrow text-[8px] text-amber-500 mr-0.5"></i>📍 ${Number(distanceKm).toFixed(1)} km</span>`
+              ? `<span><i class="fa-solid fa-location-arrow text-[8px] text-[#C9A227] mr-0.5"></i>📍 ${Number(distanceKm).toFixed(1)} km</span>`
               : '';
 
             const searchParams = new URLSearchParams(window.location.search);
@@ -556,19 +607,19 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
                 class="w-16 h-16 object-cover rounded-xl border border-white/10 flex-shrink-0"
               />
               <div class="flex-1 min-w-0 pr-0.5">
-                <span class="text-[8px] font-black text-amber-500 uppercase tracking-widest leading-none">${selected.brand || 'Luxury'}</span>
+                <span class="text-[8px] font-black text-[#C9A227] uppercase tracking-widest leading-none">${selected.brand || 'Luxury'}</span>
                 <h4 class="font-extrabold text-xs text-white leading-tight truncate mt-0.5" title="${selected.name}">${selected.name}</h4>
                 <div class="flex items-center gap-1 mt-0.5 text-xs">
                   <i class="fa-solid fa-star text-amber-500 text-[10px]"></i>
                   <span class="font-black text-[10px] text-white">${selected.rating ? Number(selected.rating).toFixed(1) : '5.0'}</span>
-                  <span class="text-slate-450 text-[9px]">(${(selected as any).totalReviews || (selected as any).totalTrips || 0})</span>
+                  <span class="text-slate-400 text-[9px]">(${(selected as any).totalReviews || (selected as any).totalTrips || 0})</span>
                 </div>
                 <div class="flex items-center gap-2 mt-1 text-[9px] font-bold text-slate-400">
                   ${distText}
                 </div>
-                <div class="mt-2.5 flex items-center justify-between border-t border-slate-800/80 pt-2">
-                  <span class="text-[10px] font-black text-amber-500">${formatCurrency(selected.pricePerDay)}/ngày</span>
-                  <a href="/marketplace/vehicles/${selected.id}${dateParams}" class="text-[9px] font-black bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 rounded-lg transition-all shadow-md shadow-amber-500/10">Chi tiết</a>
+                <div class="mt-2.5 flex items-center justify-between border-t border-slate-800/85 pt-2">
+                  <span class="text-[10px] font-black text-[#C9A227]">${formatCurrency(selected.pricePerDay)}/ngày</span>
+                  <a href="/marketplace/vehicles/${selected.id}${dateParams}" class="text-[9px] font-black bg-[#C9A227] hover:bg-[#E5C158] text-[#0B1120] px-2 py-1.5 rounded-lg transition-all shadow-md font-bold">Xem xe</a>
                 </div>
               </div>
             `;
@@ -709,7 +760,12 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
   }, [pickupCoords, destCoords]);
 
   return (
-    <div style={{ height }} className="w-full h-full rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl relative z-10">
+    <div
+      style={{ height, overscrollBehavior: 'contain' }}
+      className="w-full h-full rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl relative z-10"
+      onWheel={(e) => e.stopPropagation()}
+      onTouchMove={(e) => e.stopPropagation()}
+    >
       <div ref={mapContainerRef} className="w-full h-full" />
     </div>
   );

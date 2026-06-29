@@ -1,14 +1,31 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
-  MessageSquare, X, Send, Sparkles, MapPin, AlertTriangle, ShieldCheck,
-  HelpCircle, ArrowRight, Mic, Volume2, VolumeX, ThumbsUp, ThumbsDown,
-  Download, AlertCircle, Wrench, Calendar, CheckCircle2, ChevronRight
+  AlertCircle,
+  AlertTriangle,
+  Calendar,
+  CheckCircle2,
+  ChevronRight,
+  Download,
+  HelpCircle,
+  MapPin,
+  MessageSquare,
+  Mic,
+  Send,
+  ShieldCheck,
+  Sparkles,
+  ThumbsDown,
+  ThumbsUp,
+  Volume2,
+  VolumeX,
+  Wrench,
+  X,
 } from 'lucide-react';
 import { aiConciergeService } from '@/services/helpService';
 import { useT } from '@/i18n/translations';
 import { useAuthStore } from '@/store';
+import { cn } from '@/utils';
 import { DeliveryTrackerMap } from './DeliveryTrackerMap';
 
 interface Message {
@@ -22,9 +39,22 @@ interface Message {
 
 type OrbState = 'idle' | 'listening' | 'thinking' | 'responding';
 
+const easeOutExpo = [0.16, 1, 0.3, 1] as const;
+
+const parseActionCard = (rawResponse?: string) => {
+  if (!rawResponse || !rawResponse.includes('actionCard')) return undefined;
+
+  try {
+    return JSON.parse(rawResponse).actionCard;
+  } catch {
+    return undefined;
+  }
+};
+
 export const FloatingAIConcierge: React.FC = () => {
   const t = useT();
   const location = useLocation();
+  const shouldReduceMotion = useReducedMotion();
   const { user } = useAuthStore();
 
   const [isOpen, setIsOpen] = useState(false);
@@ -33,21 +63,35 @@ export const FloatingAIConcierge: React.FC = () => {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // AI Context derived from current URL
   const [activeVehicleId, setActiveVehicleId] = useState<string | undefined>(undefined);
   const [activeBookingId, setActiveBookingId] = useState<string | undefined>(undefined);
-
-  // Orb UI state
   const [orbState, setOrbState] = useState<OrbState>('idle');
-
-  // Voice States
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(false);
   const [isListening, setIsListening] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
 
-  // Retrieve or generate session
+  const status = useMemo(() => {
+    if (orbState === 'listening') return { label: 'Listening', tone: 'text-rose-300', dot: 'bg-rose-400' };
+    if (orbState === 'thinking') return { label: 'Thinking', tone: 'text-amber-300', dot: 'bg-amber-400' };
+    if (orbState === 'responding') return { label: 'Responding', tone: 'text-emerald-300', dot: 'bg-emerald-400' };
+    if (activeBookingId) return { label: `Booking ${activeBookingId.substring(0, 8).toUpperCase()}`, tone: 'text-amber-300', dot: 'bg-amber-400' };
+    if (activeVehicleId) return { label: 'Vehicle context active', tone: 'text-amber-300', dot: 'bg-amber-400' };
+    return { label: 'Ready for trip support', tone: 'text-slate-400', dot: 'bg-slate-500' };
+  }, [activeBookingId, activeVehicleId, orbState]);
+
+  const quickActions = useMemo(
+    () => [
+      { label: 'Track delivery', text: 'Where is my car? Show me the delivery tracking simulator.', icon: MapPin },
+      { label: 'Roadside help', text: 'I have a flat tire and roadside breakdown emergency.', icon: AlertTriangle },
+      { label: 'Refund request', text: 'How do I cancel my trip and request a refund?', icon: ShieldCheck },
+      { label: 'Host earnings', text: 'Tell me about LuxeWay Host commission and payouts.', icon: Calendar },
+      { label: 'System status', text: 'Are all payment and booking systems operational?', icon: HelpCircle },
+    ],
+    []
+  );
+
   useEffect(() => {
     let sid = localStorage.getItem('luxeway_ai_session_id');
     if (!sid) {
@@ -56,7 +100,6 @@ export const FloatingAIConcierge: React.FC = () => {
     }
     setSessionId(sid);
 
-    // Initialize Speech Recognition
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (SpeechRecognition) {
       const rec = new SpeechRecognition();
@@ -72,104 +115,91 @@ export const FloatingAIConcierge: React.FC = () => {
       };
 
       rec.onerror = (e: any) => {
-        console.error("Speech recognition error:", e);
+        console.error('Speech recognition error:', e);
         setIsListening(false);
         setOrbState('idle');
       };
 
       rec.onend = () => {
         setIsListening(false);
-        if (orbState === 'listening') {
-          setOrbState('idle');
-        }
+        setOrbState(prev => (prev === 'listening' ? 'idle' : prev));
       };
 
       recognitionRef.current = rec;
     }
 
-    // Load AI user preferences on start
-    aiConciergeService.getPreferences()
-      .then(res => {
-        if (res) {
-          setIsVoiceEnabled(res.voiceEnabled || false);
-        }
-      })
-      .catch(() => {});
-  }, []);
+    if (user) {
+      aiConciergeService
+        .getPreferences()
+        .then(res => {
+          if (res) setIsVoiceEnabled(res.voiceEnabled || false);
+        })
+        .catch(() => {});
+    }
+  }, [user]);
 
-  // Parse path shifts to resolve context IDs
   useEffect(() => {
     const path = location.pathname;
-
-    let resolvedVehicleId: string | undefined = undefined;
-    let resolvedBookingId: string | undefined = undefined;
-
-    // Check cars
     const carMatch = path.match(/\/cars\/([a-zA-Z0-9-]+)/);
-    if (carMatch) resolvedVehicleId = carMatch[1];
-
-    // Check motorbikes
     const bikeMatch = path.match(/\/motorbikes\/([a-zA-Z0-9-]+)/);
-    if (bikeMatch) resolvedVehicleId = bikeMatch[1];
-
-    // Check bookings
     const carBookingMatch = path.match(/\/car-booking\/([a-zA-Z0-9-]+)/);
-    if (carBookingMatch) resolvedBookingId = carBookingMatch[1];
-
     const bikeBookingMatch = path.match(/\/motorbike-booking\/([a-zA-Z0-9-]+)/);
-    if (bikeBookingMatch) resolvedBookingId = bikeBookingMatch[1];
 
-    setActiveVehicleId(resolvedVehicleId);
-    setActiveBookingId(resolvedBookingId);
+    setActiveVehicleId(carMatch?.[1] || bikeMatch?.[1]);
+    setActiveBookingId(carBookingMatch?.[1] || bikeBookingMatch?.[1]);
   }, [location]);
 
-  // Scroll to bottom
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, loading]);
+    messagesEndRef.current?.scrollIntoView({ behavior: shouldReduceMotion ? 'auto' : 'smooth' });
+  }, [loading, messages, shouldReduceMotion]);
 
-  // Load chat history if opened
   useEffect(() => {
-    if (isOpen && sessionId) {
-      setLoading(true);
-      aiConciergeService.getHistory(sessionId)
-        .then(res => {
-          if (res && res.length > 0) {
-            setMessages(res.map((m: any) => ({
+    if (!isOpen || !sessionId) return;
+
+    setLoading(true);
+    aiConciergeService
+      .getHistory(sessionId)
+      .then(res => {
+        if (res && res.length > 0) {
+          setMessages(
+            res.map((m: any) => ({
               id: m.id,
               role: m.role,
               content: m.content,
               createdAt: m.createdAt,
-              actionCard: m.rawResponse && m.rawResponse.includes("actionCard") ? JSON.parse(m.rawResponse).actionCard : undefined
-            })));
-          } else {
-            setMessages([
-              {
-                role: 'ASSISTANT',
-                content: t.help.aiConciergeGreeting || "Greetings. Welcome to LuxeWay's VIP AI Concierge. I am fully synchronized with your active session details. How may I assist you with your premium bookings, delivery maps, roadside recoveries, or host assets today?",
-                createdAt: new Date().toISOString()
-              }
-            ]);
-          }
-        })
-        .catch(() => {})
-        .finally(() => setLoading(false));
-    }
+              actionCard: parseActionCard(m.rawResponse),
+            }))
+          );
+          return;
+        }
+
+        setMessages([
+          {
+            role: 'ASSISTANT',
+            content:
+              t.help.aiConciergeGreeting ||
+              "Greetings. Welcome to LuxeWay's VIP AI Concierge. I am fully synchronized with your active session details. How may I assist you with your premium bookings, delivery maps, roadside recoveries, or host assets today?",
+            createdAt: new Date().toISOString(),
+          },
+        ]);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, [isOpen, sessionId, t.help.aiConciergeGreeting]);
 
-  // Speak response out loud
   const speakText = (text: string) => {
     if (!isVoiceEnabled || !('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
-    
-    // Clean markdown before speaking
-    const cleanText = text.replace(/[*#`_\-\[\]()]/g, '');
+
+    const cleanText = text.replace(/[*#`_\-[\]()]/g, '');
     const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.rate = 0.95;
     utterance.pitch = 1.0;
 
     const voices = window.speechSynthesis.getVoices();
-    const premiumVoice = voices.find(v => v.name.includes("Google US English") || v.name.includes("Premium") || v.lang.startsWith("en"));
+    const premiumVoice = voices.find(
+      v => v.name.includes('Google US English') || v.name.includes('Premium') || v.lang.startsWith('en')
+    );
     if (premiumVoice) utterance.voice = premiumVoice;
 
     utterance.onstart = () => setOrbState('responding');
@@ -184,30 +214,32 @@ export const FloatingAIConcierge: React.FC = () => {
       window.speechSynthesis.cancel();
       setOrbState('idle');
     }
-    // Update preferences in DB
+
     try {
       await aiConciergeService.savePreferences({
         preferredLanguage: 'en',
-        voiceEnabled: newVal
+        voiceEnabled: newVal,
       });
-    } catch (e) {}
+    } catch {}
   };
 
   const startVoiceListening = () => {
     if (!recognitionRef.current) {
-      alert("Speech recognition is not supported in this browser. Please try Chrome or Safari.");
+      alert('Speech recognition is not supported in this browser. Please try Chrome or Safari.');
       return;
     }
+
     if (isListening) {
       recognitionRef.current.stop();
       setIsListening(false);
       setOrbState('idle');
-    } else {
-      window.speechSynthesis.cancel();
-      setIsListening(true);
-      setOrbState('listening');
-      recognitionRef.current.start();
+      return;
     }
+
+    window.speechSynthesis.cancel();
+    setIsListening(true);
+    setOrbState('listening');
+    recognitionRef.current.start();
   };
 
   const handleSend = async (textToSend?: string) => {
@@ -218,50 +250,49 @@ export const FloatingAIConcierge: React.FC = () => {
     setLoading(true);
     setOrbState('thinking');
 
-    // Add user message locally
-    const userMsg: Message = {
-      role: 'USER',
-      content: text,
-      createdAt: new Date().toISOString()
-    };
-    setMessages(prev => [...prev, userMsg]);
+    setMessages(prev => [
+      ...prev,
+      {
+        role: 'USER',
+        content: text,
+        createdAt: new Date().toISOString(),
+      },
+    ]);
 
     try {
-      const res = await aiConciergeService.chat(
-        sessionId,
-        text,
-        location.pathname,
-        activeVehicleId,
-        activeBookingId
-      );
+      const res = await aiConciergeService.chat(sessionId, text, location.pathname, activeVehicleId, activeBookingId);
 
       if (res) {
-        const reply: Message = {
-          id: res.messageId,
-          role: 'ASSISTANT',
-          content: res.content,
-          createdAt: res.createdAt || new Date().toISOString(),
-          actionCard: res.actionCard
-        };
-        setMessages(prev => [...prev, reply]);
+        setMessages(prev => [
+          ...prev,
+          {
+            id: res.messageId,
+            role: 'ASSISTANT',
+            content: res.content,
+            createdAt: res.createdAt || new Date().toISOString(),
+            actionCard: res.actionCard,
+          },
+        ]);
         setOrbState('responding');
         speakText(res.content);
       }
     } catch (err) {
-      console.error("AI Concierge request failed:", err);
-      const errReply: Message = {
-        role: 'ASSISTANT',
-        content: "I apologize, but I am experiencing temporary difficulties connecting to our VIP generative network. Please try again shortly.",
-        createdAt: new Date().toISOString()
-      };
-      setMessages(prev => [...prev, errReply]);
+      console.error('AI Concierge request failed:', err);
+      setMessages(prev => [
+        ...prev,
+        {
+          role: 'ASSISTANT',
+          content:
+            'I am having trouble reaching the concierge network right now. Please try again shortly or open a support ticket if the matter is urgent.',
+          createdAt: new Date().toISOString(),
+        },
+      ]);
       setOrbState('idle');
     } finally {
       setLoading(false);
-      // Let responding animation complete or fallback to idle
-      setTimeout(() => {
-        setOrbState(prev => prev === 'responding' ? 'responding' : 'idle');
-      }, 500);
+      window.setTimeout(() => {
+        setOrbState(prev => (prev === 'thinking' || (!isVoiceEnabled && prev === 'responding') ? 'idle' : prev));
+      }, 900);
     }
   };
 
@@ -274,347 +305,396 @@ export const FloatingAIConcierge: React.FC = () => {
         sessionId,
         messageId: msg.id,
         isPositive,
-        feedbackText: isPositive ? "Positive rating" : "Negative rating"
+        feedbackText: isPositive ? 'Positive rating' : 'Negative rating',
       });
 
       setMessages(prev => {
         const updated = [...prev];
         updated[messageIdx] = {
           ...msg,
-          feedbackGiven: isPositive ? 'UP' : 'DOWN'
+          feedbackGiven: isPositive ? 'UP' : 'DOWN',
         };
         return updated;
       });
     } catch (e) {
-      console.error("Error submitting rating:", e);
+      console.error('Error submitting rating:', e);
     }
   };
 
-  const quickActions = [
-    { label: "🗺️ Track Delivery", text: "Where is my car? Show me the delivery tracking simulator." },
-    { label: "🚨 Roadside Emergency", text: "I have a flat tire and roadside breakdown emergency!" },
-    { label: "💸 Request Refund", text: "How do I cancel my trip and request a refund?" },
-    { label: "📈 Host Earnings", text: "Tell me about LuxeWay Host commission and Stripe payouts." },
-    { label: "🟢 System Status", text: "Are all payment and booking status systems operational?" },
-  ];
+  const renderActionCard = (msg: Message) => {
+    if (!msg.actionCard) return null;
+
+    if (msg.actionCard.action === 'CANCEL_BOOKING') {
+      return (
+        <ActionPanel tone="rose">
+          <ActionHeader icon={AlertCircle} label="Trip cancelled" tone="rose" />
+          <p className="text-xs leading-5 text-slate-300">{msg.actionCard.message}</p>
+          <div className="flex items-center justify-between rounded-md border border-rose-400/20 bg-rose-400/10 px-3 py-2 text-xs">
+            <span className="text-rose-100/80">Refund amount</span>
+            <span className="font-semibold text-rose-200">${msg.actionCard.refundAmount}</span>
+          </div>
+        </ActionPanel>
+      );
+    }
+
+    if (msg.actionCard.action === 'MODIFY_BOOKING') {
+      return (
+        <ActionPanel tone="emerald">
+          <ActionHeader icon={CheckCircle2} label="Trip dates modified" tone="emerald" />
+          <p className="text-xs leading-5 text-slate-300">{msg.actionCard.message}</p>
+          <div className="space-y-2 rounded-md border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-xs">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-emerald-100/80">New end date</span>
+              <span className="font-semibold text-white">{msg.actionCard.newEndDate}</span>
+            </div>
+            <div className="flex items-center justify-between gap-3 border-t border-emerald-400/20 pt-2">
+              <span className="text-emerald-100/80">Additional cost</span>
+              <span className="font-semibold text-emerald-200">+${msg.actionCard.additionalCost}</span>
+            </div>
+          </div>
+        </ActionPanel>
+      );
+    }
+
+    if (msg.actionCard.action === 'DOWNLOAD_INVOICE') {
+      return (
+        <ActionPanel tone="amber">
+          <div className="flex items-center justify-between gap-3 text-xs">
+            <span className="font-semibold text-amber-200">Billing invoice</span>
+            <span className="font-mono text-slate-400">{msg.actionCard.invoiceNumber}</span>
+          </div>
+          <div className="space-y-2 text-xs text-slate-300">
+            <ActionRow label="Recipient" value={msg.actionCard.customerName} />
+            <ActionRow label="Vehicle" value={msg.actionCard.vehicleName} />
+            <ActionRow label="Duration" value={`${msg.actionCard.totalDays} Days`} />
+            <ActionRow label="Total charged" value={`$${msg.actionCard.total}`} strong />
+          </div>
+          <a
+            href={msg.actionCard.pdfUrl}
+            download
+            className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-[#D4AF37] px-3 text-xs font-semibold text-[#0B1221] transition duration-200 hover:bg-[#E5C158] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Download PDF
+          </a>
+        </ActionPanel>
+      );
+    }
+
+    if (msg.actionCard.action === 'EMERGENCY_DISPATCH') {
+      return (
+        <ActionPanel tone="rose">
+          <ActionHeader icon={Wrench} label="Roadside dispatch active" tone="rose" />
+          <p className="text-xs leading-5 text-slate-300">{msg.actionCard.message}</p>
+          <a
+            href="/help/emergency"
+            className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-rose-400/30 bg-rose-400/10 px-3 text-xs font-semibold text-rose-200 transition duration-200 hover:bg-rose-400/15 focus:outline-none focus:ring-2 focus:ring-rose-400/30"
+          >
+            <AlertTriangle className="h-3.5 w-3.5" />
+            View incident dashboard
+          </a>
+        </ActionPanel>
+      );
+    }
+
+    return null;
+  };
 
   return (
-    <div className="fixed bottom-6 right-6 z-[9999]">
-      {/* Floating Gold/Black Orb Trigger */}
-      <div className="relative">
-        <motion.button
-          onClick={() => setIsOpen(!isOpen)}
-          whileHover={{ scale: 1.08 }}
-          whileTap={{ scale: 0.95 }}
-          className={`w-16 h-16 rounded-full flex items-center justify-center border transition-all cursor-pointer relative shadow-2xl ${
-            isOpen 
-              ? 'bg-black/90 border-amber-500/40 text-amber-500' 
-              : 'bg-gradient-to-tr from-[#0b0b0d] via-[#16161a] to-[#25252b] border-amber-500/30 text-amber-400 hover:shadow-[0_0_25px_rgba(245,158,11,0.35)]'
-          }`}
-        >
-          {/* Wave ripple rings (when listening) */}
-          {orbState === 'listening' && (
-            <>
-              <span className="absolute inset-0 rounded-full border border-amber-500/60 animate-ping opacity-75" />
-              <span className="absolute -inset-2 rounded-full border border-amber-500/30 animate-ping opacity-40" />
-            </>
+    <div className="fixed bottom-4 right-4 z-[9999] sm:bottom-6 sm:right-6">
+      <motion.button
+        type="button"
+        onClick={() => setIsOpen(prev => !prev)}
+        whileHover={shouldReduceMotion ? undefined : { y: -2 }}
+        whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }}
+        className={cn(
+          'group relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-lg border shadow-[0_18px_45px_rgba(11,18,33,0.22)] transition duration-200 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50',
+          isOpen
+            ? 'border-[#D4AF37]/45 bg-[#0B1221] text-[#D4AF37]'
+            : 'border-slate-800 bg-[#0B1221] text-white hover:border-[#D4AF37]/50'
+        )}
+        aria-label={isOpen ? 'Close LuxeWay AI Concierge' : 'Open LuxeWay AI Concierge'}
+      >
+        <span className={cn('absolute right-2 top-2 h-2 w-2 rounded-full', status.dot)} />
+        <AnimatePresence mode="wait" initial={false}>
+          {isOpen ? (
+            <motion.span
+              key="close"
+              initial={shouldReduceMotion ? false : { opacity: 0, rotate: -45 }}
+              animate={{ opacity: 1, rotate: 0 }}
+              exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, rotate: 45 }}
+              transition={{ duration: 0.18, ease: easeOutExpo }}
+            >
+              <X className="h-5 w-5" />
+            </motion.span>
+          ) : (
+            <motion.span
+              key={orbState}
+              initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.88 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.88 }}
+              transition={{ duration: 0.2, ease: easeOutExpo }}
+              className="relative"
+            >
+              {orbState === 'listening' ? <Mic className="h-5 w-5 text-rose-200" /> : <Sparkles className="h-5 w-5" />}
+            </motion.span>
           )}
+        </AnimatePresence>
+        {orbState !== 'idle' && !shouldReduceMotion && (
+          <motion.span
+            className="absolute inset-1 rounded-md border border-[#D4AF37]/30"
+            animate={{ opacity: [0.25, 0.75, 0.25], scale: [1, 1.08, 1] }}
+            transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+          />
+        )}
+      </motion.button>
 
-          {/* Rotating particle ring (when thinking) */}
-          {orbState === 'thinking' && (
-            <div className="absolute inset-0 rounded-full border-t border-b border-amber-400 animate-spin" style={{ animationDuration: '1s' }} />
-          )}
-
-          {/* Flowing golden gradient glow (when responding) */}
-          {orbState === 'responding' && (
-            <div className="absolute inset-0 rounded-full border-2 border-amber-400 animate-pulse shadow-[0_0_20px_rgba(245,158,11,0.6)]" />
-          )}
-
-          {/* Inner orb visual representation */}
-          <div className="relative flex items-center justify-center">
-            <AnimatePresence mode="wait">
-              {isOpen ? (
-                <motion.div
-                  key="close"
-                  initial={{ rotate: -90, opacity: 0 }}
-                  animate={{ rotate: 0, opacity: 1 }}
-                  exit={{ rotate: 90, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <X className="w-6 h-6" />
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="orb"
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.8, opacity: 0 }}
-                  className="flex items-center justify-center"
-                >
-                  {orbState === 'listening' ? (
-                    <Mic className="w-6 h-6 animate-pulse text-amber-500" />
-                  ) : (
-                    <Sparkles className="w-6 h-6 animate-pulse" />
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </motion.button>
-      </div>
-
-      {/* Luxury Dialog Window */}
       <AnimatePresence>
         {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 40 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 40 }}
-            transition={{ type: "spring", damping: 22, stiffness: 240 }}
-            className="absolute bottom-20 right-0 w-[440px] max-w-[92vw] h-[640px] rounded-[28px] border border-amber-500/20 bg-black/95 backdrop-blur-xl shadow-[0_30px_70px_rgba(0,0,0,0.9)] overflow-hidden flex flex-col font-sans"
+          <motion.section
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 18, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 12, scale: 0.98 }}
+            transition={{ duration: 0.24, ease: easeOutExpo }}
+            className="absolute bottom-16 right-0 flex h-[min(680px,calc(100vh-7rem))] w-[min(440px,calc(100vw-2rem))] flex-col overflow-hidden rounded-lg border border-slate-800 bg-[#0B1221] text-white shadow-[0_26px_80px_rgba(2,6,23,0.42)]"
+            aria-label="LuxeWay AI Concierge chat"
           >
-            {/* Elegant Header */}
-            <div className="px-6 py-4 bg-gradient-to-b from-amber-950/20 via-amber-950/5 to-transparent border-b border-slate-900 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-500/10 to-yellow-600/10 flex items-center justify-center border border-amber-500/30">
-                  <Sparkles className={`w-5 h-5 text-amber-400 ${orbState === 'thinking' ? 'animate-spin' : 'animate-pulse'}`} />
+            <header className="border-b border-slate-800 bg-[#101A2D] px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-[#D4AF37]/25 bg-[#D4AF37]/10">
+                    <MessageSquare className="h-5 w-5 text-[#D4AF37]" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="truncate text-sm font-semibold tracking-normal text-white">LuxeWay AI Concierge</h3>
+                    <div className="mt-1 flex items-center gap-2">
+                      <span className={cn('h-1.5 w-1.5 rounded-full', status.dot)} />
+                      <span className={cn('truncate text-[11px] font-medium', status.tone)}>{status.label}</span>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-white font-extrabold text-sm tracking-wide flex items-center gap-1.5">
-                    LuxeWay Virtual Concierge
-                  </h3>
-                  {activeBookingId ? (
-                    <span className="text-[10px] text-amber-400 font-bold tracking-wider uppercase block">
-                      Active Booking Context: {activeBookingId.substring(0, 8).toUpperCase()}
-                    </span>
-                  ) : activeVehicleId ? (
-                    <span className="text-[10px] text-amber-400 font-bold tracking-wider uppercase block">
-                      Viewing Vehicle Details Context
-                    </span>
-                  ) : (
-                    <span className="text-[10px] text-slate-500 font-bold tracking-wider uppercase block">
-                      Global Portal Assistance
-                    </span>
-                  )}
-                </div>
-              </div>
 
-              {/* Toggles Panel */}
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleVoiceToggle}
-                  title={isVoiceEnabled ? "Mute TTS response" : "Read responses aloud"}
-                  className={`w-8 h-8 rounded-full border flex items-center justify-center transition-all cursor-pointer ${
-                    isVoiceEnabled
-                      ? 'bg-amber-500/10 border-amber-400 text-amber-400'
-                      : 'bg-slate-900/60 border-slate-800 text-slate-500 hover:text-white'
-                  }`}
-                >
-                  {isVoiceEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-                </button>
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="w-8 h-8 rounded-full bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition-colors border border-slate-800 cursor-pointer"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            {/* Chat Messages Log */}
-            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 flex flex-col bg-gradient-to-b from-black to-slate-950/90">
-              {messages.map((msg, idx) => (
-                <div key={idx} className={`flex flex-col ${msg.role === 'USER' ? 'items-end' : 'items-start'} space-y-1`}>
-                  {/* Dialogue Bubble */}
-                  <div className={`max-w-[90%] rounded-2xl px-4 py-3 text-sm leading-relaxed border ${
-                    msg.role === 'USER'
-                      ? 'bg-gradient-to-tr from-amber-600 to-amber-700 text-white rounded-br-none border-amber-500/30 shadow-md shadow-amber-900/10'
-                      : 'bg-slate-900/90 text-slate-200 border-slate-850 rounded-bl-none'
-                  }`}>
-                    <p className="whitespace-pre-wrap">{msg.content}</p>
-                    
-                    {/* Feedback Rating Panel for AI messages */}
-                    {msg.role === 'ASSISTANT' && msg.id && (
-                      <div className="mt-2.5 pt-2 border-t border-slate-850 flex items-center justify-between text-[10px] text-slate-500">
-                        <span>Was this helpful?</span>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleFeedback(idx, true)}
-                            disabled={!!msg.feedbackGiven}
-                            className={`p-1 rounded hover:bg-slate-800 transition-colors ${msg.feedbackGiven === 'UP' ? 'text-amber-400' : 'text-slate-500'}`}
-                          >
-                            <ThumbsUp className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleFeedback(idx, false)}
-                            disabled={!!msg.feedbackGiven}
-                            className={`p-1 rounded hover:bg-slate-800 transition-colors ${msg.feedbackGiven === 'DOWN' ? 'text-rose-400' : 'text-slate-500'}`}
-                          >
-                            <ThumbsDown className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleVoiceToggle}
+                    title={isVoiceEnabled ? 'Mute spoken responses' : 'Read responses aloud'}
+                    className={cn(
+                      'flex h-9 w-9 items-center justify-center rounded-md border transition duration-200 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/40',
+                      isVoiceEnabled
+                        ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
+                        : 'border-slate-700 bg-slate-900 text-slate-400 hover:text-white'
                     )}
-                  </div>
-
-                  {/* Rich Action UI Cards Render */}
-                  {msg.role === 'ASSISTANT' && msg.actionCard && (
-                    <div className="w-[95%] mt-2">
-                      {/* 1. CANCEL BOOKING CARD */}
-                      {msg.actionCard.action === 'CANCEL_BOOKING' && (
-                        <div className="p-4 border border-rose-500/20 bg-rose-500/5 rounded-2xl space-y-3">
-                          <div className="flex items-center gap-2 text-rose-400 font-bold text-xs uppercase tracking-wider">
-                            <AlertCircle className="w-4 h-4" />
-                            <span>Trip Cancelled</span>
-                          </div>
-                          <p className="text-slate-300 text-xs">{msg.actionCard.message}</p>
-                          <div className="bg-slate-900/40 p-2.5 border border-slate-850 rounded-xl flex justify-between text-xs font-mono">
-                            <span className="text-slate-500">Refund Amount</span>
-                            <span className="text-rose-400 font-bold">${msg.actionCard.refundAmount}</span>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* 2. MODIFY DATES CARD */}
-                      {msg.actionCard.action === 'MODIFY_BOOKING' && (
-                        <div className="p-4 border border-emerald-500/20 bg-emerald-500/5 rounded-2xl space-y-3">
-                          <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs uppercase tracking-wider">
-                            <CheckCircle2 className="w-4 h-4" />
-                            <span>Trip Dates Modified</span>
-                          </div>
-                          <p className="text-slate-300 text-xs">{msg.actionCard.message}</p>
-                          <div className="bg-slate-900/40 p-2.5 border border-slate-850 rounded-xl space-y-1.5 text-xs font-mono">
-                            <div className="flex justify-between">
-                              <span className="text-slate-500">New End Date</span>
-                              <span className="text-white font-bold">{msg.actionCard.newEndDate}</span>
-                            </div>
-                            <div className="flex justify-between border-t border-slate-800/80 pt-1.5">
-                              <span className="text-slate-500">Additional Cost</span>
-                              <span className="text-emerald-400 font-bold">+${msg.actionCard.additionalCost}</span>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* 3. DOWNLOAD INVOICE CARD */}
-                      {msg.actionCard.action === 'DOWNLOAD_INVOICE' && (
-                        <div className="p-4 border border-amber-500/20 bg-slate-900/60 rounded-2xl space-y-3">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="text-amber-400 font-extrabold tracking-wider uppercase">Billing Invoice</span>
-                            <span className="text-slate-500 font-mono">{msg.actionCard.invoiceNumber}</span>
-                          </div>
-                          <div className="space-y-1.5 text-xs font-mono text-slate-300">
-                            <div className="flex justify-between"><span className="text-slate-500">Recipient</span><span>{msg.actionCard.customerName}</span></div>
-                            <div className="flex justify-between"><span className="text-slate-500">Vehicle</span><span>{msg.actionCard.vehicleName}</span></div>
-                            <div className="flex justify-between"><span className="text-slate-500">Duration</span><span>{msg.actionCard.totalDays} Days</span></div>
-                            <div className="flex justify-between border-t border-slate-800/80 pt-1.5"><span className="text-slate-500">Total Charged</span><span className="text-white font-bold">${msg.actionCard.total}</span></div>
-                          </div>
-                          <a
-                            href={msg.actionCard.pdfUrl}
-                            download
-                            className="w-full py-2 bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-black font-extrabold text-[11px] uppercase tracking-widest rounded-lg flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                          >
-                            <Download className="w-3.5 h-3.5" /> Download PDF
-                          </a>
-                        </div>
-                      )}
-
-                      {/* 4. EMERGENCY DISPATCH CARD */}
-                      {msg.actionCard.action === 'EMERGENCY_DISPATCH' && (
-                        <div className="p-4 border border-rose-500/30 bg-rose-500/5 rounded-2xl space-y-3">
-                          <div className="flex items-center gap-2 text-rose-500 font-bold text-xs uppercase tracking-wider animate-pulse">
-                            <Wrench className="w-4 h-4" />
-                            <span>Roadside Dispatch Active</span>
-                          </div>
-                          <p className="text-slate-350 text-xs">{msg.actionCard.message}</p>
-                          <a
-                            href="/help/emergency"
-                            className="w-full py-2 bg-rose-950/40 hover:bg-rose-950 border border-rose-500/40 text-rose-400 font-bold text-[10px] uppercase tracking-widest rounded-lg flex items-center justify-center gap-1.5 transition-all"
-                          >
-                            <AlertTriangle className="w-3.5 h-3.5" /> View Incident Dashboard
-                          </a>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* INLINE DELIVERY TRACKING MAPS INTEGRATION */}
-                  {msg.role === 'ASSISTANT' && msg.content.includes("GPS") && activeBookingId && (
-                    <div className="w-full mt-3 rounded-2xl overflow-hidden shadow-lg border border-slate-900">
-                      <DeliveryTrackerMap bookingId={activeBookingId} />
-                    </div>
-                  )}
+                  >
+                    {isVoiceEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsOpen(false)}
+                    className="flex h-9 w-9 items-center justify-center rounded-md border border-slate-700 bg-slate-900 text-slate-400 transition duration-200 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/40"
+                    aria-label="Close concierge"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
                 </div>
-              ))}
+              </div>
+            </header>
 
-              {/* Typing Response Loading Indicator */}
-              {loading && (
-                <div className="flex justify-start">
-                  <div className="bg-slate-900 border border-slate-850 rounded-2xl rounded-bl-none px-4 py-3 flex items-center gap-1.5 shadow-sm">
-                    <span className="w-2 h-2 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <span className="w-2 h-2 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <span className="w-2 h-2 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                  </div>
-                </div>
-              )}
-              <div ref={messagesEndRef} />
+            <div className="flex-1 overflow-y-auto bg-[#0B1221] px-4 py-4">
+              <div className="flex flex-col gap-4">
+                {messages.map((msg, idx) => {
+                  const isUser = msg.role === 'USER';
+
+                  return (
+                    <motion.div
+                      key={`${msg.createdAt}-${idx}`}
+                      initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.18, ease: easeOutExpo }}
+                      className={cn('flex flex-col gap-2', isUser ? 'items-end' : 'items-start')}
+                    >
+                      <div
+                        className={cn(
+                          'max-w-[88%] rounded-lg border px-3.5 py-3 text-sm leading-6 shadow-sm',
+                          isUser
+                            ? 'border-[#D4AF37]/25 bg-[#D4AF37] text-[#0B1221]'
+                            : 'border-slate-800 bg-[#111B2E] text-slate-100'
+                        )}
+                      >
+                        <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+
+                        {!isUser && msg.id && (
+                          <div className="mt-3 flex items-center justify-between gap-3 border-t border-slate-800 pt-2 text-[11px] text-slate-400">
+                            <span>Helpful?</span>
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleFeedback(idx, true)}
+                                disabled={!!msg.feedbackGiven}
+                                className={cn(
+                                  'rounded-md p-1.5 transition duration-150 hover:bg-slate-800 disabled:cursor-default disabled:opacity-70',
+                                  msg.feedbackGiven === 'UP' ? 'text-[#D4AF37]' : 'text-slate-400'
+                                )}
+                                aria-label="Mark response helpful"
+                              >
+                                <ThumbsUp className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleFeedback(idx, false)}
+                                disabled={!!msg.feedbackGiven}
+                                className={cn(
+                                  'rounded-md p-1.5 transition duration-150 hover:bg-slate-800 disabled:cursor-default disabled:opacity-70',
+                                  msg.feedbackGiven === 'DOWN' ? 'text-rose-300' : 'text-slate-400'
+                                )}
+                                aria-label="Mark response not helpful"
+                              >
+                                <ThumbsDown className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {!isUser && renderActionCard(msg)}
+
+                      {!isUser && msg.content.includes('GPS') && activeBookingId && (
+                        <div className="w-full overflow-hidden rounded-lg border border-slate-800">
+                          <DeliveryTrackerMap bookingId={activeBookingId} />
+                        </div>
+                      )}
+                    </motion.div>
+                  );
+                })}
+
+                {loading && (
+                  <motion.div
+                    initial={shouldReduceMotion ? false : { opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex justify-start"
+                  >
+                    <div className="flex items-center gap-2 rounded-lg border border-slate-800 bg-[#111B2E] px-3.5 py-3 text-xs text-slate-400">
+                      <Sparkles className="h-3.5 w-3.5 text-[#D4AF37]" />
+                      <span>Concierge is composing</span>
+                      <span className="flex items-center gap-1" aria-hidden="true">
+                        {[0, 1, 2].map(i => (
+                          <motion.span
+                            key={i}
+                            className="h-1.5 w-1.5 rounded-full bg-[#D4AF37]"
+                            animate={shouldReduceMotion ? undefined : { opacity: [0.35, 1, 0.35], y: [0, -2, 0] }}
+                            transition={{ duration: 0.75, repeat: Infinity, delay: i * 0.12 }}
+                          />
+                        ))}
+                      </span>
+                    </div>
+                  </motion.div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
             </div>
 
-            {/* Quick Actions Ribbon */}
-            <div className="px-4 py-2 border-t border-slate-900 bg-slate-950/80 overflow-x-auto whitespace-nowrap scrollbar-none flex gap-2">
-              {quickActions.map((act, i) => (
+            <div className="border-t border-slate-800 bg-[#101A2D] px-4 py-3">
+              <div className="-mx-1 mb-3 flex gap-2 overflow-x-auto px-1 pb-1">
+                {quickActions.map(action => {
+                  const Icon = action.icon;
+
+                  return (
+                    <button
+                      key={action.label}
+                      type="button"
+                      onClick={() => handleSend(action.text)}
+                      disabled={loading}
+                      className="inline-flex h-8 shrink-0 items-center gap-2 rounded-md border border-slate-700 bg-slate-900 px-3 text-xs font-medium text-slate-300 transition duration-200 hover:border-[#D4AF37]/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <Icon className="h-3.5 w-3.5 text-[#D4AF37]" />
+                      {action.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <form
+                onSubmit={e => {
+                  e.preventDefault();
+                  handleSend();
+                }}
+                className="flex items-center gap-2"
+              >
                 <button
-                  key={i}
-                  onClick={() => handleSend(act.text)}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-slate-900 hover:bg-amber-950/20 text-slate-300 hover:text-amber-400 border border-slate-850 hover:border-amber-500/30 text-[11px] font-semibold transition-all cursor-pointer"
+                  type="button"
+                  onClick={startVoiceListening}
+                  title="Dictate message"
+                  className={cn(
+                    'flex h-11 w-11 shrink-0 items-center justify-center rounded-md border transition duration-200 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/40',
+                    isListening
+                      ? 'border-rose-400/50 bg-rose-400/10 text-rose-200'
+                      : 'border-slate-700 bg-slate-900 text-slate-400 hover:text-white'
+                  )}
                 >
-                  {act.label}
+                  <Mic className="h-4 w-4" />
                 </button>
-              ))}
+
+                <div className="relative min-w-0 flex-1">
+                  <input
+                    type="text"
+                    value={input}
+                    onChange={e => setInput(e.target.value)}
+                    placeholder="Ask about bookings, delivery, refunds..."
+                    disabled={loading}
+                    className="h-11 w-full rounded-md border border-slate-700 bg-slate-900 px-3 pr-9 text-sm text-white outline-none transition duration-200 placeholder:text-slate-500 focus:border-[#D4AF37]/60 focus:ring-2 focus:ring-[#D4AF37]/15 disabled:cursor-not-allowed disabled:opacity-60"
+                  />
+                  <ChevronRight className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600" />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={!input.trim() || loading}
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-[#D4AF37]/40 bg-[#D4AF37] text-[#0B1221] transition duration-200 hover:bg-[#E5C158] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 disabled:border-slate-700 disabled:bg-slate-900 disabled:text-slate-600"
+                  aria-label="Send message"
+                >
+                  <Send className="h-4 w-4" />
+                </button>
+              </form>
             </div>
-
-            {/* Input Message Area */}
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleSend();
-              }}
-              className="p-4 bg-slate-950 border-t border-slate-900 flex gap-2 items-center"
-            >
-              {/* Mic Dictate Trigger */}
-              <button
-                type="button"
-                onClick={startVoiceListening}
-                title="Dictate message"
-                className={`w-11 h-11 rounded-xl flex items-center justify-center border transition-all cursor-pointer ${
-                  isListening
-                    ? 'bg-rose-500/10 border-rose-500/50 text-rose-500 animate-pulse'
-                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
-                }`}
-              >
-                <Mic className="w-4 h-4" />
-              </button>
-
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask our concierge anything about your trip..."
-                disabled={loading}
-                className="flex-1 bg-slate-900 border border-slate-850 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/30 placeholder-slate-600 transition-all"
-              />
-
-              <button
-                type="submit"
-                disabled={!input.trim() || loading}
-                className="w-11 h-11 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-600 text-black font-bold flex items-center justify-center hover:from-amber-600 hover:to-yellow-700 disabled:from-slate-900 disabled:to-slate-900 disabled:text-slate-650 border border-amber-400/30 disabled:border-slate-800 transition-all cursor-pointer"
-              >
-                <Send className="w-4 h-4 text-black" />
-              </button>
-            </form>
-          </motion.div>
+          </motion.section>
         )}
       </AnimatePresence>
     </div>
   );
 };
+
+const ActionPanel: React.FC<{ tone: 'amber' | 'emerald' | 'rose'; children: React.ReactNode }> = ({ tone, children }) => (
+  <div
+    className={cn(
+      'w-[92%] space-y-3 rounded-lg border p-3.5 shadow-sm',
+      tone === 'amber' && 'border-[#D4AF37]/25 bg-[#D4AF37]/10',
+      tone === 'emerald' && 'border-emerald-400/20 bg-emerald-400/10',
+      tone === 'rose' && 'border-rose-400/20 bg-rose-400/10'
+    )}
+  >
+    {children}
+  </div>
+);
+
+const ActionHeader: React.FC<{
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  tone: 'emerald' | 'rose';
+}> = ({ icon: Icon, label, tone }) => (
+  <div
+    className={cn(
+      'flex items-center gap-2 text-xs font-semibold',
+      tone === 'emerald' ? 'text-emerald-200' : 'text-rose-200'
+    )}
+  >
+    <Icon className="h-4 w-4" />
+    <span>{label}</span>
+  </div>
+);
+
+const ActionRow: React.FC<{ label: string; value: string; strong?: boolean }> = ({ label, value, strong }) => (
+  <div className="flex items-center justify-between gap-3 border-t border-slate-800 pt-2 first:border-t-0 first:pt-0">
+    <span className="text-slate-400">{label}</span>
+    <span className={cn('truncate text-right', strong ? 'font-semibold text-white' : 'text-slate-200')}>{value}</span>
+  </div>
+);

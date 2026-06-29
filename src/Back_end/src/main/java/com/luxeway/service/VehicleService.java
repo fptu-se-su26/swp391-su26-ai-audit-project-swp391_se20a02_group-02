@@ -335,6 +335,7 @@ public class VehicleService {
                 .engineSize(req.getEngineSize())
                 .color(req.getColor())
                 .licensePlate(req.getLicensePlate())
+                .vin(req.getVin())
                 .minRentalDays(req.getMinRentalDays())
                 .maxRentalDays(req.getMaxRentalDays())
                 .instantBook(req.getInstantBook())
@@ -641,6 +642,7 @@ public class VehicleService {
         vehicle.setEngineSize(req.getEngineSize());
         vehicle.setColor(req.getColor());
         vehicle.setLicensePlate(req.getLicensePlate());
+        vehicle.setVin(req.getVin());
         
         vehicle.setMinRentalDays(req.getMinRentalDays());
         vehicle.setMaxRentalDays(req.getMaxRentalDays());
@@ -763,6 +765,8 @@ public class VehicleService {
         r.setFuelType(v.getFuelType() != null ? v.getFuelType().name().toLowerCase() : null);
         r.setColor(v.getColor());
         r.setLicensePlate(v.getLicensePlate());
+        r.setVin(v.getVin());
+        r.setIsLocked(v.getIsLocked() != null ? v.getIsLocked() : true);
         r.setStatus(v.getStatus().name().toLowerCase());
         r.setApprovalStatus(v.getApprovalStatus() != null ? v.getApprovalStatus().name().toLowerCase() : null);
         r.setApprovalNote(v.getApprovalNote());

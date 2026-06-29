@@ -357,6 +357,29 @@ public class VehicleController {
         }
     }
     
+
+
+    @GetMapping("/{id}/detail")
+    public ResponseEntity<Map<String, Object>> getVehicleDetailById(@PathVariable String id) {
+        try {
+            VehicleDTOs.VehicleResponse vehicle = vehicleService.getById(id);
+            Map<String, Object> response = new HashMap<>();
+            response.put("vehicle", vehicle);
+            response.put("id", id);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Vehicle not found");
+            errorResponse.put("id", id);
+            return ResponseEntity.status(404).body(errorResponse);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Failed to fetch vehicle detail");
+            errorResponse.put("message", e.getMessage());
+            return ResponseEntity.status(500).body(errorResponse);
+        }
+    }
+
     @GetMapping("/owner/{ownerId}")
     public ResponseEntity<Map<String, Object>> getVehiclesByOwner(
             @PathVariable String ownerId,
@@ -508,6 +531,32 @@ public class VehicleController {
             }
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/{id}/control-lock")
+    public ResponseEntity<Map<String, Object>> controlLockVehicle(@PathVariable String id) {
+        try {
+            Vehicle vehicle = vehicleRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Vehicle not found"));
+            vehicle.setIsLocked(true);
+            vehicleRepository.save(vehicle);
+            return ResponseEntity.ok(Map.of("success", true, "isLocked", true, "message", "Vehicle successfully locked via Smartcar IoT simulation"));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/{id}/control-unlock")
+    public ResponseEntity<Map<String, Object>> controlUnlockVehicle(@PathVariable String id) {
+        try {
+            Vehicle vehicle = vehicleRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Vehicle not found"));
+            vehicle.setIsLocked(false);
+            vehicleRepository.save(vehicle);
+            return ResponseEntity.ok(Map.of("success", true, "isLocked", false, "message", "Vehicle successfully unlocked via Smartcar IoT simulation"));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
         }
     }
 

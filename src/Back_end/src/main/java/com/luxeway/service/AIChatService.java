@@ -122,10 +122,10 @@ public class AIChatService {
             // An action was successfully executed, inject action message
             aiResponse = (String) actionCard.get("message");
             rawResponse = "{\"actionExecuted\": true, \"action\": \"" + actionCard.get("action") + "\"}";
-        } else if (apiKey == null || apiKey.trim().isEmpty() || "mock_key".equals(apiKey) || !apiKey.startsWith("AIzaSy")) {
-            // Fallback to Mock Responses if API key is not configured or invalid (doesn't start with AIzaSy)
+        } else if (!hasConfiguredGeminiKey()) {
+            // Fallback to mock responses only when the API key is missing or still a placeholder.
             aiResponse = generateMockResponse(userMessage, user, recentBookings, contextBooking, contextVehicle, currentPage);
-            rawResponse = "{\"mock\": true, \"reason\": \"API key is not configured or mock_key or invalid\"}";
+            rawResponse = "{\"mock\": true, \"reason\": \"API key is not configured or is still a placeholder\"}";
         } else {
             try {
                 String url = String.format("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s", modelName, apiKey);
@@ -176,6 +176,17 @@ public class AIChatService {
         return result;
     }
 
+
+    private boolean hasConfiguredGeminiKey() {
+        if (apiKey == null) return false;
+        String key = apiKey.trim();
+        if (key.isEmpty()) return false;
+        String lowerKey = key.toLowerCase(Locale.ROOT);
+        return !lowerKey.equals("mock_key")
+                && !lowerKey.contains("your-gemini-api-key")
+                && !lowerKey.contains("placeholder")
+                && !lowerKey.contains("change_me");
+    }
     private Map<String, Object> checkForDirectActions(String message, Booking contextBooking, User user) {
         String msgLower = message.toLowerCase();
 

@@ -61,7 +61,7 @@ export const imageService = {
     if (onProgress) {
       return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
-        const apiBase = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8080';
+        const apiBase = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8080/api/v1';
         xhr.open('POST', `${apiBase}/upload`);
 
         // Set auth header if token exists

@@ -7,9 +7,6 @@
 USE car_rental_platform;
 
 
-IF NOT EXISTS (SELECT 1 FROM users WHERE email = 'admin@luxeway.vn')
-BEGIN
-
 -- Insert Users
 INSERT INTO users (id, email, password_hash, first_name, last_name, display_name, avatar, phone, role, verified, kyc_verified, driving_license_verified, rating, total_reviews, total_rentals, bio, location, account_type, company_name, stripe_customer_id, is_active, joined_at, last_active, created_at, updated_at, wallet_balance, kyc_status, driver_license_status, provider) VALUES
 ('A1B2C3D4-E5F6-7890-ABCD-123456789012', 'admin@luxeway.vn', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', N'Admin', N'LuxeWay', N'Admin LuxeWay', 'https://ui-avatars.com/api/?name=Admin+LuxeWay&background=0F172A&color=fff&size=200', '0901234567', 'ADMIN', 1, 1, 1, 5.00, 0, 0, N'LuxeWay Platform Administrator', N'Hồ Chí Minh', 'INDIVIDUAL', NULL, NULL, 1, '2024-01-01 00:00:00', '2024-05-23 10:00:00', '2024-01-01 00:00:00', '2024-05-23 10:00:00', 0, 'VERIFIED', 'VERIFIED', 'LOCAL'),
@@ -200,7 +197,6 @@ INSERT INTO faqs (id, question, answer, is_active, display_order) VALUES
 (3, N'Chi phí thuê xe đã bao gồm bảo hiểm chưa?', N'Tất cả các xe được niêm yết trên LuxeWay đều được trang bị bảo hiểm trách nhiệm dân sự bắt buộc của chủ xe. Ngoài ra, trong quá trình đặt xe, LuxeWay cung cấp thêm tùy chọn gói bảo hiểm chuyến đi cao cấp (LuxeWay Shield) giúp bảo vệ toàn diện trước các sự cố va quẹt, tai nạn hoặc trộm cắp tài sản.', 1, 3),
 (4, N'Tôi làm thế nào để đăng ký làm chủ xe hoặc đối tác doanh nghiệp?', N'Rất đơn giản! Bạn chỉ cần nhấn nút "Đăng Ký", chọn vai trò "Chủ Xe" (Owner). Sau khi đăng nhập, bạn có thể dễ dàng đăng ký thông tin xe, hình ảnh và mức giá mong muốn. Nếu bạn sở hữu doanh nghiệp vận tải, hãy vào phần Profile cá nhân chọn nâng cấp lên "Tài Khoản Doanh Nghiệp" để kích hoạt các công cụ quản lý đội xe nâng cao.', 1, 4);
 SET IDENTITY_INSERT faqs OFF;
-END;
 
 PRINT '✅ Sample data with 100% REAL approved vehicles, promotions, destinations, and FAQs imported successfully!';
 PRINT '';

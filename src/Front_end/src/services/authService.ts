@@ -46,6 +46,8 @@ export const authService = {
           badges: userInfo.badges || [],
           accountType: userInfo.accountType || 'INDIVIDUAL',
           preferredLanguage: userInfo.preferredLanguage || 'en',
+          kycStatus: userInfo.kycStatus || 'NOT_UPLOADED',
+          driverLicenseStatus: userInfo.driverLicenseStatus || 'NOT_UPLOADED',
         } as unknown as User;
         
         localStorage.setItem(USER_KEY, JSON.stringify(user));
@@ -99,8 +101,10 @@ export const authService = {
           location: '',
           bio: '',
           badges: [],
-          accountType: payload.accountType as any,
+           accountType: payload.accountType as any,
           preferredLanguage: userInfo.preferredLanguage || 'en',
+          kycStatus: 'NOT_UPLOADED',
+          driverLicenseStatus: 'NOT_UPLOADED',
         } as unknown as User;
         
         localStorage.setItem(USER_KEY, JSON.stringify(user));
@@ -175,12 +179,14 @@ export const authService = {
         verified: userInfo.verified || userInfo.isVerified || false,
         rating: userInfo.rating || 0,
         totalReviews: userInfo.totalReviews || 0,
-        joinedAt: userInfo.joinedAt || userInfo.createdAt,
+        joinedAt: userInfo.joinedAt || userInfo.createdAt || '2024-01-15T09:00:00Z',
         location: userInfo.location || userInfo.city || '',
         bio: userInfo.bio || '',
         badges: userInfo.badges || [],
         accountType: userInfo.accountType || 'INDIVIDUAL',
         preferredLanguage: userInfo.preferredLanguage || 'en',
+        kycStatus: userInfo.kycStatus || 'NOT_UPLOADED',
+        driverLicenseStatus: userInfo.driverLicenseStatus || 'NOT_UPLOADED',
       } as unknown as User;
       
       localStorage.setItem(USER_KEY, JSON.stringify(user));

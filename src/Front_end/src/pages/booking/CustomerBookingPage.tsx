@@ -5,6 +5,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import SockJS from 'sockjs-client';
 import Stomp from 'stompjs';
 import { mapService, BookingTrackingInfo } from '@/services/mapService';
+import { vehicleService } from '@/services/vehicleService';
 import { formatCurrency } from '@/utils';
 import { useUIStore } from '@/store';
 import { ArrowLeft, Navigation, MapPin, Compass, ShieldCheck } from 'lucide-react';
@@ -60,6 +61,35 @@ export const CustomerBookingPage: React.FC = () => {
   const [eta, setEta] = useState<number | null>(null); // in minutes
   const [loading, setLoading] = useState(true);
 
+  // Smartcar IoT Control Panel State
+  const [isLocked, setIsLocked] = useState<boolean>(true);
+  const [togglingLock, setTogglingLock] = useState<boolean>(false);
+
+  const handleLockToggle = async () => {
+    if (!bookingInfo || !bookingInfo.vehicleId) return;
+    
+    setTogglingLock(true);
+    try {
+      const action = isLocked ? vehicleService.controlUnlock(bookingInfo.vehicleId) : vehicleService.controlLock(bookingInfo.vehicleId);
+      const res = await action;
+      
+      if (res.success) {
+        setIsLocked(res.isLocked);
+        toast.success(
+          res.isLocked ? 'Locked successfully!' : 'Unlocked successfully!',
+          res.message
+        );
+      } else {
+        toast.error('Control Action Failed', res.message);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Control Action Failed', 'An error occurred during vehicle command execution.');
+    } finally {
+      setTogglingLock(false);
+    }
+  };
+
   // 1. Fetch initial tracking info & draw static map elements
   useEffect(() => {
     if (!bookingId) return;
@@ -76,6 +106,17 @@ export const CustomerBookingPage: React.FC = () => {
           });
         }
         setEta(info.estimatedTimeMin);
+        
+        // Fetch vehicle details lock status
+        if (info.vehicleId) {
+          vehicleService.getById(info.vehicleId)
+            .then(vehicleData => {
+              if (vehicleData && vehicleData.isLocked !== undefined) {
+                setIsLocked(vehicleData.isLocked);
+              }
+            })
+            .catch(err => console.error('Error fetching vehicle details:', err));
+        }
         setLoading(false);
       })
       .catch(err => {
@@ -394,6 +435,69 @@ export const CustomerBookingPage: React.FC = () => {
               <div className="flex items-center gap-2">
                 <i className="fa-solid fa-arrows-to-dot text-emerald-400 text-sm"></i>
                 <span className="text-[10px] text-slate-300 font-semibold">Heading: <span className="font-extrabold text-white">{vehicleLocation?.heading ? vehicleLocation.heading.toFixed(0) : '0'}°</span></span>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 4: Smartcar Keyless Control Panel */}
+          <div className="rounded-[2rem] p-5 border border-white/10 shadow-2xl glass-dark text-white select-none">
+            <div className="flex items-center justify-between border-b border-white/5 pb-3.5 mb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400 text-sm">
+                  <i className="fa-solid fa-key"></i>
+                </div>
+                <div>
+                  <h4 className="text-xs font-extrabold text-white">Smartcar Keyless Control</h4>
+                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">IoT Simulation (100% Real)</p>
+                </div>
+              </div>
+              <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border ${
+                isLocked 
+                  ? 'bg-red-500/10 text-red-400 border-red-500/20' 
+                  : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+              }`}>
+                {isLocked ? 'Locked' : 'Unlocked'}
+              </span>
+            </div>
+
+            <div className="space-y-4">
+              <button
+                type="button"
+                onClick={handleLockToggle}
+                disabled={togglingLock}
+                className={`w-full py-3.5 rounded-xl font-display font-black uppercase text-xs tracking-wider transition-all duration-200 shadow-md flex items-center justify-center gap-2 ${
+                  isLocked 
+                    ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/10' 
+                    : 'bg-red-500 hover:bg-red-600 text-white shadow-red-500/10'
+                } disabled:opacity-50 disabled:pointer-events-none`}
+              >
+                {togglingLock ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    Executing Command...
+                  </>
+                ) : isLocked ? (
+                  <>
+                    <i className="fa-solid fa-lock-open text-xs"></i>
+                    Unlock Vehicle Doors
+                  </>
+                ) : (
+                  <>
+                    <i className="fa-solid fa-lock text-xs"></i>
+                    Lock Vehicle Doors
+                  </>
+                )}
+              </button>
+
+              <div className="grid grid-cols-2 gap-2 text-[10px] text-slate-450 leading-relaxed font-semibold">
+                <div className="flex items-center gap-1.5 p-2.5 bg-slate-900/50 border border-white/5 rounded-xl">
+                  <i className="fa-solid fa-gas-pump text-blue-400"></i>
+                  <span>Fuel: <span className="text-white font-extrabold">78%</span></span>
+                </div>
+                <div className="flex items-center gap-1.5 p-2.5 bg-slate-900/50 border border-white/5 rounded-xl">
+                  <i className="fa-solid fa-gauge text-blue-400"></i>
+                  <span>Odo: <span className="text-white font-extrabold">12,450 km</span></span>
+                </div>
               </div>
             </div>
           </div>

@@ -40,17 +40,22 @@ export const DrivingLicenseScanner: React.FC<DrivingLicenseScannerProps> = ({ on
   const toast = useToast();
 
   const steps = [
-    { key: 'front', label: 'MẶT TRƯỚC' },
-    { key: 'back',  label: 'MẶT SAU'  },
-    { key: 'confirm', label: 'XÁC NHẬN' },
-    { key: 'success', label: 'HOÀN TẤT' },
+    { key: 'front', label: 'Mặt trước' },
+    { key: 'back',  label: 'Mặt sau'  },
+    { key: 'confirm', label: 'Xác nhận' },
+    { key: 'success', label: 'Hoàn tất' },
   ];
   const currentStepIdx = steps.findIndex(s => s.key === step);
 
   const handleImageSelect = (side: 'front' | 'back', file: File) => {
     const url = URL.createObjectURL(file);
-    if (side === 'front') { setFrontFile(file); setFrontPreview(url); }
-    else                  { setBackFile(file);  setBackPreview(url);  }
+    if (side === 'front') {
+      setFrontFile(file);
+      setFrontPreview(url);
+    } else {
+      setBackFile(file);
+      setBackPreview(url);
+    }
   };
 
   const scanFront = async () => {
@@ -102,7 +107,7 @@ export const DrivingLicenseScanner: React.FC<DrivingLicenseScannerProps> = ({ on
     inputRef: React.RefObject<HTMLInputElement>;
   }) => (
     <div
-      className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-2xl p-8 text-center cursor-pointer hover:border-accent/50 hover:bg-accent/5 transition-all group"
+      className="border border-dashed border-slate-350 dark:border-slate-700 rounded-md p-8 text-center cursor-pointer hover:border-[#C9A227] transition-all group"
       onClick={() => inputRef.current?.click()}
       onDragOver={e => e.preventDefault()}
       onDrop={e => {
@@ -120,19 +125,19 @@ export const DrivingLicenseScanner: React.FC<DrivingLicenseScannerProps> = ({ on
       />
       {preview ? (
         <div className="space-y-3">
-          <img src={preview} alt="Preview" className="max-h-48 mx-auto rounded-xl object-contain shadow" />
-          <p className="text-xs text-green-600 dark:text-green-400 font-bold">✓ Đã chọn ảnh — nhấn để đổi</p>
+          <img src={preview} alt="Preview" className="max-h-48 mx-auto rounded-md object-contain border border-slate-200 dark:border-[#1E2D45]" />
+          <p className="text-xs text-green-650 dark:text-green-405 font-bold">Đã chọn ảnh thành công</p>
         </div>
       ) : (
         <div className="space-y-3">
-          <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-2xl flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
-            <Upload className="w-7 h-7 text-slate-400" />
+          <div className="w-12 h-12 bg-slate-100 dark:bg-[#1E2D45] rounded-md flex items-center justify-center mx-auto transition-transform">
+            <Upload className="w-6 h-6 text-slate-400" />
           </div>
           <div>
-            <p className="font-bold text-slate-700 dark:text-slate-200 text-sm">
+            <p className="font-bold text-slate-750 dark:text-slate-200 text-xs uppercase tracking-wider">
               Tải ảnh {side === 'front' ? 'mặt trước' : 'mặt sau'} GPLX
             </p>
-            <p className="text-xs text-slate-400 mt-1">Kéo thả hoặc nhấn để chọn · JPG, PNG, WEBP</p>
+            <p className="text-[10px] text-slate-400 mt-1">Kéo thả hoặc nhấn để chọn file JPG, PNG, WEBP</p>
           </div>
         </div>
       )}
@@ -142,30 +147,30 @@ export const DrivingLicenseScanner: React.FC<DrivingLicenseScannerProps> = ({ on
   const InfoRow = ({ label, value }: { label: string; value?: string | null }) => (
     value ? (
       <div>
-        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">{label}</span>
+        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">{label}</span>
         <p className="font-bold text-slate-800 dark:text-white text-sm">{value}</p>
       </div>
     ) : null
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-sans">
       {/* Stepper */}
       <div className="flex items-center justify-between px-2">
         {steps.map((s, idx) => (
           <React.Fragment key={s.key}>
             <div className="flex flex-col items-center gap-1">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                idx < currentStepIdx  ? 'bg-green-500 text-white' :
-                idx === currentStepIdx ? 'bg-accent text-white ring-4 ring-accent/20' :
+              <div className={`w-7 h-7 rounded-sm flex items-center justify-center text-xs font-bold transition-all ${
+                idx < currentStepIdx  ? 'bg-emerald-500 text-white' :
+                idx === currentStepIdx ? 'bg-[#C9A227] text-[#0B1221]' :
                 'bg-slate-200 dark:bg-slate-700 text-slate-400'
               }`}>
-                {idx < currentStepIdx ? <CheckCircle className="w-4 h-4" /> : idx + 1}
+                {idx < currentStepIdx ? <CheckCircle className="w-4 h-4 text-white" /> : idx + 1}
               </div>
-              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">{s.label}</span>
+              <span className="text-[9px] font-bold text-slate-455 uppercase tracking-wider">{s.label}</span>
             </div>
             {idx < steps.length - 1 && (
-              <div className={`flex-1 h-0.5 mx-2 transition-all ${idx < currentStepIdx ? 'bg-green-500' : 'bg-slate-200 dark:bg-slate-700'}`} />
+              <div className={`flex-1 h-[2px] mx-2 transition-all ${idx < currentStepIdx ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-700'}`} />
             )}
           </React.Fragment>
         ))}
@@ -176,21 +181,21 @@ export const DrivingLicenseScanner: React.FC<DrivingLicenseScannerProps> = ({ on
         {step === 'front' && (
           <motion.div key="front" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
             <div className="text-center">
-              <div className="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                <Car className="w-7 h-7 text-blue-500" />
+              <div className="w-12 h-12 bg-slate-50 dark:bg-[#1E2D45] rounded-md flex items-center justify-center mx-auto mb-3">
+                <Car className="w-6 h-6 text-[#C9A227]" />
               </div>
-              <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-1">Quét mặt trước GPLX</h3>
-              <p className="text-xs text-slate-500">Chụp rõ mặt trước Giấy Phép Lái Xe — hệ thống sẽ tự động đọc thông tin</p>
+              <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-1">Quét mặt trước GPLX</h3>
+              <p className="text-[11px] text-slate-500">Chụp rõ mặt trước Giấy Phép Lái Xe để hệ thống tự động đọc thông tin</p>
             </div>
             <DropZone side="front" preview={frontPreview} inputRef={frontInputRef} />
             <div className="flex justify-between items-center pt-2">
-              <button onClick={onCancel} className="btn-ghost px-6 py-3 rounded-xl font-bold text-sm">Hủy</button>
+              <button onClick={onCancel} className="px-6 py-3 border border-slate-200 dark:border-[#1E2D45] hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md font-bold text-xs uppercase tracking-wider transition-all">Hủy</button>
               <button
                 onClick={scanFront}
                 disabled={!frontFile || loading}
-                className="btn-primary px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2 disabled:opacity-50"
+                className="bg-[#C9A227] hover:bg-[#E5C158] text-[#0B1221] px-6 py-3 rounded-md font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2 disabled:opacity-50"
               >
-                {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Đang quét...</> : 'Quét & Tiếp tục →'}
+                {loading ? <><Loader2 className="w-4 h-4 animate-spin text-[#0B1221]" /> Đang quét...</> : 'Quét & Tiếp tục'}
               </button>
             </div>
           </motion.div>
@@ -201,8 +206,8 @@ export const DrivingLicenseScanner: React.FC<DrivingLicenseScannerProps> = ({ on
           <motion.div key="back" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
             {/* Show front scan result */}
             {frontData && (frontData.fullName || frontData.idNumber) && (
-              <div className="bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800/30 rounded-xl p-4">
-                <p className="text-xs font-bold text-green-700 dark:text-green-400 mb-2">✓ Mặt trước đã quét thành công</p>
+              <div className="bg-slate-50/50 dark:bg-[#1E2D45]/30 border border-slate-200 dark:border-[#1E2D45] rounded-md p-4">
+                <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mb-2">Mặt trước đã quét thành công</p>
                 <div className="grid grid-cols-2 gap-2">
                   {frontData.fullName && <InfoRow label="Họ tên" value={frontData.fullName} />}
                   {frontData.idNumber && <InfoRow label="Số GPLX" value={frontData.idNumber} />}
@@ -210,21 +215,21 @@ export const DrivingLicenseScanner: React.FC<DrivingLicenseScannerProps> = ({ on
               </div>
             )}
             <div className="text-center">
-              <div className="w-14 h-14 bg-purple-500/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                <FileText className="w-7 h-7 text-purple-500" />
+              <div className="w-12 h-12 bg-slate-50 dark:bg-[#1E2D45] rounded-md flex items-center justify-center mx-auto mb-3">
+                <FileText className="w-6 h-6 text-[#C9A227]" />
               </div>
-              <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-1">Quét mặt sau GPLX</h3>
-              <p className="text-xs text-slate-500">Tiếp theo chụp mặt sau Giấy Phép Lái Xe</p>
+              <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-1">Quét mặt sau GPLX</h3>
+              <p className="text-[11px] text-slate-500">Tiếp theo chụp mặt sau Giấy Phép Lái Xe</p>
             </div>
             <DropZone side="back" preview={backPreview} inputRef={backInputRef} />
             <div className="flex justify-between items-center pt-2">
-              <button onClick={() => setStep('front')} className="btn-ghost px-6 py-3 rounded-xl font-bold text-sm">← Quay lại</button>
+              <button onClick={() => setStep('front')} className="px-6 py-3 border border-slate-200 dark:border-[#1E2D45] hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md font-bold text-xs uppercase tracking-wider transition-all">Quay lại</button>
               <button
                 onClick={scanBack}
                 disabled={!backFile || loading}
-                className="btn-primary px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2 disabled:opacity-50"
+                className="bg-[#C9A227] hover:bg-[#E5C158] text-[#0B1221] px-6 py-3 rounded-md font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2 disabled:opacity-50"
               >
-                {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Đang quét...</> : 'Quét & Tiếp tục →'}
+                {loading ? <><Loader2 className="w-4 h-4 animate-spin text-[#0B1221]" /> Đang quét...</> : 'Quét & Tiếp tục'}
               </button>
             </div>
           </motion.div>
@@ -234,24 +239,24 @@ export const DrivingLicenseScanner: React.FC<DrivingLicenseScannerProps> = ({ on
         {step === 'confirm' && (
           <motion.div key="confirm" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
             <div className="text-center">
-              <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-1">Xác nhận thông tin GPLX</h3>
-              <p className="text-xs text-slate-500">Kiểm tra kỹ thông tin trước khi gửi đi xét duyệt</p>
+              <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-1">Xác nhận thông tin GPLX</h3>
+              <p className="text-[11px] text-slate-500">Kiểm tra kỹ thông tin trước khi gửi đi xác duyệt</p>
             </div>
 
             {/* Image previews */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Mặt trước</p>
-                {frontPreview && <img src={frontPreview} alt="Front" className="w-full rounded-xl object-contain border border-slate-200 dark:border-slate-700 max-h-32" />}
+                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Mặt trước</p>
+                {frontPreview && <img src={frontPreview} alt="Front" className="w-full rounded-md object-contain border border-slate-200 dark:border-[#1E2D45] max-h-32" />}
               </div>
               <div className="space-y-2">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Mặt sau</p>
-                {backPreview && <img src={backPreview} alt="Back" className="w-full rounded-xl object-contain border border-slate-200 dark:border-slate-700 max-h-32" />}
+                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Mặt sau</p>
+                {backPreview && <img src={backPreview} alt="Back" className="w-full rounded-md object-contain border border-slate-200 dark:border-[#1E2D45] max-h-32" />}
               </div>
             </div>
 
             {/* Extracted info */}
-            <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-5 border border-slate-200 dark:border-slate-700">
+            <div className="bg-slate-50/50 dark:bg-[#1E2D45]/30 rounded-md p-5 border border-slate-200 dark:border-[#1E2D45]">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-6">
                 <InfoRow label="Họ tên / Full Name" value={frontData?.fullName} />
                 <InfoRow label="Số GPLX / License ID" value={frontData?.idNumber} />
@@ -268,25 +273,25 @@ export const DrivingLicenseScanner: React.FC<DrivingLicenseScannerProps> = ({ on
                 )}
               </div>
               {!frontData?.fullName && !frontData?.idNumber && (
-                <p className="text-xs text-slate-400 text-center py-2">Không đọc được thông tin — ảnh sẽ được admin xét duyệt thủ công</p>
+                <p className="text-xs text-slate-455 text-center py-2">Không đọc được thông tin, sẽ được admin xác duyệt thủ công</p>
               )}
             </div>
 
-            <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/30 rounded-xl p-4 flex gap-3">
-              <AlertCircle className="w-5 h-5 text-blue-500 flex-shrink-0" />
-              <p className="text-xs text-blue-800 dark:text-blue-300">
-                GPLX sẽ được đội ngũ xét duyệt trong vòng 24 giờ. Bạn sẽ nhận thông báo khi hoàn tất.
+            <div className="bg-slate-100 dark:bg-[#1E2D45]/30 border border-slate-200 dark:border-[#1E2D45] rounded-md p-4 flex gap-3">
+              <AlertCircle className="w-5 h-5 text-[#C9A227] flex-shrink-0" />
+              <p className="text-[11px] text-slate-600 dark:text-slate-350">
+                GPLX sẽ được đội ngũ xác duyệt trong vòng 24 giờ. Bạn sẽ nhận thông báo khi hoàn tất.
               </p>
             </div>
 
             <div className="flex justify-between items-center pt-2">
-              <button onClick={() => setStep('back')} className="btn-ghost px-6 py-3 rounded-xl font-bold text-sm">← Quay lại</button>
+              <button onClick={() => setStep('back')} className="px-6 py-3 border border-slate-200 dark:border-[#1E2D45] hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md font-bold text-xs uppercase tracking-wider transition-all">Quay lại</button>
               <button
                 onClick={handleConfirm}
                 disabled={loading}
-                className="btn-primary px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2"
+                className="bg-[#C9A227] hover:bg-[#E5C158] text-[#0B1221] px-6 py-3 rounded-md font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2"
               >
-                {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Đang gửi...</> : 'Gửi xét duyệt'}
+                {loading ? <><Loader2 className="w-4 h-4 animate-spin text-[#0B1221]" /> Đang gửi...</> : 'Gửi xác duyệt'}
               </button>
             </div>
           </motion.div>
@@ -294,13 +299,13 @@ export const DrivingLicenseScanner: React.FC<DrivingLicenseScannerProps> = ({ on
 
         {/* SUCCESS STEP */}
         {step === 'success' && (
-          <motion.div key="success" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-8 space-y-4">
-            <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto">
-              <CheckCircle className="w-10 h-10 text-green-500" />
+          <motion.div key="success" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-8 space-y-4">
+            <div className="w-14 h-14 bg-emerald-500/10 rounded-md flex items-center justify-center mx-auto">
+              <CheckCircle className="w-8 h-8 text-emerald-500" />
             </div>
-            <h3 className="text-2xl font-display font-extrabold text-slate-800 dark:text-white">Gửi thành công!</h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-              GPLX của bạn đã được gửi đi xét duyệt. Đội ngũ sẽ xác minh trong vòng 24 giờ.
+            <h3 className="text-xl font-bold text-slate-800 dark:text-white display-font">Gửi thành công!</h3>
+            <p className="text-xs text-slate-550 dark:text-slate-400 max-w-sm mx-auto">
+              GPLX của bạn đã được gửi đi xác duyệt. Đội ngũ sẽ xác minh trong vòng 24 giờ.
             </p>
             <button onClick={onComplete} className="btn-primary px-8 py-3 rounded-xl font-bold text-sm">
               Về trang Documents

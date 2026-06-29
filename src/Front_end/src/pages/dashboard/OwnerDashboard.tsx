@@ -615,6 +615,7 @@ export const VehicleFormPage: React.FC = () => {
   const [step, setStep] = useState(1);
   const [images, setImages] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [vinLoading, setVinLoading] = useState(false);
 
   const [form, setForm] = useState({
     name: '', brand: '', category: 'supercar', year: new Date().getFullYear(),
@@ -625,7 +626,100 @@ export const VehicleFormPage: React.FC = () => {
     thumbnailUrl: 'https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=800&q=80',
     lat: 10.762,
     lng: 106.660,
+    vin: '',
   });
+
+  const handleVinFill = async () => {
+    if (!form.vin || form.vin.trim().length !== 17) {
+      toast.error(isVi ? 'Số VIN phải đủ 17 ký tự' : 'VIN must be exactly 17 characters');
+      return;
+    }
+
+    setVinLoading(true);
+    try {
+      const response = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/decodevinvaluesextended/${form.vin}?format=json`);
+      const data = await response.json();
+      
+      if (data && data.Results && data.Results[0]) {
+        const res = data.Results[0];
+        
+        if (!res.Make && !res.Model) {
+          toast.error(isVi ? 'Không tìm thấy thông tin xe với số VIN này.' : 'No vehicle information found for this VIN.');
+          setVinLoading(false);
+          return;
+        }
+
+        const brand = res.Make ? res.Make.trim() : '';
+        const model = res.Model ? res.Model.trim() : '';
+        const name = brand && model ? `${brand} ${model}` : (brand || model);
+        const year = res.ModelYear ? parseInt(res.ModelYear) : new Date().getFullYear();
+        const seats = res.Seats || res.NumberofSeats ? parseInt(res.Seats || res.NumberofSeats) : 5;
+        const doors = res.Doors ? parseInt(res.Doors) : 4;
+        
+        let fuelType = 'Gasoline';
+        const rawFuel = (res.FuelTypePrimary || '').toLowerCase();
+        if (rawFuel.includes('electric') || rawFuel.includes('battery')) {
+          fuelType = 'Electric';
+        } else if (rawFuel.includes('hybrid')) {
+          fuelType = 'Hybrid';
+        } else if (rawFuel.includes('diesel')) {
+          fuelType = 'Diesel';
+        }
+
+        let transmission = 'Automatic';
+        const rawTrans = (res.TransmissionStyle || res.TransmissionSpeeds || '').toLowerCase();
+        if (rawTrans.includes('manual')) {
+          transmission = 'Manual';
+        }
+
+        let category = 'sedan';
+        const bodyClass = (res.BodyClass || '').toLowerCase();
+        if (bodyClass.includes('sport utility') || bodyClass.includes('suv')) {
+          category = 'suv';
+        } else if (bodyClass.includes('convertible') || bodyClass.includes('cabriolet')) {
+          category = 'convertible';
+        } else if (bodyClass.includes('sedan')) {
+          category = 'sedan';
+        } else if (fuelType === 'Electric') {
+          category = 'electric';
+        } else if (bodyClass.includes('coupe') || bodyClass.includes('supercar') || bodyClass.includes('exotic')) {
+          category = 'supercar';
+        }
+
+        const horsepower = res.EngineHP ? `${res.EngineHP} HP` : '';
+        const desc = isVi
+          ? `Xe ${name} sản xuất năm ${year}. Động cơ ${res.DisplacementL || ''}L ${horsepower}, nhiên liệu ${fuelType}, số ${transmission}. Xe sở hữu cảm giác lái vượt trội, nội thất cao cấp và các trang bị hiện đại.`
+          : `${year} ${name} featuring a ${res.DisplacementL || ''}L engine with ${horsepower}, running on ${fuelType} and ${transmission} transmission. Exceptional driving experience with luxury interior and premium amenities.`;
+
+        setForm(f => ({
+          ...f,
+          brand: brand || f.brand,
+          name: name || f.name,
+          year: year || f.year,
+          seats: seats || f.seats,
+          doors: doors || f.doors,
+          fuelType: fuelType || f.fuelType,
+          transmission: transmission || f.transmission,
+          category: category || f.category,
+          description: desc || f.description,
+        }));
+
+        toast.success(
+          isVi ? 'Đọc thông tin VIN thành công!' : 'VIN decoded successfully!',
+          isVi 
+            ? `Đã nhận diện: ${brand} ${model} (${year}).`
+            : `Identified: ${brand} ${model} (${year}).`
+        );
+      } else {
+        toast.error(isVi ? 'Số VIN không hợp lệ hoặc không có kết quả.' : 'Invalid VIN or no results found.');
+      }
+    } catch (error) {
+      console.error('Error decoding VIN:', error);
+      toast.error(isVi ? 'Có lỗi xảy ra khi gọi API tra cứu số VIN.' : 'An error occurred while decoding the VIN.');
+    } finally {
+      setVinLoading(false);
+    }
+  };
 
   const getCurrencySymbol = (code: string) => {
     return {
@@ -666,6 +760,7 @@ export const VehicleFormPage: React.FC = () => {
           thumbnailUrl: vehicle.thumbnailUrl || 'https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=800&q=80',
           lat: vehicle.location?.lat !== undefined ? vehicle.location.lat : ((vehicle as any).latitude || 10.762),
           lng: vehicle.location?.lng !== undefined ? vehicle.location.lng : ((vehicle as any).longitude || 106.660),
+          vin: vehicle.vin || '',
         });
         setImages(vehicle.images || (vehicle.thumbnailUrl ? [vehicle.thumbnailUrl] : []));
       } else {
@@ -735,6 +830,7 @@ export const VehicleFormPage: React.FC = () => {
 
     const vehicleData: Omit<Vehicle, 'id'> = {
       ownerId: user?.id || '',
+      vin: form.vin || undefined,
       name: form.name,
       brand: form.brand,
       category: form.category as any,
@@ -858,6 +954,48 @@ export const VehicleFormPage: React.FC = () => {
         {step === 1 && (
           <motion.div variants={fadeUp} initial="hidden" animate="visible" className="space-y-6">
             <h3 className="font-display text-xl font-bold text-slate-800 dark:text-white border-b border-slate-200/10 dark:border-white/5 pb-3">{isVi ? 'Thông Tin Cơ Bản' : isJa ? '基本情報' : 'Basic Information'}</h3>
+            
+            <div className="md:col-span-2 bg-slate-50 dark:bg-white/5 p-5 rounded-2xl border border-slate-100 dark:border-white/5 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+                <div className="flex-1 lw-form-group mb-0">
+                  <label className="lw-form-label flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                    <span>🔑</span>
+                    {isVi ? 'Nhập Số VIN (Tra cứu thông số)' : 'Enter VIN (Decode specs)'}
+                  </label>
+                  <input
+                    value={form.vin}
+                    onChange={e => update('vin', e.target.value.toUpperCase())}
+                    placeholder="e.g. 1FA6P8CF0H5XXXXXX"
+                    className="lw-input-interactive"
+                    maxLength={17}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleVinFill}
+                  disabled={vinLoading || !form.vin || form.vin.trim().length < 17}
+                  className="px-5 py-3.5 bg-slate-900 hover:bg-slate-800 dark:bg-gold dark:hover:bg-[#CA9E26] text-white dark:text-slate-950 text-xs font-extrabold rounded-xl transition-all duration-150 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 whitespace-nowrap lw-btn-interactive border border-transparent dark:border-none"
+                >
+                  {vinLoading ? (
+                    <>
+                      <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      {isVi ? 'Đang đọc...' : 'Decoding...'}
+                    </>
+                  ) : (
+                    <>
+                      <span>⚡</span>
+                      {isVi ? 'Tự Động Điền' : 'Auto-fill Specs'}
+                    </>
+                  )}
+                </button>
+              </div>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
+                {isVi 
+                  ? 'Nhập 17 ký tự số VIN của xe và nhấn "Tự Động Điền" để tải thông tin chính thức từ cơ sở dữ liệu NHTSA.' 
+                  : 'Enter the 17-character Vehicle Identification Number and click "Auto-fill Specs" to fetch details from the NHTSA database.'}
+              </p>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="lw-form-group">
                 <label className="lw-form-label">{isVi ? 'Tên Xe *' : isJa ? '車両名 *' : 'Vehicle Name *'}</label>
@@ -1737,12 +1875,13 @@ export const OwnerDashboardLayout: React.FC = () => {
   }, [isAuthenticated]);
 
   const links = [
-    { href: '/', icon: Globe, label: t.marketplace.home, exact: true },
-    { href: '/owner', icon: LayoutDashboard, label: t.ownerDashboard.overview, exact: true },
-    { href: '/owner/vehicles', icon: Car, label: t.ownerDashboard.myVehicles },
-    { href: '/owner/calendar', icon: Clock, label: t.ownerDashboard.calendar },
-    { href: '/owner/bookings', icon: Calendar, label: t.ownerDashboard.bookings },
-    { href: '/owner/revenue', icon: TrendingUp, label: t.ownerDashboard.revenue },
+    { href: '/owner', icon: LayoutDashboard, label: 'Overview', exact: true },
+    { href: '/owner/vehicles', icon: Car, label: 'My Vehicles' },
+    { href: '/owner/calendar', icon: Clock, label: 'Calendar' },
+    { href: '/owner/bookings', icon: Calendar, label: 'Bookings' },
+    { href: '/owner/revenue', icon: TrendingUp, label: 'Revenue' },
+    { href: '/owner/reviews', icon: Star, label: 'Reviews' },
+    { href: '/owner/settings', icon: Settings, label: 'Settings' },
   ];
 
   const getInitials = (name: string) => {
@@ -1933,6 +2072,253 @@ export const OwnerDashboardLayout: React.FC = () => {
           </main>
         </div>
       </div>
+    </div>
+  );
+};
+
+export const OwnerReviewsPage: React.FC = () => {
+  const { user } = useAuthStore();
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const toast = useToast();
+
+  useEffect(() => {
+    if (user?.id) {
+      apiClient.get<any>(`/reviews/owner/${user.id}?page=0&size=100`)
+        .then(res => {
+          const data = res.data?.data || res.data;
+          setReviews(data?.content || res.content || []);
+          setLoading(false);
+        })
+        .catch(err => {
+          console.error(err);
+          setLoading(false);
+          toast.error('Error', 'Failed to load reviews');
+        });
+    }
+  }, [user]);
+
+  const ratingAvg = reviews.length > 0 
+    ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
+    : 'N/A';
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <div className="border-b border-[var(--lw-border)] pb-5">
+        <h2 className="text-xl font-bold tracking-tight text-[var(--lw-text-primary)]">Reviews & Feedback</h2>
+        <p className="text-xs text-[var(--lw-text-muted)] mt-1">Monitor passenger feedback and fleet service ratings</p>
+      </div>
+
+      {loading ? (
+        <div className="space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="skeleton h-24 rounded-2xl animate-pulse" />
+          ))}
+        </div>
+      ) : reviews.length === 0 ? (
+        <div className="glass border border-slate-200/50 dark:border-white/5 text-center py-16 rounded-[2rem] shadow-sm">
+          <Star className="w-14 h-14 text-slate-300 dark:text-slate-700 mx-auto mb-3 animate-pulse" />
+          <p className="text-slate-400 text-sm font-semibold">No reviews received yet</p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm flex flex-col md:flex-row items-center gap-6">
+            <div className="text-center md:border-r border-slate-200/20 md:pr-8 flex-shrink-0">
+              <p className="text-5xl font-black text-amber-500 tracking-tight">{ratingAvg}</p>
+              <div className="flex items-center justify-center gap-0.5 mt-2">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className={`w-4 h-4 fill-current ${i < Math.round(Number(ratingAvg) || 5) ? 'text-amber-500' : 'text-slate-200'}`} />
+                ))}
+              </div>
+              <p className="text-[10px] text-slate-450 dark:text-slate-500 font-extrabold uppercase tracking-widest mt-2">{reviews.length} total reviews</p>
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-bold text-slate-800 dark:text-slate-100">Host Score Metrics</p>
+              <p className="text-xs text-slate-400 dark:text-slate-550 mt-1">High ratings increase listing visibility and matching prioritization on the marketplace index.</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4">
+            {reviews.map(review => (
+              <div key={review.id} className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm hover-lift transition-all">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <Avatar src={review.user?.avatar} name={review.user?.displayName || 'Customer'} size="md" />
+                    <div>
+                      <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{review.user?.displayName || 'Customer'}</p>
+                      <p className="text-[10px] text-slate-450 dark:text-slate-500 font-medium">{formatDate(review.createdAt)}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-0.5 bg-amber-500/10 text-amber-500 px-2.5 py-1 rounded-xl text-xs font-black">
+                    <Star className="w-3.5 h-3.5 fill-current" />
+                    <span>{review.rating?.toFixed(1) || '5.0'}</span>
+                  </div>
+                </div>
+                <p className="text-slate-600 dark:text-slate-350 text-sm mt-4 leading-relaxed italic">"{review.comment || 'No comment provided'}"</p>
+                <div className="border-t border-slate-200/10 dark:border-white/5 mt-4 pt-3 flex items-center justify-between text-xs text-slate-400 dark:text-slate-550 font-semibold">
+                  <span>Vehicle: <strong className="text-slate-700 dark:text-slate-300">{review.vehicleName || 'Vehicle'}</strong></span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export const OwnerSettingsPage: React.FC = () => {
+  const { user, initAuth } = useAuthStore();
+  const toast = useToast();
+  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({
+    firstName: user?.firstName || '',
+    lastName: user?.lastName || '',
+    phone: user?.phone || '',
+    bio: user?.bio || '',
+    location: user?.location || '',
+    preferredLanguage: user?.preferredLanguage || 'en',
+    licenseClass: user?.licenseClass || '',
+    licenseNumber: user?.licenseNumber || '',
+  });
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.firstName || !form.lastName) {
+      toast.error('Missing Info', 'First and Last name are required.');
+      return;
+    }
+    setLoading(true);
+    try {
+      await apiClient.put(`/users/${user?.id}`, {
+        firstName: form.firstName,
+        lastName: form.lastName,
+        phone: form.phone,
+        bio: form.bio,
+        location: form.location,
+        preferredLanguage: form.preferredLanguage,
+        licenseClass: form.licenseClass,
+        licenseNumber: form.licenseNumber
+      });
+      
+      const stored = JSON.parse(localStorage.getItem('luxeway_user') || '{}');
+      const updatedUser = {
+        ...stored,
+        ...form,
+        displayName: `${form.firstName} ${form.lastName}`
+      };
+      localStorage.setItem('luxeway_user', JSON.stringify(updatedUser));
+      initAuth();
+      toast.success('Profile Saved', 'Your Host profile details have been synchronized.');
+    } catch (err: any) {
+      console.error(err);
+      toast.error('Save Failed', err.response?.data?.error || 'Failed to update host details.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <div className="border-b border-[var(--lw-border)] pb-5">
+        <h2 className="text-xl font-bold tracking-tight text-[var(--lw-text-primary)]">Host Settings</h2>
+        <p className="text-xs text-[var(--lw-text-muted)] mt-1">Configure your public host bio and registry profile parameters</p>
+      </div>
+
+      <form onSubmit={handleSave} className="space-y-6 max-w-2xl">
+        <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm space-y-4">
+          <h3 className="font-display text-sm font-bold text-amber-500 uppercase tracking-widest border-b border-slate-200/10 dark:border-white/5 pb-2.5">Personal Profile</h3>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">First Name</label>
+              <input 
+                type="text" 
+                value={form.firstName}
+                onChange={e => setForm(f => ({ ...f, firstName: e.target.value }))}
+                className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Last Name</label>
+              <input 
+                type="text" 
+                value={form.lastName}
+                onChange={e => setForm(f => ({ ...f, lastName: e.target.value }))}
+                className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Phone Number</label>
+            <input 
+              type="text" 
+              value={form.phone}
+              onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+              className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Host Bio</label>
+            <textarea 
+              value={form.bio}
+              onChange={e => setForm(f => ({ ...f, bio: e.target.value }))}
+              className="lux-input h-24 bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100 resize-none py-2"
+              placeholder="Tell prospective renters about your hosting history or luxury vehicle collection..."
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Operating Location</label>
+            <input 
+              type="text" 
+              value={form.location}
+              onChange={e => setForm(f => ({ ...f, location: e.target.value }))}
+              className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100"
+              placeholder="e.g. District 1, HCMC"
+            />
+          </div>
+        </div>
+
+        <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm space-y-4">
+          <h3 className="font-display text-sm font-bold text-amber-500 uppercase tracking-widest border-b border-slate-200/10 dark:border-white/5 pb-2.5">Verification & Driving License</h3>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">License Class</label>
+              <input 
+                type="text" 
+                value={form.licenseClass}
+                onChange={e => setForm(f => ({ ...f, licenseClass: e.target.value }))}
+                className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100 uppercase"
+                placeholder="e.g. B2"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">License Number</label>
+              <input 
+                type="text" 
+                value={form.licenseNumber}
+                onChange={e => setForm(f => ({ ...f, licenseNumber: e.target.value }))}
+                className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100"
+                placeholder="License ID number"
+              />
+            </div>
+          </div>
+        </div>
+
+        <motion.button 
+          whileHover={{ scale: 1.01 }} 
+          whileTap={{ scale: 0.99 }} 
+          type="submit" 
+          disabled={loading}
+          className="btn-gold flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-bold shadow-lg shadow-gold/20 hover:shadow-gold/30 hover-lift disabled:opacity-50"
+        >
+          {loading ? 'Saving...' : 'Save Settings'}
+        </motion.button>
+      </form>
     </div>
   );
 };

@@ -269,7 +269,8 @@ public class UserController {
         if (currentStatus != null && !"NOT_UPLOADED".equalsIgnoreCase(currentStatus) 
                 && !"VERIFYING".equalsIgnoreCase(currentStatus) 
                 && !"FAILED".equalsIgnoreCase(currentStatus) 
-                && !"REJECTED".equalsIgnoreCase(currentStatus)) {
+                && !"REJECTED".equalsIgnoreCase(currentStatus)
+                && !"VERIFIED".equalsIgnoreCase(currentStatus)) {
             Map<String, String> errorResponse = new HashMap<>();
             errorResponse.put("error", "Cannot upload documents when KYC status is " + currentStatus);
             return ResponseEntity.badRequest().body(errorResponse);
@@ -613,5 +614,24 @@ public class UserController {
         }
         com.luxeway.dto.user.UserDTOs.UserProfileResponse updated = userService.updateProfile(id, request);
         return ResponseEntity.ok(updated);
+    }
+
+    @PostMapping("/become-owner")
+    public ResponseEntity<?> becomeOwner(
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.luxeway.entity.User authUser) {
+        if (authUser == null) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Unauthorized");
+            return ResponseEntity.status(401).body(errorResponse);
+        }
+
+        com.luxeway.entity.User user = userRepository.findById(authUser.getId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        user.setRole(com.luxeway.enums.UserRole.OWNER);
+        userRepository.save(user);
+        
+        log.info("User {} upgraded role to OWNER", user.getId());
+        return ResponseEntity.ok(userService.toProfileResponse(user));
     }
 }

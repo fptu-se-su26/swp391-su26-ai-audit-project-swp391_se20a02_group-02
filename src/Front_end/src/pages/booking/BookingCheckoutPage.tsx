@@ -31,6 +31,64 @@ const BookingCheckoutPage: React.FC = () => {
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  // Live Weather & Currency Exchange Rates Integration
+  const [weather, setWeather] = useState<any>(null);
+  const [weatherLoading, setWeatherLoading] = useState(false);
+  const [exchangeRates, setExchangeRates] = useState<any>(null);
+  const [ratesLoading, setRatesLoading] = useState(false);
+
+  useEffect(() => {
+    if (!vehicle) return;
+    
+    // Default coordinates or fallback based on DB values
+    const lat = vehicle.location?.lat || 10.762;
+    const lng = vehicle.location?.lng || 106.660;
+
+    // Fetch live weather forecast from Open-Meteo API
+    setWeatherLoading(true);
+    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=auto`)
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.daily) {
+          setWeather(data.daily);
+        }
+      })
+      .catch(err => console.error('Error fetching weather:', err))
+      .finally(() => setWeatherLoading(false));
+
+    // Fetch live exchange rates base VND from open.er-api.com
+    setRatesLoading(true);
+    fetch('https://open.er-api.com/v6/latest/VND')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.rates) {
+          setExchangeRates(data.rates);
+        }
+      })
+      .catch(err => console.error('Error fetching exchange rates:', err))
+      .finally(() => setRatesLoading(false));
+  }, [vehicle]);
+
+  const getWeatherIcon = (code: number) => {
+    if (code === 0 || code === 1) return '☀️'; // Sunny/Clear
+    if (code === 2 || code === 3) return '⛅'; // Partly Cloudy/Cloudy
+    if (code === 45 || code === 48) return '🌫️'; // Foggy
+    if ([51, 53, 55, 61, 63, 65, 80, 81, 82].includes(code)) return '🌧️'; // Rainy
+    if ([71, 73, 75, 77, 85, 86].includes(code)) return '❄️'; // Snowy
+    if ([95, 96, 99].includes(code)) return '⛈️'; // Thunderstorm
+    return '☁️';
+  };
+
+  const getWeatherLabel = (code: number) => {
+    if (code === 0 || code === 1) return isVi ? 'Nắng ráo' : 'Sunny';
+    if (code === 2 || code === 3) return isVi ? 'Nhiều mây' : 'Cloudy';
+    if (code === 45 || code === 48) return isVi ? 'Có sương mù' : 'Foggy';
+    if ([51, 53, 55, 61, 63, 65, 80, 81, 82].includes(code)) return isVi ? 'Có mưa' : 'Rainy';
+    if ([71, 73, 75, 77, 85, 86].includes(code)) return isVi ? 'Có tuyết' : 'Snowy';
+    if ([95, 96, 99].includes(code)) return isVi ? 'Có dông sét' : 'Stormy';
+    return isVi ? 'U ám' : 'Cloudy';
+  };
+
   useEffect(() => {
     if (!vehicleId) return;
     
@@ -206,6 +264,110 @@ const BookingCheckoutPage: React.FC = () => {
                   {isVi ? 'Thời gian thuê:' : 'Total Duration:'} <span className="font-bold text-foreground">{days} {isVi ? 'ngày' : 'days'}</span>
                 </p>
               </div>
+            </div>
+
+            {/* Live Weather Forecast Advisory */}
+            <div className="bg-card border border-border p-6 rounded-3xl shadow-sm space-y-4">
+              <div className="flex items-center justify-between border-b border-border pb-2.5">
+                <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                  <span className="text-lg">🌤️</span>
+                  {isVi ? 'Dự báo thời tiết điểm đón xe' : 'Pick-up Weather Advisor'}
+                </h3>
+                <span className="text-[10px] text-slate-400 font-bold bg-slate-100 dark:bg-white/5 px-2 py-0.5 rounded-full">
+                  {vehicle.location?.city || 'Vietnam'}
+                </span>
+              </div>
+              
+              {weatherLoading ? (
+                <div className="flex items-center justify-center py-4">
+                  <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : weather && weather.time ? (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-3 gap-3">
+                    {weather.time.slice(0, 3).map((timeStr: string, idx: number) => {
+                      const maxTemp = weather.temperature_2m_max[idx];
+                      const minTemp = weather.temperature_2m_min[idx];
+                      const code = weather.weathercode[idx];
+                      const date = new Date(timeStr);
+                      const dayLabel = idx === 0 
+                        ? (isVi ? 'Hôm nay' : 'Today') 
+                        : date.toLocaleDateString(isVi ? 'vi-VN' : 'en-US', { weekday: 'short' });
+                      
+                      return (
+                        <div key={timeStr} className="bg-slate-50 dark:bg-white/5 p-3 rounded-2xl border border-slate-100 dark:border-white/5 text-center space-y-1">
+                          <span className="text-2xl block">{getWeatherIcon(code)}</span>
+                          <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">{dayLabel}</span>
+                          <span className="text-xs font-black text-foreground block">{minTemp}° - {maxTemp}°C</span>
+                          <span className="text-[10px] text-slate-450 font-medium block truncate">{getWeatherLabel(code)}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  
+                  <div className="bg-blue-50/40 dark:bg-blue-950/20 border border-blue-100/50 dark:border-blue-900/30 p-3.5 rounded-2xl flex items-start gap-2.5 text-xs text-blue-600 dark:text-blue-400 leading-normal font-medium">
+                    <span className="text-base mt-0.5">ℹ️</span>
+                    <p>
+                      {[51, 53, 55, 61, 63, 65, 80, 81, 82, 95, 96, 99].includes(weather.weathercode[0]) 
+                        ? (isVi 
+                          ? 'Dự báo hôm nay có mưa lớn hoặc dông sét tại điểm nhận xe. Hãy lái xe cẩn thận và liên hệ trước với chủ xe để thống nhất phương án giao nhận.' 
+                          : 'Heavy rain or storm is expected today at the pick-up location. Please drive carefully and coordinate delivery with the host.')
+                        : (isVi 
+                          ? 'Thời tiết lý tưởng cho việc thuê xe tự lái. Hãy khởi hành vui vẻ và nhớ kiểm tra kỹ tình trạng xe trước khi nhận!' 
+                          : 'Ideal weather conditions for a drive. Have a wonderful trip and remember to inspect the vehicle prior to acceptance!')}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-slate-450 text-center">{isVi ? 'Không thể tải dự báo thời tiết.' : 'Weather forecast unavailable.'}</p>
+              )}
+            </div>
+
+            {/* Live Exchange Rate Advisor */}
+            <div className="bg-card border border-border p-6 rounded-3xl shadow-sm space-y-4">
+              <div className="flex items-center justify-between border-b border-border pb-2.5">
+                <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                  <span className="text-lg">💱</span>
+                  {isVi ? 'Tỷ giá thanh toán (Quy đổi ước tính)' : 'International Payment Advisor'}
+                </h3>
+                <span className="text-[10px] text-slate-450 font-bold bg-slate-100 dark:bg-white/5 px-2 py-0.5 rounded-full">
+                  Base: VND
+                </span>
+              </div>
+              
+              {ratesLoading ? (
+                <div className="flex items-center justify-center py-4">
+                  <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : exchangeRates ? (
+                <div className="space-y-3">
+                  <p className="text-xs text-slate-500 leading-normal">
+                    {isVi 
+                      ? 'Dành cho khách quốc tế, tổng giá trị đặt xe quy đổi sang các ngoại tệ phổ biến dựa trên tỷ giá trực tiếp:' 
+                      : 'For international cards, the estimated total converted rates based on live mid-market rates are:'}
+                  </p>
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5">
+                      <span className="font-extrabold text-slate-400">💵 USD</span>
+                      <span className="font-black text-foreground">${(totalCost * (exchangeRates.USD || 0.000039)).toFixed(2)}</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5">
+                      <span className="font-extrabold text-slate-400">💶 EUR</span>
+                      <span className="font-black text-foreground">€{(totalCost * (exchangeRates.EUR || 0.000036)).toFixed(2)}</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5">
+                      <span className="font-extrabold text-slate-400">💴 JPY</span>
+                      <span className="font-black text-foreground">¥{(totalCost * (exchangeRates.JPY || 0.0061)).toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5">
+                      <span className="font-extrabold text-slate-400">🪙 SGD</span>
+                      <span className="font-black text-foreground">S${(totalCost * (exchangeRates.SGD || 0.000053)).toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-slate-450 text-center">{isVi ? 'Không thể tải tỷ giá tiền tệ.' : 'Exchange rates unavailable.'}</p>
+              )}
             </div>
 
             {/* Delivery address (if selected) */}

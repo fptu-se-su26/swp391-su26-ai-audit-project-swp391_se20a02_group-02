@@ -187,6 +187,13 @@ public class Vehicle {
     
     @Column(name = "license_plate", length = 20, unique = true)
     private String licensePlate;
+
+    @Column(length = 50)
+    private String vin;
+
+    @Column(name = "is_locked", nullable = false)
+    @Builder.Default
+    private Boolean isLocked = true;
     
     // Availability fields
     @Column(name = "min_rental_days")

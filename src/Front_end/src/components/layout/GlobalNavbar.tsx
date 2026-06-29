@@ -28,12 +28,11 @@ const LANGS = [
 ];
 
 const CURRENCIES = [
-  { code: 'VND', label: 'VND', flag: '🇻🇳', symbol: '₫' },
   { code: 'USD', label: 'USD', flag: '🇺🇸', symbol: '$' },
-  { code: 'EUR', label: 'EUR', flag: '🇪🇺', symbol: '€' },
   { code: 'JPY', label: 'JPY', flag: '🇯🇵', symbol: '¥' },
-  { code: 'SGD', label: 'SGD', flag: '🇸🇬', symbol: 'S$' },
+  { code: 'VND', label: 'VND', flag: '🇻🇳', symbol: '₫' },
   { code: 'KRW', label: 'KRW', flag: '🇰🇷', symbol: '₩' },
+  { code: 'CNY', label: 'CNY', flag: '🇨🇳', symbol: '¥' },
 ];
 
 // Localized items for Global Navbar to guarantee no mixed languages
@@ -267,25 +266,23 @@ export const GlobalNavbar: React.FC = () => {
   };
 
   const navLinks = [
-    { href: '/marketplace', label: l.browseCars },
-    { href: '/reviews', label: l.reviews },
-    { href: '/help', label: l.help },
+    { href: '/', label: 'Home' },
+    { href: '/marketplace', label: 'Marketplace' },
+    { href: '/map', label: 'Map' },
+    { href: '/dashboard/bookings', label: 'Trips' },
+    { href: '/owner/register', label: 'Become Owner' },
   ];
 
   const currentLang = LANGS.find(lang => lang.code === language) || LANGS[0];
   const currentCurr = CURRENCIES.find(curr => curr.code === currency) || CURRENCIES[0];
 
-  // Navbar is ALWAYS full-width, fixed at top-0, left-0
-  // Sidebar slides under the navbar using top: 64px
-
-  // Always show glassmorphism on subpages/dashboards, dynamic trigger on home/landing page
   const isLandingPage = location.pathname === '/';
   const showGlassBg = !isLandingPage || isScrolled;
 
   const navBg = showGlassBg
     ? isDark
-      ? 'bg-slate-950/95 backdrop-blur-xl border-slate-900/60 shadow-lg'
-      : 'bg-white border-slate-100/80 shadow-sm'
+      ? 'bg-[#0B1221] border-b border-slate-800 shadow-sm'
+      : 'bg-white border-b border-slate-100 shadow-sm'
     : 'bg-transparent border-transparent';
 
   return (
@@ -294,7 +291,7 @@ export const GlobalNavbar: React.FC = () => {
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
       className={cn(
-        'fixed top-0 left-0 right-0 z-[1000] transition-all duration-300 flex items-center border-b h-16',
+        'fixed top-0 left-0 right-0 z-[1000] transition-all duration-300 flex items-center h-16',
         navBg
       )}
     >
@@ -310,25 +307,25 @@ export const GlobalNavbar: React.FC = () => {
             src={logoImage}
             alt="LuxeWay"
             style={{ height: '60px', width: 'auto', display: 'block' }}
-            className="transition-transform duration-300 group-hover:scale-105"
+            className="transition-transform duration-300"
           />
         </Link>
 
         {/* Center Side: Navigation Links (Desktop/Tablet) */}
-        <nav className="hidden md:flex items-center gap-2.5">
+        <nav className="hidden md:flex items-center gap-2 font-sans">
           {navLinks.map(link => (
             <Link
               key={link.href}
               to={link.href}
               className={cn(
-                'px-5 py-2.5 rounded-2xl text-base font-bold transition-all duration-200 hover-lift',
+                'px-4 py-2 rounded-md text-xs uppercase tracking-widest font-bold transition-all duration-200',
                 isActive(link.href)
-                  ? isDark
-                    ? 'bg-white text-slate-950 shadow-md'
-                    : 'bg-slate-950 text-white shadow-md'
-                  : isDark
-                    ? 'text-slate-350 hover:text-white hover:bg-slate-800/40'
-                    : 'text-slate-600 hover:text-slate-950 hover:bg-slate-50'
+                  ? showGlassBg
+                    ? 'bg-[#0B1221] dark:bg-white text-white dark:text-[#0B1221]'
+                    : 'bg-white text-[#0B1221]'
+                  : showGlassBg
+                    ? 'text-slate-600 hover:text-[#0B1221] hover:bg-slate-50 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-800'
+                    : 'text-white/80 hover:text-white hover:bg-white/10'
               )}
             >
               {link.label}
@@ -337,146 +334,145 @@ export const GlobalNavbar: React.FC = () => {
         </nav>
 
         {/* Right Side: Global controls & Profile */}
-        <div className="flex items-center gap-2 sm:gap-3.5">
+        <div className="flex items-center gap-2 sm:gap-3">
           {/* Search trigger */}
           <button
             onClick={() => navigate('/search')}
             className={cn(
-              'p-2.5 sm:p-3 rounded-2xl transition-all hover-lift',
-              isDark ? 'text-slate-350 hover:bg-slate-800/40 hover:text-white' : 'text-slate-655 hover:bg-slate-50 hover:text-slate-950'
+              'p-2.5 rounded-md transition-all',
+              showGlassBg
+                ? 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'
+                : 'text-white/85 hover:bg-white/10'
             )}
             title={l.search}
           >
-            <Search className="w-5.5 h-5.5" />
+            <Search className="w-4.5 h-4.5" />
           </button>
+
+          {/* Language Selector Dropdown */}
+          <div ref={langRef} className="relative font-sans">
+            <button
+              onClick={() => {
+                setLangDropdownOpen(!langDropdownOpen);
+                setCurrDropdownOpen(false);
+                setUserDropdownOpen(false);
+              }}
+              className={cn(
+                'flex items-center gap-1.5 p-2 rounded-md transition-all text-xs font-bold',
+                showGlassBg
+                  ? 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'
+                  : 'text-white/85 hover:bg-white/10'
+              )}
+              title="Change Language"
+            >
+              <span>{currentLang.flag}</span>
+              <span className="uppercase">{currentLang.code}</span>
+              <ChevronDown className="w-3 h-3 opacity-60" />
+            </button>
+            
+            <AnimatePresence>
+              {langDropdownOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  className="absolute right-0 mt-1.5 w-40 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-white/5 shadow-xl py-1.5 z-50 overflow-hidden"
+                >
+                  {LANGS.filter(l => ['en', 'vi', 'ja', 'ko', 'zh'].map(x => x.toLowerCase()).includes(l.code)).map(lang => (
+                    <button
+                      key={lang.code}
+                      onClick={() => {
+                        setLanguage(lang.code);
+                        setLangDropdownOpen(false);
+                      }}
+                      className={cn(
+                        'w-full flex items-center justify-between px-3.5 py-2 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left',
+                        language === lang.code ? 'text-amber-500 bg-amber-500/5' : 'text-slate-700 dark:text-slate-250'
+                      )}
+                    >
+                      <span className="flex items-center gap-2">
+                        <span>{lang.flag}</span>
+                        <span>{lang.label}</span>
+                      </span>
+                      {language === lang.code && <Check className="w-3.5 h-3.5" />}
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Currency Selector Dropdown */}
+          <div ref={currRef} className="relative font-sans">
+            <button
+              onClick={() => {
+                setCurrDropdownOpen(!currDropdownOpen);
+                setLangDropdownOpen(false);
+                setUserDropdownOpen(false);
+              }}
+              className={cn(
+                'flex items-center gap-1.5 p-2 rounded-md transition-all text-xs font-bold',
+                showGlassBg
+                  ? 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'
+                  : 'text-white/85 hover:bg-white/10'
+              )}
+              title="Change Currency"
+            >
+              <span className="text-[10px] bg-slate-500/10 dark:bg-white/10 px-1 py-0.5 rounded text-amber-500 font-bold">{currentCurr.symbol}</span>
+              <span className="uppercase">{currentCurr.code}</span>
+              <ChevronDown className="w-3 h-3 opacity-60" />
+            </button>
+            
+            <AnimatePresence>
+              {currDropdownOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  className="absolute right-0 mt-1.5 w-40 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-white/5 shadow-xl py-1.5 z-50 overflow-hidden"
+                >
+                  {CURRENCIES.map(curr => (
+                    <button
+                      key={curr.code}
+                      onClick={() => {
+                        setCurrency(curr.code);
+                        setCurrDropdownOpen(false);
+                      }}
+                      className={cn(
+                        'w-full flex items-center justify-between px-3.5 py-2 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left',
+                        currency === curr.code ? 'text-amber-500 bg-amber-500/5' : 'text-slate-700 dark:text-slate-250'
+                      )}
+                    >
+                      <span className="flex items-center gap-2">
+                        <span className="text-[10px] w-5 text-center bg-slate-500/10 dark:bg-white/10 py-0.5 rounded text-amber-500 font-bold">{curr.symbol}</span>
+                        <span>{curr.label}</span>
+                      </span>
+                      {currency === curr.code && <Check className="w-3.5 h-3.5" />}
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
 
           {/* Dark / Light Toggle */}
           <button
             onClick={toggleTheme}
             className={cn(
-              'p-2.5 sm:p-3 rounded-2xl transition-all hover-lift',
-              isDark ? 'text-yellow-400 hover:bg-slate-800/40' : 'text-slate-655 hover:bg-slate-50 hover:text-slate-950'
+              'p-2.5 rounded-md transition-all',
+              showGlassBg
+                ? 'text-slate-600 hover:bg-slate-50 dark:text-slate-350 dark:hover:bg-slate-800'
+                : 'text-white/85 hover:bg-white/10'
             )}
           >
-            {isDark ? <Sun className="w-5.5 h-5.5" /> : <Moon className="w-5.5 h-5.5" />}
+            {isDark ? <Sun className="w-4.5 h-4.5" /> : <Moon className="w-4.5 h-4.5" />}
           </button>
 
-          {/* Language Dropdown Selector (Desktop) */}
-          <div ref={langRef} className="relative hidden lg:block">
-            <button
-              onClick={() => {
-                setLangDropdownOpen(!langDropdownOpen);
-                setCurrDropdownOpen(false);
-              }}
-              className={cn(
-                'flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-bold transition-all hover-lift',
-                isDark ? 'text-slate-355 hover:bg-slate-800/40 hover:text-white' : 'text-slate-655 hover:bg-slate-50 hover:text-slate-950'
-              )}
-            >
-              <Globe className="w-4.5 h-4.5" />
-              <span className="uppercase">{currentLang.code}</span>
-              <span>{currentLang.flag}</span>
-              <ChevronDown className={cn('w-4 h-4 opacity-60 transition-transform duration-200', langDropdownOpen && 'rotate-180')} />
-            </button>
-
-            <AnimatePresence>
-              {langDropdownOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: 12, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 12, scale: 0.95 }}
-                  transition={{ duration: 0.15 }}
-                  className={cn(
-                    'absolute right-0 mt-2 w-52 rounded-[20px] border shadow-[0_15px_30px_rgba(0,0,0,0.1)] overflow-hidden z-50',
-                    isDark ? 'bg-slate-900/95 border-slate-800/80' : 'bg-white/95 border-slate-100'
-                  )}
-                >
-                  <div className="p-1.5 max-h-64 overflow-y-auto">
-                    {LANGS.map(lang => (
-                      <button
-                        key={lang.code}
-                        onClick={() => {
-                          setLanguage(lang.code);
-                          setLangDropdownOpen(false);
-                        }}
-                        className={cn(
-                          'w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-colors',
-                          language === lang.code
-                            ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400'
-                            : 'text-slate-655 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800/60'
-                        )}
-                      >
-                        <span className="text-base">{lang.flag}</span>
-                        <span className="flex-1 text-left">{lang.label}</span>
-                        {language === lang.code && <Check className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />}
-                      </button>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* Currency Dropdown Selector (Desktop) */}
-          <div ref={currRef} className="relative hidden lg:block">
-            <button
-              onClick={() => {
-                setCurrDropdownOpen(!currDropdownOpen);
-                setLangDropdownOpen(false);
-              }}
-              className={cn(
-                'flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-bold transition-all hover-lift',
-                isDark ? 'text-slate-355 hover:bg-slate-800/40 hover:text-white' : 'text-slate-655 hover:bg-slate-50 hover:text-slate-950'
-              )}
-            >
-              <span>{currentCurr.flag}</span>
-              <span className="uppercase">{currentCurr.code}</span>
-              <span className="opacity-60">({currentCurr.symbol})</span>
-              <ChevronDown className={cn('w-4 h-4 opacity-60 transition-transform duration-200', currDropdownOpen && 'rotate-180')} />
-            </button>
-
-            <AnimatePresence>
-              {currDropdownOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: 12, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 12, scale: 0.95 }}
-                  transition={{ duration: 0.15 }}
-                  className={cn(
-                    'absolute right-0 mt-2 w-52 rounded-[20px] border shadow-[0_15px_30px_rgba(0,0,0,0.1)] overflow-hidden z-50',
-                    isDark ? 'bg-slate-900/95 border-slate-800/80' : 'bg-white/95 border-slate-100'
-                  )}
-                >
-                  <div className="p-1.5">
-                    {CURRENCIES.map(curr => (
-                      <button
-                        key={curr.code}
-                        onClick={() => {
-                          setCurrency(curr.code);
-                          setCurrDropdownOpen(false);
-                        }}
-                        className={cn(
-                          'w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-colors',
-                          currency === curr.code
-                            ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400'
-                            : 'text-slate-655 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800/60'
-                        )}
-                      >
-                        <span className="text-base">{curr.flag}</span>
-                        <span className="flex-1 text-left">{curr.code} ({curr.symbol})</span>
-                        {currency === curr.code && <Check className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />}
-                      </button>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
 
           {/* Authed Message & Notifications Icons */}
           {isAuthenticated && (
             <>
-              <div className="relative">
+              <div className="relative font-sans">
                 <button
                   onClick={() => {
                     setNotificationOpen(!notificationOpen);
@@ -484,13 +480,15 @@ export const GlobalNavbar: React.FC = () => {
                     setUserDropdownOpen(false);
                   }}
                   className={cn(
-                    'relative p-2.5 sm:p-3 rounded-2xl transition-all hover-lift',
-                    isDark ? 'text-slate-355 hover:bg-slate-800/40 hover:text-white' : 'text-slate-655 hover:bg-slate-50 hover:text-slate-950'
+                    'relative p-2.5 rounded-md transition-all',
+                    showGlassBg
+                      ? 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'
+                      : 'text-white/85 hover:bg-white/10'
                   )}
                 >
-                  <Bell className="w-5.5 h-5.5" />
+                  <Bell className="w-4.5 h-4.5" />
                   {unreadCount > 0 && (
-                    <span className="absolute top-2 right-2 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse">
+                    <span className="absolute top-1.5 right-1.5 w-3.5 h-3.5 bg-red-550 text-white text-[8px] font-bold rounded-full flex items-center justify-center">
                       {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
                   )}
@@ -498,7 +496,7 @@ export const GlobalNavbar: React.FC = () => {
                 <NotificationDropdown isOpen={notificationOpen} onClose={() => setNotificationOpen(false)} />
               </div>
 
-              <div className="relative">
+              <div className="relative font-sans">
                 <button
                   onClick={() => {
                     setMessageOpen(!messageOpen);
@@ -506,11 +504,13 @@ export const GlobalNavbar: React.FC = () => {
                     setUserDropdownOpen(false);
                   }}
                   className={cn(
-                    'p-2.5 sm:p-3 rounded-2xl transition-all hover-lift',
-                    isDark ? 'text-slate-355 hover:bg-slate-800/40 hover:text-white' : 'text-slate-655 hover:bg-slate-50 hover:text-slate-950'
+                    'p-2.5 rounded-md transition-all',
+                    showGlassBg
+                      ? 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'
+                      : 'text-white/85 hover:bg-white/10'
                   )}
                 >
-                  <MessageSquare className="w-5.5 h-5.5" />
+                  <MessageSquare className="w-4.5 h-4.5" />
                 </button>
                 <MessageDropdown isOpen={messageOpen} onClose={() => setMessageOpen(false)} />
               </div>
@@ -519,7 +519,7 @@ export const GlobalNavbar: React.FC = () => {
 
           {/* Auth Trigger Buttons (Avatar / Login options) */}
           {isAuthenticated && user ? (
-            <div className="relative">
+            <div className="relative font-sans">
               <button
                 onClick={() => {
                   setUserDropdownOpen(!userDropdownOpen);
@@ -527,28 +527,28 @@ export const GlobalNavbar: React.FC = () => {
                   setMessageOpen(false);
                 }}
                 className={cn(
-                  'flex items-center gap-2 sm:gap-2.5 pl-2 pr-3.5 py-2 rounded-2xl border transition-all hover-lift',
-                  isDark
-                    ? 'border-slate-800/80 bg-slate-900/60 hover:bg-slate-800'
-                    : 'border-slate-150 bg-white hover:bg-slate-50'
+                  'flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-md border transition-all text-xs font-bold',
+                  showGlassBg
+                    ? 'border-slate-200 bg-white hover:bg-slate-50 dark:border-slate-800 dark:bg-[#0B1221]'
+                    : 'border-white/15 bg-white/10 hover:bg-white/20 text-white'
                 )}
               >
-                <Avatar src={user.avatar} name={user.displayName} className="w-9 h-9 sm:w-10 sm:h-10 ring-2 ring-indigo-500/10" />
-                <span className="text-sm font-bold max-w-24 truncate hidden sm:block">
+                <Avatar src={user.avatar} name={user.displayName} className="w-7 h-7 sm:w-8 sm:h-8" />
+                <span className="text-xs font-bold max-w-24 truncate hidden sm:block">
                   {user.firstName}
                 </span>
-                <ChevronDown className={cn('w-4 h-4 opacity-60 transition-transform duration-200', userDropdownOpen && 'rotate-180')} />
+                <ChevronDown className={cn('w-3.5 h-3.5 opacity-60 transition-transform duration-200', userDropdownOpen && 'rotate-180')} />
               </button>
 
               <NavbarDropdown isOpen={userDropdownOpen} onClose={() => setUserDropdownOpen(false)} />
             </div>
           ) : (
-            <div className="hidden sm:flex items-center">
+            <div className="hidden sm:flex items-center font-sans">
               <Link
                 to="/auth/login"
-                className="btn-primary text-sm px-6 py-2.5 shadow-lg shadow-indigo-550/10 hover-lift bg-indigo-600 text-white hover:bg-indigo-700 font-bold rounded-2xl"
+                className="text-xs uppercase tracking-widest font-bold px-6 py-2.5 bg-[#D4AF37] hover:bg-[#E5C158] text-[#0B1221] rounded-md transition-all duration-200"
               >
-                {l.signIn}
+                Login
               </Link>
             </div>
           )}
@@ -557,11 +557,13 @@ export const GlobalNavbar: React.FC = () => {
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className={cn(
-              'p-2.5 sm:p-3 rounded-2xl md:hidden transition-all hover-lift',
-              isDark ? 'text-slate-355 hover:bg-slate-800/40 hover:text-white' : 'text-slate-655 hover:bg-slate-50 hover:text-slate-950'
+              'p-2.5 rounded-md md:hidden transition-all',
+              showGlassBg
+                ? 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'
+                : 'text-white/85 hover:bg-white/10'
             )}
           >
-            {mobileMenuOpen ? <X className="w-5.5 h-5.5" /> : <Menu className="w-5.5 h-5.5" />}
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
       </div>
@@ -671,94 +673,6 @@ export const GlobalNavbar: React.FC = () => {
                     </Link>
                   </div>
                 )}
-              </div>
-
-              {/* Language mobile selector */}
-              <div className="border-t border-slate-100 dark:border-slate-800 pt-3.5">
-                <button
-                  onClick={() => setMobileLangOpen(!mobileLangOpen)}
-                  className="w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-semibold text-left"
-                >
-                  <span className="flex items-center gap-2">
-                    <Globe className="w-5 h-5 text-slate-400" />
-                    {l.language} ({currentLang.label})
-                  </span>
-                  <ChevronDown className={cn('w-4 h-4 transition-transform duration-200', mobileLangOpen && 'rotate-180')} />
-                </button>
-
-                <AnimatePresence>
-                  {mobileLangOpen && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="pl-6 pr-2 py-1 max-h-48 overflow-y-auto space-y-1"
-                    >
-                      {LANGS.map(lang => (
-                        <button
-                          key={lang.code}
-                          onClick={() => {
-                            setLanguage(lang.code);
-                            setMobileMenuOpen(false);
-                          }}
-                          className={cn(
-                            'w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold',
-                            language === lang.code
-                              ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400'
-                              : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50'
-                          )}
-                        >
-                          <span>{lang.flag}</span>
-                          <span>{lang.label}</span>
-                        </button>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* Currency mobile selector */}
-              <div className="border-t border-slate-100 dark:border-slate-800 pt-3.5">
-                <button
-                  onClick={() => setMobileCurrOpen(!mobileCurrOpen)}
-                  className="w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-semibold text-left"
-                >
-                  <span className="flex items-center gap-2">
-                    <Globe className="w-5 h-5 text-slate-400" />
-                    {l.currency} ({currentCurr.code} - {currentCurr.symbol})
-                  </span>
-                  <ChevronDown className={cn('w-4 h-4 transition-transform duration-200', mobileCurrOpen && 'rotate-180')} />
-                </button>
-
-                <AnimatePresence>
-                  {mobileCurrOpen && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="pl-6 pr-2 py-1 space-y-1"
-                    >
-                      {CURRENCIES.map(curr => (
-                        <button
-                          key={curr.code}
-                          onClick={() => {
-                            setCurrency(curr.code);
-                            setMobileMenuOpen(false);
-                          }}
-                          className={cn(
-                            'w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold',
-                            currency === curr.code
-                              ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400'
-                              : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50'
-                          )}
-                        >
-                          <span>{curr.flag}</span>
-                          <span>{curr.code} ({curr.symbol})</span>
-                        </button>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
               </div>
             </div>
           </motion.div>

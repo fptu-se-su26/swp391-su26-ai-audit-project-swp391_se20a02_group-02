@@ -80,6 +80,53 @@ public class PaymentController {
         return ResponseEntity.ok(ApiResponse.success("Payment return processed", payment));
     }
 
+    @PostMapping("/momo/ipn")
+    @Operation(summary = "Handle MoMo IPN (Instant Payment Notification) – public endpoint")
+    public ResponseEntity<Map<String, Object>> momoIpn(@RequestBody Map<String, String> params) {
+        try {
+            PaymentDTOs.PaymentResponse payment = paymentService.processMoMoIpn(params);
+            Map<String, Object> ack = Map.of(
+                "partnerCode", params.getOrDefault("partnerCode", ""),
+                "requestId",   params.getOrDefault("requestId", ""),
+                "orderId",     params.getOrDefault("orderId", ""),
+                "resultCode",  0,
+                "message",     "Success"
+            );
+            return ResponseEntity.ok(ack);
+        } catch (Exception e) {
+            Map<String, Object> err = Map.of("resultCode", -1, "message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(err);
+        }
+    }
+
+    @RequestMapping(value = "/momo/return", method = {RequestMethod.GET, RequestMethod.POST})
+    @Operation(summary = "Handle MoMo return redirect – public endpoint")
+    public ResponseEntity<ApiResponse<PaymentDTOs.PaymentResponse>> momoReturn(
+            @RequestParam Map<String, String> params) {
+        PaymentDTOs.PaymentResponse payment = paymentService.processMoMoReturn(params);
+        return ResponseEntity.ok(ApiResponse.success("MoMo payment return processed", payment));
+    }
+
+    @PostMapping("/payos/webhook")
+    @Operation(summary = "Handle PayOS webhook - public endpoint")
+    public ResponseEntity<Map<String, Object>> payosWebhook(@RequestBody Map<String, Object> payload) {
+        try {
+            paymentService.processPayOSWebhook(payload);
+            return ResponseEntity.ok(Map.of("success", true));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    @RequestMapping(value = "/payos/return", method = {RequestMethod.GET, RequestMethod.POST})
+    @Operation(summary = "Handle PayOS return redirect - public endpoint")
+    public ResponseEntity<ApiResponse<PaymentDTOs.PaymentResponse>> payosReturn(
+            @RequestParam Map<String, String> params) {
+        PaymentDTOs.PaymentResponse payment = paymentService.processPayOSReturn(params);
+        return ResponseEntity.ok(ApiResponse.success("PayOS payment return processed", payment));
+    }
+
     @PostMapping("/wallet/topup")
     @Operation(summary = "Top up LuxeWallet balance")
     public ResponseEntity<ApiResponse<PaymentDTOs.PaymentResponse>> topUpWallet(

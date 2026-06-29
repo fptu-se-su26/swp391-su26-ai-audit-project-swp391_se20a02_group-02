@@ -1316,11 +1316,71 @@ Commit: feat: implement Vietnam vehicle rental map discovery page with collapsib
 
 ---
 
+# [Phase 06.2] Advanced eKYC & Mioto Full-Screen Map UI Refinement
+
+## Ngày thực hiện
+
+```text
+2026-06-29
+```
+
+## Đã hoàn thành
+
+- [x] **Cập nhật FPT.AI API Key mới**:
+  - Tích hợp khóa FPT.AI API hoạt động (`jTvJG13HCzWUlM5ZIt4oZdP7t2EChMhP`) vào cấu hình hệ thống [`.env`](file:///d:/Project_ALL_Mon/swp391-su26-ai-audit-project-swp391_se20a02_group-02/.env) và tệp thực thi Backend [`run-be.bat`](file:///d:/Project_ALL_Mon/swp391-su26-ai-audit-project-swp391_se20a02_group-02/run-be.bat) để sửa lỗi quét tài liệu bị chặn.
+- [x] **Sửa lỗi không đồng bộ trạng thái eKYC giữa BE và FE**:
+  - Bổ sung trường `kycStatus` và `driverLicenseStatus` vào DTO đăng nhập [`AuthDTOs.java`](file:///d:/Project_ALL_Mon/swp391-su26-ai-audit-project-swp391_se20a02_group-02/src/Back_end/src/main/java/com/luxeway/dto/auth/AuthDTOs.java).
+  - Ánh xạ đầy đủ các trạng thái này trong endpoint hồ sơ tài khoản hiện tại `/auth/me` của [`AuthController.java`](file:///d:/Project_ALL_Mon/swp391-su26-ai-audit-project-swp391_se20a02_group-02/src/Back_end/src/main/java/com/luxeway/controller/AuthController.java) và hàm sinh token đăng nhập ở [`AuthService.java`](file:///d:/Project_ALL_Mon/swp391-su26-ai-audit-project-swp391_se20a02_group-02/src/Back_end/src/main/java/com/luxeway/service/AuthService.java).
+  - Cập nhật [`authService.ts`](file:///d:/Project_ALL_Mon/swp391-su26-ai-audit-project-swp391_se20a02_group-02/src/Front_end/src/services/authService.ts) trên Frontend để nhận trạng thái KYC chính xác khi tải lại trang, hiển thị đúng tích xanh VERIFIED.
+- [x] **Nới lỏng ràng buộc tải ảnh tài liệu KYC**:
+  - Cho phép người dùng đã xác minh (`VERIFIED`) thực hiện tải lại tài liệu eKYC phục vụ kiểm thử và cập nhật thông tin trong [`UserController.java`](file:///d:/Project_ALL_Mon/swp391-su26-ai-audit-project-swp391_se20a02_group-02/src/Back_end/src/main/java/com/luxeway/controller/UserController.java).
+- [x] **Ràng buộc phân loại bằng lái xe nghiêm ngặt**:
+  - Nâng cấp phương thức kiểm tra đặt xe tại [`BookingService.java`](file:///d:/Project_ALL_Mon/swp391-su26-ai-audit-project-swp391_se20a02_group-02/src/Back_end/src/main/java/com/luxeway/service/BookingService.java): Người dùng chỉ có bằng xe máy (A, A1, A2...) sẽ bị chặn đặt ô tô kèm theo thông báo cảnh báo lỗi tiếng Việt chi tiết: *"Bằng lái xe máy hạng A1 không được phép thuê xe ô tô. Vui lòng sử dụng bằng lái xe ô tô (B1, B2, C...)"*.
+- [x] **Overhaul Giao diện Bản đồ Full-screen (Mioto UX)**:
+  - Ẩn hoàn toàn danh sách xe khi bản đồ mở để tối ưu không gian hiển thị 100% full-screen. Khi ẩn bản đồ, danh sách xe được kéo giãn hết cỡ với grid 4 cột trên desktop (`xl:grid-cols-4`).
+  - Tích hợp khay trượt Bộ lọc Nâng cao (Advanced Filters Drawer) ngay trên bản đồ (Mioto-style) hỗ trợ lọc xe thời gian thực.
+  - Sửa đổi lỗi đường dẫn card chi tiết xe trên bản đồ (chuyển sang `/cars/{id}` hoặc `/motorbikes/{id}`).
+- [x] **Nút Floating Action thông minh tự động ẩn/hiện**:
+  - Sử dụng Framer Motion và scroll listener để ẩn nút **Danh sách / Bản đồ** khi lướt xuống dưới và tự động hiện lại khi lướt lên trên.
+
+## Thay đổi chi tiết - Nguyễn Văn Dạng (DE190324)
+
+| STT | Nội dung thay đổi | Người thực hiện | File/Module liên quan | Minh chứng |
+|---:|---|---|---|---|
+| 1 | Cấu hình FPTAI_API_KEY hoạt động | Nguyễn Văn Dạng | `.env`, `run-be.bat` | Key mới chạy được |
+| 2 | Ánh xạ DTO kycStatus & driverLicenseStatus | Nguyễn Văn Dạng | `AuthDTOs.java`, `AuthController.java`, `AuthService.java` | /auth/me payload |
+| 3 | Thêm ràng buộc bằng lái ô tô / xe máy nghiêm ngặt | Nguyễn Văn Dạng | `BookingService.java` | Exception check bằng lái xe máy |
+| 4 | Cải tiến giao diện bản đồ full-screen toggle & drawer | Nguyễn Văn Dạng | `MarketplacePage.tsx` | Bản đồ 100% rộng |
+| 5 | Tích hợp scroll-direction aware toggle button | Nguyễn Văn Dạng | `MarketplacePage.tsx` | Nút ẩn hiện khi cuộn |
+
+## AI có hỗ trợ không?
+
+- [x] Có
+- [ ] Không
+
+Nếu có, mô tả AI đã hỗ trợ phần nào:
+
+```text
+AI (Antigravity) hỗ trợ:
+- Gợi ý cấu trúc DTO kycStatus để trả về thông tin xác thực cho Frontend.
+- Thiết kế layout Advanced Filters Drawer dạng trượt trơn tru kết hợp backdrop blur trên bản đồ.
+- Tối ưu hóa tính năng scroll listener với passive flag và Framer Motion.
+```
+
+## Commit/Screenshot minh chứng
+
+```text
+Branch: main
+Commit: feat: implement premium full-screen Mioto-style map toggle layout with advanced filters drawer and scroll-aware button
+```
+
+---
+
 # 5. Cam kết cập nhật Changelog
 
 Sinh viên/nhóm cam kết rằng nội dung changelog phản ánh đúng các thay đổi đã thực hiện trong quá trình làm bài tập/project.
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-06-27 |
+| Nguyễn Văn Dạng - DE190324 | 2026-06-29 |
 

@@ -32,6 +32,10 @@ import MotorbikeDetails from '@/pages/marketplace/MotorbikeDetails';
 import BookingWizardPage from '@/pages/booking/BookingWizardPage';
 import BookingCheckoutPage from '@/pages/booking/BookingCheckoutPage';
 import VNPayReturnPage from '@/pages/booking/VNPayReturnPage';
+import MoMoReturnPage from '@/pages/booking/MoMoReturnPage';
+import PayOSReturnPage from '@/pages/booking/PayOSReturnPage';
+import MapPage from '@/pages/map/MapPage';
+import BecomeOwnerPage from '@/pages/owner/BecomeOwnerPage';
 import HelpPage from '@/pages/help/HelpPage';
 import { OwnerSuccessHub } from '@/pages/help/OwnerSuccessHub';
 import { PlatformStatus } from '@/pages/help/PlatformStatus';
@@ -56,13 +60,8 @@ const VehicleFormPage = lazy(() => import('@/pages/dashboard/OwnerDashboard').th
 const OwnerCalendarPage = lazy(() => import('@/pages/dashboard/OwnerDashboard').then(m => ({ default: m.OwnerCalendarPage })));
 const OwnerBookingsPage = lazy(() => import('@/pages/dashboard/OwnerDashboard').then(m => ({ default: m.OwnerBookingsPage })));
 const OwnerRevenuePage = lazy(() => import('@/pages/dashboard/OwnerDashboard').then(m => ({ default: m.OwnerRevenuePage })));
-const BusinessOwnerDashboardLayout = lazy(() => import('@/pages/dashboard/BusinessOwnerDashboard').then(m => ({ default: m.BusinessOwnerDashboardLayout })));
-const BusinessOverview = lazy(() => import('@/pages/dashboard/BusinessOwnerDashboard').then(m => ({ default: m.BusinessOverview })));
-const FleetManagementPage = lazy(() => import('@/pages/dashboard/BusinessOwnerDashboard').then(m => ({ default: m.FleetManagementPage })));
-const EmployeeManagementPage = lazy(() => import('@/pages/dashboard/BusinessOwnerDashboard').then(m => ({ default: m.EmployeeManagementPage })));
-const DriverManagementPage = lazy(() => import('@/pages/dashboard/BusinessOwnerDashboard').then(m => ({ default: m.DriverManagementPage })));
-const FleetAnalyticsPage = lazy(() => import('@/pages/dashboard/BusinessOwnerDashboard').then(m => ({ default: m.FleetAnalyticsPage })));
-const CorporateReportsPage = lazy(() => import('@/pages/dashboard/BusinessOwnerDashboard').then(m => ({ default: m.CorporateReportsPage })));
+const OwnerReviewsPage = lazy(() => import('@/pages/dashboard/OwnerDashboard').then(m => ({ default: m.OwnerReviewsPage })));
+const OwnerSettingsPage = lazy(() => import('@/pages/dashboard/OwnerDashboard').then(m => ({ default: m.OwnerSettingsPage })));
 const MessengerPage = lazy(() => import('@/pages/messages/MessengerPage'));
 const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'));
 const CustomerBookingPage = lazy(() => import('@/pages/booking/CustomerBookingPage'));
@@ -112,47 +111,39 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; requiredRole?: 'cust
   
   if (!isAuthenticated) return <Navigate to="/auth/login" replace />;
   
-  if (requiredRole) {
-    const roleUpper = user?.role?.toUpperCase();
-    const accTypeUpper = user?.accountType?.toUpperCase();
-    const userIsBusiness = roleUpper === 'BUSINESS_OWNER' || (roleUpper === 'OWNER' && accTypeUpper === 'BUSINESS');
-    
-    let authorized = false;
-    if (requiredRole === 'admin') {
-      // BUG-4/19 FIX: SUPER_ADMIN also gets admin access
-      authorized = roleUpper === 'ADMIN' || roleUpper === 'SUPER_ADMIN';
-    } else if (requiredRole === 'business_owner') {
-      authorized = userIsBusiness;
-    } else if (requiredRole === 'owner') {
-      authorized = roleUpper === 'OWNER' && !userIsBusiness;
-    } else if (requiredRole === 'customer') {
-      authorized = roleUpper === 'CUSTOMER';
+    if (requiredRole) {
+      const roleUpper = user?.role?.toUpperCase();
+      
+      let authorized = false;
+      if (requiredRole === 'admin') {
+        authorized = roleUpper === 'ADMIN' || roleUpper === 'SUPER_ADMIN';
+      } else if (requiredRole === 'business_owner' || requiredRole === 'owner') {
+        authorized = roleUpper === 'OWNER' || roleUpper === 'BUSINESS_OWNER';
+      } else if (requiredRole === 'customer') {
+        authorized = roleUpper === 'CUSTOMER';
+      }
+      
+      if (!authorized) {
+        return <Navigate to="/403" replace />;
+      }
     }
-    
-    if (!authorized) {
-      return <Navigate to="/403" replace />;
-    }
-  }
-  return <>{children}</>;
-};
-
-// ====== FORBIDDEN 403 PAGE ======
-const ForbiddenPage: React.FC = () => {
-  const { theme } = useUIStore();
-  const isDark = theme === 'dark';
-  const { user } = useAuthStore();
-  const navigate = useNavigate();
-
-  const getBackRoute = () => {
-    if (!user) return '/';
-    const roleUpper = user.role?.toUpperCase();
-    const accTypeUpper = user.accountType?.toUpperCase();
-    // BUG-4 FIX: SUPER_ADMIN routes to /admin
-    if (roleUpper === 'ADMIN' || roleUpper === 'SUPER_ADMIN') return '/admin';
-    if (roleUpper === 'BUSINESS_OWNER' || (roleUpper === 'OWNER' && accTypeUpper === 'BUSINESS')) return '/business';
-    if (roleUpper === 'OWNER') return '/owner';
-    return '/dashboard';
+    return <>{children}</>;
   };
+  
+  // ====== FORBIDDEN 403 PAGE ======
+  const ForbiddenPage: React.FC = () => {
+    const { theme } = useUIStore();
+    const isDark = theme === 'dark';
+    const { user } = useAuthStore();
+    const navigate = useNavigate();
+  
+    const getBackRoute = () => {
+      if (!user) return '/';
+      const roleUpper = user.role?.toUpperCase();
+      if (roleUpper === 'ADMIN' || roleUpper === 'SUPER_ADMIN') return '/admin';
+      if (roleUpper === 'OWNER' || roleUpper === 'BUSINESS_OWNER') return '/owner';
+      return '/dashboard';
+    };
 
   return (
     <div className={`min-h-screen flex items-center justify-center px-4 ${isDark ? 'bg-slate-950 text-white' : 'bg-[#F8FAFC] text-[#0F172A]'}`}>
@@ -536,7 +527,8 @@ const App: React.FC = () => {
             <Route path="marketplace" element={<MarketplacePage />} />
             <Route path="vehicles" element={<MarketplacePage />} />
             <Route path="search" element={<MarketplacePage />} />
-            <Route path="map" element={<MarketplacePage forceMapOpen={true} />} />
+            <Route path="map" element={<MapPage />} />
+            <Route path="owner/register" element={<BecomeOwnerPage />} />
             <Route path="vehicles/:id" element={<VehicleDetailPage />} />
             <Route path="cars" element={<CarsMarketplace />} />
             <Route path="motorbikes" element={<MotorbikeMarketplace />} />
@@ -550,6 +542,12 @@ const App: React.FC = () => {
             } />
             <Route path="payment/vnpay/return" element={
               <ProtectedRoute><VNPayReturnPage /></ProtectedRoute>
+            } />
+            <Route path="payment/momo/return" element={
+              <ProtectedRoute><MoMoReturnPage /></ProtectedRoute>
+            } />
+            <Route path="payment/payos/return" element={
+              <ProtectedRoute><PayOSReturnPage /></ProtectedRoute>
             } />
             <Route path="success" element={<BookingSuccessPage />} />
             <Route path="bookings/:bookingId" element={
@@ -606,23 +604,12 @@ const App: React.FC = () => {
               <Route path="vehicles" element={<VehicleManagePage />} />
               <Route path="vehicles/new" element={<VehicleFormPage />} />
               <Route path="vehicles/:id/edit" element={<VehicleFormPage />} />
-              <Route path="analytics" element={<OwnerRevenuePage />} />
               <Route path="calendar" element={<OwnerCalendarPage />} />
               <Route path="bookings" element={<OwnerBookingsPage />} />
               <Route path="bookings/:bookingId/tracking" element={<OwnerBookingTrackingPage />} />
               <Route path="revenue" element={<OwnerRevenuePage />} />
-              <Route path="fleet" element={<FleetManagementPage />} />
-              <Route path="employees" element={<EmployeeManagementPage />} />
-            </Route>
-
-            {/* Business Owner Dashboard */}
-            <Route path="business" element={<ProtectedRoute requiredRole="business_owner"><BusinessOwnerDashboardLayout /></ProtectedRoute>}>
-              <Route index element={<BusinessOverview />} />
-              <Route path="fleet" element={<FleetManagementPage />} />
-              <Route path="employees" element={<EmployeeManagementPage />} />
-              <Route path="drivers" element={<DriverManagementPage />} />
-              <Route path="analytics" element={<FleetAnalyticsPage />} />
-              <Route path="reports" element={<CorporateReportsPage />} />
+              <Route path="reviews" element={<OwnerReviewsPage />} />
+              <Route path="settings" element={<OwnerSettingsPage />} />
             </Route>
 
             {/* Admin */}

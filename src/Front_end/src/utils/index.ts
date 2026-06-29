@@ -318,7 +318,7 @@ export function isStrongPassword(password: string): { valid: boolean; strength: 
   };
 }
 
-const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8080';
+const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8080/api/v1';
 const SERVER_BASE = API_BASE.replace('/api/v1', '');
 
 export function getVehicleFallbackImage(url: string | null | undefined): string {

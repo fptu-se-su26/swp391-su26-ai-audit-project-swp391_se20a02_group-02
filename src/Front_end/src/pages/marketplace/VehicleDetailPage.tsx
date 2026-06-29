@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Star, MapPin, Shield, Users, ChevronLeft, ChevronRight,
   Info, Clock, Check, Loader2, Calendar, AlertCircle, FileText, CheckCircle2,
-  Sparkles, ShieldCheck
+  Sparkles, ShieldCheck, SlidersHorizontal
 } from 'lucide-react';
 import { vehicleService } from '@/services/vehicleService';
 import apiClient from '@/services/api';
@@ -14,8 +14,10 @@ import { useToast } from '@/components/ui/Toast';
 import { formatCurrency, cn, resolveImageUrl } from '@/utils';
 import { fadeUp, staggerContainer, staggerItem } from '@/animations/variants';
 import LuxeWayMap from '@/components/map/LuxeWayMap';
+import { recommendationService } from '@/services/enterpriseService';
+import { Camera, Music, Smartphone, Compass, Eye, Heart, Menu, Trash } from 'lucide-react';
 
-const VehicleDetailPage: React.FC = () => {
+export const VehicleDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const toast = useToast();
@@ -26,9 +28,17 @@ const VehicleDetailPage: React.FC = () => {
 
   const [loading, setLoading] = useState(true);
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
+  const [similarVehicles, setSimilarVehicles] = useState<any[]>([]);
   
   // Gallery slider state
   const [activeImageIdx, setActiveImageIdx] = useState(0);
+  const [showFullscreen, setShowFullscreen] = useState(false);
+
+  // Collapsible description state
+  const [descExpanded, setDescExpanded] = useState(false);
+
+  // Documents tab selection
+  const [selectedDocTab, setSelectedDocTab] = useState<'gplx' | 'passport'>('gplx');
 
   // Booking options state
   const [startDate, setStartDate] = useState('');
@@ -49,6 +59,43 @@ const VehicleDetailPage: React.FC = () => {
       .then(data => {
         if (data) {
           setVehicle(data);
+          
+          // Load recommendations / similar listings
+          if (data.vehicleType === 'motorbike') {
+            recommendationService.getSimilarMotorbikes(data.id)
+              .then(sim => {
+                if (sim && sim.length > 0) {
+                  setSimilarVehicles(sim);
+                } else {
+                  // Fallback
+                  vehicleService.getMapVehicles({ vehicleType: 'motorbike' })
+                    .then(list => setSimilarVehicles(list.filter(v => v.id !== data.id).slice(0, 4)))
+                    .catch(() => {});
+                }
+              })
+              .catch(() => {
+                vehicleService.getMapVehicles({ vehicleType: 'motorbike' })
+                  .then(list => setSimilarVehicles(list.filter(v => v.id !== data.id).slice(0, 4)))
+                  .catch(() => {});
+              });
+          } else {
+            recommendationService.getSimilarCars(data.id)
+              .then(sim => {
+                if (sim && sim.length > 0) {
+                  setSimilarVehicles(sim);
+                } else {
+                  // Fallback
+                  vehicleService.getMapVehicles({ vehicleType: 'car' })
+                    .then(list => setSimilarVehicles(list.filter(v => v.id !== data.id).slice(0, 4)))
+                    .catch(() => {});
+                }
+              })
+              .catch(() => {
+                vehicleService.getMapVehicles({ vehicleType: 'car' })
+                  .then(list => setSimilarVehicles(list.filter(v => v.id !== data.id).slice(0, 4)))
+                  .catch(() => {});
+              });
+          }
         } else {
           toast.error('Error', isVi ? 'Không tìm thấy thông tin xe.' : 'Vehicle details not found.');
         }
@@ -64,9 +111,9 @@ const VehicleDetailPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen pt-24 pb-12 flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+      <div className="min-h-screen pt-24 pb-12 flex items-center justify-center bg-[#F8FAFC] dark:bg-[#090D1A]">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-blue-500 mx-auto mb-4" />
+          <Loader2 className="w-12 h-12 animate-spin text-[#D4AF37] mx-auto mb-4" />
           <p className="text-slate-500 font-semibold">{isVi ? 'Đang tải thông tin xe...' : 'Loading vehicle details...'}</p>
         </div>
       </div>
@@ -75,12 +122,12 @@ const VehicleDetailPage: React.FC = () => {
 
   if (!vehicle) {
     return (
-      <div className="min-h-screen pt-24 pb-12 flex items-center justify-center bg-slate-50 dark:bg-slate-900">
-        <div className="text-center p-8 bg-card rounded-3xl border border-border shadow-lg max-w-md w-full">
+      <div className="min-h-screen pt-24 pb-12 flex items-center justify-center bg-[#F8FAFC] dark:bg-[#090D1A]">
+        <div className="text-center p-8 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg max-w-md w-full">
           <div className="text-6xl mb-4">🚗</div>
           <h2 className="text-2xl font-bold text-foreground mb-2">{isVi ? 'Không tìm thấy xe' : 'Vehicle Not Found'}</h2>
           <p className="text-slate-500 mb-6">{isVi ? 'Xe này không tồn tại hoặc chưa được duyệt.' : 'This vehicle does not exist or has not been approved.'}</p>
-          <button onClick={() => navigate('/marketplace')} className="w-full btn-primary py-3 rounded-xl font-bold">
+          <button onClick={() => navigate('/marketplace')} className="w-full py-3 bg-[#0B1221] text-white rounded-xl font-bold">
             {isVi ? 'Quay lại Marketplace' : 'Back to Marketplace'}
           </button>
         </div>
@@ -134,7 +181,7 @@ const VehicleDetailPage: React.FC = () => {
     }
   };
 
-  // Image list preparation (Primary first, then gallery)
+  // Image list preparation
   const imageList = vehicle.vehicleImages && vehicle.vehicleImages.length > 0 
     ? vehicle.vehicleImages 
     : [vehicle.thumbnailUrl || 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=800'];
@@ -143,12 +190,10 @@ const VehicleDetailPage: React.FC = () => {
   const finalPrice = vehicle.finalPrice ? Number(vehicle.finalPrice) : Number(vehicle.pricePerDay);
   const showMap = !!(vehicle.location?.lat && vehicle.location?.lng && Number(vehicle.location.lat) !== 0 && Number(vehicle.location.lng) !== 0);
 
-  // Rental duration calculation
   const days = (startDate && endDate) 
     ? Math.max(1, Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)))
     : 0;
 
-  // Invoice pricing estimation
   const rawBase = Number(vehicle.pricePerDay) * (days || 1);
   const discountAmt = Math.round(rawBase * (discountPercent / 100));
   const basePriceAfterDiscount = rawBase - discountAmt;
@@ -158,182 +203,312 @@ const VehicleDetailPage: React.FC = () => {
   const taxes = Math.round(basePriceAfterDiscount * 0.08);
   const estimatedTotal = basePriceAfterDiscount + insuranceFee + deliveryFee + serviceFee + taxes;
 
+  const featureIcons: Record<string, React.JSX.Element> = {
+    gps: <Compass className="w-4 h-4 text-[#D4AF37]" />,
+    wifi: <SlidersHorizontal className="w-4 h-4 text-[#D4AF37]" />,
+    camera: <Camera className="w-4 h-4 text-[#D4AF37]" />,
+    bluetooth: <Smartphone className="w-4 h-4 text-[#D4AF37]" />,
+    map: <MapPin className="w-4 h-4 text-[#D4AF37]" />,
+    safety: <Shield className="w-4 h-4 text-[#D4AF37]" />
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pt-20 pb-16 transition-colors">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#090D1A] pt-24 pb-20 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* IMAGE GALLERY SECTION */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          <div className="lg:col-span-2 relative h-[300px] sm:h-[450px] bg-black rounded-3xl overflow-hidden shadow-lg border border-slate-200 dark:border-slate-800">
+        {/* Gallery Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
+          <div 
+            onClick={() => setShowFullscreen(true)}
+            className="lg:col-span-2 relative h-[320px] sm:h-[460px] bg-black rounded-3xl overflow-hidden shadow-md border border-slate-200/50 dark:border-white/5 cursor-pointer group"
+          >
             <img 
               src={resolveImageUrl(imageList[activeImageIdx])} 
               alt={vehicle.name} 
-              className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
             />
             
+            <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
+              <span className="text-white text-xs font-bold bg-[#0B1221]/80 backdrop-blur px-3.5 py-2 rounded-xl flex items-center gap-1.5 shadow">
+                <Eye className="w-3.5 h-3.5 text-[#D4AF37]" />
+                {isVi ? 'Xem ảnh chế độ đầy đủ' : 'View full-screen gallery'}
+              </span>
+            </div>
+
             {imageList.length > 1 && (
-              <>
-                <button 
-                  onClick={() => setActiveImageIdx(prev => prev === 0 ? imageList.length - 1 : prev - 1)}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/80 dark:bg-slate-900/80 backdrop-blur text-slate-800 dark:text-white shadow hover:bg-white dark:hover:bg-slate-900 transition-colors"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-                <button 
-                  onClick={() => setActiveImageIdx(prev => prev === imageList.length - 1 ? 0 : prev + 1)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/80 dark:bg-slate-900/80 backdrop-blur text-slate-800 dark:text-white shadow hover:bg-white dark:hover:bg-slate-900 transition-colors"
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
-              </>
+              <div className="absolute bottom-4 right-4 bg-[#0B1221]/75 backdrop-blur text-white text-[10px] font-black px-3.5 py-1.5 rounded-full select-none shadow">
+                {activeImageIdx + 1} / {imageList.length}
+              </div>
             )}
 
             {discountPercent > 0 && (
-              <div className="absolute top-4 left-4 bg-red-500 text-white font-extrabold text-xs px-3 py-1.5 rounded-full shadow flex items-center gap-1 uppercase tracking-wider animate-pulse">
+              <div className="absolute top-4 left-4 bg-red-500 text-white font-extrabold text-[10px] px-3.5 py-1.5 rounded-full shadow flex items-center gap-1.5 uppercase tracking-widest">
                 <Sparkles className="w-3.5 h-3.5" />
-                -{discountPercent}% {isVi ? 'GIẢM GIÁ' : 'PROMO'}
+                Giảm {discountPercent}%
               </div>
             )}
           </div>
           
           {/* Thumbnails grid */}
           <div className="grid grid-cols-4 lg:grid-cols-2 gap-3 h-fit">
-            {imageList.slice(0, 8).map((img: string, idx: number) => (
+            {imageList.slice(0, 6).map((img: string, idx: number) => (
               <button
                 key={idx}
                 onClick={() => setActiveImageIdx(idx)}
                 className={cn(
-                  "relative h-20 sm:h-24 lg:h-[106px] rounded-2xl overflow-hidden border-2 transition-all",
-                  activeImageIdx === idx ? "border-blue-500 scale-[0.98] shadow-md shadow-blue-500/10" : "border-transparent hover:border-slate-300 dark:hover:border-slate-700"
+                  "relative h-20 sm:h-24 lg:h-[110px] rounded-2xl overflow-hidden border-2 transition-all",
+                  activeImageIdx === idx ? "border-[#D4AF37] scale-[0.98] shadow-md shadow-[#D4AF37]/10" : "border-transparent hover:border-slate-350 dark:hover:border-slate-800"
                 )}
               >
                 <img src={resolveImageUrl(img)} alt="Thumbnail" className="w-full h-full object-cover" />
+                {idx === 5 && imageList.length > 6 && (
+                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-black text-sm">
+                    +{imageList.length - 6}
+                  </div>
+                )}
               </button>
             ))}
           </div>
         </div>
 
-        {/* DETAILS & STICKY BOOKING WIDGET */}
+        {/* Double Column Info Structure */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
-          {/* LEFT: Vehicle Information */}
-          <div className="lg:col-span-2 space-y-8">
+          {/* Left Column: Details */}
+          <div className="lg:col-span-2 space-y-6">
             
-            {/* Header info */}
-            <div className="bg-card border border-border p-6 sm:p-8 rounded-3xl shadow-sm">
-              <h1 className="text-2xl sm:text-3xl font-display font-black text-foreground uppercase tracking-tight mb-2">
-                {vehicle.brand} {vehicle.model} <span className="text-slate-400 font-medium">{vehicle.year}</span>
+            {/* Main Header Card */}
+            <div className="bg-white dark:bg-[#131F35] border border-slate-200/50 dark:border-white/5 p-6 sm:p-8 rounded-3xl shadow-sm transition-colors">
+              <h1 className="text-2xl sm:text-3xl font-display font-black text-[#0B1221] dark:text-white uppercase tracking-tight mb-2">
+                {vehicle.brand} {vehicle.model} <span className="text-slate-400 font-sans font-light">{vehicle.year}</span>
               </h1>
               
-              <div className="flex flex-wrap items-center gap-4 text-sm text-slate-500 dark:text-slate-400 mb-6">
+              <div className="flex flex-wrap items-center gap-4 text-xs font-bold text-slate-500 dark:text-slate-400 mb-6">
                 <div className="flex items-center gap-1">
-                  <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
-                  <span className="font-bold text-foreground">{vehicle.rating?.toFixed(1)}</span>
-                  <span>({vehicle.totalReviews} {isVi ? 'đánh giá' : 'reviews'})</span>
+                  <Star className="w-4 h-4 text-[#D4AF37] fill-[#D4AF37]" />
+                  <span className="font-black text-slate-850 dark:text-white text-sm">{vehicle.rating?.toFixed(1) || '5.0'}</span>
+                  <span className="font-medium text-slate-455">({vehicle.totalReviews || 0} đánh giá)</span>
                 </div>
                 <div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700" />
                 <div>
-                  <span className="font-bold text-foreground">{vehicle.totalBookings}</span> {isVi ? 'chuyến đi' : 'trips'}
+                  <span className="font-black text-slate-850 dark:text-white text-sm">{vehicle.totalBookings || 12}</span> {isVi ? 'chuyến đi' : 'trips'}
                 </div>
                 <div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700" />
-                <div className="flex items-center gap-1">
-                  <MapPin className="w-4 h-4 text-slate-400" />
-                  <span>{vehicle.location?.city}</span>
+                <div className="flex items-center gap-1 font-medium">
+                  <MapPin className="w-4 h-4 text-amber-500" />
+                  <span>{vehicle.location?.city || 'Hồ Chí Minh'}</span>
                 </div>
               </div>
 
-              {/* Badges */}
-              <div className="flex flex-wrap gap-2.5">
-                {discountPercent > 0 && (
-                  <span className="text-xs font-extrabold bg-red-500/10 text-red-500 dark:text-red-400 px-3 py-1.5 rounded-xl border border-red-500/20">
-                    {isVi ? 'Ưu đãi đặc biệt' : 'Promo discount'}
-                  </span>
-                )}
-                {(!vehicle.deposit || Number(vehicle.deposit) === 0) && (
-                  <span className="text-xs font-extrabold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-3 py-1.5 rounded-xl border border-emerald-500/20">
-                    {isVi ? 'Không cần cọc' : 'No deposit'}
-                  </span>
-                )}
+              {/* Status Badges */}
+              <div className="flex flex-wrap gap-2 pt-2 select-none">
+                <span className="text-[10px] font-black bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-3 py-1.5 rounded-xl border border-emerald-500/20">
+                  Miễn thế chấp
+                </span>
                 {vehicle.deliveryAvailable && (
-                  <span className="text-xs font-extrabold bg-blue-500/10 text-blue-600 dark:text-blue-400 px-3 py-1.5 rounded-xl border border-blue-500/20">
-                    {isVi ? 'Giao xe tận nơi' : 'Delivery available'}
+                  <span className="text-[10px] font-black bg-blue-500/10 text-blue-600 dark:text-blue-400 px-3 py-1.5 rounded-xl border border-blue-500/20">
+                    Giao xe tận nơi
                   </span>
                 )}
                 {vehicle.instantBook && (
-                  <span className="text-xs font-extrabold bg-amber-500/10 text-amber-600 dark:text-amber-400 px-3 py-1.5 rounded-xl border border-amber-500/20">
-                    {isVi ? 'Đặt xe nhanh' : 'Instant Book'}
+                  <span className="text-[10px] font-black bg-amber-500/10 text-amber-600 dark:text-amber-400 px-3 py-1.5 rounded-xl border border-amber-500/20">
+                    Đặt xe nhanh
                   </span>
                 )}
               </div>
             </div>
 
-            {/* Quick Specs */}
+            {/* Structured Specifications Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div className="bg-card border border-border p-4 rounded-2xl text-center shadow-sm">
-                <p className="text-[10px] uppercase font-bold tracking-wider text-slate-400 mb-1">{isVi ? 'HỘP SỐ' : 'TRANSMISSION'}</p>
-                <p className="font-extrabold text-foreground capitalize">{vehicle.specs?.transmission || 'Tự động'}</p>
+              <div className="bg-white dark:bg-[#131F35] border border-slate-200/50 dark:border-white/5 p-4 rounded-2xl shadow-sm text-center">
+                <p className="text-[9px] uppercase font-black tracking-wider text-slate-400 mb-1">Hộp số</p>
+                <p className="font-extrabold text-slate-800 dark:text-white capitalize text-sm">{vehicle.specs?.transmission || 'Số tự động'}</p>
               </div>
-              <div className="bg-card border border-border p-4 rounded-2xl text-center shadow-sm">
-                <p className="text-[10px] uppercase font-bold tracking-wider text-slate-400 mb-1">{isVi ? 'SỐ CHỖ' : 'SEAT CAPACITY'}</p>
-                <p className="font-extrabold text-foreground">{vehicle.seatNumber || vehicle.specs?.seats || 5} {isVi ? 'chỗ' : 'seats'}</p>
+              <div className="bg-white dark:bg-[#131F35] border border-slate-200/50 dark:border-white/5 p-4 rounded-2xl shadow-sm text-center">
+                <p className="text-[9px] uppercase font-black tracking-wider text-slate-400 mb-1">Số chỗ</p>
+                <p className="font-extrabold text-slate-800 dark:text-white text-sm">{vehicle.seatNumber || vehicle.specs?.seats || 5} chỗ</p>
               </div>
-              <div className="bg-card border border-border p-4 rounded-2xl text-center shadow-sm">
-                <p className="text-[10px] uppercase font-bold tracking-wider text-slate-400 mb-1">{isVi ? 'NHIÊN LIỆU' : 'FUEL TYPE'}</p>
-                <p className="font-extrabold text-foreground capitalize">{vehicle.specs?.fuelType || 'Xăng'}</p>
+              <div className="bg-white dark:bg-[#131F35] border border-slate-200/50 dark:border-white/5 p-4 rounded-2xl shadow-sm text-center">
+                <p className="text-[9px] uppercase font-black tracking-wider text-slate-400 mb-1">Nhiên liệu</p>
+                <p className="font-extrabold text-slate-800 dark:text-white capitalize text-sm">{vehicle.specs?.fuelType || 'Xăng'}</p>
               </div>
-              <div className="bg-card border border-border p-4 rounded-2xl text-center shadow-sm">
-                <p className="text-[10px] uppercase font-bold tracking-wider text-slate-400 mb-1">{isVi ? 'TIÊU THỤ' : 'CONSUMPTION'}</p>
-                <p className="font-extrabold text-foreground">{vehicle.vehicleType === 'motorbike' ? '2.5L/100km' : '6.5L/100km'}</p>
+              <div className="bg-white dark:bg-[#131F35] border border-slate-200/50 dark:border-white/5 p-4 rounded-2xl shadow-sm text-center">
+                <p className="text-[9px] uppercase font-black tracking-wider text-slate-400 mb-1">Tiêu hao</p>
+                <p className="font-extrabold text-slate-800 dark:text-white text-sm">{vehicle.vehicleType === 'motorbike' ? '2.5L/100km' : '7.0L/100km'}</p>
               </div>
             </div>
 
-            {/* Description */}
-            <div className="bg-card border border-border p-6 sm:p-8 rounded-3xl shadow-sm">
-              <h3 className="text-lg font-bold text-foreground mb-4">{isVi ? 'Mô tả chi tiết' : 'Description'}</h3>
-              <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed whitespace-pre-line">
-                {vehicle.description || (isVi ? 'Không có mô tả chi tiết.' : 'No detailed description available.')}
+            {/* Description Collapsible block */}
+            <div className="bg-white dark:bg-[#131F35] border border-slate-200/50 dark:border-white/5 p-6 sm:p-8 rounded-3xl shadow-sm">
+              <h3 className="text-base font-black text-slate-850 dark:text-white uppercase tracking-wider mb-4 border-l-4 border-[#D4AF37] pl-3">Mô tả chi tiết</h3>
+              <p className={cn(
+                "text-slate-650 dark:text-slate-350 text-xs leading-relaxed whitespace-pre-line",
+                !descExpanded && "line-clamp-4"
+              )}>
+                {vehicle.description || 'Chủ xe chưa cập nhật mô tả chi tiết cho phương tiện này. Tuy nhiên bạn có thể liên hệ trực tiếp để giải đáp các thắc mắc về tình trạng vận hành.'}
               </p>
+              
+              <button 
+                onClick={() => setDescExpanded(!descExpanded)}
+                className="mt-3 text-xs font-black text-[#D4AF37] hover:underline"
+              >
+                {descExpanded ? 'Rút gọn ▲' : 'Xem thêm ▼'}
+              </button>
             </div>
 
-            {/* Features */}
+            {/* Amenities Grid */}
             {vehicle.features && vehicle.features.length > 0 && (
-              <div className="bg-card border border-border p-6 sm:p-8 rounded-3xl shadow-sm">
-                <h3 className="text-lg font-bold text-foreground mb-6">{isVi ? 'Tính năng & Tiện ích' : 'Features & Amenities'}</h3>
+              <div className="bg-white dark:bg-[#131F35] border border-slate-200/50 dark:border-white/5 p-6 sm:p-8 rounded-3xl shadow-sm">
+                <h3 className="text-base font-black text-slate-850 dark:text-white uppercase tracking-wider mb-6 border-l-4 border-[#D4AF37] pl-3">Tính năng tiện ích</h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                  {vehicle.features.map((feature, idx) => (
-                    <div key={idx} className="flex items-center gap-2.5 text-sm text-slate-700 dark:text-slate-350 bg-slate-50 dark:bg-slate-900 p-3.5 rounded-xl border border-slate-100 dark:border-slate-800">
-                      <div className="w-5 h-5 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500 font-bold">✓</div>
-                      <span className="capitalize">{feature.replace(/_/g, ' ')}</span>
-                    </div>
-                  ))}
+                  {vehicle.features.map((feature, idx) => {
+                    const cleanKey = feature.toLowerCase().trim();
+                    let icon = <Check className="w-4 h-4 text-emerald-500" />;
+                    for (const [k, v] of Object.entries(featureIcons)) {
+                      if (cleanKey.includes(k)) {
+                        icon = v;
+                        break;
+                      }
+                    }
+                    return (
+                      <div key={idx} className="flex items-center gap-3 text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800">
+                        {icon}
+                        <span className="capitalize">{feature.replace(/_/g, ' ')}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
 
-            {/* Rental Documents */}
-            <div className="bg-card border border-border p-6 sm:p-8 rounded-3xl shadow-sm">
-              <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-                <FileText className="w-5 h-5 text-blue-500" />
-                {isVi ? 'Giấy tờ thuê xe bắt buộc' : 'Required Rental Documents'}
-              </h3>
-              <div className="bg-slate-50 dark:bg-slate-900 border border-slate-150 dark:border-slate-800 p-5 rounded-2xl text-sm leading-relaxed text-slate-650 dark:text-slate-400">
-                <p className="font-bold text-foreground mb-2">{vehicle.requiredDocuments}</p>
-                <p className="text-xs text-slate-550">
-                  {isVi 
-                    ? '* Khách thuê phải xuất trình giấy tờ gốc cho chủ xe khi nhận xe để đối chiếu. LuxeWay sẽ không lưu trữ bản gốc của bạn.'
-                    : '* Renters must present original documents to the owner at pickup. LuxeWay does not keep physical records.'}
-                </p>
+            {/* Required Rental Documents with tab selectors */}
+            <div className="bg-white dark:bg-[#131F35] border border-slate-200/50 dark:border-white/5 p-6 sm:p-8 rounded-3xl shadow-sm">
+              <h3 className="text-base font-black text-slate-850 dark:text-white uppercase tracking-wider mb-6 border-l-4 border-[#D4AF37] pl-3">Giấy tờ thuê xe bắt buộc</h3>
+              
+              {/* Tab options selector */}
+              <div className="flex border-b border-slate-200 dark:border-slate-800 mb-5">
+                <button
+                  onClick={() => setSelectedDocTab('gplx')}
+                  className={cn(
+                    "flex-1 pb-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all",
+                    selectedDocTab === 'gplx' ? "border-[#D4AF37] text-[#D4AF37]" : "border-transparent text-slate-400 hover:text-slate-300"
+                  )}
+                >
+                  GPLX & Căn cước định danh
+                </button>
+                <button
+                  onClick={() => setSelectedDocTab('passport')}
+                  className={cn(
+                    "flex-1 pb-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all",
+                    selectedDocTab === 'passport' ? "border-[#D4AF37] text-[#D4AF37]" : "border-transparent text-slate-400 hover:text-slate-300"
+                  )}
+                >
+                  Hộ chiếu (Passport)
+                </button>
+              </div>
+
+              {selectedDocTab === 'gplx' ? (
+                <div className="space-y-4">
+                  <div className="flex gap-3 text-xs bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-2xl text-emerald-600 dark:text-emerald-400">
+                    <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+                    <div>
+                      <p className="font-extrabold">Yêu cầu GPLX hạng B1 / B2 trở lên (đối với xe ô tô)</p>
+                      <p className="mt-1 font-medium text-[11px] opacity-90">Bản gốc thẻ PET hoặc thông tin tài khoản VNeID định danh mức độ 2 chứa giấy phép lái xe hợp lệ.</p>
+                    </div>
+                  </div>
+                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400 pl-1 leading-relaxed">
+                    Khách thuê cần mang theo bản gốc giấy phép lái xe để chủ xe đối chiếu khi ký hợp đồng giao nhận xe.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex gap-3 text-xs bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl text-amber-600 dark:text-amber-400">
+                    <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                    <div>
+                      <p className="font-extrabold">Áp dụng cho người nước ngoài hoặc khách du lịch</p>
+                      <p className="mt-1 font-medium text-[11px] opacity-90">Hộ chiếu còn hạn trên 6 tháng kèm tài sản thế chấp trị giá 15 triệu VNĐ hoặc đặt cọc tiền mặt tương đương.</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Collateral Details */}
+            <div className="bg-white dark:bg-[#131F35] border border-slate-200/50 dark:border-white/5 p-6 sm:p-8 rounded-3xl shadow-sm">
+              <h3 className="text-base font-black text-slate-850 dark:text-white uppercase tracking-wider mb-4 border-l-4 border-[#D4AF37] pl-3">Tài sản thế chấp</h3>
+              <div className="p-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl flex gap-3.5 items-center">
+                <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 text-lg">💰</div>
+                <div>
+                  <h4 className="font-extrabold text-xs text-slate-850 dark:text-white">Không cần đặt cọc thế chấp tài sản</h4>
+                  <p className="text-[11px] font-medium text-slate-455 mt-0.5">LuxeWay bảo lãnh hoàn toàn khoản cọc thế chấp. Khách hàng chỉ cần xuất trình giấy tờ hợp lệ.</p>
+                </div>
               </div>
             </div>
 
-            {/* Owner Section */}
-            {vehicle.owner && (
-              <div className="bg-card border border-border p-6 sm:p-8 rounded-3xl shadow-sm">
-                <h3 className="text-lg font-bold text-foreground mb-6">{isVi ? 'Thông tin chủ xe' : 'Owner Credibility'}</h3>
+            {/* Policies and Terms Grid Cancellation Table */}
+            <div className="bg-white dark:bg-[#131F35] border border-slate-200/50 dark:border-white/5 p-6 sm:p-8 rounded-3xl shadow-sm space-y-6">
+              <h3 className="text-base font-black text-slate-850 dark:text-white uppercase tracking-wider border-l-4 border-[#D4AF37] pl-3">Điều khoản & Chính sách</h3>
+              
+              <div className="space-y-4">
+                <h4 className="font-bold text-xs text-slate-500 uppercase tracking-wide">Quy định hủy chuyến</h4>
                 
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-border">
+                {/* Cancellation Refund Table */}
+                <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden text-xs">
+                  <div className="grid grid-cols-3 bg-slate-50 dark:bg-slate-900/60 p-3 font-extrabold border-b border-slate-200 dark:border-slate-800 text-slate-850 dark:text-white">
+                    <span>Thời điểm hủy chuyến</span>
+                    <span>Khách thuê nhận lại</span>
+                    <span>Phí dịch vụ LuxeWay</span>
+                  </div>
+                  <div className="grid grid-cols-3 p-3 border-b border-slate-200 dark:border-slate-800 font-medium text-slate-600 dark:text-slate-400">
+                    <span>Trước chuyến đi &gt; 7 ngày</span>
+                    <span className="text-emerald-500 font-extrabold">Hoàn trả 100%</span>
+                    <span>Miễn phí</span>
+                  </div>
+                  <div className="grid grid-cols-3 p-3 border-b border-slate-200 dark:border-slate-800 font-medium text-slate-600 dark:text-slate-400">
+                    <span>Từ 1 - 7 ngày trước đi</span>
+                    <span className="text-amber-500 font-extrabold">Hoàn trả 90%</span>
+                    <span>10% phí thuê xe</span>
+                  </div>
+                  <div className="grid grid-cols-3 p-3 font-medium text-slate-600 dark:text-slate-400">
+                    <span>Trong vòng 24 giờ</span>
+                    <span className="text-red-500 font-extrabold">Không hoàn trả</span>
+                    <span>100% phí cọc giữ chỗ</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Map Section */}
+            <div className="bg-white dark:bg-[#131F35] border border-slate-200/50 dark:border-white/5 p-6 sm:p-8 rounded-3xl shadow-sm">
+              <h3 className="text-base font-black text-slate-850 dark:text-white uppercase tracking-wider mb-4 border-l-4 border-[#D4AF37] pl-3">Vị trí đỗ xe</h3>
+              
+              {showMap ? (
+                <div className="relative h-80 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800">
+                  <LuxeWayMap 
+                    vehicles={[vehicle]} 
+                    selectedVehicleId={vehicle.id} 
+                    height="100%" 
+                    pickupCoords={[Number(vehicle.location?.lat), Number(vehicle.location?.lng)]}
+                    disableAutoPan={true}
+                  />
+                </div>
+              ) : (
+                <div className="bg-slate-50 dark:bg-slate-900 p-6 rounded-2xl flex flex-col items-center justify-center text-center border border-dashed border-slate-200 dark:border-slate-800">
+                  <MapPin className="w-8 h-8 text-amber-500 mb-2" />
+                  <h4 className="font-bold text-foreground text-sm mb-1">Vị trí nhận xe</h4>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{vehicle.location?.address + ", " + vehicle.location?.city}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Host Section */}
+            {vehicle.owner && (
+              <div className="bg-white dark:bg-[#131F35] border border-slate-200/50 dark:border-white/5 p-6 sm:p-8 rounded-3xl shadow-sm">
+                <h3 className="text-base font-black text-slate-850 dark:text-white uppercase tracking-wider mb-6 border-l-4 border-[#D4AF37] pl-3">Thông tin chủ xe</h3>
+                
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-slate-100 dark:border-slate-800/80">
                   <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center font-display font-black text-blue-500 text-2xl overflow-hidden">
+                    <div className="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center font-display font-black text-[#D4AF37] text-2xl overflow-hidden">
                       {vehicle.owner.avatar ? (
                         <img src={resolveImageUrl(vehicle.owner.avatar)} alt="Avatar" className="w-full h-full object-cover" />
                       ) : (
@@ -341,232 +516,182 @@ const VehicleDetailPage: React.FC = () => {
                       )}
                     </div>
                     <div>
-                      <h4 className="font-bold text-foreground flex items-center gap-2 text-base">
+                      <h4 className="font-black text-slate-850 dark:text-white flex items-center gap-2 text-base">
                         {vehicle.owner.displayName}
                         {vehicle.owner.approvalBadge && (
-                          <span className="text-[9px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-extrabold px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                          <span className="text-[9px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-450 font-extrabold px-1.5 py-0.5 rounded flex items-center gap-0.5">
                             <ShieldCheck className="w-2.5 h-2.5" />
-                            {isVi ? 'ĐỐI TÁC XÁC MINH' : 'VERIFIED HOST'}
+                            ĐỐI TÁC XÁC MINH
                           </span>
                         )}
                       </h4>
                       <p className="text-xs text-slate-400 mt-1">
-                        {isVi ? 'Thành viên từ 2024' : 'LuxeWay Partner since 2024'}
+                        Thành viên từ 2024
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-6 text-center">
+                  <div className="flex items-center gap-6 text-center select-none font-bold">
                     <div>
-                      <p className="text-xs text-slate-400">{isVi ? 'Đánh giá' : 'Rating'}</p>
-                      <p className="font-extrabold text-foreground text-lg flex items-center justify-center gap-0.5 mt-0.5">
-                        {vehicle.owner.rating?.toFixed(1)} <Star className="w-4 h-4 text-amber-500 fill-amber-500 inline" />
+                      <p className="text-xs text-slate-400">Đánh giá</p>
+                      <p className="font-black text-slate-850 dark:text-white text-lg flex items-center justify-center gap-0.5 mt-0.5">
+                        {vehicle.owner.rating?.toFixed(1) || '5.0'} <Star className="w-4 h-4 text-amber-500 fill-amber-500 inline" />
                       </p>
                     </div>
-                    <div className="w-px h-8 bg-border" />
+                    <div className="w-px h-8 bg-slate-200 dark:bg-slate-800" />
                     <div>
-                      <p className="text-xs text-slate-400">{isVi ? 'Phản hồi' : 'Response rate'}</p>
-                      <p className="font-extrabold text-foreground text-lg mt-0.5">{vehicle.owner.responseRate}%</p>
+                      <p className="text-xs text-slate-400">Tỉ lệ phản hồi</p>
+                      <p className="font-black text-slate-850 dark:text-white text-lg mt-0.5">{vehicle.owner.responseRate || 100}%</p>
                     </div>
-                    <div className="w-px h-8 bg-border" />
+                    <div className="w-px h-8 bg-slate-200 dark:bg-slate-800" />
                     <div>
-                      <p className="text-xs text-slate-400">{isVi ? 'Số chuyến' : 'Trips'}</p>
-                      <p className="font-extrabold text-foreground text-lg mt-0.5">{vehicle.owner.totalTrips || 0}</p>
+                      <p className="text-xs text-slate-400">Số chuyến</p>
+                      <p className="font-black text-slate-850 dark:text-white text-lg mt-0.5">{vehicle.owner.totalTrips || 0}</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="pt-4 text-xs text-slate-500">
-                  {isVi 
-                    ? `* Tỷ lệ phản hồi trung bình: ${vehicle.owner.responseRate}% trong vòng ${vehicle.owner.responseTime} phút.`
-                    : `* Average response rate: ${vehicle.owner.responseRate}% within ${vehicle.owner.responseTime} minutes.`}
+                <div className="pt-4 text-xs font-medium text-slate-400">
+                  * Tỷ lệ phản hồi trung bình: {vehicle.owner.responseRate || 100}% trong vòng 15 phút.
                 </div>
               </div>
             )}
 
-            {/* Policies & Rules */}
-            <div className="bg-card border border-border p-6 sm:p-8 rounded-3xl shadow-sm space-y-6">
-              <h3 className="text-lg font-bold text-foreground border-b border-border pb-3">{isVi ? 'Chính sách & Quy định' : 'Policies & Cancellation Rules'}</h3>
-              
-              <div>
-                <h4 className="font-bold text-sm text-foreground mb-1">{isVi ? 'Chính sách hủy chuyến' : 'Cancellation Policy'}</h4>
-                <p className="text-xs text-slate-500 leading-relaxed">{vehicle.cancellationPolicy}</p>
-              </div>
-              
-              <div>
-                <h4 className="font-bold text-sm text-foreground mb-1">{isVi ? 'Chính sách đặt cọc thế chấp' : 'Deposit Policy'}</h4>
-                <p className="text-xs text-slate-500 leading-relaxed">{vehicle.depositPolicy}</p>
-              </div>
-
-              <div>
-                <h4 className="font-bold text-sm text-foreground mb-1">{isVi ? 'Quy định riêng của chủ xe' : 'Rental Rules'}</h4>
-                <p className="text-xs text-slate-505 leading-relaxed">{vehicle.rentalRules}</p>
-              </div>
-            </div>
-
-            {/* Map Section */}
-            <div className="bg-card border border-border p-6 sm:p-8 rounded-3xl shadow-sm">
-              <h3 className="text-lg font-bold text-foreground mb-4">{isVi ? 'Bản đồ vị trí xe' : 'Location Map'}</h3>
-              
-              {showMap ? (
-                <div className="relative h-80 rounded-2xl overflow-hidden shadow-sm border border-border">
-                  <LuxeWayMap 
-                    vehicles={[vehicle]} 
-                    selectedVehicleId={vehicle.id} 
-                    height="100%" 
-                    pickupCoords={[Number(vehicle.location?.lat), Number(vehicle.location?.lng)]}
-                  />
-                </div>
-              ) : (
-                <div className="bg-slate-50 dark:bg-slate-900 p-6 rounded-2xl flex flex-col items-center justify-center text-center border border-dashed border-slate-200 dark:border-slate-800">
-                  <MapPin className="w-8 h-8 text-amber-500 mb-2" />
-                  <h4 className="font-bold text-foreground text-sm mb-1">{isVi ? 'Vị trí nhận xe' : 'Vehicle Location'}</h4>
-                  <p className="text-xs text-slate-555 dark:text-slate-400">{vehicle.location?.address + ", " + vehicle.location?.city}</p>
-                </div>
-              )}
-            </div>
-
           </div>
 
-          {/* RIGHT: Booking Checkout Widget (Sticky) */}
+          {/* Right Column: Sticky Booking Card */}
           <div className="h-fit lg:sticky lg:top-24">
-            <div className="bg-card border border-border rounded-3xl p-6 shadow-xl space-y-6">
+            <div className="bg-white dark:bg-[#131F35] border border-slate-200/50 dark:border-white/5 rounded-3xl p-6 shadow-xl space-y-6 transition-colors">
               
-              {/* Pricing title */}
+              {/* Rental pricing */}
               <div>
-                <p className="text-slate-400 dark:text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">{isVi ? 'ĐƠN GIÁ THUÊ' : 'RENTAL PRICE'}</p>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-display font-black text-foreground">{formatCurrency(finalPrice, language)}</span>
-                  <span className="text-xs text-slate-400">/{isVi ? 'ngày' : 'day'}</span>
+                <p className="text-slate-400 text-[10px] font-black uppercase tracking-wider mb-1">Đơn giá thuê</p>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-2xl font-display font-black text-[#0B1221] dark:text-white">{formatCurrency(finalPrice)}</span>
+                  <span className="text-xs text-slate-400 font-bold">/ngày</span>
                   {discountPercent > 0 && (
-                    <span className="text-xs font-bold line-through text-slate-400">
-                      {formatCurrency(Number(vehicle.pricePerDay), language)}
+                    <span className="text-xs font-bold line-through text-slate-400 ml-2">
+                      {formatCurrency(Number(vehicle.pricePerDay))}
                     </span>
                   )}
                 </div>
               </div>
 
               {/* Date pickers */}
-              <div className="space-y-3.5 pt-3 border-t border-border">
+              <div className="space-y-4 pt-3 border-t border-slate-100 dark:border-slate-800">
                 <div>
-                  <label className="block text-[11px] font-extrabold text-slate-400 uppercase tracking-wide mb-1.5">{isVi ? 'Ngày nhận xe' : 'Pick-up Date'}</label>
-                  <div className="relative">
-                    <input 
-                      type="date" 
-                      value={startDate}
-                      min={new Date().toISOString().split('T')[0]}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      className="w-full bg-slate-50 dark:bg-slate-900 border border-border p-3 rounded-xl text-sm font-bold text-foreground focus:outline-none focus:border-blue-500 transition-colors"
-                    />
-                  </div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wide mb-1.5">Ngày nhận xe</label>
+                  <input 
+                    type="date" 
+                    value={startDate}
+                    min={new Date().toISOString().split('T')[0]}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-2xl text-xs font-bold text-slate-850 dark:text-white focus:outline-none focus:border-[#D4AF37] transition-all"
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-extrabold text-slate-400 uppercase tracking-wide mb-1.5">{isVi ? 'Ngày trả xe' : 'Return Date'}</label>
-                  <div className="relative">
-                    <input 
-                      type="date" 
-                      value={endDate}
-                      min={startDate || new Date().toISOString().split('T')[0]}
-                      onChange={(e) => setEndDate(e.target.value)}
-                      className="w-full bg-slate-50 dark:bg-slate-900 border border-border p-3 rounded-xl text-sm font-bold text-foreground focus:outline-none focus:border-blue-500 transition-colors"
-                    />
-                  </div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wide mb-1.5">Ngày trả xe</label>
+                  <input 
+                    type="date" 
+                    value={endDate}
+                    min={startDate || new Date().toISOString().split('T')[0]}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-2xl text-xs font-bold text-slate-850 dark:text-white focus:outline-none focus:border-[#D4AF37] transition-all"
+                  />
                 </div>
               </div>
 
-              {/* Extras Switch toggles */}
-              <div className="space-y-4 pt-4 border-t border-border">
-                <h4 className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">{isVi ? 'Dịch vụ thêm' : 'Addons / Extras'}</h4>
+              {/* Addons toggle */}
+              <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Dịch vụ kèm theo</h4>
                 
-                {/* Insurance toggle */}
+                {/* Insurance Protection */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-bold text-foreground">{isVi ? 'Bảo hiểm chuyến đi' : 'Trip Protection'}</p>
-                    <p className="text-[10px] text-slate-400">{isVi ? 'Bảo hiểm vật chất nâng cao (+15%)' : 'Premium accident insurance (+15%)'}</p>
+                    <p className="text-xs font-extrabold text-slate-850 dark:text-white">Bảo hiểm chuyến đi</p>
+                    <p className="text-[10px] text-slate-400 font-bold mt-0.5">Hỗ trợ chi trả tổn thất va chạm (+15%)</p>
                   </div>
                   <input 
                     type="checkbox" 
                     checked={includeInsurance}
                     onChange={(e) => setIncludeInsurance(e.target.checked)}
-                    className="w-4 h-4 rounded text-blue-500 border-border focus:ring-blue-500"
+                    className="w-4 h-4 rounded text-[#D4AF37] focus:ring-[#D4AF37] border-slate-200 dark:border-slate-800"
                   />
                 </div>
 
-                {/* Delivery toggle */}
+                {/* Delivery Option */}
                 {vehicle.deliveryAvailable && (
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-bold text-foreground">{isVi ? 'Giao xe tận nơi' : 'Delivery services'}</p>
-                      <p className="text-[10px] text-slate-400">
-                        {isVi ? `Giao xe nội thành (+${formatCurrency(Number(vehicle.deliveryFee), language)})` : `Doorstep delivery (+${formatCurrency(Number(vehicle.deliveryFee), language)})`}
+                      <p className="text-xs font-extrabold text-slate-850 dark:text-white">Giao xe tận nơi</p>
+                      <p className="text-[10px] text-slate-400 font-bold mt-0.5">
+                        Giao nhận xe tận nhà (+{formatCurrency(Number(vehicle.deliveryFee))})
                       </p>
                     </div>
                     <input 
                       type="checkbox" 
                       checked={includeDelivery}
                       onChange={(e) => setIncludeDelivery(e.target.checked)}
-                      className="w-4 h-4 rounded text-blue-500 border-border focus:ring-blue-500"
+                      className="w-4 h-4 rounded text-[#D4AF37] focus:ring-[#D4AF37] border-slate-200 dark:border-slate-800"
                     />
                   </div>
                 )}
               </div>
 
-              {/* Price Breakdown Preview */}
+              {/* Dynamic Bill Breakdown */}
               {days > 0 && (
-                <div className="pt-4 border-t border-border text-xs space-y-2.5">
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">{isVi ? 'Đơn giá thuê' : 'Base Price'} ({days} {isVi ? 'ngày' : 'days'})</span>
-                    <span className="font-bold text-foreground">{formatCurrency(rawBase, language)}</span>
+                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 text-xs space-y-2.5 font-bold">
+                  <div className="flex justify-between text-slate-400">
+                    <span>Đơn giá thuê ({days} ngày)</span>
+                    <span className="text-slate-800 dark:text-white">{formatCurrency(rawBase)}</span>
                   </div>
                   {discountAmt > 0 && (
                     <div className="flex justify-between text-red-500">
-                      <span>{isVi ? 'Ưu đãi giảm giá' : 'Special promo discount'}</span>
-                      <span className="font-bold">-{formatCurrency(discountAmt, language)}</span>
+                      <span>Ưu đãi giảm giá</span>
+                      <span>-{formatCurrency(discountAmt)}</span>
                     </div>
                   )}
                   {includeInsurance && (
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">{isVi ? 'Bảo hiểm chuyến đi' : 'Insurance fee'}</span>
-                      <span className="font-bold text-foreground">+{formatCurrency(insuranceFee, language)}</span>
+                    <div className="flex justify-between text-slate-450">
+                      <span>Bảo hiểm chuyến đi</span>
+                      <span className="text-slate-800 dark:text-white">+{formatCurrency(insuranceFee)}</span>
                     </div>
                   )}
                   {includeDelivery && (
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">{isVi ? 'Phí giao nhận' : 'Delivery fee'}</span>
-                      <span className="font-bold text-foreground">+{formatCurrency(deliveryFee, language)}</span>
+                    <div className="flex justify-between text-slate-450">
+                      <span>Phí giao xe</span>
+                      <span className="text-slate-800 dark:text-white">+{formatCurrency(deliveryFee)}</span>
                     </div>
                   )}
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">{isVi ? 'Phí nền tảng' : 'Service fee'} (12%)</span>
-                    <span className="font-bold text-foreground">+{formatCurrency(serviceFee, language)}</span>
+                  <div className="flex justify-between text-slate-450">
+                    <span>Phí dịch vụ LuxeWay (12%)</span>
+                    <span className="text-slate-800 dark:text-white">+{formatCurrency(serviceFee)}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">{isVi ? 'Thuế & VAT' : 'Taxes & VAT'} (8%)</span>
-                    <span className="font-bold text-foreground">+{formatCurrency(taxes, language)}</span>
+                  <div className="flex justify-between text-slate-450">
+                    <span>Thuế GTGT (8%)</span>
+                    <span className="text-slate-800 dark:text-white">+{formatCurrency(taxes)}</span>
                   </div>
-                  <div className="flex justify-between text-base font-bold pt-2 border-t border-dashed border-border">
-                    <span className="text-foreground">{isVi ? 'TỔNG TẠM TÍNH' : 'ESTIMATED TOTAL'}</span>
-                    <span className="text-blue-500 font-display font-black">{formatCurrency(estimatedTotal, language)}</span>
+                  <div className="flex justify-between text-sm font-extrabold pt-3 border-t border-dashed border-slate-200 dark:border-slate-800">
+                    <span className="text-slate-850 dark:text-white">TỔNG CỘNG TẠM TÍNH</span>
+                    <span className="text-[#D4AF37] font-display text-base">{formatCurrency(estimatedTotal)}</span>
                   </div>
                 </div>
               )}
 
-              {/* Book Button */}
+              {/* Book Action Button */}
               <button
                 onClick={handleBookClick}
                 disabled={bookingLoading}
-                className="w-full py-4 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white font-display font-black uppercase text-xs tracking-wider rounded-2xl transition-all shadow-lg shadow-blue-500/20 hover:shadow-blue-600/30 flex items-center justify-center gap-2"
+                className="w-full py-4 bg-[#0B1221] dark:bg-white text-white dark:text-[#0B1221] hover:bg-[#D4AF37] dark:hover:bg-[#D4AF37] hover:text-white dark:hover:text-white disabled:bg-slate-300 dark:disabled:bg-slate-800 disabled:text-slate-500 font-display font-black uppercase text-xs tracking-widest rounded-2xl transition-all shadow-lg flex items-center justify-center gap-2"
               >
                 {bookingLoading ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    {isVi ? 'ĐANG KIỂM TRA ĐIỀU KIỆN...' : 'VALIDATING ELIGIBILITY...'}
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ĐANG KIỂM TRA ĐIỀU KIỆN...
                   </>
                 ) : (
-                  <>
-                    {isVi ? 'ĐẶT XE NGAY' : 'BOOK EXPERIENCE'}
-                  </>
+                  'ĐẶT XE NGAY'
                 )}
               </button>
 
@@ -575,30 +700,173 @@ const VehicleDetailPage: React.FC = () => {
 
         </div>
 
+        {/* Similar Vehicles Carousel / Slider */}
+        {similarVehicles && similarVehicles.length > 0 && (
+          <div className="mt-16 pt-10 border-t border-slate-200/60 dark:border-white/5">
+            <h3 className="text-lg font-display font-black text-slate-850 dark:text-white uppercase tracking-wider mb-6">Xe tương tự đề xuất</h3>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {similarVehicles.map(v => {
+                const thumbnailSrc = v.thumbnail || v.thumbnailUrl || 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=800';
+                
+                const displayPrice = v.pricePerDay >= 1000 
+                  ? `${(v.pricePerDay / 1000).toLocaleString('en-US', { maximumFractionDigits: 0 })}K`
+                  : `${v.pricePerDay}`;
+                  
+                const discountPercent = v.discount || 0;
+                
+                return (
+                  <div 
+                    key={v.id}
+                    onClick={() => {
+                      const typePath = v.vehicleType?.toLowerCase() === 'motorbike' || v.type?.toLowerCase() === 'motorbike' ? 'motorbikes' : 'cars';
+                      navigate(`/${typePath}/${v.id}`);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className="group bg-white dark:bg-[#131F35] rounded-3xl border border-slate-200/50 dark:border-white/5 overflow-hidden shadow-sm hover:shadow-lg hover:border-[#D4AF37]/35 transition-all duration-300 cursor-pointer flex flex-col justify-between"
+                  >
+                    <div className="relative aspect-[16/10] bg-slate-100 dark:bg-slate-900 overflow-hidden">
+                      <img 
+                        src={thumbnailSrc} 
+                        alt={v.name} 
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      
+                      <div className="absolute top-3 left-3 flex flex-col gap-1 z-10 select-none">
+                        {discountPercent > 0 && (
+                          <span className="text-[10px] font-black bg-red-500 text-white px-2 py-0.5 rounded-lg shadow-sm">
+                            Giảm {discountPercent}%
+                          </span>
+                        )}
+                        <span className="text-[10px] font-black bg-emerald-500 text-white px-2 py-0.5 rounded-lg shadow-sm">
+                          Miễn thế chấp
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="p-4 flex-1 flex flex-col justify-between">
+                      <div>
+                        <h4 className="font-extrabold text-sm text-slate-850 dark:text-white truncate uppercase tracking-tight">
+                          {v.brand} {v.name.replace(new RegExp('^' + v.brand, 'i'), '').trim()}
+                        </h4>
+                        
+                        <div className="flex items-center gap-1.5 text-[11px] text-slate-450 mt-1 font-bold">
+                          <span>Số tự động</span>
+                          <span>•</span>
+                          <span>{v.type?.toLowerCase() === 'motorbike' || v.vehicleType?.toLowerCase() === 'motorbike' ? '2 chỗ' : '5 chỗ'}</span>
+                          <span>•</span>
+                          <span>Xăng</span>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                        <div className="flex items-center gap-1 text-[11px]">
+                          <span className="text-[#D4AF37] font-bold">★</span>
+                          <span className="font-extrabold text-slate-800 dark:text-white">{Number(v.rating || 5.0).toFixed(1)}</span>
+                          <span className="text-slate-450">({v.totalTrips || v.totalReviews || 12} chuyến)</span>
+                        </div>
+                        
+                        <p className="font-display font-black text-[#0B1221] dark:text-white leading-none">
+                          <span className="text-base text-amber-500">{displayPrice}</span>
+                          <span className="text-[9px] text-slate-450 font-bold font-sans">/ngày</span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
       </div>
+
+      {/* FULLSCREEN PHOTO VIEWER MODAL */}
+      {showFullscreen && (
+        <div className="fixed inset-0 z-60 bg-black/95 flex flex-col justify-between p-4">
+          <div className="flex justify-between items-center text-white px-2 py-4">
+            <span className="text-xs font-extrabold tracking-wider bg-white/10 px-3 py-1.5 rounded-full select-none">
+              Ảnh xe ({activeImageIdx + 1} / {imageList.length})
+            </span>
+            <button 
+              onClick={() => setShowFullscreen(false)}
+              className="p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all text-xs font-black select-none"
+            >
+              Đóng (Esc)
+            </button>
+          </div>
+
+          <div className="flex-1 flex items-center justify-center relative">
+            <img 
+              src={resolveImageUrl(imageList[activeImageIdx])} 
+              alt="Fullscreen slide" 
+              className="max-h-[75vh] max-w-[90vw] object-contain rounded-2xl shadow-2xl transition-all duration-300"
+            />
+            
+            {imageList.length > 1 && (
+              <>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); setActiveImageIdx(prev => prev === 0 ? imageList.length - 1 : prev - 1); }}
+                  className="absolute left-4 p-3.5 bg-white/15 hover:bg-white/30 text-white rounded-full transition-all"
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); setActiveImageIdx(prev => prev === imageList.length - 1 ? 0 : prev + 1); }}
+                  className="absolute right-4 p-3.5 bg-white/15 hover:bg-white/30 text-white rounded-full transition-all"
+                >
+                  <ChevronRight className="w-6 h-6" />
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* Bottom small indicators list */}
+          <div className="flex gap-2.5 overflow-x-auto justify-center py-6 select-none scrollbar-none">
+            {imageList.map((img: string, idx: number) => (
+              <button
+                key={idx}
+                onClick={() => setActiveImageIdx(idx)}
+                className={cn(
+                  "relative w-14 h-10 rounded-lg overflow-hidden border transition-all flex-shrink-0",
+                  activeImageIdx === idx ? "border-[#D4AF37] scale-110" : "border-white/20 hover:border-white/50"
+                )}
+              >
+                <img src={resolveImageUrl(img)} alt="Thumbnail small" className="w-full h-full object-cover" />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ERROR / CRITERIA FAILS MODAL */}
       {showErrorModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-card border border-border rounded-3xl p-6 max-w-md w-full shadow-2xl animate-in fade-in zoom-in duration-200">
+          <div className="bg-white dark:bg-[#131F35] border border-slate-200 dark:border-slate-805 rounded-3xl p-6 max-w-md w-full shadow-2xl animate-in fade-in zoom-in duration-200">
             <div className="flex items-center gap-3 text-red-500 mb-4">
               <AlertCircle className="w-8 h-8" />
-              <h3 className="text-xl font-bold text-foreground">{isVi ? 'Không thể đặt xe' : 'Booking Conditions Unmet'}</h3>
+              <h3 className="text-lg font-black text-slate-850 dark:text-white uppercase tracking-tight">{isVi ? 'Không thể đặt xe' : 'Booking Conditions Unmet'}</h3>
             </div>
-            <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-6">{errorModalMessage}</p>
+            <p className="text-slate-500 dark:text-slate-400 text-xs font-bold leading-relaxed mb-6">{errorModalMessage}</p>
             <div className="flex justify-end gap-3">
               <button 
                 onClick={() => setShowErrorModal(false)}
-                className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-foreground font-bold rounded-xl transition-colors"
+                className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-foreground font-bold rounded-xl transition-colors text-xs"
               >
                 {isVi ? 'Đóng' : 'Close'}
               </button>
-              {(errorModalMessage.includes('verification') || errorModalMessage.toLowerCase().includes('identity') || errorModalMessage.toLowerCase().includes('kyc')) && (
+              {(errorModalMessage.toLowerCase().includes('verification') || 
+                errorModalMessage.toLowerCase().includes('identity') || 
+                errorModalMessage.toLowerCase().includes('kyc') ||
+                errorModalMessage.toLowerCase().includes('license') ||
+                errorModalMessage.toLowerCase().includes('gplx') ||
+                errorModalMessage.toLowerCase().includes('driving')
+              ) && (
                 <button 
-                  onClick={() => navigate('/dashboard/profile')}
-                  className="px-5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl transition-colors"
+                  onClick={() => { setShowErrorModal(false); navigate('/dashboard/documents'); }}
+                  className="px-5 py-2.5 bg-[#D4AF37] hover:bg-[#D4AF37]/90 text-[#0B1221] font-bold rounded-xl transition-all shadow-sm text-xs animate-pulse"
                 >
-                  {isVi ? 'Xác thực ngay' : 'Verify Identity'}
+                  {isVi ? 'Xác thực & Tải GPLX' : 'Verify & Upload License'}
                 </button>
               )}
             </div>

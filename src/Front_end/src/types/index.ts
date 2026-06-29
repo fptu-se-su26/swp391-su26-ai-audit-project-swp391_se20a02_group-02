@@ -79,6 +79,8 @@ export interface Vehicle {
   id: string;
   ownerId: string;
   owner?: User;
+  vin?: string;
+  isLocked?: boolean;
   name: string;
   brand: string;
   model: string;
