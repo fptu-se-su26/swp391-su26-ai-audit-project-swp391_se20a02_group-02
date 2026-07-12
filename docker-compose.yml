@@ -110,6 +110,8 @@ services:
       - FIREBASE_PRIVATE_KEY=${FIREBASE_PRIVATE_KEY}
       - SESSION_SECRET=${SESSION_SECRET:-change-this-session-secret}
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:5173}
+      - AGENT_SERVICE_URL=http://agent-service:8001
+      - AGENT_API_KEY=${AGENT_API_KEY:-default_agent_key}
     depends_on:
       sqlserver:
         condition: service_healthy

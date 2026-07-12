@@ -20,6 +20,7 @@ import { useToast } from '@/components/ui/Toast';
 import { useUIStore, useAuthStore } from '@/store';
 import { useT } from '@/i18n/translations';
 import { AuditTrailDashboard } from '@/components/enterprise/AuditTrailDashboard';
+import { AICopilotWidget } from '@/components/admin/AICopilotWidget';
 import Avatar from '@/components/ui/Avatar';
 import StatusBadge from '@/components/ui/StatusBadge';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
@@ -2707,6 +2708,7 @@ const AdminDashboard: React.FC = () => {
         )}
       </AdminSlideDrawer>
 
+      <AICopilotWidget />
     </div>
   );
 };

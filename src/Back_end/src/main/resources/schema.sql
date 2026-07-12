@@ -37,7 +37,10 @@ CREATE TABLE users (
     joined_at                   DATETIME2       NOT NULL DEFAULT GETDATE(),
     last_active                 DATETIME2       NOT NULL DEFAULT GETDATE(),
     created_at                  DATETIME2       NOT NULL DEFAULT GETDATE(),
-    updated_at                  DATETIME2       NOT NULL DEFAULT GETDATE()
+    updated_at                  DATETIME2       NOT NULL DEFAULT GETDATE(),
+    wallet_balance              DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
+    provider                    NVARCHAR(20)    NOT NULL DEFAULT 'LOCAL',
+    provider_id                 NVARCHAR(200)
 );
 END
 GO
@@ -132,6 +135,12 @@ CREATE TABLE vehicles (
     engine_size             NVARCHAR(20),
     color                   NVARCHAR(50),
     license_plate           NVARCHAR(20)    UNIQUE,
+    vin                     NVARCHAR(50),
+    is_locked               BIT             NOT NULL DEFAULT 1,
+    current_lat             DECIMAL(10,8),
+    current_lng             DECIMAL(11,8),
+    last_location_update    DATETIME2,
+    location_status         NVARCHAR(50),
     min_rental_days         INT             NOT NULL DEFAULT 1,
     max_rental_days         INT             NOT NULL DEFAULT 30,
     advance_booking_days    INT             NOT NULL DEFAULT 365,
@@ -1545,6 +1554,61 @@ CREATE TABLE motorbike_analytics (
     date DATE NOT NULL UNIQUE,
     revenue DECIMAL(18,2) NOT NULL DEFAULT 0.00,
     bookings_count INT NOT NULL DEFAULT 0
+);
+END
+GO
+
+-- ============================================================
+-- 68. PROMOTIONS
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'promotions')
+BEGIN
+CREATE TABLE promotions (
+    id NVARCHAR(36) NOT NULL PRIMARY KEY,
+    title NVARCHAR(255) NOT NULL,
+    description NVARCHAR(MAX),
+    image_url NVARCHAR(500),
+    discount_percent INT NOT NULL DEFAULT 0,
+    badge_text NVARCHAR(100),
+    cta_text NVARCHAR(100) DEFAULT 'Book Now',
+    cta_url NVARCHAR(500) DEFAULT '/marketplace',
+    start_date DATETIME2,
+    end_date DATETIME2,
+    active BIT NOT NULL DEFAULT 1,
+    display_order INT DEFAULT 0,
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE()
+);
+END
+GO
+
+-- ============================================================
+-- 69. DESTINATION_ANALYTICS
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'destination_analytics')
+BEGIN
+CREATE TABLE destination_analytics (
+    city NVARCHAR(100) NOT NULL PRIMARY KEY,
+    vehicle_count INT NOT NULL DEFAULT 0,
+    average_price BIGINT NOT NULL DEFAULT 0,
+    top_category NVARCHAR(50) DEFAULT 'economy',
+    image_url NVARCHAR(500),
+    display_order INT DEFAULT 0,
+    active BIT NOT NULL DEFAULT 1
+);
+END
+GO
+
+-- ============================================================
+-- 70. FAQS
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'faqs')
+BEGIN
+CREATE TABLE faqs (
+    id BIGINT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    question NVARCHAR(500) NOT NULL,
+    answer NVARCHAR(MAX) NOT NULL,
+    is_active BIT NOT NULL DEFAULT 1,
+    display_order INT DEFAULT 0
 );
 END
 GO
