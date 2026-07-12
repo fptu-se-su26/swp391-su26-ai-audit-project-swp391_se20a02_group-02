@@ -36,11 +36,13 @@ public class MotorbikeController {
             @RequestParam(required = false) Boolean raincoatIncluded,
             @RequestParam(required = false) Boolean phoneHolder,
             @RequestParam(required = false) Boolean luggageRack,
+            @RequestParam(required = false) String brand,
+            @RequestParam(required = false) String category,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size) {
         try {
             Page<MotorbikeDTOs.MotorbikeResponse> motorbikes = motorbikeService.searchMotorbikes(
-                city, engineCc, transmission, helmetIncluded, raincoatIncluded, phoneHolder, luggageRack, page, size
+                city, engineCc, transmission, helmetIncluded, raincoatIncluded, phoneHolder, luggageRack, brand, category, page, size
             );
             Map<String, Object> response = new HashMap<>();
             response.put("vehicles", motorbikes.getContent());

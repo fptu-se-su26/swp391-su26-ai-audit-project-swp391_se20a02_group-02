@@ -30,6 +30,7 @@ public class MotorbikeService {
     public Page<MotorbikeDTOs.MotorbikeResponse> searchMotorbikes(
             String city, Integer engineCc, String transmission,
             Boolean helmetIncluded, Boolean raincoatIncluded, Boolean phoneHolder, Boolean luggageRack,
+            String brand, String category,
             int page, int size) {
         
         com.luxeway.enums.TransmissionType transEnum = null;
@@ -43,7 +44,10 @@ public class MotorbikeService {
         
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Motorbike> motorbikePage = motorbikeRepository.searchMotorbikes(
-            city, engineCc, transEnum, helmetIncluded, raincoatIncluded, phoneHolder, luggageRack, pageable
+            city, engineCc, transEnum, helmetIncluded, raincoatIncluded, phoneHolder, luggageRack,
+            (brand != null && !brand.isBlank()) ? brand : null,
+            (category != null && !category.isBlank()) ? category : null,
+            pageable
         );
         return motorbikePage.map(this::toResponse);
     }

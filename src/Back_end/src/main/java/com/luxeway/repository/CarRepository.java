@@ -39,7 +39,9 @@ public interface CarRepository extends JpaRepository<Car, String> {
            "(:hasChauffeur IS NULL OR s.hasChauffeur = :hasChauffeur) AND " +
            "(:airportDelivery IS NULL OR s.airportDelivery = :airportDelivery) AND " +
            "(:electric IS NULL OR s.electric = :electric) AND " +
-           "(:hybrid IS NULL OR s.hybrid = :hybrid)")
+           "(:hybrid IS NULL OR s.hybrid = :hybrid) AND " +
+           "(:brand IS NULL OR LOWER(b.name) LIKE LOWER(CONCAT('%', :brand, '%'))) AND " +
+           "(:category IS NULL OR LOWER(m.category) = LOWER(:category))")
     Page<Car> searchCars(
         @Param("city") String city,
         @Param("seats") Integer seats,
@@ -49,6 +51,9 @@ public interface CarRepository extends JpaRepository<Car, String> {
         @Param("airportDelivery") Boolean airportDelivery,
         @Param("electric") Boolean electric,
         @Param("hybrid") Boolean hybrid,
+        @Param("brand") String brand,
+        @Param("category") String category,
         Pageable pageable
     );
+
 }

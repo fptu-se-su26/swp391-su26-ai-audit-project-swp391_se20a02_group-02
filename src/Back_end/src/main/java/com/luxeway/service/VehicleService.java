@@ -180,31 +180,54 @@ public class VehicleService {
     private String resolveLocation(String location) {
         if (location == null || location.isBlank()) return null;
 
-        // Mapping table: lowercase no-diacritic form → Vietnamese form in DB
+        // Mapping table: lowercase form (both with and without diacritics) → English form in DB
         java.util.Map<String, String> cityMap = new java.util.HashMap<>();
-        cityMap.put("ho chi minh",  "Hồ Chí Minh");
-        cityMap.put("hcm",          "Hồ Chí Minh");
-        cityMap.put("tp hcm",       "Hồ Chí Minh");
-        cityMap.put("sai gon",      "Hồ Chí Minh");
-        cityMap.put("saigon",       "Hồ Chí Minh");
-        cityMap.put("ha noi",       "Hà Nội");
-        cityMap.put("hanoi",        "Hà Nội");
-        cityMap.put("da nang",      "Đà Nẵng");
-        cityMap.put("danang",       "Đà Nẵng");
-        cityMap.put("nha trang",    "Nha Trang");
-        cityMap.put("nhatrang",     "Nha Trang");
-        cityMap.put("da lat",       "Đà Lạt");
-        cityMap.put("dalat",        "Đà Lạt");
-        cityMap.put("hai phong",    "Hải Phòng");
-        cityMap.put("haiphong",     "Hải Phòng");
-        cityMap.put("hue",          "Huế");
-        cityMap.put("can tho",      "Cần Thơ");
-        cityMap.put("cantho",       "Cần Thơ");
-        cityMap.put("vung tau",     "Vũng Tàu");
-        cityMap.put("vungtau",      "Vũng Tàu");
+        // Ho Chi Minh
+        cityMap.put("ho chi minh",   "Ho Chi Minh");
+        cityMap.put("hồ chí minh",   "Ho Chi Minh");
+        cityMap.put("hổ chí minh",   "Ho Chi Minh");
+        cityMap.put("hcm",           "Ho Chi Minh");
+        cityMap.put("tp hcm",        "Ho Chi Minh");
+        cityMap.put("tp. hồ chí minh","Ho Chi Minh");
+        cityMap.put("sai gon",       "Ho Chi Minh");
+        cityMap.put("saigon",        "Ho Chi Minh");
+        // Ha Noi
+        cityMap.put("ha noi",        "Ha Noi");
+        cityMap.put("hà nội",        "Ha Noi");
+        cityMap.put("hanoi",         "Ha Noi");
+        // Da Nang
+        cityMap.put("da nang",       "Da Nang");
+        cityMap.put("đà nẵng",       "Da Nang");
+        cityMap.put("danang",        "Da Nang");
+        // Nha Trang
+        cityMap.put("nha trang",     "Nha Trang");
+        cityMap.put("nhatrang",      "Nha Trang");
+        // Da Lat
+        cityMap.put("da lat",        "Da Lat");
+        cityMap.put("đà lạt",        "Da Lat");
+        cityMap.put("dalat",         "Da Lat");
+        // Hai Phong
+        cityMap.put("hai phong",     "Hai Phong");
+        cityMap.put("hải phòng",     "Hai Phong");
+        cityMap.put("haiphong",      "Hai Phong");
+        // Hue
+        cityMap.put("hue",           "Hue");
+        cityMap.put("huế",           "Hue");
+        // Can Tho
+        cityMap.put("can tho",       "Can Tho");
+        cityMap.put("cần thơ",       "Can Tho");
+        cityMap.put("cantho",        "Can Tho");
+        // Vung Tau
+        cityMap.put("vung tau",      "Vung Tau");
+        cityMap.put("vũng tàu",      "Vung Tau");
+        cityMap.put("vungtau",       "Vung Tau");
+        // Phu Quoc
+        cityMap.put("phu quoc",      "Phu Quoc");
+        cityMap.put("phú quốc",      "Phu Quoc");
+        cityMap.put("phuquoc",       "Phu Quoc");
 
         String key = location.toLowerCase().trim();
-        return cityMap.getOrDefault(key, location); // fallback: use as-is (supports Vietnamese input & partial match)
+        return cityMap.getOrDefault(key, location); // fallback: use as-is
     }
 
     // ====== Search ======
@@ -396,7 +419,7 @@ public class VehicleService {
                     "VEHICLE_APPROVAL",
                     "New Vehicle Listing Pending Approval",
                     "Vehicle: " + vehicle.getBrand() + " " + vehicle.getModel() + " (" + vehicle.getLicensePlate() + ") has been submitted by Owner: " + owner.getDisplayName(),
-                    "/admin?tab=vehicles"
+                    "/admin?tab=vehicles&id=" + vehicle.getId()
                 );
             }
         } catch (Exception e) {
@@ -511,7 +534,7 @@ public class VehicleService {
                                 "VEHICLE_APPROVAL",
                                 "Vehicle update requires approval",
                                 "Vehicle: " + req.getBrand() + " " + req.getModel() + " has been updated by Owner and needs re-approval.",
-                                "/admin?tab=vehicles"
+                                "/admin?tab=vehicles&id=" + vehicle.getId()
                             );
                         }
                         for (User superAdmin : superAdmins) {
@@ -520,7 +543,7 @@ public class VehicleService {
                                 "VEHICLE_APPROVAL",
                                 "Vehicle update requires approval",
                                 "Vehicle: " + req.getBrand() + " " + req.getModel() + " has been updated by Owner and needs re-approval.",
-                                "/admin?tab=vehicles"
+                                "/admin?tab=vehicles&id=" + vehicle.getId()
                             );
                         }
                         notificationService.createNotification(
@@ -550,7 +573,7 @@ public class VehicleService {
                             "VEHICLE_APPROVAL",
                             "New vehicle waiting for approval",
                             "Vehicle: " + req.getBrand() + " " + req.getModel() + " has been resubmitted from Draft.",
-                            "/admin?tab=vehicles"
+                            "/admin?tab=vehicles&id=" + vehicle.getId()
                         );
                     }
                     for (User superAdmin : superAdmins) {
@@ -559,7 +582,7 @@ public class VehicleService {
                             "VEHICLE_APPROVAL",
                             "New vehicle waiting for approval",
                             "Vehicle: " + req.getBrand() + " " + req.getModel() + " has been resubmitted from Draft.",
-                            "/admin?tab=vehicles"
+                            "/admin?tab=vehicles&id=" + vehicle.getId()
                         );
                     }
                 } catch (Exception e) {
@@ -578,7 +601,7 @@ public class VehicleService {
                             "VEHICLE_APPROVAL",
                             "New vehicle waiting for approval",
                             "Vehicle: " + req.getBrand() + " " + req.getModel() + " has been edited by Owner and resubmitted.",
-                            "/admin?tab=vehicles"
+                            "/admin?tab=vehicles&id=" + vehicle.getId()
                         );
                     }
                     for (User superAdmin : superAdmins) {
@@ -587,7 +610,7 @@ public class VehicleService {
                             "VEHICLE_APPROVAL",
                             "New vehicle waiting for approval",
                             "Vehicle: " + req.getBrand() + " " + req.getModel() + " has been edited by Owner and resubmitted.",
-                            "/admin?tab=vehicles"
+                            "/admin?tab=vehicles&id=" + vehicle.getId()
                         );
                     }
                 } catch (Exception e) {

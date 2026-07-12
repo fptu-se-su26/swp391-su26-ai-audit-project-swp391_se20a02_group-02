@@ -39,8 +39,8 @@ public class AdminSeedingController {
     public ResponseEntity<ApiResponse<String>> triggerVehicleSeeding() {
         try {
             // Get or create the default owner to associate vehicles with
-            com.luxeway.entity.User owner = userRepository.findByEmail("owner@luxeway.com")
-                .orElseThrow(() -> new RuntimeException("Default owner not found. Run /admin/seed first."));
+            com.luxeway.entity.User owner = userRepository.findByEmail("owner@luxeway.vn")
+                    .orElseThrow(() -> new RuntimeException("Default owner not found. Run /admin/seed first."));
             seedingService.seedVehicles(owner);
             return ResponseEntity.ok(ApiResponse.success("Vehicles table seeded successfully", "Success"));
         } catch (Exception e) {

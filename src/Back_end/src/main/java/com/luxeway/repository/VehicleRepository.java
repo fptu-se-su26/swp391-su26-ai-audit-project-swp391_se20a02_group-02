@@ -138,7 +138,7 @@ public interface VehicleRepository extends JpaRepository<Vehicle, String> {
            "(:businessRental = false OR v.businessRental = true) AND " +
            "(:startDate IS NULL OR :endDate IS NULL OR NOT EXISTS (" +
            "  SELECT b FROM Booking b WHERE b.vehicle.id = v.id AND " +
-           "  b.status IN (com.luxeway.enums.BookingStatus.PENDING, com.luxeway.enums.BookingStatus.CONFIRMED, com.luxeway.enums.BookingStatus.ACTIVE) AND " +
+           "  b.status IN (com.luxeway.enums.BookingStatus.WAITING_PAYMENT, com.luxeway.enums.BookingStatus.PAYMENT_PENDING, com.luxeway.enums.BookingStatus.PAYMENT_VERIFIED, com.luxeway.enums.BookingStatus.OWNER_APPROVED, com.luxeway.enums.BookingStatus.READY_FOR_PICKUP, com.luxeway.enums.BookingStatus.CHECKED_OUT, com.luxeway.enums.BookingStatus.IN_RENTAL, com.luxeway.enums.BookingStatus.RETURN_PENDING, com.luxeway.enums.BookingStatus.RETURN_COMPLETED, com.luxeway.enums.BookingStatus.COMPLETED) AND " +
            "  b.startDate <= :endDate AND b.endDate >= :startDate" +
            ")) AND " +
            "v.status = 'AVAILABLE' AND v.approvalStatus = 'APPROVED'")

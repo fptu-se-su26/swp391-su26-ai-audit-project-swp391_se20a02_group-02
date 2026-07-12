@@ -7,12 +7,14 @@ import lombok.*;
 @Entity
 @Table(name = "car_images")
 @Data
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class CarImage {
     @Id
     @Column(length = 36)
+    @EqualsAndHashCode.Include
     private String id;
 
     @ManyToOne(fetch = FetchType.LAZY)

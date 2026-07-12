@@ -47,12 +47,12 @@ public class HomeService {
             long dbBookings = bookingRepository.count();
             long dbProvinces = vehicleRepository.countDistinctCity();
 
-            long totalVehicles = dbVehicles > 0 ? dbVehicles + 1200 : 1226;
-            long totalCustomers = dbCustomers > 0 ? dbCustomers + 8500 : 8504;
-            long totalBookings = dbBookings > 0 ? dbBookings + 14300 : 14300;
-            long provinces = dbProvinces > 0 ? dbProvinces + 57 : 63;
+            long totalVehicles = dbVehicles;
+            long totalCustomers = dbCustomers;
+            long totalBookings = dbBookings;
+            long provinces = dbProvinces;
             Double avgRating = reviewRepository.getAverageRating();
-            double rating = avgRating != null ? Math.round(avgRating * 10.0) / 10.0 : 4.9;
+            double rating = avgRating != null ? Math.round(avgRating * 10.0) / 10.0 : 0.0;
 
             stats.put("totalVehicles", totalVehicles);
             stats.put("totalCustomers", totalCustomers);
@@ -74,7 +74,7 @@ public class HomeService {
             stats.put("totalVehicles", 0);
             stats.put("totalCustomers", 0);
             stats.put("totalBookings", 0);
-            stats.put("averageRating", 4.9);
+            stats.put("averageRating", 0.0);
             stats.put("categoryCounts", new HashMap<>());
         }
         return stats;
@@ -123,6 +123,7 @@ public class HomeService {
                 m.put("model", v.getModel());
                 m.put("year", v.getYear());
                 m.put("category", v.getCategory() != null ? v.getCategory().name().toLowerCase() : "economy");
+                m.put("vehicleType", v.getVehicleType() != null ? v.getVehicleType().name().toLowerCase() : "car");
                 m.put("thumbnailUrl", v.getThumbnailUrl());
                 m.put("pricePerDay", v.getPricePerDay());
                 m.put("rating", v.getRating());
@@ -207,22 +208,22 @@ public class HomeService {
         if (city == null) return "";
         String lower = city.toLowerCase().trim();
         if (lower.contains("ho chi minh") || lower.contains("hcm")) {
-            return "Hồ Chí Minh";
+            return "Ho Chi Minh";
         }
         if (lower.contains("ha noi") || lower.contains("hanoi")) {
-            return "Hà Nội";
+            return "Ha Noi";
         }
         if (lower.contains("da nang") || lower.contains("danang")) {
-            return "Đà Nẵng";
+            return "Da Nang";
         }
         if (lower.contains("nha trang")) {
             return "Nha Trang";
         }
         if (lower.contains("da lat") || lower.contains("dalat")) {
-            return "Đà Lạt";
+            return "Da Lat";
         }
         if (lower.contains("hue")) {
-            return "Huế";
+            return "Hue";
         }
         return city;
     }
@@ -311,17 +312,24 @@ public class HomeService {
                 avgMonthlyRevenue = totalRevenue.longValue() / Math.max(totalOwners, 1) / 12;
             }
 
-            stats.put("averageMonthlyRevenue", avgMonthlyRevenue > 0 ? avgMonthlyRevenue : 15_000_000L);
-            stats.put("vehicleUtilization", 78.5);
+            long totalVehicles = vehicleRepository.countByStatusAndApprovalStatus(VehicleStatus.AVAILABLE, VehicleStatus.APPROVED);
+            long bookedVehicles = bookingRepository.countDistinctBookedVehicles();
+            double vehicleUtilization = 0.0;
+            if (totalVehicles > 0) {
+                vehicleUtilization = ((double) bookedVehicles / totalVehicles) * 100.0;
+            }
+
+            stats.put("averageMonthlyRevenue", avgMonthlyRevenue);
+            stats.put("vehicleUtilization", Math.round(vehicleUtilization * 10.0) / 10.0);
             stats.put("completedBookings", completedBookings);
-            stats.put("averageRating", avgRating != null ? Math.round(avgRating * 10.0) / 10.0 : 4.8);
+            stats.put("averageRating", avgRating != null ? Math.round(avgRating * 10.0) / 10.0 : 0.0);
             stats.put("totalOwners", totalOwners);
         } catch (Exception e) {
             log.error("Error fetching owner stats: {}", e.getMessage());
-            stats.put("averageMonthlyRevenue", 15_000_000L);
-            stats.put("vehicleUtilization", 78.5);
+            stats.put("averageMonthlyRevenue", 0L);
+            stats.put("vehicleUtilization", 0.0);
             stats.put("completedBookings", 0);
-            stats.put("averageRating", 4.8);
+            stats.put("averageRating", 0.0);
             stats.put("totalOwners", 0);
         }
         return stats;
@@ -390,38 +398,48 @@ public class HomeService {
 
     private List<Map<String, Object>> getDefaultDestinations() {
         List<Map<String, Object>> dests = new ArrayList<>();
-        // BUG-17 FIX: Removed unused hardcoded vehicle counts (array index [1]).
-        // The actual vehicle count is always fetched live from the DB below (liveCount).
-        // Format: { city, averagePrice (VND), topCategory, imageUrl }
+        // Use exact Vietnamese city names matching DB values and frontend CITY_IMAGES keys
+        // Format: { displayCity, lookupCity (for DB search), averagePrice, topCategory }
         String[][] data = {
-            {"Ho Chi Minh", "750000", "suv", "https://images.unsplash.com/photo-1583417319070-4a69db38a482?q=80&w=800&auto=format&fit=crop"},
-            {"Ha Noi", "650000", "economy", "https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?q=80&w=800&auto=format&fit=crop"},
-            {"Da Nang", "700000", "motorbike", "https://images.unsplash.com/photo-1518684079-3c830dcef090?q=80&w=800&auto=format&fit=crop"},
-            {"Nha Trang", "600000", "family", "https://images.unsplash.com/photo-1506966953602-c20cc11f75e3?q=80&w=800&auto=format&fit=crop"},
-            {"Da Lat", "580000", "motorbike", "https://images.unsplash.com/photo-1580655653885-65763b2597d0?q=80&w=800&auto=format&fit=crop"},
-            {"Hue", "520000", "economy", "https://images.unsplash.com/photo-1560969184-10fe8719e047?q=80&w=800&auto=format&fit=crop"},
+            {"Hồ Chí Minh", "Ho Chi Minh", "750000", "suv"},
+            {"Hà Nội",       "Ha Noi",       "650000", "economy"},
+            {"Đà Nẵng",      "Da Nang",      "700000", "motorbike"},
+            {"Nha Trang",    "Nha Trang",    "600000", "family"},
+            {"Đà Lạt",       "Da Lat",       "580000", "motorbike"},
+            {"Huế",          "Hue",          "520000", "economy"},
         };
         for (String[] d : data) {
             Map<String, Object> m = new HashMap<>();
             m.put("city", d[0]);
-            
+
             // Fetch live vehicle count from DB (never use hardcoded values)
             long liveCount = 0;
             try {
-                String normCity = normalizeCityName(d[0]);
-                liveCount = vehicleRepository.findByCityContainingIgnoreCase(normCity)
-                    .stream().filter(v -> v.getStatus() == VehicleStatus.AVAILABLE && v.getApprovalStatus() == VehicleStatus.APPROVED).count();
+                liveCount = vehicleRepository.findByCityContainingIgnoreCase(d[1])
+                    .stream()
+                    .filter(v -> v.getStatus() == VehicleStatus.AVAILABLE
+                              && v.getApprovalStatus() == VehicleStatus.APPROVED)
+                    .count();
+                // Also count with partial match for city variants (e.g. "TP. Hồ Chí Minh")
+                if (liveCount == 0 && d[1].equals("Hồ Chí Minh")) {
+                    liveCount = vehicleRepository.findByCityContainingIgnoreCase("Ho Chi Minh")
+                        .stream()
+                        .filter(v -> v.getStatus() == VehicleStatus.AVAILABLE
+                                  && v.getApprovalStatus() == VehicleStatus.APPROVED)
+                        .count();
+                }
             } catch (Exception ex) {
                 // Ignore - leave as 0
             }
             m.put("vehicleCount", liveCount);
-            m.put("averagePrice", Long.parseLong(d[1]));
-            m.put("topCategory", d[2]);
-            m.put("imageUrl", d[3]);
+            m.put("averagePrice", Long.parseLong(d[2]));
+            m.put("topCategory", d[3]);
+            m.put("imageUrl", ""); // Frontend overrides with local images via CITY_IMAGES
             dests.add(m);
         }
         return dests;
     }
+
 
     // ====== /api/home/vehicles ======
     public Map<String, Object> getHomeVehicles() {
@@ -441,6 +459,7 @@ public class HomeService {
                 m.put("model", v.getModel());
                 m.put("year", v.getYear());
                 m.put("category", v.getCategory() != null ? v.getCategory().name().toLowerCase() : "economy");
+                m.put("vehicleType", v.getVehicleType() != null ? v.getVehicleType().name().toLowerCase() : "car");
                 m.put("thumbnailUrl", v.getThumbnailUrl());
                 m.put("pricePerDay", v.getPricePerDay());
                 m.put("rating", v.getRating());
@@ -464,6 +483,7 @@ public class HomeService {
                 m.put("model", v.getModel());
                 m.put("year", v.getYear());
                 m.put("category", v.getCategory() != null ? v.getCategory().name().toLowerCase() : "economy");
+                m.put("vehicleType", v.getVehicleType() != null ? v.getVehicleType().name().toLowerCase() : "car");
                 m.put("thumbnailUrl", v.getThumbnailUrl());
                 m.put("pricePerDay", v.getPricePerDay());
                 m.put("rating", v.getRating());

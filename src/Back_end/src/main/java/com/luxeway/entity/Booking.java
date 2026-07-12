@@ -27,6 +27,17 @@ public class Booking {
     @Id
     @Column(length = 36)
     private String id;
+
+    @Column(name = "booking_code", unique = true, length = 50)
+    private String bookingCode;
+
+    @Column(name = "cleaning_fee", nullable = false, precision = 12, scale = 0)
+    @Builder.Default
+    private BigDecimal cleaningFee = BigDecimal.ZERO;
+
+    @Version
+    @Column(nullable = false)
+    private Long version;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "vehicle_id", nullable = false)
@@ -188,11 +199,11 @@ public class Booking {
     
     // Helper methods
     public boolean canBeCancelled() {
-        return status == BookingStatus.PENDING || status == BookingStatus.CONFIRMED;
+        return status == BookingStatus.WAITING_PAYMENT || status == BookingStatus.PAYMENT_PENDING || status == BookingStatus.CONFIRMED || status == BookingStatus.DRAFT;
     }
     
     public boolean isActive() {
-        return status == BookingStatus.ACTIVE;
+        return status == BookingStatus.IN_RENTAL;
     }
     
     public boolean isCompleted() {

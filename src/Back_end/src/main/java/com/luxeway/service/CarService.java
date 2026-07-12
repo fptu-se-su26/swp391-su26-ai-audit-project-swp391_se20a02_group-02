@@ -30,6 +30,7 @@ public class CarService {
     public Page<CarDTOs.CarResponse> searchCars(
             String city, Integer seats, String transmission, String fuelType,
             Boolean hasChauffeur, Boolean airportDelivery, Boolean electric, Boolean hybrid,
+            String brand, String category,
             int page, int size) {
         
         com.luxeway.enums.TransmissionType transEnum = null;
@@ -52,7 +53,10 @@ public class CarService {
         
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Car> carPage = carRepository.searchCars(
-            city, seats, transEnum, fuelEnum, hasChauffeur, airportDelivery, electric, hybrid, pageable
+            city, seats, transEnum, fuelEnum, hasChauffeur, airportDelivery, electric, hybrid,
+            (brand != null && !brand.isBlank()) ? brand : null,
+            (category != null && !category.isBlank()) ? category : null,
+            pageable
         );
         return carPage.map(this::toResponse);
     }
