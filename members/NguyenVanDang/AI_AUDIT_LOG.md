@@ -788,24 +788,83 @@ Audit LuxeWay Car Rental Platform:
 - **Prompt Reference:** PROMPTS.md#prompt-23
 - **AI Output Summary:** Gợi ý cách sửa lỗi database check constraint `CHK_vehicles_category`; hướng dẫn cấu hình `/map` route và Navbar đếm badge; cung cấp code update logic `updateMarkers` trong `LuxeWayMap.tsx` để hỗ trợ 3-tier marker interaction (`1 xe` -> white price tag -> green box) cùng collapsible sidebar xe bên trái.
 - **Human Decision:** Áp dụng toàn bộ logic refactoring map markers, tự cấu hình style class và icons cho toggle floating button ở đáy bản đồ, sửa lỗi typecast TypeScript.
-- **Applied To:** `schema.sql`, `V0.1__schema.sql`, `App.tsx`, `Navbar.tsx`, `LuxeWayMap.tsx`, `MarketplacePage.tsx`.
-- **Verification:** Chạy build frontend và gradle compile backend hoàn toàn sạch lỗi, chạy runtime trang `/map` hiển thị bản đồ toàn màn hình cùng các chức năng click zoom/selection chính xác.
+- **Applied To:** `schema.sql`, `V0.1__schema.sql`, `App.tsx`, `Navbar.tsx`, `LuxeWayMap.tsx`, `MarketplacePage.tsx`, `CarDetailsPage.tsx`, `MotorbikeDetailsPage.tsx`.
+- **Verification:** Gradle backend build thành công, Vite frontend build 0 lỗi, bản đồ toggle full-screen hoạt động chuẩn.
 
 ---
 
 ## Log #23
 
-- **Date:** 2026-06-29
+- **Date:** 2026-06-30
 - **Author:** Nguyễn Văn Dạng (DE190324)
 - **AI Tool:** Antigravity
-- **Purpose:** Cập nhật FPT.AI API Key, đồng bộ trạng thái eKYC giữa BE/FE, chặn bằng xe máy đặt ô tô và overhaul bản đồ full-screen (Mioto style) có Advanced Filters Drawer.
-- **Prompt Reference:** PROMPTS.md#prompt-20
-- **AI Output Summary:** Gợi ý cấu hình FPTAI_API_KEY mới, code chỉnh sửa DTO và endpoints ở backend cùng authService ở frontend, logic validation hạng bằng lái trong `BookingService.java`, và UI/UX cho bản đồ full-screen toggle, ngăn lọc trượt drawer và scroll auto-hide button ở `MarketplacePage.tsx`.
-- **Human Decision:** Áp dụng các thay đổi cấu hình API, DTO mapping và các validation rules. Thiết kế và tối ưu ngăn lọc Drawer overlay đè bản đồ full-screen, sửa lỗi link card trên bản đồ sang `/cars/` và `/motorbikes/`.
+- **Purpose:** Đồng bộ 100% bộ lọc Marketplace (Car & Motorbike) với dữ liệu thực tế trong Database — bao gồm hãng xe và loại xe; thêm filter `brand` và `category` xuyên suốt toàn bộ stack (Repository → Service → Controller → Frontend Service).
+- **Prompt Reference:** PROMPTS.md#prompt-24
+- **AI Output Summary:**
+  - Truy vấn DB thực tế bằng `sqlcmd` để lấy toàn bộ danh sách distinct `brand` và `category` cho cả 2 bảng legacy (`cars`, `motorbikes`) lẫn bảng unified (`vehicles`).
+  - Cập nhật `CAR_BRANDS` (20 hãng), `CAR_CATEGORIES` (10 loại), `MOTO_BRANDS` (14 hãng), `MOTORBIKE_CATEGORIES` (6 loại) trong 2 file Frontend marketplace.
+  - Thêm `@RequestParam brand` và `@RequestParam category` vào `CarController.java` và `MotorbikeController.java`.
+  - Thêm `brand` và `category` params vào `CarService.java`, `MotorbikeService.java`.
+  - Mở rộng JPQL query trong `CarRepository.java` và `MotorbikeRepository.java` với điều kiện lọc mới: `LOWER(b.name) LIKE LOWER(CONCAT('%', :brand, '%'))` và `LOWER(m.category) = LOWER(:category)`.
+  - Cập nhật `carService.ts` và `motorbikeService.ts` ở Frontend để gửi `brand` và `category` params lên API.
+  - Fix bộ lọc Fuel Type của xe ô tô từ 4 tuỳ chọn (có Hybrid) xuống 3 (Xăng / Dầu / Điện) khớp đúng với dữ liệu trong `car_specifications`.
+  - Xác nhận `motorbike_specifications` KHÔNG có cột `fuel_type` → bộ lọc Fuel Type không xuất hiện trong Motorbike filter panel.
+- **Human Decision:**
+  - Kiểm tra và đối chiếu kết quả truy vấn DB với nội dung các array constants trong Frontend, tự xác định chênh lệch.
+  - Ưu tiên dùng LIKE thay vì exact match cho `brand` để chịu được sự khác biệt chữ hoa/thường.
+  - Rebuild backend `./gradlew bootJar` sau khi sửa Java → `BUILD SUCCESSFUL in 16s`.
+  - Xác minh filter SQL trực tiếp: Toyota → 12 xe ✓, Sedan → 35 xe ✓, Honda (moto) → 13 xe ✓, Scooter → 28 xe ✓.
 - **Applied To:**
-  - Backend: [`.env`](file:///d:/Project_ALL_Mon/swp391-su26-ai-audit-project-swp391_se20a02_group-02/.env), [`run-be.bat`](file:///d:/Project_ALL_Mon/swp391-su26-ai-audit-project-swp391_se20a02_group-02/run-be.bat), [`AuthDTOs.java`](file:///d:/Project_ALL_Mon/swp391-su26-ai-audit-project-swp391_se20a02_group-02/src/Back_end/src/main/java/com/luxeway/dto/auth/AuthDTOs.java), [`AuthController.java`](file:///d:/Project_ALL_Mon/swp391-su26-ai-audit-project-swp391_se20a02_group-02/src/Back_end/src/main/java/com/luxeway/controller/AuthController.java), [`AuthService.java`](file:///d:/Project_ALL_Mon/swp391-su26-ai-audit-project-swp391_se20a02_group-02/src/Back_end/src/main/java/com/luxeway/service/AuthService.java), [`UserController.java`](file:///d:/Project_ALL_Mon/swp391-su26-ai-audit-project-swp391_se20a02_group-02/src/Back_end/src/main/java/com/luxeway/controller/UserController.java), [`BookingService.java`](file:///d:/Project_ALL_Mon/swp391-su26-ai-audit-project-swp391_se20a02_group-02/src/Back_end/src/main/java/com/luxeway/service/BookingService.java).
-  - Frontend: [`authService.ts`](file:///d:/Project_ALL_Mon/swp391-su26-ai-audit-project-swp391_se20a02_group-02/src/Front_end/src/services/authService.ts), [`MarketplacePage.tsx`](file:///d:/Project_ALL_Mon/swp391-su26-ai-audit-project-swp391_se20a02_group-02/src/Front_end/src/pages/marketplace/MarketplacePage.tsx).
-- **Verification:** Biên dịch Gradle Backend thành công, build Vite Frontend thành công 0 lỗi. Chạy thử nghiệm quét tài liệu bằng API key mới thành công, hiển thị chính xác trạng thái KYC VERIFIED, chặn đặt xe ô tô bằng bằng lái xe máy và bản đồ trượt bộ lọc drawer hoạt động hoàn hảo.
+  - `CarRepository.java`, `MotorbikeRepository.java` (JPQL query mở rộng)
+  - `CarService.java`, `MotorbikeService.java` (thêm params brand/category)
+  - `CarController.java`, `MotorbikeController.java` (thêm @RequestParam)
+  - `carService.ts`, `motorbikeService.ts` (gửi brand/category lên API)
+  - `CarsMarketplace.tsx` (20 brands, 10 categories, fix fuel type 3 loại)
+  - `MotorbikeMarketplace.tsx` (14 brands, 6 categories)
+- **Verification:** `./gradlew bootJar` → BUILD SUCCESSFUL in 16s. SQL test trực tiếp xác nhận bộ lọc cho kết quả chính xác.
+
+---
+
+## Log #24
+
+- **Date:** 2026-07-01 đến 2026-07-13
+- **Author:** Nguyễn Văn Dạng (DE190324)
+- **AI Tool:** Antigravity
+- **Purpose:** Triển khai cơ chế thanh toán chuyển khoản thủ công VietQR, đếm ngược thanh toán 15 phút, Scheduler hủy đơn hết hạn, và nâng cấp toàn diện UI/UX cho 3 Dashboard (Customer, Owner, Admin) cùng cấu trúc Validation dữ liệu đầu vào.
+- **Prompt Reference:** PROMPTS.md#prompt-25
+- **AI Output Summary:**
+  - Hướng dẫn viết migration database `V5__booking_payment_overhaul.sql` để tạo bảng `booking_counters`, `payment_settings` và cập nhật ràng buộc `CHK_bookings_status` mở rộng thêm các trạng thái vòng đời đặt xe mới (`WAITING_PAYMENT`, `PAYMENT_PENDING`, `PAYMENT_VERIFIED`, `PAYMENT_REJECTED`, `PAYMENT_EXPIRED`, v.v.).
+  - Cung cấp logic Spring Boot Service (`BookingService.java`, `SeedingService.java`) để quản lý thanh toán bằng tay: admin duyệt thanh toán (`approvePayment`), admin từ chối thanh toán (`rejectPayment`), scheduler kiểm tra quá giờ 15 phút (`checkExpiredBookings`) chạy ngầm mỗi phút để giải phóng xe.
+  - Thiết kế trang `BookingPaymentPage.tsx` ở Frontend hiển thị tài khoản nhận tiền (MB Bank - 0377096245 - NGUYEN VAN DANG), tạo mã QR động VietQR với nội dung và số tiền khớp đúng, đếm ngược 15 phút thời gian thực, nút xác nhận chuyển khoản.
+  - Cung cấp mã cấu trúc UI/UX mới cho `CustomerDashboard.tsx`, `OwnerDashboard.tsx`, và `AdminDashboard.tsx` theo style tối giản sang trọng của LuxeWay (Slate tối `#0B1221`, Accent Gold `#D4AF37`), hỗ trợ sidebar thu gọn, bảng dữ liệu thống kê, quản lý duyệt KYC/xe, Dispute Center với arbitrate refund sliders.
+  - Gợi ý kiểm soát dữ liệu input bằng các annotation standard `@Valid` và `@Pattern` ở Backend và cập nhật `GlobalExceptionHandler.java`.
+- **Human Decision:**
+  - Tích hợp và hiển thị mã QR thanh toán rõ ràng, thân thiện với người dùng.
+  - Custom chi tiết lý do từ chối đơn hàng của Admin và hoàn thiện validation thông tin người dùng ở Frontend.
+  - Kiểm thử cơ chế Scheduler ngầm đảm bảo tự giải phóng xe chính xác và gửi notification cho renter qua WebSocket/DB.
+- **Applied To:**
+  - Backend: `V5__booking_payment_overhaul.sql`, `BookingService.java`, `SeedingService.java`, `VehicleService.java`, `BookingController.java`, `Booking.java`, `Payment.java`, `GlobalExceptionHandler.java`, `UserDTO.java`, `ChangePasswordRequest.java`, `VehicleDTO.java`.
+  - Frontend: `BookingPaymentPage.tsx`, `AdminDashboard.tsx`, `CustomerDashboard.tsx`, `OwnerDashboard.tsx`, `bookingService.ts`, `globals.css`.
+- **Verification:** Chạy build frontend và gradle compile backend 100% thành công. Chạy thử nghiệm thực tế: Đơn hàng tạo xong chuyển sang WAITING_PAYMENT, renter xác nhận đổi thành PENDING, Admin duyệt đổi thành CONFIRMED có hóa đơn PDF gửi đi, hoặc từ chối giải phóng lịch xe; scheduler quét tự động quá 15 phút chuyển sang EXPIRED và trả lại lịch rảnh cho xe.
+
+---
+
+## 5. Bảng tổng hợp mức độ sử dụng AI (cập nhật 2026-07-13)
+
+| Hạng mục | Không dùng AI | AI hỗ trợ ít | AI hỗ trợ nhiều | AI sinh chính | Ghi chú |
+|---|:---:|:---:|:---:|:---:|---|
+| Phân tích yêu cầu | ✅ | | | | Tự phân tích từ đề bài |
+| Viết user story/use case | ✅ | | | | Nhóm tự viết |
+| Thiết kế database | | ✅ | | | AI gợi ý schema và migration |
+| Thiết kế kiến trúc hệ thống | | ✅ | | | AI gợi ý folder structure |
+| Thiết kế giao diện | | | ✅ | | AI hỗ trợ nâng cấp dashboard và payment page |
+| Code frontend | | | ✅ | | AI hỗ trợ layout dashboard, VietQR page |
+| Code backend | | | ✅ | | AI hỗ trợ logic payment, scheduler ngầm, validation annotations |
+| Debug lỗi | | | ✅ | | AI fix validation exceptions, scheduler locks |
+| DB audit / data sync | | ✅ | | | Tự quản lý và seed dữ liệu |
+| Kiểm thử sản phẩm | ✅ | | | | Tự test manual luồng thanh toán và scheduler |
+| Tối ưu code | | ✅ | | | AI gợi ý scheduler, optimize charts và table loaders |
+| Viết báo cáo | ✅ | | | | Tự viết |
 
 ---
 
@@ -821,5 +880,28 @@ Sinh viên/nhóm cam kết rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-06-29 |
+| Nguyễn Văn Dạng - DE190324 | 2026-07-13 |
 
+---
+
+## Log #25
+
+- **Date:** 2026-07-13
+- **Author:** Nguyễn Văn Dạng (DE190324)
+- **AI Tool:** Antigravity
+- **Purpose:** Dọn dẹp code dư thừa ("code rác") Frontend và sửa lỗi H2 Database Reserved Word trong các kiểm thử tích hợp (Integration Tests) Backend.
+- **Prompt Reference:** PROMPTS.md#prompt-26
+- **AI Output Summary:**
+  - Phát hiện và dọn dẹp các files rác: xóa thư mục mock data cũ `src/Front_end/src/mock` và xóa file trùng lặp `AdminDashboard.tsx` tại `src/Front_end/src/pages/dashboard/`.
+  - Khắc phục lỗi tương thích H2 database trong `SecurityIntegrationTest` bằng cách đổi tên cột từ `value` thành `counter_value` trong thực thể `BookingCounter.java` (đánh dấu `@Column(name = "counter_value")`), `DatabaseMigration.java`, và migration script `V5__booking_payment_overhaul.sql`.
+  - Tách biệt câu lệnh tạo bảng (`CREATE TABLE`) và seeding (`INSERT INTO`) trong `DatabaseMigration.java` thành các khối try-catch riêng biệt để tránh bỏ sót dữ liệu khởi tạo khi Hibernate tự tạo bảng trước.
+  - Cập nhật check constraint `CHK_bookings_status` trong `schema.sql` và `V0.1__schema.sql` để hỗ trợ đầy đủ các trạng thái đơn hàng mới, đồng thời xóa cache file cơ sở dữ liệu `luxeway_db.mv.db` trên đĩa để H2 tái tạo schema sạch từ đầu.
+- **Human Decision:**
+  - Áp dụng các thay đổi cấu hình SQL và JPA, thực hiện xóa database file H2 thủ công trên đĩa.
+  - Re-run toàn bộ test suite và build script để đảm bảo hệ thống chạy trơn tru 100%.
+- **Applied To:**
+  - Frontend: `src/Front_end/src/pages/dashboard/AdminDashboard.tsx` (Xóa), `src/Front_end/src/mock/` (Xóa).
+  - Backend: `BookingCounter.java`, `DatabaseMigration.java`, `V5__booking_payment_overhaul.sql`, `schema.sql`, `V0.1__schema.sql`, `luxeway_db.mv.db` (Xóa).
+- **Verification:**
+  - Backend: `./gradlew test` chạy thành công 100% (20 tests passed, 0 failed).
+  - Frontend: `npm run build` chạy thành công 100% (0 errors, 0 warnings).

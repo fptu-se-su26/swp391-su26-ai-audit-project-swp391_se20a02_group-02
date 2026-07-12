@@ -6,7 +6,7 @@ import {
   ChevronLeft, Car, MapPin, Clock, Tag, Loader2, ArrowRight,
   Zap, Lock, Star, Package, Truck, X, Wallet, Building2,
   AlertTriangle, Info, Sparkles, UserCircle, Heart, Briefcase,
-  Check, CloudRain, Smartphone, Camera
+  Check, CloudRain, Smartphone
 } from 'lucide-react';
 import { vehicleService } from '@/services/vehicleService';
 import { bookingService, paymentService, paymentMethodService } from '@/services/bookingService';
@@ -302,7 +302,7 @@ const PaymentMethodCard: React.FC<{
     className={`relative w-full p-4 rounded-2xl border-2 text-left transition-all duration-200 ${
       selected
         ? 'border-indigo-500 bg-indigo-50/40'
-        : 'border-slate-200 hover:border-slate-300'
+        : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
     }`}
   >
     {badge && (
@@ -315,7 +315,7 @@ const PaymentMethodCard: React.FC<{
         {icon}
       </div>
       <div>
-        <p className="text-sm font-bold text-slate-800">{label}</p>
+        <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{label}</p>
         <p className="text-xs text-slate-400 font-semibold mt-0.5">{sublabel}</p>
       </div>
     </div>
@@ -329,172 +329,9 @@ const BookingWizardPage: React.FC = () => {
   const navigate = useNavigate();
   const t = useT();
   const toast = useToast();
-  const { user, updateUser } = useAuthStore();
+  const { user, initAuth } = useAuthStore();
   const wizard = useBookingWizardStore();
   const isVi = t.common.loading.includes('Đang');
-
-  // States for driving license verification form
-  const [gplxNumber, setGplxNumber] = useState(user?.licenseNumber || '');
-  const [gplxName, setGplxName] = useState(user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : '');
-  const [gplxClass, setGplxClass] = useState(user?.licenseClass || 'B2');
-  const [isSubmittingLicense, setIsSubmittingLicense] = useState(false);
-  const [frontImageMock, setFrontImageMock] = useState<string | null>(null);
-  const [backImageMock, setBackImageMock] = useState<string | null>(null);
-
-  const checkLocalLicenseCompatibility = (selectedClass: string) => {
-    if (!vehicle) return true;
-    const cls = selectedClass.toUpperCase();
-    if (vehicle.vehicleType === 'motorbike') {
-      return cls === 'A1' || cls === 'A';
-    } else if (vehicle.vehicleType === 'car') {
-      return cls.startsWith('B') || 
-             cls.startsWith('C') || 
-             cls.startsWith('D') || 
-             cls.startsWith('E') || 
-             cls.startsWith('F');
-    }
-    return false;
-  };
-
-  const isLocalCompatible = checkLocalLicenseCompatibility(gplxClass);
-
-  const handleVerifyLicense = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!gplxNumber.trim()) {
-      toast.warning(isVi ? 'Nhập số GPLX' : 'Enter License Number', isVi ? 'Vui lòng điền số bằng lái xe của bạn.' : 'Please enter your driving license number.');
-      return;
-    }
-    if (gplxNumber.trim().length !== 12) {
-      toast.warning(isVi ? 'Số GPLX không hợp lệ' : 'Invalid License Number', isVi ? 'Số GPLX của Việt Nam phải có độ dài đúng 12 chữ số.' : 'Vietnamese driving license must be exactly 12 digits.');
-      return;
-    }
-    if (!gplxName.trim()) {
-      toast.warning(isVi ? 'Nhập họ tên' : 'Enter Full Name', isVi ? 'Vui lòng điền tên chủ bằng lái.' : 'Please enter the license holder name.');
-      return;
-    }
-    if (!isLocalCompatible) {
-      toast.error(isVi ? 'Hạng bằng không tương thích' : 'Incompatible License', isVi ? 'Hạng bằng lái này không đủ điều kiện thuê xe.' : 'This license class is not compatible with the vehicle.');
-      return;
-    }
-    
-    setIsSubmittingLicense(true);
-    try {
-      const nameParts = gplxName.trim().split(/\s+/);
-      const firstName = nameParts[0] || '';
-      const lastName = nameParts.slice(1).join(' ') || '';
-      
-      await updateUser({
-        licenseClass: gplxClass,
-        licenseNumber: gplxNumber.trim(),
-        firstName,
-        lastName
-      });
-      
-      toast.success(isVi ? 'Xác thực thành công' : 'Verification Successful', isVi ? 'Thông tin bằng lái của bạn đã được cập nhật thành công!' : 'Your driving license details have been verified successfully.');
-    } catch (err: any) {
-      toast.error(isVi ? 'Lỗi xác thực' : 'Verification Error', err.message || (isVi ? 'Không thể cập nhật bằng lái.' : 'Failed to update driving license.'));
-    } finally {
-      setIsSubmittingLicense(false);
-    }
-  };
-
-  // Enforce KYC verification & license class matching
-  const isKycVerified = user?.role === 'admin' || user?.kycStatus === 'VERIFIED';
-  const isDlVerified = user?.role === 'admin' || user?.driverLicenseStatus === 'VERIFIED';
-  const licenseClass = (user?.licenseClass || '').toUpperCase();
-
-  const checkLicenseCompatibility = () => {
-    if (user?.role === 'admin') return true;
-    if (vehicle?.vehicleType === 'motorbike') {
-      return licenseClass === 'A1' || licenseClass === 'A';
-    } else if (vehicle?.vehicleType === 'car') {
-      return licenseClass.startsWith('B') || 
-             licenseClass.startsWith('C') || 
-             licenseClass.startsWith('D') || 
-             licenseClass.startsWith('E') || 
-             licenseClass.startsWith('F');
-    }
-    return false;
-  };
-
-  const isLicenseCompatible = checkLicenseCompatibility();
-  const isBlocked = user ? (!isKycVerified || !isDlVerified || !isLicenseCompatible) : false;
-
-  const getBlockingReason = () => {
-    if (user?.role === 'admin') return null;
-    if (user?.kycStatus !== 'VERIFIED') {
-      if (user?.kycStatus === 'PENDING' || user?.kycStatus === 'PENDING_APPROVAL') {
-        return {
-          title: isVi ? 'Hồ sơ KYC đang chờ duyệt' : 'KYC Verification Pending',
-          description: isVi 
-            ? 'Tài liệu định danh của bạn đã được tải lên và đang được ban quản trị xét duyệt. Vui lòng quay lại sau khi quá trình xác thực hoàn tất.' 
-            : 'Your identity documents have been uploaded and are currently under review by our admin team. Please check back once verification is completed.',
-          badge: isVi ? 'Đang duyệt' : 'Under Review',
-          status: 'pending'
-        };
-      }
-      return {
-        title: isVi ? 'Yêu cầu xác thực tài khoản (KYC)' : 'Identity Verification Required',
-        description: isVi 
-          ? 'Để đảm bảo an toàn và tuân thủ quy định pháp luật Việt Nam, bạn cần hoàn thành xác thực Căn cước công dân (CCCD) và ảnh chân dung trước khi thuê xe.' 
-          : 'To ensure safety and compliance with Vietnamese regulations, you must verify your Citizen ID (CCCD) and Selfie before renting a vehicle.',
-        badge: isVi ? 'Chưa xác thực' : 'Not Verified',
-        status: 'unverified'
-      };
-    }
-    if (user?.driverLicenseStatus !== 'VERIFIED') {
-      if (user?.driverLicenseStatus === 'PENDING' || user?.driverLicenseStatus === 'PENDING_APPROVAL') {
-        return {
-          title: isVi ? 'Bằng lái xe đang chờ duyệt' : 'Driving License Review Pending',
-          description: isVi 
-            ? 'Bằng lái xe của bạn đang được ban quản trị kiểm tra thông tin đối chiếu OCR. Quá trình này thường mất dưới 10 phút.' 
-            : 'Your driving license details are under administrative review. This usually takes less than 10 minutes.',
-          badge: isVi ? 'Đang duyệt' : 'Under Review',
-          status: 'pending'
-        };
-      }
-      return {
-        title: isVi ? 'Yêu cầu xác thực bằng lái xe' : 'Driving License Verification Required',
-        description: isVi 
-          ? 'Vui lòng cung cấp bằng lái xe hợp lệ để hệ thống đối chiếu lớp bằng lái tương ứng trước khi tiến hành thanh toán đặt xe.' 
-          : 'Please provide a valid driving license so our system can cross-reference the class compatibility before checkout.',
-        badge: isVi ? 'Chưa xác thực' : 'Not Verified',
-        status: 'unverified'
-      };
-    }
-    
-    if (vehicle?.vehicleType === 'motorbike') {
-      if (licenseClass !== 'A1' && licenseClass !== 'A') {
-        return {
-          title: isVi ? 'Hạng bằng lái không tương thích' : 'Incompatible Driving License Class',
-          description: isVi 
-            ? `Thuê xe máy yêu cầu bằng lái hạng A1 hoặc A. Bằng lái hiện tại của bạn là hạng [${licenseClass || 'Chưa rõ'}].` 
-            : `Motorbike rental requires an A1 or A class driving license. Your current license class is [${licenseClass || 'N/A'}].`,
-          badge: isVi ? 'Không tương thích' : 'Incompatible',
-          status: 'incompatible'
-        };
-      }
-    } else if (vehicle?.vehicleType === 'car') {
-      const isCarLicense = licenseClass.startsWith('B') || 
-                           licenseClass.startsWith('C') || 
-                           licenseClass.startsWith('D') || 
-                           licenseClass.startsWith('E') || 
-                           licenseClass.startsWith('F');
-      if (!isCarLicense) {
-        return {
-          title: isVi ? 'Hạng bằng lái không tương thích' : 'Incompatible Driving License Class',
-          description: isVi 
-            ? `Thuê xe ô tô yêu cầu bằng lái hạng B, C, D, E hoặc F. Bằng lái hiện tại của bạn là hạng [${licenseClass || 'Chưa rõ'}].` 
-            : `Car rental requires a B, C, D, E, or F class driving license. Your current license class is [${licenseClass || 'N/A'}].`,
-          badge: isVi ? 'Không tương thích' : 'Incompatible',
-          status: 'incompatible'
-        };
-      }
-    }
-    return null;
-  };
-
-  const blockReason = isBlocked ? getBlockingReason() : null;
 
   // Page level state
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
@@ -528,6 +365,111 @@ const BookingWizardPage: React.FC = () => {
   const [hasRaincoat, setHasRaincoat] = useState(false);
   const [hasPhoneHolder, setHasPhoneHolder] = useState(false);
   const [hasTouringPackage, setHasTouringPackage] = useState(false);
+
+  // Enforce KYC verification & license class matching
+  const isKycVerified = user?.role === 'admin' || user?.kycStatus === 'VERIFIED';
+  const isDlVerified = user?.role === 'admin' || user?.driverLicenseStatus === 'VERIFIED';
+  const licenseClass = (user?.licenseClass || '').toUpperCase();
+
+  const checkLicenseCompatibility = () => {
+    if (user?.role === 'admin') return true;
+    if (vehicle?.vehicleType === 'motorbike') {
+      return licenseClass.startsWith('A');
+    } else if (vehicle?.vehicleType === 'car') {
+      return licenseClass.startsWith('B') || 
+             licenseClass.startsWith('C') || 
+             licenseClass.startsWith('D') || 
+             licenseClass.startsWith('E') || 
+             licenseClass.startsWith('F');
+    }
+    return false;
+  };
+
+  const isLicenseCompatible = checkLicenseCompatibility();
+  const isBlocked = user ? (!isKycVerified || !isDlVerified || !isLicenseCompatible) : false;
+
+  const getBlockingReason = () => {
+    if (user?.role === 'admin') return null;
+    if (user?.kycStatus !== 'VERIFIED') {
+      if (user?.kycStatus === 'PENDING') {
+        return {
+          title: isVi ? 'Hồ sơ KYC đang chờ duyệt' : 'KYC Verification Pending',
+          description: isVi 
+            ? 'Tài liệu định danh của bạn đã được tải lên và đang được ban quản trị xét duyệt. Vui lòng quay lại sau khi quá trình xác thực hoàn tất.' 
+            : 'Your identity documents have been uploaded and are currently under review by our admin team. Please check back once verification is completed.',
+          badge: isVi ? 'Đang duyệt' : 'Under Review',
+          status: 'pending'
+        };
+      }
+      return {
+        title: isVi ? 'Yêu cầu xác thực tài khoản (KYC)' : 'Identity Verification Required',
+        description: isVi 
+          ? 'Để đảm bảo an toàn và tuân thủ quy định pháp luật Việt Nam, bạn cần hoàn thành xác thực Căn cước công dân (CCCD) và ảnh chân dung trước khi thuê xe.' 
+          : 'To ensure safety and compliance with Vietnamese regulations, you must verify your Citizen ID (CCCD) and Selfie before renting a vehicle.',
+        badge: isVi ? 'Chưa xác thực' : 'Not Verified',
+        status: 'unverified'
+      };
+    }
+    if (user?.driverLicenseStatus !== 'VERIFIED') {
+      if (user?.driverLicenseStatus === 'PENDING') {
+        return {
+          title: isVi ? 'Bằng lái xe đang chờ duyệt' : 'Driving License Review Pending',
+          description: isVi 
+            ? 'Bằng lái xe của bạn đang được ban quản trị kiểm tra thông tin đối chiếu OCR. Quá trình này thường mất dưới 10 phút.' 
+            : 'Your driving license details are under administrative review. This usually takes less than 10 minutes.',
+          badge: isVi ? 'Đang duyệt' : 'Under Review',
+          status: 'pending'
+        };
+      }
+      return {
+        title: isVi ? 'Yêu cầu xác thực bằng lái xe' : 'Driving License Verification Required',
+        description: isVi 
+          ? 'Vui lòng cung cấp bằng lái xe hợp lệ để hệ thống đối chiếu lớp bằng lái tương ứng trước khi tiến hành thanh toán đặt xe.' 
+          : 'Please provide a valid driving license so our system can cross-reference the class compatibility before checkout.',
+        badge: isVi ? 'Chưa xác thực' : 'Not Verified',
+        status: 'unverified'
+      };
+    }
+    
+    if (vehicle?.vehicleType === 'motorbike') {
+      if (!licenseClass.startsWith('A')) {
+        return {
+          title: isVi ? 'Hạng bằng lái không tương thích' : 'Incompatible Driving License Class',
+          description: isVi 
+            ? `Thuê xe máy yêu cầu bằng lái hạng A (A1/A2). Bằng lái hiện tại của bạn là hạng [${licenseClass || 'Chưa rõ'}].` 
+            : `Motorbike rental requires an A (A1/A2) class driving license. Your current license class is [${licenseClass || 'N/A'}].`,
+          badge: isVi ? 'Không tương thích' : 'Incompatible',
+          status: 'incompatible'
+        };
+      }
+    } else if (vehicle?.vehicleType === 'car') {
+      const isCarLicense = licenseClass.startsWith('B') || 
+                           licenseClass.startsWith('C') || 
+                           licenseClass.startsWith('D') || 
+                           licenseClass.startsWith('E') || 
+                           licenseClass.startsWith('F');
+      if (!isCarLicense) {
+        return {
+          title: isVi ? 'Hạng bằng lái không tương thích' : 'Incompatible Driving License Class',
+          description: isVi 
+            ? `Thuê xe ô tô yêu cầu bằng lái hạng B, C, D, E hoặc F. Bằng lái hiện tại của bạn là hạng [${licenseClass || 'Chưa rõ'}].` 
+            : `Car rental requires a B, C, D, E, or F class driving license. Your current license class is [${licenseClass || 'N/A'}].`,
+          badge: isVi ? 'Không tương thích' : 'Incompatible',
+          status: 'incompatible'
+        };
+      }
+    }
+    return null;
+  };
+
+  const blockReason = isBlocked ? getBlockingReason() : null;
+
+  // Refresh user profile details when entering booking to avoid stale cached/session values
+  useEffect(() => {
+    if (user) {
+      initAuth();
+    }
+  }, []);
 
   useEffect(() => {
     if (!vehicleId) return;
@@ -635,7 +577,7 @@ const BookingWizardPage: React.FC = () => {
         );
 
         // 2. Process payment
-        const returnUrl = `${window.location.origin}/payment/${paymentMethod.toLowerCase()}/return`;
+        const returnUrl = `${window.location.origin}/payment/${paymentMethod === 'payos' ? 'payos' : 'momo'}/return`;
         const paymentResult = await paymentService.processPayment(
           booking.id,
           paymentMethod,
@@ -645,7 +587,7 @@ const BookingWizardPage: React.FC = () => {
 
         if (paymentResult.success) {
           if (paymentResult.paymentUrl) {
-            // Redirect to VNPay gateway
+            // Redirect to MoMo payment gateway
             window.location.href = paymentResult.paymentUrl;
           } else {
             // Save card details if enabled
@@ -767,13 +709,13 @@ const BookingWizardPage: React.FC = () => {
               {/* STEP 1 — Dates & Details */}
               {wizard.step === 1 && (
                 <motion.div key="step1" variants={scaleIn} initial="hidden" animate="visible" exit="hidden"
-                  className="bg-white rounded-3xl border border-slate-200/80 shadow-xl shadow-slate-900/5 p-6">
+                  className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-700/80 shadow-xl shadow-slate-900/5 p-6">
                   <div className="flex items-center gap-3 mb-6">
                     <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
                       style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)' }}>
                       <Calendar className="w-5 h-5 text-white" />
                     </div>
-                    <h2 className="font-display text-xl font-bold text-slate-800">{t.booking.selectDates}</h2>
+                    <h2 className="font-display text-xl font-bold text-slate-800 dark:text-slate-200">{t.booking.selectDates}</h2>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 mb-6">
@@ -784,7 +726,7 @@ const BookingWizardPage: React.FC = () => {
                         value={wizard.startDate}
                         min={new Date().toISOString().split('T')[0]}
                         onChange={e => wizard.setDates(e.target.value, wizard.endDate)}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all"
+                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all"
                       />
                     </div>
                     <div>
@@ -794,7 +736,7 @@ const BookingWizardPage: React.FC = () => {
                         value={wizard.endDate}
                         min={wizard.startDate || new Date().toISOString().split('T')[0]}
                         onChange={e => wizard.setDates(wizard.startDate, e.target.value)}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all"
+                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all"
                       />
                     </div>
                   </div>
@@ -821,7 +763,7 @@ const BookingWizardPage: React.FC = () => {
                       onChange={e => wizard.setNotes(e.target.value)}
                       rows={3}
                       placeholder={isVi ? 'Nhập yêu cầu đặc biệt hoặc hướng dẫn nhận xe...' : 'Any special requests, pickup instructions, etc.'}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all resize-none"
+                      className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-200 placeholder:text-slate-400 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all resize-none"
                     />
                   </div>
 
@@ -852,8 +794,8 @@ const BookingWizardPage: React.FC = () => {
                     onClick={() => wizard.setInsurance(!wizard.includeInsurance)}
                     whileHover={{ scale: 1.01 }}
                     whileTap={{ scale: 0.99 }}
-                    className={`bg-white rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
-                      wizard.includeInsurance ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 hover:border-slate-300'
+                    className={`bg-white dark:bg-slate-900 rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
+                      wizard.includeInsurance ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
                     }`}
                   >
                     <div className="flex items-start gap-4">
@@ -864,9 +806,9 @@ const BookingWizardPage: React.FC = () => {
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
-                          <h3 className="font-bold text-slate-800">{isVi ? 'Bảo hiểm Premium' : 'Premium Insurance'}</h3>
+                          <h3 className="font-bold text-slate-800 dark:text-slate-200">{isVi ? 'Bảo hiểm Premium' : 'Premium Insurance'}</h3>
                           <div className="text-right">
-                            <p className="font-bold text-slate-800">{formatVND(Math.round(vehicle.pricePerDay * 0.15))}<span className="text-xs text-slate-400 font-normal">/{isVi ? 'ngày' : 'day'}</span></p>
+                            <p className="font-bold text-slate-800 dark:text-slate-200">{formatVND(Math.round(vehicle.pricePerDay * 0.15))}<span className="text-xs text-slate-400 font-normal">/{isVi ? 'ngày' : 'day'}</span></p>
                           </div>
                         </div>
                         <p className="text-sm text-slate-500 mt-1">
@@ -890,8 +832,8 @@ const BookingWizardPage: React.FC = () => {
                           onClick={() => wizard.setDelivery(!wizard.includeDelivery)}
                           whileHover={{ scale: 1.01 }}
                           whileTap={{ scale: 0.99 }}
-                          className={`bg-white rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
-                            wizard.includeDelivery ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 hover:border-slate-300'
+                          className={`bg-white dark:bg-slate-900 rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
+                            wizard.includeDelivery ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
                           }`}
                         >
                           <div className="flex items-start gap-4">
@@ -902,8 +844,8 @@ const BookingWizardPage: React.FC = () => {
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center justify-between">
-                                <h3 className="font-bold text-slate-800">{isVi ? 'Giao xe tại sân bay' : 'Airport Delivery'}</h3>
-                                <p className="font-bold text-slate-800">{formatVND(200000)}</p>
+                                <h3 className="font-bold text-slate-800 dark:text-slate-200">{isVi ? 'Giao xe tại sân bay' : 'Airport Delivery'}</h3>
+                                <p className="font-bold text-slate-800 dark:text-slate-200">{formatVND(200000)}</p>
                               </div>
                               <p className="text-sm text-slate-500 mt-1">
                                 {isVi ? 'Nhận và trả xe ngay tại ga đến sân bay' : 'Pick up and return vehicle directly at the airport terminal'}
@@ -920,7 +862,7 @@ const BookingWizardPage: React.FC = () => {
                               <input
                                 type="text"
                                 placeholder={isVi ? 'Nhập mã chuyến bay hoặc địa chỉ chi tiết...' : 'Enter flight number or details...'}
-                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-400 transition-all"
+                                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-indigo-400 transition-all"
                                 onClick={e => e.stopPropagation()}
                                 onChange={e => wizard.setDelivery(true, e.target.value)}
                               />
@@ -935,8 +877,8 @@ const BookingWizardPage: React.FC = () => {
                           onClick={() => setHasChauffeur(!hasChauffeur)}
                           whileHover={{ scale: 1.01 }}
                           whileTap={{ scale: 0.99 }}
-                          className={`bg-white rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
-                            hasChauffeur ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 hover:border-slate-300'
+                          className={`bg-white dark:bg-slate-900 rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
+                            hasChauffeur ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
                           }`}
                         >
                           <div className="flex items-start gap-4">
@@ -947,8 +889,8 @@ const BookingWizardPage: React.FC = () => {
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center justify-between">
-                                <h3 className="font-bold text-slate-800">{isVi ? 'Thuê tài xế riêng' : 'Chauffeur Service'}</h3>
-                                <p className="font-bold text-slate-800">{formatVND(500000)}<span className="text-xs text-slate-400 font-normal">/{isVi ? 'ngày' : 'day'}</span></p>
+                                <h3 className="font-bold text-slate-800 dark:text-slate-200">{isVi ? 'Thuê tài xế riêng' : 'Chauffeur Service'}</h3>
+                                <p className="font-bold text-slate-800 dark:text-slate-200">{formatVND(500000)}<span className="text-xs text-slate-400 font-normal">/{isVi ? 'ngày' : 'day'}</span></p>
                               </div>
                               <p className="text-sm text-slate-500 mt-1">
                                 {isVi ? 'Tài xế chuyên nghiệp, lịch sự, thông thạo đường phố' : 'Professional, polite driver who knows the city inside out'}
@@ -969,8 +911,8 @@ const BookingWizardPage: React.FC = () => {
                           onClick={() => setWeddingPackage(!weddingPackage)}
                           whileHover={{ scale: 1.01 }}
                           whileTap={{ scale: 0.99 }}
-                          className={`bg-white rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
-                            weddingPackage ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 hover:border-slate-300'
+                          className={`bg-white dark:bg-slate-900 rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
+                            weddingPackage ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
                           }`}
                         >
                           <div className="flex items-start gap-4">
@@ -981,8 +923,8 @@ const BookingWizardPage: React.FC = () => {
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center justify-between">
-                                <h3 className="font-bold text-slate-800">{isVi ? 'Gói xe hoa đám cưới' : 'Wedding Package Decor'}</h3>
-                                <p className="font-bold text-slate-800">{formatVND(1500000)}</p>
+                                <h3 className="font-bold text-slate-800 dark:text-slate-200">{isVi ? 'Gói xe hoa đám cưới' : 'Wedding Package Decor'}</h3>
+                                <p className="font-bold text-slate-800 dark:text-slate-200">{formatVND(1500000)}</p>
                               </div>
                               <p className="text-sm text-slate-500 mt-1">
                                 {isVi ? 'Trang trí hoa cưới sang trọng theo yêu cầu' : 'Elegant floral wedding decoration styled to your preference'}
@@ -1003,8 +945,8 @@ const BookingWizardPage: React.FC = () => {
                           onClick={() => setBusinessPackage(!businessPackage)}
                           whileHover={{ scale: 1.01 }}
                           whileTap={{ scale: 0.99 }}
-                          className={`bg-white rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
-                            businessPackage ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 hover:border-slate-300'
+                          className={`bg-white dark:bg-slate-900 rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
+                            businessPackage ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
                           }`}
                         >
                           <div className="flex items-start gap-4">
@@ -1015,8 +957,8 @@ const BookingWizardPage: React.FC = () => {
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center justify-between">
-                                <h3 className="font-bold text-slate-800">{isVi ? 'Gói thuê doanh nghiệp (VAT)' : 'Business Corporate Package'}</h3>
-                                <p className="font-bold text-slate-800">-{isVi ? 'Giảm 10%' : '10% Off'}</p>
+                                <h3 className="font-bold text-slate-800 dark:text-slate-200">{isVi ? 'Gói thuê doanh nghiệp (VAT)' : 'Business Corporate Package'}</h3>
+                                <p className="font-bold text-slate-800 dark:text-slate-200">-{isVi ? 'Giảm 10%' : '10% Off'}</p>
                               </div>
                               <p className="text-sm text-slate-500 mt-1">
                                 {isVi ? 'Hỗ trợ xuất hóa đơn đỏ VAT đầy đủ, thủ tục nhanh' : 'Full VAT corporate tax invoice support and expedited processing'}
@@ -1039,8 +981,8 @@ const BookingWizardPage: React.FC = () => {
                           onClick={() => setHasHelmet(!hasHelmet)}
                           whileHover={{ scale: 1.01 }}
                           whileTap={{ scale: 0.99 }}
-                          className={`bg-white rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
-                            hasHelmet ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 hover:border-slate-300'
+                          className={`bg-white dark:bg-slate-900 rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
+                            hasHelmet ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
                           }`}
                         >
                           <div className="flex items-start gap-4">
@@ -1051,8 +993,8 @@ const BookingWizardPage: React.FC = () => {
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center justify-between">
-                                <h3 className="font-bold text-slate-800">{isVi ? 'Thuê mũ bảo hiểm' : 'Premium Helmet Rental'}</h3>
-                                <p className="font-bold text-slate-800">{formatVND(20000)}<span className="text-xs text-slate-400 font-normal">/{isVi ? 'ngày' : 'day'}</span></p>
+                                <h3 className="font-bold text-slate-800 dark:text-slate-200">{isVi ? 'Thuê mũ bảo hiểm' : 'Premium Helmet Rental'}</h3>
+                                <p className="font-bold text-slate-800 dark:text-slate-200">{formatVND(20000)}<span className="text-xs text-slate-400 font-normal">/{isVi ? 'ngày' : 'day'}</span></p>
                               </div>
                               <p className="text-sm text-slate-500 mt-1">
                                 {isVi ? 'Mũ bảo hiểm đạt chuẩn chất lượng an toàn cao' : 'High quality safety certified helmet for maximum protection'}
@@ -1073,8 +1015,8 @@ const BookingWizardPage: React.FC = () => {
                           onClick={() => setHasRaincoat(!hasRaincoat)}
                           whileHover={{ scale: 1.01 }}
                           whileTap={{ scale: 0.99 }}
-                          className={`bg-white rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
-                            hasRaincoat ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 hover:border-slate-300'
+                          className={`bg-white dark:bg-slate-900 rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
+                            hasRaincoat ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
                           }`}
                         >
                           <div className="flex items-start gap-4">
@@ -1085,8 +1027,8 @@ const BookingWizardPage: React.FC = () => {
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center justify-between">
-                                <h3 className="font-bold text-slate-800">{isVi ? 'Thuê áo mưa' : 'Raincoat Included'}</h3>
-                                <p className="font-bold text-slate-800">{formatVND(10000)}<span className="text-xs text-slate-400 font-normal">/{isVi ? 'ngày' : 'day'}</span></p>
+                                <h3 className="font-bold text-slate-800 dark:text-slate-200">{isVi ? 'Thuê áo mưa' : 'Raincoat Included'}</h3>
+                                <p className="font-bold text-slate-800 dark:text-slate-200">{formatVND(10000)}<span className="text-xs text-slate-400 font-normal">/{isVi ? 'ngày' : 'day'}</span></p>
                               </div>
                               <p className="text-sm text-slate-500 mt-1">
                                 {isVi ? 'Áo mưa tiện lợi, chống thấm nước tốt' : 'Convenient, waterproof raincoat for rainy days'}
@@ -1107,8 +1049,8 @@ const BookingWizardPage: React.FC = () => {
                           onClick={() => setHasPhoneHolder(!hasPhoneHolder)}
                           whileHover={{ scale: 1.01 }}
                           whileTap={{ scale: 0.99 }}
-                          className={`bg-white rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
-                            hasPhoneHolder ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 hover:border-slate-300'
+                          className={`bg-white dark:bg-slate-900 rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
+                            hasPhoneHolder ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
                           }`}
                         >
                           <div className="flex items-start gap-4">
@@ -1119,8 +1061,8 @@ const BookingWizardPage: React.FC = () => {
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center justify-between">
-                                <h3 className="font-bold text-slate-800">{isVi ? 'Kẹp điện thoại' : 'Phone Holder'}</h3>
-                                <p className="font-bold text-slate-800">{formatVND(10000)}<span className="text-xs text-slate-400 font-normal">/{isVi ? 'ngày' : 'day'}</span></p>
+                                <h3 className="font-bold text-slate-800 dark:text-slate-200">{isVi ? 'Kẹp điện thoại' : 'Phone Holder'}</h3>
+                                <p className="font-bold text-slate-800 dark:text-slate-200">{formatVND(10000)}<span className="text-xs text-slate-400 font-normal">/{isVi ? 'ngày' : 'day'}</span></p>
                               </div>
                               <p className="text-sm text-slate-500 mt-1">
                                 {isVi ? 'Kẹp điện thoại chắc chắn gắn ghi-đông để định vị' : 'Sturdy handlebar-mounted phone holder for navigation'}
@@ -1141,8 +1083,8 @@ const BookingWizardPage: React.FC = () => {
                           onClick={() => setHasTouringPackage(!hasTouringPackage)}
                           whileHover={{ scale: 1.01 }}
                           whileTap={{ scale: 0.99 }}
-                          className={`bg-white rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
-                            hasTouringPackage ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 hover:border-slate-300'
+                          className={`bg-white dark:bg-slate-900 rounded-3xl border-2 p-5 cursor-pointer transition-all duration-200 shadow-lg shadow-slate-900/5 ${
+                            hasTouringPackage ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
                           }`}
                         >
                           <div className="flex items-start gap-4">
@@ -1153,8 +1095,8 @@ const BookingWizardPage: React.FC = () => {
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center justify-between">
-                                <h3 className="font-bold text-slate-800">{isVi ? 'Gói hành lý touring' : 'Touring Rack & Boxes'}</h3>
-                                <p className="font-bold text-slate-800">{formatVND(100000)}<span className="text-xs text-slate-400 font-normal">/{isVi ? 'ngày' : 'day'}</span></p>
+                                <h3 className="font-bold text-slate-800 dark:text-slate-200">{isVi ? 'Gói hành lý touring' : 'Touring Rack & Boxes'}</h3>
+                                <p className="font-bold text-slate-800 dark:text-slate-200">{formatVND(100000)}<span className="text-xs text-slate-400 font-normal">/{isVi ? 'ngày' : 'day'}</span></p>
                               </div>
                               <p className="text-sm text-slate-500 mt-1">
                                 {isVi ? 'Baga sau và thùng đựng đồ Givi tiện lợi đi phượt' : 'Heavy-duty rear luggage rack and side boxes for road trips'}
@@ -1172,8 +1114,8 @@ const BookingWizardPage: React.FC = () => {
                   )}
 
                   {/* Coupon */}
-                  <div className="bg-white rounded-3xl border border-slate-200 shadow-lg shadow-slate-900/5 p-5">
-                    <h3 className="font-bold text-slate-800 mb-3 flex items-center gap-2">
+                  <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-lg shadow-slate-900/5 p-5">
+                    <h3 className="font-bold text-slate-800 dark:text-slate-200 mb-3 flex items-center gap-2">
                       <Tag className="w-4 h-4 text-amber-500" />
                       {t.booking.applyCoupon}
                     </h3>
@@ -1183,7 +1125,7 @@ const BookingWizardPage: React.FC = () => {
                         value={couponInput}
                         onChange={e => { setCouponInput(e.target.value.toUpperCase()); setCouponError(''); }}
                         placeholder="LUXE20, WELCOME15, VIP25..."
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-400 transition-all font-mono tracking-widest"
+                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-indigo-400 transition-all font-mono tracking-widest"
                       />
                       <button
                         onClick={handleApplyCoupon}
@@ -1208,13 +1150,13 @@ const BookingWizardPage: React.FC = () => {
               {/* STEP 3 — Review */}
               {wizard.step === 3 && (
                 <motion.div key="step3" variants={scaleIn} initial="hidden" animate="visible" exit="hidden"
-                  className="bg-white rounded-3xl border border-slate-200/80 shadow-xl shadow-slate-900/5 p-6">
+                  className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-700/80 shadow-xl shadow-slate-900/5 p-6">
                   <div className="flex items-center gap-3 mb-6">
                     <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
                       style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)' }}>
                       <CheckCircle className="w-5 h-5 text-white" />
                     </div>
-                    <h2 className="font-display text-xl font-bold text-slate-800">
+                    <h2 className="font-display text-xl font-bold text-slate-800 dark:text-slate-200">
                       {isVi ? 'Xem Lại Đặt Xe' : 'Review Your Booking'}
                     </h2>
                   </div>
@@ -1229,9 +1171,9 @@ const BookingWizardPage: React.FC = () => {
                       { label: isVi ? 'Bảo hiểm' : 'Insurance', value: wizard.includeInsurance ? (isVi ? `Premium (${formatCurrency(Math.round(vehicle.pricePerDay * 0.15))}/ngày)` : `Premium (${formatCurrency(Math.round(vehicle.pricePerDay * 0.15))}/day)`) : (isVi ? 'Không có' : 'None') },
                       { label: isVi ? 'Giao xe' : 'Delivery', value: wizard.includeDelivery ? (isVi ? 'Có - Giao tận nơi' : 'Yes - Door to door') : (isVi ? 'Tự nhận xe' : 'Self pickup') },
                     ].map(item => (
-                      <div key={item.label} className="flex justify-between items-center py-3 border-b border-slate-100 last:border-0">
+                      <div key={item.label} className="flex justify-between items-center py-3 border-b border-slate-100 dark:border-slate-800 last:border-0">
                         <span className="text-sm text-slate-500">{item.label}</span>
-                        <span className="text-sm font-bold text-slate-800">{item.value}</span>
+                        <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{item.value}</span>
                       </div>
                     ))}
                   </div>
@@ -1252,13 +1194,13 @@ const BookingWizardPage: React.FC = () => {
               {/* STEP 4 — Payment */}
               {wizard.step === 4 && (
                 <motion.div key="step4" variants={scaleIn} initial="hidden" animate="visible" exit="hidden"
-                  className="bg-white rounded-3xl border border-slate-200/80 shadow-xl shadow-slate-900/5 p-6">
+                  className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-700/80 shadow-xl shadow-slate-900/5 p-6">
                   <div className="flex items-center gap-3 mb-6">
                     <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
                       style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)' }}>
                       <CreditCard className="w-5 h-5 text-white" />
                     </div>
-                    <h2 className="font-display text-xl font-bold text-slate-800">
+                    <h2 className="font-display text-xl font-bold text-slate-800 dark:text-slate-200">
                       {isVi ? 'Chọn phương thức thanh toán' : 'Payment Method'}
                     </h2>
                   </div>
@@ -1268,26 +1210,19 @@ const BookingWizardPage: React.FC = () => {
                       id="momo"
                       label="MoMo"
                       sublabel={isVi ? 'Ví điện tử MoMo' : 'MoMo e-Wallet'}
-                      icon={<span className="text-pink-650 font-black">M</span>}
+                      icon={<span>💜</span>}
                       selected={paymentMethod === 'momo'}
                       onClick={() => setPaymentMethod('momo')}
-                      badge={isVi ? 'Khuyên dùng' : 'Recommended'}
+                      badge={isVi ? 'Phổ biến' : 'Popular'}
                     />
                     <PaymentMethodCard
                       id="payos"
                       label="PayOS"
-                      sublabel={isVi ? 'Chuyển khoản nhanh 24/7' : 'Quick QR Transfer'}
-                      icon={<Zap className="w-5 h-5 text-emerald-500" />}
+                      sublabel={isVi ? 'Thanh toán QR/ngân hàng thực' : 'Real QR/bank payment'}
+                      icon={<Building2 className="w-5 h-5 text-sky-600" />}
                       selected={paymentMethod === 'payos'}
                       onClick={() => setPaymentMethod('payos')}
-                    />
-                    <PaymentMethodCard
-                      id="vnpay"
-                      label="VNPay"
-                      sublabel={isVi ? 'Ngân hàng VN, QR Pay' : 'Vietnam Banks, QR Pay'}
-                      icon={<span>🏦</span>}
-                      selected={paymentMethod === 'vnpay'}
-                      onClick={() => setPaymentMethod('vnpay')}
+                      badge={isVi ? 'Thực' : 'Live'}
                     />
                     <PaymentMethodCard
                       id="wallet"
@@ -1318,55 +1253,47 @@ const BookingWizardPage: React.FC = () => {
                   {/* MoMo info */}
                   {paymentMethod === 'momo' && (
                     <motion.div variants={fadeUp} initial="hidden" animate="visible"
-                      className="p-5 rounded-2xl mb-4 font-sans"
-                      style={{ background: 'linear-gradient(135deg, #FFF0F6, #FFF5F9)', border: '1px solid #FBCFE8' }}>
+                      className="p-5 rounded-2xl mb-4"
+                      style={{ background: 'linear-gradient(135deg, #FFF0F6, #FCE4F0)', border: '1px solid #F9A8D4' }}>
                       <div className="flex items-center gap-3 mb-3">
-                        <span className="w-5 h-5 rounded bg-pink-500 text-white font-bold flex items-center justify-center text-xs">M</span>
-                        <p className="font-bold text-pink-800">{isVi ? 'Thanh toán qua MoMo' : 'Pay with MoMo e-Wallet'}</p>
+                        <span className="text-2xl">💜</span>
+                        <p className="font-bold" style={{ color: '#BE185D' }}>
+                          {isVi ? 'Thanh toán qua MoMo' : 'Pay with MoMo e-Wallet'}
+                        </p>
                       </div>
-                      <p className="text-sm text-pink-700">
+                      <p className="text-sm mb-3" style={{ color: '#9D174D' }}>
                         {isVi
-                          ? 'Bạn sẽ được chuyển hướng tới cổng thanh toán MoMo để thực hiện giao dịch.'
-                          : "You'll be redirected to MoMo's secure payment gateway."}
-                      </p>
-                    </motion.div>
-                  )}
-
-                  {/* PayOS info */}
-                  {paymentMethod === 'payos' && (
-                    <motion.div variants={fadeUp} initial="hidden" animate="visible"
-                      className="p-5 rounded-2xl mb-4 font-sans"
-                      style={{ background: 'linear-gradient(135deg, #ECFDF5, #F0FDF4)', border: '1px solid #A7F3D0' }}>
-                      <div className="flex items-center gap-3 mb-3">
-                        <Zap className="w-5 h-5 text-emerald-500" />
-                        <p className="font-bold text-emerald-800">{isVi ? 'Thanh toán qua PayOS' : 'Pay with PayOS'}</p>
-                      </div>
-                      <p className="text-sm text-emerald-700">
-                        {isVi
-                          ? 'Quét mã QR chuyển khoản ngân hàng nhanh 24/7 qua cổng PayOS.'
-                          : 'Scan the QR code to complete a quick 24/7 bank transfer via PayOS.'}
-                      </p>
-                    </motion.div>
-                  )}
-
-                  {/* VNPay info */}
-                  {paymentMethod === 'vnpay' && (
-                    <motion.div variants={fadeUp} initial="hidden" animate="visible"
-                      className="p-5 rounded-2xl mb-4 font-sans"
-                      style={{ background: 'linear-gradient(135deg, #EEF2FF, #F5F3FF)', border: '1px solid #C7D2FE' }}>
-                      <div className="flex items-center gap-3 mb-3">
-                        <Building2 className="w-5 h-5 text-indigo-500" />
-                        <p className="font-bold text-indigo-800">{isVi ? 'Thanh toán qua VNPay' : 'Pay with VNPay Gateway'}</p>
-                      </div>
-                      <p className="text-sm text-indigo-600 mb-3">
-                        {isVi
-                          ? 'Bạn sẽ được chuyển hướng tới cổng thanh toán an toàn của VNPay để thực hiện giao dịch.'
-                          : "You'll be redirected to VNPay's secure payment gateway."}
+                          ? 'Bạn sẽ được chuyển hướng tới ứng dụng MoMo để hoàn tất thanh toán an toàn.'
+                          : "You'll be redirected to MoMo's secure payment page to complete your transaction."}
                       </p>
                       <div className="flex gap-2 flex-wrap">
-                        {['Vietcombank', 'BIDV', 'Techcombank', 'VietinBank', 'MBBank'].map(bank => (
-                          <span key={bank} className="px-2.5 py-1 bg-white text-slate-600 rounded-lg text-xs font-semibold shadow-sm border border-slate-200">
-                            {bank}
+                        {['QR Code', 'ATM', isVi ? 'Thẻ tín dụng' : 'Credit Card', isVi ? 'Liên kết ngân hàng' : 'Bank Link'].map(m => (
+                          <span key={m} className="px-2.5 py-1 bg-white dark:bg-slate-900 rounded-lg text-xs font-semibold shadow-sm" style={{ color: '#BE185D', border: '1px solid #F9A8D4' }}>
+                            {m}
+                          </span>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                  {paymentMethod === 'payos' && (
+                    <motion.div variants={fadeUp} initial="hidden" animate="visible"
+                      className="p-5 rounded-2xl mb-4"
+                      style={{ background: 'linear-gradient(135deg, #EFF6FF, #E0F2FE)', border: '1px solid #7DD3FC' }}>
+                      <div className="flex items-center gap-3 mb-3">
+                        <Building2 className="w-6 h-6 text-sky-700" />
+                        <p className="font-bold text-sky-800">
+                          {isVi ? 'Thanh toán qua PayOS' : 'Pay with PayOS'}
+                        </p>
+                      </div>
+                      <p className="text-sm mb-3 text-sky-900">
+                        {isVi
+                          ? 'Bạn sẽ được chuyển hướng tới cổng PayOS thật để thanh toán bằng mã QR hoặc ngân hàng.'
+                          : "You'll be redirected to the live PayOS checkout for QR or bank payment."}
+                      </p>
+                      <div className="flex gap-2 flex-wrap">
+                        {['VietQR', 'Bank Transfer', isVi ? 'Môi trường thực' : 'Live Gateway'].map(m => (
+                          <span key={m} className="px-2.5 py-1 bg-white dark:bg-slate-900 rounded-lg text-xs font-semibold shadow-sm text-sky-800 border border-sky-200">
+                            {m}
                           </span>
                         ))}
                       </div>
@@ -1391,13 +1318,13 @@ const BookingWizardPage: React.FC = () => {
                                     setCardName(card.brand || 'Card');
                                   }}
                                   className={`p-4 rounded-2xl border-2 flex items-center justify-between cursor-pointer transition-all duration-200 ${
-                                    isSelected ? 'border-indigo-500 bg-indigo-50/40' : 'border-slate-100 hover:border-slate-200'
+                                    isSelected ? 'border-indigo-500 bg-indigo-50/40' : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:border-slate-700'
                                   }`}
                                 >
                                   <div className="flex items-center gap-3">
                                     <span className="text-2xl">💳</span>
                                     <div>
-                                      <p className="text-sm font-bold text-slate-800 uppercase">
+                                      <p className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase">
                                         {card.brand || 'Credit Card'} ···· {card.last4}
                                       </p>
                                       <p className="text-[10px] text-slate-400 font-semibold mt-0.5">
@@ -1408,7 +1335,7 @@ const BookingWizardPage: React.FC = () => {
                                   <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                                     isSelected ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300'
                                   }`}>
-                                    {isSelected && <div className="w-2 h-2 bg-white rounded-full" />}
+                                    {isSelected && <div className="w-2 h-2 bg-white dark:bg-slate-900 rounded-full" />}
                                   </div>
                                 </div>
                               );
@@ -1453,7 +1380,7 @@ const BookingWizardPage: React.FC = () => {
                               value={cardName}
                               onChange={e => setCardName(e.target.value)}
                               placeholder={isVi ? 'NGUYEN VAN A' : 'JOHN DOE'}
-                              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all uppercase tracking-widest"
+                              className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all uppercase tracking-widest"
                             />
                           </div>
                           <div>
@@ -1463,7 +1390,7 @@ const BookingWizardPage: React.FC = () => {
                                 value={cardNumber}
                                 onChange={e => setCardNumber(e.target.value.replace(/\D/g, '').replace(/(.{4})/g, '$1 ').trim())}
                                 placeholder="0000 0000 0000 0000"
-                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all font-mono pr-12"
+                                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all font-mono pr-12"
                                 maxLength={19}
                               />
                               <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg">💳</span>
@@ -1479,7 +1406,7 @@ const BookingWizardPage: React.FC = () => {
                                   if (v.length > 2) v = v.slice(0, 2) + '/' + v.slice(2, 4);
                                   setCardExpiry(v);
                                 }}
-                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-400 transition-all font-mono"
+                                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-indigo-400 transition-all font-mono"
                                 placeholder="MM/YY"
                                 maxLength={5}
                               />
@@ -1489,7 +1416,7 @@ const BookingWizardPage: React.FC = () => {
                               <input
                                 value={cardCVC}
                                 onChange={e => setCardCVC(e.target.value.replace(/\D/g, ''))}
-                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-400 transition-all font-mono"
+                                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-indigo-400 transition-all font-mono"
                                 placeholder="•••"
                                 maxLength={4}
                                 type="password"
@@ -1564,7 +1491,7 @@ const BookingWizardPage: React.FC = () => {
               {/* STEP 5 — Success */}
               {wizard.step === 5 && (
                 <motion.div key="step5" variants={scaleIn} initial="hidden" animate="visible" exit="hidden"
-                  className="bg-white rounded-3xl border border-slate-200/80 shadow-xl shadow-slate-900/5 p-10 text-center overflow-hidden relative">
+                  className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-700/80 shadow-xl shadow-slate-900/5 p-10 text-center overflow-hidden relative">
                   {/* Confetti-like decorative elements */}
                   <div className="absolute top-0 left-0 w-full h-2"
                     style={{ background: 'linear-gradient(90deg, #6366F1, #8B5CF6, #EC4899, #F59E0B, #10B981)' }} />
@@ -1588,13 +1515,13 @@ const BookingWizardPage: React.FC = () => {
                       {isVi ? 'Đơn đặt xe của bạn đã được ghi nhận thành công.' : 'Your booking has been successfully placed.'}
                     </p>
                     {bookingId && (
-                      <div className="inline-flex items-center gap-2 bg-slate-50 border border-slate-200 px-5 py-2.5 rounded-2xl mb-6">
+                      <div className="inline-flex items-center gap-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-5 py-2.5 rounded-2xl mb-6">
                         <span className="text-xs text-slate-500">{isVi ? 'Mã Đặt Xe:' : 'Booking ID:'}</span>
-                        <span className="font-mono font-bold text-slate-800 text-sm">#{bookingId.slice(-8).toUpperCase()}</span>
+                        <span className="font-mono font-bold text-slate-800 dark:text-slate-200 text-sm">#{bookingId.slice(-8).toUpperCase()}</span>
                       </div>
                     )}
 
-                    <div className="bg-slate-50 rounded-2xl p-5 text-left mb-8 max-w-sm mx-auto space-y-2.5 text-sm">
+                    <div className="bg-slate-50 dark:bg-slate-900 rounded-2xl p-5 text-left mb-8 max-w-sm mx-auto space-y-2.5 text-sm">
                       {[
                         { label: isVi ? 'Xe' : 'Vehicle', value: vehicle.name },
                         { label: t.booking.pickUp, value: formatDate(wizard.startDate, 'short') },
@@ -1603,7 +1530,7 @@ const BookingWizardPage: React.FC = () => {
                       ].map(item => (
                         <div key={item.label} className="flex justify-between">
                           <span className="text-slate-500">{item.label}</span>
-                          <span className="font-bold text-slate-800">{item.value}</span>
+                          <span className="font-bold text-slate-800 dark:text-slate-200">{item.value}</span>
                         </div>
                       ))}
                     </div>
@@ -1627,7 +1554,7 @@ const BookingWizardPage: React.FC = () => {
                         onClick={() => { wizard.reset(); navigate('/marketplace'); }}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        className="inline-flex items-center justify-center gap-2 px-8 py-3 font-bold rounded-2xl border-2 border-slate-200 text-slate-700 hover:border-indigo-300 transition-colors"
+                        className="inline-flex items-center justify-center gap-2 px-8 py-3 font-bold rounded-2xl border-2 border-slate-200 dark:border-slate-700 text-slate-700 hover:border-indigo-300 transition-colors"
                       >
                         {isVi ? 'Thuê Thêm Xe Khác' : 'Browse More Vehicles'}
                       </motion.button>
@@ -1644,7 +1571,7 @@ const BookingWizardPage: React.FC = () => {
                   onClick={() => wizard.step > 1 ? wizard.setStep(wizard.step - 1) : navigate(-1)}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="flex items-center gap-2 px-5 py-3 rounded-2xl border-2 border-slate-200 text-slate-600 font-semibold text-sm hover:border-slate-300 transition-colors"
+                  className="flex items-center gap-2 px-5 py-3 rounded-2xl border-2 border-slate-200 dark:border-slate-700 text-slate-600 font-semibold text-sm hover:border-slate-300 transition-colors"
                 >
                   <ChevronLeft className="w-4 h-4" />
                   {t.booking.back}
@@ -1693,250 +1620,83 @@ const BookingWizardPage: React.FC = () => {
         </div>
       </div>
       {isBlocked && blockReason && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[999] flex items-end justify-center md:items-center p-0 md:p-4 overflow-y-auto">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[999] flex items-end justify-center">
           <motion.div 
-            initial={{ y: '100%', scale: 0.95 }}
-            animate={{ y: 0, scale: 1 }}
-            exit={{ y: '100%', scale: 0.95 }}
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 180 }}
-            className="w-full max-w-3xl bg-white rounded-t-[2.5rem] md:rounded-[2.5rem] shadow-[0_-15px_30px_rgba(0,0,0,0.15)] border border-slate-100 p-6 md:p-8 select-none relative pb-10 max-h-[90vh] overflow-y-auto"
+            className="w-full max-w-3xl bg-white dark:bg-slate-900 rounded-t-[2.5rem] shadow-[0_-15px_30px_rgba(0,0,0,0.15)] border-t border-slate-100 dark:border-slate-800 p-8 select-none relative pb-10"
           >
             {/* Top Drag Indicator Line */}
-            <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6 md:hidden" />
+            <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6" />
 
             <div className="flex items-start gap-5 mb-6">
-              <div className="w-14 h-14 rounded-2xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-500 flex-shrink-0 shadow-sm animate-pulse">
+              <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-500 flex-shrink-0 shadow-sm animate-pulse">
                 <Shield className="w-7 h-7" />
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-3">
-                  <h3 className="text-xl font-bold text-slate-800">
-                    {blockReason.status === 'incompatible' 
-                      ? (isVi ? 'Yêu cầu bằng lái tương thích' : 'Compatible License Required')
-                      : (isVi ? 'Cập nhật bằng lái xe (GPLX)' : 'Driving License Required')
-                    }
-                  </h3>
+                  <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200">{blockReason.title}</h3>
                   <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                     blockReason.status === 'pending' 
                       ? 'bg-amber-100 text-amber-800' 
                       : blockReason.status === 'incompatible' 
                       ? 'bg-red-100 text-red-800' 
-                      : 'bg-indigo-100 text-indigo-850'
+                      : 'bg-slate-100 text-slate-800 dark:text-slate-200'
                   }`}>
                     {blockReason.badge}
                   </span>
                 </div>
                 <p className="text-sm text-slate-500 mt-2 leading-relaxed">
-                  {blockReason.status === 'incompatible'
-                    ? (isVi 
-                        ? `Xe này yêu cầu bằng lái ô tô (hạng B1, B2, C, D...). Bằng lái hiện tại của bạn là hạng [${licenseClass || 'Chưa cập nhật'}]. Vui lòng cập nhật bằng lái phù hợp.`
-                        : `This vehicle requires a car driving license (B1, B2, C, D...). Your current license class is [${licenseClass || 'N/A'}]. Please update your license.`)
-                    : (isVi 
-                        ? 'Để tiếp tục đặt xe, vui lòng cập nhật thông tin giấy phép lái xe hợp lệ của bạn dưới đây.'
-                        : 'To proceed with this booking, please update and verify your driving license details below.')
-                  }
+                  {blockReason.description}
                 </p>
               </div>
             </div>
 
             {/* Check Details Container */}
-            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 mb-6 space-y-3">
-              <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-200/50">
+            <div className="bg-slate-50 dark:bg-slate-900 rounded-2xl p-5 border border-slate-250/60 mb-6 space-y-4">
+              <div className="flex justify-between items-center text-sm py-1 border-b border-slate-200 dark:border-slate-700/50 pb-3">
                 <span className="text-slate-500 font-semibold">{isVi ? '1. Định danh cá nhân (KYC)' : '1. Identity KYC Status'}</span>
                 <span className={`font-bold ${user?.kycStatus === 'VERIFIED' ? 'text-emerald-600' : user?.kycStatus === 'PENDING' ? 'text-amber-500' : 'text-slate-400'}`}>
                   {user?.kycStatus === 'VERIFIED' ? '✓ VERIFIED' : user?.kycStatus === 'PENDING' ? '⏳ PENDING REVIEW' : '✗ NOT VERIFIED'}
                 </span>
               </div>
-              <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-200/50">
+              <div className="flex justify-between items-center text-sm py-1 border-b border-slate-200 dark:border-slate-700/50 pb-3">
                 <span className="text-slate-500 font-semibold">{isVi ? '2. Bằng lái xe (Driver License)' : '2. Driving License Status'}</span>
                 <span className={`font-bold ${user?.driverLicenseStatus === 'VERIFIED' ? 'text-emerald-600' : user?.driverLicenseStatus === 'PENDING' ? 'text-amber-500' : 'text-slate-400'}`}>
                   {user?.driverLicenseStatus === 'VERIFIED' ? '✓ VERIFIED' : user?.driverLicenseStatus === 'PENDING' ? '⏳ PENDING REVIEW' : '✗ NOT VERIFIED'}
                 </span>
               </div>
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-slate-500 font-semibold">{isVi ? '3. Hạng bằng lái hiện tại' : '3. Current License Class'}</span>
+              <div className="flex justify-between items-center text-sm py-1">
+                <span className="text-slate-500 font-semibold">{isVi ? '3. Hạng bằng lái / Loại xe' : '3. License Compatibility'}</span>
                 <span className={`font-bold ${isLicenseCompatible ? 'text-emerald-600' : 'text-red-500'}`}>
-                  {user?.licenseClass ? `${user?.licenseClass} (${isLicenseCompatible ? 'COMPATIBLE' : 'INCOMPATIBLE'})` : 'None'}
+                  {isLicenseCompatible 
+                    ? `✓ COMPATIBLE (${user?.licenseClass || 'N/A'} for ${vehicle.vehicleType?.toUpperCase()})` 
+                    : `✗ INCOMPATIBLE (${user?.licenseClass || 'None'} for ${vehicle.vehicleType?.toUpperCase()})`
+                  }
                 </span>
               </div>
             </div>
 
-            {/* Form Section */}
-            {blockReason.status === 'pending' ? (
-              <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200 mb-6 text-center">
-                <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center text-amber-600 mx-auto mb-3 animate-spin">
-                  <Loader2 className="w-6 h-6" />
-                </div>
-                <h4 className="font-bold text-slate-800 mb-2">{isVi ? 'Đang chờ xét duyệt' : 'Under Review'}</h4>
-                <p className="text-xs text-slate-500 max-w-md mx-auto">
-                  {blockReason.description}
-                </p>
+            {/* Actions */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              {blockReason.status !== 'pending' && (
                 <button
-                  type="button"
-                  onClick={() => navigate(-1)}
-                  className="mt-4 px-6 py-2 border border-slate-200 text-slate-650 hover:bg-slate-100 font-bold rounded-xl text-xs transition-colors cursor-pointer"
+                  onClick={() => navigate('/dashboard/documents')}
+                  className="flex-1 py-3.5 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-600/10 flex items-center justify-center gap-2 cursor-pointer transition-colors"
                 >
-                  {isVi ? 'Quay lại cửa hàng' : 'Back to Marketplace'}
+                  <Lock className="w-4 h-4" />
+                  {isVi ? 'Xác thực tài liệu ngay' : 'Verify My Documents'}
                 </button>
-              </div>
-            ) : (
-              <form onSubmit={handleVerifyLicense} className="space-y-5 mb-6">
-                <h4 className="text-sm font-black text-slate-700 tracking-wide uppercase">{isVi ? 'Nhập thông tin GPLX của bạn' : 'Enter Driving License Details'}</h4>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Left Column: Inputs */}
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 mb-1">{isVi ? 'Họ và tên chủ bằng' : 'License Holder Name'}</label>
-                      <input
-                        type="text"
-                        value={gplxName}
-                        onChange={(e) => setGplxName(e.target.value.toUpperCase())}
-                        placeholder={isVi ? 'VD: GIANG NGUYỄN' : 'e.g. GIANG NGUYEN'}
-                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 mb-1">{isVi ? 'Số GPLX' : 'License Number'}</label>
-                      <input
-                        type="text"
-                        value={gplxNumber}
-                        onChange={(e) => setGplxNumber(e.target.value.replace(/\D/g, ''))}
-                        placeholder={isVi ? 'Nhập 12 chữ số' : 'Enter 12 digits'}
-                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all"
-                        maxLength={12}
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 mb-1">{isVi ? 'Hạng bằng lái (GPLX)' : 'GPLX Class'}</label>
-                      <select
-                        value={gplxClass}
-                        onChange={(e) => setGplxClass(e.target.value)}
-                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all cursor-pointer"
-                      >
-                        <option value="A1">{isVi ? 'Hạng A1 (Xe máy <= 175cc)' : 'Class A1 (Motorcycle <= 175cc)'}</option>
-                        <option value="A">{isVi ? 'Hạng A / A2 (Xe máy lớn)' : 'Class A / A2 (Big Motorcycle)'}</option>
-                        <option value="B1">{isVi ? 'Hạng B1 (Ô tô số tự động)' : 'Class B1 (Automatic Car)'}</option>
-                        <option value="B2">{isVi ? 'Hạng B2 (Ô tô số sàn & số tự động)' : 'Class B2 (Manual & Auto Car)'}</option>
-                        <option value="C">{isVi ? 'Hạng C (Xe tải > 3.500kg)' : 'Class C (Trucks)'}</option>
-                        <option value="D">{isVi ? 'Hạng D / E / F (Xe khách, tải nặng)' : 'Class D / E / F (Heavy Vehicles)'}</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Right Column: Photo Uploads */}
-                  <div className="space-y-3">
-                    <label className="block text-xs font-bold text-slate-500">{isVi ? 'Ảnh chụp bằng lái' : 'GPLX Photos'}</label>
-                    <div className="grid grid-cols-2 gap-3">
-                      {/* Front Side */}
-                      <div 
-                        onClick={() => setFrontImageMock('front_uploaded')}
-                        className={`aspect-[1.58] border-2 border-dashed rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all ${
-                          frontImageMock 
-                            ? 'bg-emerald-50/50 border-emerald-300 text-emerald-600 font-bold' 
-                            : 'bg-slate-50 hover:bg-slate-100/70 border-slate-200 hover:border-slate-300 text-slate-400'
-                        }`}
-                      >
-                        {frontImageMock ? (
-                          <>
-                            <Check className="w-6 h-6 mb-1 text-emerald-500" />
-                            <span className="text-[10px]">{isVi ? 'Mặt trước ✓' : 'Front Side ✓'}</span>
-                          </>
-                        ) : (
-                          <>
-                            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center mb-1 text-slate-500">
-                              <Camera className="w-4 h-4" />
-                            </div>
-                            <span className="text-[10px] font-bold">{isVi ? 'Mặt trước' : 'Front Side'}</span>
-                          </>
-                        )}
-                      </div>
-
-                      {/* Back Side */}
-                      <div 
-                        onClick={() => setBackImageMock('back_uploaded')}
-                        className={`aspect-[1.58] border-2 border-dashed rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all ${
-                          backImageMock 
-                            ? 'bg-emerald-50/50 border-emerald-300 text-emerald-600 font-bold' 
-                            : 'bg-slate-50 hover:bg-slate-100/70 border-slate-200 hover:border-slate-300 text-slate-400'
-                        }`}
-                      >
-                        {backImageMock ? (
-                          <>
-                            <Check className="w-6 h-6 mb-1 text-emerald-500" />
-                            <span className="text-[10px]">{isVi ? 'Mặt sau ✓' : 'Back Side ✓'}</span>
-                          </>
-                        ) : (
-                          <>
-                            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center mb-1 text-slate-500">
-                              <Camera className="w-4 h-4" />
-                            </div>
-                            <span className="text-[10px] font-bold">{isVi ? 'Mặt sau' : 'Back Side'}</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    <p className="text-[10px] text-slate-400 text-center leading-relaxed">
-                      {isVi 
-                        ? 'Click vào khung để mô phỏng tải lên hình ảnh bằng lái.' 
-                        : 'Click on a frame to simulate driving license image upload.'}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Validation message */}
-                {!isLocalCompatible && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="p-4 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-3 text-red-700 text-xs leading-relaxed"
-                  >
-                    <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-bold">{isVi ? 'Bằng lái xe không hợp lệ để thuê ô tô' : 'Incompatible Driving License'}</p>
-                      <p className="mt-1">
-                        {isVi 
-                          ? `Hạng bằng lái xe máy (A1/A) không được phép lái xe ô tô. Bạn bắt buộc phải cập nhật bằng lái hạng ô tô (B1, B2, C, D...) mới có thể thuê xe này.`
-                          : `Motorcycle driving license (A1/A) cannot be used to drive cars. You must possess a B1, B2, C, or D class license to rent this car.`
-                        }
-                      </p>
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* Actions */}
-                <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                  <button
-                    type="submit"
-                    disabled={isSubmittingLicense || !isLocalCompatible}
-                    className="flex-1 py-3.5 px-6 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white font-bold rounded-2xl shadow-lg shadow-indigo-600/10 flex items-center justify-center gap-2 cursor-pointer transition-colors"
-                  >
-                    {isSubmittingLicense ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        {isVi ? 'Đang cập nhật...' : 'Updating...'}
-                      </>
-                    ) : (
-                      <>
-                        <Check className="w-4 h-4" />
-                        {isVi ? 'Xác nhận & Cập nhật' : 'Confirm & Update'}
-                      </>
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => navigate(-1)}
-                    className="flex-1 py-3.5 px-6 border-2 border-slate-200 text-slate-650 hover:bg-slate-50 font-bold rounded-2xl transition-colors cursor-pointer flex items-center justify-center gap-2"
-                  >
-                    {isVi ? 'Quay lại cửa hàng' : 'Back to Marketplace'}
-                  </button>
-                </div>
-              </form>
-            )}
+              )}
+              <button
+                onClick={() => navigate(-1)}
+                className="flex-1 py-3.5 px-6 border-2 border-slate-200 dark:border-slate-700 text-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 font-bold rounded-2xl transition-colors cursor-pointer flex items-center justify-center gap-2"
+              >
+                {isVi ? 'Quay lại cửa hàng' : 'Back to Marketplace'}
+              </button>
+            </div>
           </motion.div>
         </div>
       )}

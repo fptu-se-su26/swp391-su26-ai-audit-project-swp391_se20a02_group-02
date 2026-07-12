@@ -200,8 +200,8 @@ const BookingCheckoutPage: React.FC = () => {
       );
 
       if (booking && booking.id) {
-        toast.success(isVi ? 'Đặt xe thành công' : 'Booking Created', isVi ? 'Yêu cầu thuê xe của bạn đã được gửi thành công.' : 'Your booking request has been submitted successfully.');
-        navigate('/success');
+        toast.success(isVi ? 'Đặt xe thành công' : 'Booking Created', isVi ? 'Đơn đặt xe đã được tạo. Vui lòng thanh toán.' : 'Booking created. Please make payment.');
+        navigate(`/booking/${booking.id}/payment`);
       } else {
         toast.error(isVi ? 'Đặt xe thất bại' : 'Submission failed', isVi ? 'Không khởi tạo được lịch trình.' : 'Failed to initialize booking.');
       }

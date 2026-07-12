@@ -41,7 +41,7 @@ export const DrivingLicenseScanner: React.FC<DrivingLicenseScannerProps> = ({ on
 
   const steps = [
     { key: 'front', label: 'Mặt trước' },
-    { key: 'back',  label: 'Mặt sau'  },
+    { key: 'back', label: 'Mặt sau' },
     { key: 'confirm', label: 'Xác nhận' },
     { key: 'success', label: 'Hoàn tất' },
   ];
@@ -160,11 +160,10 @@ export const DrivingLicenseScanner: React.FC<DrivingLicenseScannerProps> = ({ on
         {steps.map((s, idx) => (
           <React.Fragment key={s.key}>
             <div className="flex flex-col items-center gap-1">
-              <div className={`w-7 h-7 rounded-sm flex items-center justify-center text-xs font-bold transition-all ${
-                idx < currentStepIdx  ? 'bg-emerald-500 text-white' :
-                idx === currentStepIdx ? 'bg-[#C9A227] text-[#0B1221]' :
-                'bg-slate-200 dark:bg-slate-700 text-slate-400'
-              }`}>
+              <div className={`w-7 h-7 rounded-sm flex items-center justify-center text-xs font-bold transition-all ${idx < currentStepIdx ? 'bg-emerald-500 text-white' :
+                  idx === currentStepIdx ? 'bg-[#C9A227] text-[#0B1221]' :
+                    'bg-slate-200 dark:bg-slate-700 text-slate-400'
+                }`}>
                 {idx < currentStepIdx ? <CheckCircle className="w-4 h-4 text-white" /> : idx + 1}
               </div>
               <span className="text-[9px] font-bold text-slate-455 uppercase tracking-wider">{s.label}</span>

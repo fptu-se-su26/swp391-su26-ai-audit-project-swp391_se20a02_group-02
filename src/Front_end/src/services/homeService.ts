@@ -185,15 +185,24 @@ export const homeService = {
   getHomeVehicles: async (): Promise<{ popular: TrendingVehicle[]; latest: TrendingVehicle[] } | null> => {
     const data = await fetchWithDiagnostics<{ popular: TrendingVehicle[]; latest: TrendingVehicle[] }>(`${BASE}/vehicles`);
     if (!data) return null;
+    const motorbikeCategories = [
+      'MOTORBIKE', 'SCOOTER', 'AUTOMATIC_SCOOTER', 'MANUAL_MOTORCYCLE',
+      'SPORT_BIKE', 'TOURING_BIKE', 'ADVENTURE_BIKE', 'CLASSIC_BIKE', 'ELECTRIC_BIKE',
+      'motorbike', 'scooter', 'automatic_scooter', 'manual_motorcycle',
+      'sport_bike', 'touring_bike', 'adventure_bike', 'classic_bike', 'electric_bike'
+    ];
+    const normalize = (v: TrendingVehicle) => {
+      const inferredType = v.vehicleType?.toLowerCase() ||
+        (motorbikeCategories.includes(v.category) ? 'motorbike' : 'car');
+      return {
+        ...v,
+        vehicleType: inferredType,
+        thumbnailUrl: resolveImageUrl(v.thumbnailUrl)
+      };
+    };
     return {
-      popular: (data.popular || []).map(v => ({
-        ...v,
-        thumbnailUrl: resolveImageUrl(v.thumbnailUrl)
-      })),
-      latest: (data.latest || []).map(v => ({
-        ...v,
-        thumbnailUrl: resolveImageUrl(v.thumbnailUrl)
-      }))
+      popular: (data.popular || []).map(normalize),
+      latest: (data.latest || []).map(normalize)
     };
   },
 };

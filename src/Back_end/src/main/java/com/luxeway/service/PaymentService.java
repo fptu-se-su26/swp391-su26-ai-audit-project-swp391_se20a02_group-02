@@ -38,15 +38,6 @@ public class PaymentService {
     @org.springframework.context.annotation.Lazy
     private final BookingService bookingService;
 
-    @Value("${payment.vnpay.url:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}")
-    private String vnpayUrl;
-
-    @Value("${payment.vnpay.tmn-code:LUXEWAY1}")
-    private String vnpayTmnCode;
-
-    @Value("${payment.vnpay.secret-key:IKGZVMMTMTUYKQLJILPBYXJVHOUCGFDF}")
-    private String vnpaySecretKey;
-
     // ====== MoMo Configuration ======
     @Value("${payment.momo.partner-code:MOMO}")
     private String momoPartnerCode;
@@ -92,6 +83,7 @@ public class PaymentService {
 
     @Transactional
     public PaymentDTOs.PaymentResponse createPayment(String userId, PaymentDTOs.CreatePaymentRequest req) {
+        String method = req.getMethod() != null ? req.getMethod().trim() : "";
         Booking booking = bookingRepository.findById(req.getBookingId())
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
 
@@ -102,7 +94,6 @@ public class PaymentService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        String method = req.getMethod() != null ? req.getMethod().trim() : "";
         String transactionId = "payos".equalsIgnoreCase(method)
                 ? generatePayOSOrderCode()
                 : "TXN" + UUID.randomUUID().toString().replace("-", "").substring(0, 17).toUpperCase();
@@ -127,40 +118,32 @@ public class PaymentService {
             if (user.getWalletBalance().compareTo(req.getAmount()) < 0) {
                 throw new RuntimeException("Insufficient wallet balance. Please top up your LuxeWallet.");
             }
-            // Deduct balance
             user.setWalletBalance(user.getWalletBalance().subtract(req.getAmount()));
             userRepository.save(user);
 
-            // Complete payment
             payment.setStatus(PaymentStatus.SUCCEEDED);
             payment.setProcessedAt(LocalDateTime.now());
             paymentRepository.save(payment);
 
-            // Confirm booking and block availability calendar
             booking.setStatus(com.luxeway.enums.BookingStatus.CONFIRMED);
             bookingRepository.save(booking);
-            // BUG-07 FIX: Block availability calendar so vehicle no longer appears as available
             bookingService.blockAvailabilityCalendarPublic(booking);
 
             response = toResponse(payment);
             log.info("LuxeWallet payment successful: deducted {} from user {}", req.getAmount(), userId);
+
         } else if ("stripe".equalsIgnoreCase(method) || "card".equalsIgnoreCase(method)) {
-            // Complete payment immediately for simulated flow
             payment.setStatus(PaymentStatus.SUCCEEDED);
             payment.setProcessedAt(LocalDateTime.now());
             paymentRepository.save(payment);
 
-            // Confirm booking and block availability calendar
             booking.setStatus(com.luxeway.enums.BookingStatus.CONFIRMED);
             bookingRepository.save(booking);
-            // BUG-07 FIX: Block availability calendar so vehicle no longer appears as available
             bookingService.blockAvailabilityCalendarPublic(booking);
 
             response = toResponse(payment);
             log.info("Stripe/Card payment successful immediately: {}", transactionId);
-        } else if ("vnpay".equalsIgnoreCase(method)) {
-            String paymentUrl = buildVNPayUrl(payment, req.getReturnUrl());
-            response.setPaymentUrl(paymentUrl);
+
         } else if ("momo".equalsIgnoreCase(method)) {
             String returnUrl = req.getReturnUrl() != null && !req.getReturnUrl().isEmpty()
                     ? req.getReturnUrl() : momoReturnUrl;
@@ -171,6 +154,8 @@ public class PaymentService {
                     ? req.getReturnUrl() : payosReturnUrl;
             String paymentUrl = buildPayOSPaymentUrl(payment, returnUrl, payosCancelUrl);
             response.setPaymentUrl(paymentUrl);
+        } else {
+            throw new RuntimeException("Unsupported payment method: " + method);
         }
 
         log.info("Payment created: {} for booking {} by user {}", payment.getId(), req.getBookingId(), userId);
@@ -212,21 +197,19 @@ public class PaymentService {
                     ? req.getReturnUrl() : payosReturnUrl;
             String paymentUrl = buildPayOSPaymentUrl(payment, returnUrl, payosCancelUrl);
             response.setPaymentUrl(paymentUrl);
-        } else if ("vnpay".equalsIgnoreCase(method)) {
-            String paymentUrl = buildVNPayUrl(payment, req.getReturnUrl());
-            response.setPaymentUrl(paymentUrl);
-        } else {
+        } else if ("stripe".equalsIgnoreCase(method) || "card".equalsIgnoreCase(method)) {
             // Stripe or Credit Card top-up succeeds instantly
             payment.setStatus(PaymentStatus.SUCCEEDED);
             payment.setProcessedAt(LocalDateTime.now());
             paymentRepository.save(payment);
-            
-            // Add wallet balance
+
             user.setWalletBalance(user.getWalletBalance().add(req.getAmount()));
             userRepository.save(user);
-            
+
             response = toResponse(payment);
             log.info("LuxeWallet Top Up successful: user {} balance is now {}", userId, user.getWalletBalance());
+        } else {
+            throw new RuntimeException("Unsupported top-up method: " + method);
         }
 
         return response;
@@ -258,205 +241,12 @@ public class PaymentService {
                 .map(this::toResponse);
     }
 
-    // ====== Process VNPay callback ======
-
-    @Transactional
-    public PaymentDTOs.PaymentResponse processVNPayCallback(Map<String, String> params) {
-        // Verify VNPay signature (strictly mandatory)
-        String secureHash = params.get("vnp_SecureHash");
-        if (secureHash == null || secureHash.trim().isEmpty()) {
-            log.error("VNPay payment secure hash signature is missing in callback");
-            throw new RuntimeException("VNPay payment secure hash signature is missing");
-        }
-
-        Map<String, String> sortedParams = new java.util.TreeMap<>();
-        for (Map.Entry<String, String> entry : params.entrySet()) {
-            if (entry.getKey().startsWith("vnp_") && !entry.getKey().equals("vnp_SecureHash") && !entry.getKey().equals("vnp_SecureHashType")) {
-                sortedParams.put(entry.getKey(), entry.getValue());
-            }
-        }
-
-        StringBuilder hashData = new StringBuilder();
-        java.util.Iterator<Map.Entry<String, String>> itr = sortedParams.entrySet().iterator();
-        while (itr.hasNext()) {
-            Map.Entry<String, String> entry = itr.next();
-            hashData.append(entry.getKey()).append('=');
-            try {
-                hashData.append(java.net.URLEncoder.encode(entry.getValue(), java.nio.charset.StandardCharsets.US_ASCII.toString()));
-            } catch (Exception e) {
-                log.error("Encoding error in callback verification", e);
-            }
-            if (itr.hasNext()) {
-                hashData.append('&');
-            }
-        }
-
-        String calculatedHash = hmacSHA512(vnpaySecretKey, hashData.toString());
-        if (!calculatedHash.equalsIgnoreCase(secureHash)) {
-            log.error("VNPay signature verification failed. Calculated: {}, Received: {}", calculatedHash, secureHash);
-            throw new RuntimeException("VNPay payment signature verification failed");
-        }
-
-        String transactionId = params.get("vnp_TxnRef");
-        String responseCode = params.get("vnp_ResponseCode");
-
-        Payment payment = paymentRepository.findByTransactionId(transactionId)
-                .orElseThrow(() -> new RuntimeException("Payment not found for transaction: " + transactionId));
-
-        // Prevent double processing / replay attacks
-        if (payment.getStatus() == PaymentStatus.SUCCEEDED) {
-            log.warn("VNPay callback ignored: Transaction {} is already SUCCEEDED", transactionId);
-            throw new RuntimeException("Transaction already processed successfully");
-        }
-
-        if ("00".equals(responseCode)) {
-
-            payment.setStatus(PaymentStatus.SUCCEEDED);
-            payment.setProcessedAt(LocalDateTime.now());
-            
-            if (payment.getBooking() == null) {
-                // Wallet top-up!
-                User user = payment.getUser();
-                user.setWalletBalance(user.getWalletBalance().add(payment.getAmount()));
-                userRepository.save(user);
-                log.info("VNPay Top Up callback successful: user {} balance is now {}", user.getId(), user.getWalletBalance());
-            } else {
-                // Booking payment!
-                Booking booking = payment.getBooking();
-                booking.setStatus(com.luxeway.enums.BookingStatus.CONFIRMED);
-                bookingRepository.save(booking);
-                // BUG-07 FIX: Block availability calendar on VNPay callback success
-                bookingService.blockAvailabilityCalendarPublic(booking);
-                log.info("VNPay booking payment callback completed and booking confirmed: {}", transactionId);
-            }
-        } else {
-            payment.setStatus(PaymentStatus.FAILED);
-            log.warn("VNPay payment failed: {} with code {}", transactionId, responseCode);
-        }
-
-        payment = paymentRepository.save(payment);
-        return toResponse(payment);
-    }
-
-    // ====== Refund payment ======
-
-    @Transactional
-    public PaymentDTOs.PaymentResponse refundPayment(String paymentId, BigDecimal refundAmount, String adminId) {
-        Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new RuntimeException("Payment not found"));
-
-        if (payment.getStatus() != PaymentStatus.SUCCEEDED) {
-            throw new RuntimeException("Only completed payments can be refunded");
-        }
-
-        payment.setStatus(PaymentStatus.REFUNDED);
-        payment.setRefundAmount(refundAmount != null ? refundAmount : payment.getAmount());
-        payment.setRefundedAt(LocalDateTime.now());
-        payment = paymentRepository.save(payment);
-
-        log.info("Payment {} refunded by admin {}", paymentId, adminId);
-        return toResponse(payment);
-    }
-
-    // ====== Build VNPay URL ======
-
-    private String buildVNPayUrl(Payment payment, String returnUrl) {
-        java.util.TimeZone vnTimeZone = java.util.TimeZone.getTimeZone("Asia/Ho_Chi_Minh");
-        java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat("yyyyMMddHHmmss");
-        formatter.setTimeZone(vnTimeZone);
-
-        java.util.Calendar cld = java.util.Calendar.getInstance(vnTimeZone);
-        String createDate = formatter.format(cld.getTime());
-
-        // Expire after 15 minutes
-        cld.add(java.util.Calendar.MINUTE, 15);
-        String expireDate = formatter.format(cld.getTime());
-
-        // OrderInfo must be ASCII-safe for VNPay hash
-        String rawDesc = payment.getDescription() != null
-                ? payment.getDescription()
-                : "Payment " + payment.getTransactionId();
-        // Strip non-ASCII characters to ensure hash compatibility
-        String orderInfo = rawDesc.replaceAll("[^\\x20-\\x7E]", " ").trim();
-        if (orderInfo.isEmpty()) orderInfo = "Payment " + payment.getTransactionId();
-        // VNPay limits OrderInfo to 255 chars
-        if (orderInfo.length() > 255) orderInfo = orderInfo.substring(0, 255);
-
-        Map<String, String> vnp_Params = new java.util.TreeMap<>();  // Use TreeMap for automatic sorting
-        vnp_Params.put("vnp_Version", "2.1.0");
-        vnp_Params.put("vnp_Command", "pay");
-        vnp_Params.put("vnp_TmnCode", vnpayTmnCode);
-        vnp_Params.put("vnp_Amount", String.valueOf(payment.getAmount().multiply(BigDecimal.valueOf(100)).longValue()));
-        vnp_Params.put("vnp_CurrCode", "VND");
-        vnp_Params.put("vnp_TxnRef", payment.getTransactionId());
-        vnp_Params.put("vnp_OrderInfo", orderInfo);
-        vnp_Params.put("vnp_OrderType", "other");
-        vnp_Params.put("vnp_Locale", "vn");
-        vnp_Params.put("vnp_ReturnUrl", returnUrl != null && !returnUrl.isEmpty()
-                ? returnUrl : "http://localhost:5173/payment/vnpay/return");
-        vnp_Params.put("vnp_IpAddr", "127.0.0.1");
-        vnp_Params.put("vnp_CreateDate", createDate);
-        vnp_Params.put("vnp_ExpireDate", expireDate);
-
-        // Build hash data and query string from sorted params
-        StringBuilder hashData = new StringBuilder();
-        StringBuilder query = new StringBuilder();
-        java.util.Iterator<Map.Entry<String, String>> itr = vnp_Params.entrySet().iterator();
-        while (itr.hasNext()) {
-            Map.Entry<String, String> entry = itr.next();
-            String fieldName = entry.getKey();
-            String fieldValue = entry.getValue();
-            if (fieldValue != null && !fieldValue.isEmpty()) {
-                try {
-                    String encodedValue = java.net.URLEncoder.encode(fieldValue, java.nio.charset.StandardCharsets.UTF_8.toString())
-                            .replace("+", "%20");
-                    // Hash data uses raw value (not encoded) per VNPay spec
-                    hashData.append(fieldName).append('=').append(fieldValue);
-                    query.append(fieldName).append('=').append(encodedValue);
-                } catch (Exception e) {
-                    log.error("Error encoding VNPay parameter: {}", fieldName, e);
-                    hashData.append(fieldName).append('=').append(fieldValue);
-                    query.append(fieldName).append('=').append(fieldValue);
-                }
-                if (itr.hasNext()) {
-                    hashData.append('&');
-                    query.append('&');
-                }
-            }
-        }
-
-        String queryUrl = query.toString();
-        String vnp_SecureHash = hmacSHA512(vnpaySecretKey, hashData.toString());
-        queryUrl += "&vnp_SecureHash=" + vnp_SecureHash;
-
-        log.info("VNPay URL built for txn: {}, amount: {}, returnUrl: {}",
-                payment.getTransactionId(), payment.getAmount(), returnUrl);
-        return vnpayUrl + "?" + queryUrl;
-    }
-
-    private String hmacSHA512(String key, String data) {
-        try {
-            if (key == null || data == null) {
-                throw new NullPointerException();
-            }
-            javax.crypto.Mac hmac512 = javax.crypto.Mac.getInstance("HmacSHA512");
-            byte[] hmacKeyBytes = key.getBytes(java.nio.charset.StandardCharsets.UTF_8);
-            javax.crypto.spec.SecretKeySpec secretKey = new javax.crypto.spec.SecretKeySpec(hmacKeyBytes, "HmacSHA512");
-            hmac512.init(secretKey);
-            byte[] result = hmac512.doFinal(data.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-            StringBuilder sb = new StringBuilder(2 * result.length);
-            for (byte b : result) {
-                sb.append(String.format("%02x", b & 0xff));
-            }
-            return sb.toString();
-        } catch (Exception ex) {
-            log.error("Error in hmacSHA512 generation", ex);
-            return "";
-        }
-    }
-
     // ====== Process MoMo IPN (Instant Payment Notification) ======
 
+    /**
+     * MoMo IPN is sent as POST from MoMo server after payment.
+     * Verifies signature then updates payment & booking.
+     */
     @Transactional
     public PaymentDTOs.PaymentResponse processMoMoIpn(Map<String, String> params) {
         String partnerCode  = params.getOrDefault("partnerCode", "");
@@ -473,7 +263,7 @@ public class PaymentService {
         String extraData    = params.getOrDefault("extraData", "");
         String receivedSignature = params.getOrDefault("signature", "");
 
-        // Build signature string per MoMo spec
+        // Build signature string per MoMo spec (sorted key=value&... no trailing &)
         String rawSignature = "accessKey=" + momoAccessKey
                 + "&amount=" + amount
                 + "&extraData=" + extraData
@@ -495,6 +285,7 @@ public class PaymentService {
             throw new RuntimeException("MoMo IPN signature verification failed");
         }
 
+        // orderId == transactionId we sent when creating
         Payment payment = paymentRepository.findByTransactionId(orderId)
                 .orElseThrow(() -> new RuntimeException("Payment not found for orderId: " + orderId));
 
@@ -504,15 +295,18 @@ public class PaymentService {
         }
 
         if ("0".equals(resultCode)) {
+            // Success
             payment.setStatus(PaymentStatus.SUCCEEDED);
             payment.setProcessedAt(LocalDateTime.now());
 
             if (payment.getBooking() == null) {
+                // Wallet top-up
                 User user = payment.getUser();
                 user.setWalletBalance(user.getWalletBalance().add(payment.getAmount()));
                 userRepository.save(user);
                 log.info("MoMo Top Up IPN success: user {} balance +{}", user.getId(), payment.getAmount());
             } else {
+                // Booking payment confirmed
                 Booking booking = payment.getBooking();
                 booking.setStatus(com.luxeway.enums.BookingStatus.CONFIRMED);
                 bookingRepository.save(booking);
@@ -528,6 +322,11 @@ public class PaymentService {
         return toResponse(payment);
     }
 
+    /**
+     * MoMo Return – user is redirected back to our site after payment.
+     * Same verification as IPN but called via GET/POST from browser redirect.
+     * We look up payment by orderId and return its current status.
+     */
     @Transactional
     public PaymentDTOs.PaymentResponse processMoMoReturn(Map<String, String> params) {
         String orderId      = params.getOrDefault("orderId", "");
@@ -540,6 +339,7 @@ public class PaymentService {
         Payment payment = paymentRepository.findByTransactionId(orderId)
                 .orElseThrow(() -> new RuntimeException("Payment not found for orderId: " + orderId));
 
+        // If IPN hasn't fired yet, apply result from return params
         if (payment.getStatus() == PaymentStatus.PENDING) {
             if ("0".equals(resultCode)) {
                 payment.setStatus(PaymentStatus.SUCCEEDED);
@@ -628,17 +428,38 @@ public class PaymentService {
         return toResponse(payment);
     }
 
+    // ====== Refund payment ======
+
+    @Transactional
+    public PaymentDTOs.PaymentResponse refundPayment(String paymentId, BigDecimal refundAmount, String adminId) {
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new RuntimeException("Payment not found"));
+
+        if (payment.getStatus() != PaymentStatus.SUCCEEDED) {
+            throw new RuntimeException("Only completed payments can be refunded");
+        }
+
+        payment.setStatus(PaymentStatus.REFUNDED);
+        payment.setRefundAmount(refundAmount != null ? refundAmount : payment.getAmount());
+        payment.setRefundedAt(LocalDateTime.now());
+        payment = paymentRepository.save(payment);
+
+        log.info("Payment {} refunded by admin {}", paymentId, adminId);
+        return toResponse(payment);
+    }
+
     // ====== Build MoMo Payment URL ======
 
     private String buildMoMoPaymentUrl(Payment payment, String returnUrl) {
         try {
             String requestId = UUID.randomUUID().toString();
-            String orderId   = payment.getTransactionId();
+            String orderId   = payment.getTransactionId();  // reuse our transactionId as orderId
             long   amountVal = payment.getAmount().longValue();
             String orderInfo = "LuxeWay payment " + orderId;
-            String extraData = "";
+            String extraData = "";  // base64 extra info (optional)
             String ipnUrl    = momoIpnUrl;
 
+            // Signature per MoMo v2 spec
             String rawSignature = "accessKey=" + momoAccessKey
                     + "&amount=" + amountVal
                     + "&extraData=" + extraData
@@ -652,6 +473,7 @@ public class PaymentService {
 
             String signature = hmacSHA256(momoSecretKey, rawSignature);
 
+            // Build JSON body for MoMo API
             com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
             java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
             body.put("partnerCode", momoPartnerCode);
@@ -671,6 +493,7 @@ public class PaymentService {
 
             String jsonBody = mapper.writeValueAsString(body);
 
+            // Call MoMo API to get payUrl
             java.net.http.HttpClient httpClient = java.net.http.HttpClient.newBuilder()
                     .connectTimeout(java.time.Duration.ofSeconds(15))
                     .build();
@@ -701,6 +524,7 @@ public class PaymentService {
                 log.error("MoMo create payment failed: resultCode={}, message={}", resultCode, errMsg);
                 throw new RuntimeException("MoMo payment creation failed: " + errMsg);
             }
+
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
@@ -770,6 +594,7 @@ public class PaymentService {
             String errMsg = String.valueOf(payosResp.getOrDefault("desc", "Unknown PayOS error"));
             log.error("PayOS create payment failed: code={}, desc={}", code, errMsg);
             throw new RuntimeException("PayOS payment creation failed: " + errMsg);
+
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
@@ -873,6 +698,8 @@ public class PaymentService {
                 expected.getBytes(java.nio.charset.StandardCharsets.UTF_8),
                 actual.getBytes(java.nio.charset.StandardCharsets.UTF_8));
     }
+
+    // ====== HMAC-SHA256 (MoMo uses SHA256, not SHA512) ======
 
     private String hmacSHA256(String key, String data) {
         try {

@@ -31,7 +31,7 @@ const getStoredLanguage = (): LangCode => {
   try {
     const stored = localStorage.getItem(LANGUAGE_KEY) as LangCode;
     if (stored && ['en', 'vi', 'ja', 'ko', 'zh', 'fr', 'de', 'es'].includes(stored)) return stored;
-  } catch {}
+  } catch { }
   return 'en';
 };
 
@@ -61,7 +61,7 @@ export const changeLanguage = (lang: LangCode) => {
   i18n.changeLanguage(lang);
   try {
     localStorage.setItem(LANGUAGE_KEY, lang);
-  } catch {}
+  } catch { }
 };
 
 export default i18n;

@@ -31,10 +31,11 @@ import CarDetails from '@/pages/marketplace/CarDetails';
 import MotorbikeDetails from '@/pages/marketplace/MotorbikeDetails';
 import BookingWizardPage from '@/pages/booking/BookingWizardPage';
 import BookingCheckoutPage from '@/pages/booking/BookingCheckoutPage';
+import BookingPaymentPage from '@/pages/booking/BookingPaymentPage';
 import VNPayReturnPage from '@/pages/booking/VNPayReturnPage';
 import MoMoReturnPage from '@/pages/booking/MoMoReturnPage';
 import PayOSReturnPage from '@/pages/booking/PayOSReturnPage';
-import MapPage from '@/pages/map/MapPage';
+// Map view is now a view mode inside MarketplacePage (derived from URL path /map)
 import BecomeOwnerPage from '@/pages/owner/BecomeOwnerPage';
 import HelpPage from '@/pages/help/HelpPage';
 import { OwnerSuccessHub } from '@/pages/help/OwnerSuccessHub';
@@ -102,54 +103,54 @@ const PageLoader: React.FC = () => {
 };
 
 // ====== PROTECTED ROUTE ======
-const ProtectedRoute: React.FC<{ children: React.ReactNode; requiredRole?: 'customer' | 'owner' | 'business_owner' | 'admin' }> = ({ children, requiredRole }) => {
+const ProtectedRoute: React.FC<{ children: React.ReactNode; requiredRole?: 'customer' | 'owner' | 'admin' }> = ({ children, requiredRole }) => {
   const { isAuthenticated, user, isInitialized } = useAuthStore();
-  
+
   if (!isInitialized) {
     return <PageLoader />;
   }
-  
+
   if (!isAuthenticated) return <Navigate to="/auth/login" replace />;
-  
-    if (requiredRole) {
-      const roleUpper = user?.role?.toUpperCase();
-      
-      let authorized = false;
-      if (requiredRole === 'admin') {
-        authorized = roleUpper === 'ADMIN' || roleUpper === 'SUPER_ADMIN';
-      } else if (requiredRole === 'business_owner' || requiredRole === 'owner') {
-        authorized = roleUpper === 'OWNER' || roleUpper === 'BUSINESS_OWNER';
-      } else if (requiredRole === 'customer') {
-        authorized = roleUpper === 'CUSTOMER';
-      }
-      
-      if (!authorized) {
-        return <Navigate to="/403" replace />;
-      }
+
+  if (requiredRole) {
+    const roleUpper = user?.role?.toUpperCase();
+
+    let authorized = false;
+    if (requiredRole === 'admin') {
+      authorized = roleUpper === 'ADMIN' || roleUpper === 'SUPER_ADMIN';
+    } else if (requiredRole === 'owner') {
+      authorized = roleUpper === 'OWNER';
+    } else if (requiredRole === 'customer') {
+      authorized = roleUpper === 'CUSTOMER';
     }
-    return <>{children}</>;
+
+    if (!authorized) {
+      return <Navigate to="/403" replace />;
+    }
+  }
+  return <>{children}</>;
+};
+
+// ====== FORBIDDEN 403 PAGE ======
+const ForbiddenPage: React.FC = () => {
+  const { theme } = useUIStore();
+  const isDark = theme === 'dark';
+  const { user } = useAuthStore();
+  const navigate = useNavigate();
+
+  const getBackRoute = () => {
+    if (!user) return '/';
+    const roleUpper = user.role?.toUpperCase();
+    if (roleUpper === 'ADMIN' || roleUpper === 'SUPER_ADMIN') return '/admin';
+    if (roleUpper === 'OWNER') return '/owner';
+    return '/dashboard';
   };
-  
-  // ====== FORBIDDEN 403 PAGE ======
-  const ForbiddenPage: React.FC = () => {
-    const { theme } = useUIStore();
-    const isDark = theme === 'dark';
-    const { user } = useAuthStore();
-    const navigate = useNavigate();
-  
-    const getBackRoute = () => {
-      if (!user) return '/';
-      const roleUpper = user.role?.toUpperCase();
-      if (roleUpper === 'ADMIN' || roleUpper === 'SUPER_ADMIN') return '/admin';
-      if (roleUpper === 'OWNER' || roleUpper === 'BUSINESS_OWNER') return '/owner';
-      return '/dashboard';
-    };
 
   return (
     <div className={`min-h-screen flex items-center justify-center px-4 ${isDark ? 'bg-slate-950 text-white' : 'bg-[#F8FAFC] text-[#0F172A]'}`}>
       <div className="text-center max-w-md p-8 rounded-[2rem] glass dark:glass-dark border border-red-500/20 shadow-2xl relative overflow-hidden">
         <div className="absolute -top-12 -right-12 w-32 h-32 bg-red-500/10 rounded-full blur-2xl pointer-events-none" />
-        
+
         <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-red-500/20 shadow-lg">
           <span className="text-2xl">🛡️</span>
         </div>
@@ -233,7 +234,7 @@ const WishlistPage: React.FC = () => {
           {vehicles.map(v => (
             <div key={v.id} className="relative group">
               <VehicleCard vehicle={v} />
-              <button 
+              <button
                 onClick={() => {
                   if (user?.id) vehicleService.toggleWishlist(v.id, user.id);
                   setVehicles(prev => prev.filter(veh => veh.id !== v.id));
@@ -310,7 +311,7 @@ const OTPPage: React.FC = () => {
   const t = useT();
   const toast = useToast();
   const isDark = theme === 'dark';
-  
+
   const queryEmail = new URLSearchParams(location.search).get('email') || '';
   const queryToken = new URLSearchParams(location.search).get('token') || '';
   const stateEmail = (location.state as any)?.email || '';
@@ -321,10 +322,10 @@ const OTPPage: React.FC = () => {
   const [resetToken, setResetToken] = React.useState(queryToken);
   const [newPassword, setNewPassword] = React.useState('');
   const [confirmPassword, setConfirmPassword] = React.useState('');
-  
+
   const [loading, setLoading] = React.useState(false);
   const [success, setSuccess] = React.useState(false);
-  
+
   const inputs = React.useRef<HTMLInputElement[]>([]);
 
   const handleChange = (val: string, idx: number) => {
@@ -407,9 +408,9 @@ const OTPPage: React.FC = () => {
                 />
               ))}
             </div>
-            <button 
-              onClick={handleVerify} 
-              disabled={loading || code.join('').length < 6} 
+            <button
+              onClick={handleVerify}
+              disabled={loading || code.join('').length < 6}
               className="btn-primary w-full py-3.5 disabled:opacity-50 justify-center"
             >
               {loading ? 'Verifying...' : 'Verify Code'}
@@ -422,7 +423,7 @@ const OTPPage: React.FC = () => {
           <form onSubmit={handleResetPassword} className="space-y-4 text-left">
             <h1 className={`font-display text-2xl font-bold text-center mb-2 ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>Reset Password</h1>
             <p className="text-slate-500 text-sm text-center mb-6">Create a strong new password for your account.</p>
-            
+
             <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">{t.auth.password}</label>
               <input
@@ -434,7 +435,7 @@ const OTPPage: React.FC = () => {
                 required
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">{t.auth.confirmPassword}</label>
               <input
@@ -447,9 +448,9 @@ const OTPPage: React.FC = () => {
               />
             </div>
 
-            <button 
-              type="submit" 
-              disabled={loading} 
+            <button
+              type="submit"
+              disabled={loading}
               className="btn-primary w-full py-3.5 disabled:opacity-50 justify-center"
             >
               {loading ? 'Resetting...' : 'Update Password'}
@@ -527,15 +528,18 @@ const App: React.FC = () => {
             <Route path="marketplace" element={<MarketplacePage />} />
             <Route path="vehicles" element={<MarketplacePage />} />
             <Route path="search" element={<MarketplacePage />} />
-            <Route path="map" element={<MapPage />} />
+            <Route path="map" element={<MarketplacePage />} />
             <Route path="owner/register" element={<BecomeOwnerPage />} />
             <Route path="vehicles/:id" element={<VehicleDetailPage />} />
-            <Route path="cars" element={<CarsMarketplace />} />
-            <Route path="motorbikes" element={<MotorbikeMarketplace />} />
+            <Route path="cars" element={<Navigate to="/marketplace?type=car" replace />} />
+            <Route path="motorbikes" element={<Navigate to="/marketplace?type=motorbike" replace />} />
             <Route path="cars/:id" element={<VehicleDetailPage />} />
             <Route path="motorbikes/:id" element={<VehicleDetailPage />} />
             <Route path="booking/:vehicleId" element={
               <ProtectedRoute><BookingCheckoutPage /></ProtectedRoute>
+            } />
+            <Route path="booking/:bookingId/payment" element={
+              <ProtectedRoute><BookingPaymentPage /></ProtectedRoute>
             } />
             <Route path="payment/:bookingId" element={
               <ProtectedRoute><BookingWizardPage /></ProtectedRoute>

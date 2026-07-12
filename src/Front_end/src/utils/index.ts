@@ -8,7 +8,7 @@ export function cn(...inputs: ClassValue[]) {
 
 export function convertCurrency(amount: number, from = 'VND', to = 'VND'): number {
   if (from === to) return amount;
-  
+
   // Current approximate exchange rates relative to VND (base rates)
   const ratesToVND: Record<string, number> = {
     VND: 1,
@@ -21,7 +21,7 @@ export function convertCurrency(amount: number, from = 'VND', to = 'VND'): numbe
     GBP: 32300,
     KRW: 18.5,
   };
-  
+
   const amountInVND = amount * (ratesToVND[from] || 1);
   return amountInVND / (ratesToVND[to] || 1);
 }
@@ -33,13 +33,13 @@ export function formatCurrency(amount: number, currency?: string): string {
     const uiState = useUIStore.getState();
     activeCurrency = uiState.currency || 'VND';
     activeLang = uiState.language || 'en';
-  } catch {}
-  
+  } catch { }
+
   const targetCurrency = currency || activeCurrency;
-  
+
   // Assumes database amount is always in VND base currency
   const convertedAmount = convertCurrency(amount, 'VND', targetCurrency);
-  
+
   const langLocaleMap: Record<string, string> = {
     en: 'en-US',
     vi: 'vi-VN',
@@ -64,7 +64,7 @@ export function formatDate(dateStr: string, format: 'short' | 'long' | 'relative
   let activeLang = 'en';
   try {
     activeLang = useUIStore.getState().language || 'en';
-  } catch {}
+  } catch { }
 
   const localeMap: Record<string, string> = {
     en: 'en-US',
@@ -341,19 +341,19 @@ export function getVehicleFallbackImage(url: string | null | undefined): string 
 
 export function resolveImageUrl(url: string | null | undefined): string {
   if (!url) return '';
-  
+
   // Normalize backslashes to forward slashes
   let normalizedUrl = url.replace(/\\/g, '/').trim();
-  
+
   // Check for fallbacks first
   const fallback = getVehicleFallbackImage(normalizedUrl);
   if (fallback) return fallback;
-  
+
   // Handle absolute URLs
   if (normalizedUrl.startsWith('http://') || normalizedUrl.startsWith('https://')) {
     return normalizedUrl.replace(/ /g, '%20');
   }
-  
+
   // Handle backend uploads (starts with /uploads, uploads, or contains /uploads/)
   const isUpload = normalizedUrl.startsWith('/uploads') || normalizedUrl.startsWith('uploads') || normalizedUrl.includes('/uploads/');
   if (isUpload) {
@@ -368,7 +368,7 @@ export function resolveImageUrl(url: string | null | undefined): string {
     const encodedParts = parts.map((p, i) => i === parts.length - 1 ? encodeURIComponent(p) : p);
     return `${SERVER_BASE}${encodedParts.join('/')}`;
   }
-  
+
   // Handle local public folder assets (starts with /images, images, or contains /images/)
   const isLocalImage = normalizedUrl.startsWith('/images') || normalizedUrl.startsWith('images') || normalizedUrl.includes('/images/');
   if (isLocalImage) {
@@ -379,13 +379,36 @@ export function resolveImageUrl(url: string | null | undefined): string {
     } else {
       cleanUrl = normalizedUrl.startsWith('/') ? normalizedUrl : '/' + normalizedUrl;
     }
-    
+
     // Split to encode ONLY the filename (last segment), to avoid breaking spaces
     const parts = cleanUrl.split('/');
     const encodedParts = parts.map((p, i) => i === parts.length - 1 ? encodeURIComponent(p) : p);
     return encodedParts.join('/');
   }
-  
+
   return normalizedUrl.replace(/ /g, '%20');
 }
+
+export function sanitizeLocation(text: string | null | undefined): string {
+  if (!text) return '';
+  let clean = text.trim();
+  // Replace typical replacement characters or question marks in "Hồ Chí Minh"
+  clean = clean.replace(/H\? Ch\u00ED Minh/g, 'H\u1ED3 Ch\u00ED Minh')
+    .replace(/H\? Ch\u00ED/g, 'H\u1ED3 Ch\u00ED')
+    .replace(/H\uFFFD Ch\u00ED Minh/g, 'H\u1ED3 Ch\u00ED Minh')
+    .replace(/H\uFFFD Ch\u00ED/g, 'H\u1ED3 Ch\u00ED');
+
+  // Standard fallback replacement for any "H?" representing "Hồ"
+  if (clean.startsWith('H? ') || clean.startsWith('H\uFFFD ')) {
+    clean = 'H\u1ED3 ' + clean.substring(2);
+  }
+  if (clean.includes(' H? ') || clean.includes(' H\uFFFD ')) {
+    clean = clean.replace(/ H\? /g, ' H\u1ED3 ').replace(/ H\uFFFD /g, ' H\u1ED3 ');
+  }
+  if (clean === 'H?' || clean === 'H\uFFFD') {
+    clean = 'H\u1ED3';
+  }
+  return clean;
+}
+
 

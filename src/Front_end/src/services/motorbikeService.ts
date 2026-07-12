@@ -106,6 +106,14 @@ export const motorbikeService = {
         if (filters.hasRaincoat) queryParams.append('raincoatIncluded', 'true');
         if (filters.hasPhoneHolder) queryParams.append('phoneHolder', 'true');
         if (filters.hasTouringPackage) queryParams.append('luggageRack', 'true');
+        // brand filter - send first brand selected
+        if (filters.brands && filters.brands.length > 0) {
+          queryParams.append('brand', filters.brands[0]);
+        }
+        // category filter - send first category selected (uppercase to match DB)
+        if (filters.category && filters.category.length > 0) {
+          queryParams.append('category', filters.category[0].toUpperCase());
+        }
       }
       
       const response = await apiClient.get<any>(`/motorbikes?${queryParams.toString()}`);

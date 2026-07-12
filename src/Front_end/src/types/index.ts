@@ -16,7 +16,7 @@ export type MotorbikeCategory = 'scooter' | 'automatic_scooter' | 'manual_motorc
 // Combined (all categories in the system)
 export type VehicleCategory = CarCategory | MotorbikeCategory;
 
-export type BookingStatus = 'pending' | 'confirmed' | 'active' | 'completed' | 'cancelled' | 'disputed' | 'picking_up' | 'in_progress';
+export type BookingStatus = 'pending' | 'confirmed' | 'active' | 'completed' | 'cancelled' | 'disputed' | 'picking_up' | 'in_progress' | 'waiting_payment' | 'payment_pending' | 'payment_verified' | 'payment_rejected' | 'payment_expired' | 'owner_approved' | 'ready_for_pickup' | 'checked_out' | 'in_rental' | 'return_pending' | 'return_completed' | 'customer_cancelled' | 'owner_cancelled' | 'system_cancelled';
 export type PaymentStatus = 'pending' | 'processing' | 'succeeded' | 'failed' | 'refunded';
 export type VehicleStatus = 'available' | 'rented' | 'maintenance' | 'pending_approval' | 'draft' | 'approved' | 'rejected' | 'blocked';
 export type TransmissionType = 'automatic' | 'manual';
@@ -183,8 +183,11 @@ export interface VehicleAddon {
 // ====== BOOKING ======
 export interface Booking {
   id: string;
+  bookingCode?: string;
   vehicleId: string;
+  vehicle?: any;
   renterId: string;
+  renter?: any;
   ownerId: string;
   status: BookingStatus;
   startDate: string;
@@ -197,6 +200,7 @@ export interface Booking {
     insuranceFee: number;
     deliveryFee: number;
     serviceFee: number;
+    cleaningFee?: number;
     taxes: number;
     discount: number;
     total: number;
@@ -527,5 +531,9 @@ export interface VehicleLocationResponse {
   available: boolean;
   ownerName: string;
   distanceKm?: number;
+  transmission?: string;
+  seats?: number;
+  instantBook?: boolean;
+  deliveryAvailable?: boolean;
 }
 

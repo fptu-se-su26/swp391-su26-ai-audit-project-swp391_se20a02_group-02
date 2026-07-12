@@ -19,7 +19,7 @@ export const useAuth = () => {
   
   // Custom badges/role logic based on database role strings
   const isCustomer = role === 'customer';
-  const isOwner = role === 'owner' || role === 'business_owner';
+  const isOwner = role === 'owner';
   const isAdmin = role === 'admin' || role === 'super_admin';
 
   return {

@@ -19,9 +19,6 @@ const LANGS = [
   { code: 'ja' as const, label: '日本語', flag: '🇯🇵' },
   { code: 'ko' as const, label: '한국어', flag: '🇰🇷' },
   { code: 'zh' as const, label: '中文', flag: '🇨🇳' },
-  { code: 'fr' as const, label: 'Français', flag: '🇫🇷' },
-  { code: 'de' as const, label: 'Deutsch', flag: '🇩🇪' },
-  { code: 'es' as const, label: 'Español', flag: '🇪🇸' },
 ];
 
 
@@ -419,10 +416,7 @@ export const Navbar: React.FC = () => {
                           {/* Menu Items */}
                           <div className="p-2">
                             {(() => {
-                              const roleUpper = user.role?.toUpperCase();
-                              const accTypeUpper = user.accountType?.toUpperCase();
-                              const userIsBusiness = roleUpper === 'BUSINESS_OWNER' || (roleUpper === 'OWNER' && accTypeUpper === 'BUSINESS');
-
+                              const roleUpper = user?.role?.toUpperCase();
                               let menuItems: Array<{ icon: any; label: string; href: string }> = [];
                               if (roleUpper === 'CUSTOMER') {
                                 menuItems = [
@@ -431,11 +425,6 @@ export const Navbar: React.FC = () => {
                                   { icon: Heart, label: t.nav.wishlist, href: '/dashboard/wishlist' },
                                   { icon: User, label: t.nav.profile, href: '/dashboard/profile' },
                                   { icon: Bell, label: t.nav.notifications, href: '/dashboard/notifications' },
-                                ];
-                              } else if (userIsBusiness) {
-                                menuItems = [
-                                  { icon: LayoutDashboard, label: 'Business Panel', href: '/business' },
-                                  { icon: User, label: t.nav.profile, href: '/dashboard/profile' },
                                 ];
                               } else if (roleUpper === 'OWNER') {
                                 menuItems = [

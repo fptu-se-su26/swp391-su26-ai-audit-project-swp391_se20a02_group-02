@@ -108,6 +108,14 @@ export const carService = {
         if (filters.airportDelivery) queryParams.append('airportDelivery', 'true');
         if (filters.electric) queryParams.append('electric', 'true');
         if (filters.hybrid) queryParams.append('hybrid', 'true');
+        // brand filter - send first brand selected
+        if (filters.brands && filters.brands.length > 0) {
+          queryParams.append('brand', filters.brands[0]);
+        }
+        // category filter - send first category selected
+        if (filters.category && filters.category.length > 0) {
+          queryParams.append('category', filters.category[0].toUpperCase());
+        }
       }
       
       const response = await apiClient.get<any>(`/cars?${queryParams.toString()}`);

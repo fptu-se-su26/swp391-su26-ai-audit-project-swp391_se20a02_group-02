@@ -37,7 +37,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   initAuth: async () => {
     const user = authService.getCurrentUser();
     const token = authService.getAccessToken();
-    
+
     if (user && token) {
       // BUG-2/3 FIX: Immediately mark as authenticated with cached data.
       // This ensures the UI shows the correct state even before the backend call completes.
@@ -45,7 +45,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       if (user.preferredLanguage) {
         useUIStore.getState().setLanguage(user.preferredLanguage as Language);
       }
-      
+
       // Fetch fresh user data from backend (best-effort — NOT session-critical)
       try {
         const freshUser = await authService.fetchCurrentUser();
@@ -164,7 +164,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   updateUser: async (data) => {
     const current = get().user;
     if (!current) return;
-    
+
     try {
       const updated = await authService.updateProfile(current.id, data);
       if (updated) {
@@ -244,8 +244,10 @@ interface UIStore {
   theme: Theme;
   language: Language;
   currency: string;
+  desktopSidebarCollapsed: boolean;
   setSidebarOpen: (open: boolean) => void;
   setMobileMenuOpen: (open: boolean) => void;
+  setDesktopSidebarCollapsed: (collapsed: boolean) => void;
   addToast: (toast: Omit<Toast, 'id'>) => void;
   removeToast: (id: string) => void;
   openModal: (modal: string) => void;
@@ -261,6 +263,7 @@ export const useUIStore = create<UIStore>()(
     (set, get) => ({
       sidebarOpen: true,
       mobileMenuOpen: false,
+      desktopSidebarCollapsed: false,
       toasts: [],
       activeModal: null,
       isScrolled: false,
@@ -269,19 +272,20 @@ export const useUIStore = create<UIStore>()(
         try {
           const lang = localStorage.getItem('language');
           if (lang && ['en', 'vi', 'ja', 'ko', 'zh', 'fr', 'de', 'es'].includes(lang)) return lang as Language;
-        } catch {}
+        } catch { }
         return 'en';
       })(),
       currency: (() => {
         try {
           const curr = localStorage.getItem('currency');
           if (curr && ['VND', 'USD', 'EUR', 'JPY', 'SGD', 'KRW'].includes(curr)) return curr;
-        } catch {}
+        } catch { }
         return 'VND';
       })(),
 
       setSidebarOpen: (open) => set({ sidebarOpen: open }),
       setMobileMenuOpen: (open) => set({ mobileMenuOpen: open }),
+      setDesktopSidebarCollapsed: (collapsed) => set({ desktopSidebarCollapsed: collapsed }),
 
       addToast: (toast) => {
         const id = faker.string.uuid();
@@ -312,7 +316,7 @@ export const useUIStore = create<UIStore>()(
         if (currentLang === lang) return;
 
         set({ language: lang });
-        try { localStorage.setItem('language', lang); } catch {}
+        try { localStorage.setItem('language', lang); } catch { }
         import('@/i18n/config').then(m => m.default.changeLanguage(lang));
 
         // Sync to backend user profile if logged in and language is different
@@ -338,7 +342,7 @@ export const useUIStore = create<UIStore>()(
 
       setCurrency: (curr) => {
         set({ currency: curr });
-        try { localStorage.setItem('currency', curr); } catch {}
+        try { localStorage.setItem('currency', curr); } catch { }
       },
     }),
     {

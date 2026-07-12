@@ -16,9 +16,6 @@ const getRoleBasedDashboard = (user: User | null): string => {
     return '/admin';
   }
   if (role === 'owner') {
-    if (accountType === 'BUSINESS') {
-      return '/business';
-    }
     return '/owner';
   }
   return '/';
@@ -68,8 +65,8 @@ export const OAuth2RedirectHandler: React.FC = () => {
             await initAuth();
             toast.success('Login Successful', 'Welcome to LuxeWay!');
             
-            // BUG-8 FIX: Navigate to the role-appropriate dashboard, not '/'
-            navigate(getRoleBasedDashboard(user), { replace: true });
+            // Navigate to Home page, not dashboard
+            navigate('/', { replace: true });
           } else {
             toast.error('Authentication Failed', 'Failed to retrieve user profile.');
             navigate('/auth/login', { replace: true });

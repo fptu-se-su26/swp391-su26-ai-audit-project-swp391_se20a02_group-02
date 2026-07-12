@@ -2,9 +2,9 @@ import { Variants, Transition } from 'framer-motion';
 
 // ====== PAGE TRANSITIONS ======
 export const pageVariants: Variants = {
-  initial: { opacity: 0, y: 20 },
-  enter: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -10 },
+  initial: { opacity: 0 },
+  enter: { opacity: 1 },
+  exit: { opacity: 0 },
 };
 
 export const pageTransition: Transition = {

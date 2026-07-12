@@ -1352,4 +1352,23 @@ html.dark .leaflet-popup-close-button {
   border-radius: 50%;
   display: inline-block;
   flex-shrink: 0;
-}
+}
+
+/* Premium Date Input: Hide default ugly browser calendar picker indicator and make the entire field clickable */
+input[type="date"] {
+  position: relative;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 5;
+}
+

@@ -1,604 +1,821 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Search, SlidersHorizontal, MapPin, Calendar, DollarSign, Star, 
-  Car, Bike, Navigation, Loader2, ArrowRight, X, Heart, Menu
+import {
+  ChevronLeft, ChevronRight, X, SlidersHorizontal, Star,
+  MapPin, RotateCcw, ChevronDown, Car, Zap, Heart,
+  UserCircle, Plane, Briefcase, Menu, Check
 } from 'lucide-react';
 import { LuxeWayMap } from '@/components/map/LuxeWayMap';
 import { vehicleService } from '@/services/vehicleService';
 import { useUIStore } from '@/store';
-import type { Vehicle, VehicleFilters, VehicleLocationResponse } from '@/types';
+import type { VehicleFilters, VehicleCategory, VehicleLocationResponse } from '@/types';
 import { formatCurrency, cn } from '@/utils';
-import { fadeUp, staggerContainer, staggerItem } from '@/animations/variants';
 
-const GEOCODE_DATABASE: Record<string, { lat: number; lng: number }> = {
-  'hồ chí minh': { lat: 10.762, lng: 106.660 },
-  'ho chi minh': { lat: 10.762, lng: 106.660 },
-  'hà nội': { lat: 21.0285, lng: 105.8542 },
-  'ha noi': { lat: 21.0285, lng: 105.8542 },
-  'đà nẵng': { lat: 16.0544, lng: 108.2022 },
-  'da nang': { lat: 16.0544, lng: 108.2022 },
-  'nha trang': { lat: 12.2451, lng: 109.1943 },
-  'đà lạt': { lat: 11.9404, lng: 108.4583 },
-  'da lat': { lat: 11.9404, lng: 108.4583 },
-  'vũng tàu': { lat: 10.3458, lng: 107.0843 },
-  'vung tau': { lat: 10.3458, lng: 107.0843 },
+// ── Constants ────────────────────────────────────────────────────────────────
+const CAR_CATEGORIES: { value: VehicleCategory; label: string; icon: string }[] = [
+  { value: 'economy', label: 'Economy', icon: '🚗' },
+  { value: 'sedan', label: 'Sedan', icon: '🚘' },
+  { value: 'suv', label: 'SUV', icon: '🚙' },
+  { value: 'mpv', label: 'MPV', icon: '🚐' },
+  { value: 'luxury', label: 'Luxury', icon: '💎' },
+  { value: 'business', label: 'Business', icon: '💼' },
+  { value: 'electric', label: 'Electric', icon: '⚡' },
+  { value: 'sports', label: 'Sports', icon: '🏎️' },
+  { value: 'pickup', label: 'Pickup', icon: '🛻' },
+  { value: 'family', label: 'Family', icon: '👨‍👩‍👧' },
+];
+
+const CAR_BRANDS = [
+  'Toyota', 'Honda', 'Mazda', 'Hyundai', 'Kia', 'Ford',
+  'Mitsubishi', 'Nissan', 'Suzuki', 'VinFast', 'MG',
+  'Mercedes-Benz', 'BMW', 'Audi', 'Lexus', 'Porsche',
+  'Peugeot', 'Volvo', 'Chevrolet', 'Subaru',
+];
+
+const MOTORBIKE_BRANDS = [
+  'Honda', 'Yamaha', 'Suzuki', 'SYM', 'Piaggio', 'Ducati',
+  'Kawasaki', 'Vespa', 'Peugeot Motocycles', 'Royal Enfield',
+];
+
+const SORT_OPTIONS = [
+  { value: 'popular', label: 'Phổ biến nhất' },
+  { value: 'rating', label: 'Đánh giá cao' },
+  { value: 'price_asc', label: 'Giá thấp → cao' },
+  { value: 'price_desc', label: 'Giá cao → thấp' },
+  { value: 'newest', label: 'Mới nhất' },
+];
+
+const CITY_COORDS: Record<string, [number, number]> = {
+  'hồ chí minh': [106.7020, 10.7779],
+  'hcm': [106.7020, 10.7779],
+  'hà nội': [105.8542, 21.0285],
+  'hn': [105.8542, 21.0285],
+  'đà nẵng': [108.2200, 16.0478],
+  'nha trang': [109.1965, 12.2415],
+  'đà lạt': [108.4385, 11.9412],
 };
 
-export const MapPage: React.FC = () => {
-  const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const { theme } = useUIStore();
-  const isDark = theme === 'dark';
+// ── Filter Drawer (identical logic to CarsMarketplace CarFilterPanel) ────────
+const MapFilterDrawer: React.FC<{
+  filters: VehicleFilters;
+  onChange: (f: VehicleFilters) => void;
+  onClose: () => void;
+}> = ({ filters, onChange, onClose }) => {
+  const [priceRange, setPriceRange] = useState<[number, number]>([
+    filters.minPrice ?? 0,
+    filters.maxPrice ?? 5000000,
+  ]);
 
-  // Search & Filter state
-  const [keyword, setKeyword] = useState(searchParams.get('keyword') || '');
-  const [locationText, setLocationText] = useState(searchParams.get('location') || 'Ho Chi Minh');
-  const [vehicleType, setVehicleType] = useState<'car' | 'motorbike' | ''>(
-    (searchParams.get('type')?.toLowerCase() as 'car' | 'motorbike') || ''
-  );
-  const [selectedBrand, setSelectedBrand] = useState<string>('');
-  const [maxPrice, setMaxPrice] = useState<number>(10000000);
-  const [minRating, setMinRating] = useState<number>(0);
-  
-  // Quick filters states
-  const [deliveryAvailable, setDeliveryAvailable] = useState(false);
-  const [fiveStarHost, setFiveStarHost] = useState(false);
-  const [instantBook, setInstantBook] = useState(false);
-  const [noDeposit, setNoDeposit] = useState(false);
-  const [hasDiscount, setHasDiscount] = useState(false);
-  const [showListMode, setShowListMode] = useState(false);
+  const isMotorbike = filters.vehicleType === 'motorbike';
 
-  // Data state
-  const [vehicles, setVehicles] = useState<VehicleLocationResponse[]>([]);
-  const [selectedVehicle, setSelectedVehicle] = useState<any | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
-
-  // Active Dropdowns
-  const [activeDropdown, setActiveDropdown] = useState<'type' | 'brand' | 'price' | 'rating' | null>(null);
-
-  // Auto detect user location on mount
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserCoords({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          });
-        },
-        (error) => {
-          console.warn('Geolocation access denied, using default city center.', error);
-        }
-      );
-    }
-  }, []);
-
-  // Fetch vehicles with active filters
-  const fetchMapVehicles = useCallback(async () => {
-    setLoading(true);
-    try {
-      const filters: VehicleFilters = {
-        keyword: keyword || undefined,
-        location: locationText || undefined,
-        vehicleType: vehicleType || undefined,
-        brands: selectedBrand ? [selectedBrand] : undefined,
-        maxPrice: maxPrice < 10000000 ? maxPrice : undefined,
-        minRating: fiveStarHost ? 4.8 : (minRating > 0 ? minRating : undefined),
-        instantBook: instantBook ? true : undefined,
-        deliveryAvailable: deliveryAvailable ? true : undefined,
-        userLat: userCoords?.lat,
-        userLng: userCoords?.lng,
-      };
-      
-      const response = await vehicleService.getMapVehicles(filters);
-      let filtered = response || [];
-      
-      // Client-side fallback checks for local-only filter properties
-      if (noDeposit) {
-        filtered = filtered.filter(v => !v.discount || v.discount >= 0); // fallback or zero deposit mock matching
-      }
-      if (hasDiscount) {
-        filtered = filtered.filter(v => v.discount > 0);
-      }
-      
-      setVehicles(filtered);
-    } catch (err) {
-      console.error('Failed to load map vehicles:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [keyword, locationText, vehicleType, selectedBrand, maxPrice, minRating, userCoords, deliveryAvailable, fiveStarHost, instantBook, noDeposit, hasDiscount]);
-
-  useEffect(() => {
-    fetchMapVehicles();
-  }, [fetchMapVehicles]);
-
-  const handleLocationSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const cleanLoc = locationText.toLowerCase().trim();
-    if (GEOCODE_DATABASE[cleanLoc]) {
-      const target = GEOCODE_DATABASE[cleanLoc];
-      if ((window as any).luxewayMapInstance) {
-        (window as any).luxewayMapInstance.flyTo({
-          center: [target.lng, target.lat],
-          zoom: 13,
-          essential: true
-        });
-      }
-    }
-    fetchMapVehicles();
+  const toggle = (key: keyof VehicleFilters, val: any) => {
+    const arr: any[] = (filters as any)[key] || [];
+    const next = arr.includes(val) ? arr.filter((x: any) => x !== val) : [...arr, val];
+    onChange({ ...filters, [key]: next.length > 0 ? next : undefined });
   };
 
-  // Toggle active filter dropdowns
-  const toggleDropdown = (dropdown: 'type' | 'brand' | 'price' | 'rating') => {
-    setActiveDropdown(prev => prev === dropdown ? null : dropdown);
-  };
+  const toggleBool = (key: keyof VehicleFilters) =>
+    onChange({ ...filters, [key]: !(filters as any)[key] || undefined });
+
+  const formatVND = (n: number) =>
+    new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', minimumFractionDigits: 0 }).format(n);
+
+  const brands = isMotorbike ? MOTORBIKE_BRANDS : CAR_BRANDS;
 
   return (
-    <div className="flex flex-col h-screen w-full bg-[#F8FAFC] dark:bg-[#090D1A] text-slate-800 dark:text-slate-100 overflow-hidden font-sans transition-colors">
-      
-      {/* Top Filter Bar */}
-      <div className="pt-20 pb-3 px-4 sm:px-6 lg:px-8 bg-white dark:bg-[#0F172A] border-b border-slate-200/65 dark:border-slate-800/80 shadow-sm z-35 transition-colors">
-        <div className="max-w-7xl mx-auto space-y-3">
-          
-          {/* Row 1: Search Inputs & Date range */}
-          <div className="flex flex-col md:flex-row gap-3 items-center justify-between">
-            <form onSubmit={handleLocationSubmit} className="flex flex-wrap flex-1 w-full gap-2 items-center">
-              <div className="relative flex-1 min-w-[200px] max-w-sm">
-                <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-500" />
-                <input
-                  type="text"
-                  value={locationText}
-                  onChange={e => setLocationText(e.target.value)}
-                  placeholder="Điểm đón xe (Thành phố, địa chỉ...)"
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-bold text-slate-850 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/20 transition-all"
-                />
-              </div>
+    <motion.div
+      key="drawer"
+      initial={{ x: '100%' }}
+      animate={{ x: 0 }}
+      exit={{ x: '100%' }}
+      transition={{ type: 'spring', damping: 28, stiffness: 220 }}
+      className="fixed right-0 top-0 bottom-0 w-full sm:w-[340px] bg-white dark:bg-slate-950 border-l border-slate-200 dark:border-slate-800 shadow-2xl z-[200] flex flex-col"
+    >
+      {/* Drawer Header */}
+      <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex-shrink-0">
+        <h3 className="font-bold text-sm text-slate-800 dark:text-white flex items-center gap-2">
+          <Car className="w-4 h-4 text-blue-500" />
+          {isMotorbike ? 'Lọc Xe Máy' : 'Lọc Xe Ô Tô'}
+        </h3>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => onChange({ vehicleType: filters.vehicleType })}
+            className="text-xs text-blue-500 hover:underline font-bold"
+          >
+            Xóa lọc
+          </button>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+          >
+            <X className="w-4 h-4 text-slate-500" />
+          </button>
+        </div>
+      </div>
 
-              {/* Time display indicator styled as datepicker range */}
-              <div className="relative flex items-center gap-2 px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-[11px] font-bold text-slate-500 dark:text-slate-400">
-                <Calendar className="w-3.5 h-3.5 text-amber-500" />
-                <span>21:00 T2, 29/06 - 20:00 T3, 30/06</span>
-              </div>
+      {/* Drawer Body */}
+      <div className="flex-1 overflow-y-auto px-5 py-5 space-y-6 scrollbar-none">
 
-              <div className="relative flex-1 min-w-[150px] max-w-xs">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  type="text"
-                  value={keyword}
-                  onChange={e => setKeyword(e.target.value)}
-                  placeholder="Tên xe, từ khóa..."
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-bold text-slate-850 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/20 transition-all"
-                />
-              </div>
-
-              <button 
-                type="submit" 
-                className="py-2.5 px-6 bg-[#0B1221] dark:bg-white text-white dark:text-[#0B1221] hover:bg-[#D4AF37] dark:hover:bg-[#D4AF37] hover:text-white dark:hover:text-white text-xs font-bold uppercase tracking-wider rounded-2xl transition-all shadow-sm flex items-center gap-2"
-              >
-                {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Tìm kiếm'}
-              </button>
-            </form>
+        {/* Vehicle Type */}
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-3">Loại Xe</p>
+          <div className="flex gap-2">
+            {[
+              { value: '', label: 'Tất cả' },
+              { value: 'car', label: '🚗 Ô Tô' },
+              { value: 'motorbike', label: '🏍️ Xe Máy' },
+            ].map(opt => {
+              const sel = (filters.vehicleType ?? '') === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  onClick={() => onChange({ ...filters, vehicleType: (opt.value as any) || undefined })}
+                  className={cn(
+                    'flex-1 py-2 rounded-xl text-xs font-bold border transition-all',
+                    sel
+                      ? 'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                      : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                  )}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
           </div>
+        </div>
 
-          {/* Row 2: Quick filters scroll row */}
-          <div className="flex gap-2 w-full overflow-x-auto pb-1 scrollbar-none select-none">
-            
-            {/* 1. Loại xe (Type) */}
-            <div className="relative flex-shrink-0">
-              <button 
-                onClick={() => toggleDropdown('type')}
-                className={cn(
-                  "px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border text-xs font-bold rounded-full flex items-center gap-1.5 transition-all",
-                  vehicleType ? "border-[#D4AF37] text-[#D4AF37] bg-[#D4AF37]/5" : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-350"
-                )}
-              >
-                <span>Loại xe: {vehicleType === 'car' ? 'Ô tô' : vehicleType === 'motorbike' ? 'Xe máy' : 'Tất cả'}</span>
-              </button>
-              
-              <AnimatePresence>
-                {activeDropdown === 'type' && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    className="absolute left-0 mt-2 w-48 bg-white dark:bg-slate-900 border border-slate-200/65 dark:border-slate-800/80 rounded-2xl shadow-xl p-2 z-55"
+        {/* Categories (cars only) */}
+        {!isMotorbike && (
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-3">Dòng Xe</p>
+            <div className="grid grid-cols-2 gap-2">
+              {CAR_CATEGORIES.map(cat => {
+                const sel = (filters.category || []).includes(cat.value);
+                return (
+                  <button
+                    key={cat.value}
+                    onClick={() => toggle('category', cat.value)}
+                    className={cn(
+                      'px-2 py-2 rounded-xl text-xs font-bold border transition-all text-left flex items-center gap-1.5',
+                      sel
+                        ? 'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                        : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                    )}
                   >
-                    {[
-                      { key: '', label: 'Tất cả các loại' },
-                      { key: 'car', label: 'Chỉ xe Ô tô' },
-                      { key: 'motorbike', label: 'Chỉ xe Máy' }
-                    ].map(opt => (
-                      <button
-                        key={opt.key}
-                        onClick={() => {
-                          setVehicleType(opt.key as any);
-                          setActiveDropdown(null);
-                        }}
-                        className={cn(
-                          "w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all",
-                          vehicleType === opt.key ? "bg-[#D4AF37]/10 text-[#D4AF37] font-extrabold" : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
-                        )}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                    <span>{cat.icon}</span>
+                    {cat.label}
+                  </button>
+                );
+              })}
             </div>
+          </div>
+        )}
 
-            {/* 2. Hãng xe (Brand) */}
-            <div className="relative flex-shrink-0">
-              <button 
-                onClick={() => toggleDropdown('brand')}
-                className={cn(
-                  "px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border text-xs font-bold rounded-full flex items-center gap-1.5 transition-all",
-                  selectedBrand ? "border-[#D4AF37] text-[#D4AF37] bg-[#D4AF37]/5" : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-355"
-                )}
-              >
-                <span>Hãng xe: {selectedBrand || 'Tất cả'}</span>
-              </button>
-              
-              <AnimatePresence>
-                {activeDropdown === 'brand' && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    className="absolute left-0 mt-2 w-48 bg-white dark:bg-slate-900 border border-slate-200/65 dark:border-slate-800/80 rounded-2xl shadow-xl p-2 z-55 max-h-60 overflow-y-auto"
+        {/* Price range */}
+        <div>
+          <div className="flex justify-between items-center mb-3">
+            <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Giá / Ngày</p>
+            <span className="text-xs font-bold text-slate-700 dark:text-white">
+              {formatVND(priceRange[0])} – {formatVND(priceRange[1])}
+            </span>
+          </div>
+          <input
+            type="range" min={0} max={5000000} step={50000} value={priceRange[0]}
+            onChange={e => {
+              const v = Math.min(Number(e.target.value), priceRange[1] - 100000);
+              setPriceRange([v, priceRange[1]]);
+              onChange({ ...filters, minPrice: v > 0 ? v : undefined });
+            }}
+            className="w-full accent-blue-500 h-1 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer mb-2"
+          />
+          <input
+            type="range" min={0} max={5000000} step={50000} value={priceRange[1]}
+            onChange={e => {
+              const v = Math.max(Number(e.target.value), priceRange[0] + 100000);
+              setPriceRange([priceRange[0], v]);
+              onChange({ ...filters, maxPrice: v < 5000000 ? v : undefined });
+            }}
+            className="w-full accent-blue-500 h-1 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
+          />
+          <div className="flex justify-between text-[10px] text-slate-400 mt-1 font-medium">
+            <span>0đ</span><span>2.5tr</span><span>5tr</span>
+          </div>
+        </div>
+
+        {/* Seats (cars only) */}
+        {!isMotorbike && (
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-3">Số Chỗ Ngồi</p>
+            <div className="grid grid-cols-4 gap-2">
+              {[{ label: '4 chỗ', val: 4 }, { label: '5 chỗ', val: 5 }, { label: '7 chỗ', val: 7 }, { label: '9+ chỗ', val: 9 }].map(seat => {
+                const sel = filters.minSeats === seat.val;
+                return (
+                  <button
+                    key={seat.val}
+                    onClick={() => onChange({ ...filters, minSeats: sel ? undefined : seat.val })}
+                    className={cn(
+                      'py-2 rounded-xl text-xs font-bold border transition-all',
+                      sel
+                        ? 'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                        : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                    )}
                   >
-                    <button 
-                      onClick={() => { setSelectedBrand(''); setActiveDropdown(null); }}
-                      className="w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-650 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
-                    >
-                      Tất cả các hãng
-                    </button>
-                    {['Toyota', 'VinFast', 'Ford', 'Honda', 'Yamaha', 'BMW', 'Mercedes-Benz', 'Audi'].map(b => (
-                      <button
-                        key={b}
-                        onClick={() => {
-                          setSelectedBrand(b);
-                          setActiveDropdown(null);
-                        }}
-                        className={cn(
-                          "w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all",
-                          selectedBrand === b ? "bg-[#D4AF37]/10 text-[#D4AF37] font-extrabold" : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
-                        )}
-                      >
-                        {b}
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                    {seat.label}
+                  </button>
+                );
+              })}
             </div>
+          </div>
+        )}
 
-            {/* 3. Giao nhận tận nơi toggle */}
-            <button
-              onClick={() => setDeliveryAvailable(!deliveryAvailable)}
-              className={cn(
-                "px-4 py-2.5 border text-xs font-bold rounded-full transition-all flex-shrink-0",
-                deliveryAvailable ? "border-blue-500 text-blue-600 dark:text-blue-400 bg-blue-500/10" : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300"
-              )}
-            >
-              Giao xe tận nơi
-            </button>
+        {/* Transmission */}
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-3">Hộp Số</p>
+          <div className="flex gap-2">
+            {(['automatic', 'manual'] as const).map(t => {
+              const sel = (filters.transmission || []).includes(t);
+              return (
+                <button
+                  key={t}
+                  onClick={() => onChange({ ...filters, transmission: sel ? undefined : [t] })}
+                  className={cn(
+                    'flex-1 py-2 rounded-xl text-xs font-bold border transition-all',
+                    sel
+                      ? 'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                      : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                  )}
+                >
+                  {t === 'automatic' ? 'Tự Động' : 'Số Sàn'}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
-            {/* 4. Chủ xe 5★ toggle */}
-            <button
-              onClick={() => setFiveStarHost(!fiveStarHost)}
-              className={cn(
-                "px-4 py-2.5 border text-xs font-bold rounded-full transition-all flex-shrink-0",
-                fiveStarHost ? "border-[#D4AF37] text-[#D4AF37] bg-[#D4AF37]/10" : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300"
-              )}
-            >
-              Chủ xe 5★
-            </button>
+        {/* Fuel Type */}
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-3">Nhiên Liệu</p>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { value: 'gasoline', label: '⛽ Xăng' },
+              { value: 'diesel', label: '🛢️ Dầu' },
+              { value: 'electric', label: '⚡ Điện' },
+            ].map(fuel => {
+              const sel = (filters.fuelType || []).includes(fuel.value as any);
+              return (
+                <button
+                  key={fuel.value}
+                  onClick={() => onChange({ ...filters, fuelType: sel ? undefined : [fuel.value as any] })}
+                  className={cn(
+                    'py-2 rounded-xl text-xs font-bold border transition-all',
+                    sel
+                      ? 'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                      : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                  )}
+                >
+                  {fuel.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
-            {/* 5. Đặt xe nhanh toggle */}
-            <button
-              onClick={() => setInstantBook(!instantBook)}
-              className={cn(
-                "px-4 py-2.5 border text-xs font-bold rounded-full transition-all flex-shrink-0",
-                instantBook ? "border-amber-500 text-amber-600 dark:text-amber-400 bg-amber-500/10" : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300"
-              )}
-            >
-              Đặt xe nhanh
-            </button>
+        {/* Brands */}
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-3">Hãng Xe</p>
+          <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+            {brands.map(brand => {
+              const checked = (filters.brands || []).includes(brand);
+              return (
+                <label key={brand} className="flex items-center gap-2.5 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => toggle('brands', brand)}
+                    className="rounded text-blue-500 accent-blue-500 w-4 h-4"
+                  />
+                  <span className="text-sm font-medium text-slate-600 dark:text-slate-400 group-hover:text-slate-800 dark:group-hover:text-white transition-colors">
+                    {brand}
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        </div>
 
-            {/* 6. Miễn thế chấp toggle */}
-            <button
-              onClick={() => setNoDeposit(!noDeposit)}
-              className={cn(
-                "px-4 py-2.5 border text-xs font-bold rounded-full transition-all flex-shrink-0",
-                noDeposit ? "border-emerald-500 text-emerald-600 dark:text-emerald-450 bg-emerald-500/10" : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300"
-              )}
-            >
-              Miễn thế chấp
-            </button>
-
-            {/* 7. Giảm giá toggle */}
-            <button
-              onClick={() => setHasDiscount(!hasDiscount)}
-              className={cn(
-                "px-4 py-2.5 border text-xs font-bold rounded-full transition-all flex-shrink-0",
-                hasDiscount ? "border-red-500 text-red-600 dark:text-red-405 bg-red-500/10" : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300"
-              )}
-            >
-              Giảm giá %
-            </button>
-
-            {/* 8. Bộ lọc (Price slider toggler) */}
-            <div className="relative flex-shrink-0">
-              <button 
-                onClick={() => toggleDropdown('price')}
-                className={cn(
-                  "px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border text-xs font-bold rounded-full flex items-center gap-1.5 transition-all",
-                  maxPrice < 10000000 ? "border-[#D4AF37] text-[#D4AF37] bg-[#D4AF37]/5" : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300"
-                )}
-              >
-                <SlidersHorizontal className="w-3.5 h-3.5" />
-                <span>Bộ lọc: {maxPrice < 10000000 ? `< ${(maxPrice/1000).toLocaleString()}K` : 'Mọi mức giá'}</span>
-              </button>
-              
-              <AnimatePresence>
-                {activeDropdown === 'price' && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    className="absolute left-0 mt-2 w-64 bg-white dark:bg-slate-900 border border-slate-200/65 dark:border-slate-800/80 rounded-2xl shadow-xl p-4 z-55"
-                  >
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-[10px] uppercase font-bold text-slate-400">Ngân sách / Ngày</span>
-                      <span className="text-xs font-bold text-[#D4AF37]">{formatCurrency(maxPrice)}</span>
-                    </div>
-                    <input 
-                      type="range" 
-                      min={200000} 
-                      max={10000000} 
-                      step={100000}
-                      value={maxPrice} 
-                      onChange={e => setMaxPrice(Number(e.target.value))}
-                      className="w-full accent-[#D4AF37] h-1 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
-                    />
-                    <div className="flex justify-between text-[9px] text-slate-400 mt-2 font-bold">
-                      <span>200K</span>
-                      <span>5M</span>
-                      <span>10M+</span>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* ─── Vehicle count badge ─── */}
-            <div className="ml-auto flex-shrink-0 flex items-center gap-2 pl-3 border-l border-slate-200 dark:border-slate-800">
-              {loading ? (
-                <span className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 dark:bg-slate-900 rounded-full text-[11px] font-bold text-slate-400">
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                  Đang tìm...
+        {/* Special Options */}
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-3">Tính Năng & Dịch Vụ</p>
+          <div className="space-y-2">
+            {(isMotorbike ? [
+              { key: 'hasHelmet', icon: '🪖', label: 'Có mũ bảo hiểm' },
+              { key: 'hasRaincoat', icon: '🧥', label: 'Có áo mưa' },
+              { key: 'hasPhoneHolder', icon: '📱', label: 'Giá đỡ điện thoại' },
+              { key: 'hasTouringPackage', icon: '🗺️', label: 'Gói du lịch' },
+              { key: 'instantBook', icon: '⚡', label: 'Đặt Ngay' },
+            ] : [
+              { key: 'hasChauffeur', icon: '👤', label: 'Có Tài Xế Riêng' },
+              { key: 'airportDelivery', icon: '✈️', label: 'Giao Xe Sân Bay' },
+              { key: 'weddingRental', icon: '💍', label: 'Phục Vụ Đám Cưới' },
+              { key: 'businessRental', icon: '💼', label: 'Xe Doanh Nghiệp' },
+              { key: 'instantBook', icon: '⚡', label: 'Đặt Ngay' },
+            ]).map(f => (
+              <label key={f.key} className="flex items-center gap-2.5 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={!!(filters as any)[f.key]}
+                  onChange={() => toggleBool(f.key as keyof VehicleFilters)}
+                  className="rounded text-blue-500 accent-blue-500 w-4 h-4"
+                />
+                <span className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 group-hover:text-slate-800 dark:group-hover:text-white transition-colors">
+                  <span>{f.icon}</span>{f.label}
                 </span>
-              ) : (
-                <span className="px-3 py-2 bg-[#0B1221] dark:bg-white text-white dark:text-[#0B1221] rounded-full text-[11px] font-black tabular-nums">
-                  {vehicles.length} xe
-                </span>
-              )}
-            </div>
+              </label>
+            ))}
+          </div>
+        </div>
 
+        {/* Min Rating */}
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-3">Đánh Giá Tối Thiểu</p>
+          <div className="flex gap-2">
+            {[4.0, 4.5, 4.8].map(r => (
+              <button
+                key={r}
+                onClick={() => onChange({ ...filters, minRating: filters.minRating === r ? undefined : r })}
+                className={cn(
+                  'flex-1 py-2 rounded-xl text-xs font-bold border-2 transition-all',
+                  filters.minRating === r
+                    ? 'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                    : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                )}
+              >
+                ⭐ {r}+
+              </button>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Main Map Content Body */}
-      <div className="flex-1 flex w-full relative overflow-hidden bg-slate-50 dark:bg-slate-950 transition-colors">
-        
-        {/* VIEW 1: Grid of Vehicles (List Mode) */}
-        {showListMode ? (
-          <div className="w-full h-full overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#F8FAFC] dark:bg-[#090D1A] transition-colors relative">
-            <div className="max-w-7xl mx-auto">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-base font-display font-extrabold text-slate-850 dark:text-white uppercase tracking-wider">
-                  Tìm thấy {vehicles.length} xe theo yêu cầu
-                </h2>
-                {loading && <Loader2 className="w-5 h-5 animate-spin text-amber-500" />}
-              </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 pb-20">
-                {vehicles.map(v => {
-                  const thumbnailSrc = v.thumbnail || 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=800';
-                  
-                  const pricePerDay = v.pricePerDay;
-                  const displayPrice = pricePerDay >= 1000 
-                    ? `${(pricePerDay / 1000).toLocaleString('en-US', { maximumFractionDigits: 0 })}K`
-                    : `${pricePerDay}`;
-                  
-                  const originalPrice = v.discount > 0 ? (pricePerDay / (1 - v.discount / 100)) : pricePerDay;
-                  const displayOriginalPrice = originalPrice >= 1000 
-                    ? `${(originalPrice / 1000).toLocaleString('en-US', { maximumFractionDigits: 0 })}K`
-                    : `${originalPrice.toFixed(0)}`;
-                    
-                  const discountPercent = v.discount || 0;
-                  const targetPath = v.type?.toLowerCase() === 'motorbike' ? `/motorbikes/${v.id}` : `/cars/${v.id}`;
-                  
-                  return (
-                    <div 
-                      key={v.id}
-                      onClick={() => navigate(targetPath)}
-                      className="group bg-white dark:bg-[#131F35] rounded-3xl border border-slate-200/50 dark:border-white/5 overflow-hidden shadow-sm hover:shadow-xl hover:border-[#D4AF37]/35 transition-all duration-300 cursor-pointer flex flex-col justify-between"
+      {/* Footer */}
+      <div className="px-5 py-4 border-t border-slate-100 dark:border-slate-800 flex gap-3 flex-shrink-0">
+        <button
+          onClick={() => { onChange({ vehicleType: filters.vehicleType }); onClose(); }}
+          className="flex-1 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+        >
+          Thiết lập lại
+        </button>
+        <button
+          onClick={onClose}
+          className="flex-1 py-3 rounded-2xl bg-blue-500 hover:bg-blue-600 text-white text-xs font-black uppercase tracking-wide transition-colors shadow-lg"
+        >
+          Áp dụng
+        </button>
+      </div>
+    </motion.div>
+  );
+};
+
+// ── MapPage ────────────────────────────────────────────────────────────────────
+export const MapPage: React.FC = () => {
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { language } = useUIStore();
+  const isVi = language === 'vi';
+
+  // Filters
+  const [filters, setFilters] = useState<VehicleFilters>(() => {
+    const f: VehicleFilters = {};
+    const loc = searchParams.get('location');
+    if (loc) f.location = loc;
+    const type = searchParams.get('type') as any;
+    if (type) f.vehicleType = type;
+    const brand = searchParams.get('brand');
+    if (brand) f.brands = [brand];
+    const mp = searchParams.get('maxPrice');
+    if (mp) f.maxPrice = Number(mp);
+    const kw = searchParams.get('keyword');
+    if (kw) f.keyword = kw;
+    const sort = searchParams.get('sort') as any;
+    if (sort) f.sortBy = sort;
+    return f;
+  });
+
+  // Data
+  const [vehicles, setVehicles] = useState<VehicleLocationResponse[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedVehicle, setSelectedVehicle] = useState<VehicleLocationResponse | null>(null);
+  const [hoveredId, setHoveredId] = useState<string | undefined>(undefined);
+
+  // UI state
+  const [showFilters, setShowFilters] = useState(false);
+  const [showSort, setShowSort] = useState(false);
+  const [sortLabel, setSortLabel] = useState('Phổ biến nhất');
+  const carouselRef = useRef<HTMLDivElement>(null);
+
+  // Fetch vehicles
+  const fetchVehicles = useCallback(async (signal?: AbortSignal) => {
+    setLoading(true);
+    try {
+      const data = await vehicleService.getMapVehicles(filters, signal);
+      setVehicles(data || []);
+      if (data && data.length > 0 && !selectedVehicle) {
+        setSelectedVehicle(data[0]);
+      }
+    } catch (e: any) {
+      if (e?.name !== 'AbortError') console.error('Map fetch error:', e);
+    } finally {
+      setLoading(false);
+    }
+  }, [filters]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchVehicles(controller.signal);
+    return () => controller.abort();
+  }, [fetchVehicles]);
+
+  // Sync filters → URL
+  useEffect(() => {
+    const p: Record<string, string> = {};
+    if (filters.location) p.location = filters.location;
+    if (filters.vehicleType) p.type = filters.vehicleType;
+    if (filters.brands?.length) p.brand = filters.brands[0];
+    if (filters.maxPrice) p.maxPrice = String(filters.maxPrice);
+    if (filters.keyword) p.keyword = filters.keyword;
+    if (filters.sortBy) p.sort = filters.sortBy;
+    const sd = searchParams.get('startDate');
+    const ed = searchParams.get('endDate');
+    if (sd) p.startDate = sd;
+    if (ed) p.endDate = ed;
+    setSearchParams(p, { replace: true });
+  }, [filters]);
+
+  const handleFilterChange = (newF: VehicleFilters) => setFilters(newF);
+
+  const handleMarkerClick = (v: any) => {
+    setSelectedVehicle(v);
+    const idx = vehicles.findIndex(x => x.id === v.id);
+    if (idx !== -1 && carouselRef.current) {
+      carouselRef.current.scrollTo({ left: idx * 310, behavior: 'smooth' });
+    }
+  };
+
+  const flyTo = (loc: string) => {
+    const key = Object.keys(CITY_COORDS).find(k => loc.toLowerCase().includes(k));
+    if (!key) return;
+    const [lng, lat] = CITY_COORDS[key];
+    const map = (window as any).luxewayMapInstance;
+    if (map) map.flyTo({ center: [lng, lat], zoom: 12.5, duration: 1400 });
+  };
+
+  const handleSortChange = (opt: typeof SORT_OPTIONS[0]) => {
+    setSortLabel(opt.label);
+    setFilters(f => ({ ...f, sortBy: opt.value as any }));
+    setShowSort(false);
+  };
+
+  const goToMarketplace = () => {
+    const q = new URLSearchParams();
+    if (filters.location) q.set('location', filters.location);
+    if (filters.vehicleType) q.set('type', filters.vehicleType);
+    if (filters.brands?.length) q.set('brand', filters.brands[0]);
+    navigate(`/marketplace?${q.toString()}`);
+  };
+
+  // Quick filter pills data
+  const quickPills = [
+    {
+      id: 'type',
+      label: filters.vehicleType === 'car' ? '🚗 Ô Tô' : filters.vehicleType === 'motorbike' ? '🏍️ Xe Máy' : 'Loại xe',
+      active: !!filters.vehicleType,
+      dropdown: true,
+    },
+    {
+      id: 'brand',
+      label: filters.brands?.length ? `Hãng: ${filters.brands[0]}` : 'Hãng xe',
+      active: !!filters.brands?.length,
+      dropdown: false,
+      onClick: () => setShowFilters(true),
+    },
+    {
+      id: 'hourly', label: 'Thuê giờ', active: false,
+      onClick: () => {},
+    },
+    {
+      id: 'delivery', label: 'Giao nhận tận nơi',
+      active: !!filters.deliveryAvailable,
+      onClick: () => setFilters(f => ({ ...f, deliveryAvailable: f.deliveryAvailable ? undefined : true })),
+    },
+    {
+      id: 'fiveStar', label: 'Chủ xe 5 ★',
+      active: filters.minRating === 4.8,
+      onClick: () => setFilters(f => ({ ...f, minRating: f.minRating === 4.8 ? undefined : 4.8 })),
+    },
+    {
+      id: 'instant', label: 'Đặt xe nhanh',
+      active: !!filters.instantBook,
+      onClick: () => setFilters(f => ({ ...f, instantBook: f.instantBook ? undefined : true })),
+    },
+    {
+      id: 'nodeposit', label: 'Miễn thế chấp',
+      active: false, onClick: () => {},
+    },
+    {
+      id: 'discount', label: 'Giảm giá',
+      active: false, onClick: () => {},
+    },
+  ];
+
+  // On mount: fly to default city from URL param or HCM
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const loc = filters.location || 'hồ chí minh';
+      flyTo(loc);
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <div className="flex flex-col h-full min-h-0">
+
+      {/* ── Light Filter Bar ─────────────────────────────────────────────── */}
+      <div className="flex-shrink-0 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 px-4 py-2.5 flex items-center gap-2 overflow-x-auto scrollbar-none z-10 shadow-sm">
+
+        {/* Reset */}
+        <button
+          onClick={() => setFilters({})}
+          title="Thiết lập lại"
+          className="p-2 rounded-full border border-slate-200 dark:border-slate-800 text-slate-400 hover:text-slate-700 hover:border-slate-400 flex-shrink-0 transition-all"
+        >
+          <RotateCcw className="w-3.5 h-3.5" />
+        </button>
+
+        {/* Quick filter pills */}
+        {quickPills.map(pill => (
+          <button
+            key={pill.id}
+            onClick={pill.onClick ?? (() => setShowFilters(true))}
+            className={cn(
+              'flex-shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border text-[11px] font-semibold whitespace-nowrap transition-all',
+              pill.active
+                ? 'bg-slate-900 dark:bg-white border-slate-900 dark:border-white text-white dark:text-slate-900'
+                : 'bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-400 dark:hover:border-slate-500'
+            )}
+          >
+            <span>{pill.label}</span>
+            {pill.active && <Check className="w-3 h-3" />}
+          </button>
+        ))}
+
+        {/* More */}
+        <button className="flex-shrink-0 px-3.5 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 text-[11px] font-semibold text-slate-500 hover:border-slate-400 whitespace-nowrap transition-all">
+          ···
+        </button>
+
+        {/* Divider */}
+        <div className="flex-shrink-0 w-px h-5 bg-slate-200 dark:bg-slate-700 mx-1" />
+
+        {/* Full filter button */}
+        <button
+          onClick={() => setShowFilters(true)}
+          className={cn(
+            'flex-shrink-0 flex items-center gap-2 px-4 py-1.5 rounded-full border text-[11px] font-bold whitespace-nowrap transition-all',
+            showFilters
+              ? 'bg-slate-900 dark:bg-white border-slate-900 dark:border-white text-white dark:text-slate-900'
+              : 'border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:border-slate-600 dark:hover:border-slate-400'
+          )}
+        >
+          <SlidersHorizontal className="w-3.5 h-3.5" />
+          Bộ lọc
+        </button>
+      </div>
+
+      {/* ── Map Area ──────────────────────────────────────────────────────── */}
+      <div className="flex-1 relative overflow-hidden min-h-0">
+
+        {/* Map Canvas */}
+        <LuxeWayMap
+          vehicles={vehicles}
+          selectedVehicleId={selectedVehicle?.id}
+          hoveredVehicleId={hoveredId}
+          onVehicleClick={handleMarkerClick}
+          height="100%"
+        />
+
+        {/* Sort dropdown (top-left, floating) */}
+        <div className="absolute top-3 left-3 z-20">
+          <div className="relative">
+            <button
+              onClick={() => setShowSort(s => !s)}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-white shadow-md hover:shadow-lg transition-all"
+            >
+              {sortLabel}
+              <ChevronDown className={cn('w-3.5 h-3.5 text-slate-400 transition-transform', showSort && 'rotate-180')} />
+            </button>
+            <AnimatePresence>
+              {showSort && (
+                <motion.div
+                  initial={{ opacity: 0, y: -6, scale: 0.97 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -6, scale: 0.97 }}
+                  className="absolute top-full mt-1.5 left-0 w-48 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden z-30"
+                >
+                  {SORT_OPTIONS.map(opt => (
+                    <button
+                      key={opt.value}
+                      onClick={() => handleSortChange(opt)}
+                      className={cn(
+                        'w-full text-left px-3.5 py-2.5 text-xs font-semibold transition-colors',
+                        opt.label === sortLabel
+                          ? 'bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400'
+                          : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                      )}
                     >
-                      <div className="relative aspect-[16/10] bg-slate-100 dark:bg-slate-900 overflow-hidden">
-                        <img 
-                          src={thumbnailSrc} 
-                          alt={v.name} 
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                        
-                        {/* Overlay badges matching Mioto layout */}
-                        <div className="absolute top-3 left-3 flex flex-col gap-1 z-10 select-none">
-                          {discountPercent > 0 && (
-                            <span className="text-[10px] font-black bg-red-500 text-white px-2 py-0.5 rounded-lg shadow-sm">
-                              Giảm {discountPercent}%
+                      {opt.label}
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+
+        {/* Loading overlay */}
+        {loading && (
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full px-4 py-2 shadow-lg flex items-center gap-2">
+            <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+            <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Đang tải xe...</span>
+          </div>
+        )}
+
+        {/* ── Bottom Horizontal Card Carousel ───────────────────────────── */}
+        <div className="absolute bottom-0 left-0 right-0 z-20">
+
+          {/* Carousel track */}
+          <div className="relative flex items-center px-2 py-3 bg-gradient-to-t from-black/20 to-transparent">
+
+            {/* Prev arrow */}
+            <button
+              onClick={() => carouselRef.current?.scrollBy({ left: -300, behavior: 'smooth' })}
+              className="absolute left-2 z-30 w-9 h-9 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all active:scale-95 flex-shrink-0"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+
+            {/* Cards */}
+            <div
+              ref={carouselRef}
+              className="flex gap-3 overflow-x-auto scroll-smooth px-10 pb-1 scrollbar-none snap-x snap-mandatory"
+            >
+              {vehicles.length === 0 && !loading ? (
+                <div className="w-72 flex-shrink-0 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 text-center shadow-md">
+                  <p className="text-sm font-semibold text-slate-500">Không tìm thấy xe trong khu vực này</p>
+                  <button
+                    onClick={goToMarketplace}
+                    className="mt-3 text-xs text-blue-500 hover:underline font-bold"
+                  >
+                    Xem tất cả xe →
+                  </button>
+                </div>
+              ) : (
+                vehicles.map(v => {
+                  const isSel = selectedVehicle?.id === v.id;
+                  const thumb = v.thumbnail || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=400&q=80';
+                  const discounted = v.discount > 0;
+                  const originalPrice = discounted ? Math.round(v.pricePerDay / (1 - v.discount / 100)) : v.pricePerDay;
+
+                  return (
+                    <div
+                      key={v.id}
+                      onClick={() => handleMarkerClick(v)}
+                      onMouseEnter={() => setHoveredId(v.id)}
+                      onMouseLeave={() => setHoveredId(undefined)}
+                      className={cn(
+                        'flex-shrink-0 w-[290px] sm:w-[310px] bg-white dark:bg-slate-900 rounded-2xl border shadow-lg overflow-hidden snap-start cursor-pointer transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5',
+                        isSel
+                          ? 'border-[#D4AF37] ring-2 ring-[#D4AF37]/30'
+                          : 'border-slate-200 dark:border-slate-700'
+                      )}
+                    >
+                      <div className="flex gap-0">
+                        {/* Thumbnail */}
+                        <div className="relative w-28 h-24 flex-shrink-0">
+                          <img src={thumb} alt={v.name} className="w-full h-full object-cover" />
+                          {v.instantBook && (
+                            <span className="absolute top-1.5 left-1.5 bg-amber-400 text-slate-950 text-[8px] font-black px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
+                              ⚡
                             </span>
                           )}
-                          <span className="text-[10px] font-black bg-emerald-500 text-white px-2 py-0.5 rounded-lg shadow-sm">
-                            Miễn thế chấp
-                          </span>
-                          <span className="text-[10px] font-black bg-blue-500 text-white px-2 py-0.5 rounded-lg shadow-sm">
-                            Giao xe tận nơi
-                          </span>
+                          {discounted && (
+                            <span className="absolute bottom-1.5 left-1.5 bg-red-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md">
+                              -{v.discount}%
+                            </span>
+                          )}
                         </div>
-                      </div>
-                      
-                      <div className="p-4 flex-1 flex flex-col justify-between">
-                        <div>
-                          <h4 className="font-extrabold text-sm text-slate-850 dark:text-white truncate uppercase tracking-tight">
-                            {v.brand} {v.name.replace(new RegExp('^' + v.brand, 'i'), '').trim()}
-                          </h4>
-                          
-                          <div className="flex items-center gap-1.5 text-[11px] text-slate-450 dark:text-slate-400 mt-1 font-bold">
-                            <span>Số tự động</span>
-                            <span>•</span>
-                            <span>{v.type?.toLowerCase() === 'motorbike' ? '2 chỗ' : '5 chỗ'}</span>
-                            <span>•</span>
-                            <span>Xăng</span>
+
+                        {/* Info */}
+                        <div className="flex-1 p-3 min-w-0 flex flex-col justify-between">
+                          <div>
+                            <div className="flex items-start justify-between gap-1">
+                              <h4 className="font-black text-[11px] text-slate-800 dark:text-white leading-tight line-clamp-1 uppercase tracking-tight">
+                                {v.name}
+                              </h4>
+                              <button className="text-slate-300 hover:text-red-400 transition-colors flex-shrink-0">
+                                <Heart className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+
+                            <div className="flex items-center gap-1 mt-0.5">
+                              <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+                              <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300">
+                                {Number(v.rating || 4.5).toFixed(1)}
+                              </span>
+                              <span className="text-[10px] text-slate-400">·</span>
+                              <span className="text-[10px] text-slate-400 font-medium">
+                                {v.totalTrips || 0} chuyến
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-1 mt-0.5">
+                              <MapPin className="w-2.5 h-2.5 text-slate-400 flex-shrink-0" />
+                              <p className="text-[9px] text-slate-400 truncate">{v.address || v.city}</p>
+                            </div>
                           </div>
-                          
-                          <p className="text-[11px] text-slate-400 mt-2 truncate">
-                            📍 {v.address || 'Hồ Chí Minh'}
-                          </p>
-                        </div>
-                        
-                        <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-end justify-between">
-                          <div className="flex items-center gap-1 text-[11px]">
-                            <span className="text-[#D4AF37] font-bold">★</span>
-                            <span className="font-extrabold text-slate-800 dark:text-white">{Number(v.rating || 5.0).toFixed(1)}</span>
-                            <span className="text-slate-450">({v.totalTrips || 12} chuyến)</span>
-                          </div>
-                          
-                          <div className="text-right">
-                            {discountPercent > 0 && (
-                              <p className="text-[10px] text-slate-400 line-through leading-none mb-0.5">
-                                {displayOriginalPrice}
-                              </p>
+
+                          <div className="mt-1.5">
+                            {discounted && (
+                              <span className="text-[9px] text-slate-400 line-through mr-1">
+                                {formatCurrency(originalPrice)}
+                              </span>
                             )}
-                            <p className="font-display font-black text-[#0B1221] dark:text-white leading-none">
-                              <span className="text-base text-amber-500">{displayPrice}</span>
-                              <span className="text-[9px] text-slate-450 font-bold font-sans">/ngày</span>
-                            </p>
+                            <span className={cn('font-black text-xs', discounted ? 'text-[#D4AF37]' : 'text-slate-800 dark:text-white')}>
+                              {formatCurrency(v.pricePerDay)}
+                            </span>
+                            <span className="text-[9px] text-slate-400 font-medium">/ngày</span>
+
+                            {/* Specs row */}
+                            <div className="flex items-center gap-2 mt-1 text-[9px] text-slate-500 font-medium">
+                              {v.transmission && <span>🔧 {v.transmission === 'AUTOMATIC' ? 'Tự động' : 'Số sàn'}</span>}
+                              {v.seats && <span>👥 {v.seats} chỗ</span>}
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
                   );
-                })}
-              </div>
-
-              {!loading && vehicles.length === 0 && (
-                <div className="text-center py-24 bg-white dark:bg-[#131F35] rounded-3xl border border-slate-150 dark:border-slate-800 p-8 shadow-sm">
-                  <span className="text-5xl block mb-2">🚗</span>
-                  <h3 className="text-lg font-bold text-foreground mb-1">Không tìm thấy xe</h3>
-                  <p className="text-slate-400 text-xs max-w-sm mx-auto">Vui lòng thay đổi bộ lọc, giảm ngân sách hoặc đổi khu vực tìm kiếm.</p>
-                </div>
+                })
               )}
             </div>
+
+            {/* Next arrow */}
+            <button
+              onClick={() => carouselRef.current?.scrollBy({ left: 300, behavior: 'smooth' })}
+              className="absolute right-2 z-30 w-9 h-9 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all active:scale-95 flex-shrink-0"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
           </div>
-        ) : (
-          
-          /* VIEW 2: Full Screen Map (Map Mode) */
-          <div className="flex-1 h-full w-full relative z-10">
-            <LuxeWayMap
-              vehicles={vehicles}
-              selectedVehicleId={selectedVehicle?.id}
-              onVehicleClick={v => setSelectedVehicle(v)}
-              onSelectionChange={list => {
-                if (list && list.length > 0) {
-                  setSelectedVehicle(list[0]);
-                }
-              }}
-            />
 
-            {/* Selected Vehicle Floating Panel (Overlay Map) */}
-            <AnimatePresence>
-              {selectedVehicle && (
-                <motion.div
-                  initial={{ opacity: 0, y: 50, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 50, scale: 0.95 }}
-                  className="absolute bottom-20 left-4 right-4 md:left-auto md:right-6 md:w-80 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl p-4 z-20 flex gap-4 transition-colors"
-                >
-                  <div className="w-24 h-20 rounded-2xl overflow-hidden flex-shrink-0 bg-slate-100 dark:bg-slate-800">
-                    <img 
-                      src={selectedVehicle.thumbnail || 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=800'} 
-                      alt={selectedVehicle.name} 
-                      className="w-full h-full object-cover" 
-                    />
-                  </div>
-                  
-                  <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
-                    <div>
-                      <h4 className="font-extrabold text-xs text-slate-850 dark:text-white truncate uppercase tracking-tight">
-                        {selectedVehicle.brand} {selectedVehicle.name.replace(new RegExp('^' + selectedVehicle.brand, 'i'), '').trim()}
-                      </h4>
-                      <p className="text-[11px] font-bold text-amber-500 mt-1 flex items-center gap-1">
-                        ★ {Number(selectedVehicle.rating || 5.0).toFixed(1)} 
-                        <span className="text-slate-400 font-normal">({selectedVehicle.totalReviews || selectedVehicle.totalTrips || 12} chuyến)</span>
-                      </p>
-                    </div>
-
-                    <div className="flex items-center justify-between mt-2 pt-1 border-t border-slate-100 dark:border-slate-800">
-                      <span className="text-xs font-black text-emerald-500 dark:text-emerald-400">
-                        {(selectedVehicle.pricePerDay >= 1000 ? `${(selectedVehicle.pricePerDay / 1000).toLocaleString('en-US', { maximumFractionDigits: 0 })}K` : selectedVehicle.pricePerDay)}/ngày
-                      </span>
-                      <button
-                        onClick={() => {
-                          const typePath = selectedVehicle.vehicleType?.toLowerCase() === 'motorbike' || selectedVehicle.type?.toLowerCase() === 'motorbike' ? 'motorbikes' : 'cars';
-                          navigate(`/${typePath}/${selectedVehicle.id}`);
-                        }}
-                        className="px-3.5 py-1.5 bg-[#0B1221] dark:bg-white text-white dark:text-[#0B1221] text-[10px] font-bold uppercase tracking-wider rounded-xl hover:bg-[#D4AF37] dark:hover:bg-[#D4AF37] hover:text-white dark:hover:text-white transition-all shadow-sm"
-                      >
-                        Thuê ngay
-                      </button>
-                    </div>
-                  </div>
-
-                  <button 
-                    onClick={() => setSelectedVehicle(null)}
-                    className="absolute top-2.5 right-2.5 p-1 bg-slate-50 hover:bg-slate-150 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-full"
-                  >
-                    <X className="w-3.5 h-3.5 text-slate-450" />
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
+          {/* "Xem xe trong khu vực này" gold pill button */}
+          <div className="flex justify-center pb-4">
+            <button
+              onClick={() => fetchVehicles()}
+              className="flex items-center gap-2 px-6 py-2.5 bg-[#D4AF37] hover:bg-[#c4a030] text-slate-950 font-black text-xs rounded-full shadow-lg transition-all active:scale-95"
+            >
+              <MapPin className="w-3.5 h-3.5" />
+              Xem xe trong khu vực này
+            </button>
           </div>
-        )}
-
-        {/* FLOATING VIEW MODE SWITCHER (Absolute bottom center) */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 select-none">
-          <button
-            onClick={() => setShowListMode(!showListMode)}
-            className="flex items-center gap-2 px-6 py-3.5 bg-[#0B1221] text-white hover:bg-[#D4AF37] hover:scale-105 active:scale-95 text-xs font-extrabold uppercase tracking-widest rounded-full shadow-2xl transition-all border border-white/10"
-          >
-            {showListMode ? (
-              <>
-                <MapPin className="w-4 h-4 text-[#D4AF37]" />
-                <span>Bản đồ 🗺</span>
-              </>
-            ) : (
-              <>
-                <Menu className="w-4 h-4 text-[#D4AF37]" />
-                <span>Danh sách ☰</span>
-              </>
-            )}
-          </button>
         </div>
 
+        {/* Close sort dropdown when clicking outside */}
+        {showSort && (
+          <div className="absolute inset-0 z-10" onClick={() => setShowSort(false)} />
+        )}
       </div>
+
+      {/* ── Filter Drawer + Backdrop ─────────────────────────────────────── */}
+      <AnimatePresence>
+        {showFilters && (
+          <>
+            <motion.div
+              key="backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowFilters(false)}
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100]"
+            />
+            <MapFilterDrawer
+              filters={filters}
+              onChange={handleFilterChange}
+              onClose={() => setShowFilters(false)}
+            />
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

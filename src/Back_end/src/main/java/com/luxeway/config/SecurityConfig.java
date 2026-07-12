@@ -136,6 +136,10 @@ public class SecurityConfig {
                     "/api/v1/ai/**",
                     "/chat",
                     "/api/v1/chat",
+                    "/admin/seed/**",
+                    "/api/v1/admin/seed/**",
+                    "/payment-settings",
+                    "/api/v1/payment-settings",
                     "/error"
                 ).permitAll()
                 // Support ticket endpoints — must be authenticated

@@ -986,6 +986,7 @@ Trong giai đoạn này (Phase 6.2), mình đã cùng Antigravity hoàn thiện 
    Overhaul giao diện sang dạng 100% full-screen map loại bỏ hoàn toàn sự lộn xộn của split-screen cũ. Khay bộ lọc Drawer overlay trượt mượt mà và nút điều hướng tự động ẩn khi lướt xuống (Scroll Down) để đọc danh sách và hiện lại khi cuộn lên (Scroll Up) đem lại cảm giác ứng dụng di động bản địa (native-like UX), nâng tầm trải nghiệm của LuxeWay lên phân khúc premium.
 ```
 
+
 ### Tự đánh giá Phase 6.2
 
 | Tiêu chí | Điểm | Ghi chú |
@@ -998,7 +999,64 @@ Trong giai đoạn này (Phase 6.2), mình đã cùng Antigravity hoàn thiện 
 
 ---
 
-## 17. Cam kết Reflection
+## 17. Reflection - Đồng bộ Bộ lọc Marketplace với DB thực tế (2026-06-30)
+
+Trong phase này, mình đã sử dụng AI (Antigravity) để rà soát toàn bộ cấu trúc bảng và dữ liệu trong Database nhằm đồng bộ bộ lọc hiển thị cho người dùng.
+
+### Những bài học rút ra:
+
+1. **Hiểu rõ lược đồ và dữ liệu thực tế (Database Consistency)**:
+   Bộ lọc phía client không thể thiết kế theo phỏng đoán. Cần truy vấn trực tiếp (`sqlcmd`) để biết chính xác các thương hiệu và dòng xe đang tồn tại trong database (cả ở các bảng legacy lẫn unified). Việc đồng nhất giữa chữ hoa/thường (ví dụ `Classic_Bike` trong legacy và `CLASSIC_BIKE` trong unified) đòi hỏi câu truy vấn SQL ở backend phải linh hoạt sử dụng `LOWER()` và `LIKE`.
+
+2. **Chặt chẽ về mặt đặc tả cấu trúc bảng (Table Constraints & Columns)**:
+   Phát hiện bảng `motorbike_specifications` không chứa cột `fuel_type` giúp tránh được việc thiết kế bộ lọc thừa thãi ở Frontend mà Backend không thể đáp ứng. Bộ lọc ô tô cũng loại bỏ tuỳ chọn Hybrid khi dữ liệu thực tế chỉ dùng 3 loại nhiên liệu (Xăng, Dầu, Điện).
+
+3. **Mở rộng API Endpoint linh hoạt**:
+   Bổ sung tham số tìm kiếm động ở 4 tầng cấu trúc (JPA Repository -> Service -> Controller -> Client Service API) giúp bộ lọc chạy chính xác và mượt mà hơn rất nhiều, phản ánh trực tiếp sự thay đổi dữ liệu của database lên giao diện người dùng.
+
+### Tự đánh giá Phase 08
+
+| Tiêu chí | Điểm | Ghi chú |
+|---|:---:|---|
+| Hiểu vấn đề trước khi fix | 5 | Xác định đúng tình trạng bất đồng bộ giữa UI filter và dữ liệu DB thực tế |
+| Fix đúng nguyên nhân gốc | 5 | Tích hợp filter params ở cả Java backend và React frontend |
+| Kiểm chứng sau fix | 5 | Chạy query test trực tiếp kiểm chứng kết quả trả về khớp chính xác |
+| Ghi lại đầy đủ | 5 | Cập nhật đầy đủ 4 file log trong members/NguyenVanDang |
+| Sử dụng AI có trách nhiệm | 5 | Đối chiếu và tự điều chỉnh code AI sinh ra cho khớp với cột bảng thực tế |
+
+---
+
+## Reflection — Phase 09: Booking & Payment Overhaul & Dashboards UI/UX Upgrade (2026-07-13)
+
+### Tóm tắt
+
+Trong giai đoạn này (Phase 09), mình đã cùng Antigravity triển khai cải tiến và tái cấu trúc toàn diện hệ thống đặt xe (Booking) và thanh toán (Payment). Hệ thống thanh toán chuyển khoản thủ công qua VietQR đi kèm mã QR sinh động đã được triển khai, cùng bộ đếm ngược 15 phút thời gian thực ở client và một scheduler chạy ngầm phía backend tự động quét hủy các đặt xe hết hạn thanh toán nhằm giải phóng xe ngay lập tức.
+Bên cạnh đó, mình đã nâng cấp giao diện của 3 dashboards chính (Customer, Owner, Admin) theo định hướng luxury hiện đại tối giản của LuxeWay (bo góc nhỏ 4-6px, bảng dữ liệu nâng cao, thanh điều hướng đóng mở linh hoạt), đồng thời thực thi các ràng buộc kiểm tra dữ liệu đầu vào chuẩn hóa (Validation rules) ở cả 2 phía Frontend và Backend.
+
+### Những bài học rút ra:
+
+1. **Vòng đời đặt xe phức tạp và tự động hóa ngầm (Automated Lifecycle Scheduling)**:
+   Xây dựng một hệ thống thuê xe thực tế đòi hỏi cơ chế quản lý trạng thái tự động cực kỳ chính xác. Khi renter tạo yêu cầu đặt xe, trạng thái chuyển sang `WAITING_PAYMENT` và bắt đầu đếm ngược. Nếu quá 15 phút mà renter không chuyển khoản và bấm xác nhận, Scheduler ngầm `@Scheduled(fixedRate = 60000)` phía backend sẽ tự động quét, chuyển trạng thái sang `PAYMENT_EXPIRED`, đồng thời hoàn trả lại lịch rảnh cho xe đó trong calendar. Điều này giúp ngăn chặn việc giữ xe ảo gây thiệt hại cho chủ xe.
+
+2. **Duyệt giao dịch thủ công an toàn (Manual Admin Verification Audit)**:
+   Để tránh gian lận chuyển khoản giả mạo, các giao dịch thanh toán được chuyển sang trạng thái `PAYMENT_PENDING` sau khi khách bấm xác nhận. Admin sẽ đối chiếu với tài khoản ngân hàng thực tế (được cấu hình động qua `PaymentSetting`), sau đó bấm Duyệt (`confirmPayment`) để chuyển trạng thái sang `CONFIRMED` và sinh hóa đơn PDF hoặc Từ chối (`rejectPayment`) kèm lý do từ chối. Mọi hoạt động này đều được lưu vết chi tiết trong `BookingStatusHistory` và bảng `payments` để phục vụ audit.
+
+3. **Cải tiến UI/UX Luxury nhất quán & Standard Validation**:
+   Thiết kế luxury không chỉ ở màu sắc (Deep Slate và Accent Gold) hay typography Serif mà còn ở sự gọn gàng, tính năng thiết thực (collapsible sidebar) và sự rõ ràng của thông báo lỗi. Bằng việc tích hợp `@Valid` tại các Controllers và custom `GlobalExceptionHandler`, toàn bộ lỗi validation được trả về dạng chuẩn JSON giúp frontend hiển thị thông báo lỗi trực quan trên từng trường input, tăng tính an toàn và chuyên nghiệp.
+
+### Tự đánh giá Phase 09
+
+| Tiêu chí | Điểm | Ghi chú |
+|---|:---:|---|
+| Hiểu vấn đề trước khi fix | 5 | Hiểu rõ cơ chế quản lý vòng đời trạng thái booking và scheduler ngầm |
+| Fix đúng nguyên nhân gốc | 5 | Tích hợp thành công luồng thanh toán thủ công và các form validation |
+| Kiểm chứng sau fix | 5 | Chạy compile backend Gradle và build frontend Vite thành công 100% |
+| Ghi lại đầy đủ | 5 | Cập nhật đầy đủ 4 file log trong members/NguyenVanDang |
+| Sử dụng AI có trách nhiệm | 5 | Làm chủ logic nghiệp vụ, tự custom style bảng, layout và form inputs |
+
+---
+
+## 18. Cam kết Reflection
 
 Em/nhóm cam kết rằng nội dung reflection này phản ánh trung thực quá trình sử dụng AI và quá trình học tập trong bài tập/project.
 
@@ -1011,5 +1069,6 @@ Sinh viên/nhóm hiểu rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-06-29 |
+| Nguyễn Văn Dạng - DE190324 | 2026-07-13 |
+
 

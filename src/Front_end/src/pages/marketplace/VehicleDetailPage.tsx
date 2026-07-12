@@ -11,7 +11,7 @@ import apiClient from '@/services/api';
 import type { Vehicle } from '@/types';
 import { useAuthStore, useUIStore } from '@/store';
 import { useToast } from '@/components/ui/Toast';
-import { formatCurrency, cn, resolveImageUrl } from '@/utils';
+import { formatCurrency, cn, resolveImageUrl, sanitizeLocation } from '@/utils';
 import { fadeUp, staggerContainer, staggerItem } from '@/animations/variants';
 import LuxeWayMap from '@/components/map/LuxeWayMap';
 import { recommendationService } from '@/services/enterpriseService';
@@ -296,7 +296,7 @@ export const VehicleDetailPage: React.FC = () => {
                 <div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700" />
                 <div className="flex items-center gap-1 font-medium">
                   <MapPin className="w-4 h-4 text-amber-500" />
-                  <span>{vehicle.location?.city || 'Hồ Chí Minh'}</span>
+                  <span>{sanitizeLocation(vehicle.location?.city || 'Hồ Chí Minh')}</span>
                 </div>
               </div>
 

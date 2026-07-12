@@ -64,27 +64,17 @@ public class PaymentController {
         return ResponseEntity.ok(ApiResponse.success(payments));
     }
 
-    @RequestMapping(value = "/vnpay/callback", method = {RequestMethod.GET, RequestMethod.POST})
-    @Operation(summary = "Handle VNPay payment callback (public endpoint)")
-    public ResponseEntity<ApiResponse<PaymentDTOs.PaymentResponse>> vnpayCallback(
-            @RequestParam Map<String, String> params) {
-        PaymentDTOs.PaymentResponse payment = paymentService.processVNPayCallback(params);
-        return ResponseEntity.ok(ApiResponse.success("Payment callback processed", payment));
-    }
-
-    @GetMapping("/vnpay/return")
-    @Operation(summary = "Handle VNPay return redirect (public endpoint)")
-    public ResponseEntity<ApiResponse<PaymentDTOs.PaymentResponse>> vnpayReturn(
-            @RequestParam Map<String, String> params) {
-        PaymentDTOs.PaymentResponse payment = paymentService.processVNPayCallback(params);
-        return ResponseEntity.ok(ApiResponse.success("Payment return processed", payment));
-    }
-
+    /**
+     * MoMo IPN endpoint – called by MoMo server (POST) after payment.
+     * Must be publicly accessible (no auth required from MoMo).
+     * Path: POST /payments/momo/ipn  (matches momoIpnUrl in config)
+     */
     @PostMapping("/momo/ipn")
     @Operation(summary = "Handle MoMo IPN (Instant Payment Notification) – public endpoint")
     public ResponseEntity<Map<String, Object>> momoIpn(@RequestBody Map<String, String> params) {
         try {
             PaymentDTOs.PaymentResponse payment = paymentService.processMoMoIpn(params);
+            // MoMo expects HTTP 204 or 200 with specific body to acknowledge receipt
             Map<String, Object> ack = Map.of(
                 "partnerCode", params.getOrDefault("partnerCode", ""),
                 "requestId",   params.getOrDefault("requestId", ""),
@@ -99,6 +89,11 @@ public class PaymentController {
         }
     }
 
+    /**
+     * MoMo Return endpoint – user browser is redirected here after payment.
+     * Can be GET or POST depending on MoMo's redirect.
+     * Path: GET|POST /payments/momo/return
+     */
     @RequestMapping(value = "/momo/return", method = {RequestMethod.GET, RequestMethod.POST})
     @Operation(summary = "Handle MoMo return redirect – public endpoint")
     public ResponseEntity<ApiResponse<PaymentDTOs.PaymentResponse>> momoReturn(
@@ -107,6 +102,11 @@ public class PaymentController {
         return ResponseEntity.ok(ApiResponse.success("MoMo payment return processed", payment));
     }
 
+    /**
+     * PayOS webhook endpoint - called by PayOS after payment status changes.
+     * Must be publicly accessible because PayOS calls without user JWT.
+     * Path: POST /payments/payos/webhook
+     */
     @PostMapping("/payos/webhook")
     @Operation(summary = "Handle PayOS webhook - public endpoint")
     public ResponseEntity<Map<String, Object>> payosWebhook(@RequestBody Map<String, Object> payload) {
@@ -119,6 +119,11 @@ public class PaymentController {
         }
     }
 
+    /**
+     * PayOS Return endpoint - user browser is redirected here after payment.
+     * The backend verifies the real payment status with PayOS before updating local state.
+     * Path: GET|POST /payments/payos/return
+     */
     @RequestMapping(value = "/payos/return", method = {RequestMethod.GET, RequestMethod.POST})
     @Operation(summary = "Handle PayOS return redirect - public endpoint")
     public ResponseEntity<ApiResponse<PaymentDTOs.PaymentResponse>> payosReturn(

@@ -124,7 +124,7 @@ class ApiClient {
               this.onUnauthorized();
             } else {
               // Only redirect if we're on a protected page and have no auth handler wired
-              const protectedPrefixes = ['/dashboard', '/admin', '/owner', '/business', '/booking', '/payment', '/messages', '/notifications'];
+              const protectedPrefixes = ['/dashboard', '/admin', '/owner', '/booking', '/payment', '/messages', '/notifications'];
               const path = window.location.pathname;
               const isProtected = protectedPrefixes.some(p => path === p || path.startsWith(p + '/'));
               if (isProtected) {

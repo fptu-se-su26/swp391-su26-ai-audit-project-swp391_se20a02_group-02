@@ -27,9 +27,6 @@ const getRoleBasedDashboard = (user: User | null): string => {
     return '/admin';
   }
   if (role === 'owner') {
-    if (accountType === 'BUSINESS') {
-      return '/business';
-    }
     return '/owner';
   }
   return '/';
@@ -119,9 +116,9 @@ export const LoginPage: React.FC = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   React.useEffect(() => {
-    // BUG-18 FIX: Already-authenticated users get sent to their role dashboard, not '/'
+    // Already-authenticated users get sent to Home page, not dashboard
     if (isInitialized && isAuthenticated && user) {
-      navigate(getRoleBasedDashboard(user), { replace: true });
+      navigate('/', { replace: true });
     }
   }, [isInitialized, isAuthenticated, user, navigate]);
 
@@ -146,8 +143,8 @@ export const LoginPage: React.FC = () => {
     if (success) {
       const { user } = useAuthStore.getState();
       toast.success(t.auth.welcomeBack, t.auth.signInSuccess);
-      // BUG-1/16 FIX: Navigate to role-based dashboard, not '/'
-      navigate(getRoleBasedDashboard(user), { replace: true });
+      // Navigate to Home page, not dashboard
+      navigate('/', { replace: true });
     } else {
       toast.error(t.auth.invalidCredentials, t.auth.invalidCredentialsDesc);
       setErrors({ password: t.auth.invalidCredentialsDesc });

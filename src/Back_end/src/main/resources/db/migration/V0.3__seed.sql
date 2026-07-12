@@ -47,12 +47,12 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'Kia Morning MT', 'Kia', 'Morning MT', 2023, 'ECONOMY', 500000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00001', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'Kia Morning MT', 'Kia', 'Morning MT', 2023, 'ECONOMY', 500000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00001', 'CAR')
 END;
 
 
 INSERT INTO raw_vehicle_data (source, original_price, vehicle_name, location, raw_json)
-VALUES ('MIOTO', 500000, 'Kia Morning MT', 'Đà Nẵng', '{"source": "MIOTO", "name": "Kia Morning MT", "brand": "Kia", "model": "Morning MT", "year": "2023", "original_price": "500000₫", "location": "Đà Nẵng", "image_url": "./Cho thuê ô tô_files/1689218176455_kia morning.jpeg", "seats": 5, "transmission": "Auto", "fuel": "Gasoline", "base_price": 500000, "local_image_url": ""}');
+VALUES ('MIOTO', 500000, 'Kia Morning MT', 'Da Nang', '{"source": "MIOTO", "name": "Kia Morning MT", "brand": "Kia", "model": "Morning MT", "year": "2023", "original_price": "500000₫", "location": "Da Nang", "image_url": "./Cho thuê ô tô_files/1689218176455_kia morning.jpeg", "seats": 5, "transmission": "Auto", "fuel": "Gasoline", "base_price": 500000, "local_image_url": ""}');
 
 
 IF NOT EXISTS (SELECT 1 FROM vehicle_brands WHERE name = 'Kia')
@@ -83,12 +83,12 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'Kia Forte 1.6 MT', 'Kia', 'Forte 1.6', 2023, 'ECONOMY', 700000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00002', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'Kia Forte 1.6 MT', 'Kia', 'Forte 1.6', 2023, 'ECONOMY', 700000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00002', 'CAR')
 END;
 
 
 INSERT INTO raw_vehicle_data (source, original_price, vehicle_name, location, raw_json)
-VALUES ('MIOTO', 700000, 'Kia Forte 1.6 MT', 'Tp. Đà Nẵng', '{"source": "MIOTO", "name": "Kia Forte 1.6 MT", "brand": "Kia", "model": "Forte 1.6", "year": "2023", "original_price": "700000₫", "location": "Tp. Đà Nẵng", "image_url": "./Cho thuê ô tô_files/default-image.jpg", "seats": 5, "transmission": "Auto", "fuel": "Gasoline", "base_price": 700000, "local_image_url": ""}');
+VALUES ('MIOTO', 700000, 'Kia Forte 1.6 MT', 'Tp. Da Nang', '{"source": "MIOTO", "name": "Kia Forte 1.6 MT", "brand": "Kia", "model": "Forte 1.6", "year": "2023", "original_price": "700000₫", "location": "Tp. Da Nang", "image_url": "./Cho thuê ô tô_files/default-image.jpg", "seats": 5, "transmission": "Auto", "fuel": "Gasoline", "base_price": 700000, "local_image_url": ""}');
 
 
 IF NOT EXISTS (SELECT 1 FROM vehicle_brands WHERE name = 'Honda')
@@ -119,12 +119,12 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'Honda Civic MT', 'Honda', 'Civic MT', 2023, 'ECONOMY', 700000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00003', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'Honda Civic MT', 'Honda', 'Civic MT', 2023, 'ECONOMY', 700000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00003', 'CAR')
 END;
 
 
 INSERT INTO raw_vehicle_data (source, original_price, vehicle_name, location, raw_json)
-VALUES ('MIOTO', 700000, 'Honda Civic MT', 'Tp. Đà Nẵng', '{"source": "MIOTO", "name": "Honda Civic MT", "brand": "Honda", "model": "Civic MT", "year": "2023", "original_price": "700000₫", "location": "Tp. Đà Nẵng", "image_url": "./Cho thuê ô tô_files/1689309307704_honda civic.jpeg", "seats": 5, "transmission": "Auto", "fuel": "Gasoline", "base_price": 700000, "local_image_url": ""}');
+VALUES ('MIOTO', 700000, 'Honda Civic MT', 'Tp. Da Nang', '{"source": "MIOTO", "name": "Honda Civic MT", "brand": "Honda", "model": "Civic MT", "year": "2023", "original_price": "700000₫", "location": "Tp. Da Nang", "image_url": "./Cho thuê ô tô_files/1689309307704_honda civic.jpeg", "seats": 5, "transmission": "Auto", "fuel": "Gasoline", "base_price": 700000, "local_image_url": ""}');
 
 
 IF NOT EXISTS (SELECT 1 FROM vehicle_brands WHERE name = 'Hyundai')
@@ -155,12 +155,12 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'Hyundai Grand i10 Hatchback 1.0 AT', 'Hyundai', 'Grand i10', 2023, 'ECONOMY', 700000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00004', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'Hyundai Grand i10 Hatchback 1.0 AT', 'Hyundai', 'Grand i10', 2023, 'ECONOMY', 700000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00004', 'CAR')
 END;
 
 
 INSERT INTO raw_vehicle_data (source, original_price, vehicle_name, location, raw_json)
-VALUES ('MIOTO', 700000, 'Hyundai Grand i10 Hatchback 1.0 AT', 'Tp. Đà Nẵng', '{"source": "MIOTO", "name": "Hyundai Grand i10 Hatchback 1.0 AT", "brand": "Hyundai", "model": "Grand i10", "year": "2023", "original_price": "700000₫", "location": "Tp. Đà Nẵng", "image_url": "./Cho thuê ô tô_files/1689143255811_hyundai i10.jpg", "seats": 5, "transmission": "Auto", "fuel": "Gasoline", "base_price": 700000, "local_image_url": ""}');
+VALUES ('MIOTO', 700000, 'Hyundai Grand i10 Hatchback 1.0 AT', 'Tp. Da Nang', '{"source": "MIOTO", "name": "Hyundai Grand i10 Hatchback 1.0 AT", "brand": "Hyundai", "model": "Grand i10", "year": "2023", "original_price": "700000₫", "location": "Tp. Da Nang", "image_url": "./Cho thuê ô tô_files/1689143255811_hyundai i10.jpg", "seats": 5, "transmission": "Auto", "fuel": "Gasoline", "base_price": 700000, "local_image_url": ""}');
 
 
 IF NOT EXISTS (SELECT 1 FROM vehicle_brands WHERE name = 'Nissan')
@@ -191,12 +191,12 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'Nissan Sunny XL', 'Nissan', 'Sunny XL', 2023, 'ECONOMY', 700000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00005', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'Nissan Sunny XL', 'Nissan', 'Sunny XL', 2023, 'ECONOMY', 700000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00005', 'CAR')
 END;
 
 
 INSERT INTO raw_vehicle_data (source, original_price, vehicle_name, location, raw_json)
-VALUES ('MIOTO', 700000, 'Nissan Sunny XL', 'Tp. Đà Nẵng', '{"source": "MIOTO", "name": "Nissan Sunny XL", "brand": "Nissan", "model": "Sunny XL", "year": "2023", "original_price": "700000₫", "location": "Tp. Đà Nẵng", "image_url": "./Cho thuê ô tô_files/1689318398716_nissan sunny.png", "seats": 5, "transmission": "Auto", "fuel": "Gasoline", "base_price": 700000, "local_image_url": ""}');
+VALUES ('MIOTO', 700000, 'Nissan Sunny XL', 'Tp. Da Nang', '{"source": "MIOTO", "name": "Nissan Sunny XL", "brand": "Nissan", "model": "Sunny XL", "year": "2023", "original_price": "700000₫", "location": "Tp. Da Nang", "image_url": "./Cho thuê ô tô_files/1689318398716_nissan sunny.png", "seats": 5, "transmission": "Auto", "fuel": "Gasoline", "base_price": 700000, "local_image_url": ""}');
 
 
 IF NOT EXISTS (SELECT 1 FROM vehicle_brands WHERE name = 'Toyota')
@@ -227,12 +227,12 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'Toyota Vios MT', 'Toyota', 'Vios MT', 2023, 'ECONOMY', 700000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00006', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'Toyota Vios MT', 'Toyota', 'Vios MT', 2023, 'ECONOMY', 700000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00006', 'CAR')
 END;
 
 
 INSERT INTO raw_vehicle_data (source, original_price, vehicle_name, location, raw_json)
-VALUES ('MIOTO', 700000, 'Toyota Vios MT', 'Tp. Đà Nẵng', '{"source": "MIOTO", "name": "Toyota Vios MT", "brand": "Toyota", "model": "Vios MT", "year": "2023", "original_price": "700000₫", "location": "Tp. Đà Nẵng", "image_url": "./Cho thuê ô tô_files/1689132278841_Vios MT.png", "seats": 5, "transmission": "Auto", "fuel": "Gasoline", "base_price": 700000, "local_image_url": ""}');
+VALUES ('MIOTO', 700000, 'Toyota Vios MT', 'Tp. Da Nang', '{"source": "MIOTO", "name": "Toyota Vios MT", "brand": "Toyota", "model": "Vios MT", "year": "2023", "original_price": "700000₫", "location": "Tp. Da Nang", "image_url": "./Cho thuê ô tô_files/1689132278841_Vios MT.png", "seats": 5, "transmission": "Auto", "fuel": "Gasoline", "base_price": 700000, "local_image_url": ""}');
 
 
 IF NOT EXISTS (SELECT 1 FROM vehicle_brands WHERE name = 'Hyundai')
@@ -263,12 +263,12 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'Hyundai Avante AT', 'Hyundai', 'Avante AT', 2023, 'ECONOMY', 700000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00007', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'Hyundai Avante AT', 'Hyundai', 'Avante AT', 2023, 'ECONOMY', 700000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00007', 'CAR')
 END;
 
 
 INSERT INTO raw_vehicle_data (source, original_price, vehicle_name, location, raw_json)
-VALUES ('MIOTO', 700000, 'Hyundai Avante AT', 'Tp. Đà Nẵng', '{"source": "MIOTO", "name": "Hyundai Avante AT", "brand": "Hyundai", "model": "Avante AT", "year": "2023", "original_price": "700000₫", "location": "Tp. Đà Nẵng", "image_url": "./Cho thuê ô tô_files/1689134881883_hyundai avante.jpeg", "seats": 5, "transmission": "Auto", "fuel": "Gasoline", "base_price": 700000, "local_image_url": ""}');
+VALUES ('MIOTO', 700000, 'Hyundai Avante AT', 'Tp. Da Nang', '{"source": "MIOTO", "name": "Hyundai Avante AT", "brand": "Hyundai", "model": "Avante AT", "year": "2023", "original_price": "700000₫", "location": "Tp. Da Nang", "image_url": "./Cho thuê ô tô_files/1689134881883_hyundai avante.jpeg", "seats": 5, "transmission": "Auto", "fuel": "Gasoline", "base_price": 700000, "local_image_url": ""}');
 
 
 IF NOT EXISTS (SELECT 1 FROM vehicle_brands WHERE name = 'Geely')
@@ -299,12 +299,12 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'Geely Coolray Coolray Flagship', 'Geely', 'Coolray Coolray', 2023, 'ECONOMY', 730000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00008', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'Geely Coolray Coolray Flagship', 'Geely', 'Coolray Coolray', 2023, 'ECONOMY', 730000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00008', 'CAR')
 END;
 
 
 INSERT INTO raw_vehicle_data (source, original_price, vehicle_name, location, raw_json)
-VALUES ('MIOTO', 730000, 'Geely Coolray Coolray Flagship', 'Đà Nẵng', '{"source": "MIOTO", "name": "Geely Coolray Coolray Flagship", "brand": "Geely", "model": "Coolray Coolray", "year": "2023", "original_price": "730000₫", "location": "Đà Nẵng", "image_url": "./Cho thuê ô tô_files/1762309920454_geely-coolray-250303-c05.jpg", "seats": 5, "transmission": "Auto", "fuel": "Gasoline", "base_price": 730000, "local_image_url": ""}');
+VALUES ('MIOTO', 730000, 'Geely Coolray Coolray Flagship', 'Da Nang', '{"source": "MIOTO", "name": "Geely Coolray Coolray Flagship", "brand": "Geely", "model": "Coolray Coolray", "year": "2023", "original_price": "730000₫", "location": "Da Nang", "image_url": "./Cho thuê ô tô_files/1762309920454_geely-coolray-250303-c05.jpg", "seats": 5, "transmission": "Auto", "fuel": "Gasoline", "base_price": 730000, "local_image_url": ""}');
 
 
 IF NOT EXISTS (SELECT 1 FROM vehicle_brands WHERE name = 'Toyota')
@@ -335,12 +335,12 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'Toyota Vios AT', 'Toyota', 'Vios AT', 2023, 'ECONOMY', 800000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00009', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'Toyota Vios AT', 'Toyota', 'Vios AT', 2023, 'ECONOMY', 800000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00009', 'CAR')
 END;
 
 
 INSERT INTO raw_vehicle_data (source, original_price, vehicle_name, location, raw_json)
-VALUES ('MIOTO', 800000, 'Toyota Vios AT', 'Tp. Đà Nẵng', '{"source": "MIOTO", "name": "Toyota Vios AT", "brand": "Toyota", "model": "Vios AT", "year": "2023", "original_price": "800000₫", "location": "Tp. Đà Nẵng", "image_url": "./Cho thuê ô tô_files/1689132331746_Vios MT.png", "seats": 5, "transmission": "Auto", "fuel": "Gasoline", "base_price": 800000, "local_image_url": ""}');
+VALUES ('MIOTO', 800000, 'Toyota Vios AT', 'Tp. Da Nang', '{"source": "MIOTO", "name": "Toyota Vios AT", "brand": "Toyota", "model": "Vios AT", "year": "2023", "original_price": "800000₫", "location": "Tp. Da Nang", "image_url": "./Cho thuê ô tô_files/1689132331746_Vios MT.png", "seats": 5, "transmission": "Auto", "fuel": "Gasoline", "base_price": 800000, "local_image_url": ""}');
 
 
 IF NOT EXISTS (SELECT 1 FROM vehicle_brands WHERE name = 'VINFAST')
@@ -371,7 +371,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'VINFAST VF3 2025', 'VINFAST', 'VF3 2025', 2023, 'ECONOMY', 6070005, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00010', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'VINFAST VF3 2025', 'VINFAST', 'VF3 2025', 2023, 'ECONOMY', 6070005, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00010', 'CAR')
 END;
 
 
@@ -407,7 +407,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'VINFAST VF3 2026', 'VINFAST', 'VF3 2026', 2023, 'ECONOMY', 6600006, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00011', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'VINFAST VF3 2026', 'VINFAST', 'VF3 2026', 2023, 'ECONOMY', 6600006, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00011', 'CAR')
 END;
 
 
@@ -443,7 +443,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'SUZUKI ERTIGA 2021', 'SUZUKI', 'ERTIGA 2021', 2023, 'ECONOMY', 7580006, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00012', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'SUZUKI ERTIGA 2021', 'SUZUKI', 'ERTIGA 2021', 2023, 'ECONOMY', 7580006, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00012', 'CAR')
 END;
 
 
@@ -479,7 +479,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'VINFAST VF5 2025', 'VINFAST', 'VF5 2025', 2023, 'ECONOMY', 8840008, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00013', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'VINFAST VF5 2025', 'VINFAST', 'VF5 2025', 2023, 'ECONOMY', 8840008, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00013', 'CAR')
 END;
 
 
@@ -515,7 +515,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'TOYOTA INNOVA 2018', 'TOYOTA', 'INNOVA 2018', 2023, 'ECONOMY', 8610007, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00014', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'TOYOTA INNOVA 2018', 'TOYOTA', 'INNOVA 2018', 2023, 'ECONOMY', 8610007, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00014', 'CAR')
 END;
 
 
@@ -551,7 +551,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'NISSAN SUNNY 2017', 'NISSAN', 'SUNNY 2017', 2023, 'ECONOMY', 6310005, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00015', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'NISSAN SUNNY 2017', 'NISSAN', 'SUNNY 2017', 2023, 'ECONOMY', 6310005, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00015', 'CAR')
 END;
 
 
@@ -587,7 +587,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'TOYOTA INNOVA CROSS  2025', 'TOYOTA', 'INNOVA CROSS', 2023, 'ECONOMY', 1297000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00016', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'TOYOTA INNOVA CROSS  2025', 'TOYOTA', 'INNOVA CROSS', 2023, 'ECONOMY', 1297000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00016', 'CAR')
 END;
 
 
@@ -623,7 +623,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'VINFAST LUX SA  2021', 'VINFAST', 'LUX SA', 2023, 'ECONOMY', 1148000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00017', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'VINFAST LUX SA  2021', 'VINFAST', 'LUX SA', 2023, 'ECONOMY', 1148000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00017', 'CAR')
 END;
 
 
@@ -659,7 +659,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'KIA K3 PREMIUM 2022', 'KIA', 'K3 PREMIUM', 2023, 'ECONOMY', 1034000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00018', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'KIA K3 PREMIUM 2022', 'KIA', 'K3 PREMIUM', 2023, 'ECONOMY', 1034000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00018', 'CAR')
 END;
 
 
@@ -695,7 +695,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'VINFAST VF5 2024', 'VINFAST', 'VF5 2024', 2023, 'ECONOMY', 8840008, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00019', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'VINFAST VF5 2024', 'VINFAST', 'VF5 2024', 2023, 'ECONOMY', 8840008, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00019', 'CAR')
 END;
 
 
@@ -731,7 +731,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MITSUBISHI XPANDER 2023', 'MITSUBISHI', 'XPANDER 2023', 2023, 'ECONOMY', 1022000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00020', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MITSUBISHI XPANDER 2023', 'MITSUBISHI', 'XPANDER 2023', 2023, 'ECONOMY', 1022000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00020', 'CAR')
 END;
 
 
@@ -767,7 +767,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'TOYOTA VIOS 2018', 'TOYOTA', 'VIOS 2018', 2023, 'ECONOMY', 8150007, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00021', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'TOYOTA VIOS 2018', 'TOYOTA', 'VIOS 2018', 2023, 'ECONOMY', 8150007, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00021', 'CAR')
 END;
 
 
@@ -803,7 +803,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'CHEVROLET SPARK 2012', 'CHEVROLET', 'SPARK 2012', 2023, 'ECONOMY', 4920004, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00022', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'CHEVROLET SPARK 2012', 'CHEVROLET', 'SPARK 2012', 2023, 'ECONOMY', 4920004, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00022', 'CAR')
 END;
 
 
@@ -839,7 +839,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'HYUNDAI STARGAZER 2024', 'HYUNDAI', 'STARGAZER 2024', 2023, 'ECONOMY', 1135000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00023', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'HYUNDAI STARGAZER 2024', 'HYUNDAI', 'STARGAZER 2024', 2023, 'ECONOMY', 1135000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00023', 'CAR')
 END;
 
 
@@ -875,7 +875,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MAZDA 3 Deluxe 2017', 'MAZDA', '3 Deluxe', 2023, 'ECONOMY', 8720007, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00024', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MAZDA 3 Deluxe 2017', 'MAZDA', '3 Deluxe', 2023, 'ECONOMY', 8720007, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00024', 'CAR')
 END;
 
 
@@ -911,7 +911,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MITSUBISHI XPANDER 2022', 'MITSUBISHI', 'XPANDER 2022', 2023, 'ECONOMY', 1099000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00025', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MITSUBISHI XPANDER 2022', 'MITSUBISHI', 'XPANDER 2022', 2023, 'ECONOMY', 1099000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00025', 'CAR')
 END;
 
 
@@ -947,7 +947,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'SUZUKI XL7 2023', 'SUZUKI', 'XL7 2023', 2023, 'ECONOMY', 1033000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00026', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'SUZUKI XL7 2023', 'SUZUKI', 'XL7 2023', 2023, 'ECONOMY', 1033000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00026', 'CAR')
 END;
 
 
@@ -983,7 +983,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MITSUBISHI PAJERO SPORT 2015', 'MITSUBISHI', 'PAJERO SPORT', 2023, 'ECONOMY', 1079000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00027', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MITSUBISHI PAJERO SPORT 2015', 'MITSUBISHI', 'PAJERO SPORT', 2023, 'ECONOMY', 1079000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00027', 'CAR')
 END;
 
 
@@ -1019,7 +1019,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MAZDA CX5 LUXURY 2023', 'MAZDA', 'CX5 LUXURY', 2023, 'ECONOMY', 1435000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00028', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MAZDA CX5 LUXURY 2023', 'MAZDA', 'CX5 LUXURY', 2023, 'ECONOMY', 1435000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00028', 'CAR')
 END;
 
 
@@ -1055,7 +1055,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'VINFAST LIMO GREEN 2026', 'VINFAST', 'LIMO GREEN', 2023, 'ECONOMY', 1389000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00029', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'VINFAST LIMO GREEN 2026', 'VINFAST', 'LIMO GREEN', 2023, 'ECONOMY', 1389000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00029', 'CAR')
 END;
 
 
@@ -1091,7 +1091,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MITSUBISHI XPANDER CROSS 2023', 'MITSUBISHI', 'XPANDER CROSS', 2023, 'ECONOMY', 1187000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00030', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MITSUBISHI XPANDER CROSS 2023', 'MITSUBISHI', 'XPANDER CROSS', 2023, 'ECONOMY', 1187000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00030', 'CAR')
 END;
 
 
@@ -1127,7 +1127,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'CHEVROLET CAPTIVA 2016', 'CHEVROLET', 'CAPTIVA 2016', 2023, 'ECONOMY', 9960008, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00031', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'CHEVROLET CAPTIVA 2016', 'CHEVROLET', 'CAPTIVA 2016', 2023, 'ECONOMY', 9960008, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00031', 'CAR')
 END;
 
 
@@ -1163,7 +1163,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'KIA CERATO 2019', 'KIA', 'CERATO 2019', 2023, 'ECONOMY', 9070008, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00032', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'KIA CERATO 2019', 'KIA', 'CERATO 2019', 2023, 'ECONOMY', 9070008, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00032', 'CAR')
 END;
 
 
@@ -1199,7 +1199,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'KIA CARENS 2025', 'KIA', 'CARENS 2025', 2023, 'ECONOMY', 1389000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00033', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'KIA CARENS 2025', 'KIA', 'CARENS 2025', 2023, 'ECONOMY', 1389000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00033', 'CAR')
 END;
 
 
@@ -1235,7 +1235,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'KIA SELTOS LUXURY 2023', 'KIA', 'SELTOS LUXURY', 2023, 'ECONOMY', 916000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00034', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'KIA SELTOS LUXURY 2023', 'KIA', 'SELTOS LUXURY', 2023, 'ECONOMY', 916000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00034', 'CAR')
 END;
 
 
@@ -1271,7 +1271,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'KIA SELTOS DELUXE 2023', 'KIA', 'SELTOS DELUXE', 2023, 'ECONOMY', 1149000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00035', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'KIA SELTOS DELUXE 2023', 'KIA', 'SELTOS DELUXE', 2023, 'ECONOMY', 1149000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00035', 'CAR')
 END;
 
 
@@ -1307,7 +1307,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MAZDA CX5 LUXURY 2024', 'MAZDA', 'CX5 LUXURY', 2023, 'ECONOMY', 1372000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00036', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MAZDA CX5 LUXURY 2024', 'MAZDA', 'CX5 LUXURY', 2023, 'ECONOMY', 1372000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00036', 'CAR')
 END;
 
 
@@ -1343,7 +1343,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'KIA SELTOS PREMIUM 2020', 'KIA', 'SELTOS PREMIUM', 2023, 'ECONOMY', 1091000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00037', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'KIA SELTOS PREMIUM 2020', 'KIA', 'SELTOS PREMIUM', 2023, 'ECONOMY', 1091000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00037', 'CAR')
 END;
 
 
@@ -1379,7 +1379,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'JAECOO J7 FLAGSHIP 2025', 'JAECOO', 'J7 FLAGSHIP', 2023, 'ECONOMY', 1498000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00038', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'JAECOO J7 FLAGSHIP 2025', 'JAECOO', 'J7 FLAGSHIP', 2023, 'ECONOMY', 1498000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00038', 'CAR')
 END;
 
 
@@ -1415,7 +1415,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'TOYOTA VELOZ CROSS 2024', 'TOYOTA', 'VELOZ CROSS', 2023, 'ECONOMY', 1079000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00039', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'TOYOTA VELOZ CROSS 2024', 'TOYOTA', 'VELOZ CROSS', 2023, 'ECONOMY', 1079000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00039', 'CAR')
 END;
 
 
@@ -1451,7 +1451,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'VINFAST VF3 2024', 'VINFAST', 'VF3 2024', 2023, 'ECONOMY', 5740005, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00040', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'VINFAST VF3 2024', 'VINFAST', 'VF3 2024', 2023, 'ECONOMY', 5740005, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00040', 'CAR')
 END;
 
 
@@ -1487,7 +1487,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MAZDA 3 LUXURY 2023', 'MAZDA', '3 LUXURY', 2023, 'ECONOMY', 1021000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00041', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MAZDA 3 LUXURY 2023', 'MAZDA', '3 LUXURY', 2023, 'ECONOMY', 1021000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00041', 'CAR')
 END;
 
 
@@ -1523,7 +1523,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'VINFAST VF6 PLUS 2024', 'VINFAST', 'VF6 PLUS', 2023, 'ECONOMY', 1056000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00042', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'VINFAST VF6 PLUS 2024', 'VINFAST', 'VF6 PLUS', 2023, 'ECONOMY', 1056000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00042', 'CAR')
 END;
 
 
@@ -1559,7 +1559,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'KIA CARNIVAL PREMIUM 2021', 'KIA', 'CARNIVAL PREMIUM', 2023, 'ECONOMY', 2058000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00043', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'KIA CARNIVAL PREMIUM 2021', 'KIA', 'CARNIVAL PREMIUM', 2023, 'ECONOMY', 2058000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00043', 'CAR')
 END;
 
 
@@ -1595,7 +1595,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MAZDA 2 2023', 'MAZDA', '2 2023', 2023, 'ECONOMY', 8970007, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00044', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MAZDA 2 2023', 'MAZDA', '2 2023', 2023, 'ECONOMY', 8970007, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00044', 'CAR')
 END;
 
 
@@ -1631,7 +1631,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'KIA CARENS LUXURY 2025', 'KIA', 'CARENS LUXURY', 2023, 'ECONOMY', 1263000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00045', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'KIA CARENS LUXURY 2025', 'KIA', 'CARENS LUXURY', 2023, 'ECONOMY', 1263000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00045', 'CAR')
 END;
 
 
@@ -1667,7 +1667,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MG5 STANDARD 2025', 'MG5', 'STANDARD 2025', 2023, 'ECONOMY', 8610007, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00046', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MG5 STANDARD 2025', 'MG5', 'STANDARD 2025', 2023, 'ECONOMY', 8610007, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00046', 'CAR')
 END;
 
 
@@ -1703,7 +1703,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'HONDA HRV G 2023', 'HONDA', 'HRV G', 2023, 'ECONOMY', 1068000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00047', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'HONDA HRV G 2023', 'HONDA', 'HRV G', 2023, 'ECONOMY', 1068000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00047', 'CAR')
 END;
 
 
@@ -1739,7 +1739,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'TOYOTA AVANZA 2023', 'TOYOTA', 'AVANZA 2023', 2023, 'ECONOMY', 1068000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00048', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'TOYOTA AVANZA 2023', 'TOYOTA', 'AVANZA 2023', 2023, 'ECONOMY', 1068000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00048', 'CAR')
 END;
 
 
@@ -1775,7 +1775,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MG ZS STANDARD 2024', 'MG', 'ZS STANDARD', 2023, 'ECONOMY', 861000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00049', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MG ZS STANDARD 2024', 'MG', 'ZS STANDARD', 2023, 'ECONOMY', 861000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00049', 'CAR')
 END;
 
 
@@ -1811,7 +1811,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'KIA CARNIVAL PREMIUM 2024', 'KIA', 'CARNIVAL PREMIUM', 2023, 'ECONOMY', 2296000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00050', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'KIA CARNIVAL PREMIUM 2024', 'KIA', 'CARNIVAL PREMIUM', 2023, 'ECONOMY', 2296000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00050', 'CAR')
 END;
 
 
@@ -1847,7 +1847,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'SUZUKI SWIFT HATCHBACK 2016', 'SUZUKI', 'SWIFT HATCHBACK', 2023, 'ECONOMY', 6560005, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00051', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'SUZUKI SWIFT HATCHBACK 2016', 'SUZUKI', 'SWIFT HATCHBACK', 2023, 'ECONOMY', 6560005, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00051', 'CAR')
 END;
 
 
@@ -1883,7 +1883,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'HONDA CITY 2016', 'HONDA', 'CITY 2016', 2023, 'ECONOMY', 6890005, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00052', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'HONDA CITY 2016', 'HONDA', 'CITY 2016', 2023, 'ECONOMY', 6890005, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00052', 'CAR')
 END;
 
 
@@ -1919,7 +1919,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'HONDA CITY RS 2025', 'HONDA', 'CITY RS', 2023, 'ECONOMY', 9760008, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00053', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'HONDA CITY RS 2025', 'HONDA', 'CITY RS', 2023, 'ECONOMY', 9760008, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00053', 'CAR')
 END;
 
 
@@ -1955,7 +1955,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MITSUBISHI OUTLANDER 2018', 'MITSUBISHI', 'OUTLANDER 2018', 2023, 'ECONOMY', 1091000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00054', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MITSUBISHI OUTLANDER 2018', 'MITSUBISHI', 'OUTLANDER 2018', 2023, 'ECONOMY', 1091000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00054', 'CAR')
 END;
 
 
@@ -1991,7 +1991,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MITSUBISHI ATTRAGE 2022', 'MITSUBISHI', 'ATTRAGE 2022', 2023, 'ECONOMY', 6650005, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00055', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MITSUBISHI ATTRAGE 2022', 'MITSUBISHI', 'ATTRAGE 2022', 2023, 'ECONOMY', 6650005, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00055', 'CAR')
 END;
 
 
@@ -2027,7 +2027,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'VINFAST VF5 2026', 'VINFAST', 'VF5 2026', 2023, 'ECONOMY', 9060008, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00056', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'VINFAST VF5 2026', 'VINFAST', 'VF5 2026', 2023, 'ECONOMY', 9060008, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00056', 'CAR')
 END;
 
 
@@ -2063,7 +2063,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'HYUNDAI ACCENT 2012', 'HYUNDAI', 'ACCENT 2012', 2023, 'ECONOMY', 6260005, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00057', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'HYUNDAI ACCENT 2012', 'HYUNDAI', 'ACCENT 2012', 2023, 'ECONOMY', 6260005, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00057', 'CAR')
 END;
 
 
@@ -2099,7 +2099,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MAZDA 3 LUXURY 2024', 'MAZDA', '3 LUXURY', 2023, 'ECONOMY', 1010000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00058', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MAZDA 3 LUXURY 2024', 'MAZDA', '3 LUXURY', 2023, 'ECONOMY', 1010000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00058', 'CAR')
 END;
 
 
@@ -2135,7 +2135,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'HYUNDAI ELANTRA 2018', 'HYUNDAI', 'ELANTRA 2018', 2023, 'ECONOMY', 8040007, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00059', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'HYUNDAI ELANTRA 2018', 'HYUNDAI', 'ELANTRA 2018', 2023, 'ECONOMY', 8040007, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00059', 'CAR')
 END;
 
 
@@ -2171,7 +2171,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'HYUNDAI SANTAFE 2024', 'HYUNDAI', 'SANTAFE 2024', 2023, 'ECONOMY', 1722000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00060', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'HYUNDAI SANTAFE 2024', 'HYUNDAI', 'SANTAFE 2024', 2023, 'ECONOMY', 1722000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00060', 'CAR')
 END;
 
 
@@ -2207,7 +2207,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'VINFAST LUX A 2019', 'VINFAST', 'LUX A', 2023, 'ECONOMY', 1171000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00061', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'VINFAST LUX A 2019', 'VINFAST', 'LUX A', 2023, 'ECONOMY', 1171000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00061', 'CAR')
 END;
 
 
@@ -2243,7 +2243,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'HYUNDAI VELOSER HATCHBACK 2011', 'HYUNDAI', 'VELOSER HATCHBACK', 2023, 'ECONOMY', 5450004, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00062', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'HYUNDAI VELOSER HATCHBACK 2011', 'HYUNDAI', 'VELOSER HATCHBACK', 2023, 'ECONOMY', 5450004, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00062', 'CAR')
 END;
 
 
@@ -2279,7 +2279,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MITSUBISHI XPANDER 2020', 'MITSUBISHI', 'XPANDER 2020', 2023, 'ECONOMY', 7810006, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00063', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MITSUBISHI XPANDER 2020', 'MITSUBISHI', 'XPANDER 2020', 2023, 'ECONOMY', 7810006, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00063', 'CAR')
 END;
 
 
@@ -2315,7 +2315,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'VINFAST VF6 ECO 2025', 'VINFAST', 'VF6 ECO', 2023, 'ECONOMY', 1022000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00064', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'VINFAST VF6 ECO 2025', 'VINFAST', 'VF6 ECO', 2023, 'ECONOMY', 1022000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00064', 'CAR')
 END;
 
 
@@ -2351,7 +2351,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'TOYOTA INNOVA 2017', 'TOYOTA', 'INNOVA 2017', 2023, 'ECONOMY', 8480007, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00065', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'TOYOTA INNOVA 2017', 'TOYOTA', 'INNOVA 2017', 2023, 'ECONOMY', 8480007, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00065', 'CAR')
 END;
 
 
@@ -2387,7 +2387,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'KIA SOLUTO 2021', 'KIA', 'SOLUTO 2021', 2023, 'ECONOMY', 7450006, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00066', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'KIA SOLUTO 2021', 'KIA', 'SOLUTO 2021', 2023, 'ECONOMY', 7450006, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00066', 'CAR')
 END;
 
 
@@ -2423,7 +2423,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'VINFAST VF6 ECO 2024', 'VINFAST', 'VF6 ECO', 2023, 'ECONOMY', 1062000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00067', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'VINFAST VF6 ECO 2024', 'VINFAST', 'VF6 ECO', 2023, 'ECONOMY', 1062000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00067', 'CAR')
 END;
 
 
@@ -2459,7 +2459,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'VINFAST VF7 PLUS 2026', 'VINFAST', 'VF7 PLUS', 2023, 'ECONOMY', 1793000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00068', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'VINFAST VF7 PLUS 2026', 'VINFAST', 'VF7 PLUS', 2023, 'ECONOMY', 1793000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '', 5, 'AVAILABLE', GETDATE(), 'SCR-00068', 'CAR')
 END;
 
 
@@ -2495,7 +2495,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'FORD ECOSPORT 2019', 'FORD', 'ECOSPORT 2019', 2023, 'ECONOMY', 8590007, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '/images/cars/MIOTO_ford_ecosport 2019_2019_mioto.jpg', 5, 'AVAILABLE', GETDATE(), 'SCR-00069', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'FORD ECOSPORT 2019', 'FORD', 'ECOSPORT 2019', 2023, 'ECONOMY', 8590007, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '/images/cars/MIOTO_ford_ecosport 2019_2019_mioto.jpg', 5, 'AVAILABLE', GETDATE(), 'SCR-00069', 'CAR')
 END;
 
 
@@ -2531,7 +2531,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'TOYOTA VELOZ CROSS 2025', 'TOYOTA', 'VELOZ CROSS', 2023, 'ECONOMY', 1159000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '/images/cars/MIOTO_toyota_veloz cross_2025_mioto.jpg', 5, 'AVAILABLE', GETDATE(), 'SCR-00070', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'TOYOTA VELOZ CROSS 2025', 'TOYOTA', 'VELOZ CROSS', 2023, 'ECONOMY', 1159000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '/images/cars/MIOTO_toyota_veloz cross_2025_mioto.jpg', 5, 'AVAILABLE', GETDATE(), 'SCR-00070', 'CAR')
 END;
 
 
@@ -2567,7 +2567,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MG5 2025', 'MG5', '2025', 2023, 'ECONOMY', 7990006, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '/images/cars/MIOTO_mg5_2025_2025_mioto.jpg', 5, 'AVAILABLE', GETDATE(), 'SCR-00071', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MG5 2025', 'MG5', '2025', 2023, 'ECONOMY', 7990006, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '/images/cars/MIOTO_mg5_2025_2025_mioto.jpg', 5, 'AVAILABLE', GETDATE(), 'SCR-00071', 'CAR')
 END;
 
 
@@ -2603,7 +2603,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MERCEDES C200 2008', 'MERCEDES', 'C200 2008', 2023, 'ECONOMY', 9850008, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '/images/cars/MIOTO_mercedes_c200 2008_2008_mioto.jpg', 5, 'AVAILABLE', GETDATE(), 'SCR-00072', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MERCEDES C200 2008', 'MERCEDES', 'C200 2008', 2023, 'ECONOMY', 9850008, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '/images/cars/MIOTO_mercedes_c200 2008_2008_mioto.jpg', 5, 'AVAILABLE', GETDATE(), 'SCR-00072', 'CAR')
 END;
 
 
@@ -2639,7 +2639,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'KIA SORENTO PREMIUM  2018', 'KIA', 'SORENTO PREMIUM', 2023, 'ECONOMY', 1364000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '/images/cars/MIOTO_kia_sorento premium_2018_mioto.jpg', 5, 'AVAILABLE', GETDATE(), 'SCR-00073', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'KIA SORENTO PREMIUM  2018', 'KIA', 'SORENTO PREMIUM', 2023, 'ECONOMY', 1364000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '/images/cars/MIOTO_kia_sorento premium_2018_mioto.jpg', 5, 'AVAILABLE', GETDATE(), 'SCR-00073', 'CAR')
 END;
 
 
@@ -2675,7 +2675,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MITSUBISHI OUTLANDER 2022', 'MITSUBISHI', 'OUTLANDER 2022', 2023, 'ECONOMY', 1225000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '/images/cars/MIOTO_mitsubishi_outlander 2022_2022_mioto.jpg', 5, 'AVAILABLE', GETDATE(), 'SCR-00074', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MITSUBISHI OUTLANDER 2022', 'MITSUBISHI', 'OUTLANDER 2022', 2023, 'ECONOMY', 1225000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '/images/cars/MIOTO_mitsubishi_outlander 2022_2022_mioto.jpg', 5, 'AVAILABLE', GETDATE(), 'SCR-00074', 'CAR')
 END;
 
 
@@ -2711,7 +2711,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'TOYOTA VIOS 2022', 'TOYOTA', 'VIOS 2022', 2023, 'ECONOMY', 8950007, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '/images/cars/MIOTO_toyota_vios 2022_2022_mioto.jpg', 5, 'AVAILABLE', GETDATE(), 'SCR-00075', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'TOYOTA VIOS 2022', 'TOYOTA', 'VIOS 2022', 2023, 'ECONOMY', 8950007, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '/images/cars/MIOTO_toyota_vios 2022_2022_mioto.jpg', 5, 'AVAILABLE', GETDATE(), 'SCR-00075', 'CAR')
 END;
 
 
@@ -2747,7 +2747,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MAZDA 3 PREMIUM 2017', 'MAZDA', '3 PREMIUM', 2023, 'ECONOMY', 8040007, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '/images/cars/MIOTO_mazda_3 premium_2017_mioto.jpg', 5, 'AVAILABLE', GETDATE(), 'SCR-00076', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MAZDA 3 PREMIUM 2017', 'MAZDA', '3 PREMIUM', 2023, 'ECONOMY', 8040007, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '/images/cars/MIOTO_mazda_3 premium_2017_mioto.jpg', 5, 'AVAILABLE', GETDATE(), 'SCR-00076', 'CAR')
 END;
 
 
@@ -2783,7 +2783,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'KIA SORENTO LUXURY 2015', 'KIA', 'SORENTO LUXURY', 2023, 'ECONOMY', 1085000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '/images/cars/MIOTO_kia_sorento luxury_2015_mioto.jpg', 5, 'AVAILABLE', GETDATE(), 'SCR-00077', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'KIA SORENTO LUXURY 2015', 'KIA', 'SORENTO LUXURY', 2023, 'ECONOMY', 1085000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '/images/cars/MIOTO_kia_sorento luxury_2015_mioto.jpg', 5, 'AVAILABLE', GETDATE(), 'SCR-00077', 'CAR')
 END;
 
 
@@ -2819,7 +2819,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MITSUBISHI XPANDER 2025', 'MITSUBISHI', 'XPANDER 2025', 2023, 'ECONOMY', 1124000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '/images/cars/MIOTO_mitsubishi_xpander 2025_2025_mioto.jpg', 5, 'AVAILABLE', GETDATE(), 'SCR-00078', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MITSUBISHI XPANDER 2025', 'MITSUBISHI', 'XPANDER 2025', 2023, 'ECONOMY', 1124000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '/images/cars/MIOTO_mitsubishi_xpander 2025_2025_mioto.jpg', 5, 'AVAILABLE', GETDATE(), 'SCR-00078', 'CAR')
 END;
 
 
@@ -2855,7 +2855,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'PEUGEOT 3008 2018', 'PEUGEOT', '3008 2018', 2023, 'ECONOMY', 861000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '/images/cars/MIOTO_peugeot_3008 2018_2018_mioto.jpg', 5, 'AVAILABLE', GETDATE(), 'SCR-00079', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'PEUGEOT 3008 2018', 'PEUGEOT', '3008 2018', 2023, 'ECONOMY', 861000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '/images/cars/MIOTO_peugeot_3008 2018_2018_mioto.jpg', 5, 'AVAILABLE', GETDATE(), 'SCR-00079', 'CAR')
 END;
 
 
@@ -2891,7 +2891,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'HYUNDAI CRETA LUXURY 2025', 'HYUNDAI', 'CRETA LUXURY', 2023, 'ECONOMY', 1147000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '/images/cars/MIOTO_hyundai_creta luxury_2025_mioto.jpg', 5, 'AVAILABLE', GETDATE(), 'SCR-00080', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'HYUNDAI CRETA LUXURY 2025', 'HYUNDAI', 'CRETA LUXURY', 2023, 'ECONOMY', 1147000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '/images/cars/MIOTO_hyundai_creta luxury_2025_mioto.jpg', 5, 'AVAILABLE', GETDATE(), 'SCR-00080', 'CAR')
 END;
 
 
@@ -2927,7 +2927,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'FORD TERRITORY TITANIUM 2023', 'FORD', 'TERRITORY TITANIUM', 2023, 'ECONOMY', 1263000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '/images/cars/MIOTO_ford_territory titanium_2023_mioto.jpg', 5, 'AVAILABLE', GETDATE(), 'SCR-00081', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'FORD TERRITORY TITANIUM 2023', 'FORD', 'TERRITORY TITANIUM', 2023, 'ECONOMY', 1263000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '/images/cars/MIOTO_ford_territory titanium_2023_mioto.jpg', 5, 'AVAILABLE', GETDATE(), 'SCR-00081', 'CAR')
 END;
 
 
@@ -2963,7 +2963,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MG RX5 STANDARD 2023', 'MG', 'RX5 STANDARD', 2023, 'ECONOMY', 1111000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '/images/cars/MIOTO_mg_rx5 standard_2023_mioto.jpg', 5, 'AVAILABLE', GETDATE(), 'SCR-00082', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MG RX5 STANDARD 2023', 'MG', 'RX5 STANDARD', 2023, 'ECONOMY', 1111000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '/images/cars/MIOTO_mg_rx5 standard_2023_mioto.jpg', 5, 'AVAILABLE', GETDATE(), 'SCR-00082', 'CAR')
 END;
 
 
@@ -2999,7 +2999,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MAZDA CX5 Deluxe 2024', 'MAZDA', 'CX5 Deluxe', 2023, 'ECONOMY', 1378000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '/images/cars/MIOTO_mazda_cx5 deluxe_2024_mioto.jpg', 5, 'AVAILABLE', GETDATE(), 'SCR-00083', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MAZDA CX5 Deluxe 2024', 'MAZDA', 'CX5 Deluxe', 2023, 'ECONOMY', 1378000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '/images/cars/MIOTO_mazda_cx5 deluxe_2024_mioto.jpg', 5, 'AVAILABLE', GETDATE(), 'SCR-00083', 'CAR')
 END;
 
 
@@ -3035,7 +3035,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MG HS LUX TROPHY 2020', 'MG', 'HS LUX', 2023, 'ECONOMY', 1091000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '/images/cars/MIOTO_mg_hs lux_2020_mioto.jpg', 5, 'AVAILABLE', GETDATE(), 'SCR-00084', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MG HS LUX TROPHY 2020', 'MG', 'HS LUX', 2023, 'ECONOMY', 1091000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '/images/cars/MIOTO_mg_hs lux_2020_mioto.jpg', 5, 'AVAILABLE', GETDATE(), 'SCR-00084', 'CAR')
 END;
 
 
@@ -3071,7 +3071,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MAZDA CX5 LUXURY 2025', 'MAZDA', 'CX5 LUXURY', 2023, 'ECONOMY', 1435000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '/images/cars/MIOTO_mazda_cx5 luxury_2025_mioto.jpg', 5, 'AVAILABLE', GETDATE(), 'SCR-00085', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MAZDA CX5 LUXURY 2025', 'MAZDA', 'CX5 LUXURY', 2023, 'ECONOMY', 1435000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '/images/cars/MIOTO_mazda_cx5 luxury_2025_mioto.jpg', 5, 'AVAILABLE', GETDATE(), 'SCR-00085', 'CAR')
 END;
 
 
@@ -3107,7 +3107,7 @@ END
 ELSE
 BEGIN
     INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
-    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MG ZS STANDARD 2025', 'MG', 'ZS STANDARD', 2023, 'ECONOMY', 953000, 0, N'Hà Nội', 'AUTOMATIC', 'GASOLINE', '/images/cars/MIOTO_mg_zs standard_2025_mioto.jpg', 5, 'AVAILABLE', GETDATE(), 'SCR-00086', 'CAR')
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', 'MG ZS STANDARD 2025', 'MG', 'ZS STANDARD', 2023, 'ECONOMY', 953000, 0, N'Hanoi', 'AUTOMATIC', 'GASOLINE', '/images/cars/MIOTO_mg_zs standard_2025_mioto.jpg', 5, 'AVAILABLE', GETDATE(), 'SCR-00086', 'CAR')
 END;
 
 

@@ -22,6 +22,44 @@ public class DatabaseMigration implements CommandLineRunner {
     public void run(String... args) {
         log.info("Running custom database migrations...");
 
+        // Reset corrupt database diacritics (e.g., C?n Tho or Mu B?O Hi?M) to force fresh clean English seeding
+        try {
+            boolean needsReset = false;
+            try {
+                Integer countCity = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM vehicles WHERE city LIKE '%?%'", Integer.class);
+                if (countCity != null && countCity > 0) {
+                    needsReset = true;
+                }
+            } catch (Exception e) {}
+            
+            try {
+                Integer countFeature = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM vehicle_features WHERE name LIKE '%?%'", Integer.class);
+                if (countFeature != null && countFeature > 0) {
+                    needsReset = true;
+                }
+            } catch (Exception e) {}
+
+            if (needsReset) {
+                log.info("Detected encoding errors or question marks in database values. Performing database tables cleanup for fresh English seeding...");
+                String[] tables = {
+                    "booking_payments", "payments", "bookings", "vehicle_reviews", "reviews", 
+                    "vehicle_features", "vehicle_images", "vehicle_translations", "employee_vehicle_assignments",
+                    "employees", "invoices", "messages", "conversation_participants", "conversations",
+                    "vehicles", "owner_verifications", "owner_ratings", "owners", "users"
+                };
+                for (String table : tables) {
+                    try {
+                        jdbcTemplate.execute("DELETE FROM " + table);
+                    } catch (Exception ex) {
+                        log.debug("Could not delete from table " + table + ": " + ex.getMessage());
+                    }
+                }
+                log.info("Database cleanup completed successfully.");
+            }
+        } catch (Exception e) {
+            log.error("Failed database diacritics reset check: {}", e.getMessage());
+        }
+
         // Programmatically run sample data seeding if database is empty
         try {
             Integer count = jdbcTemplate.queryForObject(
@@ -744,6 +782,100 @@ public class DatabaseMigration implements CommandLineRunner {
         } catch (Exception e) {
             log.error("Error running schema-enterprise.sql: {}", e.getMessage(), e);
         }
+
+        // CREATE TABLE: booking_counters
+        try {
+            jdbcTemplate.execute("CREATE TABLE booking_counters (" +
+                    "name NVARCHAR(50) NOT NULL PRIMARY KEY, " +
+                    "counter_value BIGINT NOT NULL)");
+            log.info("Successfully created table: booking_counters");
+        } catch (Exception e) {
+            log.debug("booking_counters table already exists: {}", e.getMessage());
+        }
+
+        // Seed initial counter value if not present
+        try {
+            Integer count = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM booking_counters WHERE name = 'bookings'", Integer.class);
+            if (count == null || count == 0) {
+                jdbcTemplate.execute("INSERT INTO booking_counters (name, counter_value) VALUES ('bookings', 100000)");
+                log.info("Successfully seeded table: booking_counters");
+            }
+        } catch (Exception e) {
+            log.warn("Failed to seed booking_counters: {}", e.getMessage());
+        }
+
+        // CREATE TABLE: payment_settings
+        try {
+            jdbcTemplate.execute("CREATE TABLE payment_settings (" +
+                    "id NVARCHAR(36) NOT NULL PRIMARY KEY, " +
+                    "bank_name NVARCHAR(100) NOT NULL, " +
+                    "account_number NVARCHAR(100) NOT NULL, " +
+                    "owner_name NVARCHAR(100) NOT NULL, " +
+                    "enabled BIT NOT NULL DEFAULT 1, " +
+                    "version INT NOT NULL DEFAULT 1, " +
+                    "updated_by NVARCHAR(100) NULL, " +
+                    "updated_time DATETIME2 NOT NULL DEFAULT GETDATE())");
+            log.info("Successfully created table: payment_settings");
+        } catch (Exception e) {
+            log.debug("payment_settings table already exists: {}", e.getMessage());
+        }
+
+        // Seed initial payment setting if not present
+        try {
+            Integer count = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM payment_settings WHERE id = 'P1'", Integer.class);
+            if (count == null || count == 0) {
+                jdbcTemplate.execute("INSERT INTO payment_settings (id, bank_name, account_number, owner_name, enabled, version, updated_by, updated_time) " +
+                        "VALUES ('P1', 'MB Bank', '0377096245', 'NGUYEN VAN DANG', 1, 1, 'SYSTEM', GETDATE())");
+                log.info("Successfully seeded table: payment_settings");
+            }
+        } catch (Exception e) {
+            log.warn("Failed to seed payment_settings: {}", e.getMessage());
+        }
+
+        // Drop/recreate CHK_bookings_status constraint
+        try {
+            try {
+                jdbcTemplate.execute("IF EXISTS (SELECT 1 FROM sys.objects WHERE name = 'CHK_bookings_status' AND type = 'C') " +
+                        "ALTER TABLE bookings DROP CONSTRAINT CHK_bookings_status");
+            } catch (Exception ex) {
+                // Standard SQL fallback
+                try {
+                    jdbcTemplate.execute("ALTER TABLE bookings DROP CONSTRAINT CHK_bookings_status");
+                } catch (Exception ignore) {}
+            }
+            jdbcTemplate.execute("ALTER TABLE bookings ADD CONSTRAINT CHK_bookings_status CHECK (status IN (" +
+                    "'PENDING', 'CONFIRMED', 'PICKING_UP', 'IN_PROGRESS', 'ACTIVE', 'DISPUTED', " +
+                    "'DRAFT', 'WAITING_PAYMENT', 'PAYMENT_PENDING', 'PAYMENT_VERIFIED', " +
+                    "'OWNER_APPROVED', 'READY_FOR_PICKUP', 'CHECKED_OUT', 'IN_RENTAL', " +
+                    "'RETURN_PENDING', 'RETURN_COMPLETED', 'COMPLETED', 'PAYMENT_EXPIRED', " +
+                    "'PAYMENT_REJECTED', 'CUSTOMER_CANCELLED', 'OWNER_CANCELLED', 'SYSTEM_CANCELLED'))");
+            log.info("Successfully updated CHK_bookings_status constraint");
+        } catch (Exception e) {
+            log.debug("Failed to update CHK_bookings_status check constraint: {}", e.getMessage());
+        }
+
+        // Add columns to bookings
+        addNullableColumn("bookings", "booking_code", "NVARCHAR(50)", "VARCHAR(50)");
+        addNullableColumn("bookings", "cleaning_fee", "DECIMAL(12,0) NOT NULL DEFAULT 0", "DECIMAL(12,0) NOT NULL DEFAULT 0");
+        addNullableColumn("bookings", "version", "INT NOT NULL DEFAULT 0", "INT NOT NULL DEFAULT 0");
+
+        // Add unique index on booking_code
+        try {
+            jdbcTemplate.execute("CREATE UNIQUE INDEX UQ_bookings_booking_code ON bookings (booking_code) WHERE booking_code IS NOT NULL");
+            log.info("Successfully created index: UQ_bookings_booking_code");
+        } catch (Exception e) {
+            try {
+                jdbcTemplate.execute("CREATE UNIQUE INDEX UQ_bookings_booking_code ON bookings (booking_code)");
+            } catch (Exception ignore) {}
+        }
+
+        // Add columns to payments
+        addNullableColumn("payments", "verified_by", "NVARCHAR(100)", "VARCHAR(100)");
+        addNullableColumn("payments", "verified_time", "DATETIME2", "TIMESTAMP");
+        addNullableColumn("payments", "rejected_reason", "NVARCHAR(500)", "VARCHAR(500)");
+        addNullableColumn("payments", "transfer_content", "NVARCHAR(100)", "VARCHAR(100)");
     }
 
     private void addNullableColumn(String tableName, String columnName, String sqlServerType, String standardType) {

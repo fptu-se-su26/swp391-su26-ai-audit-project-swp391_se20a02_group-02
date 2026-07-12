@@ -8,7 +8,7 @@ import {
 import type { Vehicle } from '@/types';
 import { useVehicleStore, useAuthStore } from '@/store';
 import { useToast } from '@/components/ui/Toast';
-import { cn, formatCurrency, resolveImageUrl } from '@/utils';
+import { cn, formatCurrency, resolveImageUrl, sanitizeLocation } from '@/utils';
 import { cardHoverVariants } from '@/animations/variants';
 import { useT } from '@/i18n/translations';
 
@@ -213,7 +213,7 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
                   </h3>
                   <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mt-1">
                     <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                    {vehicle.location?.city || (vehicle as any).city || 'Vietnam'}
+                    {sanitizeLocation(vehicle.location?.city || (vehicle as any).city || 'Vietnam')}
                   </div>
                 </div>
                 
@@ -398,7 +398,7 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
               </h3>
               <div className="flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                 <MapPin className="w-3 h-3 flex-shrink-0" />
-                <span className="truncate">{vehicle.location?.city || (vehicle as any).city || 'Vietnam'}</span>
+                <span className="truncate">{sanitizeLocation(vehicle.location?.city || (vehicle as any).city || 'Vietnam')}</span>
               </div>
             </div>
             <div className="text-right flex-shrink-0">

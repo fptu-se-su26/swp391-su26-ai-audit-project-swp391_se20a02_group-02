@@ -461,7 +461,7 @@ export const CarDetails: React.FC = () => {
 
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
   const { isWishlisted, addToWishlist, removeFromWishlist, addRecentlyViewed, compareList, addToCompare, removeFromCompare } = useVehicleStore();
   const toast = useToast();
 
@@ -770,6 +770,31 @@ export const CarDetails: React.FC = () => {
       navigate('/auth/login');
       return;
     }
+
+    const isVi = language === 'vi';
+
+    // 1. Mandatory Scan Check: Verify KYC is completed
+    if (!user?.kycVerified && user?.kycStatus !== 'VERIFIED') {
+      toast.error(
+        isVi ? 'Yêu cầu xác minh danh tính' : 'Identity Verification Required',
+        isVi ? 'Bạn cần thực hiện quét CCCD và Bằng lái xe trước khi tiến hành đặt xe.' : 'Please scan and verify your ID (CCCD) and Driving License before booking.'
+      );
+      navigate('/dashboard/documents');
+      return;
+    }
+
+    // 2. Motorbike License Check: Motorbike licenses cannot rent cars
+    const licenseClass = user?.licenseClass ? user.licenseClass.trim().toUpperCase() : '';
+    if (licenseClass.startsWith('A')) {
+      toast.error(
+        isVi ? 'Không đủ điều kiện thuê xe' : 'Ineligible to Rent',
+        isVi 
+          ? `Bằng lái xe máy hạng ${licenseClass} không được phép thuê xe ô tô. Vui lòng sử dụng bằng lái xe ô tô (B1, B2, C...)`
+          : `A motorbike license (class ${licenseClass}) is not permitted to rent cars. Please use a car driving license (B1, B2, C...).`
+      );
+      return;
+    }
+
     if (!startDate || !endDate) {
       toast.warning('Select dates', 'Please choose pick-up and return dates.');
       return;

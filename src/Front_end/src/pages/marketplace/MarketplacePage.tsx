@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate, useLocation } from 'react-router-dom';
+import maplibregl from 'maplibre-gl';
 import {
-  Search, SlidersHorizontal, Grid3X3, List, X, ChevronDown,
+  Search, SlidersHorizontal, Grid3X3, List, X, ChevronDown, ChevronRight,
   MapPin, Sparkles, ArrowUpDown, Shield, Car, Bike,
   Map, ZoomIn, ZoomOut, Compass, Zap, Star, Check,
   Smartphone, CloudRain, Package, UserCircle,
-  Plane, Heart, Briefcase
+  Plane, Heart, Briefcase, RotateCw
 } from 'lucide-react';
 import { vehicleService } from '@/services/vehicleService';
 import { VehicleCard } from '@/components/vehicle/VehicleCard';
@@ -14,7 +15,7 @@ import { VehicleCardSkeleton } from '@/components/ui/Skeleton';
 import { LuxeWayMap } from '@/components/map/LuxeWayMap';
 import { useUIStore } from '@/store';
 import type { Vehicle, VehicleFilters, VehicleCategory, VehicleType, VehicleLocationResponse } from '@/types';
-import { formatCurrency, debounce, cn } from '@/utils';
+import { formatCurrency, debounce, cn, sanitizeLocation } from '@/utils';
 import { fadeUp, staggerContainer, staggerItem } from '@/animations/variants';
 import { useT } from '@/i18n/translations';
 
@@ -33,10 +34,15 @@ const formatVND = (amount: number): string => {
 
 // ====== CAR CATEGORIES ======
 const CAR_CATEGORIES: { value: VehicleCategory; label: string; icon: string }[] = [
+  { value: 'economy', label: 'Economy', icon: '🚗' },
   { value: 'sedan', label: 'Sedan', icon: '🚘' },
   { value: 'suv', label: 'SUV', icon: '🚙' },
+  { value: 'mpv', label: 'MPV', icon: '🚐' },
   { value: 'luxury', label: 'Luxury', icon: '💎' },
+  { value: 'business', label: 'Business', icon: '👔' },
   { value: 'electric_car', label: 'Electric', icon: '⚡' },
+  { value: 'sports', label: 'Sports', icon: '🏎️' },
+  { value: 'pickup', label: 'Pickup', icon: '🛻' },
 ];
 
 // ====== MOTORBIKE CATEGORIES ======
@@ -44,13 +50,16 @@ const MOTORBIKE_CATEGORIES: { value: VehicleCategory; label: string; icon: strin
   { value: 'scooter', label: 'Scooter', icon: '🛵' },
   { value: 'manual_motorcycle', label: 'Manual', icon: '🏍️' },
   { value: 'sport_bike', label: 'Sport Bike', icon: '🏍️' },
+  { value: 'classic_bike', label: 'Classic Bike', icon: '🛵' },
+  { value: 'adventure_bike', label: 'Adventure Bike', icon: '🚵' },
+  { value: 'electric_bike', label: 'Electric Bike', icon: '⚡' },
 ];
 
 // ====== CAR BRANDS ======
-const CAR_BRANDS = ['Toyota', 'BMW', 'Mercedes-Benz', 'VinFast', 'Honda'];
+const CAR_BRANDS = ['Toyota', 'Honda', 'Hyundai', 'BMW', 'Mercedes-Benz', 'VinFast', 'Audi', 'Mitsubishi', 'Kia', 'Mazda'];
 
 // ====== MOTORBIKE BRANDS ======
-const MOTO_BRANDS = ['Honda', 'Yamaha', 'VinFast'];
+const MOTO_BRANDS = ['Honda', 'Yamaha', 'Vespa', 'Suzuki', 'Kawasaki', 'Ducati', 'VinFast', 'Piaggio', 'BMW'];
 
 const SORT_OPTIONS = [
   { value: 'popular', label: 'Most Popular' },
@@ -79,11 +88,11 @@ const CompactSidebarCard: React.FC<CompactSidebarCardProps> = ({
   const isVi = language === 'vi';
   const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=800';
   const thumbnailSrc = vehicle.images?.[0] || vehicle.thumbnailUrl || FALLBACK_IMAGE;
-  
+
   const finalPrice = vehicle.pricePerDay;
   const finalPriceText = finalPrice >= 1000 ? `${(finalPrice / 1000).toLocaleString('en-US', { maximumFractionDigits: 0 })}K` : `${finalPrice}`;
-  
-  const distanceText = (vehicle as any).distanceKm !== undefined 
+
+  const distanceText = (vehicle as any).distanceKm !== undefined
     ? `${Number((vehicle as any).distanceKm).toFixed(1)} km`
     : `${(Math.random() * 8 + 1.2).toFixed(1)} km`;
 
@@ -109,7 +118,7 @@ const CompactSidebarCard: React.FC<CompactSidebarCardProps> = ({
           <h4 className="font-extrabold text-xs sm:text-sm text-slate-850 dark:text-white truncate leading-snug">
             {vehicle.name}
           </h4>
-          
+
           {/* Rating */}
           <div className="flex items-center gap-1 mt-1 text-[10px] text-slate-500 dark:text-slate-405 font-bold">
             <span className="text-amber-500 text-xs">★</span>
@@ -138,6 +147,7 @@ const CompactSidebarCard: React.FC<CompactSidebarCardProps> = ({
 
 // ====== CAR FILTER PANEL ======
 const CarFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: VehicleFilters) => void; onClose?: () => void }> = ({ filters, onChange, onClose }) => {
+  const t = useT();
   const [priceRange, setPriceRange] = useState<[number, number]>([filters.minPrice ?? 0, filters.maxPrice ?? 15000000]);
 
   const toggle = (key: keyof VehicleFilters, val: any) => {
@@ -150,7 +160,7 @@ const CarFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: VehicleF
     onChange({ ...filters, [key]: !(filters as any)[key] || undefined });
 
   return (
-    <div className="space-y-6 max-h-[80vh] overflow-y-auto pr-2 pb-6">
+    <div className="space-y-6 pb-2">
       <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
         <h3 className="font-display font-bold text-foreground text-base flex items-center gap-2">
           <Car className="w-4 h-4 text-blue-500" /> Car Filters
@@ -171,7 +181,7 @@ const CarFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: VehicleF
               <button key={cat.value} onClick={() => toggle('category', cat.value)}
                 className={cn("px-2 py-2 rounded-xl text-xs font-bold border transition-all text-left flex items-center gap-1.5",
                   sel ? "border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400" : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400")}>
-                <span>{cat.icon}</span>{cat.label}
+                <span>{cat.icon}</span>{t.categories[cat.value as keyof typeof t.categories] || cat.label}
               </button>
             );
           })}
@@ -297,6 +307,7 @@ const CarFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: VehicleF
 
 // ====== MOTORBIKE FILTER PANEL ======
 const MotorbikeFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: VehicleFilters) => void; onClose?: () => void }> = ({ filters, onChange, onClose }) => {
+  const t = useT();
   const [priceRange, setPriceRange] = useState<[number, number]>([filters.minPrice ?? 0, filters.maxPrice ?? 1500000]);
 
   const toggle = (key: keyof VehicleFilters, val: any) => {
@@ -309,7 +320,7 @@ const MotorbikeFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: Ve
     onChange({ ...filters, [key]: !(filters as any)[key] || undefined });
 
   return (
-    <div className="space-y-6 max-h-[80vh] overflow-y-auto pr-2 pb-6">
+    <div className="space-y-6 pb-2">
       <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
         <h3 className="font-display font-bold text-foreground text-base flex items-center gap-2">
           <Bike className="w-4 h-4 text-orange-500" /> Motorbike Filters
@@ -330,7 +341,7 @@ const MotorbikeFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: Ve
               <button key={cat.value} onClick={() => toggle('category', cat.value)}
                 className={cn("px-2 py-2 rounded-xl text-xs font-bold border transition-all text-left flex items-center gap-1.5",
                   sel ? "border-orange-500 bg-orange-500/10 text-orange-600 dark:text-orange-400" : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400")}>
-                <span>{cat.icon}</span>{cat.label}
+                <span>{cat.icon}</span>{t.categories[cat.value as keyof typeof t.categories] || cat.label}
               </button>
             );
           })}
@@ -464,7 +475,6 @@ const MotorbikeFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: Ve
   );
 };
 
-// ====== GEOCODE DATABASE FOR VIETNAMESE HOTSPOTS ======
 const GEOCODE_DATABASE: Record<string, { lat: number; lng: number }> = {
   'hồ chí minh': { lat: 10.762, lng: 106.660 },
   'ho chi minh': { lat: 10.762, lng: 106.660 },
@@ -475,6 +485,12 @@ const GEOCODE_DATABASE: Record<string, { lat: number; lng: number }> = {
   'nha trang': { lat: 12.2451, lng: 109.1943 },
   'đà lạt': { lat: 11.9404, lng: 108.4583 },
   'da lat': { lat: 11.9404, lng: 108.4583 },
+  'cần thơ': { lat: 10.0371, lng: 105.7882 },
+  'can tho': { lat: 10.0371, lng: 105.7882 },
+  'hải phòng': { lat: 20.8449, lng: 106.6881 },
+  'hai phong': { lat: 20.8449, lng: 106.6881 },
+  'huế': { lat: 16.4637, lng: 107.5909 },
+  'hue': { lat: 16.4637, lng: 107.5909 },
   'thủ đức': { lat: 10.8501, lng: 106.7712 },
   'thu duc': { lat: 10.8501, lng: 106.7712 },
   'quận 1': { lat: 10.7756, lng: 106.7004 },
@@ -488,15 +504,16 @@ const GEOCODE_DATABASE: Record<string, { lat: number; lng: number }> = {
 };
 
 // ====== MAIN MARKETPLACE PAGE ======
-interface MarketplacePageProps {
-  forceMapOpen?: boolean;
-}
-
-const MarketplacePage: React.FC<MarketplacePageProps> = ({ forceMapOpen = false }) => {
+const MarketplacePage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { language } = useUIStore();
   const isVi = language === 'vi';
+
+  // Derive map view mode from URL path or query param
+  const isMapView = location.pathname === '/map' || searchParams.get('view') === 'map';
+
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [mapVehicles, setMapVehicles] = useState<VehicleLocationResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -505,12 +522,20 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ forceMapOpen = false 
   const [page, setPage] = useState(1);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [mobileViewMode, setMobileViewMode] = useState<'list' | 'map'>(() => {
-    return (forceMapOpen || searchParams.get('map') === 'true') ? 'map' : 'list';
+    return isMapView ? 'map' : 'list';
   });
   const [showFilters, setShowFilters] = useState<boolean>(false);
-  const [mapOpen, setMapOpen] = useState<boolean>(() => {
-    return forceMapOpen || searchParams.get('map') === 'true';
-  });
+  const [mapOpen, setMapOpen] = useState<boolean>(isMapView);
+
+  // Rebuild states
+  const [showCarousel, setShowCarousel] = useState<boolean>(false);
+  const [showSearchArea, setShowSearchArea] = useState<boolean>(false);
+  const [mapBounds, setMapBounds] = useState<{ minLat: number; maxLat: number; minLng: number; maxLng: number } | null>(null);
+  const [shouldFitBounds, setShouldFitBounds] = useState<boolean>(true);
+  const [hoveredMapVehicleId, setHoveredMapVehicleId] = useState<string | null>(null);
+
+  // Carousel scroll ref for map view bottom carousel
+  const carouselRef = useRef<HTMLDivElement>(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
   const [mapSelectedVehicles, setMapSelectedVehicles] = useState<any[]>([]);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(true);
@@ -557,6 +582,10 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ forceMapOpen = false 
 
   const [filters, setFilters] = useState<VehicleFilters>(() => {
     const type = searchParams.get('type') as VehicleType | undefined;
+    const categories = searchParams.getAll('category') as VehicleCategory[];
+    const brands = searchParams.getAll('brands');
+    const minEngineCc = searchParams.get('minEngineCc');
+    const maxEngineCc = searchParams.get('maxEngineCc');
     return {
       vehicleType: type || undefined,
       location: searchParams.get('location') || undefined,
@@ -564,8 +593,110 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ forceMapOpen = false 
       startDate: searchParams.get('startDate') || undefined,
       endDate: searchParams.get('endDate') || undefined,
       keyword: searchParams.get('q') || undefined,
+      category: categories.length > 0 ? categories : undefined,
+      brands: brands.length > 0 ? brands : undefined,
+      minEngineCc: minEngineCc ? parseInt(minEngineCc, 10) : undefined,
+      maxEngineCc: maxEngineCc ? parseInt(maxEngineCc, 10) : undefined,
+      instantBook: searchParams.get('instantBook') === 'true' || undefined,
+      deliveryAvailable: searchParams.get('deliveryAvailable') === 'true' || undefined,
+      hasHelmet: searchParams.get('hasHelmet') === 'true' || undefined,
+      hasPhoneHolder: searchParams.get('hasPhoneHolder') === 'true' || undefined,
+      hasRaincoat: searchParams.get('hasRaincoat') === 'true' || undefined,
+      hasTouringPackage: searchParams.get('hasTouringPackage') === 'true' || undefined,
+      hasChauffeur: searchParams.get('hasChauffeur') === 'true' || undefined,
+      airportDelivery: searchParams.get('airportDelivery') === 'true' || undefined,
+      weddingRental: searchParams.get('weddingRental') === 'true' || undefined,
+      businessRental: searchParams.get('businessRental') === 'true' || undefined,
     };
   });
+
+  // Persist Map State (Load on mount)
+  useEffect(() => {
+    if (isMapView) {
+      try {
+        const saved = sessionStorage.getItem('luxeway_map_state');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.filters) {
+            setFilters(prev => ({ ...prev, ...parsed.filters }));
+          }
+          if (parsed.selectedVehicleId) {
+            setSelectedVehicleId(parsed.selectedVehicleId);
+          }
+          if (parsed.showCarousel !== undefined) {
+            setShowCarousel(parsed.showCarousel);
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to restore map state', e);
+      }
+    }
+  }, [isMapView]);
+
+  // Persist Map State (Save on changes)
+  useEffect(() => {
+    if (isMapView) {
+      try {
+        const stateToSave = {
+          filters,
+          selectedVehicleId,
+          showCarousel,
+        };
+        sessionStorage.setItem('luxeway_map_state', JSON.stringify(stateToSave));
+      } catch (e) { /* Ignore storage errors */ }
+    }
+  }, [filters, selectedVehicleId, showCarousel, isMapView]);
+
+  // Sync state back to URL parameters dynamically on filter changes
+  useEffect(() => {
+    const params = new URLSearchParams();
+
+    if (filters.vehicleType) params.set('type', filters.vehicleType);
+    if (filters.location) params.set('location', filters.location);
+    if (filters.sortBy && filters.sortBy !== 'popular') params.set('sort', filters.sortBy);
+    if (filters.startDate) params.set('startDate', filters.startDate);
+    if (filters.endDate) params.set('endDate', filters.endDate);
+    if (filters.keyword) params.set('q', filters.keyword);
+
+    if (filters.category && filters.category.length > 0) {
+      filters.category.forEach(c => params.append('category', c));
+    }
+    if (filters.brands && filters.brands.length > 0) {
+      filters.brands.forEach(b => params.append('brands', b));
+    }
+
+    if (filters.minEngineCc !== undefined) params.set('minEngineCc', filters.minEngineCc.toString());
+    if (filters.maxEngineCc !== undefined) params.set('maxEngineCc', filters.maxEngineCc.toString());
+
+    if (filters.instantBook) params.set('instantBook', 'true');
+    if (filters.deliveryAvailable) params.set('deliveryAvailable', 'true');
+    if (filters.hasHelmet) params.set('hasHelmet', 'true');
+    if (filters.hasPhoneHolder) params.set('hasPhoneHolder', 'true');
+    if (filters.hasRaincoat) params.set('hasRaincoat', 'true');
+    if (filters.hasTouringPackage) params.set('hasTouringPackage', 'true');
+    if (filters.hasChauffeur) params.set('hasChauffeur', 'true');
+    if (filters.airportDelivery) params.set('airportDelivery', 'true');
+    if (filters.weddingRental) params.set('weddingRental', 'true');
+    if (filters.businessRental) params.set('businessRental', 'true');
+
+    // Retain page context if present or view mode
+    const viewParam = searchParams.get('view');
+    if (viewParam) params.set('view', viewParam);
+    const vehicleParam = searchParams.get('vehicle');
+    if (vehicleParam) params.set('vehicle', vehicleParam);
+
+    setSearchParams(params, { replace: true });
+  }, [filters, setSearchParams]);
+
+  // Handle deep link /map?vehicle=id
+  useEffect(() => {
+    const vehicleId = searchParams.get('vehicle');
+    if (vehicleId && isMapView) {
+      setSelectedVehicleId(vehicleId);
+      setShowCarousel(true);
+      setFilters(prev => ({ ...prev, keyword: undefined })); // Clear search input to show the vehicle
+    }
+  }, [searchParams, isMapView]);
 
   const loadVehicles = useCallback(async (f: VehicleFilters, p: number) => {
     setLoading(true);
@@ -648,21 +779,22 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ forceMapOpen = false 
     }
   }, [filters, mapOpen, mobileViewMode, loadMapVehicles]);
 
-  // Sync map open state from URL search parameters (?map=true)
+  // Sync map open state from URL (path or query param)
   useEffect(() => {
-    const showMap = forceMapOpen || searchParams.get('map') === 'true';
-    if (showMap) {
+    if (isMapView) {
       setMapOpen(true);
       setMobileViewMode('map');
     } else {
       setMapOpen(false);
       setMobileViewMode('list');
     }
-  }, [searchParams, forceMapOpen]);
+  }, [isMapView]);
 
   // Clear map selection when filters change or map is closed
   useEffect(() => {
     setMapSelectedVehicles([]);
+    // Fit bounds on filter changes, not user pan
+    setShouldFitBounds(true);
   }, [filters, mapOpen]);
 
   const handleTypeSwitch = (type: VehicleType | 'all') => {
@@ -715,74 +847,76 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ forceMapOpen = false 
       : 'text-accent border-accent bg-accent/10';
 
   return (
-    <div className="min-h-screen bg-background pt-20">
-      {/* ====== VEHICLE TYPE TABS ====== */}
-      <div className="bg-card border-b border-slate-100 dark:border-slate-800 shadow-sm">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-1 py-3 overflow-x-auto scrollbar-hide">
-            {[
-              { type: 'all' as const, label: isVi ? 'Tất Cả Xe' : 'All Vehicles', icon: <Sparkles className="w-4 h-4" />, count: null },
-              { type: 'car' as const, label: isVi ? 'Ô Tô' : 'Cars', icon: <Car className="w-4 h-4" />, count: null },
-              { type: 'motorbike' as const, label: isVi ? 'Xe Máy' : 'Motorbikes', icon: <Bike className="w-4 h-4" />, count: null },
-            ].map(tab => (
-              <button
-                key={tab.type}
-                onClick={() => handleTypeSwitch(tab.type)}
-                className={cn(
-                  "flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-bold border-2 transition-all whitespace-nowrap flex-shrink-0",
-                  activeType === tab.type
-                    ? tab.type === 'motorbike'
-                      ? "border-orange-500 bg-orange-500/10 text-orange-600 dark:text-orange-400 shadow-sm"
-                      : tab.type === 'car'
-                        ? "border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400 shadow-sm"
-                        : "border-accent bg-accent/10 text-accent shadow-sm"
-                    : "border-transparent text-slate-500 hover:text-foreground hover:bg-slate-50 dark:hover:bg-slate-900"
-                )}
-              >
-                {tab.icon}
-                {tab.label}
-                {activeType === tab.type && (
-                  <span className={cn(
-                    "text-[10px] font-black px-1.5 py-0.5 rounded-full",
-                    tab.type === 'motorbike' ? "bg-orange-500/20 text-orange-600"
-                      : tab.type === 'car' ? "bg-blue-500/20 text-blue-600"
-                        : "bg-accent/20 text-accent"
-                  )}>
-                    {loading ? '...' : total}
-                  </span>
-                )}
-              </button>
-            ))}
-
-            <div className="flex-1" />
-
-            {/* Quick City Filters */}
-            <div className="hidden lg:flex items-center gap-1 border-l border-slate-200 dark:border-slate-800 pl-3">
-              {['Hồ Chí Minh', 'Hà Nội', 'Đà Nẵng', 'Nha Trang', 'Đà Lạt'].map(city => (
+    <div className="h-screen overflow-hidden flex flex-col bg-background pt-16">
+      {/* ====== STICKY FILTER AND HEADER SECTION ====== */}
+      <div className="sticky top-0 z-40 bg-card border-b border-slate-100 dark:border-slate-800 shadow-sm flex-shrink-0">
+        {/* ====== VEHICLE TYPE TABS ====== */}
+        <div className="border-b border-slate-100 dark:border-slate-800">
+          <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center gap-1 py-3 overflow-x-auto scrollbar-hide">
+              {[
+                { type: 'all' as const, label: isVi ? 'Tất Cả Xe' : 'All Vehicles', icon: <Sparkles className="w-4 h-4" />, count: null },
+                { type: 'car' as const, label: isVi ? 'Ô Tô' : 'Cars', icon: <Car className="w-4 h-4" />, count: null },
+                { type: 'motorbike' as const, label: isVi ? 'Xe Máy' : 'Motorbikes', icon: <Bike className="w-4 h-4" />, count: null },
+              ].map(tab => (
                 <button
-                  key={city}
-                  onClick={() => handleFilterChange({ ...filters, location: filters.location === city ? undefined : city })}
+                  key={tab.type}
+                  onClick={() => handleTypeSwitch(tab.type)}
                   className={cn(
-                    "px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all whitespace-nowrap",
-                    filters.location === city
-                      ? "border-accent bg-accent/10 text-accent"
-                      : "border-slate-200 dark:border-slate-800 text-slate-500 hover:border-slate-350"
+                    "flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-bold border-2 transition-all whitespace-nowrap flex-shrink-0",
+                    activeType === tab.type
+                      ? tab.type === 'motorbike'
+                        ? "border-orange-500 bg-orange-500/10 text-orange-600 dark:text-orange-400 shadow-sm"
+                        : tab.type === 'car'
+                          ? "border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400 shadow-sm"
+                          : "border-accent bg-accent/10 text-accent shadow-sm"
+                      : "border-transparent text-slate-500 hover:text-foreground hover:bg-slate-50 dark:hover:bg-slate-900"
                   )}
                 >
-                  <MapPin className="w-3 h-3 inline mr-1" />{city}
+                  {tab.icon}
+                  {tab.label}
+                  {activeType === tab.type && (
+                    <span className={cn(
+                      "text-[10px] font-black px-1.5 py-0.5 rounded-full",
+                      tab.type === 'motorbike' ? "bg-orange-500/20 text-orange-600"
+                        : tab.type === 'car' ? "bg-blue-500/20 text-blue-600"
+                          : "bg-accent/20 text-accent"
+                    )}>
+                      {loading ? '...' : total}
+                    </span>
+                  )}
                 </button>
               ))}
+
+              <div className="flex-1" />
+
+              {/* Quick City Filters */}
+              <div className="hidden lg:flex items-center gap-1 border-l border-slate-200 dark:border-slate-800 pl-3">
+                {['Hồ Chí Minh', 'Hà Nội', 'Đà Nẵng', 'Nha Trang', 'Đà Lạt'].map(city => (
+                  <button
+                    key={city}
+                    onClick={() => handleFilterChange({ ...filters, location: filters.location === city ? undefined : city })}
+                    className={cn(
+                      "px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all whitespace-nowrap",
+                      filters.location === city
+                        ? "border-accent bg-accent/10 text-accent"
+                        : "border-slate-200 dark:border-slate-800 text-slate-500 hover:border-slate-350"
+                    )}
+                  >
+                    <MapPin className="w-3 h-3 inline mr-1" />{city}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* ====== SEARCH HEADER BAR ====== */}
-      <div className={cn(
-        "bg-card border-b border-slate-100 dark:border-slate-800 sticky top-20 z-40 shadow-sm",
-        activeType === 'motorbike' ? "border-l-4 border-l-orange-500/40" : activeType === 'car' ? "border-l-4 border-l-blue-500/40" : ""
-      )}>
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col md:flex-row items-center justify-between gap-4">
+        {/* ====== SEARCH HEADER BAR ====== */}
+        <div className={cn(
+          "bg-card",
+          activeType === 'motorbike' ? "border-l-4 border-l-orange-500/40" : activeType === 'car' ? "border-l-4 border-l-blue-500/40" : ""
+        )}>
+          <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3 w-full md:w-auto flex-1 max-w-xl">
             <div className="relative flex-1">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -845,23 +979,40 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ forceMapOpen = false 
 
             <button
               onClick={() => {
-                if (window.innerWidth < 1024) {
-                  setMobileViewMode(prev => prev === 'list' ? 'map' : 'list');
+                const params = new URLSearchParams(searchParams);
+                params.delete('view');
+                const qs = params.toString();
+                if (isMapView) {
+                  navigate(`/vehicles${qs ? `?${qs}` : ''}`);
                 } else {
-                  setMapOpen(!mapOpen);
+                  navigate(`/map${qs ? `?${qs}` : ''}`);
                 }
               }}
-              className={cn("hidden lg:flex items-center gap-2 px-4 py-2.5 rounded-2xl border text-xs font-bold transition-all",
-                mapOpen ? "bg-accent/15 border-accent text-accent" : "border-slate-200 dark:border-slate-800 text-slate-500")}>
-              <Map className="w-4 h-4" />
-              <span>Map</span>
+              className={cn(
+                "hidden lg:flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-extrabold transition-all duration-200 shadow-sm border",
+                isMapView
+                  ? "bg-[#D4AF37] border-[#D4AF37] text-[#0B1221] shadow-md"
+                  : "bg-[#0B1221] dark:bg-slate-900 border-[#1E2D45] text-white hover:bg-[#D4AF37]/10 hover:border-[#D4AF37] hover:text-[#D4AF37]"
+              )}>
+              {isMapView ? (
+                <>
+                  <List className="w-4 h-4" />
+                  <span>{isVi ? 'Danh sách' : 'List'}</span>
+                </>
+              ) : (
+                <>
+                  <Map className="w-4 h-4" />
+                  <span>{isVi ? 'Bản đồ' : 'Map'}</span>
+                </>
+              )}
             </button>
           </div>
         </div>
       </div>
+      </div>
 
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex gap-6 items-start">
+      <div className={cn("mx-auto flex-1 overflow-hidden w-full flex flex-col", isMapView ? "px-0 py-0" : "max-w-[1600px] px-4 sm:px-6 lg:px-8 py-4")}>
+        <div className={cn("flex-1 flex items-stretch w-full min-h-0", isMapView ? "gap-0 flex-col overflow-hidden" : "gap-6 overflow-hidden")}>
           {/* Filter Sidebar */}
           <AnimatePresence>
             {showFilters && !mapOpen && (
@@ -870,9 +1021,10 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ forceMapOpen = false 
                 animate={{ width: 300, opacity: 1 }}
                 exit={{ width: 0, opacity: 0 }}
                 transition={{ duration: 0.3 }}
-                className="hidden xl:block flex-shrink-0 overflow-hidden"
+                className="hidden xl:flex flex-shrink-0 h-full scrollbar-hide"
+                style={{ minWidth: 0, overflowX: 'clip', overflowY: 'auto' }}
               >
-                <div className="w-[300px] bg-card rounded-3xl border border-slate-150 dark:border-slate-800 p-6 sticky top-38 shadow-sm">
+                <div className="w-[284px] bg-card rounded-3xl border border-slate-150 dark:border-slate-800 p-6 shadow-sm flex-shrink-0 mr-4">
                   {activeType === 'motorbike' ? (
                     <MotorbikeFilterPanel filters={filters} onChange={handleFilterChange} onClose={() => setShowFilters(false)} />
                   ) : (
@@ -884,8 +1036,8 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ forceMapOpen = false 
           </AnimatePresence>
 
           <div className={cn(
-            "flex-1 min-w-0 transition-all duration-300 flex flex-col h-[calc(100vh-220px)]",
-            (mapOpen || mobileViewMode === 'map') ? "hidden" : "block"
+            "flex-1 min-w-0 transition-all duration-300 flex flex-col h-full overflow-y-auto pr-2 pb-16",
+            isMapView ? "hidden" : (mapOpen || mobileViewMode === 'map') ? "hidden" : "block"
           )}>
             {/* Result count + active filters */}
             <div className="flex items-center justify-between mb-5 flex-shrink-0">
@@ -948,11 +1100,11 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ forceMapOpen = false 
                 <motion.div
                   variants={staggerContainer} initial="hidden" animate="visible"
                   className={cn(
-                    mapOpen 
-                      ? 'space-y-4 pr-1 pb-4' 
+                    mapOpen
+                      ? 'space-y-4 pr-1 pb-4'
                       : viewMode === 'grid'
-                      ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-6'
-                      : 'space-y-6'
+                        ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-6'
+                        : 'space-y-6'
                   )}
                 >
                   {vehicles.map(vehicle => (
@@ -1038,23 +1190,28 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ forceMapOpen = false 
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.3 }}
                 className={cn(
-                  "flex-1 sticky top-52 overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg relative bg-slate-50 dark:bg-slate-950",
+                  "overflow-hidden relative bg-slate-50 dark:bg-slate-950 h-full flex-1 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg",
                   mobileViewMode === 'map' ? 'w-full block' : 'hidden lg:block'
                 )}
-                style={{ height: 'calc(100vh - 220px)' }}
               >
                 <div className="relative w-full h-full">
                   <LuxeWayMap
                     vehicles={mapVehicles}
                     selectedVehicleId={selectedVehicleId}
-                    hoveredVehicleId={hoveredVehicleId || undefined}
+                    hoveredVehicleId={hoveredMapVehicleId || hoveredVehicleId || undefined}
                     onSelectionChange={setMapSelectedVehicles}
+                    onMarkerHover={setHoveredMapVehicleId}
+                    onMapMoved={() => {
+                      setShowSearchArea(true);
+                      setShouldFitBounds(false); // Disable auto-fit once user interacts
+                    }}
                     onVehicleClick={v => {
                       setSelectedVehicleId(v.id);
+                      setShowCarousel(true);
                       setTimeout(() => {
-                        const card = document.getElementById(`vehicle-card-${v.id}`);
-                        if (card) {
-                          card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        const carouselCard = document.getElementById(`map-carousel-card-${v.id}`);
+                        if (carouselCard) {
+                          carouselCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
                         }
                       }, 100);
                     }}
@@ -1065,10 +1222,59 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ forceMapOpen = false 
                         userLng: lng
                       });
                     }}
+                    initialCenter={
+                      (() => {
+                        try {
+                          const saved = sessionStorage.getItem('luxeway_map_state');
+                          if (saved) {
+                            const parsed = JSON.parse(saved);
+                            if (parsed.filters?.userLng && parsed.filters?.userLat) {
+                              return [parsed.filters.userLng, parsed.filters.userLat];
+                            }
+                          }
+                        } catch (e) {}
+                        
+                        const loc = (filters.location || '').toLowerCase().trim();
+                        if (!loc) return [106.660, 10.762]; // Default: HCM
+                        const match = Object.entries(GEOCODE_DATABASE).find(([k]) => loc.includes(k) || k.includes(loc));
+                        return match ? [match[1].lng, match[1].lat] : [106.660, 10.762];
+                      })()
+                    }
+                    shouldFitBounds={shouldFitBounds}
                     height="100%"
                   />
 
-                  {/* Floating Action Buttons (Right side overlay) */}
+                  {/* "Tìm trong khu vực này" Search Area Button */}
+                  <AnimatePresence>
+                    {showSearchArea && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -20, x: '-50%' }}
+                        animate={{ opacity: 1, y: 0, x: '-50%' }}
+                        exit={{ opacity: 0, y: -20, x: '-50%' }}
+                        className="absolute top-4 left-1/2 -translate-x-1/2 z-20"
+                      >
+                        <button
+                          onClick={async () => {
+                            setShowSearchArea(false);
+                            setMapLoading(true); // Triggers loading skeletons for markers/cards
+                            try {
+                              // Enrichment/load callback
+                              await loadMapVehicles(filters);
+                              await loadVehicles(filters, 1);
+                            } finally {
+                              setMapLoading(false);
+                            }
+                          }}
+                          className="flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full shadow-lg text-xs font-black text-slate-800 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition-all active:scale-95 duration-200"
+                        >
+                          <RotateCw className="w-3.5 h-3.5 text-accent animate-spin-slow" />
+                          <span>{isVi ? 'Tìm trong khu vực này' : 'Search this area'}</span>
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Floating Locate Me GPS button (Mioto Style) */}
                   <div className="absolute top-4 right-4 z-20 flex flex-col gap-2">
                     <button
                       onClick={() => {
@@ -1076,139 +1282,148 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ forceMapOpen = false 
                           navigator.geolocation.getCurrentPosition((pos) => {
                             const lat = pos.coords.latitude;
                             const lng = pos.coords.longitude;
+                            
+                            // Fly to user GPS coords
                             (window as any).luxewayMapInstance?.flyTo({
                               center: [lng, lat],
-                              zoom: 14,
-                              duration: 1200
+                              zoom: 14.5,
+                              duration: 1300
                             });
+
+                            // Add a pulse indicator element on the map
+                            const userLocEl = document.createElement('div');
+                            userLocEl.className = 'w-6 h-6 bg-blue-500 border-4 border-white rounded-full shadow-lg relative flex items-center justify-center';
+                            const pingEl = document.createElement('div');
+                            pingEl.className = 'absolute -inset-2 bg-blue-400/40 rounded-full animate-ping';
+                            userLocEl.appendChild(pingEl);
+
+                            // Label popup for Locate Me
+                            const popup = new maplibregl.Popup({ closeButton: false, offset: 15 })
+                              .setText(isVi ? 'Bạn đang ở đây' : 'You are here');
+
+                            new maplibregl.Marker({ element: userLocEl })
+                              .setLngLat([lng, lat])
+                              .setPopup(popup)
+                              .addTo((window as any).luxewayMapInstance);
                           });
                         }
                       }}
-                      className="w-10 h-10 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-350 shadow-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all flex items-center justify-center cursor-pointer active:scale-95 duration-200"
-                      title="My Location"
+                      className="w-11 h-11 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-350 shadow-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all flex items-center justify-center cursor-pointer active:scale-90 duration-200"
+                      title={isVi ? 'Vị trí của tôi' : 'My Location'}
                     >
-                      <Compass className="w-5 h-5 text-emerald-500" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (mapVehicles.length > 0) {
-                          const avgLat = mapVehicles.reduce((sum, v) => sum + (v.latitude || 0), 0) / mapVehicles.length;
-                          const avgLng = mapVehicles.reduce((sum, v) => sum + (v.longitude || 0), 0) / mapVehicles.length;
-                          (window as any).luxewayMapInstance?.flyTo({
-                            center: [avgLng, avgLat],
-                            zoom: 12.5,
-                            duration: 1200
-                          });
-                        }
-                      }}
-                      className="w-10 h-10 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-350 shadow-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all flex items-center justify-center cursor-pointer active:scale-95 duration-200"
-                      title="Vehicles Near Me"
-                    >
-                      <Car className="w-5 h-5 text-emerald-500" />
+                      <Compass className="w-5.5 h-5.5 text-accent animate-pulse" />
                     </button>
                   </div>
 
-                  {/* Map Legend (Bottom Right overlay) */}
-                  <div className="absolute bottom-4 right-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur border border-slate-200 dark:border-slate-800 px-3.5 py-2.5 rounded-2xl shadow-2xl z-20 flex flex-col gap-2 text-[10px] font-bold text-slate-600 dark:text-slate-350 select-none leading-none">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                      <span>Available</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-blue-500 border border-white" />
-                      <span>Your Location</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-blue-600 flex items-center justify-center text-white text-[7px]">25</span>
-                      <span>Cluster (zoom)</span>
-                    </div>
-                  </div>
-
-                  {/* Floating Open Sidebar Button (Bottom Left overlay) */}
-                  {mapOpen && isSidebarCollapsed && (
-                    <button
-                      onClick={() => setIsSidebarCollapsed(false)}
-                      className="absolute bottom-20 left-4 z-40 flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-neutral-900 border border-neutral-800 text-white font-bold text-xs shadow-2xl hover:bg-neutral-950 transition-all active:scale-95 duration-200 cursor-pointer"
-                    >
-                      <span>Show List</span>
-                      <span>→</span>
-                    </button>
-                  )}
-
-                  {/* Floating selected vehicle cards at the bottom of the map */}
+                  {/* Bottom Carousel (Airbnb/Mioto style) */}
                   <AnimatePresence>
-                    {mapSelectedVehicles.length > 0 && (
+                    {(isMapView ? (showCarousel && vehicles.length > 0) : mapSelectedVehicles.length > 0) && (
                       <motion.div
-                        initial={{ y: 50, opacity: 0 }}
+                        initial={{ y: 150, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
-                        exit={{ y: 50, opacity: 0 }}
+                        exit={{ y: 150, opacity: 0 }}
                         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                        className="absolute bottom-20 left-4 right-4 z-40 flex gap-4 overflow-x-auto pb-3 pt-1 px-1 scrollbar-none snap-x snap-mandatory"
+                        ref={isMapView ? carouselRef : undefined}
+                        className={cn(
+                          "absolute z-45 flex gap-4 overflow-x-auto pb-4 pt-2 px-4 scrollbar-hide snap-x snap-mandatory scroll-smooth",
+                          isMapView
+                            ? "bottom-16 left-0 right-0 max-w-full md:px-8 lg:px-16"
+                            : "bottom-20 left-4 right-4"
+                        )}
                       >
-                        {mapSelectedVehicles.map(v => {
-                          const thumbnailSrc = v.image || v.thumbnail || FALLBACK_IMAGE;
+                        {(isMapView ? vehicles : mapSelectedVehicles).map(v => {
+                          const thumbnailSrc = v.image || v.thumbnail || (v as any).images?.[0] || FALLBACK_IMAGE;
                           const finalPrice = v.pricePerDay;
-                          const originalPrice = v.pricePerDay * 1.12; // 12% discount mockup
+                          const originalPrice = v.pricePerDay * 1.12;
                           const finalPriceText = finalPrice >= 1000 ? `${(finalPrice / 1000).toLocaleString('en-US', { maximumFractionDigits: 0 })}K` : `${finalPrice}`;
                           const originalPriceText = originalPrice >= 1000 ? `${(originalPrice / 1000).toLocaleString('en-US', { maximumFractionDigits: 0 })}K` : `${originalPrice}`;
-                          
-                          // Determine location text
-                          const locationText = filters.location || 'Phường 14, Quận Bình Thạnh';
+                          const locationText = sanitizeLocation(filters.location || v.address || 'TP. Hồ Chí Minh');
+                          const isSelected = selectedVehicleId === v.id;
+                          const isHovered = hoveredMapVehicleId === v.id || hoveredVehicleId === v.id;
 
                           return (
                             <div
                               key={v.id}
+                              id={`map-carousel-card-${v.id}`}
                               onClick={() => {
+                                setSelectedVehicleId(v.id);
+                                if (isMapView) {
+                                  // Highlight marker + center map
+                                  const mapLoc = mapVehicles.find(mv => mv.id === v.id);
+                                  if (mapLoc && (window as any).luxewayMapInstance) {
+                                    (window as any).luxewayMapInstance.flyTo({
+                                      center: [mapLoc.longitude, mapLoc.latitude],
+                                      zoom: 15,
+                                      duration: 1200
+                                    });
+                                  }
+                                }
+                              }}
+                              onDoubleClick={() => {
+                                // Navigate to vehicle detail view on double-click
                                 const startDate = searchParams.get('startDate') || '';
                                 const endDate = searchParams.get('endDate') || '';
                                 const dateParams = (startDate && endDate) ? `?startDate=${startDate}&endDate=${endDate}` : '';
                                 const detailPath = v.vehicleType === 'motorbike' ? `/motorbikes/${v.id}` : `/cars/${v.id}`;
                                 navigate(`${detailPath}${dateParams}`);
                               }}
-                              className="w-[280px] sm:w-[330px] flex-shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-2.5 shadow-2xl flex gap-3 snap-start relative cursor-pointer hover:border-emerald-500 transition-all select-none duration-250 active:scale-98"
+                              onMouseEnter={() => setHoveredMapVehicleId(v.id)}
+                              onMouseLeave={() => setHoveredMapVehicleId(null)}
+                              className={cn(
+                                "flex-shrink-0 bg-white dark:bg-slate-900 border rounded-3xl p-3 shadow-2xl flex gap-3 snap-start relative cursor-pointer transition-all duration-250 active:scale-[0.98]",
+                                isMobile ? "w-[290px] h-[130px]" : "w-[340px] h-[145px]",
+                                isSelected
+                                  ? "border-accent ring-2 ring-accent/35 scale-[1.01]"
+                                  : isHovered
+                                    ? "border-accent/60 ring-2 ring-accent/15"
+                                    : "border-slate-200 dark:border-slate-800"
+                              )}
                             >
                               {/* Image section */}
-                              <div className="w-24 h-20 sm:w-28 sm:h-24 rounded-2xl overflow-hidden flex-shrink-0 relative bg-slate-100 dark:bg-slate-800">
+                              <div className="w-24 h-full sm:w-28 rounded-2xl overflow-hidden flex-shrink-0 relative bg-slate-100 dark:bg-slate-800">
                                 <img
                                   src={thumbnailSrc}
                                   alt={v.name}
                                   className="w-full h-full object-cover"
+                                  loading="lazy"
                                 />
                                 {/* Zap icon badge */}
-                                <div className="absolute top-1.5 left-1.5 bg-amber-500 text-white w-4.5 h-4.5 rounded-full flex items-center justify-center text-[9px] shadow-md z-10">
-                                  <svg className="w-2.5 h-2.5 fill-current" viewBox="0 0 24 24">
-                                    <path d="M13 10V3L4 14h9v7l9-11h-9z" />
-                                  </svg>
+                                <div className="absolute top-1.5 left-1.5 bg-amber-500 text-white w-5 h-5 rounded-full flex items-center justify-center text-[9px] shadow-md z-10">
+                                  <Zap className="w-3 h-3 fill-current" />
                                 </div>
                               </div>
 
                               {/* Info section */}
-                              <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+                              <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
                                 <div>
-                                  <h4 className="font-extrabold text-xs sm:text-sm text-slate-800 dark:text-white truncate leading-snug">
+                                  <h4 className="font-black text-xs sm:text-sm text-slate-800 dark:text-white truncate leading-snug">
                                     {v.name}
                                   </h4>
-                                  
+
                                   {/* Rating & Trips */}
-                                  <div className="flex items-center gap-1 mt-1 text-[10px] text-slate-500 dark:text-slate-400 font-bold">
-                                    <span className="text-amber-500 text-xs leading-none">★</span>
+                                  <div className="flex items-center gap-1 mt-1.5 text-[10px] text-slate-500 dark:text-slate-400 font-bold">
+                                    <Star className="w-3.5 h-3.5 text-amber-500 fill-current" />
                                     <span>{v.rating ? Number(v.rating).toFixed(1) : '5.0'}</span>
                                     <span>•</span>
-                                    <span>{v.totalReviews || 12} {isVi ? 'chuyến' : 'trips'}</span>
+                                    <span>{v.totalReviews || 18} {isVi ? 'chuyến' : 'trips'}</span>
                                   </div>
 
-                                  {/* Address */}
-                                  <div className="flex items-center gap-1 mt-1.5 text-[9px] sm:text-[10px] text-slate-450">
-                                    <span className="text-xs">📍</span>
-                                    <span className="truncate">{locationText}</span>
+                                  {/* Seats & Transmission */}
+                                  <div className="flex gap-2 mt-1 text-[9px] font-bold text-slate-400">
+                                    <span>{v.seats || 4} {isVi ? 'chỗ' : 'seats'}</span>
+                                    <span>•</span>
+                                    <span>{v.transmission === 'automatic' || (v as any).transmission === 'AUTOMATIC' ? (isVi ? 'Tự động' : 'Auto') : (isVi ? 'Số sàn' : 'Manual')}</span>
                                   </div>
                                 </div>
 
-                                {/* Price */}
-                                <div className="flex items-baseline gap-1.5 mt-1 border-t border-slate-100 dark:border-slate-800/80 pt-1.5">
-                                  <span className="text-[10px] text-slate-400 line-through font-medium">{originalPriceText}</span>
-                                  <span className="text-xs sm:text-sm font-black text-emerald-500 dark:text-emerald-400">{finalPriceText}</span>
-                                  <span className="text-[9px] text-slate-500 font-bold">/{isVi ? 'ngày' : 'day'}</span>
+                                {/* Price / Day */}
+                                <div className="flex items-baseline justify-between border-t border-slate-100 dark:border-slate-800/80 pt-2 mt-1">
+                                  <div className="flex items-baseline gap-1.5">
+                                    <span className="text-[10px] text-slate-450 line-through font-medium">{originalPriceText}</span>
+                                    <span className="text-xs sm:text-sm font-black text-emerald-500 dark:text-emerald-450">{finalPriceText}</span>
+                                    <span className="text-[9px] text-slate-450 font-bold">/{isVi ? 'ngày' : 'day'}</span>
+                                  </div>
+                                  <ChevronRight className="w-4 h-4 text-slate-400" />
                                 </div>
                               </div>
                             </div>
@@ -1218,23 +1433,60 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ forceMapOpen = false 
                     )}
                   </AnimatePresence>
 
-                  {/* Loading Overlay */}
+                  {/* Loading Skeletons Overlay (Markers & Cards) */}
                   {mapLoading && (
-                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-20 transition-all duration-300">
-                      <div className="bg-slate-950/90 border border-slate-800 px-6 py-4 rounded-2xl flex items-center gap-3 shadow-2xl">
-                        <div className="w-5 h-5 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-                        <span className="text-sm font-bold text-white">{isVi ? 'Đang tìm xe gần bạn...' : 'Searching for vehicles near you...'}</span>
+                    <div className="absolute inset-0 bg-slate-900/15 pointer-events-none flex flex-col justify-end z-30 transition-all duration-300">
+                      {/* Pulse cards skeleton */}
+                      <div className="flex gap-4 px-4 pb-6 overflow-hidden max-w-full">
+                        {[1, 2, 3].map(i => (
+                          <div key={i} className="w-[320px] h-[130px] rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 flex gap-3 animate-pulse shadow-2xl">
+                            <div className="w-24 h-full rounded-2xl bg-slate-200 dark:bg-slate-800" />
+                            <div className="flex-1 py-2 flex flex-col justify-between">
+                              <div className="space-y-2">
+                                <div className="w-2/3 h-4 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+                                <div className="w-1/2 h-3 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+                              </div>
+                              <div className="w-3/4 h-3.5 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
 
-                  {/* Empty Overlay */}
+                  {/* Empty State Overlay with Illustration */}
                   {!mapLoading && mapVehicles.length === 0 && (
-                    <div className="absolute inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center z-20 transition-all duration-350">
-                      <div className="bg-slate-950/95 border border-slate-800 p-6 rounded-3xl text-center max-w-xs shadow-2xl">
-                        <span className="text-4xl block mb-2">📍</span>
-                        <h4 className="font-extrabold text-sm text-white mb-1">{isVi ? 'Không tìm thấy xe trong khu vực' : 'No vehicles found in this area'}</h4>
-                        <p className="text-xs text-slate-400">{isVi ? 'Hãy thử đổi vị trí hoặc mở rộng phạm vi tìm kiếm.' : 'Try changing the location or expanding your search range.'}</p>
+                    <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-md flex items-center justify-center z-30 transition-all duration-350">
+                      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 rounded-3xl text-center max-w-md shadow-2xl mx-4">
+                        <div className="text-6xl mb-4 animate-bounce-slow">🚗</div>
+                        <h4 className="font-black text-base text-slate-800 dark:text-white mb-2">
+                          {isVi ? 'Không tìm thấy xe phù hợp' : 'No matching vehicles found'}
+                        </h4>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
+                          {isVi
+                            ? 'Chúng tôi không tìm thấy xe nào trong khu vực này. Thử xóa bớt bộ lọc hoặc chọn khu vực lân cận khác xem sao nhé!'
+                            : 'We couldn\'t find any vehicles in this area. Try clearing filters or searching nearby locations!'}
+                        </p>
+                        <div className="flex gap-3 justify-center">
+                          <button
+                            onClick={() => {
+                              setFilters({ vehicleType: activeType === 'all' ? undefined : activeType });
+                              setSearchQuery('');
+                            }}
+                            className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors"
+                          >
+                            {isVi ? 'Xóa bộ lọc' : 'Clear Filters'}
+                          </button>
+                          <button
+                            onClick={() => {
+                              // Reset location to default HCM center to switch area
+                              setFilters(prev => ({ ...prev, location: undefined }));
+                            }}
+                            className="px-4 py-2.5 rounded-xl bg-accent text-white text-xs font-bold hover:bg-accent-hover transition-colors shadow-lg"
+                          >
+                            {isVi ? 'Đổi khu vực' : 'Change Area'}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -1253,27 +1505,30 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ forceMapOpen = false 
             animate={{ y: 0, x: '-50%', opacity: 1 }}
             exit={{ y: 80, x: '-50%', opacity: 0 }}
             transition={{ duration: 0.25, ease: 'easeInOut' }}
-            className="fixed bottom-6 left-1/2 z-50"
+            className={cn("fixed left-1/2 z-50", isMapView ? "bottom-24 sm:bottom-28" : "bottom-6")}
           >
             <button
               onClick={() => {
-                if (isMobile) {
-                  setMobileViewMode(prev => prev === 'list' ? 'map' : 'list');
+                const params = new URLSearchParams(searchParams);
+                params.delete('view');
+                const qs = params.toString();
+                if (isMapView) {
+                  navigate(`/vehicles${qs ? `?${qs}` : ''}`);
                 } else {
-                  setMapOpen(!mapOpen);
+                  navigate(`/map${qs ? `?${qs}` : ''}`);
                 }
               }}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-full shadow-2xl font-bold text-sm text-white bg-neutral-900 border border-neutral-800 hover:bg-neutral-950 transition-all active:scale-95 duration-200 select-none"
+              className="flex items-center gap-2 px-6 py-3 rounded-full shadow-2xl font-black text-sm text-white bg-neutral-900 border border-neutral-800 hover:bg-neutral-950 transition-all active:scale-95 duration-200 select-none cursor-pointer"
             >
-              {(isMobile ? mobileViewMode === 'map' : mapOpen) ? (
+              {isMapView ? (
                 <>
                   <span>{isVi ? 'Danh sách' : 'List View'}</span>
-                  <List className="w-4 h-4 ml-1" />
+                  <List className="w-4.5 h-4.5 ml-1" />
                 </>
               ) : (
                 <>
                   <span>{isVi ? 'Bản đồ' : 'Map View'}</span>
-                  <Map className="w-4 h-4 ml-1" />
+                  <Map className="w-4.5 h-4.5 ml-1" />
                 </>
               )}
             </button>

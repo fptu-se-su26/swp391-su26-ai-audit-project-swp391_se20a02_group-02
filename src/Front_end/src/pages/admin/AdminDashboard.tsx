@@ -6,7 +6,7 @@ import {
   CheckCircle, XCircle, Eye, Search, BarChart2, Globe, Loader2,
   Settings, HelpCircle, Edit2, Plus, Trash2, Activity, LogOut, Clock, Menu, X,
   ArrowUpRight, ArrowDownRight, Scale, Ban, RefreshCw, Download, FileText, Check, Lock,
-  Cpu, HardDrive, Bell, ShieldAlert, Wifi, Terminal, Mail, Send, Share2, FileSpreadsheet
+  Cpu, HardDrive, Bell, ShieldAlert, Wifi, Terminal, Mail, Send, Share2, FileSpreadsheet, PanelLeftClose, PanelLeftOpen
 } from 'lucide-react';
 import { formatCurrency, formatDate, cn, convertCurrency } from '@/utils';
 import { staggerContainer, staggerItem, fadeUp } from '@/animations/variants';
@@ -15,7 +15,7 @@ import {
   ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, LineChart, Line
 } from 'recharts';
 import { adminService, AdminStats } from '@/services/adminService';
-import { paymentService } from '@/services/bookingService';
+import { bookingService, paymentService } from '@/services/bookingService';
 import { useToast } from '@/components/ui/Toast';
 import { useUIStore, useAuthStore } from '@/store';
 import { useT } from '@/i18n/translations';
@@ -106,10 +106,11 @@ const AdminSlideDrawer: React.FC<AdminSlideDrawerProps> = ({ isOpen, onClose, ti
 const AdminDashboard: React.FC = () => {
   const toast = useToast();
   const navigate = useNavigate();
-  const { theme, currency } = useUIStore();
+  const { theme, currency, desktopSidebarCollapsed, setDesktopSidebarCollapsed } = useUIStore();
   const { user, logout } = useAuthStore();
   const isDark = theme === 'dark';
   const t = useT();
+  const isVi = t.common?.loading?.includes('Đang') || false;
   const location = useLocation();
 
   const queryTab = new URLSearchParams(location.search).get('tab');
@@ -130,6 +131,12 @@ const AdminDashboard: React.FC = () => {
   const [vehicleSearch, setVehicleSearch] = useState('');
   const [bookingSearch, setBookingSearch] = useState('');
   const [paymentSearch, setPaymentSearch] = useState('');
+
+  // Payment Verification Enriched Queues & Config
+  const [paymentQueue, setPaymentQueue] = useState<'PENDING' | 'APPROVED' | 'REJECTED' | 'EXPIRED'>('PENDING');
+  const [verifyingBooking, setVerifyingBooking] = useState<any | null>(null);
+  const [paymentRejectionReason, setPaymentRejectionReason] = useState('');
+  const [adminPaymentSettings, setAdminPaymentSettings] = useState<any>({ bankName: 'MB Bank', accountNumber: '0377096245', ownerName: 'NGUYEN VAN DANG', enabled: true });
 
   const [userRoleFilter, setUserRoleFilter] = useState('ALL');
   const [userKycStatusFilter, setUserKycStatusFilter] = useState('ALL');
@@ -396,7 +403,7 @@ const AdminDashboard: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const [statsRes, userList, vehList, bookList, disputeList, payList, settingList, analyticsOverviewRes, analyticsHistoryRes] = await Promise.all([
+      const [statsRes, userList, vehList, bookList, disputeList, payList, settingList, analyticsOverviewRes, analyticsHistoryRes, paymentSettingsRes] = await Promise.all([
         adminService.getDashboardStats(),
         adminService.listUsers(undefined, undefined, undefined, 0, 100),
         adminService.listAllVehicles(undefined, undefined, 0, 100),
@@ -405,7 +412,8 @@ const AdminDashboard: React.FC = () => {
         adminService.listAllPayments(0, 100),
         adminService.listSettings(),
         adminService.getAnalyticsOverview(),
-        adminService.getHistoricalAnalytics(30)
+        adminService.getHistoricalAnalytics(30),
+        paymentService.getPaymentSettings().catch(() => null)
       ]);
 
       if (statsRes) setStats(statsRes);
@@ -421,6 +429,7 @@ const AdminDashboard: React.FC = () => {
       if (settingList) setSettings(settingList || []);
       if (analyticsOverviewRes) setAnalyticsOverview(analyticsOverviewRes);
       if (analyticsHistoryRes) setAnalyticsHistory(analyticsHistoryRes);
+      if (paymentSettingsRes && paymentSettingsRes.data) setAdminPaymentSettings(paymentSettingsRes.data);
 
       // Generate simulated mock audit logs for premium tracking
       setLogs([
@@ -589,6 +598,87 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  const handleVerifyPayment = async (bookingId: string) => {
+    try {
+      setLoading(true);
+      await bookingService.verifyPayment(bookingId);
+      toast.success(isVi ? 'Đã duyệt thanh toán' : 'Payment Approved', isVi ? 'Lịch trình đã được chuyển sang trạng thái CONFIRMED.' : 'Booking status is now CONFIRMED.');
+      const updatedBookings = await adminService.listAllBookings(undefined, 0, 100);
+      if (updatedBookings) setBookings(updatedBookings.content || []);
+      setVerifyingBooking(null);
+    } catch (err: any) {
+      toast.error(isVi ? 'Duyệt thất bại' : 'Verification Failed', err.message || 'Error executing request.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRejectPayment = async (bookingId: string, reason: string) => {
+    if (!reason.trim()) {
+      toast.error(isVi ? 'Thiếu lý do từ chối' : 'Rejection Reason Required', isVi ? 'Vui lòng nhập lý do từ chối.' : 'Please input a reason.');
+      return;
+    }
+    try {
+      setLoading(true);
+      await bookingService.rejectPayment(bookingId, reason);
+      toast.success(isVi ? 'Đã từ chối thanh toán' : 'Payment Rejected', isVi ? 'Lịch trình đã chuyển sang PAYMENT_REJECTED.' : 'Booking status is now PAYMENT_REJECTED.');
+      const updatedBookings = await adminService.listAllBookings(undefined, 0, 100);
+      if (updatedBookings) setBookings(updatedBookings.content || []);
+      setVerifyingBooking(null);
+      setPaymentRejectionReason('');
+    } catch (err: any) {
+      toast.error(isVi ? 'Từ chối thất bại' : 'Rejection Failed', err.message || 'Error executing request.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSavePaymentSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+      await paymentService.updatePaymentSettings(adminPaymentSettings);
+      toast.success(isVi ? 'Lưu cấu hình thành công' : 'Payment Settings Saved', isVi ? 'Thông tin chuyển khoản của LuxeWay đã được cập nhật.' : 'Bank settings updated successfully.');
+    } catch (err: any) {
+      toast.error(isVi ? 'Lưu thất bại' : 'Save Failed', err.message || 'Error executing request.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExportPaymentsCSV = () => {
+    const activeQueueBookings = bookings.filter(b => {
+      const matchSearch = 
+        (b.bookingCode && b.bookingCode.toLowerCase().includes(paymentSearch.toLowerCase())) ||
+        (b.renter?.displayName && b.renter.displayName.toLowerCase().includes(paymentSearch.toLowerCase())) ||
+        (b.renter?.email && b.renter.email.toLowerCase().includes(paymentSearch.toLowerCase())) ||
+        (b.id && b.id.toLowerCase().includes(paymentSearch.toLowerCase()));
+
+      if (!matchSearch) return false;
+
+      const statusLower = b.status?.toLowerCase();
+      if (paymentQueue === 'PENDING') return statusLower === 'payment_pending';
+      if (paymentQueue === 'APPROVED') return ['confirmed', 'payment_verified', 'owner_approved'].includes(statusLower);
+      if (paymentQueue === 'REJECTED') return statusLower === 'payment_rejected';
+      if (paymentQueue === 'EXPIRED') return statusLower === 'payment_expired';
+      return false;
+    });
+
+    let csv = 'Booking Code,Renter Name,Email,Amount,Status,Created At\n';
+    activeQueueBookings.forEach(b => {
+      csv += `"${b.bookingCode || ''}","${b.renter?.displayName || ''}","${b.renter?.email || ''}","${b.pricing?.total || 0}","${b.status || ''}","${b.createdAt || ''}"\n`;
+    });
+
+    const element = document.createElement("a");
+    const file = new Blob([csv], { type: 'text/csv' });
+    element.href = URL.createObjectURL(file);
+    element.download = `luxeway_payment_verifications_${paymentQueue.toLowerCase()}_${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+    toast.success(isVi ? 'Đã xuất file CSV' : 'CSV Exported');
+  };
+
   // Action: Handle custom broadcasts
   const handleSendBroadcast = (e: React.FormEvent) => {
     e.preventDefault();
@@ -714,24 +804,60 @@ const AdminDashboard: React.FC = () => {
     { name: 'Xe Máy (Motorbikes)', value: vehicles.filter(v => v.vehicleType === 'motorbike' || v.vehicleType === 'MOTORBIKE').length || 15 }
   ];  return (
     <div className="theme-admin min-h-screen transition-colors duration-300 bg-[var(--lw-bg-primary)] text-[var(--lw-text-primary)]">
-
-      <div style={{ display: 'flex' }}>
+      <div className={cn("lw-flex-layout", desktopSidebarCollapsed && "sidebar-collapsed")} style={{ display: 'flex' }}>
         
         {/* ============ SIDEBAR ============ */}
         <aside className="lw-sidebar hidden lg:flex bg-[var(--lw-sidebar-bg)] border-r border-[var(--lw-border)]">
           <div className="relative z-10 flex flex-col flex-1 min-h-0">
-            {/* Role Badge only, no double logo on desktop */}
-            <div className="px-5 py-4 border-b border-[var(--lw-border)]">
-              <div className="lw-sidebar-role-badge bg-rose-500/10 text-rose-600 border border-rose-500/20 m-0 w-full flex items-center justify-center py-2.5">
-                ✨ ADMIN
-              </div>
+            {/* Header section with brand logo and toggle button */}
+            <div className="px-5 py-4 border-b border-[var(--lw-border)] flex items-center justify-between gap-2 h-16">
+              {!desktopSidebarCollapsed ? (
+                <>
+                  <motion.span
+                    initial={{ opacity: 0, letterSpacing: '0.1em' }}
+                    animate={{ opacity: 1, letterSpacing: '0.25em' }}
+                    transition={{ duration: 0.6, ease: 'easeOut' }}
+                    className="font-black text-[10px] text-[var(--lw-accent)] uppercase select-none"
+                  >
+                    LUXEWAY
+                  </motion.span>
+                  <button
+                    onClick={() => setDesktopSidebarCollapsed(true)}
+                    className="p-1.5 rounded-lg border border-[var(--lw-border)] hover:bg-[var(--lw-bg-secondary)] text-[var(--lw-text-secondary)] transition-all flex-shrink-0"
+                    title="Collapse Sidebar"
+                  >
+                    <PanelLeftClose className="w-4 h-4" />
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => setDesktopSidebarCollapsed(false)}
+                  className="mx-auto p-1.5 rounded-lg border border-[var(--lw-border)] hover:bg-[var(--lw-bg-secondary)] text-[var(--lw-text-secondary)] transition-all flex items-center justify-center"
+                  title="Expand Sidebar"
+                >
+                  <PanelLeftOpen className="w-4 h-4" />
+                </button>
+              )}
             </div>
+
+            {/* Role Badge, hidden when collapsed */}
+            {!desktopSidebarCollapsed && (
+              <div className="px-5 py-3">
+                <div className="lw-sidebar-role-badge bg-rose-500/10 text-rose-600 border border-rose-500/20 m-0 w-full flex items-center justify-center py-2.5">
+                  ✨ ADMIN
+                </div>
+              </div>
+            )}
 
             {/* Sidebar Navigation items */}
             <div className="lw-sidebar-nav space-y-0.5">
               <Link
                 to="/"
-                className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 text-[var(--lw-text-secondary)] hover:bg-[var(--lw-bg-card-hover)] hover:text-[var(--lw-text-primary)]"
+                title={desktopSidebarCollapsed ? t.adminDashboard.goHome : undefined}
+                className={cn(
+                  "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative group lw-sidebar-nav-item text-[var(--lw-text-secondary)] hover:bg-[var(--lw-bg-card-hover)] hover:text-[var(--lw-text-primary)]",
+                  desktopSidebarCollapsed && "justify-center px-0 py-2.5"
+                )}
               >
                 <Globe className="w-4.5 h-4.5 text-slate-400 flex-shrink-0" />
                 <span>{t.adminDashboard.goHome}</span>
@@ -743,14 +869,15 @@ const AdminDashboard: React.FC = () => {
                   <button
                     key={tab.id}
                     onClick={() => { setActiveTab(tab.id as any); setMobileMenuOpen(false); }}
+                    title={desktopSidebarCollapsed ? tab.label : undefined}
                     className={cn(
                       "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative group lw-sidebar-nav-item",
                       active && "active"
                     )}
                   >
                     <TabIcon className="w-4.5 h-4.5 flex-shrink-0" />
-                    <span className="truncate">{tab.label}</span>
-                    {tab.badge > 0 && (
+                    <span>{tab.label}</span>
+                    {tab.badge > 0 && !desktopSidebarCollapsed && (
                       <span className="ml-auto bg-rose-500 text-white text-[9px] px-2 py-0.5 rounded-full font-black">
                         {tab.badge}
                       </span>
@@ -763,16 +890,25 @@ const AdminDashboard: React.FC = () => {
 
           {/* User Status Bottom Widget */}
           <div className="lw-sidebar-footer">
-            <div className="flex items-center gap-3 p-3 rounded-2xl border border-[var(--lw-border)] bg-[var(--lw-bg-secondary)] shadow-inner">
-              <Avatar src={user?.avatar} name={user?.displayName || 'Test Admin'} size="md" className="flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-black truncate text-[var(--lw-text-primary)]">{user?.displayName || 'Test Admin'}</p>
-                <p className="text-[9px] font-black uppercase tracking-wider text-rose-500 mt-0.5">{t.adminDashboard.superAdmin}</p>
+            {desktopSidebarCollapsed ? (
+              <div className="flex flex-col items-center gap-3 p-2 rounded-2xl border border-[var(--lw-border)] bg-[var(--lw-bg-secondary)] shadow-inner">
+                <Avatar src={user?.avatar} name={user?.displayName || 'Test Admin'} size="md" className="flex-shrink-0" />
+                <button onClick={handleLogout} className="p-2 text-slate-455 hover:text-red-500 transition-colors flex-shrink-0" title={t.adminDashboard.signOut}>
+                  <LogOut className="w-4 h-4" />
+                </button>
               </div>
-              <button onClick={handleLogout} className="p-2 text-slate-450 hover:text-red-500 transition-colors flex-shrink-0" title={t.adminDashboard.signOut}>
-                <LogOut className="w-4 h-4" />
-              </button>
-            </div>
+            ) : (
+              <div className="flex items-center gap-3 p-3 rounded-2xl border border-[var(--lw-border)] bg-[var(--lw-bg-secondary)] shadow-inner">
+                <Avatar src={user?.avatar} name={user?.displayName || 'Test Admin'} size="md" className="flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-black truncate text-[var(--lw-text-primary)]">{user?.displayName || 'Test Admin'}</p>
+                  <p className="text-[9px] font-black uppercase tracking-wider text-rose-500 mt-0.5">{t.adminDashboard.superAdmin}</p>
+                </div>
+                <button onClick={handleLogout} className="p-2 text-slate-455 hover:text-red-500 transition-colors flex-shrink-0" title={t.adminDashboard.signOut}>
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            )}
           </div>
         </aside>
 
@@ -1377,19 +1513,22 @@ const AdminDashboard: React.FC = () => {
               {activeTab === 'payments' && (
                 <div className="space-y-6">
                   <Breadcrumbs 
-                    title="Financial Operations" 
-                    items={[{ label: "LuxeWay", href: "/" }, { label: "Admin" }, { label: "Payments" }]} 
+                    title={isVi ? "Duyệt giao dịch chuyển khoản" : "Payment Verifications"} 
+                    items={[{ label: "LuxeWay", href: "/" }, { label: "Admin" }, { label: isVi ? "Duyệt thanh toán" : "Payment Verifications" }]} 
                   />
                   <div>
-                    <p className="text-[11px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-widest">Stripe-style transaction ledger, payouts splits, and failed payments</p>
+                    <p className="text-[11px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                      {isVi ? "Hệ thống đối soát chuyển khoản ngân hàng thủ công và xác thực hóa đơn" : "Manual bank transfer verification queues, invoice audit logs, and fraud prevention"}
+                    </p>
                   </div>
 
+                  {/* Operational Metrics Cards */}
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
                     {[
-                      { label: 'Gross Volume', value: formatCurrency(totalGBV), icon: DollarSign, color: 'text-indigo-500 bg-indigo-500/5 border-indigo-500/20' },
-                      { label: 'Refunds Processed', value: formatCurrency(payments.filter(p => p.status === 'refunded').reduce((sum, p) => sum + (p.refundAmount || 0), 0)), icon: RefreshCw, color: 'text-rose-500 bg-rose-500/5 border-rose-500/20' },
-                      { label: 'Platform Commission', value: formatCurrency(platformRevenue), icon: Activity, color: 'text-emerald-500 bg-emerald-500/5 border-emerald-500/20' },
-                      { label: 'Successful Payouts', value: formatCurrency(ownerPayouts), icon: CheckCircle, color: 'text-blue-500 bg-blue-500/5 border-blue-500/20' },
+                      { label: isVi ? 'Tổng Doanh Thu' : 'Total Revenue', value: formatCurrency(totalGBV), icon: DollarSign, color: 'text-indigo-500 bg-indigo-500/5 border-indigo-500/20' },
+                      { label: isVi ? 'Chờ Xác Minh' : 'Pending Verification', value: bookings.filter(b => b.status?.toLowerCase() === 'payment_pending').length, icon: Clock, color: 'text-amber-500 bg-amber-500/5 border-amber-500/20' },
+                      { label: isVi ? 'Đã Phê Duyệt' : 'Approved Transactions', value: bookings.filter(b => ['confirmed', 'payment_verified', 'owner_approved'].includes(b.status?.toLowerCase())).length, icon: CheckCircle, color: 'text-emerald-500 bg-emerald-500/5 border-emerald-500/20' },
+                      { label: isVi ? 'Bị Từ Chối' : 'Rejected Payments', value: bookings.filter(b => b.status?.toLowerCase() === 'payment_rejected').length, icon: XCircle, color: 'text-rose-500 bg-rose-500/5 border-rose-500/20' },
                     ].map(card => (
                       <div key={card.label} className={cn(
                         "rounded-3xl border p-5 shadow-sm relative overflow-hidden",
@@ -1408,41 +1547,155 @@ const AdminDashboard: React.FC = () => {
                     ))}
                   </div>
 
-                  {/* Payment Table */}
+                  {/* Queues Tabs & Search filters */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-3">
+                    <div className="flex gap-2 bg-slate-100 dark:bg-white/5 p-1 rounded-2xl border border-slate-200/60 dark:border-slate-800/60">
+                      {[
+                        { id: 'PENDING', label: isVi ? 'Chờ duyệt' : 'Pending', color: 'text-amber-500 bg-amber-500/10 border-amber-500/20' },
+                        { id: 'APPROVED', label: isVi ? 'Đã duyệt' : 'Approved', color: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' },
+                        { id: 'REJECTED', label: isVi ? 'Từ chối' : 'Rejected', color: 'text-rose-500 bg-rose-500/10 border-rose-500/20' },
+                        { id: 'EXPIRED', label: isVi ? 'Hết hạn' : 'Expired', color: 'text-slate-500 bg-slate-500/10 border-slate-500/20' }
+                      ].map(q => (
+                        <button
+                          key={q.id}
+                          onClick={() => setPaymentQueue(q.id as any)}
+                          className={cn(
+                            "px-4 py-2 text-xs font-black uppercase tracking-wider rounded-xl transition-all",
+                            paymentQueue === q.id 
+                              ? "bg-indigo-650 text-white shadow-md shadow-indigo-650/15" 
+                              : "text-slate-400 hover:text-foreground"
+                          )}
+                        >
+                          {q.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <input
+                          placeholder={isVi ? "Tìm mã, khách thuê..." : "Search Code, Renter..."}
+                          value={paymentSearch}
+                          onChange={e => setPaymentSearch(e.target.value)}
+                          className={cn(
+                            "pl-11 pr-5 py-2.5 border rounded-xl text-xs outline-none w-64 transition-all",
+                            isDark ? "bg-slate-900 border-slate-800 text-slate-200 focus:border-indigo-500" : "bg-white border-slate-200 text-slate-800 focus:border-indigo-500"
+                          )}
+                        />
+                      </div>
+                      <button
+                        onClick={handleExportPaymentsCSV}
+                        className="flex items-center gap-1.5 px-4 py-2.5 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-black uppercase tracking-wider hover-lift text-indigo-400 hover:text-indigo-500 transition-all"
+                      >
+                        <FileSpreadsheet className="w-4 h-4" />
+                        <span>Export CSV</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Payment Verification Queue Table */}
                   <div className={cn(
                     "border rounded-[2rem] overflow-hidden shadow-2xl transition-all duration-500 w-full",
                     isDark ? "bg-slate-900/60 border-slate-800/80 shadow-slate-950/40" : "bg-white border-slate-200/60"
                   )}>
-                    <table className="w-full border-collapse">
-                      <thead>
-                        <tr className={cn("border-b", isDark ? "bg-slate-950/40 border-slate-850" : "bg-slate-50 border-slate-150")}>
-                          {['Transaction Reference ID', 'Guest Renter', 'Amount', 'Currency', 'Gateway Method', 'Creation Date', 'State Status'].map(h => (
-                            <th key={h} className="text-left px-6 py-4.5 text-[9px] font-black uppercase tracking-widest text-slate-400">{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className={cn("divide-y", isDark ? "divide-slate-850" : "divide-slate-100")}>
-                        {filteredPayments.length === 0 ? (
-                          <tr><td colSpan={7} className="text-slate-400 text-xs font-black uppercase tracking-widest text-center py-20">No transaction parameters cataloged.</td></tr>
-                        ) : (
-                          filteredPayments.map(p => (
-                            <tr key={p.id} className={cn("transition-colors duration-200", isDark ? "hover:bg-slate-900/30" : "hover:bg-slate-50/20")}>
-                              <td className="px-6 py-4 font-mono text-xs font-bold text-slate-450 dark:text-indigo-400">{p.transactionId}</td>
-                              <td className="px-6 py-4 text-xs font-bold text-slate-450 dark:text-slate-400">{p.userId || 'Guest'}</td>
-                              <td className="px-6 py-4 text-xs font-black text-emerald-500">{formatCurrency(p.amount)}</td>
-                              <td className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">{p.currency || 'VND'}</td>
-                              <td className="px-6 py-4">
-                                <span className="text-[9px] font-black px-2 py-0.5 bg-slate-500/10 rounded-lg uppercase tracking-wider">{p.method}</span>
-                              </td>
-                              <td className="px-6 py-4 text-xs font-bold text-slate-455">{formatDate(p.createdAt || new Date().toISOString())}</td>
-                              <td className="px-6 py-4">
-                                <StatusBadge status={p.status === 'succeeded' || p.status === 'success' ? 'active' : p.status === 'pending' ? 'pending' : 'failed'} label={p.status?.toUpperCase()} />
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse">
+                        <thead>
+                          <tr className={cn("border-b", isDark ? "bg-slate-950/40 border-slate-850" : "bg-slate-50 border-slate-150")}>
+                            {['Mã đặt xe (Memo)', 'Khách thuê', 'Số tiền cần chuyển', 'Trạng thái', 'Thời gian khởi tạo', 'Thao tác'].map(h => (
+                              <th key={h} className="text-left px-6 py-4.5 text-[9px] font-black uppercase tracking-widest text-slate-400">{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className={cn("divide-y", isDark ? "divide-slate-850" : "divide-slate-100")}>
+                          {bookings.filter(b => {
+                            const matchSearch = 
+                              (b.bookingCode && b.bookingCode.toLowerCase().includes(paymentSearch.toLowerCase())) ||
+                              (b.renter?.displayName && b.renter.displayName.toLowerCase().includes(paymentSearch.toLowerCase())) ||
+                              (b.renter?.email && b.renter.email.toLowerCase().includes(paymentSearch.toLowerCase())) ||
+                              (b.id && b.id.toLowerCase().includes(paymentSearch.toLowerCase()));
+
+                            if (!matchSearch) return false;
+
+                            const statusLower = b.status?.toLowerCase();
+                            if (paymentQueue === 'PENDING') return statusLower === 'payment_pending';
+                            if (paymentQueue === 'APPROVED') return ['confirmed', 'payment_verified', 'owner_approved'].includes(statusLower);
+                            if (paymentQueue === 'REJECTED') return statusLower === 'payment_rejected';
+                            if (paymentQueue === 'EXPIRED') return statusLower === 'payment_expired';
+                            return false;
+                          }).length === 0 ? (
+                            <tr>
+                              <td colSpan={6} className="text-slate-400 text-xs font-black uppercase tracking-widest text-center py-20">
+                                {isVi ? 'Không có giao dịch nào trong hàng đợi.' : 'No transactions in queue.'}
                               </td>
                             </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
+                          ) : (
+                            bookings.filter(b => {
+                              const matchSearch = 
+                                (b.bookingCode && b.bookingCode.toLowerCase().includes(paymentSearch.toLowerCase())) ||
+                                (b.renter?.displayName && b.renter.displayName.toLowerCase().includes(paymentSearch.toLowerCase())) ||
+                                (b.renter?.email && b.renter.email.toLowerCase().includes(paymentSearch.toLowerCase())) ||
+                                (b.id && b.id.toLowerCase().includes(paymentSearch.toLowerCase()));
+
+                              if (!matchSearch) return false;
+
+                              const statusLower = b.status?.toLowerCase();
+                              if (paymentQueue === 'PENDING') return statusLower === 'payment_pending';
+                              if (paymentQueue === 'APPROVED') return ['confirmed', 'payment_verified', 'owner_approved'].includes(statusLower);
+                              if (paymentQueue === 'REJECTED') return statusLower === 'payment_rejected';
+                              if (paymentQueue === 'EXPIRED') return statusLower === 'payment_expired';
+                              return false;
+                            }).map(b => (
+                              <tr 
+                                key={b.id} 
+                                onClick={() => setVerifyingBooking(b)}
+                                className={cn("transition-colors duration-200 cursor-pointer", isDark ? "hover:bg-slate-900/30" : "hover:bg-slate-50/20")}
+                              >
+                                <td className="py-4 px-6 font-mono text-xs font-black text-amber-500">{b.bookingCode || 'LXW-XX-XXXXXX'}</td>
+                                <td className="py-4 px-6">
+                                  <div className="space-y-0.5">
+                                    <span className="text-xs font-black block text-foreground uppercase">{b.renter?.displayName || 'Customer'}</span>
+                                    <span className="text-[10px] text-slate-400 block">{b.renter?.email}</span>
+                                  </div>
+                                </td>
+                                <td className="py-4 px-6 text-xs font-black text-blue-500">{formatCurrency(b.pricing?.total || 0)}</td>
+                                <td className="py-4 px-6">
+                                  <StatusBadge status={b.status} label={b.status?.toUpperCase()} />
+                                </td>
+                                <td className="py-4 px-6 text-xs font-medium text-slate-400">{formatDate(b.createdAt)}</td>
+                                <td className="py-4 px-6" onClick={e => e.stopPropagation()}>
+                                  <div className="flex gap-2">
+                                    {paymentQueue === 'PENDING' && (
+                                      <>
+                                        <button 
+                                          onClick={() => handleVerifyPayment(b.id)}
+                                          className="text-[8px] bg-emerald-500 hover:bg-emerald-600 text-white px-2.5 py-1.5 rounded-xl font-black uppercase tracking-widest transition-all"
+                                        >
+                                          {isVi ? 'Duyệt' : 'Approve'}
+                                        </button>
+                                        <button 
+                                          onClick={() => setVerifyingBooking(b)}
+                                          className="text-[8px] bg-red-500 hover:bg-red-650 text-white px-2.5 py-1.5 rounded-xl font-black uppercase tracking-widest transition-all"
+                                        >
+                                          {isVi ? 'Từ chối' : 'Reject'}
+                                        </button>
+                                      </>
+                                    )}
+                                    <button 
+                                      onClick={() => setVerifyingBooking(b)}
+                                      className="text-[8px] bg-slate-500/10 hover:bg-slate-500/20 border border-slate-200/20 dark:border-slate-800/20 text-foreground px-2.5 py-1.5 rounded-xl font-black uppercase tracking-widest transition-all"
+                                    >
+                                      {isVi ? 'Chi tiết' : 'Details'}
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </div>
               )}
@@ -2239,6 +2492,66 @@ const AdminDashboard: React.FC = () => {
                         </div>
                       </div>
                     </div>
+                    <div className={cn("border rounded-[2rem] p-6 shadow-2xl flex flex-col gap-4 col-span-1 md:col-span-2", isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200")}>
+                      <h3 className="font-black text-xs uppercase tracking-widest text-indigo-400 border-b dark:border-slate-805 pb-3">
+                        {isVi ? 'Cài đặt tài khoản ngân hàng nhận tiền (VietQR)' : 'Owner Bank Account Settings (VietQR)'}
+                      </h3>
+                      <form onSubmit={handleSavePaymentSettings} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">{isVi ? 'Tên ngân hàng' : 'Bank Name'}</label>
+                          <input
+                            type="text"
+                            value={adminPaymentSettings.bankName || ''}
+                            onChange={e => setAdminPaymentSettings({ ...adminPaymentSettings, bankName: e.target.value })}
+                            placeholder="e.g. MB, VCB, ICB"
+                            className={cn(
+                              "w-full px-4 py-2.5 border rounded-xl text-xs font-bold outline-none focus:border-indigo-500",
+                              isDark ? "bg-slate-950/60 border-slate-850 text-indigo-400" : "bg-slate-50 border-slate-200 text-indigo-650"
+                            )}
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">{isVi ? 'Số tài khoản' : 'Account Number'}</label>
+                          <input
+                            type="text"
+                            value={adminPaymentSettings.accountNumber || ''}
+                            onChange={e => setAdminPaymentSettings({ ...adminPaymentSettings, accountNumber: e.target.value })}
+                            placeholder="e.g. 0377096245"
+                            className={cn(
+                              "w-full px-4 py-2.5 border rounded-xl text-xs font-bold outline-none focus:border-indigo-500",
+                              isDark ? "bg-slate-950/60 border-slate-850 text-indigo-400" : "bg-slate-50 border-slate-200 text-indigo-650"
+                            )}
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">{isVi ? 'Tên chủ tài khoản' : 'Account Holder Name'}</label>
+                          <input
+                            type="text"
+                            value={adminPaymentSettings.ownerName || ''}
+                            onChange={e => setAdminPaymentSettings({ ...adminPaymentSettings, ownerName: e.target.value.toUpperCase() })}
+                            placeholder="e.g. NGUYEN VAN DANG"
+                            className={cn(
+                              "w-full px-4 py-2.5 border rounded-xl text-xs font-bold outline-none focus:border-indigo-500",
+                              isDark ? "bg-slate-950/60 border-slate-850 text-indigo-400" : "bg-slate-50 border-slate-200 text-indigo-650"
+                            )}
+                          />
+                        </div>
+                        <div className="space-y-1.5 flex items-center justify-between sm:pt-6">
+                          <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{isVi ? 'Trạng thái hoạt động' : 'Enabled Settings'}</span>
+                          <input
+                            type="checkbox"
+                            checked={adminPaymentSettings.enabled === true}
+                            onChange={e => setAdminPaymentSettings({ ...adminPaymentSettings, enabled: e.target.checked })}
+                            className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-slate-800"
+                          />
+                        </div>
+                        <div className="col-span-1 sm:col-span-2 pt-2">
+                          <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-3 rounded-xl uppercase text-[9px] tracking-widest shadow-lg shadow-indigo-500/25 transition-all">
+                            {isVi ? 'Lưu cấu hình thanh toán' : 'Save Payment Config'}
+                          </button>
+                        </div>
+                      </form>
+                    </div>
                   </div>
                 </div>
               )}
@@ -2699,6 +3012,75 @@ const AdminDashboard: React.FC = () => {
                     className="flex-1 border dark:border-slate-700 hover:bg-slate-500/10 text-slate-300 font-black py-3 rounded-xl uppercase text-[9px] tracking-widest"
                   >
                     Escalate Case
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </AdminSlideDrawer>
+      {/* 3. Manual Bank Transfer Verification Drawer */}
+      <AdminSlideDrawer
+        isOpen={verifyingBooking !== null}
+        onClose={() => setVerifyingBooking(null)}
+        title={isVi ? "Kiểm tra chứng từ chuyển khoản" : "Payment Verification Sheet"}
+      >
+        {verifyingBooking && (
+          <div className="space-y-5 text-sm">
+            <div className="p-4 bg-slate-500/5 rounded-2xl border dark:border-slate-850 space-y-3">
+              <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest border-b dark:border-slate-800 pb-2">
+                {isVi ? 'Chi tiết giao dịch' : 'Transaction Verification Specs'}
+              </h4>
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div>
+                  <span className="text-[9px] text-slate-500 uppercase font-black block">Mã đặt xe</span>
+                  <span className="font-bold text-amber-500">{verifyingBooking.bookingCode}</span>
+                </div>
+                <div>
+                  <span className="text-[9px] text-slate-500 uppercase font-black block">Tổng tiền</span>
+                  <span className="font-bold text-blue-500">{formatCurrency(verifyingBooking.pricing?.total || 0)}</span>
+                </div>
+                <div className="col-span-2">
+                  <span className="text-[9px] text-slate-500 uppercase font-black block">Khách thuê</span>
+                  <span className="font-bold text-foreground">{verifyingBooking.renter?.displayName || 'Customer'} ({verifyingBooking.renter?.email})</span>
+                </div>
+                <div className="col-span-2">
+                  <span className="text-[9px] text-slate-500 uppercase font-black block">Lịch trình</span>
+                  <span className="font-semibold text-slate-400">{formatDate(verifyingBooking.startDate)} - {formatDate(verifyingBooking.endDate)}</span>
+                </div>
+                <div className="col-span-2">
+                  <span className="text-[9px] text-slate-500 uppercase font-black block">Trạng thái hiện tại</span>
+                  <span className="font-semibold"><StatusBadge status={verifyingBooking.status} label={verifyingBooking.status?.toUpperCase()} /></span>
+                </div>
+              </div>
+            </div>
+
+            {verifyingBooking.status?.toLowerCase() === 'payment_pending' && (
+              <div className="space-y-3 pt-2 border-t dark:border-slate-850">
+                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 block mb-1">
+                  {isVi ? 'Lý do từ chối (Chỉ điền khi từ chối giao dịch)' : 'Rejection Reason (Required only on Reject)'}
+                </label>
+                <textarea
+                  placeholder={isVi ? "Ví dụ: Sai nội dung chuyển khoản, Số tiền không khớp..." : "e.g. Mismatched amount, incorrect message..."}
+                  value={paymentRejectionReason}
+                  onChange={e => setPaymentRejectionReason(e.target.value)}
+                  className={cn(
+                    "w-full p-3.5 border rounded-xl text-xs outline-none resize-none h-20",
+                    isDark ? "bg-slate-950/60 border-slate-850 focus:border-indigo-500" : "bg-slate-50 border-slate-200 focus:border-indigo-500"
+                  )}
+                />
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => handleVerifyPayment(verifyingBooking.id)} 
+                    className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 rounded-xl uppercase text-[9px] tracking-widest shadow-md shadow-emerald-500/10"
+                  >
+                    {isVi ? 'Duyệt thanh toán' : 'Verify & Approve'}
+                  </button>
+                  <button 
+                    onClick={() => handleRejectPayment(verifyingBooking.id, paymentRejectionReason)} 
+                    className="flex-1 bg-red-500 hover:bg-red-650 text-white font-black py-3 rounded-xl uppercase text-[9px] tracking-widest shadow-md shadow-red-500/10"
+                  >
+                    {isVi ? 'Từ chối giao dịch' : 'Decline & Reject'}
                   </button>
                 </div>
               </div>

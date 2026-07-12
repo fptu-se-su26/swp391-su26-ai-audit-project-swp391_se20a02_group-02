@@ -43,7 +43,6 @@ export const translations = {
       returnDate: 'Return Date',
       cta: 'Find Your Dream Car',
     },
-    // Categories
     categories: {
       all: 'All Types',
       motorbike: 'Motorbike',
@@ -54,6 +53,18 @@ export const translations = {
       business: 'Business',
       electric: 'Electric',
       tourism: 'Tourism',
+      sedan: 'Sedan',
+      mpv: 'MPV',
+      luxury: 'Luxury',
+      electric_car: 'Electric Car',
+      sports: 'Sports',
+      pickup: 'Pickup',
+      scooter: 'Scooter',
+      manual_motorcycle: 'Manual Motorcycle',
+      sport_bike: 'Sport Bike',
+      electric_bike: 'Electric Bike',
+      classic_bike: 'Classic Bike',
+      adventure_bike: 'Adventure Bike',
     },
     // Auth
     auth: {
@@ -799,7 +810,6 @@ export const translations = {
       returnDate: 'Ngày Trả Xe',
       cta: 'Tìm Xe Mơ Ước',
     },
-    // Categories
     categories: {
       all: 'Tất Cả Loại Xe',
       motorbike: 'Xe Máy',
@@ -810,6 +820,18 @@ export const translations = {
       business: 'Xe Doanh Nhân',
       electric: 'Xe Điện',
       tourism: 'Du Lịch',
+      sedan: 'Sedan',
+      mpv: 'MPV',
+      luxury: 'Hạng Sang',
+      electric_car: 'Ô Tô Điện',
+      sports: 'Thể Thao',
+      pickup: 'Bán Tải',
+      scooter: 'Xe Ga',
+      manual_motorcycle: 'Xe Số / Côn Tay',
+      sport_bike: 'Xe Phân Khối Lớn',
+      electric_bike: 'Xe Máy Điện',
+      classic_bike: 'Xe Cổ Điển',
+      adventure_bike: 'Xe Địa Hình',
     },
     // Auth
     auth: {

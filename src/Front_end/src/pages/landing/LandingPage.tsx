@@ -16,6 +16,21 @@ import type {
 } from '@/services/homeService';
 import { formatCurrency } from '@/utils';
 import logoImage from '../../image/logo.png';
+import imgHCM from '../../image/city-hochiminh.jpg';
+import imgHaNoi from '../../image/city-hanoi.jpg';
+import imgDaNang from '../../image/city-danang.jpg';
+import imgNhaTrang from '../../image/city-nhatrang.jpg';
+import imgDaLat from '../../image/city-dalat.jpg';
+import imgHue from '../../image/city-hue.jpg';
+
+import imgEconomy from '../../image/economic_car.jpg';
+import imgFamily from '../../image/family_car.avif';
+import imgSUV from '../../image/SUV_car.webp';
+import imgBusiness from '../../image/business_car.webp';
+import imgElectric from '../../image/eletric_Car.jpg';
+import imgScooter from '../../image/motobike.jpg';
+import imgCityBike from '../../image/city_car.jpg';
+import imgTourism from '../../image/touriim_car.webp';
 import { useT } from '@/i18n/translations';
 import { useUIStore } from '@/store';
 
@@ -107,9 +122,9 @@ const TrustBadges: React.FC = () => {
 const HeroFloatingCards: React.FC<{ stats: HomeStats | null }> = ({ stats }) => {
   const t = useT();
   const cards = [
-    { icon: Star, value: stats?.averageRating?.toFixed(1) ?? '4.9', label: t.landing.stats.rating, color: 'text-[#D4AF37]' },
-    { icon: Car, value: stats ? `${(stats.totalVehicles || 0) + 1200}+` : '1,200+', label: t.landing.stats.vehicles, color: 'text-[#D4AF37]' },
-    { icon: Shield, value: stats ? `${((stats.totalCustomers || stats.totalBookings || 0) + 15800).toLocaleString()}+` : '15,000+', label: t.landing.stats.clients, color: 'text-[#D4AF37]' },
+    { icon: Star, value: stats ? stats.averageRating.toFixed(1) : '...', label: t.landing.stats.rating, color: 'text-[#D4AF37]' },
+    { icon: Car, value: stats ? `${(stats.totalVehicles || 0)}+` : '...', label: t.landing.stats.vehicles, color: 'text-[#D4AF37]' },
+    { icon: Shield, value: stats ? `${(stats.totalCustomers || 0).toLocaleString()}+` : '...', label: t.landing.stats.clients, color: 'text-[#D4AF37]' },
   ];
 
   return (
@@ -344,10 +359,10 @@ const HeroSection: React.FC<{ stats: HomeStats | null }> = ({ stats }) => {
 const StatsBar: React.FC<{ stats: HomeStats | null }> = ({ stats }) => {
   const t = useT();
   const statsItems = [
-    { icon: Car, value: stats ? (stats.totalVehicles || 0) + 1200 : 1200, suffix: '+', label: t.landing.stats.vehicles },
-    { icon: Users, value: stats ? (stats.totalCustomers || 0) + 15800 : 15800, suffix: '+', label: t.landing.stats.clients },
-    { icon: Globe, value: stats?.provinces ?? 63, suffix: '', label: t.landing.stats.provinces },
-    { icon: Star, value: stats?.averageRating ?? 4.9, suffix: '/5', label: t.landing.stats.rating, decimal: true },
+    { icon: Car, value: stats ? (stats.totalVehicles || 0) : 0, suffix: '+', label: t.landing.stats.vehicles },
+    { icon: Users, value: stats ? (stats.totalCustomers || 0) : 0, suffix: '+', label: t.landing.stats.clients },
+    { icon: Globe, value: stats?.provinces ?? 0, suffix: '', label: t.landing.stats.provinces },
+    { icon: Star, value: stats?.averageRating ?? 0.0, suffix: '/5', label: t.landing.stats.rating, decimal: true },
   ];
 
   return (
@@ -454,9 +469,8 @@ const PromotionSection: React.FC<{ promotions: Promotion[]; loading: boolean }> 
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true }}
-              className={`hidden md:grid gap-6 ${
-                promotions.length === 2 ? 'grid-cols-2 max-w-5xl mx-auto' : 'grid-cols-3'
-              }`}
+              className={`hidden md:grid gap-6 ${promotions.length === 2 ? 'grid-cols-2 max-w-5xl mx-auto' : 'grid-cols-3'
+                }`}
             >
               {promotions.slice(0, 3).map((promo) => (
                 <motion.div
@@ -720,17 +734,28 @@ const LatestSection: React.FC<{ vehicles: TrendingVehicle[]; loading: boolean }>
 import * as LucideIcons from 'lucide-react';
 
 const CAR_CATEGORIES = [
-  { key: 'economy', label: 'Economy', iconName: 'Car', image: 'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?q=80&w=800&auto=format&fit=crop' },
-  { key: 'family', label: 'Family', iconName: 'Users', image: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?q=80&w=800&auto=format&fit=crop' },
-  { key: 'suv', label: 'SUV', iconName: 'Sparkles', image: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?q=80&w=800&auto=format&fit=crop' },
-  { key: 'business', label: 'Business', iconName: 'Briefcase', image: 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?q=80&w=800&auto=format&fit=crop' },
-  { key: 'electric', label: 'Electric', iconName: 'Zap', image: 'https://images.unsplash.com/photo-1563720223185-11003d516935?q=80&w=800&auto=format&fit=crop' },
+  { key: 'economy', label: 'Economy', iconName: 'Car', image: imgEconomy },
+  { key: 'family', label: 'Family', iconName: 'Users', image: imgFamily },
+  { key: 'suv', label: 'SUV', iconName: 'Sparkles', image: imgSUV },
+  { key: 'business', label: 'Business', iconName: 'Briefcase', image: imgBusiness },
+  { key: 'electric', label: 'Electric', iconName: 'Zap', image: imgElectric },
 ];
 const MOTO_CATEGORIES = [
-  { key: 'motorbike', label: 'Scooter', iconName: 'Bike', image: 'https://images.unsplash.com/photo-1508847154043-be12a62861c1?q=80&w=800&auto=format&fit=crop' },
-  { key: 'city_car', label: 'City Bike', iconName: 'Gauge', image: 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?q=80&w=800&auto=format&fit=crop' },
-  { key: 'tourism', label: 'Touring', iconName: 'Compass', image: 'https://images.unsplash.com/photo-1599819811279-d5ad9cccf838?q=80&w=800&auto=format&fit=crop' },
+  { key: 'motorbike', label: 'Scooter', iconName: 'Bike', image: imgScooter },
+  { key: 'city_car', label: 'City Bike', iconName: 'Gauge', image: imgCityBike },
+  { key: 'tourism', label: 'Touring', iconName: 'Compass', image: imgTourism },
 ];
+
+const CATEGORY_GROUP_MAP: Record<string, string[]> = {
+  economy: ['economy', 'sedan'],
+  family: ['family', 'mpv', 'tourism'],
+  suv: ['suv', 'pickup'],
+  business: ['business', 'luxury', 'sports'],
+  electric: ['electric', 'electric_car'],
+  motorbike: ['motorbike', 'scooter', 'automatic_scooter', 'electric_bike'],
+  city_car: ['city_car', 'manual_motorcycle', 'classic_bike'],
+  tourism: ['touring_bike', 'adventure_bike', 'sport_bike'],
+};
 
 const CategoryGrid: React.FC<{ categories: typeof CAR_CATEGORIES; counts: Record<string, number>; title: string }> = ({ categories, counts, title }) => {
   const navigate = useNavigate();
@@ -750,11 +775,11 @@ const CategoryGrid: React.FC<{ categories: typeof CAR_CATEGORIES; counts: Record
         )}
         <span className="font-display font-semibold tracking-widest">{title === 'Cars' ? t.landingPage.categories.cars : t.landingPage.categories.motorbikes}</span>
       </h3>
-      <motion.div 
-        variants={staggerContainer} 
-        initial="hidden" 
-        whileInView="visible" 
-        viewport={{ once: true }} 
+      <motion.div
+        variants={staggerContainer}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
         className="grid grid-cols-2 sm:grid-cols-3 gap-4"
       >
         {categories.map(cat => {
@@ -766,16 +791,23 @@ const CategoryGrid: React.FC<{ categories: typeof CAR_CATEGORIES; counts: Record
               whileHover={{ y: -2 }}
               transition={{ duration: 0.2 }}
               className="relative rounded-md overflow-hidden h-40 cursor-pointer group shadow-sm transition-all duration-300"
-              onClick={() => navigate(`/marketplace?category=${cat.key}`)}
+              onClick={() => {
+                const subCats = CATEGORY_GROUP_MAP[cat.key] || [cat.key];
+                const type = cat.key === 'motorbike' || cat.key === 'city_car' || cat.key === 'tourism' ? 'motorbike' : 'car';
+                const query = new URLSearchParams();
+                query.set('type', type);
+                subCats.forEach(c => query.append('category', c));
+                navigate(`/marketplace?${query.toString()}`);
+              }}
             >
-              <img 
-                src={cat.image} 
-                alt={cat.label} 
-                loading="lazy" 
-                className="w-full h-full object-cover transition-transform duration-750" 
+              <img
+                src={cat.image}
+                alt={cat.label}
+                loading="lazy"
+                className="w-full h-full object-cover transition-transform duration-750"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent transition-opacity duration-350 group-hover:from-black/85" />
-              
+
               <div className="absolute inset-x-0 bottom-0 p-4 flex items-center justify-between z-10 font-sans">
                 <div className="flex items-center gap-2.5">
                   <div className="w-9 h-9 rounded-md bg-white/10 border border-white/10 flex items-center justify-center text-white group-hover:bg-[#D4AF37] group-hover:text-[#0B1221] group-hover:border-[#D4AF37] transition-all duration-300">
@@ -822,14 +854,45 @@ const CategoriesSection: React.FC<{ data: CategoryData | null }> = ({ data }) =>
 // =====================================================
 // 6. POPULAR DESTINATIONS
 // =====================================================
+// Helper to resolve clean ASCII city keys from any string (including database question marks)
+function getCityKey(city: string): string {
+  const norm = (city || '').toLowerCase().trim();
+  if (norm.includes('h') && norm.includes('ch') && norm.includes('m')) return 'hcm';
+  if (norm.includes('nội') || norm.includes('n?i') || norm.includes('hanoi') || norm.includes('ha noi')) return 'hanoi';
+  if (norm.includes('nẵng') || norm.includes('n?ng') || norm.includes('danang') || norm.includes('da nang')) return 'danang';
+  if (norm.includes('nha trang') || norm.includes('nhatrang')) return 'nhatrang';
+  if (norm.includes('lạt') || norm.includes('l?t') || norm.includes('dalat') || norm.includes('da lat')) return 'dalat';
+  if (norm.includes('huế') || norm.includes('hu?') || norm.includes('hue')) return 'hue';
+  return '';
+}
+
 const CITY_IMAGES: Record<string, string> = {
-  'Ho Chi Minh': 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?q=80&w=800&auto=format&fit=crop',
-  'Ha Noi': 'https://images.unsplash.com/photo-1509060464153-44667396260f?q=80&w=800&auto=format&fit=crop',
-  'Da Nang': 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=800&auto=format&fit=crop',
-  'Nha Trang': 'https://images.unsplash.com/photo-1571508601936-6ca847b47ae4?q=80&w=800&auto=format&fit=crop',
-  'Da Lat': 'https://images.unsplash.com/photo-1620121692029-d088224ddc74?q=80&w=800&auto=format&fit=crop',
-  'Hue': 'https://images.unsplash.com/photo-1571005471113-94993ec92454?q=80&w=800&auto=format&fit=crop',
+  hcm: imgHCM,
+  hanoi: imgHaNoi,
+  danang: imgDaNang,
+  nhatrang: imgNhaTrang,
+  dalat: imgDaLat,
+  hue: imgHue,
 };
+
+const CITY_DISPLAY_NAMES: Record<string, string> = {
+  hcm: 'TP. Hồ Chí Minh',
+  hanoi: 'Hà Nội',
+  danang: 'Đà Nẵng',
+  nhatrang: 'Nha Trang',
+  dalat: 'Đà Lạt',
+  hue: 'Huế',
+};
+
+// Static fallback — always shown if API returns nothing
+const FALLBACK_DESTINATIONS: Destination[] = [
+  { city: 'Hồ Chí Minh', imageUrl: imgHCM, vehicleCount: 0, averagePrice: 750000, topCategory: 'suv' },
+  { city: 'Hà Nội', imageUrl: imgHaNoi, vehicleCount: 0, averagePrice: 650000, topCategory: 'economy' },
+  { city: 'Đà Nẵng', imageUrl: imgDaNang, vehicleCount: 0, averagePrice: 700000, topCategory: 'motorbike' },
+  { city: 'Nha Trang', imageUrl: imgNhaTrang, vehicleCount: 0, averagePrice: 600000, topCategory: 'family' },
+  { city: 'Đà Lạt', imageUrl: imgDaLat, vehicleCount: 0, averagePrice: 580000, topCategory: 'motorbike' },
+  { city: 'Huế', imageUrl: imgHue, vehicleCount: 0, averagePrice: 520000, topCategory: 'economy' },
+];
 
 const DestinationsSection: React.FC<{ destinations: Destination[]; loading: boolean }> = ({ destinations, loading }) => {
   const navigate = useNavigate();
@@ -855,7 +918,9 @@ const DestinationsSection: React.FC<{ destinations: Destination[]; loading: bool
           className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4"
         >
           {(loading ? Array(6).fill(null) : destinations).map((dest, i) => {
-            const displayImg = dest ? (CITY_IMAGES[dest.city] || dest.imageUrl) : '';
+            const key = dest ? getCityKey(dest.city) : '';
+            const displayImg = key ? CITY_IMAGES[key] : (dest?.imageUrl || '');
+            const displayName = key ? CITY_DISPLAY_NAMES[key] : (dest?.city || '');
             return (
               <motion.div key={dest?.city ?? i} variants={staggerItem}
                 whileHover={{ y: -3 }}
@@ -864,11 +929,11 @@ const DestinationsSection: React.FC<{ destinations: Destination[]; loading: bool
                 onClick={() => dest && navigate(`/marketplace?location=${encodeURIComponent(dest.city)}`)}>
                 {dest ? (
                   <>
-                    <img src={displayImg} alt={dest.city} loading="lazy"
+                    <img src={displayImg} alt={displayName} loading="lazy"
                       className="w-full h-full object-cover transition-transform duration-750" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent transition-opacity duration-300 group-hover:from-black/90" />
                     <div className="absolute bottom-0 left-0 right-0 p-4 z-10 font-sans">
-                      <p className="font-bold text-white text-base group-hover:text-[#D4AF37] transition-colors">{dest.city}</p>
+                      <p className="font-bold text-white text-base group-hover:text-[#D4AF37] transition-colors">{displayName}</p>
                       <p className="text-white/70 text-xs mt-0.5 font-medium">{dest.vehicleCount} {t.landingPage.destinations.vehicles}</p>
                       <p className="text-[#D4AF37] text-xs font-bold mt-1">{t.landingPage.destinations.from} {formatCurrency(dest.averagePrice)}/{t.landingPage.destinations.perDay}</p>
                     </div>
@@ -1193,10 +1258,10 @@ const BecomeOwnerSection: React.FC<{ ownerStats: OwnerStats | null }> = ({ owner
   const estimatedRevenue = Math.round(days * pricePerDay * 0.8);
 
   const ownerStatsItems = [
-    { label: t.landingPage.owner.stat1, value: ownerStats ? formatCurrency(ownerStats.averageMonthlyRevenue) : '₫15M', icon: TrendingUp },
-    { label: t.landingPage.owner.stat2, value: `${ownerStats?.vehicleUtilization?.toFixed(0) ?? 78}%`, icon: BarChart3 },
-    { label: t.landingPage.owner.stat3, value: ownerStats?.completedBookings?.toLocaleString() ?? '0', icon: CheckCircle },
-    { label: t.landingPage.owner.stat4, value: `${ownerStats?.averageRating?.toFixed(1) ?? 4.8}/5`, icon: Star },
+    { label: t.landingPage.owner.stat1, value: ownerStats ? formatCurrency(ownerStats.averageMonthlyRevenue) : '...', icon: TrendingUp },
+    { label: t.landingPage.owner.stat2, value: ownerStats ? `${ownerStats.vehicleUtilization.toFixed(0)}%` : '...', icon: BarChart3 },
+    { label: t.landingPage.owner.stat3, value: ownerStats ? ownerStats.completedBookings.toLocaleString() : '...', icon: CheckCircle },
+    { label: t.landingPage.owner.stat4, value: ownerStats ? `${ownerStats.averageRating.toFixed(1)}/5` : '...', icon: Star },
   ];
 
   return (
@@ -1283,35 +1348,35 @@ const FAQSection: React.FC<{ faqs: FAQ[]; loading: boolean }> = ({ faqs, loading
   const language = useUIStore((s: any) => s.language);
 
   const DEFAULT_FAQS: FAQ[] = [
-    { 
-      id: 1, 
-      q: language === 'vi' ? 'LuxeWay xác minh danh tính chủ xe như thế nào?' : 'How does LuxeWay verify vehicle owners?', 
-      a: language === 'vi' ? 'Tất cả chủ xe phải hoàn thành quy trình xác thực KYC nghiêm ngặt: cung cấp căn cước công dân/hộ chiếu, số điện thoại, tài khoản ngân hàng và giấy tờ xe trước khi tin đăng được duyệt.' : 'All owners complete a rigorous KYC process: government ID, phone verification, bank account check, and vehicle document review before any listing goes live.' 
+    {
+      id: 1,
+      q: language === 'vi' ? 'LuxeWay xác minh danh tính chủ xe như thế nào?' : 'How does LuxeWay verify vehicle owners?',
+      a: language === 'vi' ? 'Tất cả chủ xe phải hoàn thành quy trình xác thực KYC nghiêm ngặt: cung cấp căn cước công dân/hộ chiếu, số điện thoại, tài khoản ngân hàng và giấy tờ xe trước khi tin đăng được duyệt.' : 'All owners complete a rigorous KYC process: government ID, phone verification, bank account check, and vehicle document review before any listing goes live.'
     },
-    { 
-      id: 2, 
-      q: language === 'vi' ? 'Mỗi chuyến thuê xe bao gồm những gói bảo hiểm nào?' : 'What insurance is included in every rental?', 
-      a: language === 'vi' ? 'Mỗi chuyến xe thuê trên LuxeWay đều được tích hợp sẵn gói bảo hiểm bảo vệ chuyến đi lên tới 500 triệu VND từ các đối tác bảo hiểm của chúng tôi. Bạn cũng có thể chọn mua gói nâng cấp khi đặt xe.' : 'All rentals include baseline coverage up to ₫500M per trip via our partner insurers. Additional premium coverage is available at booking.' 
+    {
+      id: 2,
+      q: language === 'vi' ? 'Mỗi chuyến thuê xe bao gồm những gói bảo hiểm nào?' : 'What insurance is included in every rental?',
+      a: language === 'vi' ? 'Mỗi chuyến xe thuê trên LuxeWay đều được tích hợp sẵn gói bảo hiểm bảo vệ chuyến đi lên tới 500 triệu VND từ các đối tác bảo hiểm của chúng tôi. Bạn cũng có thể chọn mua gói nâng cấp khi đặt xe.' : 'All rentals include baseline coverage up to ₫500M per trip via our partner insurers. Additional premium coverage is available at booking.'
     },
-    { 
-      id: 3, 
-      q: language === 'vi' ? 'Tôi có thể hủy đơn đặt xe của mình không?' : 'Can I cancel my booking?', 
-      a: language === 'vi' ? 'Có. Bạn có thể hủy chuyến đi miễn phí tối đa 48 giờ trước khi nhận xe. Việc hủy chuyến trong vòng 48 giờ trước giờ nhận xe có thể phải chịu một khoản phí nhỏ theo chính sách của từng xe.' : 'Free cancellation is available up to 48 hours before pickup. Cancellations within 48 hours may be subject to a partial fee per the vehicle\'s policy.' 
+    {
+      id: 3,
+      q: language === 'vi' ? 'Tôi có thể hủy đơn đặt xe của mình không?' : 'Can I cancel my booking?',
+      a: language === 'vi' ? 'Có. Bạn có thể hủy chuyến đi miễn phí tối đa 48 giờ trước khi nhận xe. Việc hủy chuyến trong vòng 48 giờ trước giờ nhận xe có thể phải chịu một khoản phí nhỏ theo chính sách của từng xe.' : 'Free cancellation is available up to 48 hours before pickup. Cancellations within 48 hours may be subject to a partial fee per the vehicle\'s policy.'
     },
-    { 
-      id: 4, 
-      q: language === 'vi' ? 'Dịch vụ giao xe tận nơi hoạt động thế nào?' : 'How does door-to-door delivery work?', 
-      a: language === 'vi' ? 'Các chủ xe có bật tính năng giao xe sẽ mang xe đến tận địa chỉ của bạn. Phí giao xe được hiển thị minh bạch tại trang thanh toán và được tính dựa trên khoảng cách di chuyển.' : 'Owners who have enabled delivery will bring the vehicle to your address. Delivery fees are shown transparently at checkout and vary by distance.' 
+    {
+      id: 4,
+      q: language === 'vi' ? 'Dịch vụ giao xe tận nơi hoạt động thế nào?' : 'How does door-to-door delivery work?',
+      a: language === 'vi' ? 'Các chủ xe có bật tính năng giao xe sẽ mang xe đến tận địa chỉ của bạn. Phí giao xe được hiển thị minh bạch tại trang thanh toán và được tính dựa trên khoảng cách di chuyển.' : 'Owners who have enabled delivery will bring the vehicle to your address. Delivery fees are shown transparently at checkout and vary by distance.'
     },
-    { 
-      id: 5, 
-      q: language === 'vi' ? 'Thanh toán có an toàn không và được xử lý như thế nào?' : 'How are payments processed and is it secure?', 
-      a: language === 'vi' ? 'LuxeWay tích hợp cổng thanh toán VNPay được mã hóa bảo mật cấp ngân hàng. Số tiền thanh toán sẽ được giữ bảo đảm và chỉ chuyển cho chủ xe sau khi bạn nhận xe thành công.' : 'We use VNPay with bank-grade encryption. Payments are held in escrow and only released to owners after successful pickup confirmation.' 
+    {
+      id: 5,
+      q: language === 'vi' ? 'Thanh toán có an toàn không và được xử lý như thế nào?' : 'How are payments processed and is it secure?',
+      a: language === 'vi' ? 'LuxeWay tích hợp cổng thanh toán VNPay được mã hóa bảo mật cấp ngân hàng. Số tiền thanh toán sẽ được giữ bảo đảm và chỉ chuyển cho chủ xe sau khi bạn nhận xe thành công.' : 'We use VNPay with bank-grade encryption. Payments are held in escrow and only released to owners after successful pickup confirmation.'
     },
-    { 
-      id: 6, 
-      q: language === 'vi' ? 'Nếu xảy ra tranh chấp thì xử lý thế nào?' : 'What happens if there is a dispute?', 
-      a: language === 'vi' ? 'Đội ngũ hòa giải tranh chấp chuyên biệt của LuxeWay sẽ xem xét kỹ lưỡng hình ảnh bàn giao xe và lịch sử đặt xe. Hầu hết các tranh chấp đều được phân xử công bằng và dứt điểm trong vòng 24 giờ.' : 'Our dedicated dispute resolution team reviews photo evidence and trip records. Most disputes are resolved within 24 hours with full fairness to both parties.' 
+    {
+      id: 6,
+      q: language === 'vi' ? 'Nếu xảy ra tranh chấp thì xử lý thế nào?' : 'What happens if there is a dispute?',
+      a: language === 'vi' ? 'Đội ngũ hòa giải tranh chấp chuyên biệt của LuxeWay sẽ xem xét kỹ lưỡng hình ảnh bàn giao xe và lịch sử đặt xe. Hầu hết các tranh chấp đều được phân xử công bằng và dứt điểm trong vòng 24 giờ.' : 'Our dedicated dispute resolution team reviews photo evidence and trip records. Most disputes are resolved within 24 hours with full fairness to both parties.'
     },
   ];
 
@@ -1488,17 +1553,17 @@ const Footer: React.FC = () => {
 // VEHICLE TYPE SHOWCASE — Cars & Motorbikes Side by Side
 // =====================================================
 const FEATURED_CARS = [
-  { brand: 'Toyota', model: 'Camry 2.5Q', price: 1800000, rating: 4.9, city: 'TP.HCM', img: 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?q=80&w=800&auto=format&fit=crop', badge: 'Luxury' },
-  { brand: 'Hyundai', model: 'Santa Fe 2024', price: 1500000, rating: 4.8, city: 'Hà Nội', img: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?q=80&w=800&auto=format&fit=crop', badge: 'SUV' },
-  { brand: 'VinFast', model: 'VF8 Plus', price: 1600000, rating: 4.7, city: 'Đà Nẵng', img: 'https://images.unsplash.com/photo-1563720223185-11003d516935?q=80&w=800&auto=format&fit=crop', badge: 'Electric' },
-  { brand: 'Mazda', model: 'CX-5 Premium', price: 1200000, rating: 4.8, city: 'Nha Trang', img: 'https://images.unsplash.com/photo-1560958089-b8a1929cea89?q=80&w=800&auto=format&fit=crop', badge: 'SUV' },
+  { brand: 'Toyota', model: 'Camry 2.5Q', price: 1800000, rating: 4.9, city: 'TP.HCM', img: '/images/cars/caramy_2.5Q.avif', badge: 'Luxury' },
+  { brand: 'Hyundai', model: 'Santa Fe 2024', price: 1500000, rating: 4.8, city: 'Hà Nội', img: '/images/cars/santa-fe2024.jpg', badge: 'SUV' },
+  { brand: 'VinFast', model: 'VF8 Plus', price: 1600000, rating: 4.7, city: 'Đà Nẵng', img: '/images/cars/vf8_plus.jpg', badge: 'Electric' },
+  { brand: 'Mazda', model: 'CX-5 Premium', price: 1200000, rating: 4.8, city: 'Nha Trang', img: '/images/cars/2025-Mazda-CX-5_premium.avif', badge: 'SUV' },
 ];
 
 const FEATURED_MOTORBIKES = [
-  { brand: 'Honda', model: 'SH350i', price: 650000, rating: 4.9, city: 'TP.HCM', img: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?q=80&w=800&auto=format&fit=crop', badge: 'Premium' },
-  { brand: 'Yamaha', model: 'Exciter 155', price: 280000, rating: 4.8, city: 'Hà Nội', img: 'https://images.unsplash.com/photo-1449426468159-d96dbf08f19f?q=80&w=800&auto=format&fit=crop', badge: 'Sport' },
-  { brand: 'Honda', model: 'Winner X', price: 250000, rating: 4.7, city: 'Đà Nẵng', img: 'https://images.unsplash.com/photo-1591637333184-19aa84b3e01f?q=80&w=800&auto=format&fit=crop', badge: 'Sport' },
-  { brand: 'VinFast', model: 'Klara S', price: 180000, rating: 4.6, city: 'Đà Lạt', img: 'https://images.unsplash.com/photo-1571008887538-b36bb32f4571?q=80&w=800&auto=format&fit=crop', badge: 'Electric' },
+  { brand: 'Honda', model: 'SH350i', price: 650000, rating: 4.9, city: 'TP.HCM', img: '/images/motorbikes/Sh350_i.webp', badge: 'Premium' },
+  { brand: 'Yamaha', model: 'Exciter 155', price: 280000, rating: 4.8, city: 'Hà Nội', img: '/images/motorbikes/exciter_155.jpg', badge: 'Sport' },
+  { brand: 'Honda', model: 'Winner X', price: 250000, rating: 4.7, city: 'Đà Nẵng', img: '/images/motorbikes/winner_x.jpg', badge: 'Sport' },
+  { brand: 'VinFast', model: 'Klara S', price: 180000, rating: 4.6, city: 'Đà Lạt', img: '/images/motorbikes/kalara_s.jpg', badge: 'Electric' },
 ];
 
 const getCityName = (city: string, lang: string) => {
@@ -1921,7 +1986,15 @@ const LandingPage: React.FC = () => {
       }
       setLoadingTrending(false);
     });
-    homeService.getDestinations().then(d => { setDestinations(d ?? []); setLoadingDests(false); });
+    homeService.getDestinations().then(d => {
+      // If API returns data, use it; otherwise always show fallback cities
+      const resolved = (d && d.length > 0) ? d : FALLBACK_DESTINATIONS;
+      setDestinations(resolved);
+      setLoadingDests(false);
+    }).catch(() => {
+      setDestinations(FALLBACK_DESTINATIONS);
+      setLoadingDests(false);
+    });
     homeService.getTestimonials().then(d => { setTestimonials(d ?? null); setLoadingTestimonials(false); });
     homeService.getFaqs().then(d => { setFaqs(d ?? []); setLoadingFaqs(false); });
   }, [language]);
