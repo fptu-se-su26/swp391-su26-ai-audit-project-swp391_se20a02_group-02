@@ -12,7 +12,7 @@
 | Tên sinh viên | Nguyễn Bùi Quang Vinh |
 | MSSV | DE190264 |
 | Vai trò | Member - Frontend/Backend Integration |
-| Thời gian cập nhật | 2026-05-10 đến 2026-06-28 |
+| Thời gian cập nhật | 2026-05-10 đến 2026-08-02 |
 
 ---
 
@@ -25,7 +25,8 @@
 | Phase 03 | 2026-06-04 đến 2026-06-08 | Hoàn thiện security, admin dashboard, tách Car/Motorbike, cleanup credential và cấu hình OAuth/Gmail an toàn hơn | Completed |
 | Phase 04 | 2026-06-09 đến 2026-06-18 | Tích hợp auth thật, OTP, Google OAuth, marketplace, ảnh xe, booking wizard, phí giao xe và dashboard | Completed |
 | Phase 05 | 2026-06-22 đến 2026-06-24 | Merge frontend/backend theo module, sửa lỗi H2, KYC submit/reset, STOMP WebSocket, ESLint và security advisory frontend | Completed |
-| Phase 06 | 2026-06-25 đến 2026-06-28 | Bổ sung hợp đồng điện tử, payment/VNPay, invoice, refund/dispute, admin operation timeline và sửa đồng bộ KYC admin/customer | In progress |
+| Phase 06 | 2026-06-25 đến 2026-06-28 | Bổ sung hợp đồng điện tử, payment/VNPay, invoice, refund/dispute, admin operation timeline và sửa đồng bộ KYC admin/customer | Completed |
+| Phase 07 | 2026-06-29 đến 2026-08-02 | Rà soát lỗi sau merge, tối ưu map, sửa OAuth runtime, bổ sung dashboard sidebar summary/detail, kiểm tra Reviews và seed dữ liệu unified review | Completed |
 
 ---
 
@@ -56,6 +57,14 @@
 | 21 | 2026-06-25 | Feature | Bổ sung refund/dispute operation flow và admin booking operation timeline để theo dõi xử lý sau thanh toán | Dispute/refund modules, admin timeline drawer | Có |
 | 22 | 2026-06-27 đến 2026-06-28 | Bug fix | Sửa lỗi admin đã verification KYC nhưng customer chưa hiển thị verified bằng cách đồng bộ trạng thái KYC trong auth response/store/documents UI | `AuthDTOs.java`, `AuthService.java`, `AdminService.java`, `authService.ts`, `MyDocuments.tsx` | Có |
 | 23 | 2026-06-28 | Investigation | Phân tích lỗi booking legacy motorbike tạo booking confirmed nhưng contract/payment báo `Booking not found`, dashboard hiển thị tổng tiền/deposit bằng 0 | Booking mapper, digital contract lookup, legacy motorbike booking flow | Có |
+| 24 | 2026-06-29 đến 2026-07-12 | Bug fix/Integration | Rà soát xung đột booking unified và booking legacy, xác định nguyên nhân contract/payment mới không tìm thấy một số booking cũ và dashboard hiển thị giá trị 0đ | Booking service/mapper, contract/payment lookup, dashboard booking cards | Có |
+| 25 | 2026-07-12 | Bug fix | Sửa lỗi Google Sign-In `audience does not match` do backend H2 runtime chưa tự load `.env`; bổ sung Spring config import `.env` để OAuth dùng đúng Google client ID | `application.yml`, `AuthService.java`, frontend Google login | Có |
+| 26 | 2026-07-12 | UI/UX/Bug fix | Tối ưu trang map để danh sách xe không che khu vực bản đồ và xử lý fallback khi trình duyệt không lấy được vị trí hiện tại | `MarketplaceLeafletMap.tsx`, `MarketplaceGoogleMap.tsx`, map runtime/config | Có |
+| 27 | 2026-07-12 đến 2026-08-02 | Feature | Bổ sung API dashboard sidebar summary cho customer/owner/admin và kết nối frontend hiển thị badge trạng thái theo vai trò | `DashboardSummaryController.java`, `DashboardSummaryService.java`, `dashboardSummaryService.ts`, dashboard pages | Có |
+| 28 | 2026-07-12 đến 2026-08-02 | Feature/Bug fix | Rà soát route detail dashboard như tracking, contract, payment, booking detail để điều hướng từ sidebar/dashboard nhất quán hơn | Customer/Owner/Admin dashboard, contract/payment/tracking routes | Có |
+| 29 | 2026-07-12 đến 2026-08-02 | Bug fix/Data | Kiểm tra mục Reviews, phát hiện backend trả 0 review do seeder legacy không tạo unified reviews; bổ sung seed dữ liệu `vehicles + bookings + reviews` có điều kiện | `ReviewController.java`, `ReviewService.java`, `ReviewRepository.java`, `SeedingService.java` | Có |
+| 30 | 2026-07-12 đến 2026-08-02 | UI fix | Cải thiện empty state trang Reviews để phân biệt chưa có review và không có review khớp filter | `ReviewsPage.tsx`, `otherServices.ts`, review types | Có |
+| 31 | 2026-07-12 đến 2026-08-02 | Quality | Chạy lại checkpoint frontend/backend sau các thay đổi: type-check, build, compile/test và kiểm tra API reviews/stats/dashboard summary | Frontend build, backend compile/test, public API checks | Có |
 
 ---
 
@@ -76,6 +85,10 @@
 | 11 | Hợp đồng điện tử | Có workflow xem/ký hợp đồng từ booking, lưu snapshot/hash |
 | 12 | Payment/VNPay | Có checkout VNPay, return/callback, invoice, payment history và ràng buộc ký hợp đồng |
 | 13 | Refund/Dispute | Có module xử lý dispute/refund và timeline vận hành cho admin |
+| 14 | Map UX | Trang map được tối ưu để panel/list không che mất bản đồ và có fallback khi geolocation timeout |
+| 15 | Dashboard summary | Customer/Owner/Admin sidebar có badge dữ liệu từ API tổng hợp theo vai trò |
+| 16 | Reviews | Trang Reviews có dữ liệu unified review, thống kê rating và empty state rõ ràng hơn |
+| 17 | OAuth runtime | Backend tự load `.env`, giảm lỗi Google audience mismatch khi chạy profile H2/local public test |
 
 ---
 
@@ -83,9 +96,10 @@
 
 | STT | Vấn đề | Trạng thái |
 |---:|---|---|
-| 1 | Một số booking legacy của motorbike có thể tạo confirmed booking nhưng contract/payment không tìm thấy booking trong luồng hợp nhất | Đang phân tích/sửa tiếp |
-| 2 | Một số mapper booking cũ chưa trả đúng total amount/deposit nên dashboard có thể hiển thị 0đ | Đang phân tích/sửa tiếp |
-| 3 | Cần tiếp tục smoke test toàn bộ flow booking -> ký hợp đồng -> thanh toán -> invoice -> dispute/refund trên dữ liệu thật | Cần kiểm thử thêm |
+| 1 | Một số booking legacy của motorbike có thể tạo confirmed booking nhưng contract/payment không tìm thấy booking trong luồng hợp nhất | Đã xác định nguyên nhân chính ở khác biệt legacy/unified; cần tiếp tục chuẩn hóa toàn bộ dữ liệu cũ nếu muốn production thật |
+| 2 | Một số mapper booking cũ chưa trả đúng total amount/deposit nên dashboard có thể hiển thị 0đ | Đã ghi nhận và rà soát trong nhóm booking/dashboard; cần kiểm thử thêm trên dữ liệu phát sinh thật |
+| 3 | Cần tiếp tục smoke test toàn bộ flow booking -> ký hợp đồng -> thanh toán -> invoice -> dispute/refund trên dữ liệu thật | Cần kiểm thử vận hành thêm |
+| 4 | Ngrok/local backend chỉ phù hợp kiểm thử tạm thời, chưa phải backend production bền vững | Cần triển khai backend production riêng nếu muốn kiểm thử dài hạn |
 
 ---
 
@@ -111,4 +125,4 @@ Em cam kết các nội dung trên phản ánh những thay đổi phát triển
 
 | Đại diện sinh viên | Ngày xác nhận |
 |---|---|
-| Nguyễn Bùi Quang Vinh - DE190264 | 2026-06-28 |
+| Nguyễn Bùi Quang Vinh - DE190264 | 2026-08-02 |

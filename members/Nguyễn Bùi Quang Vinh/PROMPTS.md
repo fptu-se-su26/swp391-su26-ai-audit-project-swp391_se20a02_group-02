@@ -11,8 +11,8 @@
 | Tên bài tập / Project | LuxeWay - Trusted E-commerce Platform for Vehicle Rental |
 | Tên sinh viên | Nguyễn Bùi Quang Vinh |
 | MSSV | DE190264 |
-| Thời gian ghi nhận | 2026-05-10 đến 2026-06-28 |
-| Ngày cập nhật gần nhất | 2026-06-28 |
+| Thời gian ghi nhận | 2026-05-10 đến 2026-08-02 |
+| Ngày cập nhật gần nhất | 2026-08-02 |
 
 ---
 
@@ -63,6 +63,12 @@ invoice và dispute/refund.
 | 17 | 2026-06-25 | Refund/dispute/admin ops | Bổ sung luồng dispute/refund và timeline vận hành cho admin | Admin có operation timeline, dispute/refund có service/API/UI |
 | 18 | 2026-06-27 đến 2026-06-28 | Fix KYC sync | Kiểm tra lỗi admin verified nhưng customer chưa thấy verified | Đồng bộ trạng thái KYC trong auth response, store và documents UI |
 | 19 | 2026-06-28 | Phân tích booking legacy | Kiểm tra lỗi booking confirmed nhưng contract/payment báo `Booking not found` và dashboard 0đ | Xác định nghi vấn ở luồng booking legacy/mapping chưa đồng bộ với contract/payment mới |
+| 20 | 2026-06-29 đến 2026-07-12 | Rà soát xung đột sau merge | Rà toàn bộ code tìm phần xung đột giữa booking legacy/unified, contract/payment và dashboard | Xác định nguyên nhân các luồng cũ chưa đồng bộ với contract/payment mới và lập hướng sửa ít phá vỡ |
+| 21 | 2026-07-12 | Google OAuth runtime | Kiểm tra lỗi Google Sign-In failed do audience mismatch trên web live | Xác định backend H2 chưa load `.env`, bổ sung `spring.config.import` để đọc đúng Google client ID |
+| 22 | 2026-07-12 | Tối ưu map | Lên kế hoạch và sửa lỗi panel xe che map, lỗi lấy vị trí hiện tại timeout | Rà soát map component, tối ưu bố cục và fallback geolocation |
+| 23 | 2026-07-12 đến 2026-08-02 | Dashboard sidebar/detail | Phát triển thêm sidebar/dashboard cho admin/customer/owner và thêm detail | Bổ sung dashboard summary API, service frontend và badge trạng thái theo vai trò |
+| 24 | 2026-07-12 đến 2026-08-02 | Reviews module | Kiểm tra mục Reviews vì trang hiển thị 0 reviews dù UI không lỗi | Phát hiện thiếu unified review seed, bổ sung seed có điều kiện và cải thiện empty state |
+| 25 | 2026-07-12 đến 2026-08-02 | Kiểm chứng sau sửa lỗi | Kiểm tra lại type-check/build/compile/test/API sau các thay đổi | Xác nhận frontend build, backend compile/test và public API reviews/stats/dashboard summary hoạt động |
 
 ---
 
@@ -254,6 +260,116 @@ cũ và contract/payment mới.
 
 ## 6. Prompt chưa hiệu quả và cách cải thiện
 
+### Prompt số 8 - Rà soát xung đột sau merge
+
+| Nội dung | Thông tin |
+|---|---|
+| Ngày sử dụng | 2026-06-29 đến 2026-07-12 |
+| Phần việc | Conflict/Bug Audit |
+| Mức độ sử dụng AI | Hỗ trợ phân tích |
+
+#### Prompt tóm tắt
+
+```text
+Rà soát lại toàn bộ code, tìm các phần xung đột với nhau sau merge frontend/backend. Tập trung vào booking, contract, payment, dashboard, KYC, map, WebSocket và reviews. Sau đó báo cáo nguyên nhân bug và lên kế hoạch sửa theo từng giai đoạn, mỗi giai đoạn kiểm tra lại trước khi tiếp tục.
+```
+
+#### Kết quả đã áp dụng
+
+```text
+AI giúp hệ thống hóa nhóm lỗi theo luồng dữ liệu thay vì theo file riêng lẻ. Em dùng kết quả để xác định lỗi booking legacy/unified, lỗi mapping tổng tiền/deposit, contract/payment lookup và các điểm dashboard hiển thị thiếu dữ liệu.
+```
+
+---
+
+### Prompt số 9 - Google OAuth audience mismatch
+
+| Nội dung | Thông tin |
+|---|---|
+| Ngày sử dụng | 2026-07-12 |
+| Phần việc | Authentication/OAuth |
+| Mức độ sử dụng AI | Hỗ trợ debug |
+
+#### Prompt tóm tắt
+
+```text
+Kiểm tra lỗi Google Sign-In failed: Google token audience does not match this LuxeWay application. So sánh Google client ID frontend/backend, kiểm tra runtime backend đang chạy bằng profile H2 và xác định vì sao token thật bị backend từ chối.
+```
+
+#### Kết quả đã áp dụng
+
+```text
+Phát hiện file cấu hình frontend/backend cùng client ID nhưng runtime backend chưa load `.env`, nên dùng default H2. Em cập nhật `application.yml` để import `.env` và kiểm tra backend đọc đúng `GOOGLE_CLIENT_ID`.
+```
+
+---
+
+### Prompt số 10 - Tối ưu map và sửa geolocation
+
+| Nội dung | Thông tin |
+|---|---|
+| Ngày sử dụng | 2026-07-12 |
+| Phần việc | Map UX/Geolocation |
+| Mức độ sử dụng AI | Hỗ trợ thiết kế và debug |
+
+#### Prompt tóm tắt
+
+```text
+Ở trang map, thông tin xe đang che hết bản đồ và chức năng lấy vị trí hiện tại bị timeout. Hãy kiểm tra UI map, lên kế hoạch tối ưu bố cục, xử lý fallback khi browser không cấp quyền hoặc không trả vị trí, rồi sửa theo kế hoạch.
+```
+
+#### Kết quả đã áp dụng
+
+```text
+Map component được rà soát lại về layout, khu vực nearby vehicles, selected point và geolocation error. Luồng chọn điểm bằng click map được giữ như fallback khi không lấy được vị trí hiện tại.
+```
+
+---
+
+### Prompt số 11 - Dashboard sidebar summary và detail
+
+| Nội dung | Thông tin |
+|---|---|
+| Ngày sử dụng | 2026-07-12 đến 2026-08-02 |
+| Phần việc | Dashboard/Admin/Customer/Owner |
+| Mức độ sử dụng AI | Hỗ trợ nhiều |
+
+#### Prompt tóm tắt
+
+```text
+Team muốn phát triển thêm dashboard admin/customer/owner, thêm backend cho sidebar và thêm detail. Hãy lập kế hoạch theo thứ tự, sau đó triển khai API tổng hợp dữ liệu sidebar, service frontend và badge trạng thái cho từng vai trò.
+```
+
+#### Kết quả đã áp dụng
+
+```text
+Backend có dashboard summary controller/service/DTO cho customer, owner và admin. Frontend có `dashboardSummaryService.ts`, CustomerDashboard/OwnerDashboard/AdminDashboard gọi API mới để hiển thị badge như active bookings, pending payments, unsigned contracts, pending vehicles, open disputes và alerts.
+```
+
+---
+
+### Prompt số 12 - Kiểm tra mục Reviews
+
+| Nội dung | Thông tin |
+|---|---|
+| Ngày sử dụng | 2026-07-12 đến 2026-08-02 |
+| Phần việc | Reviews/Rating/Seeder |
+| Mức độ sử dụng AI | Hỗ trợ debug |
+
+#### Prompt tóm tắt
+
+```text
+Kiểm tra mục Reviews trên web đang hiển thị 0 review. Rà frontend service, ReviewsPage, backend ReviewController/ReviewService và database để xác định là lỗi UI, lỗi endpoint hay thiếu dữ liệu.
+```
+
+#### Kết quả đã áp dụng
+
+```text
+Xác định API review trả 200 nhưng database H2 không có bản ghi review vì seed legacy không tạo unified reviews. Em bổ sung seed có điều kiện cho vehicles/bookings/reviews và sửa empty state của ReviewsPage.
+```
+
+---
+
 ```text
 Prompt chưa hiệu quả: "Sửa auth giúp tôi", "Sửa marketplace", "Sửa payment".
 
@@ -286,4 +402,4 @@ Em cam kết các prompt được ghi theo đúng mục đích đã sử dụng.
 
 | Đại diện sinh viên | Ngày xác nhận |
 |---|---|
-| Nguyễn Bùi Quang Vinh - DE190264 | 2026-06-28 |
+| Nguyễn Bùi Quang Vinh - DE190264 | 2026-08-02 |
