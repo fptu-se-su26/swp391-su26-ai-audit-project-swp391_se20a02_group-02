@@ -142,5 +142,158 @@ class AIPredictiveControllerTest {
         mockMvc.perform(post("/api/v1/admin/ai/revenue/forecast?horizon=1").with(csrf()))
                 .andExpect(status().isTooManyRequests());
     }
+
+    // ===================================================================
+    // RTM #17 — bookingDemand
+    // ===================================================================
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void bookingDemand_horizon7_returns200WithForecasts() throws Exception {
+        List<ForecastPoint> pts = new java.util.ArrayList<>();
+        for (int i = 0; i < 7; i++) {
+            pts.add(ForecastPoint.builder()
+                    .date(java.time.LocalDate.now().plusDays(i + 1))
+                    .predictedRevenue(50.0 + i)
+                    .lowerBound(40.0)
+                    .upperBound(60.0)
+                    .build());
+        }
+        BookingDemandDTO stubDemand = BookingDemandDTO.builder()
+                .forecasts(pts)
+                .peakDay("Saturday")
+                .averageDailyDemand(52.0)
+                .warningFlag(false)
+                .build();
+
+        when(mlSidecarClient.forecastBookingDemand(anyList(), anyInt())).thenReturn(stubDemand);
+
+        mockMvc.perform(post("/api/v1/admin/ai/booking/demand?horizon=7").with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.forecasts").isArray())
+                .andExpect(jsonPath("$.forecasts.length()").value(7));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void bookingDemand_invalidHorizon_returns400() throws Exception {
+        mockMvc.perform(post("/api/v1/admin/ai/booking/demand?horizon=0").with(csrf()))
+                .andExpect(status().isBadRequest());
+    }
+
+    // ===================================================================
+    // RTM #18 — vehicleUtilization
+    // ===================================================================
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void vehicleUtilization_returns200WithUtilizationData() throws Exception {
+        VehicleUtilizationDTO stubUtil = VehicleUtilizationDTO.builder()
+                .averageUtilizationRate(72.5)
+                .topVehicles(Collections.emptyList())
+                .utilizationByCategory(Collections.emptyMap())
+                .warningFlag(false)
+                .build();
+
+        when(mlSidecarClient.forecastUtilization(anyList(), anyList())).thenReturn(stubUtil);
+
+        mockMvc.perform(post("/api/v1/admin/ai/vehicle/utilization?horizon=7").with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.average_utilization_rate").value(72.5));
+    }
+
+    // ===================================================================
+    // RTM #20 — anomalies
+    // ===================================================================
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void anomalies_returns200WithAnomalyList() throws Exception {
+        List<AnomalyDTO> stubAnomalies = List.of(
+                AnomalyDTO.builder()
+                        .date(java.time.LocalDate.now().minusDays(3))
+                        .metric("revenue")
+                        .actualValue(5_000_000.0)
+                        .expectedValue(20_000_000.0)
+                        .deviationPercent(-75.0)
+                        .severity("HIGH")
+                        .build()
+        );
+        when(analyticsRepository.findAll()).thenReturn(Collections.emptyList());
+        when(mlSidecarClient.detectAnomalies(anyList())).thenReturn(stubAnomalies);
+
+        mockMvc.perform(get("/api/v1/admin/ai/anomalies"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray());
+    }
+
+    // ===================================================================
+    // RTM #21 — insights
+    // ===================================================================
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void insights_cacheNotNull_returnsInsightList() throws Exception {
+        AIPredictiveDashboardDTO dashboardWithInsights = AIPredictiveDashboardDTO.builder()
+                .insights(List.of("Revenue is up 15% this week", "Churn risk detected for 3 users"))
+                .build();
+
+        when(cacheService.getCached()).thenReturn(dashboardWithInsights);
+
+        mockMvc.perform(get("/api/v1/admin/ai/insights"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(2));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void insights_cacheNull_returnsEmptyList() throws Exception {
+        when(cacheService.getCached()).thenReturn(null);
+
+        mockMvc.perform(get("/api/v1/admin/ai/insights"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    // ===================================================================
+    // RTM #22 — fetchAnalyticsPayload
+    // ===================================================================
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void fetchAnalyticsPayload_returns200WithDataPoints() throws Exception {
+        when(analyticsRepository.findAll()).thenReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/api/v1/admin/ai/analytics/payload"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray());
+    }
+
+    // ===================================================================
+    // RTM #23 — checkRateLimit
+    // ===================================================================
+
+    @Test
+    @WithMockUser(username = "check-rate@test.com", roles = "ADMIN")
+    void checkRateLimit_withinLimit_returnsAllowed() throws Exception {
+        mockMvc.perform(get("/api/v1/admin/ai/rate-limit/status"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.allowed").value(true));
+    }
+
+    @Test
+    @WithMockUser(username = "check-rate-exceeded@test.com", roles = "ADMIN")
+    void checkRateLimit_exceeded_returnsNotAllowed() throws Exception {
+        when(mlSidecarClient.forecastRevenue(anyList(), anyInt())).thenReturn(stubRevenue(1));
+        for (int i = 0; i < 10; i++) {
+            mockMvc.perform(post("/api/v1/admin/ai/revenue/forecast?horizon=1").with(csrf()));
+        }
+
+        mockMvc.perform(get("/api/v1/admin/ai/rate-limit/status"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.allowed").value(false));
+    }
 }
 
