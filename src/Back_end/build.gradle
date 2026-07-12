@@ -8,7 +8,9 @@ group = 'com.luxeway'
 version = '1.0.0'
 
 java {
-    sourceCompatibility = '17'
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
 }
 
 if (project.hasProperty('mySecretBuild')) {

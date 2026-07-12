@@ -167,7 +167,10 @@ public class Vehicle {
     
     @Column(name = "engine_size", length = 20)
     private String engineSize;
-    
+
+    @Column(columnDefinition = "NVARCHAR(MAX)")
+    private String advantages;
+
     @Column(length = 50)
     private String color;
     

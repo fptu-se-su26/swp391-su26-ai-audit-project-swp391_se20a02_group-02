@@ -227,6 +227,8 @@ public class VehicleService {
                 .fuelType(req.getFuelType())
                 .rangeKm(req.getRangeKm())
                 .engineSize(req.getEngineSize())
+                .engineCc(req.getEngineCc())
+                .advantages(req.getAdvantages())
                 .color(req.getColor())
                 .licensePlate(req.getLicensePlate())
                 .minRentalDays(req.getMinRentalDays())
@@ -320,6 +322,11 @@ public class VehicleService {
         vehicle.setFuelType(req.getFuelType());
         vehicle.setInstantBook(req.getInstantBook());
         vehicle.setDeliveryAvailable(req.getDeliveryAvailable());
+        vehicle.setEngineSize(req.getEngineSize());
+        vehicle.setAdvantages(req.getAdvantages());
+        vehicle.setColor(req.getColor());
+        vehicle.setLicensePlate(req.getLicensePlate());
+        vehicle.setRangeKm(req.getRangeKm());
 
         return toResponse(vehicleRepository.save(vehicle));
     }
@@ -361,6 +368,9 @@ public class VehicleService {
         r.setSeats(v.getSeats());
         r.setDoors(v.getDoors());
         r.setHorsepower(v.getHorsepower());
+        r.setEngineSize(v.getEngineSize());
+        r.setEngineCc(v.getEngineCc());
+        r.setAdvantages(v.getAdvantages());
         r.setTransmission(v.getTransmission() != null ? v.getTransmission().name().toLowerCase() : null);
         r.setFuelType(v.getFuelType() != null ? v.getFuelType().name().toLowerCase() : null);
         r.setColor(v.getColor());

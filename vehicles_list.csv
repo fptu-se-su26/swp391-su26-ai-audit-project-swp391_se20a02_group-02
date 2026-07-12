@@ -1,0 +1,212 @@
+vehicle_type,brand,name,category,price_per_day,city
+------------,-----,----,--------,-------------,----
+CAR,Audi,Audi A4,SEDAN,2300000.00,Hue
+CAR,Audi,Audi A4,SEDAN,2050000.00,Da Lat
+CAR,Audi,Audi Q5,SUV,3200000.00,Hue
+CAR,Audi,Audi Q5,SUV,2500000.00,Ho Chi Minh
+CAR,Audi,Audi Q7,SUV,3500000.00,Ho Chi Minh
+CAR,Audi,Audi Q7,SUV,4000000.00,Ha Noi
+CAR,BMW,BMW 320i,SEDAN,2100000.00,Ha Noi
+CAR,BMW,BMW 320i,SEDAN,2400000.00,Da Nang
+CAR,BMW,BMW 520i,SEDAN,3200000.00,Da Nang
+CAR,BMW,BMW 520i,SEDAN,2500000.00,Nha Trang
+CAR,BMW,BMW X5,SUV,4000000.00,Da Lat
+CAR,BMW,BMW X5,SUV,3500000.00,Nha Trang
+CAR,Chevrolet,Chevrolet Colorado,PICKUP,950000.00,Ha Noi
+CAR,Chevrolet,Chevrolet Colorado,PICKUP,800000.00,Ho Chi Minh
+CAR,Chevrolet,Chevrolet Cruze,SEDAN,500000.00,Ho Chi Minh
+CAR,Chevrolet,Chevrolet Cruze,SEDAN,700000.00,Hue
+CAR,Ford,Ford Everest,SUV,1500000.00,Ha Noi
+CAR,Ford,Ford Everest,SUV,1200000.00,Ho Chi Minh
+CAR,Ford,Ford Ranger,PICKUP,1300000.00,Hue
+CAR,Ford,Ford Ranger,PICKUP,900000.00,Ho Chi Minh
+CAR,Honda,Honda City,SEDAN,700000.00,Da Nang
+CAR,Honda,Honda City,SEDAN,500000.00,Nha Trang
+CAR,Honda,Honda Civic,SEDAN,950000.00,Da Lat
+CAR,Honda,Honda Civic,SEDAN,800000.00,Nha Trang
+CAR,Honda,Honda CR-V,SUV,1500000.00,Hue
+CAR,Honda,Honda CR-V,SUV,1300000.00,Da Lat
+CAR,Hyundai,Hyundai Accent,SEDAN,700000.00,Hue
+CAR,Hyundai,Hyundai Accent,SEDAN,600000.00,Da Lat
+CAR,Hyundai,Hyundai Elantra,SEDAN,900000.00,Hue
+CAR,Hyundai,Hyundai Elantra,SEDAN,700000.00,Ho Chi Minh
+CAR,Hyundai,Hyundai SantaFe,SUV,1450000.00,Ha Noi
+CAR,Hyundai,Hyundai SantaFe,SUV,1700000.00,Da Nang
+CAR,Hyundai,Hyundai Tucson,SUV,900000.00,Ho Chi Minh
+CAR,Hyundai,Hyundai Tucson,SUV,1050000.00,Ha Noi
+CAR,Kia,Kia Carnival,MPV,1800000.00,Nha Trang
+CAR,Kia,Kia Carnival,MPV,2500000.00,Da Nang
+CAR,Kia,Kia Cerato,SEDAN,700000.00,Ha Noi
+CAR,Kia,Kia Cerato,SEDAN,600000.00,Ho Chi Minh
+CAR,Kia,Kia Morning,ECONOMY,400000.00,Ho Chi Minh
+CAR,Kia,Kia Morning,ECONOMY,550000.00,Hue
+CAR,Kia,Kia Sorento,SUV,1300000.00,Ha Noi
+CAR,Kia,Kia Sorento,SUV,1500000.00,Da Nang
+CAR,Lexus,Lexus ES250,LUXURY,3200000.00,Da Nang
+CAR,Lexus,Lexus ES250,LUXURY,2850000.00,Ha Noi
+CAR,Lexus,Lexus LX570,LUXURY,8000000.00,Nha Trang
+CAR,Lexus,Lexus LX570,LUXURY,9500000.00,Da Lat
+CAR,Lexus,Lexus RX350,LUXURY,4000000.00,Nha Trang
+CAR,Lexus,Lexus RX350,LUXURY,5500000.00,Da Nang
+CAR,Mazda,Mazda CX-5,SUV,1150000.00,Ha Noi
+CAR,Mazda,Mazda CX-5,SUV,1300000.00,Da Nang
+CAR,Mazda,Mazda CX-5,SUV,1000000.00,Ho Chi Minh
+CAR,Mazda,Mazda CX-8,SUV,1500000.00,Ha Noi
+CAR,Mazda,Mazda CX-8,SUV,1300000.00,Nha Trang
+CAR,Mazda,Mazda CX-8,SUV,1700000.00,Da Nang
+CAR,Mazda,Mazda Mazda 3,SEDAN,800000.00,Da Lat
+CAR,Mazda,Mazda Mazda 3,SEDAN,900000.00,Hue
+CAR,Mazda,Mazda Mazda 3,SEDAN,700000.00,Ho Chi Minh
+CAR,Mazda,Mazda Mazda 6,SEDAN,1250000.00,Ha Noi
+CAR,Mazda,Mazda Mazda 6,SEDAN,1100000.00,Ho Chi Minh
+CAR,Mazda,Mazda Mazda 6,SEDAN,1400000.00,Hue
+CAR,Mercedes-Benz,Mercedes-Benz C200,LUXURY,2500000.00,Da Lat
+CAR,Mercedes-Benz,Mercedes-Benz C200,LUXURY,2800000.00,Da Nang
+CAR,Mercedes-Benz,Mercedes-Benz C200,LUXURY,2200000.00,Nha Trang
+CAR,Mercedes-Benz,Mercedes-Benz E300,LUXURY,3500000.00,Nha Trang
+CAR,Mercedes-Benz,Mercedes-Benz E300,LUXURY,4000000.00,Da Lat
+CAR,Mercedes-Benz,Mercedes-Benz E300,LUXURY,4500000.00,Hue
+CAR,Mercedes-Benz,Mercedes-Benz GLC300,LUXURY,3000000.00,Ho Chi Minh
+CAR,Mercedes-Benz,Mercedes-Benz GLC300,LUXURY,3500000.00,Ha Noi
+CAR,Mercedes-Benz,Mercedes-Benz GLC300,LUXURY,4000000.00,Hue
+CAR,Mercedes-Benz,Mercedes-Benz S450,LUXURY,7500000.00,Da Lat
+CAR,Mercedes-Benz,Mercedes-Benz S450,LUXURY,6000000.00,Ho Chi Minh
+CAR,Mercedes-Benz,Mercedes-Benz S450,LUXURY,9000000.00,Hue
+CAR,Mitsubishi,Mitsubishi Outlander,SUV,1150000.00,Da Lat
+CAR,Mitsubishi,Mitsubishi Outlander,SUV,1300000.00,Hue
+CAR,Mitsubishi,Mitsubishi Xpander,MPV,825000.00,Da Lat
+CAR,Mitsubishi,Mitsubishi Xpander,MPV,700000.00,Nha Trang
+CAR,Nissan,Nissan Almera,SEDAN,700000.00,Da Nang
+CAR,Nissan,Nissan Almera,SEDAN,600000.00,Ha Noi
+CAR,Nissan,Nissan Navara,PICKUP,850000.00,Nha Trang
+CAR,Nissan,Nissan Navara,PICKUP,1200000.00,Da Nang
+CAR,Peugeot,Peugeot 2008,SUV,1100000.00,Hue
+CAR,Peugeot,Peugeot 2008,SUV,800000.00,Ho Chi Minh
+CAR,Peugeot,Peugeot 3008,SUV,1250000.00,Ha Noi
+CAR,Peugeot,Peugeot 3008,SUV,1100000.00,Ho Chi Minh
+CAR,Peugeot,Peugeot 5008,SUV,1650000.00,Ha Noi
+CAR,Peugeot,Peugeot 5008,SUV,1900000.00,Da Nang
+CAR,Porsche,Porsche Cayenne,LUXURY,6000000.00,Ho Chi Minh
+CAR,Porsche,Porsche Cayenne,LUXURY,8500000.00,Hue
+CAR,Porsche,Porsche Macan,LUXURY,6000000.00,Hue
+CAR,Porsche,Porsche Macan,LUXURY,5250000.00,Da Lat
+CAR,Porsche,Porsche Panamera,LUXURY,8250000.00,Ha Noi
+CAR,Porsche,Porsche Panamera,LUXURY,7000000.00,Ho Chi Minh
+CAR,Subaru,Subaru Forester,SUV,1100000.00,Nha Trang
+CAR,Subaru,Subaru Forester,SUV,1500000.00,Da Nang
+CAR,Suzuki,Suzuki Swift,ECONOMY,600000.00,Da Lat
+CAR,Suzuki,Suzuki Swift,ECONOMY,500000.00,Nha Trang
+CAR,Suzuki,Suzuki XL7,MPV,825000.00,Da Lat
+CAR,Suzuki,Suzuki XL7,MPV,950000.00,Hue
+CAR,Toyota,Toyota Camry,SEDAN,1500000.00,Ha Noi
+CAR,Toyota,Toyota Camry,SEDAN,1200000.00,Nha Trang
+CAR,Toyota,Toyota Camry,SEDAN,1800000.00,Da Nang
+CAR,Toyota,Toyota Fortuner,SUV,1200000.00,Nha Trang
+CAR,Toyota,Toyota Fortuner,SUV,1800000.00,Da Nang
+CAR,Toyota,Toyota Fortuner,SUV,1500000.00,Da Lat
+CAR,Toyota,Toyota Innova,MPV,1200000.00,Hue
+CAR,Toyota,Toyota Innova,MPV,1000000.00,Da Lat
+CAR,Toyota,Toyota Innova,MPV,800000.00,Nha Trang
+CAR,Toyota,Toyota Vios,SEDAN,800000.00,Da Nang
+CAR,Toyota,Toyota Vios,SEDAN,500000.00,Ho Chi Minh
+CAR,Toyota,Toyota Vios,SEDAN,650000.00,Ha Noi
+CAR,VinFast,VinFast Fadil,ECONOMY,450000.00,Ho Chi Minh
+CAR,VinFast,VinFast Fadil,ECONOMY,525000.00,Ha Noi
+CAR,VinFast,VinFast Fadil,ECONOMY,600000.00,Da Nang
+CAR,VinFast,VinFast Lux A2.0,SEDAN,1050000.00,Ha Noi
+CAR,VinFast,VinFast Lux A2.0,SEDAN,900000.00,Nha Trang
+CAR,VinFast,VinFast Lux A2.0,SEDAN,1200000.00,Da Nang
+CAR,VinFast,VinFast VF8,ELECTRIC,2000000.00,Da Nang
+CAR,VinFast,VinFast VF8,ELECTRIC,1500000.00,Nha Trang
+CAR,VinFast,VinFast VF8,ELECTRIC,1750000.00,Da Lat
+CAR,VinFast,VinFast VF9,ELECTRIC,2600000.00,Da Lat
+CAR,VinFast,VinFast VF9,ELECTRIC,2200000.00,Nha Trang
+CAR,Volvo,Volvo XC60,LUXURY,3200000.00,Da Lat
+CAR,Volvo,Volvo XC60,LUXURY,2800000.00,Nha Trang
+CAR,Volvo,Volvo XC90,LUXURY,5250000.00,Da Lat
+CAR,Volvo,Volvo XC90,LUXURY,6000000.00,Hue
+MOTORBIKE,BMW Motorrad,BMW Motorrad G310GS,ADVENTURE_BIKE,1250000.00,Hue
+MOTORBIKE,BMW Motorrad,BMW Motorrad G310GS #2,ADVENTURE_BIKE,1250000.00,Da Nang
+MOTORBIKE,BMW Motorrad,BMW Motorrad R1250GS,ADVENTURE_BIKE,2200000.00,Ho Chi Minh
+MOTORBIKE,BMW Motorrad,BMW Motorrad R1250GS #2,ADVENTURE_BIKE,2200000.00,Nha Trang
+MOTORBIKE,Ducati,Ducati Monster 797,SPORT_BIKE,1600000.00,Da Nang
+MOTORBIKE,Ducati,Ducati Monster 797 #2,SPORT_BIKE,1600000.00,Hue
+MOTORBIKE,Ducati,Ducati Scrambler 400x,CLASSIC_BIKE,1000000.00,Nha Trang
+MOTORBIKE,Ducati,Ducati Scrambler 400x #2,CLASSIC_BIKE,1000000.00,Ho Chi Minh
+MOTORBIKE,Harley-Davidson,Harley-Davidson Iron 883,CLASSIC_BIKE,2200000.00,Hue
+MOTORBIKE,Harley-Davidson,Harley-Davidson Iron 883 #2,CLASSIC_BIKE,2200000.00,Da Nang
+MOTORBIKE,Honda,Honda Air Blade 125i,SCOOTER,175000.00,Ha Noi
+MOTORBIKE,Honda,Honda Air Blade 125i #2,SCOOTER,175000.00,Da Lat
+MOTORBIKE,Honda,Honda Air Blade 160i,SCOOTER,250000.00,Da Nang
+MOTORBIKE,Honda,Honda Air Blade 160i #2,SCOOTER,250000.00,Hue
+MOTORBIKE,Honda,Honda Future,MANUAL_MOTORCYCLE,120000.00,Da Lat
+MOTORBIKE,Honda,Honda Future #2,MANUAL_MOTORCYCLE,120000.00,Ha Noi
+MOTORBIKE,Honda,Honda Lead,SCOOTER,170000.00,Da Nang
+MOTORBIKE,Honda,Honda Lead #2,SCOOTER,170000.00,Hue
+MOTORBIKE,Honda,Honda SH 125i,SCOOTER,300000.00,Nha Trang
+MOTORBIKE,Honda,Honda SH 125i #2,SCOOTER,300000.00,Ho Chi Minh
+MOTORBIKE,Honda,Honda SH 150i,SCOOTER,425000.00,Da Lat
+MOTORBIKE,Honda,Honda SH 150i #2,SCOOTER,425000.00,Ha Noi
+MOTORBIKE,Honda,Honda SH 160i,SCOOTER,550000.00,Hue
+MOTORBIKE,Honda,Honda SH 160i #2,SCOOTER,550000.00,Da Nang
+MOTORBIKE,Honda,Honda SH 350i,SCOOTER,600000.00,Ho Chi Minh
+MOTORBIKE,Honda,Honda SH 350i #2,SCOOTER,600000.00,Nha Trang
+MOTORBIKE,Honda,Honda SH Mode,SCOOTER,240000.00,Ha Noi
+MOTORBIKE,Honda,Honda SH Mode #2,SCOOTER,240000.00,Da Lat
+MOTORBIKE,Honda,Honda Vision,SCOOTER,120000.00,Ho Chi Minh
+MOTORBIKE,Honda,Honda Vision #2,SCOOTER,120000.00,Nha Trang
+MOTORBIKE,Honda,Honda Wave Alpha,MANUAL_MOTORCYCLE,80000.00,Nha Trang
+MOTORBIKE,Honda,Honda Wave Alpha #2,MANUAL_MOTORCYCLE,80000.00,Ho Chi Minh
+MOTORBIKE,Honda,Honda Winner X,MANUAL_MOTORCYCLE,200000.00,Hue
+MOTORBIKE,Honda,Honda Winner X #2,MANUAL_MOTORCYCLE,200000.00,Da Nang
+MOTORBIKE,Kawasaki,Kawasaki Ninja 400,SPORT_BIKE,1100000.00,Da Nang
+MOTORBIKE,Kawasaki,Kawasaki Ninja 400 #2,SPORT_BIKE,1100000.00,Hue
+MOTORBIKE,Kawasaki,Kawasaki Versys X300,ADVENTURE_BIKE,825000.00,Da Lat
+MOTORBIKE,Kawasaki,Kawasaki Versys X300 #2,ADVENTURE_BIKE,825000.00,Ha Noi
+MOTORBIKE,Kawasaki,Kawasaki Z400,SPORT_BIKE,750000.00,Nha Trang
+MOTORBIKE,Kawasaki,Kawasaki Z400 #2,SPORT_BIKE,750000.00,Ho Chi Minh
+MOTORBIKE,KTM,KTM Adventure 390,ADVENTURE_BIKE,1250000.00,Da Nang
+MOTORBIKE,KTM,KTM Adventure 390 #2,ADVENTURE_BIKE,1250000.00,Hue
+MOTORBIKE,KTM,KTM Duke 390,SPORT_BIKE,950000.00,Ha Noi
+MOTORBIKE,KTM,KTM Duke 390 #2,SPORT_BIKE,950000.00,Da Lat
+MOTORBIKE,Piaggio,Piaggio Liberty,SCOOTER,180000.00,Da Nang
+MOTORBIKE,Piaggio,Piaggio Liberty #2,SCOOTER,180000.00,Hue
+MOTORBIKE,Piaggio,Piaggio Medley,SCOOTER,200000.00,Nha Trang
+MOTORBIKE,Piaggio,Piaggio Medley #2,SCOOTER,200000.00,Ho Chi Minh
+MOTORBIKE,Royal Enfield,Royal Enfield Classic 350,CLASSIC_BIKE,700000.00,Ho Chi Minh
+MOTORBIKE,Royal Enfield,Royal Enfield Classic 350 #2,CLASSIC_BIKE,700000.00,Nha Trang
+MOTORBIKE,Royal Enfield,Royal Enfield Himalayan,ADVENTURE_BIKE,950000.00,Ha Noi
+MOTORBIKE,Royal Enfield,Royal Enfield Himalayan #2,ADVENTURE_BIKE,950000.00,Da Lat
+MOTORBIKE,Suzuki,Suzuki Raider R150,MANUAL_MOTORCYCLE,150000.00,Ho Chi Minh
+MOTORBIKE,Suzuki,Suzuki Raider R150 #2,MANUAL_MOTORCYCLE,150000.00,Nha Trang
+MOTORBIKE,Suzuki,Suzuki Satria F150,MANUAL_MOTORCYCLE,180000.00,Ha Noi
+MOTORBIKE,Suzuki,Suzuki Satria F150 #2,MANUAL_MOTORCYCLE,180000.00,Da Lat
+MOTORBIKE,SYM,SYM Attila,SCOOTER,110000.00,Nha Trang
+MOTORBIKE,SYM,SYM Attila #2,SCOOTER,110000.00,Ho Chi Minh
+MOTORBIKE,SYM,SYM Galaxy,MANUAL_MOTORCYCLE,115000.00,Da Lat
+MOTORBIKE,SYM,SYM Galaxy #2,MANUAL_MOTORCYCLE,115000.00,Ha Noi
+MOTORBIKE,Triumph,Triumph Bonneville T120,CLASSIC_BIKE,2500000.00,Hue
+MOTORBIKE,Triumph,Triumph Bonneville T120 #2,CLASSIC_BIKE,2500000.00,Da Nang
+MOTORBIKE,Triumph,Triumph Trident 660,CLASSIC_BIKE,1400000.00,Da Lat
+MOTORBIKE,Triumph,Triumph Trident 660 #2,CLASSIC_BIKE,1400000.00,Ha Noi
+MOTORBIKE,Vespa,Vespa GTS 300,SCOOTER,725000.00,Ha Noi
+MOTORBIKE,Vespa,Vespa GTS 300 #2,SCOOTER,725000.00,Da Lat
+MOTORBIKE,Vespa,Vespa Primavera 125,SCOOTER,280000.00,Ho Chi Minh
+MOTORBIKE,Vespa,Vespa Primavera 125 #2,SCOOTER,280000.00,Nha Trang
+MOTORBIKE,Vespa,Vespa Sprint 125,SCOOTER,400000.00,Hue
+MOTORBIKE,Vespa,Vespa Sprint 125 #2,SCOOTER,400000.00,Da Nang
+MOTORBIKE,VinFast,VinFast EVO 200,ELECTRIC_BIKE,100000.00,Da Lat
+MOTORBIKE,VinFast,VinFast Feliz S,ELECTRIC_BIKE,140000.00,Hue
+MOTORBIKE,VinFast,VinFast Klara S,ELECTRIC_BIKE,120000.00,Ho Chi Minh
+MOTORBIKE,VinFast,VinFast Theon,ELECTRIC_BIKE,185000.00,Ha Noi
+MOTORBIKE,VinFast,VinFast Vento,ELECTRIC_BIKE,130000.00,Da Nang
+MOTORBIKE,Yamaha,Yamaha Exciter 155,MANUAL_MOTORCYCLE,160000.00,Ho Chi Minh
+MOTORBIKE,Yamaha,Yamaha Exciter 155 #2,MANUAL_MOTORCYCLE,160000.00,Nha Trang
+MOTORBIKE,Yamaha,Yamaha Grande,SCOOTER,170000.00,Ha Noi
+MOTORBIKE,Yamaha,Yamaha Grande #2,SCOOTER,170000.00,Da Lat
+MOTORBIKE,Yamaha,Yamaha Janus,SCOOTER,160000.00,Da Nang
+MOTORBIKE,Yamaha,Yamaha Janus #2,SCOOTER,160000.00,Hue
+MOTORBIKE,Yamaha,Yamaha NVX 155,SCOOTER,180000.00,Nha Trang
+MOTORBIKE,Yamaha,Yamaha NVX 155 #2,SCOOTER,180000.00,Ho Chi Minh
+MOTORBIKE,Yamaha,Yamaha Sirius,MANUAL_MOTORCYCLE,105000.00,Da Lat
+MOTORBIKE,Yamaha,Yamaha Sirius #2,MANUAL_MOTORCYCLE,105000.00,Ha Noi

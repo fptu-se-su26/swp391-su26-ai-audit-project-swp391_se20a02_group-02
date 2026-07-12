@@ -112,6 +112,7 @@ export interface Vehicle {
     fuelType: FuelType;
     range?: number; // km
     engineSize?: string;
+    advantages?: string;
     color: string;
     licensePlate: string;
   };

@@ -10,7 +10,7 @@ $Root      = (New-Object -ComObject Scripting.FileSystemObject).GetFolder($Scrip
 
 $Backend  = "$Root\src\Back_end"
 $Frontend = "$Root\src\Front_end"
-$Jar      = "$Root\src\Back_end\target\LUXEWA~1.JAR"
+$Jar      = "$Root\src\Back_end\target\luxeway-backend-1.0.0.jar"
 $EnvFile  = "$Root\.env"
 
 Write-Host ""

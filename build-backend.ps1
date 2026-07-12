@@ -6,7 +6,7 @@ $BackendDir = "$Root\src\Back_end"
 $MavenBin   = "$Root\src\Back_end\maven\apache-maven-3.9.6\bin"
 
 # Set environment
-$env:JAVA_HOME = "C:\Program Files\Java\jdk-21.0.10"
+$env:JAVA_HOME = "C:\Program Files\Java\jdk-24"
 $env:PATH = "$env:JAVA_HOME\bin;$MavenBin;$env:PATH"
 
 Write-Host "Java Version check:"

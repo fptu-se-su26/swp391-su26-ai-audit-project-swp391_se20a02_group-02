@@ -53,7 +53,7 @@ server:
 # SECURITY: MUST set JWT_SECRET environment variable with 256-bit random key
 # Generate with: openssl rand -base64 32
 jwt:
-  secret: ${JWT_SECRET}
+  secret: ${JWT_SECRET:8f7e6d5c4b3a2109876543210987654321098765432109876543210987654321}
   expiration: ${JWT_EXPIRATION:86400000}       # 24 hours in milliseconds
   refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000} # 7 days in milliseconds
 

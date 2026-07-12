@@ -240,7 +240,7 @@ public class SeedingService {
                     MotorbikeBrand newBrand = MotorbikeBrand.builder()
                             .name(brandName)
                             .country(country)
-                            .logoUrl("https://images.unsplash.com/photo-1558981806-ec527fa84c39?q=80&w=200&auto=format&fit=crop")
+                            .logoUrl("https://images.unsplash.com/photo-1449426468159-d96dbf08f19f?q=80&w=200&auto=format&fit=crop")
                             .isActive(true)
                             .createdAt(LocalDateTime.now())
                             .build();
@@ -316,7 +316,7 @@ public class SeedingService {
                     // Add primary image
                     MotorbikeImage img = MotorbikeImage.builder()
                             .motorbike(motorbike)
-                            .url("https://images.unsplash.com/photo-1558981806-ec527fa84c39?q=80&w=800&auto=format&fit=crop")
+                            .url("https://images.unsplash.com/photo-1449426468159-d96dbf08f19f?q=80&w=800&auto=format&fit=crop")
                             .isPrimary(true)
                             .sortOrder(0)
                             .build();

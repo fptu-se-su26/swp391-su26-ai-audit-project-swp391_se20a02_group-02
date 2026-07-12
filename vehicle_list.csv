@@ -1,0 +1,87 @@
+Brand,VehicleName,Type
+-----,-----------,----
+Audi,Audi A4,Car
+Audi,Audi Q5,Car
+Audi,Audi Q7,Car
+BMW,BMW 320i,Car
+BMW,BMW 520i,Car
+BMW,BMW X5,Car
+Chevrolet,Chevrolet Colorado,Car
+Chevrolet,Chevrolet Cruze,Car
+Ford,Ford Everest,Car
+Ford,Ford Ranger,Car
+Honda,Honda City,Car
+Honda,Honda Civic,Car
+Honda,Honda CR-V,Car
+Hyundai,Hyundai Accent,Car
+Hyundai,Hyundai Elantra,Car
+Hyundai,Hyundai SantaFe,Car
+Hyundai,Hyundai Tucson,Car
+Kia,Kia Carnival,Car
+Kia,Kia Cerato,Car
+Kia,Kia Morning,Car
+Kia,Kia Sorento,Car
+Lexus,Lexus ES250,Car
+Lexus,Lexus LX570,Car
+Lexus,Lexus RX350,Car
+Mazda,Mazda CX-5,Car
+Mazda,Mazda CX-8,Car
+Mazda,Mazda Mazda 3,Car
+Mazda,Mazda Mazda 6,Car
+Mercedes-Benz,Mercedes-Benz C200,Car
+Mercedes-Benz,Mercedes-Benz E300,Car
+Mercedes-Benz,Mercedes-Benz GLC300,Car
+Mercedes-Benz,Mercedes-Benz S450,Car
+Mitsubishi,Mitsubishi Outlander,Car
+Mitsubishi,Mitsubishi Xpander,Car
+Nissan,Nissan Almera,Car
+Nissan,Nissan Navara,Car
+Peugeot,Peugeot 2008,Car
+Peugeot,Peugeot 3008,Car
+Peugeot,Peugeot 5008,Car
+Porsche,Porsche Cayenne,Car
+Porsche,Porsche Macan,Car
+Porsche,Porsche Panamera,Car
+Subaru,Subaru Forester,Car
+Suzuki,Suzuki Swift,Car
+Suzuki,Suzuki XL7,Car
+Toyota,Toyota Camry,Car
+Toyota,Toyota Fortuner,Car
+Toyota,Toyota Innova,Car
+Toyota,Toyota Vios,Car
+VinFast,VinFast Fadil,Car
+VinFast,VinFast Lux A2.0,Car
+VinFast,VinFast VF8,Car
+VinFast,VinFast VF9,Car
+Volvo,Volvo XC60,Car
+Volvo,Volvo XC90,Car
+BMW Motorrad,BMW Motorrad G310GS,Motorbike
+BMW Motorrad,BMW Motorrad R1250GS,Motorbike
+Ducati,Ducati Monster 797,Motorbike
+Ducati,Ducati Scrambler,Motorbike
+Harley-Davidson,Harley-Davidson Iron 883,Motorbike
+Honda,Honda Air Blade,Motorbike
+Honda,Honda SH 150i,Motorbike
+Honda,Honda Vision,Motorbike
+Honda,Honda Winner X,Motorbike
+Kawasaki,Kawasaki Ninja 400,Motorbike
+Kawasaki,Kawasaki Z400,Motorbike
+KTM,KTM Adventure 390,Motorbike
+KTM,KTM Duke 390,Motorbike
+Royal Enfield,Royal Enfield Classic 350,Motorbike
+Royal Enfield,Royal Enfield Himalayan,Motorbike
+Suzuki,Suzuki Raider R150,Motorbike
+Suzuki,Suzuki Satria F150,Motorbike
+SYM,SYM Attila,Motorbike
+SYM,SYM Galaxy,Motorbike
+Triumph,Triumph Bonneville T120,Motorbike
+Triumph,Triumph Trident 660,Motorbike
+Vespa,Vespa GTS 300,Motorbike
+Vespa,Vespa Primavera,Motorbike
+Vespa,Vespa Sprint,Motorbike
+Yamaha,Yamaha Exciter 155,Motorbike
+Yamaha,Yamaha Grande,Motorbike
+Yamaha,Yamaha NVX 155,Motorbike
+Yamaha,Yamaha Sirius,Motorbike
+
+(83 rows affected)

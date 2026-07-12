@@ -120,7 +120,7 @@ export const RecommendationCarousel: React.FC<RecommendationCarouselProps> = ({
         >
           {vehicles.map((v) => {
             const detailUrl = vehicleType === 'car' ? `/marketplace/cars/${v.id}` : `/marketplace/motorbikes/${v.id}`;
-            const image = v.thumbnailUrl || (v.images && v.images.length > 0 ? v.images[0].url : 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=600&q=80');
+            const image = v.thumbnailUrl || (v.images && v.images.length > 0 ? (typeof v.images[0] === 'string' ? v.images[0] : (v.images[0] as any).url) : 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=600&q=80');
 
             return (
               <div 

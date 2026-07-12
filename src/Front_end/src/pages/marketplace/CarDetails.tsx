@@ -827,108 +827,26 @@ export const CarDetails: React.FC = () => {
 
         {/* 1. Hero Gallery Sections */}
         <div className="mb-8">
-          <div className="flex border-b border-slate-200 dark:border-slate-800 mb-4 gap-4 overflow-x-auto pb-1">
-            {[
-              { id: 'all', label: 'All Photos' },
-              { id: '360', label: tLocal.threeSixty },
-              { id: 'video', label: tLocal.hdVideo },
-              { id: 'tour', label: tLocal.panoramic },
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => {
-                  setActiveImageTab(tab.id as any);
-                  setActiveImage(0);
-                }}
-                className={`py-2 px-1 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeImageTab === tab.id ? 'border-blue-500 text-blue-500' : 'border-transparent text-slate-400 hover:text-foreground'
-                  }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
           <div className="relative rounded-[2.5rem] overflow-hidden border border-slate-200 dark:border-slate-800/80 bg-slate-950 aspect-[16/9] shadow-xl">
-            {activeImageTab === '360' ? (
-              /* 2. 360 Exterior Rotator Section */
-              <div
-                onMouseDown={handleRotationMouseDown}
-                onMouseMove={handleRotationMouseMove}
-                onMouseUp={handleRotationMouseUp}
-                onMouseLeave={handleRotationMouseUp}
-                className="w-full h-full flex items-center justify-center cursor-ew-resize select-none relative"
-              >
-                <img
-                  src={MOCK_360_IMAGES[rotationIndex]}
-                  alt="360 rotation angle"
-                  className="max-h-full object-contain pointer-events-none"
-                />
-                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs font-bold px-4 py-2 rounded-xl backdrop-blur">
-                  Drag left or right to rotate vehicle
-                </div>
+            <img
+              src={images[activeImage]}
+              alt={vehicle.name}
+              className="w-full h-full object-cover cursor-pointer"
+              onClick={() => setLightboxOpen(true)}
+            />
+            {images.length > 1 && (
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-1.5 bg-black/45 backdrop-blur-md px-3 py-2 rounded-2xl border border-white/10">
+                {images.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setActiveImage(idx)}
+                    className={cn(
+                      "w-2.5 h-2.5 rounded-full transition-all",
+                      activeImage === idx ? "bg-blue-500 w-5" : "bg-white/40 hover:bg-white/60"
+                    )}
+                  />
+                ))}
               </div>
-            ) : activeImageTab === 'video' ? (
-              /* 3. HD Walkaround Video Gallery Section */
-              <div className="w-full h-full relative flex items-center justify-center">
-                <img src={images[0]} alt="Video Thumbnail" className="w-full h-full object-cover opacity-60" />
-                <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-center p-6">
-                  <button onClick={() => toast.info('Video Player', 'Streaming simulated video details...')} className="w-16 h-16 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-lg transform hover:scale-105 active:scale-95 transition-all">
-                    <Play className="w-8 h-8 fill-current ml-1" />
-                  </button>
-                  <p className="text-white font-bold text-lg mt-4">HD Walkaround & Sound check</p>
-                  <p className="text-slate-450 text-xs mt-1">Duration: 1m 24s</p>
-                </div>
-              </div>
-            ) : activeImageTab === 'tour' ? (
-              /* 4. Virtual Tour cabin Section */
-              <div
-                onMouseDown={(e) => { setIsPanning(true); panStart.current = e.clientX; }}
-                onMouseMove={(e) => {
-                  if (!isPanning) return;
-                  const deltaX = e.clientX - panStart.current;
-                  setPanPosition(prev => Math.max(0, Math.min(100, prev + deltaX * 0.1)));
-                  panStart.current = e.clientX;
-                }}
-                onMouseUp={() => setIsPanning(false)}
-                onMouseLeave={() => setIsPanning(false)}
-                className="w-full h-full cursor-move select-none relative"
-              >
-                <div
-                  className="absolute inset-0 bg-cover bg-center transition-all duration-75"
-                  style={{
-                    backgroundImage: `url(${images[3] || 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&q=80&w=1400'})`,
-                    backgroundPosition: `${panPosition}% 50%`,
-                    backgroundSize: '200% 100%'
-                  }}
-                />
-                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs font-bold px-4 py-2 rounded-xl backdrop-blur">
-                  Drag cabin interior panorama to look around
-                </div>
-              </div>
-            ) : (
-              /* 5. Fullscreen Lightbox triggers */
-              <>
-                <img
-                  src={images[activeImage]}
-                  alt={vehicle.name}
-                  className="w-full h-full object-cover cursor-pointer"
-                  onClick={() => setLightboxOpen(true)}
-                />
-                {images.length > 1 && (
-                  <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-1.5 bg-black/45 backdrop-blur-md px-3 py-2 rounded-2xl border border-white/10">
-                    {images.map((_, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => setActiveImage(idx)}
-                        className={cn(
-                          "w-2.5 h-2.5 rounded-full transition-all",
-                          activeImage === idx ? "bg-blue-500 w-5" : "bg-white/40 hover:bg-white/60"
-                        )}
-                      />
-                    ))}
-                  </div>
-                )}
-              </>
             )}
           </div>
         </div>
@@ -940,12 +858,14 @@ export const CarDetails: React.FC = () => {
           <div className="lg:col-span-2 space-y-6">
 
             {/* Specs Highlights */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
               {[
-                { label: 'Seats', value: `${vehicle.specs?.seats || 5} Seats`, icon: Users },
-                { label: 'Transmission', value: vehicle.specs?.transmission || 'Automatic', icon: Gauge },
-                { label: 'Fuel Type', value: vehicle.specs?.fuelType || 'Gasoline', icon: Zap },
-                { label: 'Privileges', value: vehicle.instantBook ? 'Instant Book' : 'Fast Approval', icon: ShieldCheck }
+                { label: 'Chỗ ngồi', value: `${vehicle.seats || 5} Chỗ`, icon: Users },
+                { label: 'Hộp số', value: vehicle.transmission === 'manual' ? 'Số sàn' : 'Tự động', icon: Gauge },
+                { label: 'Động cơ', value: vehicle.fuelType === 'electric' ? 'Điện' : vehicle.fuelType === 'diesel' ? 'Dầu' : 'Xăng', icon: Zap },
+                { label: 'Dung tích', value: vehicle.engineSize || 'N/A', icon: Zap },
+                { label: 'Phân Khối', value: vehicle.engineCc ? `${vehicle.engineCc} cc` : 'N/A', icon: Gauge },
+                { label: 'Dịch vụ', value: vehicle.instantBook ? 'Đặt ngay' : 'Duyệt nhanh', icon: ShieldCheck }
               ].map(spec => (
                 <div key={spec.label} className="bg-card border border-slate-150 dark:border-slate-800 rounded-3xl p-5 shadow-sm relative overflow-hidden">
                   <spec.icon className="w-6 h-6 text-blue-500 mb-4" />
@@ -962,6 +882,21 @@ export const CarDetails: React.FC = () => {
                 {vehicle.description || tLocal.noDescription}
               </p>
             </div>
+
+            {/* Advantages */}
+            {vehicle.advantages && (
+              <div className="luxury-card p-6 bg-card border border-slate-150 dark:border-slate-800 rounded-3xl">
+                <h3 className="font-display text-xl font-bold text-foreground mb-4">Ưu điểm nổi bật</h3>
+                <div className="flex flex-wrap gap-2">
+                  {vehicle.advantages.split(',').map((adv, idx) => (
+                    <span key={idx} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-sm font-semibold border border-blue-100 dark:border-blue-800/30">
+                      <CheckCircle2 className="w-4 h-4" />
+                      {adv.trim()}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Features list */}
             <div className="luxury-card p-6 bg-card border border-slate-150 dark:border-slate-800 rounded-3xl">

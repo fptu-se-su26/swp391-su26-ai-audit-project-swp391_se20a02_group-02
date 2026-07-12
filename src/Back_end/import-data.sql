@@ -44,7 +44,7 @@ INSERT INTO vehicle_features (id, vehicle_id, feature) VALUES
 ('FEAT6F7G-8H9I-0123-FEAT-666666666666', 'V2B3C4D5-E6F7-8901-VHCL-222222222222', N'Điều hòa tự động'),
 ('FEAT7G8H-9I0J-1234-FEAT-777777777777', 'V2B3C4D5-E6F7-8901-VHCL-222222222222', N'Camera 360 độ');
 
-PRINT '✅ Sample data imported successfully!';
+PRINT ' Sample data imported successfully!';
 PRINT '';
 PRINT 'Test Accounts:';
 PRINT 'Admin: admin@luxeway.vn / password';

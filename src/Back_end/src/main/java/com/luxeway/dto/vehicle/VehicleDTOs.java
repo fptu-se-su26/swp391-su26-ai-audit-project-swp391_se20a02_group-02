@@ -43,6 +43,7 @@ public class VehicleDTOs {
         private String engineSize;
         private String color;
         private String licensePlate;
+        private String advantages;
 
         private Integer minRentalDays = 1;
         private Integer maxRentalDays = 30;
@@ -92,6 +93,8 @@ public class VehicleDTOs {
         private Integer seats;
         private Integer doors;
         private Integer horsepower;
+        private String engineSize;
+        private String advantages;
         private String transmission;
         private String fuelType;
         private String color;
