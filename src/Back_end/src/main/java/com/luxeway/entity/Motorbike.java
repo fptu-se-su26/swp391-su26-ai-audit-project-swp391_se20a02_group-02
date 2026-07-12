@@ -11,12 +11,14 @@ import java.util.Set;
 @Entity
 @Table(name = "motorbikes")
 @Data
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Motorbike {
     @Id
     @Column(length = 36)
+    @EqualsAndHashCode.Include
     private String id;
 
     @ManyToOne(fetch = FetchType.LAZY)

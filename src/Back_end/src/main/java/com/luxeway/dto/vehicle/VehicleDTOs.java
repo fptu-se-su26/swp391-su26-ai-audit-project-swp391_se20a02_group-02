@@ -3,7 +3,6 @@ package com.luxeway.dto.vehicle;
 import com.luxeway.enums.FuelType;
 import com.luxeway.enums.TransmissionType;
 import com.luxeway.enums.VehicleCategory;
-import com.luxeway.enums.VehicleStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -43,6 +42,9 @@ public class VehicleDTOs {
         private String engineSize;
         private String color;
         private String licensePlate;
+        private String vin;
+        private String status;
+        private String approvalStatus;
 
         private Integer minRentalDays = 1;
         private Integer maxRentalDays = 30;
@@ -96,10 +98,17 @@ public class VehicleDTOs {
         private String fuelType;
         private String color;
         private String licensePlate;
+        private String vin;
+        private Boolean isLocked;
         private String status;
+        private String approvalStatus;
+        private String approvalNote;
+        private String approvedBy;
+        private String approvedAt;
         private Double rating;
         private Integer totalReviews;
         private Integer totalBookings;
+        private Integer rangeKm;
         private Boolean isVerified;
         private Boolean isFeatured;
         private Boolean instantBook;
@@ -122,6 +131,24 @@ public class VehicleDTOs {
         private Boolean weddingRental;
         private Boolean businessRental;
 
+        // Custom detailed fields for Mioto-style detail view
+        private Integer seatNumber;
+        private String location;
+        private BigDecimal discount;
+        private BigDecimal finalPrice;
+
+        private String primaryImage;
+        private List<String> galleryImages;
+        private List<String> vehicleImages;
+
+        private String requiredDocuments;
+        private String basicInsurance;
+        private String extraInsurance;
+        private String cancellationPolicy;
+        private String depositPolicy;
+        private String rentalRules;
+        private Double distanceKm;
+
         @Data
         public static class OwnerInfo {
             private String id;
@@ -132,12 +159,23 @@ public class VehicleDTOs {
             private Boolean verified;
             private String accountType;
             private String companyName;
+
+            // Host statistics additions
+            private String ownerId;
+            private String ownerName;
+            private Integer totalTrips;
+            private Double responseRate;
+            private Integer responseTime;
+            private Boolean approvalBadge;
         }
     }
 
     @Data
     public static class VehicleFilterRequest {
         private String location;
+        private String keyword;
+        private Double userLat;
+        private Double userLng;
         // Single category (legacy)
         private String category;
         // Multi-select categories (new)
@@ -172,5 +210,26 @@ public class VehicleDTOs {
         private Boolean airportDelivery;
         private Boolean weddingRental;
         private Boolean businessRental;
+    }
+
+    @Data
+    public static class VehicleLocationResponse {
+        private String id;
+        private String name;
+        private String brand;
+        private String type;
+        private String thumbnail;
+        private BigDecimal pricePerDay;
+        private BigDecimal discount;
+        private BigDecimal finalPrice;
+        private Double rating;
+        private Integer totalTrips;
+        private String address;
+        private String city;
+        private Double latitude;
+        private Double longitude;
+        private Boolean available;
+        private String ownerName;
+        private Double distanceKm;
     }
 }

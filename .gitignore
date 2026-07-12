@@ -61,3 +61,20 @@ temp/
 *.db
 *.sqlite
 *.sql.gz
+
+# H2 persistent DB files
+data/
+*.mv.db
+*.trace.db
+
+# AI Agent tool directories (do NOT commit)
+.agents/
+.impeccable/
+impeccable/
+.gemini/
+
+# Internal AI task and design files
+AI_TASK.md
+DESIGN.md
+PRODUCT.md
+scratch_update.py

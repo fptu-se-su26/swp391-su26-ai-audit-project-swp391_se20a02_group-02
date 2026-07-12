@@ -27,6 +27,17 @@ public class Booking {
     @Id
     @Column(length = 36)
     private String id;
+
+    @Column(name = "booking_code", unique = true, length = 50)
+    private String bookingCode;
+
+    @Column(name = "cleaning_fee", nullable = false, precision = 12, scale = 0)
+    @Builder.Default
+    private BigDecimal cleaningFee = BigDecimal.ZERO;
+
+    @Version
+    @Column(nullable = false)
+    private Long version;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "vehicle_id", nullable = false)
@@ -148,6 +159,27 @@ public class Booking {
     @Column(name = "coupon_code", length = 50)
     private String couponCode;
 
+    @Column(name = "pickup_lat", precision = 10, scale = 8)
+    private BigDecimal pickupLat;
+
+    @Column(name = "pickup_lng", precision = 11, scale = 8)
+    private BigDecimal pickupLng;
+
+    @Column(name = "dropoff_lat", precision = 10, scale = 8)
+    private BigDecimal dropoffLat;
+
+    @Column(name = "dropoff_lng", precision = 11, scale = 8)
+    private BigDecimal dropoffLng;
+
+    @Column(name = "route_distance", precision = 10, scale = 2)
+    private BigDecimal routeDistance;
+
+    @Column(name = "estimated_time")
+    private Integer estimatedTime;
+
+    @Column(name = "route_polyline", columnDefinition = "NVARCHAR(MAX)")
+    private String routePolyline;
+
     @OneToOne(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private BookingDelivery delivery;
 
@@ -167,11 +199,11 @@ public class Booking {
     
     // Helper methods
     public boolean canBeCancelled() {
-        return status == BookingStatus.PENDING || status == BookingStatus.CONFIRMED;
+        return status == BookingStatus.WAITING_PAYMENT || status == BookingStatus.PAYMENT_PENDING || status == BookingStatus.CONFIRMED || status == BookingStatus.DRAFT;
     }
     
     public boolean isActive() {
-        return status == BookingStatus.ACTIVE;
+        return status == BookingStatus.IN_RENTAL;
     }
     
     public boolean isCompleted() {

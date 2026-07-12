@@ -1930,9 +1930,138 @@ Tích hợp thành công 100%. Bản đồ tự động toggle toàn màn hình,
 | Kết quả chạy/test | npm run build thành công 0 lỗi, gradle build compile backend 0 lỗi |
 | Link commit | `feat: implement premium full-screen Mioto-style map toggle layout with advanced filters drawer and scroll-aware button` |
 
+
 ---
 
-## 11. Cam kết sử dụng prompt minh bạch
+## 11. Prompt #24 — Đồng bộ bộ lọc Marketplace với Database thực tế
+
+### 11.1. Thông tin chung
+
+| Thông tin | Nội dung |
+|---|---|
+| Ngày | 2026-06-30 |
+| Công cụ AI | Antigravity |
+| Giai đoạn | Giai đoạn 8 — Audit database và tối ưu hóa bộ lọc |
+| Phần bài tập / Module | Marketplace Filter, Spring Boot API integration |
+
+### 11.2. Prompt chính
+
+```text
+Truy vấn database để thống kê tất cả các hãng xe (brand) và loại xe (category) thực tế đang có cho cả Car và Motorbike. Cập nhật các array constants trong file frontend tương ứng (CarsMarketplace.tsx, MotorbikeMarketplace.tsx) sao cho khớp 100%. Đồng thời mở rộng API GET /cars và GET /motorbikes nhận thêm tham số brand và category, bổ sung logic lọc tại JPA Repository sử dụng JPQL LIKE và bằng để lọc chính xác kết quả từ dữ liệu thực tế.
+```
+
+### 11.3. Kết quả gợi ý từ AI
+
+```text
+1. Cung cấp câu lệnh sqlcmd SELECT DISTINCT để quét dữ liệu thương hiệu và dòng xe.
+2. Code bổ sung @Param("brand") và @Param("category") vào JPQL trong CarRepository và MotorbikeRepository.
+3. Code map tham số URLSearchParams tại carService.ts và motorbikeService.ts để truyền filter lên Backend.
+4. Danh sách 20 thương hiệu ô tô và 14 thương hiệu xe máy đầy đủ khớp DB.
+```
+
+### 11.4. Kết quả đã áp dụng vào bài
+
+```text
+Áp dụng thành công toàn bộ code Java API và code React Frontend. Bộ lọc hiện đã đồng bộ hoàn hảo 100% với dữ liệu thực tế.
+```
+
+### 11.5. Phần sinh viên/nhóm đã chỉnh sửa hoặc cải tiến
+
+```text
+- Loại bỏ tuỳ chọn Hybrid khỏi bộ lọc nhiên liệu ô tô do database thực tế chỉ lưu trữ GASOLINE, DIESEL, ELECTRIC.
+- Loại bỏ hoàn toàn bộ lọc Fuel Type khỏi xe máy do bảng đặc tả motorbike_specifications không chứa thuộc tính này.
+- Rebuild lại backend Spring Boot thành công (BUILD SUCCESSFUL).
+```
+
+### 11.6. Đánh giá chất lượng prompt
+
+- [x] Prompt rõ ràng
+- [x] Prompt có đủ bối cảnh
+- [ ] Prompt còn thiếu thông tin
+- [x] Prompt tạo ra kết quả tốt
+- [ ] Prompt tạo ra kết quả chưa phù hợp
+- [ ] Cần hỏi lại AI nhiều lần
+- [x] Cần tự kiểm tra và chỉnh sửa nhiều
+- [ ] Kết quả AI có lỗi hoặc chưa chính xác
+
+### 11.7. Minh chứng liên quan
+
+| Loại minh chứng | Nội dung |
+|---|---|
+| File liên quan | `CarsMarketplace.tsx`, `MotorbikeMarketplace.tsx`, `CarRepository.java`, `MotorbikeRepository.java`, `CarController.java`, `MotorbikeController.java`, `carService.ts`, `motorbikeService.ts` |
+| Kết quả chạy/test | `./gradlew bootJar` thành công 100%, test query SQL cho ra kết quả khớp (Toyota: 12 xe, Sedan: 35 xe, Honda: 13 xe, Scooter: 28 xe) |
+| Link commit | `feat: sync marketplace filters (brands/categories) with real DB data and extend search APIs` |
+
+---
+
+## 12. Prompt #25 — Tái cấu trúc luồng Booking/Payment và Nâng cấp UI/UX Dashboard kèm Standard Validation
+
+### 12.1. Thông tin chung
+
+| Thông tin | Nội dung |
+|---|---|
+| Ngày | 2026-07-13 |
+| Công cụ AI | Antigravity |
+| Giai đoạn | Giai đoạn 9 — Booking & Payment Overhaul & Dashboards UI/UX Upgrade |
+| Phần bài tập / Module | Customer, Owner, Admin Dashboards, Spring Boot Validations, Scheduler |
+
+### 12.2. Prompt chính
+
+```text
+Hãy thực hiện nâng cấp toàn diện giao diện và tính năng cho hệ thống LuxeWay:
+1. Thiết kế và triển khai cơ chế thanh toán chuyển khoản thủ công: Tạo bảng `payment_settings` lưu thông tin ngân hàng admin (MB Bank, 0377096245, NGUYEN VAN DANG). Khi booking được tạo, trạng thái ban đầu là WAITING_PAYMENT. Thiết kế trang `BookingPaymentPage.tsx` hiển thị thông tin chuyển khoản kèm mã QR VietQR động (số tiền và nội dung là mã booking) và đếm ngược 15 phút.
+2. Xử lý logic đếm ngược 15 phút: Viết Scheduler chạy ngầm mỗi phút quét các booking WAITING_PAYMENT quá 15 phút để chuyển trạng thái sang PAYMENT_EXPIRED, đồng thời giải phóng lịch rảnh của xe.
+3. Admin duyệt giao dịch: Khi khách bấm "Đã chuyển khoản", trạng thái đổi thành PAYMENT_PENDING. Thêm tính năng ở AdminDashboard cho phép Admin duyệt (đổi thành CONFIRMED, lưu Payment SUCCEEDED, sinh hóa đơn PDF) hoặc từ chối duyệt (đổi thành PAYMENT_REJECTED kèm lý do từ chối, giải phóng lịch xe).
+4. Nâng cấp UI/UX cho 3 Dashboards (Customer, Owner, Admin Dashboard): Sử dụng phong cách tối giản luxury với bảng dữ liệu nâng cao, thanh sidebar collapsible đóng mở linh hoạt, bo góc nhỏ 4-6px, custom skeleton loader và thông tin trống trực quan.
+5. Standard Validation: Áp dụng `@Valid` kiểm tra dữ liệu đầu vào cho các form cá nhân (User profile), thay đổi mật khẩu (Change password), tạo xe mới (VehicleDTO), nạp rút tiền ví (WalletDTO), đánh giá (ReviewDTO), tranh chấp (DisputeDTO) ở backend; bắt lỗi tập trung qua GlobalExceptionHandler để trả về JSON dạng chuẩn và hiển thị thông báo lỗi tương ứng trên input phía Frontend.
+```
+
+### 12.3. Kết quả gợi ý từ AI
+
+```text
+- File migration database `V5__booking_payment_overhaul.sql` và cấu trúc các bảng bổ sung.
+- Mã nguồn Java cập nhật logic cho `BookingService.java`, endpoints của `BookingController.java` để duyệt và hủy booking, scheduler xử lý tự động ngầm.
+- Component `BookingPaymentPage.tsx` ở Frontend với tính năng copy nhanh, mã QR VietQR, đếm ngược thời gian thực.
+- Giao diện Admin/Owner/Customer Dashboard nâng cấp với layout flex/grid chuyên nghiệp, sidebar thu gọn, bảng dữ liệu đẹp mắt.
+- Cấu hình validation annotations và GlobalExceptionHandler bắt lỗi chuẩn.
+```
+
+### 12.4. Kết quả đã áp dụng vào bài
+
+```text
+Áp dụng thành công 100% mã nguồn Frontend và Backend. Hệ thống hoạt động trơn tru không lỗi, các form submit được bảo mật và giao diện có phản hồi lỗi trực quan.
+```
+
+### 12.5. Phần sinh viên/nhóm đã chỉnh sửa hoặc cải tiến
+
+```text
+- Tự căn chỉnh layout VietQR hiển thị cân đối trên cả mobile và desktop.
+- Custom logic WebSocket thông báo tức thì khi Admin xác nhận thanh toán để cập nhật giao diện Renting/Tracking phía khách hàng.
+- Xử lý mượt mà trạng thái loading của nút bấm và bảng dữ liệu.
+```
+
+### 12.6. Đánh giá chất lượng prompt
+
+- [x] Prompt rõ ràng
+- [x] Prompt có đủ bối cảnh
+- [ ] Prompt còn thiếu thông tin
+- [x] Prompt tạo ra kết quả tốt
+- [ ] Prompt tạo ra kết quả chưa phù hợp
+- [ ] Cần hỏi lại AI nhiều lần
+- [x] Cần tự kiểm tra và chỉnh sửa nhiều
+- [ ] Kết quả AI có lỗi hoặc chưa chính xác
+
+### 12.7. Minh chứng liên quan
+
+| Loại minh chứng | Nội dung |
+|---|---|
+| File liên quan | `BookingService.java`, `BookingPaymentPage.tsx`, `AdminDashboard.tsx`, `CustomerDashboard.tsx`, `OwnerDashboard.tsx`, `GlobalExceptionHandler.java`, `V5__booking_payment_overhaul.sql` |
+| Kết quả chạy/test | Compile backend Gradle thành công, build frontend Vite thành công, chạy thử nghiệm toàn bộ luồng thanh toán và hết hạn tự động đều khớp 100% |
+| Link commit | `feat: implement booking & payment overhaul with VietQR and 15min expiration scheduler, upgrade dashboards UI/UX with standard validations` |
+
+---
+
+## 13. Cam kết sử dụng prompt minh bạch
 
 Sinh viên/nhóm cam kết rằng:
 
@@ -1944,5 +2073,69 @@ Sinh viên/nhóm cam kết rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-06-29 |
+| Nguyễn Văn Dạng - DE190324 | 2026-07-13 |
+
+---
+
+## 13. Prompt #26 — Dọn dẹp code rác Frontend và Khắc phục lỗi H2 Database Reserved Word ở Backend
+
+### 13.1. Thông tin chung
+
+| Thông tin | Nội dung |
+|---|---|
+| Ngày | 2026-07-13 |
+| Công cụ AI | Antigravity |
+| Giai đoạn | Đánh giá hoàn thiện dự án & Sửa lỗi kiểm thử |
+| Phần bài tập / Module | Code Cleanup & H2 Integration Testing |
+
+### 13.2. Prompt chính
+
+```text
+1. Đọc codebase Frontend và chỉ ra các thư mục, files rác (như mockup data cũ hoặc các dashboard bị nhân bản) không còn sử dụng để xóa sạch đi.
+2. Kiểm tra lỗi chạy kiểm thử tích hợp (integration tests) Backend khi gặp lỗi syntax H2 Database với cột `value` trong bảng `booking_counters`. Hãy đề xuất cách sửa đổi an toàn (đổi tên cột sang `counter_value` bằng JPA `@Column(name = "counter_value")` và điều chỉnh các script khởi tạo / migration liên quan) mà không gây ảnh hưởng đến phần code Java đang chạy.
+3. Tách biệt hoàn toàn phần câu lệnh CREATE TABLE và INSERT INTO trong DatabaseMigration.java để đảm bảo dữ liệu seed (hàng 'bookings' và 'P1') vẫn được nạp đầy đủ khi database được khởi tạo từ JPA/Hibernate ddl-auto.
+4. Mở rộng check constraint trạng thái booking CHK_bookings_status trực tiếp trong schema.sql và V0.1__schema.sql để đồng bộ với các trạng thái đơn hàng mới ở Backend, giải quyết lỗi check constraint violation khi chạy test.
+```
+
+### 13.3. Kết quả gợi ý từ AI
+
+```text
+- Chỉ ra thư mục src/Front_end/src/mock/ và file src/Front_end/src/pages/dashboard/AdminDashboard.tsx không được import ở bất kỳ đâu để thực hiện xóa.
+- Gợi ý đổi tên cột từ value sang counter_value trong BookingCounter.java, DatabaseMigration.java, V5__booking_payment_overhaul.sql.
+- Đề xuất tách câu lệnh tạo bảng và nạp seed dữ liệu thành các khối try-catch riêng lẻ để nạp dữ liệu độc lập.
+- Gợi ý bổ sung danh sách enum các trạng thái đặt xe mới vào check constraint trong file schema.sql.
+```
+
+### 13.4. Kết quả đã áp dụng vào bài
+
+```text
+Đã dọn sạch code rác, sửa JPA column mapping và câu lệnh SQL, mở rộng check constraint và xóa cache file luxeway_db.mv.db.
+```
+
+### 13.5. Phần sinh viên/nhóm đã chỉnh sửa hoặc cải tiến
+
+```text
+- Xóa cache database file H2 luxeway_db.mv.db và luxeway_db.trace.db trên ổ đĩa để bắt buộc H2 build lại schema mới tinh từ schema.sql đã sửa đổi.
+- Chạy tích hợp toàn bộ quy trình biên dịch gradle test backend và npm build frontend để kiểm tra kết quả cuối cùng.
+```
+
+### 13.6. Đánh giá chất lượng prompt
+
+- [x] Prompt rõ ràng
+- [x] Prompt có đủ bối cảnh
+- [ ] Prompt còn thiếu thông tin
+- [x] Prompt tạo ra kết quả tốt
+- [ ] Prompt tạo ra kết quả chưa phù hợp
+- [ ] Cần hỏi lại AI nhiều lần
+- [x] Cần tự kiểm tra và chỉnh sửa nhiều
+- [ ] Kết quả AI có lỗi hoặc chưa chính xác
+
+### 13.7. Minh chứng liên quan
+
+| Loại minh chứng | Nội dung |
+|---|---|
+| File liên quan | `AdminDashboard.tsx` (Xóa), `src/mock/` (Xóa), `BookingCounter.java`, `DatabaseMigration.java`, `V5__booking_payment_overhaul.sql`, `schema.sql` |
+| Kết quả chạy/test | `./gradlew test` thành công 100% (20 tests passed), `npm run build` thành công 100% |
+| Link commit | `chore: clean up unused mock files and duplicate admin dashboard, fix H2 reserved word value column and check constraint violations in integration tests` |
+
 

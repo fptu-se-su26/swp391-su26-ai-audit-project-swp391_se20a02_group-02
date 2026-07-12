@@ -9,13 +9,14 @@ import {
   Smartphone, CloudRain, Package
 } from 'lucide-react';
 import { motorbikeService } from '@/services/motorbikeService';
+import apiClient from '@/services/api';
 import { reviewService } from '@/services/otherServices';
 import type { Vehicle, Review } from '@/types';
 import { useVehicleStore, useAuthStore, useUIStore } from '@/store';
 import { useToast } from '@/components/ui/Toast';
 import { formatCurrency, formatDate, getRatingLabel, cn } from '@/utils';
 import { fadeUp, staggerContainer, staggerItem } from '@/animations/variants';
-import { VehicleMap } from '@/components/map/VehicleMap';
+import LuxeWayMap from '@/components/map/LuxeWayMap';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&q=80&w=1000';
 
@@ -516,7 +517,7 @@ export const MotorbikeDetails: React.FC = () => {
 
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
   const { isWishlisted, addToWishlist, removeFromWishlist, addRecentlyViewed, compareList, addToCompare, removeFromCompare } = useVehicleStore();
   const toast = useToast();
 
@@ -530,6 +531,8 @@ export const MotorbikeDetails: React.FC = () => {
   // Date and Calculation States
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [deliveryRequested, setDeliveryRequested] = useState(false);
+  const [deliveryAddress, setDeliveryAddress] = useState('');
   const [insuranceTier, setInsuranceTier] = useState<'basic' | 'premium' | 'zero'>('premium');
   const [couponCode, setCouponCode] = useState('');
   const [couponApplied, setCouponApplied] = useState(false);
@@ -541,6 +544,14 @@ export const MotorbikeDetails: React.FC = () => {
   const [phoneHolderRequested, setPhoneHolderRequested] = useState(false);
   const [touringPackageRequested, setTouringPackageRequested] = useState(false);
   const [adventurePackageRequested, setAdventurePackageRequested] = useState(false);
+
+  // Availability, Routing and Autocomplete States
+  const [availability, setAvailability] = useState<{ date: string; status: string }[]>([]);
+  const [routePolyline, setRoutePolyline] = useState<string | null>(null);
+  const [routeDistance, setRouteDistance] = useState<string | null>(null);
+  const [routeDuration, setRouteDuration] = useState<string | null>(null);
+  const [addressSuggestions, setAddressSuggestions] = useState<any[]>([]);
+  const [deliveryCoords, setDeliveryCoords] = useState<[number, number] | null>(null);
 
   // 360 Rotation Simulation States
   const [rotationIndex, setRotationIndex] = useState(0);
@@ -558,6 +569,88 @@ export const MotorbikeDetails: React.FC = () => {
 
   const wishlisted = vehicle ? isWishlisted(vehicle.id) : false;
   const isCompared = vehicle ? compareList.includes(vehicle.id) : false;
+
+  // Fetch availability list
+  useEffect(() => {
+    if (!id) return;
+    apiClient.get<any>(`/vehicles/${id}/availability`)
+      .then((res: any) => {
+        if (res) {
+          setAvailability(res.data || res);
+        }
+      })
+      .catch((err: any) => console.error('Failed to load vehicle availability', err));
+  }, [id]);
+
+  // Date locking hold
+  useEffect(() => {
+    if (startDate && endDate && vehicle && isAuthenticated) {
+      apiClient.post<any>(`/vehicles/${vehicle.id}/lock`, { startDate, endDate })
+        .then((res: any) => {
+          if (res && (res.success || res.status === 'ok')) {
+            toast.success('Dates Hold Active', 'These dates are temporarily held for you for 10 minutes.');
+            // Reload availability to update calendar styles
+            apiClient.get<any>(`/vehicles/${vehicle.id}/availability`)
+              .then((availRes: any) => {
+                if (availRes) setAvailability(availRes.data || availRes);
+              });
+          } else {
+            toast.error('Date conflict', res.error || 'The selected dates are currently locked by another customer.');
+          }
+        })
+        .catch((err: any) => console.error('Failed to lock vehicle dates', err));
+    }
+  }, [startDate, endDate, vehicle?.id, isAuthenticated]);
+
+  // Debounced address autocomplete suggestions
+  useEffect(() => {
+    if (!deliveryAddress.trim() || !deliveryRequested) {
+      setAddressSuggestions([]);
+      return;
+    }
+    const delayDebounceFn = setTimeout(() => {
+      apiClient.get<any>(`/location/autocomplete?input=${encodeURIComponent(deliveryAddress)}`)
+        .then((res: any) => {
+          if (res) {
+            setAddressSuggestions(res.data || res);
+          }
+        })
+        .catch((err: any) => console.error('Autocomplete suggestions fetch failed', err));
+    }, 400);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [deliveryAddress, deliveryRequested]);
+
+  // Suggestion select and route mapping callback
+  const handleSelectSuggestion = (suggestion: any) => {
+    setDeliveryAddress(suggestion.description);
+    setAddressSuggestions([]);
+    
+    apiClient.get<any>(`/location/detail?placeId=${suggestion.place_id}`)
+      .then((res: any) => {
+        const place = res.data || res;
+        if (place && place.lat && place.lng) {
+          const lat = Number(place.lat);
+          const lng = Number(place.lng);
+          setDeliveryCoords([lat, lng]);
+          
+          if (vehicle?.location?.lat && vehicle?.location?.lng) {
+            apiClient.get<any>(`/location/direction?originLat=${vehicle.location.lat}&originLng=${vehicle.location.lng}&destLat=${lat}&destLng=${lng}`)
+              .then((dirRes: any) => {
+                const data = dirRes.data || dirRes;
+                if (data && data.polyline) {
+                  setRoutePolyline(data.polyline);
+                  setRouteDistance(data.distance);
+                  setRouteDuration(data.duration);
+                  toast.success('Route Computed', `Delivery route path resolved: ${data.distance}`);
+                }
+              })
+              .catch((err: any) => console.error('Failed to resolve route path', err));
+          }
+        }
+      })
+      .catch((err: any) => console.error('Failed to fetch place detail coordinates', err));
+  };
 
   // Viewers Count simulation
   useEffect(() => {
@@ -676,10 +769,16 @@ export const MotorbikeDetails: React.FC = () => {
         } else {
           setReviews(r);
         }
+      } else {
+        setVehicle(null);
       }
       setLoading(false);
+    }).catch(err => {
+      console.error("Failed to load motorbike details", err);
+      setVehicle(null);
+      setLoading(false);
     });
-  }, [id]);
+  }, [id, language]);
 
   const days = startDate && endDate ? Math.max(1, Math.round((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1) : 1;
 
@@ -709,6 +808,7 @@ export const MotorbikeDetails: React.FC = () => {
   const phoneHolderFee = phoneHolderRequested ? 10000 * days : 0;
   const luggageRackFee = touringPackageRequested ? 30000 * days : 0;
   const goproFee = adventurePackageRequested ? 15000 * days : 0;
+  const deliveryFee = deliveryRequested && vehicle ? vehicle.deliveryFee || 100000 : 0;
 
   const insuranceFee = vehicle
     ? insuranceTier === 'premium'
@@ -720,7 +820,7 @@ export const MotorbikeDetails: React.FC = () => {
 
   const serviceFee = Math.round(basePrice * 0.10);
   const taxes = Math.round(basePrice * 0.08);
-  const subtotal = basePrice + helmetFee + raincoatFee + phoneHolderFee + luggageRackFee + goproFee + insuranceFee + serviceFee + taxes;
+  const subtotal = basePrice + helmetFee + raincoatFee + phoneHolderFee + luggageRackFee + goproFee + insuranceFee + serviceFee + taxes + deliveryFee;
   const totalCost = subtotal - (couponApplied ? Math.round(subtotal * couponDiscount) : 0);
 
   const handleBookingRedirect = () => {
@@ -729,6 +829,19 @@ export const MotorbikeDetails: React.FC = () => {
       navigate('/auth/login');
       return;
     }
+
+    const isVi = language === 'vi';
+
+    // Mandatory Scan Check: Verify KYC is completed
+    if (!user?.kycVerified && user?.kycStatus !== 'VERIFIED') {
+      toast.error(
+        isVi ? 'Yêu cầu xác minh danh tính' : 'Identity Verification Required',
+        isVi ? 'Bạn cần thực hiện quét CCCD và Bằng lái xe trước khi tiến hành đặt xe.' : 'Please scan and verify your ID (CCCD) and Driving License before booking.'
+      );
+      navigate('/dashboard/documents');
+      return;
+    }
+
     if (!startDate || !endDate) {
       toast.warning('Select dates', 'Please choose pick-up and return dates.');
       return;
@@ -745,6 +858,7 @@ export const MotorbikeDetails: React.FC = () => {
         phoneHolder: phoneHolderRequested ? 'true' : 'false',
         luggageRack: touringPackageRequested ? 'true' : 'false',
         gopro: adventurePackageRequested ? 'true' : 'false',
+        delivery: deliveryRequested ? 'true' : 'false',
         coupon: couponApplied ? couponCode : ''
       });
       navigate(`/booking/${vehicle?.id}?${params.toString()}`);
@@ -807,12 +921,34 @@ export const MotorbikeDetails: React.FC = () => {
     setIsRotating(false);
   };
 
-  if (loading || !vehicle) {
+  if (loading) {
     return (
       <div className="min-h-screen pt-20 px-4 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-10 h-10 animate-spin text-orange-500 mx-auto mb-4" />
           <p className="text-slate-500 font-semibold">{tLocal.loading}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!vehicle) {
+    return (
+      <div className="min-h-screen pt-20 px-4 flex flex-col items-center justify-center text-center bg-slate-50 dark:bg-slate-950">
+        <div className="max-w-md p-8 bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-slate-100 dark:border-slate-800">
+          <div className="w-16 h-16 bg-red-50 dark:bg-red-950/20 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">Motorbike Not Found</h2>
+          <p className="text-slate-500 dark:text-slate-400 mb-6">The vehicle you are looking for does not exist, has been removed, or is currently unavailable.</p>
+          <button
+            onClick={() => navigate('/motorbikes')}
+            className="w-full py-3 px-6 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-bold transition-all shadow-lg shadow-orange-500/20 active:scale-[0.98]"
+          >
+            Go to Catalog
+          </button>
         </div>
       </div>
     );
@@ -1054,20 +1190,60 @@ export const MotorbikeDetails: React.FC = () => {
               </div>
               <div className="grid grid-cols-7 gap-1 text-center text-xs">
                 {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => <div key={i} className="font-bold text-slate-450 py-1">{d}</div>)}
-                {Array.from({ length: 30 }, (_, idx) => (
-                  <div key={idx} className="p-2 border border-slate-50 dark:border-slate-800 rounded-xl h-10 flex flex-col justify-between font-bold text-slate-500">
-                    <span>{idx + 1}</span>
-                    <span className="text-[7px] text-slate-400">{(idx + 1) % 6 === 0 ? 'Booked' : 'VND ' + (vehicle.pricePerDay / 1000) + 'k'}</span>
-                  </div>
-                ))}
+                {Array.from({ length: 30 }, (_, idx) => {
+                  const date = new Date();
+                  date.setDate(date.getDate() + idx);
+                  const dateStr = date.toISOString().split('T')[0];
+                  const avail = availability.find(a => a.date === dateStr);
+                  const status = avail ? avail.status : 'AVAILABLE';
+                  
+                  let statusText = `VND ${(vehicle.pricePerDay / 1000).toFixed(0)}k`;
+                  let statusColor = 'text-slate-500';
+                  let cellBg = '';
+
+                  if (status === 'BOOKED') {
+                    statusText = 'Booked';
+                    statusColor = 'text-rose-500';
+                    cellBg = 'bg-rose-500/5 dark:bg-rose-950/10 border-rose-500/20';
+                  } else if (status === 'PENDING') {
+                    statusText = 'Pending';
+                    statusColor = 'text-amber-500';
+                    cellBg = 'bg-amber-500/5 dark:bg-amber-950/10 border-amber-500/20';
+                  } else if (status === 'MAINTENANCE') {
+                    statusText = 'Maint.';
+                    statusColor = 'text-slate-400';
+                    cellBg = 'bg-slate-100 dark:bg-slate-900 border-slate-200 dark:border-slate-800';
+                  }
+
+                  return (
+                    <div key={idx} className={cn("p-2 border border-slate-50 dark:border-slate-800 rounded-xl h-12 flex flex-col justify-between font-bold text-slate-500", cellBg)}>
+                      <span className="text-[9px]">{date.getDate()} {date.toLocaleString('en-US', { month: 'short' })}</span>
+                      <span className={cn("text-[8px]", statusColor)}>{statusText}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
             {/* Location Map */}
             <div className="luxury-card p-6 bg-card border border-slate-150 dark:border-slate-800 rounded-3xl">
-              <h3 className="font-display text-xl font-bold text-foreground mb-4">{tLocal.map}</h3>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-display text-xl font-bold text-foreground">{tLocal.map}</h3>
+                {routeDistance && routeDuration && (
+                  <span className="text-xs font-bold text-blue-500">
+                    Delivery: {routeDistance} ({routeDuration})
+                  </span>
+                )}
+              </div>
               <div className="relative h-96 rounded-[2rem] overflow-hidden shadow border border-slate-200 dark:border-slate-800">
-                <VehicleMap vehicles={[vehicle]} selectedVehicleId={vehicle.id} height="100%" />
+                <LuxeWayMap 
+                  vehicles={[vehicle]} 
+                  selectedVehicleId={vehicle.id} 
+                  height="100%" 
+                  routePolyline={routePolyline || undefined}
+                  pickupCoords={vehicle.location?.lat && vehicle.location?.lng ? [Number(vehicle.location.lat), Number(vehicle.location.lng)] : undefined}
+                  destCoords={deliveryCoords || undefined}
+                />
               </div>
             </div>
 
@@ -1254,6 +1430,54 @@ export const MotorbikeDetails: React.FC = () => {
                     className="rounded accent-orange-500 w-4 h-4"
                   />
                 </label>
+
+                {/* Delivery Option */}
+                {vehicle.deliveryAvailable && (
+                  <>
+                    <label className="flex items-center justify-between p-2.5 rounded-xl border border-slate-150 dark:border-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-orange-500" />
+                        <div className="text-left">
+                          <p className="text-xs font-bold">{tLocal.delivery}</p>
+                          <p className="text-[9px] text-slate-400">Delivered directly to your location</p>
+                        </div>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={deliveryRequested}
+                        onChange={e => setDeliveryRequested(e.target.checked)}
+                        className="rounded accent-orange-500 w-4 h-4"
+                      />
+                    </label>
+
+                    {deliveryRequested && (
+                      <div className="space-y-1 text-left relative mt-1.5 p-1">
+                        <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider">Delivery Address</label>
+                        <input
+                          type="text"
+                          value={deliveryAddress}
+                          onChange={e => setDeliveryAddress(e.target.value)}
+                          placeholder={tLocal.deliveryAddress}
+                          className="w-full px-3 py-2 border border-slate-200 dark:border-slate-850 rounded-xl text-xs bg-slate-900/50 text-foreground outline-none focus:border-orange-500 transition-colors"
+                        />
+                        {addressSuggestions.length > 0 && (
+                          <div className="absolute left-0 right-0 mt-1 bg-slate-950 border border-slate-800 rounded-xl shadow-2xl z-[100] max-h-48 overflow-y-auto">
+                            {addressSuggestions.map((s, idx) => (
+                              <button
+                                key={idx}
+                                type="button"
+                                onClick={() => handleSelectSuggestion(s)}
+                                className="w-full text-left px-3.5 py-2.5 text-xs hover:bg-slate-900 text-slate-200 border-b border-slate-900 last:border-b-0 cursor-pointer"
+                              >
+                                {s.description}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
 
               {/* Insurance tier details */}
@@ -1317,6 +1541,12 @@ export const MotorbikeDetails: React.FC = () => {
                     <div className="flex justify-between">
                       <span className="text-slate-500">{tLocal.goproAddon}</span>
                       <span className="font-bold text-foreground">+{formatCurrency(goproFee)}</span>
+                    </div>
+                  )}
+                  {deliveryRequested && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">{tLocal.delivery}</span>
+                      <span className="font-bold text-foreground">+{formatCurrency(deliveryFee)}</span>
                     </div>
                   )}
                   {insuranceFee > 0 && (

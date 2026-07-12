@@ -19,5 +19,7 @@
             "username": "sa",
             "password": "123456"
         }
-    ]
+    ],
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "css.lint.unknownAtRules": "ignore"
 }

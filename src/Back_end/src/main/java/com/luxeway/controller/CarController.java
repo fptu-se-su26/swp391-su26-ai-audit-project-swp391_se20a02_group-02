@@ -38,11 +38,13 @@ public class CarController {
             @RequestParam(required = false) Boolean airportDelivery,
             @RequestParam(required = false) Boolean electric,
             @RequestParam(required = false) Boolean hybrid,
+            @RequestParam(required = false) String brand,
+            @RequestParam(required = false) String category,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size) {
         try {
             Page<CarDTOs.CarResponse> cars = carService.searchCars(
-                city, seats, transmission, fuelType, hasChauffeur, airportDelivery, electric, hybrid, page, size
+                city, seats, transmission, fuelType, hasChauffeur, airportDelivery, electric, hybrid, brand, category, page, size
             );
             Map<String, Object> response = new HashMap<>();
             response.put("vehicles", cars.getContent());
@@ -192,8 +194,12 @@ public class CarController {
                 return ResponseEntity.status(401).body(error);
             }
             CarBookingDTOs.CarBookingResponse booking = carBookingService.getBookingById(id);
-            if (!booking.getRenter().getId().equals(user.getId()) &&
-                !booking.getOwner().getId().equals(user.getId()) &&
+            
+            String renterId = booking.getRenter() != null ? booking.getRenter().getId() : "";
+            String ownerId = booking.getOwner() != null ? booking.getOwner().getId() : "";
+            
+            if (!renterId.equals(user.getId()) &&
+                !ownerId.equals(user.getId()) &&
                 user.getRole() != com.luxeway.enums.UserRole.ADMIN) {
                 Map<String, Object> error = new HashMap<>();
                 error.put("error", "Forbidden");

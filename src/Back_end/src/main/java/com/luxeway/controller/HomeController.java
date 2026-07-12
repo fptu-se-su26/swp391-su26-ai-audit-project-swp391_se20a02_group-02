@@ -65,4 +65,25 @@ public class HomeController {
     public ResponseEntity<List<Map<String, Object>>> getFaqs() {
         return ResponseEntity.ok(homeService.getFAQs());
     }
+
+    @GetMapping("/vehicles")
+    @Operation(summary = "Get home page vehicles: latest approved and popular/trending vehicles")
+    public ResponseEntity<Map<String, Object>> getHomeVehicles() {
+        return ResponseEntity.ok(homeService.getHomeVehicles());
+    }
+
+    @GetMapping("/health")
+    @Operation(summary = "Public health check to verify database connection")
+    public ResponseEntity<Map<String, Object>> healthCheck() {
+        boolean isConnected = homeService.checkDatabaseConnection();
+        Map<String, Object> response = Map.of(
+            "status", isConnected ? "SUCCESS" : "ERROR",
+            "message", isConnected ? "LuxeWay Backend is running!" : "Database connection failed",
+            "database_connected", isConnected,
+            "timestamp", System.currentTimeMillis()
+        );
+        return isConnected 
+            ? ResponseEntity.ok(response) 
+            : ResponseEntity.status(500).body(response);
+    }
 }

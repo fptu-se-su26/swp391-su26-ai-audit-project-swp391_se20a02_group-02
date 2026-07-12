@@ -41,13 +41,14 @@ public class AdminController {
     // ====== User Management ======
 
     @GetMapping("/users")
-    @Operation(summary = "List all users with optional role filter and search")
+    @Operation(summary = "List all users with optional role, KYC status filter, and search")
     public ResponseEntity<ApiResponse<Page<UserDTOs.UserProfileResponse>>> listUsers(
             @RequestParam(required = false) String role,
+            @RequestParam(required = false) String kycStatus,
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        Page<UserDTOs.UserProfileResponse> users = adminService.listUsers(role, keyword, page, size);
+        Page<UserDTOs.UserProfileResponse> users = adminService.listUsers(role, kycStatus, keyword, page, size);
         return ResponseEntity.ok(ApiResponse.<Page<UserDTOs.UserProfileResponse>>builder()
                 .success(true).data(users)
                 .meta(ApiResponse.PageMeta.builder()
@@ -55,6 +56,14 @@ public class AdminController {
                         .totalElements(users.getTotalElements()).totalPages(users.getTotalPages())
                         .build())
                 .build());
+    }
+
+    @GetMapping("/users/{userId}/documents")
+    @Operation(summary = "Get a specific user's uploaded documents")
+    public ResponseEntity<ApiResponse<java.util.List<UserDTOs.DocumentResponse>>> getUserDocuments(
+            @PathVariable String userId) {
+        java.util.List<UserDTOs.DocumentResponse> docs = adminService.getUserDocuments(userId);
+        return ResponseEntity.ok(ApiResponse.success("Success", docs));
     }
 
     @PutMapping("/users/{id}/status")
@@ -69,12 +78,13 @@ public class AdminController {
     // ====== Vehicle Management ======
 
     @GetMapping("/vehicles")
-    @Operation(summary = "List all vehicles with optional status filter")
+    @Operation(summary = "List all vehicles with optional status and search keyword filter")
     public ResponseEntity<ApiResponse<Page<VehicleDTOs.VehicleResponse>>> listAllVehicles(
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        Page<VehicleDTOs.VehicleResponse> vehicles = adminService.listAllVehicles(status, page, size);
+        Page<VehicleDTOs.VehicleResponse> vehicles = adminService.listAllVehicles(status, keyword, page, size);
         return ResponseEntity.ok(ApiResponse.<Page<VehicleDTOs.VehicleResponse>>builder()
                 .success(true).data(vehicles)
                 .meta(ApiResponse.PageMeta.builder()
@@ -101,8 +111,11 @@ public class AdminController {
 
     @PutMapping("/vehicles/{id}/approve")
     @Operation(summary = "Approve a vehicle listing")
-    public ResponseEntity<ApiResponse<VehicleDTOs.VehicleResponse>> approveVehicle(@PathVariable String id) {
-        VehicleDTOs.VehicleResponse vehicle = adminService.approveVehicle(id);
+    public ResponseEntity<ApiResponse<VehicleDTOs.VehicleResponse>> approveVehicle(
+            @PathVariable String id,
+            @AuthenticationPrincipal User admin) {
+        String adminId = admin != null ? admin.getId() : "SYSTEM";
+        VehicleDTOs.VehicleResponse vehicle = adminService.approveVehicle(id, adminId);
         return ResponseEntity.ok(ApiResponse.success("Vehicle approved", vehicle));
     }
 
@@ -110,9 +123,11 @@ public class AdminController {
     @Operation(summary = "Reject a vehicle listing")
     public ResponseEntity<ApiResponse<VehicleDTOs.VehicleResponse>> rejectVehicle(
             @PathVariable String id,
-            @RequestBody(required = false) AdminDTOs.ApproveVehicleRequest request) {
+            @RequestBody(required = false) AdminDTOs.ApproveVehicleRequest request,
+            @AuthenticationPrincipal User admin) {
         String reason = request != null ? request.getReason() : "Does not meet platform standards";
-        VehicleDTOs.VehicleResponse vehicle = adminService.rejectVehicle(id, reason);
+        String adminId = admin != null ? admin.getId() : "SYSTEM";
+        VehicleDTOs.VehicleResponse vehicle = adminService.rejectVehicle(id, reason, adminId);
         return ResponseEntity.ok(ApiResponse.success("Vehicle rejected", vehicle));
     }
 
@@ -176,6 +191,35 @@ public class AdminController {
             @Valid @RequestBody AdminDTOs.ReviewDocumentRequest request) {
         UserDTOs.DocumentResponse doc = adminService.reviewDocument(id, request);
         return ResponseEntity.ok(ApiResponse.success("Document status updated successfully", doc));
+    }
+
+    @GetMapping("/kyc")
+    @Operation(summary = "Get list of all users with PENDING KYC status")
+    public ResponseEntity<ApiResponse<java.util.List<UserDTOs.UserProfileResponse>>> getPendingKyc() {
+        return ResponseEntity.ok(ApiResponse.success("Success", adminService.getPendingKycUsers()));
+    }
+
+    @PutMapping("/kyc/{userId}/approve")
+    @Operation(summary = "Approve user's KYC application")
+    public ResponseEntity<ApiResponse<UserDTOs.UserProfileResponse>> approveUserKyc(
+            @PathVariable String userId,
+            @AuthenticationPrincipal User admin) {
+        UserDTOs.UserProfileResponse user = adminService.approveUserKyc(userId, admin.getId());
+        return ResponseEntity.ok(ApiResponse.success("KYC approved", user));
+    }
+
+    @PutMapping("/kyc/{userId}/reject")
+    @Operation(summary = "Reject user's KYC application")
+    public ResponseEntity<ApiResponse<UserDTOs.UserProfileResponse>> rejectUserKyc(
+            @PathVariable String userId,
+            @AuthenticationPrincipal User admin,
+            @RequestBody(required = false) java.util.Map<String, String> payload) {
+        String reason = "Documents rejected by administrator";
+        if (payload != null && payload.containsKey("reason")) {
+            reason = payload.get("reason");
+        }
+        UserDTOs.UserProfileResponse user = adminService.rejectUserKyc(userId, reason, admin.getId());
+        return ResponseEntity.ok(ApiResponse.success("KYC rejected", user));
     }
 
     @GetMapping("/settings")

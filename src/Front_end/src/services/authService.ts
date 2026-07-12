@@ -1,21 +1,11 @@
 import apiClient, { ApiResponse } from './api';
 import type { User, RegisterData } from '@/types';
+import { resolveImageUrl } from '@/utils';
 
 // Storage keys
 const TOKEN_KEY = 'luxeway_access_token';
 const REFRESH_TOKEN_KEY = 'luxeway_refresh_token';
 const USER_KEY = 'luxeway_user';
-
-const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8080/api/v1';
-
-const resolveImageUrl = (url: string | null | undefined): string => {
-  if (!url) return '';
-  if (url.startsWith('/uploads') || url.startsWith('uploads')) {
-    const cleanUrl = url.startsWith('/') ? url : '/' + url;
-    return `${API_BASE}${cleanUrl}`;
-  }
-  return url;
-};
 
 // ====== REAL BACKEND AUTH SERVICE ======
 export const authService = {
@@ -56,6 +46,8 @@ export const authService = {
           badges: userInfo.badges || [],
           accountType: userInfo.accountType || 'INDIVIDUAL',
           preferredLanguage: userInfo.preferredLanguage || 'en',
+          kycStatus: userInfo.kycStatus || 'NOT_UPLOADED',
+          driverLicenseStatus: userInfo.driverLicenseStatus || 'NOT_UPLOADED',
         } as unknown as User;
         
         localStorage.setItem(USER_KEY, JSON.stringify(user));
@@ -109,8 +101,10 @@ export const authService = {
           location: '',
           bio: '',
           badges: [],
-          accountType: payload.accountType as any,
+           accountType: payload.accountType as any,
           preferredLanguage: userInfo.preferredLanguage || 'en',
+          kycStatus: 'NOT_UPLOADED',
+          driverLicenseStatus: 'NOT_UPLOADED',
         } as unknown as User;
         
         localStorage.setItem(USER_KEY, JSON.stringify(user));
@@ -185,12 +179,14 @@ export const authService = {
         verified: userInfo.verified || userInfo.isVerified || false,
         rating: userInfo.rating || 0,
         totalReviews: userInfo.totalReviews || 0,
-        joinedAt: userInfo.joinedAt || userInfo.createdAt,
+        joinedAt: userInfo.joinedAt || userInfo.createdAt || '2024-01-15T09:00:00Z',
         location: userInfo.location || userInfo.city || '',
         bio: userInfo.bio || '',
         badges: userInfo.badges || [],
         accountType: userInfo.accountType || 'INDIVIDUAL',
         preferredLanguage: userInfo.preferredLanguage || 'en',
+        kycStatus: userInfo.kycStatus || 'NOT_UPLOADED',
+        driverLicenseStatus: userInfo.driverLicenseStatus || 'NOT_UPLOADED',
       } as unknown as User;
       
       localStorage.setItem(USER_KEY, JSON.stringify(user));

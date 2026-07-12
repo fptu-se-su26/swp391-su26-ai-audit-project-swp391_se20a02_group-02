@@ -160,7 +160,7 @@ export const bookingService = {
         deliveryAddress: wizardState.deliveryAddress,
         couponCode: wizardState.couponCode,
         notes: wizardState.notes,
-        selectedAddons: wizardState.selectedAddons,
+        addonIds: wizardState.selectedAddons,
       };
       const response = await apiClient.post<any>('/bookings', payload);
       const booking = response.data || response;
@@ -199,6 +199,21 @@ export const bookingService = {
     } catch (error) {
       return null;
     }
+  },
+
+  async confirmTransfer(bookingId: string): Promise<any> {
+    const response = await apiClient.post<any>(`/bookings/${bookingId}/confirm-transfer`, {});
+    return response.data || response;
+  },
+
+  async verifyPayment(bookingId: string): Promise<any> {
+    const response = await apiClient.post<any>(`/bookings/${bookingId}/verify-payment`, {});
+    return response.data || response;
+  },
+
+  async rejectPayment(bookingId: string, reason: string): Promise<any> {
+    const response = await apiClient.post<any>(`/bookings/${bookingId}/reject-payment?reason=${encodeURIComponent(reason)}`, {});
+    return response.data || response;
   },
 
   async getAll(): Promise<Booking[]> {
@@ -249,7 +264,7 @@ export const paymentService = {
         method: method.toUpperCase(),
         amount,
         currency: 'VND',
-        returnUrl: returnUrl || `${window.location.origin}/payment/vnpay/return`,
+        returnUrl: returnUrl || `${window.location.origin}/payment/${method.toLowerCase() === 'payos' ? 'payos' : 'momo'}/return`,
         description: `Payment for booking ${bookingId}`,
       };
       // apiClient.post returns the full response body from backend
@@ -259,12 +274,16 @@ export const paymentService = {
 
       const isSuccess = response.success === true || response.status === 'ok';
       const paymentData = response.data;
+      const gatewayRequiresRedirect = ['momo', 'payos'].includes(method.toLowerCase());
+      const missingGatewayUrl = isSuccess && gatewayRequiresRedirect && !paymentData?.paymentUrl;
 
       return {
-        success: isSuccess,
+        success: isSuccess && !missingGatewayUrl,
         transactionId: paymentData?.transactionId || '',
         paymentUrl: paymentData?.paymentUrl || undefined,
-        errorMessage: !isSuccess ? (response.message || 'Payment failed') : undefined,
+        errorMessage: missingGatewayUrl
+          ? `${method.toUpperCase()} checkout URL was not returned by backend`
+          : (!isSuccess ? (response.message || 'Payment failed') : undefined),
       };
     } catch (error: any) {
       console.error('Payment processing failed', error);
@@ -287,14 +306,18 @@ export const paymentService = {
         amount,
         method: method.toUpperCase(),
         currency: 'VND',
-        returnUrl: returnUrl || `${window.location.origin}/payment/vnpay/return`,
+        returnUrl: returnUrl || `${window.location.origin}/payment/${method.toLowerCase() === 'payos' ? 'payos' : 'momo'}/return`,
       };
       const response = await apiClient.post<any>('/payments/wallet/topup', payload);
       const isSuccess = response.success === true;
+      const gatewayRequiresRedirect = ['momo', 'payos'].includes(method.toLowerCase());
+      const missingGatewayUrl = isSuccess && gatewayRequiresRedirect && !response.data?.paymentUrl;
       return {
-        success: isSuccess,
+        success: isSuccess && !missingGatewayUrl,
         paymentUrl: response.data?.paymentUrl || undefined,
-        errorMessage: !isSuccess ? (response.message || 'Top up failed') : undefined,
+        errorMessage: missingGatewayUrl
+          ? `${method.toUpperCase()} checkout URL was not returned by backend`
+          : (!isSuccess ? (response.message || 'Top up failed') : undefined),
       };
     } catch (error: any) {
       console.error('Wallet top-up failed', error);
@@ -359,6 +382,16 @@ export const paymentService = {
       discount,
       message: `${coupon.value}${coupon.type === 'percentage' ? '%' : '$'} discount applied!`,
     };
+  },
+
+  async getPaymentSettings(): Promise<any> {
+    const response = await apiClient.get<any>('/payment-settings');
+    return response.data || response;
+  },
+
+  async updatePaymentSettings(settings: any): Promise<any> {
+    const response = await apiClient.put<any>('/payment-settings', settings);
+    return response.data || response;
   },
 };
 

@@ -37,7 +37,9 @@ public interface MotorbikeRepository extends JpaRepository<Motorbike, String> {
            "(:helmetIncluded IS NULL OR s.helmetIncluded = :helmetIncluded) AND " +
            "(:raincoatIncluded IS NULL OR s.raincoatIncluded = :raincoatIncluded) AND " +
            "(:phoneHolder IS NULL OR s.phoneHolder = :phoneHolder) AND " +
-           "(:luggageRack IS NULL OR s.luggageRack = :luggageRack)")
+           "(:luggageRack IS NULL OR s.luggageRack = :luggageRack) AND " +
+           "(:brand IS NULL OR LOWER(b.name) LIKE LOWER(CONCAT('%', :brand, '%'))) AND " +
+           "(:category IS NULL OR LOWER(mo.category) = LOWER(:category))")
     Page<Motorbike> searchMotorbikes(
         @Param("city") String city,
         @Param("engineCc") Integer engineCc,
@@ -46,6 +48,9 @@ public interface MotorbikeRepository extends JpaRepository<Motorbike, String> {
         @Param("raincoatIncluded") Boolean raincoatIncluded,
         @Param("phoneHolder") Boolean phoneHolder,
         @Param("luggageRack") Boolean luggageRack,
+        @Param("brand") String brand,
+        @Param("category") String category,
         Pageable pageable
     );
+
 }

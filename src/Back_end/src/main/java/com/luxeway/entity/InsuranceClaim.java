@@ -38,6 +38,7 @@ public class InsuranceClaim {
     private String description;
 
     @Column(nullable = false, length = 20)
+    @Builder.Default
     private String status = "PENDING"; // PENDING, APPROVED, REJECTED
 
     @CreationTimestamp

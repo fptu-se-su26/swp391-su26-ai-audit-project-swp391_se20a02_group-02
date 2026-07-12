@@ -13,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,6 +20,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("all")
 public class CarBookingService {
 
     private final CarBookingRepository carBookingRepository;
@@ -56,8 +56,22 @@ public class CarBookingService {
                 .orElseThrow(() -> new RuntimeException("Renter not found"));
 
         if (renter.getRole() != com.luxeway.enums.UserRole.ADMIN) {
-            if (!Boolean.TRUE.equals(renter.getKycVerified()) || !Boolean.TRUE.equals(renter.getDrivingLicenseVerified())) {
-                throw new RuntimeException("KYC identity and driving license verification are required before booking.");
+            if (!"VERIFIED".equals(renter.getKycStatus())) {
+                throw new RuntimeException("Please complete identity verification first.");
+            }
+
+            String licenseClass = renter.getLicenseClass() != null ? renter.getLicenseClass().trim().toUpperCase() : "";
+            boolean isCarLicense = licenseClass.startsWith("B") ||
+                                   licenseClass.startsWith("C") ||
+                                   licenseClass.startsWith("D") ||
+                                   licenseClass.startsWith("E") ||
+                                   licenseClass.startsWith("F");
+            if (!isCarLicense) {
+                if (licenseClass.startsWith("A")) {
+                    throw new RuntimeException("Your driving license only supports motorcycle rental.");
+                } else {
+                    throw new RuntimeException("Your driving license does not support car rental.");
+                }
             }
         }
 
@@ -133,18 +147,21 @@ public class CarBookingService {
         }
     }
 
+    @Transactional(readOnly = true)
     public List<CarBookingDTOs.CarBookingResponse> getBookingsByRenter(String renterId) {
         return carBookingRepository.findByRenterId(renterId).stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<CarBookingDTOs.CarBookingResponse> getBookingsByOwner(String ownerId) {
         return carBookingRepository.findByOwnerId(ownerId).stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public CarBookingDTOs.CarBookingResponse getBookingById(String id) {
         CarBooking booking = carBookingRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Car booking not found with ID: " + id));
@@ -192,9 +209,13 @@ public class CarBookingService {
             CarBookingDTOs.CarBookingResponse.CarInfo ci = new CarBookingDTOs.CarBookingResponse.CarInfo();
             ci.setId(b.getCar().getId());
             ci.setName(b.getCar().getName());
-            ci.setBrandName(b.getCar().getModel().getBrand().getName());
-            ci.setModelName(b.getCar().getModel().getName());
-            ci.setCategory(b.getCar().getModel().getCategory());
+            if (b.getCar().getModel() != null) {
+                ci.setModelName(b.getCar().getModel().getName());
+                ci.setCategory(b.getCar().getModel().getCategory());
+                if (b.getCar().getModel().getBrand() != null) {
+                    ci.setBrandName(b.getCar().getModel().getBrand().getName());
+                }
+            }
             ci.setLicensePlate(b.getCar().getLicensePlate());
             if (b.getCar().getImages() != null && !b.getCar().getImages().isEmpty()) {
                 ci.setThumbnailUrl(b.getCar().getImages().iterator().next().getUrl());

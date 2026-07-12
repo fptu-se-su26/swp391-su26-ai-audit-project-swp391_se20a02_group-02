@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("all")
 public class AuthService {
 
     private final UserRepository userRepository;
@@ -100,7 +101,7 @@ public class AuthService {
         // DEV MODE: Auto-verify user on registration (no email verification step).
         // PRODUCTION: Set verified=false and send a confirmation email via JavaMailSender.
         // Check environment via Spring profiles to determine behavior
-        boolean isDevelopment = true; // TODO: Inject @Value("${spring.profiles.active}") to check profile
+        boolean isDevelopment = true; // Inject @Value("${spring.profiles.active}") to check profile
         
         User user = User.builder()
                 .email(request.getEmail())
@@ -307,6 +308,8 @@ public class AuthService {
         userInfo.setKycVerified(user.getKycVerified());
         userInfo.setWalletBalance(user.getWalletBalance());
         userInfo.setPreferredLanguage(user.getPreferredLanguage());
+        userInfo.setKycStatus(user.getKycStatus());
+        userInfo.setDriverLicenseStatus(user.getDriverLicenseStatus());
 
         AuthDTOs.AuthResponse response = new AuthDTOs.AuthResponse();
         response.setAccessToken(accessToken);

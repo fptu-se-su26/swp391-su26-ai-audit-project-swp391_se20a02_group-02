@@ -31,11 +31,15 @@ class ApiClient {
     if (!refreshToken) return null;
 
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
       const response = await fetch(`${this.baseURL}/auth/refresh`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refreshToken }),
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
 
       if (!response.ok) return null;
 
@@ -43,7 +47,6 @@ class ApiClient {
       const newAccessToken = data?.data?.accessToken || data?.accessToken;
       if (newAccessToken) {
         localStorage.setItem(TOKEN_KEY, newAccessToken);
-        // Also store new refresh token if provided
         const newRefreshToken = data?.data?.refreshToken || data?.refreshToken;
         if (newRefreshToken) {
           localStorage.setItem(REFRESH_TOKEN_KEY, newRefreshToken);
@@ -65,10 +68,18 @@ class ApiClient {
     const token = localStorage.getItem(TOKEN_KEY);
     const lang = localStorage.getItem('language') || 'en';
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
       'Accept-Language': lang,
       ...(options.headers as Record<string, string>),
     };
+
+    if (!(options.body instanceof FormData)) {
+      if (!headers['Content-Type']) {
+        headers['Content-Type'] = 'application/json';
+      }
+    } else {
+      // Let browser set Content-Type and boundary automatically for FormData
+      delete headers['Content-Type'];
+    }
 
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
@@ -80,7 +91,10 @@ class ApiClient {
     };
 
     try {
-      const response = await fetch(url, config);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      const response = await fetch(url, { ...config, signal: controller.signal });
+      clearTimeout(timeoutId);
       
       if (!response.ok) {
         if (response.status === 401) {
@@ -110,7 +124,7 @@ class ApiClient {
               this.onUnauthorized();
             } else {
               // Only redirect if we're on a protected page and have no auth handler wired
-              const protectedPrefixes = ['/dashboard', '/admin', '/owner', '/business', '/booking', '/payment', '/messages', '/notifications'];
+              const protectedPrefixes = ['/dashboard', '/admin', '/owner', '/booking', '/payment', '/messages', '/notifications'];
               const path = window.location.pathname;
               const isProtected = protectedPrefixes.some(p => path === p || path.startsWith(p + '/'));
               if (isProtected) {
@@ -137,7 +151,14 @@ class ApiClient {
             });
           }
         }
-        throw new Error(`HTTP error! status: ${response.status}`);
+        
+        let errorMsg = `HTTP error! status: ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorMsg = errorData.message || errorData.error || JSON.stringify(errorData);
+        } catch (e) {}
+        
+        throw new Error(errorMsg);
       }
       
       const contentType = response.headers.get('content-type');
@@ -158,24 +179,38 @@ class ApiClient {
   }
 
   async post<T>(endpoint: string, body: any, options?: RequestInit) {
-    return this.request<T>(endpoint, { ...options, method: 'POST', body: JSON.stringify(body) });
+    const isFormData = body instanceof FormData;
+    return this.request<T>(endpoint, { ...options, method: 'POST', body: isFormData ? body : JSON.stringify(body) });
   }
 
   async put<T>(endpoint: string, body: any, options?: RequestInit) {
-    return this.request<T>(endpoint, { ...options, method: 'PUT', body: JSON.stringify(body) });
+    const isFormData = body instanceof FormData;
+    return this.request<T>(endpoint, { ...options, method: 'PUT', body: isFormData ? body : JSON.stringify(body) });
   }
 
   async patch<T>(endpoint: string, body: any, options?: RequestInit) {
-    return this.request<T>(endpoint, { ...options, method: 'PATCH', body: JSON.stringify(body) });
+    const isFormData = body instanceof FormData;
+    return this.request<T>(endpoint, { ...options, method: 'PATCH', body: isFormData ? body : JSON.stringify(body) });
   }
 
   async delete<T>(endpoint: string, options?: RequestInit) {
     return this.request<T>(endpoint, { ...options, method: 'DELETE' });
   }
 
+  /** Upload FormData (multipart/form-data) via POST */
+  async postForm<T>(endpoint: string, formData: FormData, options?: RequestInit) {
+    return this.request<T>(endpoint, { ...options, method: 'POST', body: formData });
+  }
+
+  /** Upload FormData (multipart/form-data) via PUT */
+  async putForm<T>(endpoint: string, formData: FormData, options?: RequestInit) {
+    return this.request<T>(endpoint, { ...options, method: 'PUT', body: formData });
+  }
+
+
   // Health Check
   async healthCheck() {
-    return this.request('/test/health');
+    return this.request('/home/health');
   }
 
   // Database Info

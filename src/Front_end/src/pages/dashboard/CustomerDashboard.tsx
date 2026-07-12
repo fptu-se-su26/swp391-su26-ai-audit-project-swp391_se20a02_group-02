@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Calendar, Heart, Bell, User, Shield, FileText,
   CreditCard, Settings, LogOut, ChevronRight, Car, Star, TrendingUp,
   Package, Clock, CheckCircle, AlertCircle, X, Menu, Eye, EyeOff, Users, Wallet,
-  Loader2, Globe, Gift, Building2
+  Loader2, Globe, Gift, Building2, Trash2, Navigation
 } from 'lucide-react';
 
 import { useAuthStore, useUIStore } from '@/store';
@@ -13,22 +13,32 @@ import { bookingService, paymentService } from '@/services/bookingService';
 import { notificationService, reviewService } from '@/services/otherServices';
 import apiClient from '@/services/api';
 import type { Booking, Notification } from '@/types';
-import { formatCurrency, formatDate, getStatusColor, getInitials } from '@/utils';
+import { formatCurrency, formatDate, getStatusColor, getInitials, cn } from '@/utils';
 import { staggerContainer, staggerItem, fadeUp } from '@/animations/variants';
 import { StatCardSkeleton, TableSkeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { useT, translateNotification } from '@/i18n/translations';
+import Avatar from '@/components/ui/Avatar';
+import StatusBadge from '@/components/ui/StatusBadge';
+import Breadcrumbs from '@/components/ui/Breadcrumbs';
 
-// ====== CUSTOMER SIDEBAR ======
-const CustomerSidebar: React.FC = () => {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const { user, logout } = useAuthStore();
+// ====== CUSTOMER DASHBOARD LAYOUT ======
+export const CustomerDashboardLayout: React.FC = () => {
+  const { user, isAuthenticated, logout } = useAuthStore();
   const { sidebarOpen, setSidebarOpen } = useUIStore();
+  const navigate = useNavigate();
+  const location = useLocation();
   const language = useUIStore((s: any) => s.language) || 'en';
   const t = useT();
 
-  const customerLinks = [
+  useEffect(() => {
+    if (!isAuthenticated) navigate('/auth/login');
+    setSidebarOpen(window.innerWidth >= 1024);
+  }, [isAuthenticated]);
+
+  if (!user) return null;
+
+  const links = [
     { href: '/', icon: Globe, label: t.marketplace.home, exact: true },
     { href: '/dashboard', icon: LayoutDashboard, label: t.dashboard.overview, exact: true },
     { href: '/dashboard/bookings', icon: Calendar, label: t.dashboard.myBookings },
@@ -40,25 +50,25 @@ const CustomerSidebar: React.FC = () => {
       href: '/dashboard/rewards',
       icon: Gift,
       label: language === 'vi' ? 'Đổi Thưởng' :
-             language === 'ja' ? 'ロイヤルティ特典' :
-             language === 'ko' ? '로열티 리워드' :
-             language === 'zh' ? '会员积分奖励' :
-             language === 'fr' ? 'Récompenses' :
-             language === 'de' ? 'Treueprämien' :
-             language === 'es' ? 'Premios' :
-             'Loyalty Rewards'
+        language === 'ja' ? 'ロイヤルティ特典' :
+          language === 'ko' ? '로열티 リワード' :
+            language === 'zh' ? '会员积分奖励' :
+              language === 'fr' ? 'Récompenses' :
+                language === 'de' ? 'Treueprämien' :
+                  language === 'es' ? 'Premios' :
+                    'Loyalty Rewards'
     },
     {
       href: '/dashboard/corporate',
       icon: Building2,
       label: language === 'vi' ? 'Cổng Doanh Nghiệp' :
-             language === 'ja' ? '企業ポータル' :
-             language === 'ko' ? '기업 포탈' :
-             language === 'zh' ? '企业门户' :
-             language === 'fr' ? 'Portail Entreprise' :
-             language === 'de' ? 'Unternehmensportal' :
-             language === 'es' ? 'Portal Corporativo' :
-             'Corporate Portal'
+        language === 'ja' ? '企業ポータル' :
+          language === 'ko' ? '기업 포탈' :
+            language === 'zh' ? '企业门户' :
+              language === 'fr' ? 'Portail Entreprise' :
+                language === 'de' ? 'Unternehmensportal' :
+                  language === 'es' ? 'Portal Corporativo' :
+                    'Corporate Portal'
     },
     { href: '/messages', icon: Bell, label: t.nav.messages },
     { href: '/dashboard/notifications', icon: Heart, label: t.dashboard.notifications },
@@ -66,130 +76,181 @@ const CustomerSidebar: React.FC = () => {
     { href: '/dashboard/settings', icon: Settings, label: t.dashboard.settings },
   ];
 
-  const getInitials = (name: string) => {
-    return name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : 'C';
-  };
-
   const isActive = (href: string, exact?: boolean) =>
     exact ? location.pathname === href : location.pathname.startsWith(href);
 
   return (
-    <>
+    <div className="theme-customer min-h-screen relative font-sans bg-[var(--lw-bg-primary)] text-[var(--lw-text-primary)] transition-colors duration-300">
+      
+      {/* Mobile Sidebar Navigation Drawer */}
       <AnimatePresence>
         {sidebarOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setSidebarOpen(false)}
-            className="fixed inset-0 bg-black/50 z-30 lg:hidden backdrop-blur-sm"
-          />
+          <>
+            {/* Backdrop blur overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSidebarOpen(false)}
+              className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
+            />
+            {/* Sliding navigation drawer - mobile */}
+            <motion.aside
+              initial={{ x: -280 }}
+              animate={{ x: 0 }}
+              exit={{ x: -280 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="lw-sidebar fixed left-0 top-0 h-full z-50 flex lg:hidden shadow-2xl"
+            >
+              <div className="relative z-10 flex flex-col flex-1 min-h-0">
+                {/* Branding */}
+                <div className="lw-sidebar-logo border-b border-[var(--lw-border)]">
+                  <img src="/logo.svg" alt="LuxeWay" style={{ height: '36px', width: 'auto', display: 'block' }} />
+                  <span className="lw-sidebar-logo-text font-black text-[var(--lw-text-primary)]">LuxeWay</span>
+                </div>
+
+                <div className="lw-sidebar-role-badge bg-[var(--lw-accent-glow)] text-[var(--lw-accent)] border border-[var(--lw-border-strong)] m-0 mx-5 my-3">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--lw-accent)] animate-pulse" />
+                  ✨ CUSTOMER
+                </div>
+
+                {/* Links */}
+                <div className="lw-sidebar-nav space-y-0.5">
+                  {links.map(link => {
+                    const active = isActive(link.href, link.exact);
+                    return (
+                      <Link
+                        key={link.href}
+                        to={link.href}
+                        onClick={() => setSidebarOpen(false)}
+                        className={cn(
+                          "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative lw-sidebar-nav-item",
+                          active && "active"
+                        )}
+                      >
+                        <link.icon className="w-4 h-4 flex-shrink-0" />
+                        <span>{link.label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Bottom user card */}
+              <div className="lw-sidebar-footer">
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-[var(--lw-bg-secondary)] border border-[var(--lw-border)]">
+                  <Avatar src={user.avatar} name={user.displayName} size="md" className="flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold truncate text-[var(--lw-text-primary)]">{user.displayName}</p>
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-[var(--lw-accent)] mt-0.5">CUSTOMER</p>
+                  </div>
+                  <button 
+                    onClick={() => { logout(); setSidebarOpen(false); navigate('/auth/login'); }}
+                    className="p-2 text-[var(--lw-text-muted)] hover:text-red-500 transition-colors"
+                    title={t.nav.logout}
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </motion.aside>
+          </>
         )}
       </AnimatePresence>
 
-      <motion.aside
-        animate={{ x: sidebarOpen ? 0 : -280 }}
-        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-        className="fixed left-0 top-0 h-full w-64 z-40 flex flex-col lg:relative lg:translate-x-0 pt-20 lg:pt-0"
-        style={{
-          background: 'linear-gradient(180deg, #0a0f1e 0%, #111827 60%, #0d1527 100%)',
-          borderRight: '1px solid rgba(255,255,255,0.06)',
-        }}
-      >
-        <div className="absolute top-0 left-0 w-full h-48 pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.15) 0%, transparent 70%)' }} />
-
-        {/* User Info */}
-        <div className="p-5 border-b relative" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-          <div className="flex items-center gap-3 p-3 rounded-2xl"
-            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
-            {user?.avatar ? (
-              <img src={user.avatar} alt={user.displayName} className="w-10 h-10 rounded-xl object-cover"
-                style={{ boxShadow: '0 0 0 2px rgba(99,102,241,0.40)' }} />
-            ) : (
-              <div className="w-10 h-10 rounded-xl text-sm font-bold flex items-center justify-center text-slate-900 bg-gradient-to-br from-indigo-500 to-violet-600">
-                {getInitials(user?.displayName || '')}
+      {/* Main dashboard flex layout */}
+      <div className="lw-flex-layout pt-16">
+        
+        {/* ============ DESKTOP SIDEBAR ============ */}
+        <aside className="lw-sidebar hidden lg:flex border-r border-[var(--lw-border)] bg-[var(--lw-sidebar-bg)]">
+          <div className="relative z-10 flex flex-col flex-1 min-h-0">
+            {/* Role Badge only, no double logo on desktop */}
+            <div className="px-5 py-4 border-b border-[var(--lw-border)]">
+              <div className="lw-sidebar-role-badge bg-[var(--lw-accent-glow)] text-[var(--lw-accent)] border border-[var(--lw-border-strong)] m-0 w-full flex items-center justify-center py-2.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--lw-accent)] animate-pulse mr-1.5" />
+                ✨ CUSTOMER
               </div>
-            )}
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-white text-sm truncate">{user?.displayName}</p>
-              <p className="text-xs truncate text-slate-400" style={{ color: 'rgba(255,255,255,0.35)' }}>{user?.email}</p>
-              <span className="inline-flex items-center text-[10px] font-bold uppercase tracking-wider mt-0.5 text-indigo-400">✨ CUSTOMER</span>
+            </div>
+
+            {/* Navigation Links */}
+            <div className="lw-sidebar-nav space-y-0.5">
+              {links.map(link => {
+                const active = isActive(link.href, link.exact);
+                return (
+                  <Link
+                    key={link.href}
+                    to={link.href}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative lw-sidebar-nav-item",
+                      active && "active"
+                    )}
+                  >
+                    <link.icon className="w-4 h-4 flex-shrink-0" />
+                    <span>{link.label}</span>
+                  </Link>
+                );
+              })}
             </div>
           </div>
-        </div>
 
-        {/* Nav Links */}
-        <nav className="flex-1 overflow-y-auto p-3 space-y-0.5 relative z-10">
-          {customerLinks.map(link => {
-            const active = isActive(link.href, link.exact);
-            return (
-              <Link
-                key={link.href}
-                to={link.href}
-                onClick={() => window.innerWidth < 1024 && setSidebarOpen(false)}
-                className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative group"
-                style={{
-                  color: active ? '#fff' : 'rgba(148,163,184,1)',
-                  background: active ? 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.08))' : undefined,
-                  border: active ? '1px solid rgba(99,102,241,0.30)' : '1px solid transparent',
-                }}
+          {/* Bottom user card */}
+          <div className="lw-sidebar-footer">
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-[var(--lw-bg-secondary)] border border-[var(--lw-border)]">
+              <Avatar src={user.avatar} name={user.displayName} size="md" className="flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold truncate text-[var(--lw-text-primary)]">{user.displayName}</p>
+                <p className="text-[9px] font-bold uppercase tracking-wider text-[var(--lw-accent)] mt-0.5">CUSTOMER</p>
+              </div>
+              <button 
+                onClick={() => { logout(); navigate('/auth/login'); }}
+                className="p-2 text-[var(--lw-text-muted)] hover:text-red-500 transition-colors"
+                title={t.nav.logout}
               >
-                {active && (
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-6 rounded-r-full bg-gradient-to-br from-indigo-500 to-violet-600" />
-                )}
-                <link.icon className="w-4 h-4 transition-colors flex-shrink-0"
-                  style={{ color: active ? '#818CF8' : 'rgba(100,116,139,1)' }} />
-                <span className="truncate">{link.label}</span>
-                {active && <ChevronRight className="w-3.5 h-3.5 ml-auto flex-shrink-0 text-indigo-400" />}
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* Logout */}
-        <div className="p-3 relative z-10" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-          <button
-            onClick={() => { logout(); navigate('/auth/login'); }}
-            className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 w-full transition-all duration-200"
-          >
-            <LogOut className="w-4 h-4" />
-            {t.dashboard.signOut}
-          </button>
-        </div>
-      </motion.aside>
-    </>
-  );
-};
-
-// ====== CUSTOMER DASHBOARD LAYOUT ======
-export const CustomerDashboardLayout: React.FC = () => {
-  const { user, isAuthenticated } = useAuthStore();
-  const { sidebarOpen, setSidebarOpen, theme } = useUIStore();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!isAuthenticated) navigate('/auth/login');
-    setSidebarOpen(window.innerWidth >= 1024);
-  }, [isAuthenticated]);
-
-  if (!user) return null;
-
-  return (
-    <div className="min-h-screen text-slate-800 dark:text-slate-100 pt-20 transition-colors duration-300 relative overflow-hidden"
-      style={{ background: theme === 'dark' ? 'linear-gradient(135deg, #070B14 0%, #0B1221 50%, #070B14 100%)' : 'linear-gradient(135deg, #F8FAFF 0%, #F0F4FF 50%, #F8FAFF 100%)' }}>
-      <div className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full opacity-20 blur-3xl pointer-events-none"
-        style={{ background: 'radial-gradient(circle, #6366F1 0%, transparent 70%)' }} />
-      <div className="absolute bottom-0 left-1/4 w-96 h-96 rounded-full opacity-15 blur-3xl pointer-events-none"
-        style={{ background: 'radial-gradient(circle, #8B5CF6 0%, transparent 70%)' }} />
-
-      <div className="flex h-[calc(100vh-80px)] relative z-10">
-        <CustomerSidebar />
-        <main className="flex-1 overflow-y-auto">
-          <div className="max-w-5xl mx-auto p-6 lg:p-8">
-            <Outlet />
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
           </div>
-        </main>
+        </aside>
+
+        {/* ============ MAIN CONTENT ============ */}
+        <div className="lw-flex-main gap-0">
+          {/* Dashboard Header Bar */}
+          <header className="p-5 border-b border-[var(--lw-border)] flex items-center justify-between gap-4 bg-[var(--lw-bg-card)] mb-6 -mx-6 -mt-6 px-6">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="p-2 rounded-xl border border-[var(--lw-border)] hover:bg-[var(--lw-bg-secondary)] transition-all lg:hidden"
+                title="Menu"
+              >
+                <Menu className="w-5 h-5 text-[var(--lw-text-secondary)]" />
+              </button>
+              <div className="w-9 h-9 rounded-xl bg-[var(--lw-accent-glow)] border border-[var(--lw-border-strong)] flex items-center justify-center">
+                <LayoutDashboard className="w-4.5 h-4.5 text-[var(--lw-accent)]" />
+              </div>
+              <div>
+                <h1 className="font-bold text-base tracking-tight text-[var(--lw-text-primary)]">
+                  {t.dashboard.overview}
+                </h1>
+                <p className="text-[10px] text-[var(--lw-accent)] font-semibold uppercase tracking-widest">
+                  Customer Portal
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="hidden md:flex items-center gap-2 px-3.5 py-2 border border-[var(--lw-border)] rounded-xl bg-[var(--lw-bg-secondary)]">
+                <Clock className="w-3.5 h-3.5 text-[var(--lw-accent)]" />
+                <span className="text-[10px] font-semibold text-[var(--lw-text-secondary)]">
+                  {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                </span>
+              </div>
+            </div>
+          </header>
+
+          <main className="flex-1">
+            <Outlet />
+          </main>
+        </div>
       </div>
     </div>
   );
@@ -202,7 +263,6 @@ export const CustomerOverview: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const t = useT();
-  const isVi = t.common.loading.includes('Đang');
 
   useEffect(() => {
     if (!user) return;
@@ -223,19 +283,16 @@ export const CustomerOverview: React.FC = () => {
     spent: bookings.filter(b => b.status === 'completed').reduce((sum, b) => sum + b.pricing.total, 0),
   };
 
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-
   const statCards = [
-    { label: t.dashboard.totalBookings, value: stats.total, icon: Calendar, color: '#6366F1', glow: 'rgba(99,102,241,0.3)', sub: t.dashboard.totalBookingsChange },
-    { label: t.dashboard.activeRentals, value: stats.active, icon: Car, color: '#10B981', glow: 'rgba(16,185,129,0.3)', sub: t.dashboard.activeRentalsDesc },
-    { label: t.dashboard.completedTrips, value: stats.completed, icon: CheckCircle, color: '#F59E0B', glow: 'rgba(245,158,11,0.3)', sub: t.dashboard.completedTripsDesc },
-    { label: t.dashboard.totalSpent, value: formatCurrency(stats.spent), icon: CreditCard, color: '#EC4899', glow: 'rgba(236,72,153,0.3)', sub: t.dashboard.totalSpentDesc, isStr: true },
+    { label: t.dashboard.totalBookings, value: stats.total, icon: Calendar, color: '#2563EB', glow: 'rgba(37,99,235,0.2)', sub: t.dashboard.totalBookingsChange },
+    { label: t.dashboard.activeRentals, value: stats.active, icon: Car, color: '#10B981', glow: 'rgba(16,185,129,0.2)', sub: t.dashboard.activeRentalsDesc },
+    { label: t.dashboard.completedTrips, value: stats.completed, icon: CheckCircle, color: '#F59E0B', glow: 'rgba(245,158,11,0.2)', sub: t.dashboard.completedTripsDesc },
+    { label: t.dashboard.totalSpent, value: formatCurrency(stats.spent), icon: CreditCard, color: '#EC4899', glow: 'rgba(236,72,153,0.2)', sub: t.dashboard.totalSpentDesc, isStr: true },
   ];
 
   const statusStyle: Record<string, { bg: string; text: string }> = {
     pending: { bg: 'rgba(245,158,11,0.15)', text: '#F59E0B' },
-    confirmed: { bg: 'rgba(99,102,241,0.15)', text: '#818CF8' },
+    confirmed: { bg: 'rgba(37,99,235,0.15)', text: '#2563EB' },
     active: { bg: 'rgba(16,185,129,0.15)', text: '#10B981' },
     completed: { bg: 'rgba(16,185,129,0.15)', text: '#10B981' },
     cancelled: { bg: 'rgba(239,68,68,0.15)', text: '#EF4444' },
@@ -248,24 +305,21 @@ export const CustomerOverview: React.FC = () => {
         {/* Hero Featured Vehicle Card */}
         <motion.div
           variants={fadeUp} initial="hidden" animate="visible"
-          className="lg:col-span-3 relative rounded-3xl overflow-hidden min-h-[260px] shadow-2xl"
-          style={{ boxShadow: '0 25px 60px rgba(0,0,0,0.5)' }}
+          className="lg:col-span-3 relative rounded-3xl overflow-hidden min-h-[260px] shadow-lg"
         >
           <img
             src="https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=900&q=80"
             alt="Featured luxury car"
             className="absolute inset-0 w-full h-full object-cover"
           />
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(7,11,20,0.92) 0%, rgba(7,11,20,0.55) 55%, rgba(7,11,20,0.20) 100%)' }} />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(7,11,20,0.85) 0%, rgba(7,11,20,0.45) 55%, rgba(7,11,20,0.10) 100%)' }} />
 
           <div className="absolute top-4 left-4">
-            <span className="text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg"
-              style={{ background: 'rgba(99,102,241,0.85)', color: '#fff' }}>✨ Recommended For You</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg bg-[var(--lw-accent)] text-white">✨ Recommended For You</span>
           </div>
 
           <div className="absolute top-4 right-4 flex gap-2">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl"
-              style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 border border-white/20 backdrop-blur-md">
               <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
               <span className="text-[10px] font-bold text-white">Available</span>
             </div>
@@ -274,26 +328,25 @@ export const CustomerOverview: React.FC = () => {
           <div className="absolute bottom-0 left-0 right-0 p-6">
             <div className="flex items-end justify-between gap-4">
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold mb-1 flex items-center gap-1.5" style={{ color: 'rgba(148,163,184,0.9)' }}>
+                <p className="text-xs font-semibold mb-1 flex items-center gap-1.5 text-slate-300">
                   📍 Ho Chi Minh City, Vietnam
                 </p>
                 <h2 className="text-2xl font-extrabold text-white leading-tight tracking-tight">Ferrari F8 Tributo</h2>
-                <p className="text-xl font-extrabold mt-1" style={{ color: '#EAB308' }}>
+                <p className="text-xl font-extrabold mt-1 text-yellow-400">
                   {formatCurrency(8500000)}
-                  <span className="text-sm font-semibold ml-1" style={{ color: 'rgba(255,255,255,0.4)' }}>/day</span>
+                  <span className="text-sm font-semibold ml-1 text-white/55">/day</span>
                 </p>
               </div>
               <div className="flex flex-col gap-2 flex-shrink-0">
                 <Link to="/marketplace"
-                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-white transition-all"
-                  style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)', boxShadow: '0 4px 15px rgba(99,102,241,0.4)' }}
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-white transition-all bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md shadow-blue-500/20"
                 >
                   Book Now
                 </Link>
                 <div className="flex items-center gap-1 justify-center">
                   <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
                   <span className="text-xs font-bold text-white">5.0</span>
-                  <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.4)' }}>(128)</span>
+                  <span className="text-[10px] text-white/60">(128)</span>
                 </div>
               </div>
             </div>
@@ -309,22 +362,21 @@ export const CustomerOverview: React.FC = () => {
             <motion.div
               key={stat.label}
               variants={staggerItem}
-              whileHover={{ y: -3, boxShadow: `0 15px 35px ${stat.glow}` }}
-              className="rounded-2xl p-4 cursor-default transition-all duration-300 relative overflow-hidden"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+              whileHover={{ y: -3 }}
+              className="lw-stat-card cursor-default hover:shadow-xl hover:shadow-[var(--lw-accent-glow)] transition-all duration-300"
             >
-              <div className="absolute top-0 right-0 w-14 h-14 rounded-full -translate-y-1/2 translate-x-1/2 opacity-40 blur-xl pointer-events-none"
+              <div className="absolute top-0 right-0 w-14 h-14 rounded-full -translate-y-1/2 translate-x-1/2 opacity-20 blur-xl pointer-events-none"
                 style={{ background: stat.color }} />
               <div className="relative z-10">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3"
-                  style={{ background: `${stat.color}22`, border: `1px solid ${stat.color}33` }}>
+                <div className="stat-icon"
+                  style={{ background: `${stat.color}15`, border: `1px solid ${stat.color}25` }}>
                   <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
                 </div>
-                <p className="text-xl font-extrabold text-white tracking-tight leading-none">
+                <p className="stat-value">
                   {loading ? '—' : stat.value}
                 </p>
-                <p className="text-[10px] font-semibold uppercase tracking-wider mt-1.5" style={{ color: 'rgba(148,163,184,0.7)' }}>{stat.label}</p>
-                <p className="text-[10px] mt-1 font-medium" style={{ color: 'rgba(148,163,184,0.5)' }}>{stat.sub}</p>
+                <p className="stat-label">{stat.label}</p>
+                <p className="stat-sub">{stat.sub}</p>
               </div>
             </motion.div>
           ))}
@@ -332,20 +384,19 @@ export const CustomerOverview: React.FC = () => {
           {/* Quick links card */}
           <motion.div
             variants={staggerItem}
-            className="col-span-2 rounded-2xl p-4"
-            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+            className="col-span-2 rounded-2xl p-4 bg-[var(--lw-bg-card)] border border-[var(--lw-border)]"
           >
-            <p className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{ color: 'rgba(148,163,184,0.5)' }}>Quick Actions</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest mb-3 text-[var(--lw-text-muted)]">Quick Actions</p>
             <div className="flex gap-2 flex-wrap">
               {[
-                { label: 'Explore Cars', href: '/marketplace', color: '#6366F1' },
+                { label: 'Explore Cars', href: '/marketplace', color: '#2563EB' },
                 { label: 'Explore Motorbikes', href: '/motorbikes', color: '#8B5CF6' },
                 { label: 'My Bookings', href: '/dashboard/bookings', color: '#F59E0B' },
                 { label: 'My Profile', href: '/dashboard/profile', color: '#10B981' },
               ].map(q => (
                 <Link key={q.label} to={q.href}
-                  className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all"
-                  style={{ background: `${q.color}18`, color: q.color, border: `1px solid ${q.color}30` }}
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all hover:scale-105"
+                  style={{ background: `${q.color}12`, color: q.color, border: `1px solid ${q.color}25` }}
                 >
                   {q.label}
                 </Link>
@@ -360,27 +411,25 @@ export const CustomerOverview: React.FC = () => {
         {/* Recent Bookings */}
         <motion.div
           variants={fadeUp} initial="hidden" animate="visible"
-          className="lg:col-span-2 rounded-3xl p-5"
-          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
+          className="lg:col-span-2 rounded-3xl p-5 bg-[var(--lw-bg-card)] border border-[var(--lw-border)]"
         >
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-white text-sm">{t.dashboard.recentBookings}</h3>
-            <Link to="/dashboard/bookings" className="text-xs font-bold" style={{ color: '#818CF8' }}>{t.dashboard.viewAll} →</Link>
+            <h3 className="font-bold text-[var(--lw-text-primary)] text-sm">{t.dashboard.recentBookings}</h3>
+            <Link to="/dashboard/bookings" className="text-xs font-bold text-[var(--lw-accent)]">{t.dashboard.viewAll} →</Link>
           </div>
 
           {loading ? (
             <div className="space-y-3">
               {[1, 2, 3].map(i => (
-                <div key={i} className="h-16 rounded-2xl animate-pulse" style={{ background: 'rgba(255,255,255,0.04)' }} />
+                <div key={i} className="h-16 rounded-2xl animate-pulse bg-[var(--lw-bg-secondary)]" />
               ))}
             </div>
           ) : bookings.length === 0 ? (
             <div className="text-center py-12">
-              <Calendar className="w-10 h-10 mx-auto mb-3" style={{ color: 'rgba(148,163,184,0.3)' }} />
-              <p className="text-sm font-medium mb-4" style={{ color: 'rgba(148,163,184,0.5)' }}>{t.dashboard.noBookings}</p>
+              <Calendar className="w-10 h-10 mx-auto mb-3 text-[var(--lw-text-muted)]" />
+              <p className="text-sm font-medium mb-4 text-[var(--lw-text-secondary)]">{t.dashboard.noBookings}</p>
               <Link to="/marketplace"
-                className="px-5 py-2.5 rounded-xl text-xs font-bold text-white"
-                style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)' }}>
+                className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-[var(--lw-accent)] hover:bg-[var(--lw-accent-alt)] transition-colors">
                 {t.dashboard.exploreVehicles}
               </Link>
             </div>
@@ -392,23 +441,21 @@ export const CustomerOverview: React.FC = () => {
                   <motion.div
                     key={booking.id}
                     whileHover={{ x: 3 }}
-                    className="flex items-center gap-3 p-3.5 rounded-2xl transition-all duration-200"
-                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+                    className="flex items-center gap-3 p-3.5 rounded-2xl transition-all duration-200 bg-[var(--lw-bg-secondary)] border border-[var(--lw-border)] hover:bg-[var(--lw-bg-card-hover)]"
                   >
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                      style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                      <Car className="w-5 h-5" style={{ color: 'rgba(148,163,184,0.6)' }} />
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-[var(--lw-bg-card)] border border-[var(--lw-border)]">
+                      <Car className="w-5 h-5 text-[var(--lw-text-secondary)]" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-white truncate">Booking #{booking.id.slice(-6).toUpperCase()}</p>
-                      <p className="text-[11px] mt-0.5" style={{ color: 'rgba(148,163,184,0.6)' }}>
+                      <p className="text-sm font-bold text-[var(--lw-text-primary)] truncate">Booking #{booking.id.slice(-6).toUpperCase()}</p>
+                      <p className="text-[11px] mt-0.5 text-[var(--lw-text-secondary)]">
                         {formatDate(booking.startDate)} → {formatDate(booking.endDate)}
                       </p>
                     </div>
                     <div className="text-right flex-shrink-0">
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg block mb-1"
                         style={{ background: st.bg, color: st.text }}>{booking.status}</span>
-                      <p className="text-xs font-bold text-white">{formatCurrency(booking.pricing.total)}</p>
+                      <p className="text-xs font-bold text-[var(--lw-text-primary)]">{formatCurrency(booking.pricing.total)}</p>
                     </div>
                   </motion.div>
                 );
@@ -420,37 +467,36 @@ export const CustomerOverview: React.FC = () => {
         {/* Notifications */}
         <motion.div
           variants={fadeUp} initial="hidden" animate="visible"
-          className="rounded-3xl p-5 flex flex-col"
-          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
+          className="rounded-3xl p-5 flex flex-col bg-[var(--lw-bg-card)] border border-[var(--lw-border)]"
         >
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-white text-sm">{t.dashboard.notifications}</h3>
-            <Link to="/dashboard/notifications" className="text-xs font-bold" style={{ color: '#818CF8' }}>{t.dashboard.viewAll}</Link>
+            <h3 className="font-bold text-[var(--lw-text-primary)] text-sm">{t.dashboard.notifications}</h3>
+            <Link to="/dashboard/notifications" className="text-xs font-bold text-[var(--lw-accent)]">{t.dashboard.viewAll}</Link>
           </div>
           <div className="space-y-3 overflow-y-auto flex-1 max-h-[340px] pr-1 sidebar-scroll">
             {notifications.length === 0 ? (
               <div className="text-center py-12 my-auto">
-                <Bell className="w-10 h-10 mx-auto mb-3" style={{ color: 'rgba(148,163,184,0.2)' }} />
-                <p className="text-xs font-medium" style={{ color: 'rgba(148,163,184,0.4)' }}>{t.dashboard.noNotifications}</p>
+                <Bell className="w-10 h-10 mx-auto mb-3 text-[var(--lw-text-muted)]" />
+                <p className="text-xs font-medium text-[var(--lw-text-secondary)]">{t.dashboard.noNotifications}</p>
               </div>
             ) : (
               notifications.map(notif => (
                 <div key={notif.id}
                   className="p-3.5 rounded-2xl transition-all duration-200"
                   style={{
-                    background: !notif.read ? 'rgba(99,102,241,0.08)' : 'rgba(255,255,255,0.02)',
-                    border: `1px solid ${!notif.read ? 'rgba(99,102,241,0.20)' : 'rgba(255,255,255,0.05)'}`,
+                    background: !notif.read ? 'var(--lw-accent-glow)' : 'var(--lw-bg-secondary)',
+                    border: `1px solid ${!notif.read ? 'var(--lw-border-strong)' : 'var(--lw-border)'}`,
                   }}
                 >
                   {!notif.read && (
                     <div className="flex items-center gap-1.5 mb-1.5">
-                      <div className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-                      <span className="text-[9px] font-bold uppercase tracking-wider text-indigo-400">New</span>
+                      <div className="w-1.5 h-1.5 rounded-full bg-[var(--lw-accent)]" />
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--lw-accent)]">New</span>
                     </div>
                   )}
-                  <p className="font-bold text-xs text-white">{translateNotification(notif.title)}</p>
-                  <p className="text-[11px] mt-0.5 leading-relaxed line-clamp-2" style={{ color: 'rgba(148,163,184,0.7)' }}>{translateNotification(notif.body)}</p>
-                  <p className="text-[9px] mt-2" style={{ color: 'rgba(148,163,184,0.4)' }}>{formatDate(notif.createdAt, 'relative')}</p>
+                  <p className="font-bold text-xs text-[var(--lw-text-primary)]">{translateNotification(notif.title)}</p>
+                  <p className="text-[11px] mt-0.5 leading-relaxed line-clamp-2 text-[var(--lw-text-secondary)]">{translateNotification(notif.body)}</p>
+                  <p className="text-[9px] mt-2 text-[var(--lw-text-muted)]">{formatDate(notif.createdAt, 'relative')}</p>
                 </div>
               ))
             )}
@@ -488,103 +534,232 @@ export const MyBookingsPage: React.FC = () => {
     }
   };
 
+  const breadcrumbItems = [
+    { label: t.marketplace.home, href: '/' },
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: t.dashboard.myBookings }
+  ];
+  const statusConfig: Record<string, { bg: string; color: string; border: string; label: string }> = {
+    pending: { bg: 'rgba(245,158,11,0.12)', color: '#F59E0B', border: 'rgba(245,158,11,0.3)', label: 'PENDING' },
+    confirmed: { bg: 'rgba(37,99,235,0.12)', color: '#2563EB', border: 'rgba(37,99,235,0.3)', label: 'CONFIRMED' },
+    active: { bg: 'rgba(16,185,129,0.12)', color: '#10B981', border: 'rgba(16,185,129,0.3)', label: 'ACTIVE' },
+    completed: { bg: 'rgba(16,185,129,0.12)', color: '#10B981', border: 'rgba(16,185,129,0.3)', label: 'COMPLETED' },
+    cancelled: { bg: 'rgba(239,68,68,0.12)', color: '#EF4444', border: 'rgba(239,68,68,0.3)', label: 'CANCELLED' },
+  };
+
+  const filterDefs = [
+    { key: 'all', label: 'All' },
+    { key: 'pending', label: 'Pending' },
+    { key: 'confirmed', label: 'Confirmed' },
+    { key: 'active', label: 'Active' },
+    { key: 'completed', label: 'Completed' },
+    { key: 'cancelled', label: 'Cancelled' },
+  ];
+
+  const countFor = (key: string) => key === 'all' ? bookings.length : bookings.filter(b => b.status === key).length;
+
   return (
-    <div className="space-y-6 animate-fade-in">
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-6">
+      {/* ── Header row ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="font-display text-2.5xl font-extrabold text-slate-800 dark:text-white">{t.dashboard.myBookings}</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-xs font-medium mt-0.5">{t.dashboard.myBookingsDesc}</p>
+          <Breadcrumbs title={t.dashboard.myBookings} items={breadcrumbItems} backHref="/dashboard" backText="Dashboard" className="mb-1" />
         </div>
+        {/* Book a New Car CTA */}
+        <Link
+          to="/marketplace"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-all duration-200 flex-shrink-0"
+          style={{
+            background: 'linear-gradient(135deg, var(--lw-accent), var(--lw-accent-alt))',
+            color: '#fff',
+            boxShadow: '0 4px 20px var(--lw-accent-glow)',
+          }}
+        >
+          <Car className="w-4 h-4" />
+          Book a New Car
+        </Link>
+      </div>
 
-        {/* Sleek Horizontal Filter Pills */}
-        <div className="flex gap-2 overflow-x-auto pb-1 max-w-full">
-          {['all', 'pending', 'confirmed', 'active', 'completed', 'cancelled'].map(status => (
+      {/* ── Filter pills ── */}
+      <div className="flex gap-2 overflow-x-auto p-2 rounded-2xl bg-[var(--lw-bg-card)] border border-[var(--lw-border)]" style={{ scrollbarWidth: 'none' }}>
+        {filterDefs.map(f => {
+          const active = filter === f.key;
+          const count = countFor(f.key);
+          return (
             <button
-              key={status}
-              onClick={() => setFilter(status)}
-              className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap border transition-all duration-300 ${filter === status
-                  ? 'border-accent bg-blue-500/10 text-accent shadow-sm'
-                  : 'border-slate-200/50 dark:border-white/5 text-slate-500 dark:text-slate-400 bg-slate-500/5 hover:border-slate-300 dark:hover:border-white/10'
-                }`}
+              key={f.key}
+              onClick={() => setFilter(f.key)}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200 flex-shrink-0"
+              style={active ? {
+                background: 'var(--lw-accent-glow)',
+                color: 'var(--lw-accent)',
+                border: '1px solid var(--lw-border-strong)',
+                boxShadow: '0 4px 12px var(--lw-accent-glow)',
+              } : {
+                background: 'var(--lw-bg-secondary)',
+                color: 'var(--lw-text-secondary)',
+                border: '1px solid var(--lw-border)',
+              }}
             >
-              {status.charAt(0).toUpperCase() + status.slice(1)}
-              {status === 'all' && ` (${bookings.length})`}
+              {f.label}
+              <span
+                className="text-[10px] font-black px-1.5 py-0.5 rounded-full"
+                style={active ? { background: 'var(--lw-border-strong)', color: 'var(--lw-accent)' } : { background: 'var(--lw-border)', color: 'var(--lw-text-muted)' }}
+              >
+                {count}
+              </span>
             </button>
-          ))}
-        </div>
-      </motion.div>
+          );
+        })}
+      </div>
 
+      {/* ── Content ── */}
       {loading ? (
-        <TableSkeleton rows={5} />
+        <TableSkeleton rows={4} />
       ) : filtered.length === 0 ? (
-        <div className="glass border border-slate-200/50 dark:border-white/5 text-center py-16 rounded-[2rem]">
-          <Package className="w-12 h-12 text-slate-300 dark:text-slate-700 mx-auto mb-3" />
-          <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-1">{t.dashboard.noBookingsStatus}</h3>
-          <p className="text-slate-400 text-xs font-medium mb-5">{t.dashboard.noBookingsDesc}</p>
-          <Link to="/marketplace" className="btn-gold text-xs font-bold px-6 py-3 rounded-xl">{t.dashboard.exploreVehicles}</Link>
+        <div className="flex flex-col items-center justify-center text-center py-20 rounded-3xl bg-[var(--lw-bg-card)] border border-[var(--lw-border)]">
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5 bg-[var(--lw-accent-glow)] border border-[var(--lw-border-strong)]">
+            <Calendar className="w-8 h-8 text-[var(--lw-accent)]" />
+          </div>
+          <h3 className="text-base font-bold text-[var(--lw-text-primary)] mb-2">{t.dashboard.noBookingsStatus}</h3>
+          <p className="text-sm mb-6 max-w-xs text-[var(--lw-text-secondary)]">{t.dashboard.noBookingsDesc}</p>
+          <Link to="/marketplace"
+            className="px-6 py-3 rounded-xl text-sm font-bold text-white transition-all"
+            style={{ background: 'linear-gradient(135deg, var(--lw-accent), var(--lw-accent-alt))', boxShadow: '0 6px 20px var(--lw-accent-glow)' }}>
+            {t.dashboard.exploreVehicles}
+          </Link>
         </div>
       ) : (
-        <motion.div
-          variants={staggerContainer}
-          initial="hidden"
-          animate="visible"
-          className="space-y-4"
-        >
-          {filtered.map(booking => (
-            <motion.div key={booking.id} variants={staggerItem} className="glass border border-slate-200/50 dark:border-white/5 p-5 rounded-[2rem] hover-lift hover-glow transition-all duration-300 shadow-sm relative overflow-hidden">
-              <div className="flex flex-col sm:flex-row sm:items-start gap-4 justify-between">
-                <div className="flex items-start gap-4">
-                  <div className="w-14 h-14 bg-slate-500/10 dark:bg-white/5 rounded-2xl flex items-center justify-center flex-shrink-0 border border-slate-200/20 dark:border-white/5">
-                    <Car className="w-7 h-7 text-slate-400 dark:text-slate-300" />
+        <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filtered.map(booking => {
+            const sc = statusConfig[booking.status] || statusConfig['pending'];
+            return (
+              <motion.div
+                key={booking.id}
+                variants={staggerItem}
+                className="rounded-[2rem] p-6 transition-all duration-300 group flex flex-col justify-between relative overflow-hidden bg-[var(--lw-bg-card)] border border-[var(--lw-border)] shadow-md animate-fade-in"
+                whileHover={{ y: -6, boxShadow: '0 20px 40px var(--lw-accent-glow)', borderColor: 'var(--lw-border-strong)' }}
+              >
+                <div>
+                  {/* Status & Booking ID */}
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-base font-extrabold text-[var(--lw-text-primary)] tracking-tight">Booking #{booking.id.slice(-6).toUpperCase()}</h4>
+                    <span className="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full"
+                      style={{ background: sc.bg, color: sc.color, border: `1px solid ${sc.border}` }}>
+                      {sc.label}
+                    </span>
                   </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-3.5 mb-1.5 flex-wrap">
-                      <p className="font-bold text-slate-800 dark:text-white text-sm">Booking #{booking.id.slice(-6).toUpperCase()}</p>
-                      <span className={`badge text-[10px] font-bold uppercase tracking-wider ${getStatusColor(booking.status)}`}>
-                        {booking.status}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold mb-3">
-                      📅 {formatDate(booking.startDate)} → {formatDate(booking.endDate)} · {booking.totalDays} {t.booking.totalDays}
-                    </p>
 
-                    {/* Small stats badges */}
-                    <div className="flex items-center gap-5 flex-wrap">
-                      <div>
-                        <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">{t.dashboard.bookingAmount}</span>
-                        <p className="text-sm font-bold text-slate-800 dark:text-slate-100 mt-0.5">{formatCurrency(booking.pricing.total)}</p>
-                      </div>
-                      <div className="h-6 w-px bg-slate-200/50 dark:bg-white/10" />
-                      <div>
-                        <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">{t.dashboard.refundableDeposit}</span>
-                        <p className="text-sm font-semibold text-slate-600 dark:text-slate-300 mt-0.5">{formatCurrency(booking.pricing.deposit)}</p>
-                      </div>
+                  {/* Dates & Duration */}
+                  <div className="flex items-center gap-2 text-xs font-semibold mb-6 text-[var(--lw-text-secondary)]">
+                    <Car className="w-3.5 h-3.5" />
+                    <Calendar className="w-3.5 h-3.5" />
+                    <span>{formatDate(booking.startDate)} – {formatDate(booking.endDate)} · {booking.totalDays} {t.booking.totalDays}</span>
+                  </div>
+
+                  {/* Amounts 2 Columns */}
+                  <div className="grid grid-cols-2 gap-4 py-4 mb-6" style={{ borderTop: '1px solid var(--lw-border)', borderBottom: '1px solid var(--lw-border)' }}>
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-wider mb-1 text-[var(--lw-text-muted)]">{t.dashboard.bookingAmount}</p>
+                      <p className="text-base font-extrabold text-[var(--lw-text-primary)]">{formatCurrency(booking.pricing.total)}</p>
+                    </div>
+                    <div className="pl-4" style={{ borderLeft: '1px solid var(--lw-border)' }}>
+                      <p className="text-[10px] font-bold uppercase tracking-wider mb-1 text-[var(--lw-text-muted)]">{t.dashboard.refundableDeposit}</p>
+                      <p className="text-base font-extrabold text-[var(--lw-text-primary)]">{formatCurrency(booking.pricing.deposit)}</p>
                     </div>
                   </div>
                 </div>
 
-                {/* Actions Panel */}
-                <div className="flex flex-row sm:flex-col gap-2 mt-4 sm:mt-0 flex-wrap justify-end">
-                  <Link to={`/vehicles/${booking.vehicleId}`} className="btn-ghost text-xs px-4 py-2.5 border border-slate-200 dark:border-white/10 rounded-xl hover:bg-slate-500/5 transition-all text-slate-600 dark:text-slate-300 font-bold">
+                {/* Action buttons */}
+                <div className="grid grid-cols-2 gap-3 mt-auto">
+                  <Link
+                    to={`/vehicles/${booking.vehicleId}`}
+                    className={cn(
+                      "py-2.5 rounded-xl text-xs font-bold text-center transition-all duration-200 flex items-center justify-center",
+                      ((booking.status !== 'completed' && booking.status !== 'pending' && booking.status !== 'confirmed' && booking.status !== 'active') || (booking.status === 'completed' && booking.reviewId))
+                        ? "col-span-2"
+                        : ""
+                    )}
+                    style={{
+                      background: 'var(--lw-bg-secondary)',
+                      color: 'var(--lw-accent)',
+                      border: '1px solid var(--lw-border)',
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.background = 'var(--lw-accent-glow)';
+                      e.currentTarget.style.borderColor = 'var(--lw-border-strong)';
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.background = 'var(--lw-bg-secondary)';
+                      e.currentTarget.style.borderColor = 'var(--lw-border)';
+                    }}
+                  >
                     {t.dashboard.viewVehicle}
                   </Link>
+
+                  {booking.status === 'active' && (
+                    <Link
+                      to={`/dashboard/bookings/${booking.id}/tracking`}
+                      className="py-2.5 rounded-xl text-xs font-bold text-center transition-all duration-200 flex items-center justify-center gap-1.5"
+                      style={{
+                        background: 'linear-gradient(135deg, #10B981, #059669)',
+                        color: '#fff',
+                        boxShadow: '0 4px 15px rgba(16,185,129,0.3)',
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.filter = 'brightness(1.1)';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.filter = 'none';
+                      }}
+                    >
+                      <Navigation className="w-3.5 h-3.5 transform rotate-45" />
+                      Track Delivery
+                    </Link>
+                  )}
+
+                  {booking.status === 'completed' && !booking.reviewId && (
+                    <button
+                      className="py-2.5 rounded-xl text-xs font-bold text-center transition-all duration-200"
+                      style={{
+                        background: 'linear-gradient(135deg, #F59E0B, #FBBF24)',
+                        color: '#0B0E17',
+                        boxShadow: '0 4px 15px rgba(245,158,11,0.3)',
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.filter = 'brightness(1.1)';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.filter = 'none';
+                      }}
+                    >
+                      {t.dashboard.leaveReview}
+                    </button>
+                  )}
+
                   {(booking.status === 'pending' || booking.status === 'confirmed') && (
                     <button
                       onClick={() => handleCancel(booking.id)}
-                      className="text-xs font-bold px-4 py-2.5 text-red-500 hover:bg-red-500/10 rounded-xl border border-red-200/50 dark:border-red-500/20 transition-all"
+                      className="py-2.5 rounded-xl text-xs font-bold text-center transition-all duration-200"
+                      style={{
+                        background: 'rgba(239,68,68,0.1)',
+                        color: '#EF4444',
+                        border: '1px solid rgba(239,68,68,0.2)',
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.background = 'rgba(239,68,68,0.2)';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.background = 'rgba(239,68,68,0.1)';
+                      }}
                     >
                       {t.dashboard.cancelBooking}
                     </button>
                   )}
-                  {booking.status === 'completed' && !booking.reviewId && (
-                    <button className="btn-gold text-xs font-bold px-4 py-2.5 rounded-xl">
-                      {t.dashboard.leaveReview}
-                    </button>
-                  )}
                 </div>
-              </div>
-            </motion.div>
-          ))}`
+              </motion.div>
+            );
+          })}
         </motion.div>
       )}
     </div>
@@ -621,21 +796,21 @@ export const ProfilePage: React.FC = () => {
     toast.success(t.dashboard.profileUpdated, t.dashboard.profileUpdatedDesc);
   };
 
+  const breadcrumbItems = [
+    { label: t.marketplace.home, href: '/' },
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: t.dashboard.profile }
+  ];
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <motion.h1 variants={fadeUp} initial="hidden" animate="visible" className="font-display text-2.5xl font-extrabold text-slate-800 dark:text-white">
-        {t.dashboard.myProfile}
-      </motion.h1>
+      <Breadcrumbs title={t.dashboard.myProfile} items={breadcrumbItems} backHref="/dashboard" backText="Back to Dashboard" />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Avatar Card */}
         <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] text-center shadow-sm flex flex-col items-center">
           <div className="relative inline-block mb-4">
-            {user?.avatar ? (
-              <img src={user.avatar} alt="" className="w-24 h-24 rounded-3xl object-cover mx-auto ring-4 ring-gold/20" />
-            ) : (
-              <div className="avatar w-24 h-24 rounded-3xl text-2xl mx-auto font-bold bg-gradient-to-br from-gold to-yellow-500 text-slate-900">{getInitials(user?.displayName || '')}</div>
-            )}
+            <Avatar src={user?.avatar} name={user?.displayName || ''} size="xl" className="mx-auto ring-4 ring-gold/20" />
             <button className="absolute -bottom-1 -right-1 w-8 h-8 bg-accent text-white rounded-xl flex items-center justify-center text-xs shadow-md shadow-blue-500/30">✏️</button>
           </div>
           <h3 className="font-display text-xl font-bold text-slate-800 dark:text-white mt-2">{user?.displayName}</h3>
@@ -735,11 +910,15 @@ export const SecurityPage: React.FC = () => {
     toast.success(t.dashboard.passwordSuccess, t.dashboard.passwordSuccessDesc);
   };
 
+  const breadcrumbItems = [
+    { label: t.marketplace.home, href: '/' },
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: t.dashboard.security }
+  ];
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <motion.h1 variants={fadeUp} initial="hidden" animate="visible" className="font-display text-2.5xl font-extrabold text-slate-800 dark:text-white">
-        {t.dashboard.securitySettings}
-      </motion.h1>
+      <Breadcrumbs title={t.dashboard.securitySettings} items={breadcrumbItems} backHref="/dashboard" backText="Back to Dashboard" />
       <div className="space-y-6">
         {/* Change Password */}
         <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm">
@@ -838,18 +1017,36 @@ export const DocumentsPage: React.FC = () => {
   const { user } = useAuthStore();
   const toast = useToast();
   const t = useT();
-  
+
   const [backendDocs, setBackendDocs] = React.useState<any[]>([]);
   const [loadingDocs, setLoadingDocs] = React.useState(true);
   const [uploading, setUploading] = React.useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [selectedDocId, setSelectedDocId] = React.useState<string | null>(null);
+  const [localPreviews, setLocalPreviews] = React.useState<Record<string, string>>({});
+  const localPreviewsRef = React.useRef<Record<string, string>>({});
+  const [deletingDocId, setDeletingDocId] = React.useState<string | null>(null);
+  const [deletedDrivingLicense, setDeletedDrivingLicense] = React.useState(false);
+
+  const apiBaseUrl = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8080/api/v1';
+  const resolveDocumentUrl = (url?: string) => {
+    if (!url) return '';
+    if (url.startsWith('blob:') || url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+      return url;
+    }
+    return `${apiBaseUrl}${url}`;
+  };
+
+  const isPdfDocument = (url?: string) => Boolean(url && !url.startsWith('blob:') && url.toLowerCase().endsWith('.pdf'));
 
   const fetchDocuments = React.useCallback(async () => {
     if (!user) return;
     try {
       const data = await apiClient.get<any[]>('/users/documents');
       setBackendDocs(data || []);
+      if ((data || []).some(doc => doc.documentType === 'DRIVING_LICENSE')) {
+        setDeletedDrivingLicense(false);
+      }
     } catch (err) {
       console.error('Failed to fetch documents', err);
     } finally {
@@ -860,6 +1057,14 @@ export const DocumentsPage: React.FC = () => {
   React.useEffect(() => {
     fetchDocuments();
   }, [fetchDocuments]);
+
+  React.useEffect(() => {
+    localPreviewsRef.current = localPreviews;
+  }, [localPreviews]);
+
+  React.useEffect(() => () => {
+    Object.values(localPreviewsRef.current).forEach(url => URL.revokeObjectURL(url));
+  }, []);
 
   const getDocInfo = (docId: string) => {
     let matched: any = null;
@@ -875,21 +1080,73 @@ export const DocumentsPage: React.FC = () => {
 
     if (matched) {
       return {
+        id: matched.id,
         status: matched.status.toLowerCase(),
         reason: matched.rejectionReason,
-        url: matched.url
+        url: localPreviews[docId] || matched.url,
+        savedUrl: matched.url,
+        licenseClass: matched.licenseClass,
+        licenseNumber: matched.licenseNumber,
+        licenseFullName: matched.licenseFullName,
+        licenseDateOfBirth: matched.licenseDateOfBirth,
+        licenseResidence: matched.licenseResidence,
+        licenseNationality: matched.licenseNationality,
+        isLocalPreview: Boolean(localPreviews[docId])
+      };
+    }
+
+    if (localPreviews[docId]) {
+      return {
+        id: undefined,
+        status: 'pending',
+        reason: undefined,
+        url: localPreviews[docId],
+        savedUrl: undefined,
+        licenseClass: undefined,
+        licenseNumber: undefined,
+        licenseFullName: undefined,
+        licenseDateOfBirth: undefined,
+        licenseResidence: undefined,
+        licenseNationality: undefined,
+        isLocalPreview: true
       };
     }
 
     // Fallback using user attributes
-    if (docId === 'license' && user?.drivingLicenseVerified) {
-      return { status: 'verified', reason: undefined };
+    if (docId === 'license' && user?.drivingLicenseVerified && !deletedDrivingLicense) {
+      return {
+        id: undefined,
+        status: 'verified',
+        reason: undefined,
+        url: undefined,
+        savedUrl: undefined,
+        licenseClass: user?.licenseClass,
+        licenseNumber: user?.licenseNumber,
+        licenseFullName: undefined,
+        licenseDateOfBirth: undefined,
+        licenseResidence: undefined,
+        licenseNationality: undefined,
+        isLocalPreview: false
+      };
     }
     if (docId === 'id_card' && user?.kycVerified) {
-      return { status: 'verified', reason: undefined };
+      return { id: undefined, status: 'verified', reason: undefined, url: undefined, savedUrl: undefined, isLocalPreview: false };
     }
 
-    return { status: 'not_uploaded', reason: undefined };
+    return {
+      id: undefined,
+      status: 'not_uploaded',
+      reason: undefined,
+      url: undefined,
+      savedUrl: undefined,
+      licenseClass: undefined,
+      licenseNumber: undefined,
+      licenseFullName: undefined,
+      licenseDateOfBirth: undefined,
+      licenseResidence: undefined,
+      licenseNationality: undefined,
+      isLocalPreview: false
+    };
   };
 
   const triggerFileInput = (docId: string) => {
@@ -912,6 +1169,13 @@ export const DocumentsPage: React.FC = () => {
     formData.append('file', file);
     formData.append('documentType', documentType);
 
+    if (selectedDocId !== 'license') {
+      const previewUrl = URL.createObjectURL(file);
+      setLocalPreviews(prev => {
+        if (prev[selectedDocId]) URL.revokeObjectURL(prev[selectedDocId]);
+        return { ...prev, [selectedDocId]: previewUrl };
+      });
+    }
     setUploading(selectedDocId);
     try {
       await apiClient.post<any>('/users/documents', formData, {
@@ -919,17 +1183,65 @@ export const DocumentsPage: React.FC = () => {
           'Content-Type': 'multipart/form-data',
         },
       });
+      if (selectedDocId === 'license') {
+        setDeletedDrivingLicense(false);
+      }
       toast.success('Document uploaded!', 'Our team will review it within 24 hours.');
       await fetchDocuments();
+      setLocalPreviews(prev => {
+        const current = prev[selectedDocId];
+        if (current) URL.revokeObjectURL(current);
+        const next = { ...prev };
+        delete next[selectedDocId];
+        return next;
+      });
     } catch (err: any) {
       console.error(err);
-      toast.error('Upload failed', err.response?.data?.error || 'Failed to upload document.');
+      setLocalPreviews(prev => {
+        const current = prev[selectedDocId];
+        if (current) URL.revokeObjectURL(current);
+        const next = { ...prev };
+        delete next[selectedDocId];
+        return next;
+      });
+      toast.error('Upload failed', err.response?.data?.error || err.message || 'Failed to upload document.');
     } finally {
       setUploading(null);
       setSelectedDocId(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
+    }
+  };
+
+  const handleDeleteDrivingLicense = async (documentId?: string) => {
+    if (!documentId) {
+      toast.error('Cannot delete document', 'No saved driving license document was found.');
+      return;
+    }
+
+    const previousDocs = backendDocs;
+    setDeletingDocId(documentId);
+    setBackendDocs(prev => prev.filter(doc => doc.id !== documentId));
+    setDeletedDrivingLicense(true);
+    setLocalPreviews(prev => {
+      const current = prev.license;
+      if (current) URL.revokeObjectURL(current);
+      const next = { ...prev };
+      delete next.license;
+      return next;
+    });
+
+    try {
+      await apiClient.delete(`/users/documents/${documentId}`);
+      toast.success('Driving license deleted', 'You can upload a new driving license anytime.');
+    } catch (err: any) {
+      console.error(err);
+      setBackendDocs(previousDocs);
+      setDeletedDrivingLicense(false);
+      toast.error('Delete failed', err.message || 'Failed to delete driving license.');
+    } finally {
+      setDeletingDocId(null);
     }
   };
 
@@ -945,8 +1257,8 @@ export const DocumentsPage: React.FC = () => {
     if (status === 'pending') return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-yellow-200/20 text-yellow-600 bg-yellow-500/10">{t.dashboard.underReviewDoc}</span>;
     if (status === 'rejected') {
       return (
-        <span 
-          title={reason || 'Rejected'} 
+        <span
+          title={reason || 'Rejected'}
           className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-red-200/20 text-red-600 bg-red-500/10 cursor-help"
         >
           ❌ Rejected {reason ? `: ${reason}` : ''}
@@ -955,6 +1267,12 @@ export const DocumentsPage: React.FC = () => {
     }
     return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-slate-200/30 text-slate-500 bg-slate-500/5">{t.dashboard.notUploadedDoc}</span>;
   };
+
+  const breadcrumbItems = [
+    { label: t.marketplace.home, href: '/' },
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: t.dashboard.documents }
+  ];
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -966,14 +1284,11 @@ export const DocumentsPage: React.FC = () => {
         accept="image/*,application/pdf"
       />
 
-      <motion.div variants={fadeUp} initial="hidden" animate="visible">
-        <h1 className="font-display text-2.5xl font-extrabold text-slate-800 dark:text-white mb-1">{t.dashboard.myDocuments}</h1>
-        <p className="text-slate-500 dark:text-slate-400 text-xs font-semibold">{t.dashboard.myDocumentsDesc}</p>
-      </motion.div>
+      <Breadcrumbs title={t.dashboard.myDocuments} items={breadcrumbItems} backHref="/dashboard" backText="Back to Dashboard" />
 
       <div className={`p-4 rounded-[1.5rem] flex items-center gap-3 border ${user?.verified
-          ? 'bg-green-500/10 border-green-500/20 text-green-800 dark:text-green-300'
-          : 'bg-yellow-500/10 border-yellow-500/20 text-yellow-800 dark:text-yellow-300'
+        ? 'bg-green-500/10 border-green-500/20 text-green-800 dark:text-green-300'
+        : 'bg-yellow-500/10 border-yellow-500/20 text-yellow-800 dark:text-yellow-300'
         }`}>
         {user?.verified ? (
           <><Shield className="w-6 h-6 text-success flex-shrink-0" /><div><p className="font-bold text-sm">{t.dashboard.identityVerified}</p><p className="text-xs opacity-80 mt-0.5">{t.common.success}</p></div></>
@@ -1011,15 +1326,83 @@ export const DocumentsPage: React.FC = () => {
                         {uploading === doc.id ? (<><Clock className="w-3.5 h-3.5 animate-spin" /> {t.dashboard.uploading}</>) : (<><FileText className="w-3.5 h-3.5" /> {t.dashboard.uploadFile}</>)}
                       </motion.button>
                     )}
-                    {docInfo.url && (
-                      <a 
-                        href={`${(import.meta as any).env?.VITE_API_URL || 'http://localhost:8080/api/v1'}${docInfo.url}`} 
-                        target="_blank" 
-                        rel="noreferrer"
-                        className="text-xs text-accent hover:underline mt-2 inline-flex items-center gap-1 font-bold"
-                      >
-                        <Eye className="w-3.5 h-3.5" /> {t.dashboard.viewVehicle || 'View Document'}
-                      </a>
+                    <div className="flex flex-col gap-3 mt-2">
+                      {doc.id !== 'license' && docInfo.url && (
+                        <>
+                          {!docInfo.isLocalPreview && (
+                            <a
+                              href={resolveDocumentUrl(docInfo.url)}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-xs text-accent hover:underline inline-flex items-center gap-1 font-bold"
+                            >
+                              <Eye className="w-3.5 h-3.5" /> {t.dashboard.viewVehicle || 'View Document'}
+                            </a>
+                          )}
+
+                          <div className="mt-1 relative rounded-2xl overflow-hidden border border-slate-200/50 dark:border-white/10 max-w-sm shadow-sm bg-slate-500/5 max-h-56">
+                            {!isPdfDocument(docInfo.url) ? (
+                              <img
+                                src={resolveDocumentUrl(docInfo.url)}
+                                alt={doc.title}
+                                className="w-full h-auto object-cover max-h-56 rounded-2xl transition-all duration-300 hover:scale-105"
+                              />
+                            ) : (
+                              <div className="p-4 flex items-center gap-3">
+                                <span className="text-2xl">📄</span>
+                                <div className="min-w-0">
+                                  <p className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">{docInfo.url.split('/').pop()}</p>
+                                  <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">PDF Document</span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </>
+                      )}
+                      {doc.id === 'license' && docInfo.id && (
+                        <motion.button
+                          whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
+                          onClick={() => handleDeleteDrivingLicense(docInfo.id)}
+                          disabled={deletingDocId === docInfo.id || uploading === doc.id}
+                          className="w-fit border border-red-200/40 bg-red-500/5 text-red-600 dark:text-red-400 text-xs px-4 py-2.5 rounded-xl flex items-center gap-2 disabled:opacity-60 font-bold hover:bg-red-500/10 transition-colors"
+                        >
+                          {deletingDocId === docInfo.id ? (
+                            <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Deleting...</>
+                          ) : (
+                            <><Trash2 className="w-3.5 h-3.5" /> Delete driving license</>
+                          )}
+                        </motion.button>
+                      )}
+                    </div>
+                    {doc.id === 'license' && docInfo.status === 'verified' && (
+                      <div className="mt-3 p-3 bg-slate-500/5 dark:bg-white/5 border border-slate-200/10 dark:border-white/5 rounded-2xl max-w-2xl">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Tên trên bằng lái</span>
+                            <p className="text-sm font-bold text-slate-800 dark:text-slate-100 mt-0.5 break-words">{docInfo.licenseFullName || 'N/A'}</p>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Ngày sinh</span>
+                            <p className="text-sm font-bold text-slate-800 dark:text-slate-100 mt-0.5 break-words">{docInfo.licenseDateOfBirth || 'N/A'}</p>
+                          </div>
+                          <div className="sm:col-span-2">
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Nơi cư trú</span>
+                            <p className="text-sm font-bold text-slate-800 dark:text-slate-100 mt-0.5 break-words">{docInfo.licenseResidence || 'N/A'}</p>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Quốc tịch</span>
+                            <p className="text-sm font-bold text-slate-800 dark:text-slate-100 mt-0.5 break-words">{docInfo.licenseNationality || 'N/A'}</p>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Hạng bằng lái (Class)</span>
+                            <p className="text-sm font-extrabold text-amber-500 dark:text-gold mt-0.5">{docInfo.licenseClass || user?.licenseClass || 'N/A'}</p>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Số bằng lái (No.)</span>
+                            <p className="text-sm font-bold text-slate-800 dark:text-slate-100 mt-0.5">{docInfo.licenseNumber || user?.licenseNumber || 'N/A'}</p>
+                          </div>
+                        </div>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -1065,7 +1448,7 @@ export const PaymentHistoryPage: React.FC = () => {
       const invoiceId = invoice?.id;
       if (invoiceId) {
         const token = localStorage.getItem('luxeway_access_token');
-        const fileRes = await fetch(`http://localhost:8080/api/v1/invoices/download/${invoiceId}`, {
+        const fileRes = await fetch(`http://localhost:8080/invoices/download/${invoiceId}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -1099,14 +1482,15 @@ export const PaymentHistoryPage: React.FC = () => {
     return ['Transaction ID', 'Booking', 'Method', 'Date', 'Amount', 'Status', 'Invoice'];
   };
 
+  const breadcrumbItems = [
+    { label: t.marketplace.home, href: '/' },
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: t.dashboard.payments }
+  ];
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" className="flex items-center justify-between mb-2">
-        <div>
-          <h1 className="font-display text-2.5xl font-extrabold text-slate-800 dark:text-white">{t.dashboard.payments}</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-xs font-semibold mt-0.5">{t.dashboard.paymentHistoryDesc}</p>
-        </div>
-      </motion.div>
+      <Breadcrumbs title={t.dashboard.payments} items={breadcrumbItems} backHref="/dashboard" backText="Back to Dashboard" />
 
       {!loading && paymentData.length > 0 && (
         <div className="grid grid-cols-3 gap-4">
@@ -1152,7 +1536,7 @@ export const PaymentHistoryPage: React.FC = () => {
                     <td className="px-4 py-3.5 text-sm font-extrabold text-slate-800 dark:text-white">{formatCurrency(p.amount)}</td>
                     <td className="px-4 py-3.5"><span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border uppercase tracking-wider ${statusStyle(p.status)}`}>{p.status}</span></td>
                     <td className="px-4 py-3.5">
-                      <button 
+                      <button
                         onClick={() => handleDownloadInvoice(p.bookingId)}
                         className="text-xs text-accent hover:underline font-bold"
                       >
@@ -1200,9 +1584,15 @@ export const SettingsPage: React.FC = () => {
     </div>
   );
 
+  const breadcrumbItems = [
+    { label: t.marketplace.home, href: '/' },
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: t.dashboard.settings }
+  ];
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <motion.h1 variants={fadeUp} initial="hidden" animate="visible" className="font-display text-2.5xl font-extrabold text-slate-800 dark:text-white">{t.dashboard.settings}</motion.h1>
+      <Breadcrumbs title={t.dashboard.settings} items={breadcrumbItems} backHref="/dashboard" backText="Back to Dashboard" />
       <div className="space-y-6">
         <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm">
           <h3 className="font-display text-lg font-bold text-slate-800 dark:text-white mb-1">{t.dashboard.emailNotifications}</h3>
@@ -1231,6 +1621,11 @@ export const SettingsPage: React.FC = () => {
                 <option value="en">English</option>
                 <option value="vi">Tiếng Việt</option>
                 <option value="ja">日本語</option>
+                <option value="ko">한국어</option>
+                <option value="zh">中文</option>
+                <option value="fr">Français</option>
+                <option value="de">Deutsch</option>
+                <option value="es">Español</option>
               </select>
             </div>
             <div>
@@ -1268,15 +1663,29 @@ export const MyReviewsPage: React.FC = () => {
     });
   }, [user]);
 
+  const breadcrumbItems = [
+    { label: t.marketplace.home, href: '/' },
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: t.dashboard.myReviews }
+  ];
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <motion.h1 variants={fadeUp} initial="hidden" animate="visible" className="font-display text-2.5xl font-extrabold text-slate-800 dark:text-white">{t.dashboard.myReviews}</motion.h1>
+      <Breadcrumbs title={t.dashboard.myReviews} items={breadcrumbItems} backHref="/dashboard" backText="Back to Dashboard" />
       {loading ? <TableSkeleton rows={4} /> : reviews.length === 0 ? (
-        <div className="glass border border-slate-200/50 dark:border-white/5 text-center py-16 rounded-[2rem]">
-          <Star className="w-12 h-12 text-slate-300 dark:text-slate-700 mx-auto mb-3" />
-          <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-1">{t.dashboard.noReviewsYet}</h3>
-          <p className="text-slate-400 text-xs font-medium mb-5">{t.dashboard.noReviewsYetDesc}</p>
-          <a href="/marketplace" className="btn-gold text-xs font-bold px-6 py-3 rounded-xl">{t.dashboard.exploreVehicles}</a>
+        <div className="flex flex-col items-center justify-center text-center py-16 px-4 rounded-[2rem] bg-[var(--lw-bg-card)] border border-[var(--lw-border)] shadow-xl max-w-lg mx-auto">
+          <div className="w-16 h-16 rounded-full bg-indigo-500/10 flex items-center justify-center mb-6 border border-indigo-500/20">
+            <Star className="w-8 h-8 text-[var(--lw-accent)]" />
+          </div>
+          <h3 className="text-base font-semibold text-[var(--lw-text-primary)] mb-2 select-none">
+            {t.dashboard.noReviewsYet}
+          </h3>
+          <p className="text-sm text-[var(--lw-text-secondary)] mb-6 max-w-[280px] text-center">
+            {t.dashboard.noReviewsYetDesc}
+          </p>
+          <a href="/marketplace" className="btn-primary bg-[var(--lw-accent)] hover:bg-[var(--lw-accent-alt)] text-white shadow-lg font-bold transition-all px-6 py-3 rounded-xl lw-btn-interactive">
+            {t.dashboard.exploreVehicles}
+          </a>
         </div>
       ) : (
         <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-4">
@@ -1379,13 +1788,15 @@ export const LuxeWalletPage: React.FC = () => {
 
   const balance = user?.walletBalance || 0;
 
+  const breadcrumbItems = [
+    { label: t.marketplace.home, href: '/' },
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: t.wallet.title }
+  ];
+
   return (
     <div className="space-y-8 animate-fade-in">
-      {/* Header */}
-      <motion.div variants={fadeUp} initial="hidden" animate="visible">
-        <h1 className="font-display text-3.5xl font-extrabold text-slate-800 dark:text-white tracking-tight">{t.wallet.title}</h1>
-        <p className="text-slate-500 dark:text-slate-400 text-sm font-semibold mt-1">{t.wallet.subtitle}</p>
-      </motion.div>
+      <Breadcrumbs title={t.wallet.title} items={breadcrumbItems} backHref="/dashboard" backText="Back to Dashboard" />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Columns - Card & Top Up Form */}
@@ -1462,8 +1873,8 @@ export const LuxeWalletPage: React.FC = () => {
                       type="button"
                       onClick={() => handlePresetSelect(amt)}
                       className={`py-2.5 px-1 text-xs rounded-xl border-2 font-bold transition-all duration-300 text-center ${topUpAmount === amt
-                          ? 'border-accent bg-blue-500/10 text-accent font-extrabold shadow-sm'
-                          : 'border-slate-200/50 dark:border-white/5 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-white/15'
+                        ? 'border-accent bg-blue-500/10 text-accent font-extrabold shadow-sm'
+                        : 'border-slate-200/50 dark:border-white/5 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-white/15'
                         }`}
                     >
                       {formatCurrency(amt).replace('₫', '').trim()} ₫
@@ -1510,8 +1921,8 @@ export const LuxeWalletPage: React.FC = () => {
                       type="button"
                       onClick={() => setMethod(m.id as any)}
                       className={`p-4 rounded-[1.5rem] border-2 text-left transition-all duration-300 ${method === m.id
-                          ? 'border-accent bg-blue-500/10'
-                          : 'border-slate-200/50 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/10 bg-slate-500/5'
+                        ? 'border-accent bg-blue-500/10'
+                        : 'border-slate-200/50 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/10 bg-slate-500/5'
                         }`}
                     >
                       <div className="text-2xl mb-1.5">{m.icon}</div>
@@ -1576,10 +1987,10 @@ export const LuxeWalletPage: React.FC = () => {
                 return (
                   <div key={tx.id || idx} className="flex items-start gap-3 pt-4 first:pt-0">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold ${isFailed
-                        ? 'bg-red-500/10 text-danger'
-                        : isTopUp
-                          ? 'bg-green-500/10 text-green-600'
-                          : 'bg-blue-500/10 text-accent'
+                      ? 'bg-red-500/10 text-danger'
+                      : isTopUp
+                        ? 'bg-green-500/10 text-green-600'
+                        : 'bg-blue-500/10 text-accent'
                       }`}>
                       {isFailed ? '✕' : isTopUp ? '↓' : '↑'}
                     </div>
@@ -1593,18 +2004,18 @@ export const LuxeWalletPage: React.FC = () => {
                     </div>
                     <div className="text-right flex-shrink-0">
                       <p className={`text-xs font-extrabold ${isFailed
-                          ? 'text-slate-400 line-through'
-                          : isTopUp
-                            ? 'text-green-600'
-                            : 'text-red-500'
+                        ? 'text-slate-400 line-through'
+                        : isTopUp
+                          ? 'text-green-600'
+                          : 'text-red-500'
                         }`}>
                         {isTopUp ? '+' : '-'}{formatCurrency(tx.amount)}
                       </p>
                       <span className={`text-[8px] font-extrabold uppercase tracking-widest px-1.5 py-0.2 rounded border mt-1 inline-block ${isSuccess
-                          ? 'bg-green-500/10 text-green-600 border-green-200/20'
-                          : isFailed
-                            ? 'bg-red-500/10 text-red-600 border-red-200/20'
-                            : 'bg-yellow-500/10 text-yellow-600 border-yellow-200/20'
+                        ? 'bg-green-500/10 text-green-600 border-green-200/20'
+                        : isFailed
+                          ? 'bg-red-500/10 text-red-600 border-red-200/20'
+                          : 'bg-yellow-500/10 text-yellow-600 border-yellow-200/20'
                         }`}>
                         {tx.status}
                       </span>

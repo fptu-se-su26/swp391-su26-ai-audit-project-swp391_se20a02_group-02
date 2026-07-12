@@ -21,4 +21,6 @@ if (Test-Path $EnvFile) {
 
 # Run backend
 $Jar = "$Root\src\Back_end\target\luxeway-backend-1.0.0.jar"
+Set-Location $Root
 java -jar $Jar --spring.profiles.active=sqlserver
+

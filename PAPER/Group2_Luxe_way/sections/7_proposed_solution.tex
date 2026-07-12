@@ -1,0 +1,155 @@
+\section{Proposed Solution}
+
+\subsection{Overview}
+
+LuxeWay is implemented as a production-grade full-stack web application
+organized into two independently deployable service boundaries: a
+\textbf{React Single-Page Application (SPA)} serving the consumer and
+owner interfaces, and a \textbf{Spring Boot RESTful API} encapsulating
+all business logic, data persistence, and external service integration.
+
+Although blockchain and Smart Contract capabilities identified in the
+literature remain outside the current implementation scope, the
+\textit{design principles} they embody---transactional atomicity, audit
+immutability, automated condition enforcement, and privacy-preserving
+identity management---are realized through analogous mechanisms within
+the conventional stack: database transactions with optimistic locking,
+append-only booking history tables, rule-based pricing automation, and
+JWT-scoped data access.
+
+\subsection{System Architecture}
+
+\subsubsection{Frontend}
+
+The client application is built on \textbf{React~18} with
+\textbf{TypeScript}, bundled by \textbf{Vite~5}, and styled with
+\textbf{Tailwind CSS~3} and \textbf{Radix UI} accessible component
+primitives. State is managed globally via \textbf{Zustand} stores for
+authentication, vehicle browsing, and wishlist. Additional libraries
+include React Router~6.25 (routing), Framer Motion~11.3 (animation),
+React Leaflet~4.2 (map display), i18next~26.2 (Vi/En i18n),
+SockJS+STOMP (WebSocket messaging), React Hook Form + Zod~3.23 (form
+validation), and Recharts~2.12 (dashboard visualization).
+
+\subsubsection{Backend}
+
+The server-side application is built on \textbf{Spring Boot~3.2.5}
+running on \textbf{Java~21~LTS}, exposing a stateless RESTful API at
+context path \texttt{/api/v1}. Table~\ref{tab:backend_stack} summarizes
+the principal backend components.
+
+\begin{table}[htbp]
+\centering
+\caption{Backend Technology Stack}
+\label{tab:backend_stack}
+\begin{tabular}{ll}
+\toprule
+\textbf{Technology} & \textbf{Purpose} \\
+\midrule
+Spring Boot 3.2.5 / Java 21  & REST API, embedded Tomcat \\
+Spring Data JPA + Hibernate 6 & ORM, JPQL queries \\
+Spring Security + JJWT 0.12.3 & JWT auth, RBAC, OAuth2 \\
+Spring WebSocket + STOMP      & Real-time messaging \\
+SpringDoc OpenAPI 2.5         & Swagger UI documentation \\
+MapStruct 1.5                 & Entity-to-DTO mapping \\
+iText 5.5                     & PDF contract generation \\
+Apache Tika 2.9               & File upload MIME validation \\
+Lombok 1.18                   & Boilerplate code generation \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Database}
+
+\textbf{Microsoft SQL Server} serves as the primary relational data
+store, managed through Hibernate schema validation (\texttt{ddl-auto:
+none}) with explicit SQL schema scripts. The schema comprises over~40
+tables organized into nine logical domains: Identity \& Access; Vehicle
+Ecosystem (Cars); Vehicle Ecosystem (Motorbikes); Booking Lifecycle;
+Payments; Trust \& Reviews; Communication; Support \& Knowledge; and
+Platform Analytics. Schema initialization and seed data are applied
+automatically on startup via Spring's \texttt{sql.init} subsystem.
+
+\subsubsection{API Design}
+
+The backend exposes a versioned RESTful API following standard HTTP
+semantics. Principal endpoint groups include: \texttt{/auth/**}
+(registration, login, token refresh, OAuth2); \texttt{/cars/**} and
+\texttt{/motorbikes/**} (listing, search, booking); \texttt{/payments/**}
+(VNPay checkout and callback); \texttt{/reviews/**} (post-rental
+submission); \texttt{/users/**} (profile, KYC upload); and
+\texttt{/admin/**} (ADMIN/SUPER\_ADMIN only). CORS is configured
+globally to permit \texttt{localhost:5173} and production frontend
+origins with \texttt{AllowCredentials: true}.
+
+\subsection{Strategic Business Model}
+
+LuxeWay operationalizes the hybrid CR+CS model validated by Soppert
+et al.~\cite{soppert2024benefit} by maintaining two structurally
+independent vehicle ecosystems---\textbf{Cars} and
+\textbf{Motorbikes}---under a unified owner dashboard. This architecture
+is hypothesized to increase per-owner revenue in the 23--120\% range
+documented for commercial fleet operators~\cite{soppert2024benefit},
+adapted to the P2P context where individuals constitute the supply side.
+
+A transparent fee structure applies at checkout: a 12\% service fee
+and 8\% tax on the base rental price, consistent with Vietnamese
+e-commerce norms. Insurance tiers (basic, premium, zero-deductible),
+delivery fees, add-on packages (chauffeur, airport delivery, wedding),
+and coupon codes are composited into the final booking total prior to
+VNPay initiation.
+
+\subsection{Security Architecture}
+
+\subsubsection{Authentication and Session Management}
+
+LuxeWay implements stateless JWT authentication (RFC~7519). Login
+issues a signed access token (24\,h expiry) and refresh token (7\,d
+expiry) via HS256. The frontend client intercepts 401 responses,
+silently refreshes the token, and retries the original request.
+OAuth2 via Google is supported; the backend links the OAuth2 identity
+to an existing account by email or creates a new one, then issues an
+equivalent JWT pair.
+
+\subsubsection{Role-Based Access Control}
+
+Authorization is enforced at two layers. \texttt{HttpSecurity}
+\texttt{requestMatchers} rules restrict paths by HTTP method and
+role---e.g., \texttt{GET /cars/**} is public while \texttt{POST /cars}
+requires \texttt{OWNER} or \texttt{ADMIN}. Service-layer
+\texttt{@PreAuthorize} annotations enforce ownership constraints at
+the business logic level.
+
+\subsubsection{Payment and File Security}
+
+A custom \texttt{VNPayIPWhitelistFilter} validates that VNPay callbacks
+originate exclusively from declared VNPay server IPs, preventing spoofed
+callback injection. Uploaded files are validated by Apache Tika's
+MIME-type detector against declared \texttt{Content-Type}, mitigating
+polyglot file upload attacks.
+
+\subsection{Multi-Dimensional Review System}
+
+Following the framework of Neifer et al.~\cite{neifer2024trust},
+LuxeWay replaces a single-axis star rating with a five-dimension model
+applied per verified completed booking (Table~\ref{tab:review_dims}).
+Each dimension is scored 1--5; the composite rating is the arithmetic
+mean. Mandatory booking linkage eliminates unverified submissions,
+reducing the manipulation risk documented in~\cite{hu2019sharing}.
+
+\begin{table}[htbp]
+\centering
+\caption{Five-Dimension Review Model}
+\label{tab:review_dims}
+\begin{tabular}{ll}
+\toprule
+\textbf{Dimension} & \textbf{Evaluated Aspect} \\
+\midrule
+Vehicle Cleanliness  & Physical condition at pickup \\
+Listing Accuracy     & Description vs.\ actual vehicle \\
+Owner Communication  & Responsiveness and professionalism \\
+Value for Money      & Quality-to-price ratio \\
+Delivery Quality     & Timeliness of vehicle delivery \\
+\bottomrule
+\end{tabular}
+\end{table}

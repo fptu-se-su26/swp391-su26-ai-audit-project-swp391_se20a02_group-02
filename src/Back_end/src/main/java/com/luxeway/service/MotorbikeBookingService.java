@@ -13,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,6 +20,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("all")
 public class MotorbikeBookingService {
 
     private final MotorbikeBookingRepository motorbikeBookingRepository;
@@ -56,8 +56,14 @@ public class MotorbikeBookingService {
                 .orElseThrow(() -> new RuntimeException("Renter not found"));
 
         if (renter.getRole() != com.luxeway.enums.UserRole.ADMIN) {
-            if (!Boolean.TRUE.equals(renter.getKycVerified()) || !Boolean.TRUE.equals(renter.getDrivingLicenseVerified())) {
-                throw new RuntimeException("KYC identity and driving license verification are required before booking.");
+            if (!"VERIFIED".equals(renter.getKycStatus())) {
+                throw new RuntimeException("Please complete KYC verification first.");
+            }
+
+            String licenseClass = renter.getLicenseClass() != null ? renter.getLicenseClass().trim().toUpperCase() : "";
+            boolean isMotorbikeLicense = licenseClass.equals("A") || licenseClass.equals("A1");
+            if (!isMotorbikeLicense) {
+                throw new RuntimeException("Your driving license does not support motorcycle rental.");
             }
         }
 
@@ -130,18 +136,21 @@ public class MotorbikeBookingService {
         }
     }
 
+    @Transactional(readOnly = true)
     public List<MotorbikeBookingDTOs.MotorbikeBookingResponse> getBookingsByRenter(String renterId) {
         return motorbikeBookingRepository.findByRenterId(renterId).stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<MotorbikeBookingDTOs.MotorbikeBookingResponse> getBookingsByOwner(String ownerId) {
         return motorbikeBookingRepository.findByOwnerId(ownerId).stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public MotorbikeBookingDTOs.MotorbikeBookingResponse getBookingById(String id) {
         MotorbikeBooking booking = motorbikeBookingRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Motorbike booking not found with ID: " + id));
@@ -186,9 +195,13 @@ public class MotorbikeBookingService {
             MotorbikeBookingDTOs.MotorbikeBookingResponse.MotorbikeInfo mi = new MotorbikeBookingDTOs.MotorbikeBookingResponse.MotorbikeInfo();
             mi.setId(b.getMotorbike().getId());
             mi.setName(b.getMotorbike().getName());
-            mi.setBrandName(b.getMotorbike().getModel().getBrand().getName());
-            mi.setModelName(b.getMotorbike().getModel().getName());
-            mi.setCategory(b.getMotorbike().getModel().getCategory());
+            if (b.getMotorbike().getModel() != null) {
+                mi.setModelName(b.getMotorbike().getModel().getName());
+                mi.setCategory(b.getMotorbike().getModel().getCategory());
+                if (b.getMotorbike().getModel().getBrand() != null) {
+                    mi.setBrandName(b.getMotorbike().getModel().getBrand().getName());
+                }
+            }
             mi.setLicensePlate(b.getMotorbike().getLicensePlate());
             if (b.getMotorbike().getImages() != null && !b.getMotorbike().getImages().isEmpty()) {
                 mi.setThumbnailUrl(b.getMotorbike().getImages().iterator().next().getUrl());

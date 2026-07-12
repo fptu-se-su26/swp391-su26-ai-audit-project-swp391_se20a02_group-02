@@ -5,15 +5,17 @@ import {
   Search, SlidersHorizontal, Grid3X3, List, X, ChevronDown,
   MapPin, Sparkles, ArrowUpDown, Shield, Car, Bike,
   Map, ZoomIn, ZoomOut, Compass, Zap, Star, Check,
-  Smartphone, CloudRain, Package, UserCircle
+  Smartphone, CloudRain, Package, UserCircle, RefreshCw, Settings, Fuel
 } from 'lucide-react';
 import { motorbikeService } from '@/services/motorbikeService';
 import { VehicleCard } from '@/components/vehicle/VehicleCard';
 import { VehicleCardSkeleton } from '@/components/ui/Skeleton';
+import { LuxeWayMap } from '@/components/map/LuxeWayMap';
 import type { Vehicle, VehicleFilters, VehicleCategory, VehicleType } from '@/types';
 import { formatCurrency, debounce, cn } from '@/utils';
 import { fadeUp, staggerContainer, staggerItem } from '@/animations/variants';
 import { useT } from '@/i18n/translations';
+import { useUIStore } from '@/store';
 
 // ====== VND PRICE FORMATTER ======
 const formatVND = (amount: number): string => {
@@ -28,16 +30,11 @@ const formatVND = (amount: number): string => {
 // ====== MOTORBIKE CATEGORIES ======
 const MOTORBIKE_CATEGORIES: { value: VehicleCategory; label: string; icon: string }[] = [
   { value: 'scooter', label: 'Scooter', icon: '🛵' },
-  { value: 'automatic_scooter', label: 'Auto Scooter', icon: '🛵' },
   { value: 'manual_motorcycle', label: 'Manual', icon: '🏍️' },
   { value: 'sport_bike', label: 'Sport Bike', icon: '🏍️' },
-  { value: 'touring_bike', label: 'Touring', icon: '🏕️' },
-  { value: 'adventure_bike', label: 'Adventure', icon: '🌄' },
-  { value: 'classic_bike', label: 'Classic', icon: '🏛️' },
-  { value: 'electric_bike', label: 'Electric', icon: '⚡' },
 ];
 
-const MOTO_BRANDS = ['Honda', 'Yamaha', 'Suzuki', 'VinFast', 'Kawasaki', 'Piaggio', 'Vespa', 'SYM'];
+const MOTO_BRANDS = ['Honda', 'Yamaha', 'VinFast', 'Vespa', 'Piaggio', 'Kawasaki', 'Ducati', 'BMW', 'Suzuki'];
 
 const SORT_OPTIONS = [
   { value: 'popular', label: 'Phổ biến nhất' },
@@ -46,140 +43,6 @@ const SORT_OPTIONS = [
   { value: 'price_desc', label: 'Giá cao → thấp' },
   { value: 'newest', label: 'Mới nhất' },
 ];
-
-// ====== MAP SIMULATOR ======
-const MapSimulator: React.FC<{
-  vehicles: Vehicle[];
-  hoveredVehicleId: string | null;
-  onSelectVehicle: (id: string) => void;
-}> = ({ vehicles, hoveredVehicleId, onSelectVehicle }) => {
-  const [zoom, setZoom] = useState(13);
-  const [selectedPin, setSelectedPin] = useState<Vehicle | null>(null);
-  const [centerOffset, setCenterOffset] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-
-  useEffect(() => {
-    if (selectedPin && !vehicles.some(v => v.id === selectedPin.id)) {
-      setSelectedPin(null);
-    }
-  }, [vehicles, selectedPin]);
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    setIsDragging(true);
-    setDragStart({ x: e.clientX - centerOffset.x, y: e.clientY - centerOffset.y });
-  };
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return;
-    setCenterOffset({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
-  };
-  const handleMouseUp = () => setIsDragging(false);
-
-  return (
-    <div
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
-      className="w-full h-full relative bg-slate-900 rounded-[2.5rem] overflow-hidden border border-slate-800 shadow-2xl flex items-center justify-center cursor-grab active:cursor-grabbing select-none"
-    >
-      <div
-        onMouseDown={handleMouseDown}
-        className="absolute w-[3000px] h-[3000px] transition-transform duration-200"
-        style={{
-          transform: `translate(${centerOffset.x}px, ${centerOffset.y}px)`,
-          backgroundImage: 'radial-gradient(rgba(255,255,255,0.07) 1px, transparent 1px), radial-gradient(rgba(255,255,255,0.04) 2px, transparent 2px)',
-          backgroundSize: '30px 30px, 90px 90px',
-        }}
-      >
-        {/* Mock City Paths / Grid */}
-        <div className="absolute inset-0 opacity-20 pointer-events-none">
-          <div className="absolute top-[1400px] left-0 right-0 h-10 bg-orange-500/10 blur-sm transform -rotate-12" />
-          <div className="absolute top-0 bottom-0 left-[1400px] w-10 bg-orange-500/10 blur-sm transform rotate-45" />
-        </div>
-
-        {/* Vehicle Pins */}
-        {vehicles.map((v, i) => {
-          const latOffset = (v.location.lat - 10.7) * 30000;
-          const lngOffset = (v.location.lng - 106.6) * 30000;
-          const left = 1500 + lngOffset;
-          const top = 1500 - latOffset;
-
-          const isHovered = hoveredVehicleId === v.id;
-          const isSelected = selectedPin?.id === v.id;
-
-          return (
-            <div
-              key={v.id}
-              className="absolute transition-all duration-300 z-10"
-              style={{ left: `${left}px`, top: `${top}px` }}
-            >
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedPin(v);
-                  onSelectVehicle(v.id);
-                }}
-                className={cn(
-                  "px-3 py-1.5 rounded-full text-[10px] font-black text-white shadow-xl flex items-center gap-1 border transition-all duration-200 hover:scale-110",
-                  isSelected
-                    ? "bg-orange-600 border-white scale-110 z-30"
-                    : isHovered
-                      ? "bg-orange-500 border-orange-400 scale-105 z-20"
-                      : "bg-[#0b101c]/90 border-slate-750 backdrop-blur-md"
-                )}
-              >
-                <span>🛵</span>
-                <span>{formatCurrency(v.pricePerDay)}</span>
-              </button>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Selected Info Overlays */}
-      <AnimatePresence>
-        {selectedPin && (
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 30 }}
-            className="absolute bottom-6 left-6 right-6 glass dark:glass-dark p-4 rounded-3xl border border-white/10 shadow-2xl z-40 flex gap-4 items-center"
-          >
-            <div className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-950 flex-shrink-0">
-              <img src={selectedPin.thumbnailUrl} alt={selectedPin.name} className="w-full h-full object-cover" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h4 className="text-white text-xs font-bold truncate">{selectedPin.name}</h4>
-              <p className="text-orange-400 text-xs font-extrabold mt-1">{formatCurrency(selectedPin.pricePerDay)}/ngày</p>
-              <p className="text-slate-400 text-[10px] truncate mt-0.5">📍 {selectedPin.location.address}</p>
-            </div>
-            <Link
-              to={`/motorbikes/${selectedPin.id}`}
-              className="px-4 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-[10px] font-bold uppercase tracking-wider shadow-lg shadow-orange-500/20"
-            >
-              Detail
-            </Link>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Map controls */}
-      <div className="absolute top-6 right-6 flex flex-col gap-1.5">
-        <button onClick={() => setZoom(z => Math.min(18, z + 1))} className="w-9 h-9 rounded-xl glass hover:bg-white/20 text-white flex items-center justify-center font-bold">
-          <ZoomIn className="w-4 h-4" />
-        </button>
-        <button onClick={() => setZoom(z => Math.max(10, z - 1))} className="w-9 h-9 rounded-xl glass hover:bg-white/20 text-white flex items-center justify-center font-bold">
-          <ZoomOut className="w-4 h-4" />
-        </button>
-      </div>
-
-      <div className="absolute top-6 left-6 flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#0b101c]/80 backdrop-blur-md border border-slate-800 text-[10px] font-bold text-slate-300">
-        <Compass className="w-3.5 h-3.5 text-orange-500 animate-spin" style={{ animationDuration: '6s' }} />
-        <span>LuxeWay Map</span>
-      </div>
-    </div>
-  );
-};
 
 // ====== MOTORBIKE FILTER PANEL ======
 const MotorbikeFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: VehicleFilters) => void; onClose?: () => void }> = ({ filters, onChange, onClose }) => {
@@ -191,32 +54,35 @@ const MotorbikeFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: Ve
     onChange({ ...filters, [key]: next.length > 0 ? next : undefined });
   };
 
-  const toggleBool = (key: keyof VehicleFilters) =>
-    onChange({ ...filters, [key]: !(filters as any)[key] || undefined });
-
   return (
     <div className="space-y-6 max-h-[80vh] overflow-y-auto pr-2 pb-6">
       <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
         <h3 className="font-display font-bold text-foreground text-base flex items-center gap-2">
-          <Bike className="w-4 h-4 text-orange-500" /> Lọc Xe Máy
+          <Bike className="w-5 h-5 text-orange-500" />
+          <span>Motorbike Filters</span>
         </h3>
-        <div className="flex gap-2">
-          <button onClick={() => onChange({ vehicleType: 'motorbike' })} className="text-xs text-orange-500 hover:underline font-bold">Xóa lọc</button>
-          {onClose && <button onClick={onClose} className="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800"><X className="w-4 h-4 text-slate-400" /></button>}
+        <div className="flex items-center gap-4">
+          <button onClick={() => onChange({ vehicleType: 'motorbike' })} className="text-xs text-orange-500 hover:underline font-bold">Clear Filters</button>
+          {onClose && (
+            <button onClick={onClose} className="p-1.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 transition-colors">
+              <X className="w-4 h-4 text-slate-400" />
+            </button>
+          )}
         </div>
       </div>
 
       {/* Motorbike categories */}
       <div>
-        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Loại Xe Máy</p>
+        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">MOTORBIKE CATEGORY</p>
         <div className="grid grid-cols-2 gap-2">
           {MOTORBIKE_CATEGORIES.map(cat => {
             const sel = (filters.category || []).includes(cat.value);
             return (
               <button key={cat.value} onClick={() => toggle('category', cat.value)}
-                className={cn("px-2 py-2 rounded-xl text-xs font-bold border transition-all text-left flex items-center gap-1.5",
+                className={cn("px-3 py-2.5 rounded-xl text-xs font-bold border transition-all text-left flex items-center gap-2",
                   sel ? "border-orange-500 bg-orange-500/10 text-orange-600 dark:text-orange-400" : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400")}>
-                <span>{cat.icon}</span>{cat.label}
+                <span className="text-sm">{cat.icon}</span>
+                <span>{cat.label}</span>
               </button>
             );
           })}
@@ -226,8 +92,8 @@ const MotorbikeFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: Ve
       {/* Price range for motorbikes */}
       <div>
         <div className="flex justify-between items-center mb-3">
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Giá / Ngày</p>
-          <span className="text-xs font-bold text-foreground">{formatVND(priceRange[0])} – {formatVND(priceRange[1])}</span>
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-400">PRICE / DAY</p>
+          <span className="text-xs font-bold text-foreground">{formatCurrency(priceRange[0], 'VND')} – {formatCurrency(priceRange[1], 'VND')}</span>
         </div>
         <input type="range" min={0} max={1500000} step={10000} value={priceRange[0]}
           onChange={e => { const v = Math.min(Number(e.target.value), priceRange[1] - 50000); setPriceRange([v, priceRange[1]]); onChange({ ...filters, minPrice: v > 0 ? v : undefined }); }}
@@ -242,21 +108,18 @@ const MotorbikeFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: Ve
 
       {/* Engine CC */}
       <div>
-        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Dung Tích Máy (CC)</p>
+        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">ENGINE SIZE (CC)</p>
         <div className="grid grid-cols-3 gap-2">
           {[
-            { label: '50cc', min: 50, max: 110 },
-            { label: '110cc', min: 110, max: 125 },
-            { label: '125cc', min: 125, max: 150 },
-            { label: '150cc', min: 150, max: 175 },
-            { label: '175cc', min: 175, max: 300 },
-            { label: '300cc+', min: 300, max: 9999 },
+            { label: '<125cc', min: 50, max: 125 },
+            { label: '125-200cc', min: 125, max: 200 },
+            { label: '200cc+', min: 200, max: 9999 },
           ].map(cc => {
             const sel = filters.minEngineCc === cc.min;
             return (
               <button key={cc.label} onClick={() => onChange({ ...filters, minEngineCc: sel ? undefined : cc.min, maxEngineCc: sel ? undefined : cc.max })}
                 className={cn("py-2 rounded-xl text-xs font-bold border transition-all",
-                  sel ? "border-orange-500 bg-orange-500/10 text-orange-600 dark:text-orange-400" : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400")}>
+                  sel ? "border-orange-500 bg-orange-500/10 text-orange-650 dark:text-orange-400" : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400")}>
                 {cc.label}
               </button>
             );
@@ -266,15 +129,36 @@ const MotorbikeFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: Ve
 
       {/* Transmission */}
       <div>
-        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Hộp Số</p>
-        <div className="flex gap-2">
+        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">TRANSMISSION</p>
+        <div className="grid grid-cols-2 gap-2">
           {(['automatic', 'manual'] as const).map(t => {
             const sel = (filters.transmission || []).includes(t);
+            const Icon = t === 'automatic' ? RefreshCw : Settings;
             return (
               <button key={t} onClick={() => { onChange({ ...filters, transmission: sel ? undefined : [t] }); }}
-                className={cn("flex-1 py-2 rounded-xl text-xs font-bold border transition-all capitalize",
-                  sel ? "border-orange-500 bg-orange-500/10 text-orange-600 dark:text-orange-400" : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400")}>
-                {t === 'automatic' ? 'Tự Động' : 'Số Sàn'}
+                className={cn("py-2 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5",
+                  sel ? "border-orange-500 bg-orange-500/10 text-orange-650 dark:text-orange-400" : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400")}>
+                <Icon className="w-3.5 h-3.5" />
+                <span>{t === 'automatic' ? 'Automatic' : 'Manual'}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Fuel Type */}
+      <div>
+        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">FUEL TYPE</p>
+        <div className="grid grid-cols-2 gap-2">
+          {(['gasoline', 'electric'] as const).map(f => {
+            const sel = (filters.fuelType || []).includes(f);
+            const Icon = f === 'gasoline' ? Fuel : Zap;
+            return (
+              <button key={f} onClick={() => toggle('fuelType', f)}
+                className={cn("py-2 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5",
+                  sel ? "border-orange-500 bg-orange-500/10 text-orange-650 dark:text-orange-400" : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400")}>
+                <Icon className="w-3.5 h-3.5" />
+                <span>{f === 'gasoline' ? 'Gasoline' : 'Electric'}</span>
               </button>
             );
           })}
@@ -283,52 +167,18 @@ const MotorbikeFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: Ve
 
       {/* Brands */}
       <div>
-        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Thương Hiệu</p>
-        <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">BRANDS</p>
+        <div className="flex flex-wrap gap-2">
           {MOTO_BRANDS.map(brand => {
-            const checked = (filters.brands || []).includes(brand);
+            const sel = (filters.brands || []).includes(brand);
             return (
-              <label key={brand} className="flex items-center gap-2.5 cursor-pointer group">
-                <input type="checkbox" checked={checked} onChange={() => toggle('brands', brand)} className="rounded text-orange-500 accent-orange-500 w-4 h-4" />
-                <span className="text-sm font-medium text-slate-600 dark:text-slate-400 group-hover:text-foreground transition-colors">{brand}</span>
-              </label>
+              <button key={brand} onClick={() => toggle('brands', brand)}
+                className={cn("px-4 py-2 rounded-full text-xs font-bold border transition-all",
+                  sel ? "border-orange-500 bg-orange-500/10 text-orange-600 dark:text-orange-400" : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400")}>
+                {brand}
+              </button>
             );
           })}
-        </div>
-      </div>
-
-      {/* Accessories / Options */}
-      <div>
-        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Phụ Kiện Đi Kèm</p>
-        <div className="space-y-2">
-          {[
-            { key: 'hasHelmet', icon: <Check className="w-3.5 h-3.5" />, label: 'Mũ Bảo Hiểm Kèm Theo' },
-            { key: 'hasRaincoat', icon: <CloudRain className="w-3.5 h-3.5" />, label: 'Áo Mưa Kèm Theo' },
-            { key: 'hasPhoneHolder', icon: <Smartphone className="w-3.5 h-3.5" />, label: 'Kẹp Điện Thoại' },
-            { key: 'hasTouringPackage', icon: <Package className="w-3.5 h-3.5" />, label: 'Baga / Thùng Đồ (Touring)' },
-            { key: 'instantBook', icon: <Zap className="w-3.5 h-3.5" />, label: 'Đặt Ngay' },
-          ].map(f => (
-            <label key={f.key} className="flex items-center gap-2.5 cursor-pointer group">
-              <input type="checkbox" checked={!!(filters as any)[f.key]} onChange={() => toggleBool(f.key as keyof VehicleFilters)} className="rounded text-orange-500 accent-orange-500 w-4 h-4" />
-              <span className="flex items-center gap-1.5 text-sm font-medium text-slate-600 dark:text-slate-400 group-hover:text-foreground transition-colors">
-                <span className="text-orange-400">{f.icon}</span>{f.label}
-              </span>
-            </label>
-          ))}
-        </div>
-      </div>
-
-      {/* Rating */}
-      <div>
-        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Đánh Giá Tối Thiểu</p>
-        <div className="flex gap-2">
-          {[4.0, 4.5, 4.8].map(r => (
-            <button key={r} onClick={() => onChange({ ...filters, minRating: filters.minRating === r ? undefined : r })}
-              className={cn("flex-1 py-2 rounded-xl text-xs font-bold border-2 transition-all",
-                filters.minRating === r ? "border-orange-500 bg-orange-500/10 text-orange-650 dark:text-orange-400" : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400")}>
-              ⭐ {r}+
-            </button>
-          ))}
         </div>
       </div>
     </div>
@@ -340,6 +190,7 @@ export const MotorbikeMarketplace: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const t = useT();
+  const { language } = useUIStore();
 
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -354,6 +205,27 @@ export const MotorbikeMarketplace: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [hoveredVehicleId, setHoveredVehicleId] = useState<string | null>(null);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
+
+  // Scroll detection for Map button
+  const [showMapButton, setShowMapButton] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        setShowMapButton(false);
+      } else {
+        setShowMapButton(true);
+      }
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
+
+  const isVi = language === 'vi';
 
   // Initialize filters from query params
   const [filters, setFilters] = useState<VehicleFilters>(() => {
@@ -386,7 +258,7 @@ export const MotorbikeMarketplace: React.FC = () => {
   useEffect(() => {
     if (searchQuery) debouncedSearch(searchQuery);
     else loadVehicles(filters, page);
-  }, [filters, page, searchQuery]);
+  }, [filters, page, searchQuery, language]);
 
   const handleFilterChange = (newFilters: VehicleFilters) => {
     setFilters({ ...newFilters, vehicleType: 'motorbike' });
@@ -403,119 +275,129 @@ export const MotorbikeMarketplace: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background pt-20">
-      {/* ====== ECOSYSTEM SWITCHER HEADER ====== */}
-      <div className="bg-card border-b border-slate-100 dark:border-slate-800 shadow-sm">
+      {/* Sticky Headers Wrapper */}
+      <div className="sticky top-20 z-40 bg-card shadow-sm border-b border-slate-100 dark:border-slate-800">
+        {/* ====== ECOSYSTEM SWITCHER HEADER ====== */}
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-1 py-3 overflow-x-auto scrollbar-hide">
-            <Link
-              to="/cars"
-              className="flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-bold border-2 border-transparent text-slate-500 hover:text-blue-500 hover:bg-blue-500/5 transition-all whitespace-nowrap flex-shrink-0"
-            >
-              <Car className="w-4 h-4" />
-              <span>Chuyển Sang Ô Tô 🚗</span>
-            </Link>
+          <div className="flex items-center justify-between py-3 overflow-x-auto scrollbar-hide w-full">
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Link
+                to="/vehicles"
+                className="flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-bold border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-orange-550 transition-all whitespace-nowrap"
+              >
+                <Sparkles className="w-4 h-4 text-orange-500" />
+                <span>{isVi ? 'Tất cả xe' : 'All Vehicles'}</span>
+              </Link>
 
-            <button
-              onClick={() => {}}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-bold border-2 border-orange-500 bg-orange-500/10 text-orange-650 dark:text-orange-400 shadow-sm whitespace-nowrap flex-shrink-0"
-            >
-              <Bike className="w-4 h-4" />
-              <span>Hệ Xe Máy (Motorbikes Context)</span>
-              <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full bg-orange-500/20 text-orange-600">
-                {loading ? '...' : total}
-              </span>
-            </button>
+              <Link
+                to="/cars"
+                className="flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-bold border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-blue-500 transition-all whitespace-nowrap"
+              >
+                <Car className="w-4 h-4" />
+                <span>{isVi ? 'Ô tô' : 'Cars'}</span>
+              </Link>
 
-            <div className="flex-1" />
+              <button
+                className="flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-bold border-2 border-orange-500 bg-orange-500/10 text-orange-655 dark:text-orange-400 shadow-sm whitespace-nowrap"
+              >
+                <Bike className="w-4 h-4" />
+                <span>{isVi ? 'Xe máy' : 'Motorbikes'}</span>
+                <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full bg-orange-500/20 text-orange-600">
+                  {total}
+                </span>
+              </button>
+            </div>
 
             {/* Quick City Filters */}
-            <div className="hidden lg:flex items-center gap-1 border-l border-slate-200 dark:border-slate-800 pl-3">
+            <div className="hidden lg:flex items-center gap-1.5 pl-3">
               {['Hồ Chí Minh', 'Hà Nội', 'Đà Nẵng', 'Nha Trang', 'Đà Lạt'].map(city => (
                 <button
                   key={city}
                   onClick={() => handleFilterChange({ ...filters, location: filters.location === city ? undefined : city })}
                   className={cn(
-                    "px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all whitespace-nowrap",
+                    "flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all whitespace-nowrap",
                     filters.location === city
-                      ? "border-orange-550 bg-orange-500/10 text-orange-600"
+                      ? "border-orange-500 bg-orange-500/10 text-orange-600"
                       : "border-slate-200 dark:border-slate-800 text-slate-500 hover:border-slate-350"
                   )}
                 >
-                  <MapPin className="w-3 h-3 inline mr-1" />{city}
+                  <MapPin className="w-3 h-3 text-slate-400" />
+                  <span>{city}</span>
                 </button>
               ))}
             </div>
           </div>
         </div>
-      </div>
 
-      {/* ====== SEARCH HEADER BAR ====== */}
-      <div className="bg-card border-b border-slate-100 dark:border-slate-800 sticky top-20 z-40 shadow-sm border-l-4 border-l-orange-500/40">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3 w-full md:w-auto flex-1 max-w-xl">
-            <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder="🏍️ Tìm xe máy... Vision, Air Blade, Exciter, Winner, SH..."
-                className="w-full pl-10 pr-10 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm outline-none text-foreground focus:border-orange-500 focus:bg-white dark:focus:bg-slate-950 transition-all font-semibold"
-              />
-              {searchQuery && (
-                <button onClick={() => setSearchQuery('')} className="absolute right-3.5 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400">
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
+        {/* ====== SEARCH HEADER BAR ====== */}
+        <div className="border-t border-slate-100 dark:border-slate-800 border-l-4 border-l-orange-500/40">
+          <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3 w-full md:w-auto flex-1 max-w-xl">
+              <div className="relative flex-1">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  placeholder={isVi ? "Tìm xe máy... Vision, Exciter, SH..." : "Find motorbikes... Vision, Exciter, SH..."}
+                  className="w-full pl-10 pr-10 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm outline-none text-foreground focus:border-orange-500 focus:bg-white dark:focus:bg-slate-950 transition-all font-semibold"
+                />
+                {searchQuery && (
+                  <button onClick={() => setSearchQuery('')} className="absolute right-3.5 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
 
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className={cn(
-                "flex items-center gap-2 px-4 py-2.5 rounded-2xl border text-sm font-bold transition-all duration-200",
-                showFilters ? "border-orange-500 bg-orange-500/10 text-orange-600" : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-350"
-              )}
-            >
-              <SlidersHorizontal className="w-4 h-4" />
-              <span className="hidden sm:inline">Lọc</span>
-              {activeFilterCount > 0 && (
-                <span className="w-5 h-5 text-white text-[10px] font-extrabold rounded-full flex items-center justify-center bg-orange-500">
-                  {activeFilterCount}
-                </span>
-              )}
-            </button>
-          </div>
-
-          <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
-            <div className="relative">
-              <select
-                value={filters.sortBy || 'popular'}
-                onChange={e => handleFilterChange({ ...filters, sortBy: e.target.value as VehicleFilters['sortBy'] })}
-                className="appearance-none pl-4 pr-10 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-bold outline-none text-slate-600 dark:text-slate-300 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-850 transition-colors"
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2.5 rounded-2xl border text-sm font-bold transition-all duration-200",
+                  showFilters ? "border-orange-500 bg-orange-500/10 text-orange-600" : "border-orange-500 text-orange-500 hover:bg-orange-500/5"
+                )}
               >
-                {SORT_OPTIONS.map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                <SlidersHorizontal className="w-4 h-4" />
+                <span>{isVi ? 'Lọc' : 'Filters'}</span>
+                {activeFilterCount > 0 && (
+                  <span className="w-5 h-5 text-white text-[10px] font-extrabold rounded-full flex items-center justify-center bg-orange-500">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
+              <div className="relative">
+                <select
+                  value={filters.sortBy || 'popular'}
+                  onChange={e => handleFilterChange({ ...filters, sortBy: e.target.value as VehicleFilters['sortBy'] })}
+                  className="appearance-none pl-4 pr-10 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-bold outline-none text-slate-600 dark:text-slate-300 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-850 transition-colors"
+                >
+                  {SORT_OPTIONS.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+                <ArrowUpDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+              </div>
+
+              <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 rounded-2xl p-1 border border-slate-200/40 dark:border-slate-800/40">
+                {(['grid', 'list'] as const).map(mode => (
+                  <button key={mode} onClick={() => setViewMode(mode)}
+                    className={cn("p-2 rounded-xl transition-all", viewMode === mode ? "bg-white dark:bg-slate-800 shadow-sm text-foreground font-bold" : "text-slate-450 hover:text-foreground")}>
+                    {mode === 'grid' ? <Grid3X3 className="w-4 h-4" /> : <List className="w-4 h-4" />}
+                  </button>
                 ))}
-              </select>
-              <ArrowUpDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
-            </div>
+              </div>
 
-            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 rounded-2xl p-1 border border-slate-200/40 dark:border-slate-800/40">
-              {(['grid', 'list'] as const).map(mode => (
-                <button key={mode} onClick={() => setViewMode(mode)}
-                  className={cn("p-2 rounded-xl transition-all", viewMode === mode ? "bg-white dark:bg-slate-800 shadow-sm text-foreground font-bold" : "text-slate-450 hover:text-foreground")}>
-                  {mode === 'grid' ? <Grid3X3 className="w-4 h-4" /> : <List className="w-4 h-4" />}
-                </button>
-              ))}
+              <button
+                onClick={() => setMapOpen(!mapOpen)}
+                className={cn("hidden lg:flex items-center gap-2 px-4 py-2.5 rounded-2xl border text-xs font-bold transition-all",
+                  mapOpen ? "bg-orange-500/10 border-orange-500 text-orange-655" : "border-slate-250 dark:border-slate-800 text-slate-500 hover:border-slate-350 hover:bg-slate-50 dark:hover:bg-slate-900")}
+              >
+                <Map className="w-4 h-4" />
+                <span>{isVi ? 'Bản Đồ' : 'Map'}</span>
+              </button>
             </div>
-
-            <button
-              onClick={() => setMapOpen(!mapOpen)}
-              className={cn("hidden lg:flex items-center gap-2 px-4 py-2.5 rounded-2xl border text-xs font-bold transition-all",
-                mapOpen ? "bg-orange-500/10 border-orange-500 text-orange-655" : "border-slate-200 dark:border-slate-800 text-slate-500")}>
-              <Map className="w-4 h-4" />
-              <span>Bản Đồ</span>
-            </button>
           </div>
         </div>
       </div>
@@ -532,7 +414,7 @@ export const MotorbikeMarketplace: React.FC = () => {
                 transition={{ duration: 0.3 }}
                 className="hidden xl:block flex-shrink-0 overflow-hidden"
               >
-                <div className="w-[300px] bg-card rounded-3xl border border-slate-150 dark:border-slate-800 p-6 sticky top-38 shadow-sm">
+                <div className="w-[300px] bg-card rounded-3xl border border-slate-150 dark:border-slate-800 p-6 sticky top-[220px] shadow-sm">
                   <MotorbikeFilterPanel filters={filters} onChange={handleFilterChange} onClose={() => setShowFilters(false)} />
                 </div>
               </motion.aside>
@@ -643,15 +525,37 @@ export const MotorbikeMarketplace: React.FC = () => {
                 className="hidden lg:block flex-shrink-0 sticky top-52 overflow-hidden"
                 style={{ height: 'calc(100vh - 220px)' }}
               >
-                <MapSimulator vehicles={vehicles} hoveredVehicleId={hoveredVehicleId} onSelectVehicle={id => {
-                  setSelectedVehicleId(id);
-                  document.getElementById(`vehicle-card-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }} />
+                <LuxeWayMap
+                  vehicles={vehicles}
+                  selectedVehicleId={selectedVehicleId || undefined}
+                  hoveredVehicleId={hoveredVehicleId || undefined}
+                  onVehicleClick={v => {
+                    setSelectedVehicleId(v.id);
+                    document.getElementById(`vehicle-card-${v.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }}
+                  height="100%"
+                />
               </motion.div>
             )}
           </AnimatePresence>
         </div>
       </div>
+
+      {/* Floating Map Button */}
+      <AnimatePresence>
+        {showMapButton && (
+          <motion.button
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 50, opacity: 0 }}
+            onClick={() => setMapOpen(!mapOpen)}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 lg:hidden flex items-center gap-2 px-5 py-3 rounded-full bg-slate-900 dark:bg-slate-800 text-white font-bold text-xs shadow-xl border border-slate-700 dark:border-slate-600 hover:bg-slate-850 dark:hover:bg-slate-700 active:scale-95 transition-all"
+          >
+            <Map className="w-4 h-4 text-orange-500" />
+            <span>{mapOpen ? (isVi ? 'Danh sách' : 'List') : (isVi ? 'Bản đồ' : 'Map')}</span>
+          </motion.button>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

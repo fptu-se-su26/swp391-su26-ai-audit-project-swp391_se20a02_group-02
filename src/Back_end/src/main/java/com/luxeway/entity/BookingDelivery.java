@@ -39,6 +39,7 @@ public class BookingDelivery {
 
     @NotBlank
     @Column(nullable = false, length = 30)
+    @Builder.Default
     private String status = "PENDING"; // PENDING, IN_TRANSIT, DELIVERED, RETURNED
 
     @Column(name = "delivered_at")

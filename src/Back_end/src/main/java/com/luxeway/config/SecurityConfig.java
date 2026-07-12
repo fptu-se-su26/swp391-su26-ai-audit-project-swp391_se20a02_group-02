@@ -2,7 +2,6 @@ package com.luxeway.config;
 
 import com.luxeway.repository.UserRepository;
 import com.luxeway.security.JwtAuthenticationFilter;
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -79,6 +78,8 @@ public class SecurityConfig {
                 })
             )
             .authorizeHttpRequests(auth -> auth
+                // Allow all CORS preflight OPTIONS requests
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 // ======== Public endpoints ========
                 // BUG-11 FIX: Controllers map to /auth/**, /vehicles/**, etc. (no /api/v1/ prefix).
                 // Keeping /api/v1/** variants for forward compatibility, but also adding unprefixed paths.
@@ -101,6 +102,15 @@ public class SecurityConfig {
                     "/payments/vnpay/return",
                     "/api/v1/payments/vnpay/callback",
                     "/api/v1/payments/vnpay/return",
+                    // MoMo and PayOS callbacks (must be public)
+                    "/payments/momo/ipn",
+                    "/payments/momo/return",
+                    "/api/v1/payments/momo/ipn",
+                    "/api/v1/payments/momo/return",
+                    "/payments/payos/webhook",
+                    "/payments/payos/return",
+                    "/api/v1/payments/payos/webhook",
+                    "/api/v1/payments/payos/return",
                     // Static uploads
                     "/uploads/**",
                     "/api/v1/uploads/**",
@@ -113,6 +123,8 @@ public class SecurityConfig {
                     "/api/v1/home/**",
                     "/locations/**",
                     "/api/v1/locations/**",
+                    "/location/**",
+                    "/api/v1/location/**",
                     "/faqs/**",
                     "/faqs",
                     "/api/v1/faqs/**",
@@ -120,6 +132,14 @@ public class SecurityConfig {
                     // Help Center Knowledge Base (public — no auth needed)
                     "/help/**",
                     "/api/v1/help/**",
+                    "/ai/**",
+                    "/api/v1/ai/**",
+                    "/chat",
+                    "/api/v1/chat",
+                    "/admin/seed/**",
+                    "/api/v1/admin/seed/**",
+                    "/payment-settings",
+                    "/api/v1/payment-settings",
                     "/error"
                 ).permitAll()
                 // Support ticket endpoints — must be authenticated
@@ -130,10 +150,14 @@ public class SecurityConfig {
                     "/vehicles/search",
                     "/vehicles/featured",
                     "/vehicles/{id}",
+                    "/vehicles/{id}/detail",
+                    "/vehicles/{id}/availability",
                     "/api/v1/vehicles",
                     "/api/v1/vehicles/search",
                     "/api/v1/vehicles/featured",
                     "/api/v1/vehicles/{id}",
+                    "/api/v1/vehicles/{id}/detail",
+                    "/api/v1/vehicles/{id}/availability",
                     "/cars",
                     "/cars/{id}",
                     "/api/v1/cars",
@@ -168,8 +192,10 @@ public class SecurityConfig {
                     "/cars/**", "/api/v1/cars/**",
                     "/motorbikes/**", "/api/v1/motorbikes/**"
                 ).hasAnyRole("OWNER", "ADMIN")
-                // Upload endpoint requires authentication
-                .requestMatchers(HttpMethod.POST, "/upload", "/upload/**", "/users/documents", "/api/v1/users/documents").authenticated()
+                // Upload and eKYC endpoints require authentication
+                .requestMatchers(HttpMethod.POST, "/upload", "/upload/**", "/users/documents", "/api/v1/users/documents",
+                        "/ekyc/**", "/api/v1/ekyc/**").authenticated()
+                .requestMatchers(HttpMethod.GET, "/ekyc/**", "/api/v1/ekyc/**").authenticated()
                 // All other requests must be authenticated
                 .anyRequest().authenticated()
             )

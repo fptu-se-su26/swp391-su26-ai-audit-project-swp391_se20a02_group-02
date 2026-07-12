@@ -10,10 +10,12 @@ import {
 import { carService } from '@/services/carService';
 import { VehicleCard } from '@/components/vehicle/VehicleCard';
 import { VehicleCardSkeleton } from '@/components/ui/Skeleton';
+import { LuxeWayMap } from '@/components/map/LuxeWayMap';
 import type { Vehicle, VehicleFilters, VehicleCategory, VehicleType } from '@/types';
 import { formatCurrency, debounce, cn } from '@/utils';
 import { fadeUp, staggerContainer, staggerItem } from '@/animations/variants';
 import { useT } from '@/i18n/translations';
+import { useUIStore } from '@/store';
 
 // ====== VND PRICE FORMATTER ======
 const formatVND = (amount: number): string => {
@@ -48,139 +50,7 @@ const SORT_OPTIONS = [
   { value: 'newest', label: 'Mới nhất' },
 ];
 
-// ====== MAP SIMULATOR ======
-const MapSimulator: React.FC<{
-  vehicles: Vehicle[];
-  hoveredVehicleId: string | null;
-  onSelectVehicle: (id: string) => void;
-}> = ({ vehicles, hoveredVehicleId, onSelectVehicle }) => {
-  const [zoom, setZoom] = useState(13);
-  const [selectedPin, setSelectedPin] = useState<Vehicle | null>(null);
-  const [centerOffset, setCenterOffset] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
-  useEffect(() => {
-    if (selectedPin && !vehicles.some(v => v.id === selectedPin.id)) {
-      setSelectedPin(null);
-    }
-  }, [vehicles, selectedPin]);
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    setIsDragging(true);
-    setDragStart({ x: e.clientX - centerOffset.x, y: e.clientY - centerOffset.y });
-  };
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return;
-    setCenterOffset({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
-  };
-  const handleMouseUp = () => setIsDragging(false);
-
-  return (
-    <div
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
-      className="w-full h-full relative bg-slate-900 rounded-[2.5rem] overflow-hidden border border-slate-800 shadow-2xl flex items-center justify-center cursor-grab active:cursor-grabbing select-none"
-    >
-      <div
-        onMouseDown={handleMouseDown}
-        className="absolute w-[3000px] h-[3000px] transition-transform duration-200"
-        style={{
-          transform: `translate(${centerOffset.x}px, ${centerOffset.y}px)`,
-          backgroundImage: 'radial-gradient(rgba(255,255,255,0.07) 1px, transparent 1px), radial-gradient(rgba(255,255,255,0.04) 2px, transparent 2px)',
-          backgroundSize: '30px 30px, 90px 90px',
-        }}
-      >
-        {/* Mock City Paths / Grid */}
-        <div className="absolute inset-0 opacity-20 pointer-events-none">
-          <div className="absolute top-[1400px] left-0 right-0 h-10 bg-blue-500/10 blur-sm transform -rotate-12" />
-          <div className="absolute top-0 bottom-0 left-[1400px] w-10 bg-blue-500/10 blur-sm transform rotate-45" />
-        </div>
-
-        {/* Vehicle Pins */}
-        {vehicles.map((v, i) => {
-          const latOffset = (v.location.lat - 10.7) * 30000;
-          const lngOffset = (v.location.lng - 106.6) * 30000;
-          const left = 1500 + lngOffset;
-          const top = 1500 - latOffset;
-
-          const isHovered = hoveredVehicleId === v.id;
-          const isSelected = selectedPin?.id === v.id;
-
-          return (
-            <div
-              key={v.id}
-              className="absolute transition-all duration-300 z-10"
-              style={{ left: `${left}px`, top: `${top}px` }}
-            >
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedPin(v);
-                  onSelectVehicle(v.id);
-                }}
-                className={cn(
-                  "px-3 py-1.5 rounded-full text-[10px] font-black text-white shadow-xl flex items-center gap-1 border transition-all duration-200 hover:scale-110",
-                  isSelected
-                    ? "bg-blue-600 border-white scale-110 z-30"
-                    : isHovered
-                      ? "bg-blue-500 border-blue-400 scale-105 z-20"
-                      : "bg-[#0b101c]/90 border-slate-750 backdrop-blur-md"
-                )}
-              >
-                <span>🚗</span>
-                <span>{formatCurrency(v.pricePerDay)}</span>
-              </button>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Selected Info Overlays */}
-      <AnimatePresence>
-        {selectedPin && (
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 30 }}
-            className="absolute bottom-6 left-6 right-6 glass dark:glass-dark p-4 rounded-3xl border border-white/10 shadow-2xl z-40 flex gap-4 items-center"
-          >
-            <div className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-950 flex-shrink-0">
-              <img src={selectedPin.thumbnailUrl} alt={selectedPin.name} className="w-full h-full object-cover" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h4 className="text-white text-xs font-bold truncate">{selectedPin.name}</h4>
-              <p className="text-blue-400 text-xs font-extrabold mt-1">{formatCurrency(selectedPin.pricePerDay)}/ngày</p>
-              <p className="text-slate-400 text-[10px] truncate mt-0.5">📍 {selectedPin.location.address}</p>
-            </div>
-            <Link
-              to={`/cars/${selectedPin.id}`}
-              className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold uppercase tracking-wider shadow-lg shadow-blue-500/20"
-            >
-              Detail
-            </Link>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Map controls */}
-      <div className="absolute top-6 right-6 flex flex-col gap-1.5">
-        <button onClick={() => setZoom(z => Math.min(18, z + 1))} className="w-9 h-9 rounded-xl glass hover:bg-white/20 text-white flex items-center justify-center font-bold">
-          <ZoomIn className="w-4 h-4" />
-        </button>
-        <button onClick={() => setZoom(z => Math.max(10, z - 1))} className="w-9 h-9 rounded-xl glass hover:bg-white/20 text-white flex items-center justify-center font-bold">
-          <ZoomOut className="w-4 h-4" />
-        </button>
-      </div>
-
-      <div className="absolute top-6 left-6 flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#0b101c]/80 backdrop-blur-md border border-slate-800 text-[10px] font-bold text-slate-300">
-        <Compass className="w-3.5 h-3.5 text-blue-500 animate-spin" style={{ animationDuration: '6s' }} />
-        <span>LuxeWay Map</span>
-      </div>
-    </div>
-  );
-};
 
 // ====== CAR FILTER PANEL ======
 const CarFilterPanel: React.FC<{ filters: VehicleFilters; onChange: (f: VehicleFilters) => void; onClose?: () => void }> = ({ filters, onChange, onClose }) => {
@@ -361,6 +231,7 @@ export const CarsMarketplace: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const t = useT();
+  const { language } = useUIStore();
 
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -407,7 +278,7 @@ export const CarsMarketplace: React.FC = () => {
   useEffect(() => {
     if (searchQuery) debouncedSearch(searchQuery);
     else loadVehicles(filters, page);
-  }, [filters, page, searchQuery]);
+  }, [filters, page, searchQuery, language]);
 
   const handleFilterChange = (newFilters: VehicleFilters) => {
     setFilters({ ...newFilters, vehicleType: 'car' });
@@ -664,10 +535,16 @@ export const CarsMarketplace: React.FC = () => {
                 className="hidden lg:block flex-shrink-0 sticky top-52 overflow-hidden"
                 style={{ height: 'calc(100vh - 220px)' }}
               >
-                <MapSimulator vehicles={vehicles} hoveredVehicleId={hoveredVehicleId} onSelectVehicle={id => {
-                  setSelectedVehicleId(id);
-                  document.getElementById(`vehicle-card-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }} />
+                <LuxeWayMap
+                  vehicles={vehicles}
+                  selectedVehicleId={selectedVehicleId || undefined}
+                  hoveredVehicleId={hoveredVehicleId || undefined}
+                  onVehicleClick={v => {
+                    setSelectedVehicleId(v.id);
+                    document.getElementById(`vehicle-card-${v.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }}
+                  height="100%"
+                />
               </motion.div>
             )}
           </AnimatePresence>

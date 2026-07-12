@@ -72,7 +72,6 @@ Nguyên tắc ghi changelog:
 
 | STT | Nội dung thay đổi | Người thực hiện | File/Module liên quan | Minh chứng |
 |---:|---|---|---|---|
-| 15 | Hợp nhất routing /cars và /motorbikes vào /marketplace để đồng bộ giao diện | Lê Văn Hậu (DE190968) | App.tsx | App.tsx |
 | 1 | Tạo repository GitHub và cấu trúc thư mục | Lê Văn Hậu (DE190968) | README.md, docs/, members/, src/ | GitHub repo |
 | 2 | Khởi tạo Vite + React + TypeScript project | Lê Văn Hậu (DE190968) | src/Front_end/, package.json, vite.config.ts | src/Front_end/package.json |
 | 3 | Cài đặt và cấu hình Tailwind CSS | Lê Văn Hậu (DE190968) | tailwind.config.js, postcss.config.js | src/Front_end/tailwind.config.js |
@@ -951,44 +950,6 @@ AI (Antigravity) hỗ trợ code toàn bộ Python modules cho LLMReasoner, 3-ti
 ```text
 Branch: feature/de190968-AI-predictive_analystic
 Commit: feat(ai): integrate Agentic AI improvements (LLM, Multi-Agent, Memory, Event Bus)
-```
-
----
-
-# [Phase 06.1] ML Service Routers
-
-## Ngày thực hiện
-
-```text
-2026-06-14
-```
-
-## Đã hoàn thành
-
-- [x] Xây dựng các router cho ML Service (Anomaly, Churn, Demand, Health, Revenue, Utilization).
-- [x] Tạo ra cấu trúc thư mục ml_service và các file router bằng FastAPI.
-
-## Thay đổi chi tiết - Lê Văn Hậu (DE190968)
-
-| STT | Nội dung thay đổi | Người thực hiện | File/Module liên quan | Minh chứng |
-|---:|---|---|---|---|
-| 1 | Xây dựng FastAPI Routers | Lê Văn Hậu | src/ml_service/ | Đã chạy thành công |
-
-## AI có hỗ trợ không?
-
-- [x] Có
-- [ ] Không
-
-Nếu có, mô tả AI đã hỗ trợ phần nào:
-
-```text
-Tạo ra cấu trúc thư mục ml_service và các file router bằng FastAPI.
-```
-
-## Commit/Screenshot minh chứng
-
-```text
-Branch: feature/de190968-AI-predictive_analystic
 ```
 
 ---

@@ -20,6 +20,7 @@ import java.util.Set;
  */
 @Slf4j
 @Component
+@SuppressWarnings("all")
 public class VNPayIPWhitelistFilter extends OncePerRequestFilter {
 
     @Value("${payment.vnpay.allowed-ips:}")

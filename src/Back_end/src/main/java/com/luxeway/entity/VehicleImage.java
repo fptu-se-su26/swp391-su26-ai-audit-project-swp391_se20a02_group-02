@@ -25,6 +25,8 @@ public class VehicleImage {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "vehicle_id", nullable = false)
     @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Vehicle vehicle;
     
     @Column(nullable = false, length = 500)

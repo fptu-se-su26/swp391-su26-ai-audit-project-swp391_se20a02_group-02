@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Car, ArrowRight, CheckCircle, Shield, Loader2 } from 'lucide-react';
-import logoImage from '@/image/logo.png';
+import logoImage from '../../image/logo.png';
 import { useAuthStore } from '@/store';
 import { authService } from '@/services/authService';
 import { useToast } from '@/components/ui/Toast';
@@ -17,8 +17,18 @@ declare global {
   }
 }
 
-// Redirect logged-in/registering users to Homepage to show logged-in state
+// Redirect logged-in/registering users to their role-specific dashboards or homepage
 const getRoleBasedDashboard = (user: User | null): string => {
+  if (!user) return '/';
+  const role = user.role?.toLowerCase();
+  const accountType = user.accountType?.toUpperCase();
+
+  if (role === 'admin' || role === 'super_admin') {
+    return '/admin';
+  }
+  if (role === 'owner') {
+    return '/owner';
+  }
   return '/';
 };
 
@@ -44,9 +54,12 @@ const GoogleLoginButton: React.FC<{ onSuccess?: () => void }> = () => {
       return;
     }
     // Redirect directly to the Spring Security OAuth2 authorization endpoint
-    const backendUrl = (import.meta as any).env?.VITE_API_URL 
-      ? (import.meta as any).env.VITE_API_URL.replace('/api/v1', '') 
-      : 'http://localhost:8080';
+    const authApiUrl = (import.meta as any).env?.VITE_AUTH_API_URL;
+    const backendUrl = authApiUrl 
+      ? authApiUrl 
+      : ((import.meta as any).env?.VITE_API_URL 
+        ? (import.meta as any).env.VITE_API_URL.replace('/api/v1', '') 
+        : 'http://localhost:8080');
     window.location.href = `${backendUrl}/oauth2/authorization/google`;
   };
 
@@ -103,9 +116,9 @@ export const LoginPage: React.FC = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   React.useEffect(() => {
-    // BUG-18 FIX: Already-authenticated users get sent to their role dashboard, not '/'
+    // Already-authenticated users get sent to Home page, not dashboard
     if (isInitialized && isAuthenticated && user) {
-      navigate(getRoleBasedDashboard(user), { replace: true });
+      navigate('/', { replace: true });
     }
   }, [isInitialized, isAuthenticated, user, navigate]);
 
@@ -130,8 +143,8 @@ export const LoginPage: React.FC = () => {
     if (success) {
       const { user } = useAuthStore.getState();
       toast.success(t.auth.welcomeBack, t.auth.signInSuccess);
-      // BUG-1/16 FIX: Navigate to role-based dashboard, not '/'
-      navigate(getRoleBasedDashboard(user), { replace: true });
+      // Navigate to Home page, not dashboard
+      navigate('/', { replace: true });
     } else {
       toast.error(t.auth.invalidCredentials, t.auth.invalidCredentialsDesc);
       setErrors({ password: t.auth.invalidCredentialsDesc });

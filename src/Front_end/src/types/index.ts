@@ -16,9 +16,9 @@ export type MotorbikeCategory = 'scooter' | 'automatic_scooter' | 'manual_motorc
 // Combined (all categories in the system)
 export type VehicleCategory = CarCategory | MotorbikeCategory;
 
-export type BookingStatus = 'pending' | 'confirmed' | 'active' | 'completed' | 'cancelled' | 'disputed';
+export type BookingStatus = 'pending' | 'confirmed' | 'active' | 'completed' | 'cancelled' | 'disputed' | 'picking_up' | 'in_progress' | 'waiting_payment' | 'payment_pending' | 'payment_verified' | 'payment_rejected' | 'payment_expired' | 'owner_approved' | 'ready_for_pickup' | 'checked_out' | 'in_rental' | 'return_pending' | 'return_completed' | 'customer_cancelled' | 'owner_cancelled' | 'system_cancelled';
 export type PaymentStatus = 'pending' | 'processing' | 'succeeded' | 'failed' | 'refunded';
-export type VehicleStatus = 'available' | 'rented' | 'maintenance' | 'pending_approval';
+export type VehicleStatus = 'available' | 'rented' | 'maintenance' | 'pending_approval' | 'draft' | 'approved' | 'rejected' | 'blocked';
 export type TransmissionType = 'automatic' | 'manual';
 export type FuelType = 'gasoline' | 'petrol' | 'diesel' | 'electric' | 'hybrid';
 export type MessageType = 'text' | 'image' | 'booking_request' | 'system';
@@ -43,9 +43,17 @@ export interface User {
   verified: boolean;
   kycVerified: boolean;
   drivingLicenseVerified: boolean;
+  kycStatus?: 'PENDING' | 'PENDING_APPROVAL' | 'VERIFIED' | 'REJECTED' | 'FAILED';
+  driverLicenseStatus?: 'NONE' | 'PENDING' | 'PENDING_APPROVAL' | 'VERIFIED' | 'REJECTED' | 'FAILED';
+  licenseClass?: string;
+  licenseNumber?: string;
   rating: number;
   totalReviews: number;
   totalRentals: number;
+  totalTrips?: number;
+  responseRate?: number;
+  responseTime?: number;
+  approvalBadge?: boolean;
   bio: string;
   location: string;
   joinedAt: string;
@@ -71,6 +79,8 @@ export interface Vehicle {
   id: string;
   ownerId: string;
   owner?: User;
+  vin?: string;
+  isLocked?: boolean;
   name: string;
   brand: string;
   model: string;
@@ -129,6 +139,10 @@ export interface Vehicle {
     advanceBookingDays: number;
   };
   status: VehicleStatus;
+  approvalStatus?: VehicleStatus;
+  approvalNote?: string;
+  approvedBy?: string;
+  approvedAt?: string;
   rating: number;
   totalReviews: number;
   totalBookings: number;
@@ -141,6 +155,20 @@ export interface Vehicle {
   instantBook: boolean;
   deliveryAvailable: boolean;
   deliveryFee: number;
+  
+  // Custom detailed fields for detail views and checkout
+  discount?: number;
+  finalPrice?: number;
+  primaryImage?: string;
+  galleryImages?: string[];
+  vehicleImages?: string[];
+  requiredDocuments?: string;
+  basicInsurance?: string;
+  extraInsurance?: string;
+  cancellationPolicy?: string;
+  depositPolicy?: string;
+  rentalRules?: string;
+  seatNumber?: number;
 }
 
 // ====== VEHICLE ADDON ======
@@ -155,8 +183,11 @@ export interface VehicleAddon {
 // ====== BOOKING ======
 export interface Booking {
   id: string;
+  bookingCode?: string;
   vehicleId: string;
+  vehicle?: any;
   renterId: string;
+  renter?: any;
   ownerId: string;
   status: BookingStatus;
   startDate: string;
@@ -169,6 +200,7 @@ export interface Booking {
     insuranceFee: number;
     deliveryFee: number;
     serviceFee: number;
+    cleaningFee?: number;
     taxes: number;
     discount: number;
     total: number;
@@ -232,6 +264,12 @@ export interface UserDocument {
   uploadedAt: string;
   verifiedAt?: string;
   url: string;
+  licenseClass?: string;
+  licenseNumber?: string;
+  licenseFullName?: string;
+  licenseDateOfBirth?: string;
+  licenseResidence?: string;
+  licenseNationality?: string;
 }
 
 // ====== MESSAGE ======
@@ -371,9 +409,12 @@ export interface VehicleFilters {
   instantBook?: boolean;
   verified?: boolean;
   deliveryAvailable?: boolean;
-  sortBy?: 'price_asc' | 'price_desc' | 'rating' | 'newest' | 'popular';
+  sortBy?: 'price_asc' | 'price_desc' | 'rating' | 'newest' | 'popular' | 'nearest';
   status?: VehicleStatus;
   isFeatured?: boolean;
+  userLat?: number;
+  userLng?: number;
+  keyword?: string;
   // Motorbike-specific
   minEngineCc?: number;
   maxEngineCc?: number;
@@ -471,3 +512,28 @@ export interface BookingWizardState {
   notes: string;
   paymentMethodId: string;
 }
+
+export interface VehicleLocationResponse {
+  id: string;
+  name: string;
+  brand: string;
+  type: 'CAR' | 'MOTORBIKE' | string;
+  thumbnail: string;
+  pricePerDay: number;
+  discount: number;
+  finalPrice: number;
+  rating: number;
+  totalTrips: number;
+  address: string;
+  city: string;
+  latitude: number;
+  longitude: number;
+  available: boolean;
+  ownerName: string;
+  distanceKm?: number;
+  transmission?: string;
+  seats?: number;
+  instantBook?: boolean;
+  deliveryAvailable?: boolean;
+}
+

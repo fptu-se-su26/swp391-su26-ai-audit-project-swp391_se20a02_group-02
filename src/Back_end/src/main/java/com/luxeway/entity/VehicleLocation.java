@@ -30,6 +30,7 @@ public class VehicleLocation {
 
     @NotBlank
     @Column(nullable = false, length = 100)
+    @Builder.Default
     private String country = "Vietnam";
 
     @NotBlank
@@ -45,5 +46,6 @@ public class VehicleLocation {
     private BigDecimal longitude;
 
     @Column(length = 50, nullable = false)
+    @Builder.Default
     private String timezone = "Asia/Ho_Chi_Minh";
 }

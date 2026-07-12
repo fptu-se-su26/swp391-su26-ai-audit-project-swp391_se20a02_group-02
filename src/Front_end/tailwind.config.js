@@ -17,17 +17,17 @@ export default {
       colors: {
         // LuxeWay Design System
         primary: {
-          DEFAULT: '#0F172A',
+          DEFAULT: '#0B1120',
           foreground: '#F8FAFC',
         },
         accent: {
-          DEFAULT: '#3B82F6',
+          DEFAULT: '#C9A227',
           foreground: '#FFFFFF',
         },
         gold: {
-          DEFAULT: '#EAB308',
-          light: '#FEF08A',
-          dark: '#A16207',
+          DEFAULT: '#C9A227',
+          light: '#F3E5AB',
+          dark: '#9A7B1C',
         },
         success: {
           DEFAULT: '#22C55E',
@@ -37,7 +37,7 @@ export default {
           DEFAULT: '#EF4444',
           foreground: '#FFFFFF',
         },
-        background: '#F8FAFC',
+        background: '#F8F7F4',
         surface: {
           DEFAULT: '#FFFFFF',
           hover: '#F1F5F9',
@@ -77,8 +77,8 @@ export default {
         '4xl': '40px',
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        display: ['"Playfair Display"', 'serif'],
+        sans: ['Manrope', 'system-ui', 'sans-serif'],
+        display: ['Playfair Display', 'serif'],
       },
       keyframes: {
         'accordion-down': {

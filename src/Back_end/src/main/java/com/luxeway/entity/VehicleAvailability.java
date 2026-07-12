@@ -27,10 +27,17 @@ public class VehicleAvailability {
     private LocalDate date;
 
     @Column(name = "is_available", nullable = false)
+    @Builder.Default
     private Boolean isAvailable = true;
 
     @Column(name = "booking_id", length = 36)
     private String bookingId;
+
+    @Column(name = "locked_until")
+    private java.time.LocalDateTime lockedUntil;
+
+    @Column(name = "locked_by", length = 36)
+    private String lockedBy;
 
     @PrePersist
     public void prePersist() {

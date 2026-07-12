@@ -44,7 +44,10 @@ Nguyên tắc ghi changelog:
 | Phase 05 | 2026-06-06 đến 2026-06-12 | Refactoring, Premium UI/UX & Design System components | Completed |
 | Phase 06.0 | 2026-06-20 | Vietnam Vehicle Rental KYC Verification System | Completed |
 | Phase 06.1 | 2026-06-27 | Driver License Constraints & Mioto Map Discovery System | Completed |
-| Phase 07 | (Chưa bắt đầu) | Hoàn thiện báo cáo và demo | In Progress |
+| Phase 06.2 | 2026-06-29 | Advanced eKYC & Mioto Full-Screen Map UI Refinement | Completed |
+| Phase 08 | 2026-06-30 | Đồng bộ Bộ lọc Marketplace với Database thực tế | Completed |
+| Phase 09 | 2026-07-01 đến 2026-07-13 | Booking & Payment Overhaul & Dashboards UI/UX Upgrade | Completed |
+| Phase 10 | (Chưa bắt đầu) | Hoàn thiện báo cáo và demo | In Progress |
 
 ---
 
@@ -1376,11 +1379,214 @@ Commit: feat: implement premium full-screen Mioto-style map toggle layout with a
 
 ---
 
+# [Phase 08] Đồng bộ Bộ lọc Marketplace với Database thực tế
+
+## Ngày thực hiện
+
+```text
+2026-06-30
+```
+
+## Mục tiêu
+
+Replicate 100% danh sách hãng xe và loại xe từ cơ sở dữ liệu thực tế lên giao diện bộ lọc Marketplace (Car & Motorbike). Đồng thời bổ sung API filter `brand` và `category` xuyên suốt toàn bộ backend stack.
+
+## Đã hoàn thành
+
+### 🔍 DB Audit bằng sqlcmd
+- [x] Truy vấn `DISTINCT brand` từ bảng `cars` (legacy): 19 hãng — Audi, BMW, Chevrolet, Ford, Honda, Hyundai, Kia, Lexus, Mazda, Mercedes-Benz, Mitsubishi, Nissan, Peugeot, Porsche, Subaru, Suzuki, Toyota, VinFast, Volvo
+- [x] Truy vấn `DISTINCT brand` từ bảng `vehicles` (unified): 17 hãng — tương tự + thêm MG
+- [x] Truy vấn `DISTINCT brand` từ bảng `motorbikes` (legacy): 12 hãng — BMW Motorrad, Ducati, Harley-Davidson, Honda, Kawasaki, KTM, Royal Enfield, Suzuki, SYM, Triumph, Vespa, Yamaha
+- [x] Truy vấn `DISTINCT brand` từ bảng `vehicles` (unified, MOTORBIKE): 12 hãng — BMW Motorrad, Ducati, Honda, Kawasaki, KTM, Piaggio, Royal Enfield, Suzuki, SYM, Vespa, VinFast, Yamaha
+- [x] Truy vấn `DISTINCT category` của `car_models`: Economy, Electric, Luxury, MPV, Pickup, Sedan, SUV
+- [x] Truy vấn `DISTINCT category` của `motorbike_models`: Adventure_Bike, Classic_Bike, Manual_Motorcycle, Scooter, Sport_Bike
+- [x] Xác nhận `motorbike_specifications` KHÔNG có cột `fuel_type` → loại bỏ Fuel Type khỏi Motorbike filter
+- [x] Xác nhận `car_specifications.fuel_type` có 3 giá trị: GASOLINE, DIESEL, ELECTRIC (không có HYBRID)
+
+### 📦 Backend Java — Mở rộng API filter
+- [x] **`CarRepository.java`**: Thêm `@Param("brand")` và `@Param("category")` vào JPQL query `searchCars` với điều kiện `LOWER(b.name) LIKE LOWER(CONCAT('%', :brand, '%'))` và `LOWER(m.category) = LOWER(:category)`
+- [x] **`MotorbikeRepository.java`**: Tương tự với `searchMotorbikes` — join qua `mo.brand` và `mo.category`
+- [x] **`CarService.java`**: Thêm `String brand, String category` vào signature `searchCars`, pass xuống repository
+- [x] **`MotorbikeService.java`**: Thêm `String brand, String category` vào signature `searchMotorbikes`, pass xuống repository
+- [x] **`CarController.java`**: Thêm `@RequestParam(required = false) String brand` và `@RequestParam(required = false) String category` vào endpoint `GET /cars`
+- [x] **`MotorbikeController.java`**: Tương tự vào endpoint `GET /motorbikes`
+- [x] Rebuild `./gradlew bootJar` → **BUILD SUCCESSFUL in 16s**
+
+### 🌐 Frontend TypeScript — Gửi params lên API
+- [x] **`carService.ts`**: Thêm `filters.brands[0]` → `queryParams.append('brand', ...)` và `filters.category[0].toUpperCase()` → `queryParams.append('category', ...)`
+- [x] **`motorbikeService.ts`**: Tương tự gửi `brand` và `category` lên `/motorbikes`
+
+### 🎫 Frontend UI — Cập nhật danh sách bộ lọc
+- [x] **`CarsMarketplace.tsx`**:
+  - `CAR_BRANDS`: Tăng từ 12 lên **20 hãng** (thêm Lexus, MG, Nissan, Peugeot, Volvo, Chevrolet, Subaru, Suzuki)
+  - `CAR_CATEGORIES`: Tăng từ 9 lên **10 loại** (thêm Family, loại bỏ Electric_Car trùng lặp)
+  - Fuel Type: Xóa Hybrid (không có trong DB), chỉ giữ **3 loại**: Xăng, Dầu, Điện (grid 3 cột)
+- [x] **`MotorbikeMarketplace.tsx`**:
+  - `MOTO_BRANDS`: Tăng từ 8 lên **14 hãng** (thêm BMW Motorrad, Ducati, KTM, Royal Enfield, Harley-Davidson, Triumph)
+  - `MOTORBIKE_CATEGORIES`: Sửa thành **6 loại đúng**: Scooter, Manual, Sport Bike, Adventure, Classic, Electric (xóa `automatic_scooter` và `touring_bike` không tồn tại trong DB)
+
+### ✅ Xác minh filter hoạt động qua SQL trực tiếp
+- Toyota → **12 xe** trả về ✓
+- Sedan → **35 xe** trả về ✓
+- Honda (moto) → **13 xe** trả về ✓
+- Scooter → **28 xe** trả về ✓
+
+## Thay đổi chi tiết — Nguyễn Văn Dạng (DE190324)
+
+| STT | Nội dung thay đổi | File/Module liên quan | Minh chứng |
+|---:|---|---|---|---|
+| 1 | DB Audit: Truy vấn distinct brand+category từ cả 2 bảng legacy và unified | sqlcmd — SQL Server | Kết quả truy vấn xác nhận |
+| 2 | Mở rộng JPQL CarRepository thêm brand+category filter | `CarRepository.java` | Build Gradle thành công |
+| 3 | Mở rộng JPQL MotorbikeRepository thêm brand+category filter | `MotorbikeRepository.java` | Build Gradle thành công |
+| 4 | Thêm brand/category params trong CarService | `CarService.java` | Đã compile |
+| 5 | Thêm brand/category params trong MotorbikeService | `MotorbikeService.java` | Đã compile |
+| 6 | Thêm @RequestParam brand/category vào CarController | `CarController.java` | API nhận được params |
+| 7 | Thêm @RequestParam brand/category vào MotorbikeController | `MotorbikeController.java` | API nhận được params |
+| 8 | Frontend carService gửi brand+category lên /cars | `carService.ts` | Query params đúng |
+| 9 | Frontend motorbikeService gửi brand+category lên /motorbikes | `motorbikeService.ts` | Query params đúng |
+| 10 | Cập nhật CAR_BRANDS 20 hãng, CAR_CATEGORIES 10 loại, sửa Fuel Type | `CarsMarketplace.tsx` | 100% khớp DB |
+| 11 | Cập nhật MOTO_BRANDS 14 hãng, MOTORBIKE_CATEGORIES 6 loại đúng | `MotorbikeMarketplace.tsx` | 100% khớp DB |
+
+## AI có hỗ trợ không?
+
+- [x] Có
+- [ ] Không
+
+Nếu có, mô tả AI đã hỗ trợ phần nào:
+
+```text
+AI (Antigravity) hỗ trợ:
+- Truy vấn và phân tích kết quả DB bằng sqlcmd để xác định danh sách đầy đủ cần đồng bộ.
+- Sinh các đoạn code Java (JPQL query, service params, controller params) cho cả 4 lớp.
+- Sinh các đoạn TypeScript thêm params vào URLSearchParams.
+- Xác minh schema cột `fuel_type` không tồn tại trong `motorbike_specifications` qua INFORMATION_SCHEMA query.
+```
+
+## Commit/Screenshot minh chứng
+
+```text
+Branch: main
+Build: ./gradlew bootJar → BUILD SUCCESSFUL in 16s
+SQL Test: Toyota=12xe, Sedan=35xe, Honda(moto)=13xe, Scooter=28xe
+```
+
+---
+
+# [Phase 09] Booking & Payment Overhaul & Dashboards UI/UX Upgrade
+
+## Ngày thực hiện
+
+```text
+2026-07-01 đến 2026-07-13
+```
+
+## Đã hoàn thành
+
+- [x] **Thiết kế Migration Database và Seeding**:
+  - Tạo bảng `booking_counters` hỗ trợ sinh mã booking động tăng dần và `payment_settings` lưu thông tin ngân hàng thanh toán (`run-be.bat` / `.env` / `import-data.sql` / `V5__booking_payment_overhaul.sql`).
+  - Mở rộng check constraint cho trạng thái booking hỗ trợ các trạng thái mới: `WAITING_PAYMENT`, `PAYMENT_PENDING`, `PAYMENT_VERIFIED`, `PAYMENT_REJECTED`, `PAYMENT_EXPIRED`, v.v.
+- [x] **Xây dựng luồng Thanh toán Chuyển khoản Thủ công**:
+  - Viết Service API ở Frontend (`bookingService.ts` / `BookingPaymentPage.tsx`) hiển thị thông tin VietQR, đếm ngược 15 phút thời gian thực, nút bấm xác nhận chuyển tiền gửi trạng thái `PAYMENT_PENDING` lên hệ thống.
+  - Viết Scheduler phía Backend (`BookingService.java`) chạy ngầm quét các đơn `WAITING_PAYMENT` quá hạn 15 phút, tự động chuyển sang `PAYMENT_EXPIRED` và hoàn trả xe rảnh cho calendar.
+- [x] **Nghiệp vụ duyệt thanh toán phía Admin**:
+  - Tích hợp tính năng Duyệt (`confirmPayment`) và Từ chối duyệt (`rejectPayment` kèm lý do) tại `AdminDashboard.tsx`.
+  - Sinh hóa đơn PDF và gửi email xác nhận đặt xe tự động cho khách hàng khi giao dịch thành công.
+- [x] **Nâng cấp UI/UX Dashboard LuxeWay**:
+  - Cải tiến giao diện của 3 dashboards chính (Customer, Owner, Admin Dashboard) theo phong cách hiện đại, tối giản, thanh sidebar collapsible mở rộng/thu gọn gọn gàng, layout grids bất đối xứng, skeleton loaders và empty states mô tả chi tiết.
+- [x] **Bảo mật và chuẩn hóa Validation**:
+  - Tích hợp các quy tắc kiểm tra `@Valid`, `@Pattern` cho thông tin User Profile, Change Password, Vehicle submission, Wallet transactions, Reviews, Disputes.
+  - Bắt lỗi tập trung qua `GlobalExceptionHandler.java` trả về JSON chuẩn, đồng bộ hiển thị chi tiết thông báo lỗi trên giao diện input Frontend.
+
+## Thay đổi chi tiết - Nguyễn Văn Dạng (DE190324)
+
+| STT | Nội dung thay đổi | Người thực hiện | File/Module liên quan | Minh chứng |
+|---:|---|---|---|---|
+| 1 | Tạo SQL migration & seed dữ liệu ngân hàng nhận thanh toán | Nguyễn Văn Dạng | `V5__booking_payment_overhaul.sql` | Bảng trong SQL Server |
+| 2 | Code Service/Controller duyệt, từ chối, Scheduler tự hủy quá hạn | Nguyễn Văn Dạng | `BookingService.java`, `BookingController.java` | Spring Boot API |
+| 3 | Triển khai giao diện thanh toán dynamic VietQR & Countdown | Nguyễn Văn Dạng | `BookingPaymentPage.tsx` | Trang `/bookings/:id/payment` |
+| 4 | Overhaul UI/UX Customer, Owner và Admin Dashboard | Nguyễn Văn Dạng | `CustomerDashboard.tsx`, `OwnerDashboard.tsx`, `AdminDashboard.tsx` | Tabs, Sidebar, Table grids |
+| 5 | Tích hợp `@Valid` validations & Global Exception handler | Nguyễn Văn Dạng | DTOs, Controllers, `GlobalExceptionHandler.java` | Standard error responses |
+
+## AI có hỗ trợ không?
+
+- [x] Có
+- [ ] Không
+
+Nếu có, mô tả AI đã hỗ trợ phần nào:
+
+```text
+AI (Antigravity) hỗ trợ:
+- Gợi ý cấu trúc bảng booking_counters và logic scheduler tự động quét cập nhật dữ liệu.
+- Thiết kế layout VietQR và form inputs hiển thị thông báo lỗi đồng bộ từ GlobalExceptionHandler.
+- Gợi ý các class icon của lucide-react và styles layout responsive cho 3 Dashboards.
+```
+
+## Commit/Screenshot minh chứng
+
+```text
+Branch: feature/de190324-vehicle-rental-platform
+Commit: feat: implement booking & payment overhaul with VietQR and 15min expiration scheduler, upgrade dashboards UI/UX with standard validations
+```
+
+---
+
+# [Phase 10] Code Cleanup & H2 Integration Testing Fix
+
+## Ngày thực hiện
+
+```text
+2026-07-13
+```
+
+## Đã hoàn thành
+
+- [x] **Dọn dẹp code rác**:
+  - Xóa file trùng lặp không sử dụng `AdminDashboard.tsx` tại `src/Front_end/src/pages/dashboard/`.
+  - Xóa toàn bộ thư mục mock database `src/Front_end/src/mock` do hệ thống đã tích hợp 100% dữ liệu thực từ REST API.
+- [x] **Khắc phục lỗi H2 Database Reserved Word**:
+  - Đổi tên cột từ `value` sang `counter_value` trong `BookingCounter.java` (sử dụng `@Column(name = "counter_value")`), `DatabaseMigration.java` và file migration `V5__booking_payment_overhaul.sql` để tránh xung đột với từ khóa dành riêng trong cơ sở dữ liệu H2 phục vụ integration tests.
+- [x] **Tách biệt Seeding Dữ liệu khởi tạo**:
+  - Refactor `DatabaseMigration.java` tách các câu lệnh tạo bảng và nạp seed dữ liệu thành các khối try-catch riêng biệt, giải quyết lỗi bỏ sót dữ liệu khởi tạo của `booking_counters` và `payment_settings` khi Hibernate tự động tạo bảng trước.
+- [x] **Đồng bộ Check Constraint Trạng thái Booking**:
+  - Cập nhật check constraint `CHK_bookings_status` trong `schema.sql` và `V0.1__schema.sql` khớp hoàn toàn với các trạng thái đơn hàng mới ở Backend.
+  - Xóa các file cơ sở dữ liệu cache của H2 trên ổ đĩa để bắt buộc H2 thiết lập lại từ đầu.
+
+## Thay đổi chi tiết - Nguyễn Văn Dạng (DE190324)
+
+| STT | Nội dung thay đổi | Người thực hiện | File/Module liên quan | Minh chứng |
+|---:|---|---|---|---|
+| 1 | Xóa các file rác và mockup data không sử dụng | Nguyễn Văn Dạng | `src/Front_end/src/pages/dashboard/AdminDashboard.tsx`, `src/Front_end/src/mock/` | Thư mục dự án |
+| 2 | Thay thế cột `value` bằng `counter_value` và tách seeding | Nguyễn Văn Dạng | `BookingCounter.java`, `DatabaseMigration.java`, `V5__booking_payment_overhaul.sql` | JPA entity & SQL queries |
+| 3 | Mở rộng check constraint `status` trong schema khởi tạo | Nguyễn Văn Dạng | `schema.sql`, `V0.1__schema.sql` | File SQL resources |
+| 4 | Xóa cache file cơ sở dữ liệu H2 để chạy kiểm thử sạch | Nguyễn Văn Dạng | `src/Back_end/data/luxeway_db*` | Files H2 trên đĩa |
+
+## AI có hỗ trợ không?
+
+- [x] Có
+- [ ] Không
+
+Nếu có, mô tả AI đã hỗ trợ phần nào:
+
+```text
+AI (Antigravity) hỗ trợ:
+- Phát hiện các mock files và duplicate dashboards không được import trong dự án.
+- Đề xuất thay đổi tên cột JPA để giữ nguyên logic code Java (các hàm getter/setter không thay đổi) và đề xuất các khối try-catch riêng để nạp seed độc lập.
+- Chỉ ra lỗi check constraint khi insert trạng thái booking mới trong quá trình chạy kiểm thử và cách mở rộng check constraint trong schema khởi tạo.
+```
+
+## Commit/Screenshot minh chứng
+
+```text
+Branch: feature/de190324-vehicle-rental-platform
+Commit: chore: clean up unused mock files and duplicate admin dashboard, fix H2 reserved word value column and check constraint violations in integration tests
+```
+
+---
+
 # 5. Cam kết cập nhật Changelog
 
 Sinh viên/nhóm cam kết rằng nội dung changelog phản ánh đúng các thay đổi đã thực hiện trong quá trình làm bài tập/project.
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-06-29 |
-
+| Nguyễn Văn Dạng - DE190324 | 2026-07-13 |

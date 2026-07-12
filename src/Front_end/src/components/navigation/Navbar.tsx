@@ -10,7 +10,7 @@ import { useAuthStore, useUIStore, useNotificationStore } from '@/store';
 import { cn, getInitials } from '@/utils';
 import { notificationService } from '@/services/otherServices';
 import { useT } from '@/i18n/translations';
-import logoImage from '@/image/logo.png';
+import logoImage from '../../image/logo.png';
 
 
 const LANGS = [
@@ -19,9 +19,6 @@ const LANGS = [
   { code: 'ja' as const, label: '日本語', flag: '🇯🇵' },
   { code: 'ko' as const, label: '한국어', flag: '🇰🇷' },
   { code: 'zh' as const, label: '中文', flag: '🇨🇳' },
-  { code: 'fr' as const, label: 'Français', flag: '🇫🇷' },
-  { code: 'de' as const, label: 'Deutsch', flag: '🇩🇪' },
-  { code: 'es' as const, label: 'Español', flag: '🇪🇸' },
 ];
 
 
@@ -209,7 +206,7 @@ export const Navbar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuthStore();
-  const { isScrolled, setScrolled, mobileMenuOpen, setMobileMenuOpen, theme } = useUIStore();
+  const { isScrolled, setScrolled, mobileMenuOpen, setMobileMenuOpen, theme, language } = useUIStore();
   const { unreadCount, setUnreadCount } = useNotificationStore();
   const [userMenuOpen, setUserMenuOpen] = React.useState(false);
   const userMenuRef = React.useRef<HTMLDivElement>(null);
@@ -224,8 +221,7 @@ export const Navbar: React.FC = () => {
 
   React.useEffect(() => {
     if (user) {
-      const count = notificationService.getUnreadCount(user.id);
-      setUnreadCount(count);
+      notificationService.getUnreadCount().then(setUnreadCount);
     }
   }, [user, setUnreadCount]);
 
@@ -249,6 +245,7 @@ export const Navbar: React.FC = () => {
 
   const navLinks = [
     { href: '/marketplace', label: t.nav.marketplace },
+    { href: '/map', label: language === 'vi' ? 'Bản đồ' : 'Map' },
     { href: '/reviews', label: t.nav.reviews },
     { href: '/help', label: t.nav.help },
   ];
@@ -302,13 +299,18 @@ export const Navbar: React.FC = () => {
                   key={link.href}
                   to={link.href}
                   className={cn(
-                    'px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200',
+                    'px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 flex items-center',
                     isActive(link.href)
-                      ? 'bg-[#0F172A] text-white'
+                      ? 'bg-[#0B1120] text-white'
                       : cn(textColor, hoverBg)
                   )}
                 >
-                  {link.label}
+                  <span>{link.label}</span>
+                  {link.href === '/map' && (
+                    <span className="ml-1.5 px-1.5 py-0.5 text-[9px] font-bold text-white bg-red-500 rounded-full leading-none">
+                      25
+                    </span>
+                  )}
                 </Link>
               ))}
             </div>
@@ -414,10 +416,7 @@ export const Navbar: React.FC = () => {
                           {/* Menu Items */}
                           <div className="p-2">
                             {(() => {
-                              const roleUpper = user.role?.toUpperCase();
-                              const accTypeUpper = user.accountType?.toUpperCase();
-                              const userIsBusiness = roleUpper === 'BUSINESS_OWNER' || (roleUpper === 'OWNER' && accTypeUpper === 'BUSINESS');
-
+                              const roleUpper = user?.role?.toUpperCase();
                               let menuItems: Array<{ icon: any; label: string; href: string }> = [];
                               if (roleUpper === 'CUSTOMER') {
                                 menuItems = [
@@ -426,11 +425,6 @@ export const Navbar: React.FC = () => {
                                   { icon: Heart, label: t.nav.wishlist, href: '/dashboard/wishlist' },
                                   { icon: User, label: t.nav.profile, href: '/dashboard/profile' },
                                   { icon: Bell, label: t.nav.notifications, href: '/dashboard/notifications' },
-                                ];
-                              } else if (userIsBusiness) {
-                                menuItems = [
-                                  { icon: LayoutDashboard, label: 'Business Panel', href: '/business' },
-                                  { icon: User, label: t.nav.profile, href: '/dashboard/profile' },
                                 ];
                               } else if (roleUpper === 'OWNER') {
                                 menuItems = [
@@ -513,13 +507,18 @@ export const Navbar: React.FC = () => {
                     to={link.href}
                     onClick={() => setMobileMenuOpen(false)}
                     className={cn(
-                      'flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors',
+                      'flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-colors',
                       isActive(link.href)
                         ? 'bg-[#0F172A] text-white'
                         : isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-100'
                     )}
                   >
-                    {link.label}
+                    <span>{link.label}</span>
+                    {link.href === '/map' && (
+                      <span className="px-1.5 py-0.5 text-[9px] font-bold text-white bg-red-500 rounded-full leading-none">
+                        25
+                      </span>
+                    )}
                   </Link>
                 ))}
                 {!isAuthenticated && (

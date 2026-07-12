@@ -15,7 +15,6 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,14 +23,22 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("all")
 public class BookingService {
 
     private final BookingRepository bookingRepository;
     private final VehicleRepository vehicleRepository;
     private final UserRepository userRepository;
+    private final BookingCounterRepository bookingCounterRepository;
+    private final PaymentSettingRepository paymentSettingRepository;
+    private final PaymentRepository paymentRepository;
+    private final AuditService auditService;
+    private final InvoiceService invoiceService;
     private final NotificationService notificationService;
     private final EmailService emailService;
     private final BookingDeliveryRepository bookingDeliveryRepository;
@@ -39,6 +46,8 @@ public class BookingService {
     private final BookingStatusHistoryRepository bookingStatusHistoryRepository;
     private final VehicleAvailabilityRepository vehicleAvailabilityRepository;
     private final PricingEngine pricingEngine;
+    private final SimpMessagingTemplate messagingTemplate;
+    private final ReviewRepository reviewRepository;
 
     @Value("${business.pricing.service-fee-rate:0.12}")
     private double serviceFeeRate;
@@ -46,49 +55,102 @@ public class BookingService {
     @Value("${business.pricing.tax-rate:0.08}")
     private double taxRate;
 
+    // ====== Shared Booking Validation ======
+
+    public void validateBookingEligibility(User renter, Vehicle vehicle, LocalDate startDate, LocalDate endDate) {
+        if (startDate == null || endDate == null) {
+            throw new RuntimeException("Start date and end date are required");
+        }
+        if (!startDate.isBefore(endDate)) {
+            throw new RuntimeException("Start date must be before end date");
+        }
+        if (startDate.isBefore(LocalDate.now())) {
+            throw new RuntimeException("Start date cannot be in the past");
+        }
+
+        // Validate minimum and maximum rental days
+        long rentalDays = java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate);
+        if (rentalDays < 1) {
+            rentalDays = 1;
+        }
+        if (vehicle.getMinRentalDays() != null && rentalDays < vehicle.getMinRentalDays()) {
+            throw new RuntimeException("Thời gian thuê tối thiểu cho xe này là " + vehicle.getMinRentalDays() + " ngày.");
+        }
+        if (vehicle.getMaxRentalDays() != null && rentalDays > vehicle.getMaxRentalDays()) {
+            throw new RuntimeException("Thời gian thuê tối đa cho xe này là " + vehicle.getMaxRentalDays() + " ngày.");
+        }
+
+        if (vehicle.getStatus() != VehicleStatus.AVAILABLE) {
+            throw new RuntimeException("This vehicle is currently unavailable");
+        }
+
+        // Check for overlapping bookings (PENDING, CONFIRMED, ACTIVE overlap with requested dates)
+        if (bookingRepository.hasConflictingBooking(vehicle.getId(), startDate, endDate)) {
+            throw new RuntimeException(
+                "Vehicle is already booked for dates " + startDate + " to " + endDate +
+                ". Please choose different dates."
+            );
+        }
+
+        // Check for temporary locks preventing double booking
+        List<VehicleAvailability> conflictingLocks = vehicleAvailabilityRepository.findConflictingLocks(
+            vehicle.getId(), startDate, endDate, java.time.LocalDateTime.now(), renter.getId()
+        );
+        if (!conflictingLocks.isEmpty()) {
+            throw new RuntimeException("Vehicle is temporarily locked or unavailable for these dates. Please choose different dates.");
+        }
+
+        // Enforce KYC verification & license class matching
+        if (renter.getRole() != com.luxeway.enums.UserRole.ADMIN) {
+            if (!"VERIFIED".equals(renter.getKycStatus())) {
+                throw new RuntimeException("Please complete identity verification first");
+            }
+
+            String licenseClass = renter.getLicenseClass() != null ? renter.getLicenseClass().trim().toUpperCase() : "";
+            if (vehicle.getVehicleType() == com.luxeway.enums.VehicleType.MOTORBIKE) {
+                boolean isMotorbikeLicense = licenseClass.startsWith("A");
+                if (!isMotorbikeLicense) {
+                    throw new RuntimeException("Your driving license does not support motorcycle rental");
+                }
+            } else if (vehicle.getVehicleType() == com.luxeway.enums.VehicleType.CAR) {
+                boolean isCarLicense = licenseClass.startsWith("B") ||
+                                       licenseClass.startsWith("C") ||
+                                       licenseClass.startsWith("D") ||
+                                       licenseClass.startsWith("E") ||
+                                       licenseClass.startsWith("F");
+                if (!isCarLicense) {
+                    if (licenseClass.startsWith("A")) {
+                        throw new RuntimeException("Bằng lái xe máy hạng " + licenseClass + " không được phép thuê xe ô tô. Vui lòng sử dụng bằng lái xe ô tô (B1, B2, C...)");
+                    } else {
+                        throw new RuntimeException("Your driving license does not support car rental");
+                    }
+                }
+            }
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public void validatePreBook(String renterId, BookingDTOs.CreateBookingRequest req) {
+        User renter = userRepository.findById(renterId)
+                .orElseThrow(() -> new RuntimeException("Renter not found"));
+        Vehicle vehicle = vehicleRepository.findById(req.getVehicleId())
+                .orElseThrow(() -> new RuntimeException("Vehicle not found: " + req.getVehicleId()));
+        validateBookingEligibility(renter, vehicle, req.getStartDate(), req.getEndDate());
+    }
+
     // ====== Create Booking ======
 
     @Transactional
     public BookingDTOs.BookingResponse createBooking(String renterId, BookingDTOs.CreateBookingRequest req) {
 
-        // Validate dates (BR-1: endDate must be >= startDate; BR-2: min 1 day = same-day allowed)
-        if (req.getStartDate() == null || req.getEndDate() == null) {
-            throw new RuntimeException("Start date and end date are required");
-        }
-        if (req.getEndDate().isBefore(req.getStartDate())) {
-            throw new RuntimeException("End date must be on or after start date");
-        }
-        if (req.getStartDate().isBefore(LocalDate.now())) {
-            throw new RuntimeException("Start date cannot be in the past");
-        }
-
         // Acquire PESSIMISTIC WRITE lock on the vehicle row to prevent race condition:
-        // If two users try to book the same vehicle simultaneously, only one can hold the lock.
         Vehicle vehicle = vehicleRepository.findByIdForUpdate(req.getVehicleId())
                 .orElseThrow(() -> new RuntimeException("Vehicle not found: " + req.getVehicleId()));
-
-        if (vehicle.getStatus() != VehicleStatus.AVAILABLE) {
-            throw new RuntimeException("Vehicle is not available for booking (status: " + vehicle.getStatus() + ")");
-        }
-
-        // Check for overlapping bookings (PENDING, CONFIRMED, ACTIVE overlap with requested dates)
-        if (bookingRepository.hasConflictingBooking(req.getVehicleId(), req.getStartDate(), req.getEndDate())) {
-            throw new RuntimeException(
-                "Vehicle is already booked for dates " + req.getStartDate() + " to " + req.getEndDate() +
-                ". Please choose different dates."
-            );
-        }
 
         User renter = userRepository.findById(renterId)
                 .orElseThrow(() -> new RuntimeException("Renter not found"));
 
-        // BUG-02 FIX: All non-admin renters (CUSTOMER and OWNER renting another owner's vehicle)
-        // must have KYC and driving license verified before creating a booking.
-        if (renter.getRole() != com.luxeway.enums.UserRole.ADMIN) {
-            if (!Boolean.TRUE.equals(renter.getKycVerified()) || !Boolean.TRUE.equals(renter.getDrivingLicenseVerified())) {
-                throw new RuntimeException("KYC identity and driving license verification are required before booking. Please complete verification in your profile.");
-            }
-        }
+        validateBookingEligibility(renter, vehicle, req.getStartDate(), req.getEndDate());
 
         // Calculate pricing using Pricing Engine
         long totalDays = ChronoUnit.DAYS.between(req.getStartDate(), req.getEndDate()) + 1;
@@ -99,13 +161,25 @@ public class BookingService {
         BigDecimal deliveryFee = req.isIncludeDelivery() ? vehicle.getDeliveryFee() : BigDecimal.ZERO;
         BigDecimal serviceFee = basePrice.multiply(BigDecimal.valueOf(serviceFeeRate)).setScale(0, RoundingMode.HALF_UP);
         BigDecimal taxes = basePrice.multiply(BigDecimal.valueOf(taxRate)).setScale(0, RoundingMode.HALF_UP);
-        BigDecimal total = basePrice.add(insuranceFee).add(deliveryFee).add(serviceFee).add(taxes);
+        BigDecimal cleaningFee = BigDecimal.ZERO; // Default cleaning fee snapshot
+        BigDecimal total = basePrice.add(insuranceFee).add(deliveryFee).add(serviceFee).add(taxes).add(cleaningFee);
+
+        // Concurrency-safe sequential booking code generation
+        BookingCounter counter = bookingCounterRepository.findByNameForUpdate("bookings")
+                .orElseThrow(() -> new RuntimeException("Booking counter sequence not initialized"));
+        long nextValue = counter.getValue() + 1;
+        counter.setValue(nextValue);
+        bookingCounterRepository.saveAndFlush(counter);
+
+        int yy = java.time.LocalDate.now().getYear() % 100;
+        String bookingCode = String.format("LXW-%02d-%06d", yy, nextValue);
 
         Booking booking = Booking.builder()
                 .vehicle(vehicle)
                 .renter(renter)
                 .owner(vehicle.getOwner())
-                .status(vehicle.getInstantBook() ? BookingStatus.CONFIRMED : BookingStatus.PENDING)
+                .status(BookingStatus.WAITING_PAYMENT)
+                .bookingCode(bookingCode)
                 .startDate(req.getStartDate())
                 .endDate(req.getEndDate())
                 .totalDays((int) totalDays)
@@ -116,6 +190,7 @@ public class BookingService {
                 .deliveryFee(deliveryFee)
                 .serviceFee(serviceFee)
                 .taxes(taxes)
+                .cleaningFee(cleaningFee)
                 .discount(BigDecimal.ZERO)
                 .total(total)
                 .deposit(vehicle.getDeposit())
@@ -133,7 +208,7 @@ public class BookingService {
         BookingStatusHistory history = BookingStatusHistory.builder()
                 .booking(booking)
                 .status(booking.getStatus().name())
-                .comment("Booking created successfully")
+                .comment("Booking created successfully with code: " + bookingCode)
                 .changedBy(renterId)
                 .build();
         bookingStatusHistoryRepository.save(history);
@@ -150,19 +225,50 @@ public class BookingService {
             bookingDeliveryRepository.save(delivery);
         }
 
-        // Block Calendar if instantly confirmed
-        if (booking.getStatus() == BookingStatus.CONFIRMED) {
-            blockAvailabilityCalendar(booking);
+        // Block Calendar immediately to prevent other users from booking during WAITING_PAYMENT
+        blockAvailabilityCalendar(booking);
+
+        // Notify Customer
+        try {
+            notificationService.createNotification(
+                renterId,
+                "booking",
+                "Booking created successfully",
+                "Your booking request for " + vehicle.getName() + " has been submitted successfully.",
+                "/dashboard/bookings"
+            );
+        } catch (Exception e) {
+            log.error("Failed to notify customer: {}", e.getMessage());
         }
 
-        // Notify owner
-        notificationService.createNotification(
-            booking.getOwner().getId(),
-            "booking",
-            "notification.booking.new.title",
-            "notification.booking.new.body|renter=" + renter.getDisplayName() + "|vehicle=" + vehicle.getName(),
-            "/owner/bookings/" + booking.getId()
-        );
+        // Notify Owner
+        try {
+            notificationService.createNotification(
+                booking.getOwner().getId(),
+                "booking",
+                "You received a new booking request",
+                renter.getDisplayName() + " has requested to book " + vehicle.getName() + ".",
+                "/owner/bookings"
+            );
+        } catch (Exception e) {
+            log.error("Failed to notify owner: {}", e.getMessage());
+        }
+
+        // Notify Admin
+        try {
+            List<User> admins = userRepository.findByRole(com.luxeway.enums.UserRole.ADMIN);
+            for (User admin : admins) {
+                notificationService.createNotification(
+                    admin.getId(),
+                    "booking",
+                    "New booking created",
+                    "Renter " + renter.getDisplayName() + " booked " + vehicle.getName() + " owned by " + vehicle.getOwner().getDisplayName() + ".",
+                    "/admin/bookings"
+                );
+            }
+        } catch (Exception e) {
+            log.error("Failed to notify admins: {}", e.getMessage());
+        }
 
         log.info("Booking created: {} for vehicle {} by renter {}", booking.getId(), vehicle.getId(), renterId);
         
@@ -175,11 +281,14 @@ public class BookingService {
             }
         }
 
-        return toResponse(booking);
+        BookingDTOs.BookingResponse response = toResponse(booking);
+        broadcastLifecycleEvent(booking, "BOOKING_CREATED");
+        return response;
     }
 
     // ====== Get bookings for renter ======
 
+    @Transactional(readOnly = true)
     public Page<BookingDTOs.BookingResponse> getMyBookings(String renterId, int page, int size) {
         // Do NOT add Sort here - 'OrderByCreatedAtDesc' in method name already handles ordering
         Pageable pageable = PageRequest.of(page, size);
@@ -188,6 +297,7 @@ public class BookingService {
 
     // ====== Get bookings for owner ======
 
+    @Transactional(readOnly = true)
     public Page<BookingDTOs.BookingResponse> getOwnerBookings(String ownerId, int page, int size) {
         // Do NOT add Sort here - 'OrderByCreatedAtDesc' in method name already handles ordering
         Pageable pageable = PageRequest.of(page, size);
@@ -196,12 +306,16 @@ public class BookingService {
 
     // ====== Get booking by ID ======
 
+    @Transactional(readOnly = true)
     public BookingDTOs.BookingResponse getById(String bookingId, String requesterId, boolean isAdmin) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
 
-        if (!isAdmin && !booking.getRenter().getId().equals(requesterId)
-                && !booking.getOwner().getId().equals(requesterId)) {
+        String renterId = booking.getRenter() != null ? booking.getRenter().getId() : "";
+        String ownerId = booking.getOwner() != null ? booking.getOwner().getId() : "";
+
+        if (!isAdmin && !renterId.equals(requesterId)
+                && !ownerId.equals(requesterId)) {
             throw new org.springframework.security.access.AccessDeniedException("Not authorized to view this booking");
         }
 
@@ -302,6 +416,18 @@ public class BookingService {
 
         booking = bookingRepository.save(booking);
 
+        String eventName = null;
+        if (newStatus == BookingStatus.PICKING_UP) {
+            eventName = "VEHICLE_PICKING_UP";
+        } else if (newStatus == BookingStatus.IN_PROGRESS || newStatus == BookingStatus.ACTIVE) {
+            eventName = "TRIP_STARTED";
+        } else if (newStatus == BookingStatus.COMPLETED) {
+            eventName = "TRIP_COMPLETED";
+        }
+        if (eventName != null) {
+            broadcastLifecycleEvent(booking, eventName);
+        }
+
         // Status History Audit Logging
         BookingStatusHistory history = BookingStatusHistory.builder()
                 .booking(booking)
@@ -344,17 +470,20 @@ public class BookingService {
     // ====== Availability Calendar Helpers ======
 
     private void blockAvailabilityCalendar(Booking booking) {
-        // BUG-06 FIX: Check if record already exists for this date before inserting.
-        // This prevents duplicate records on retry or re-confirmation calls.
         LocalDate start = booking.getStartDate();
         LocalDate end = booking.getEndDate();
         for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
             final LocalDate currentDate = date;
-            boolean alreadyBlocked = vehicleAvailabilityRepository
-                    .findByVehicleIdAndDateBetween(booking.getVehicle().getId(), currentDate, currentDate)
-                    .stream()
-                    .anyMatch(slot -> booking.getId().equals(slot.getBookingId()));
-            if (!alreadyBlocked) {
+            List<VehicleAvailability> existing = vehicleAvailabilityRepository
+                    .findByVehicleIdAndDateBetween(booking.getVehicle().getId(), currentDate, currentDate);
+            if (!existing.isEmpty()) {
+                VehicleAvailability availability = existing.get(0);
+                availability.setIsAvailable(false);
+                availability.setBookingId(booking.getId());
+                availability.setLockedUntil(null);
+                availability.setLockedBy(null);
+                vehicleAvailabilityRepository.save(availability);
+            } else {
                 VehicleAvailability availability = VehicleAvailability.builder()
                         .vehicle(booking.getVehicle())
                         .date(currentDate)
@@ -373,6 +502,24 @@ public class BookingService {
     @Transactional
     public void blockAvailabilityCalendarPublic(Booking booking) {
         blockAvailabilityCalendar(booking);
+        broadcastLifecycleEvent(booking, "PAYMENT_COMPLETED");
+    }
+
+    public void broadcastLifecycleEvent(Booking booking, String eventName) {
+        try {
+            java.util.Map<String, Object> payload = new java.util.HashMap<>();
+            payload.put("bookingId", booking.getId());
+            payload.put("event", eventName);
+            payload.put("status", booking.getStatus().name());
+            payload.put("booking", toResponse(booking));
+            payload.put("timestamp", java.time.LocalDateTime.now().toString());
+
+            String destination = "/topic/tracking/" + booking.getId();
+            messagingTemplate.convertAndSend(destination, payload);
+            log.info("Broadcasted lifecycle event {} to {}", eventName, destination);
+        } catch (Exception e) {
+            log.error("Failed to broadcast lifecycle event {}: {}", eventName, e.getMessage());
+        }
     }
 
     private void freeAvailabilityCalendar(Booking booking) {
@@ -408,6 +555,7 @@ public class BookingService {
         r.setUpdatedAt(b.getUpdatedAt() != null ? b.getUpdatedAt().toString() : null);
         r.setCancelledAt(b.getCancelledAt() != null ? b.getCancelledAt().toString() : null);
         r.setCancellationReason(b.getCancellationReason());
+        r.setReviewId(reviewRepository.findByBookingId(b.getId()).map(Review::getId).orElse(null));
 
         // Pricing
         BookingDTOs.BookingResponse.PricingInfo pricing = new BookingDTOs.BookingResponse.PricingInfo();
@@ -433,7 +581,9 @@ public class BookingService {
             vi.setBrand(v.getBrand());
             vi.setThumbnailUrl(v.getThumbnailUrl());
             vi.setCity(v.getCity());
-            vi.setCategory(v.getCategory().name().toLowerCase());
+            if (v.getCategory() != null) {
+                vi.setCategory(v.getCategory().name().toLowerCase());
+            }
             r.setVehicle(vi);
         }
 
@@ -461,6 +611,282 @@ public class BookingService {
             r.setOwner(oi);
         }
 
+        r.setBookingCode(b.getBookingCode());
+        r.setVersion(b.getVersion());
+
         return r;
+    }
+
+    @Transactional
+    public BookingDTOs.BookingResponse confirmTransfer(String bookingId, String renterId, String ip, String userAgent) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+        if (!booking.getRenter().getId().equals(renterId)) {
+            throw new org.springframework.security.access.AccessDeniedException("Not authorized to confirm this booking");
+        }
+
+        // Idempotency check:
+        if (booking.getStatus() == BookingStatus.PAYMENT_PENDING) {
+            log.info("Idempotent check hit: Booking {} is already in PAYMENT_PENDING", bookingId);
+            return toResponse(booking);
+        }
+
+        if (booking.getStatus() != BookingStatus.WAITING_PAYMENT) {
+            throw new RuntimeException("Booking must be in WAITING_PAYMENT status to confirm transfer. Current status: " + booking.getStatus());
+        }
+
+        BookingStatus oldStatus = booking.getStatus();
+        booking.setStatus(BookingStatus.PAYMENT_PENDING);
+        booking = bookingRepository.save(booking);
+
+        // Timeline History Log
+        BookingStatusHistory history = BookingStatusHistory.builder()
+                .booking(booking)
+                .status(BookingStatus.PAYMENT_PENDING.name())
+                .comment("Customer clicked 'Tôi đã chuyển khoản' (I have transferred)")
+                .changedBy(renterId)
+                .build();
+        bookingStatusHistoryRepository.save(history);
+
+        // Complete Audit Log
+        auditService.log(
+            renterId,
+            "PAYMENT_SUBMITTED",
+            "Booking",
+            bookingId,
+            oldStatus.name(),
+            BookingStatus.PAYMENT_PENDING.name(),
+            ip,
+            userAgent
+        );
+
+        // Notify Owner/Admin
+        try {
+            notificationService.createNotification(
+                booking.getOwner().getId(),
+                "booking",
+                "Xác nhận thanh toán đang chờ duyệt",
+                "Đơn đặt xe " + booking.getBookingCode() + " đã được xác nhận chuyển khoản. Vui lòng duyệt.",
+                "/admin/bookings"
+            );
+        } catch (Exception e) {
+            log.error("Failed to notify owner: {}", e.getMessage());
+        }
+
+        broadcastLifecycleEvent(booking, "PAYMENT_PENDING");
+
+        return toResponse(booking);
+    }
+
+    @Transactional
+    public BookingDTOs.BookingResponse verifyPayment(String bookingId, String adminId, String ip, String userAgent) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+        if (booking.getStatus() != BookingStatus.PAYMENT_PENDING) {
+            throw new RuntimeException("Booking must be in PAYMENT_PENDING status to verify. Current status: " + booking.getStatus());
+        }
+
+        BookingStatus oldStatus = booking.getStatus();
+        booking.setStatus(BookingStatus.CONFIRMED);
+        booking = bookingRepository.save(booking);
+
+        // Generate detailed payment record
+        Payment payment = Payment.builder()
+                .booking(booking)
+                .user(booking.getRenter())
+                .amount(booking.getTotal())
+                .currency("VND")
+                .status(com.luxeway.enums.PaymentStatus.SUCCEEDED)
+                .method("BANK_TRANSFER")
+                .transactionId("LXW-" + booking.getBookingCode() + "-" + (System.currentTimeMillis() % 1000000))
+                .description("Manual bank transfer payment verified by admin " + adminId)
+                .transferContent(booking.getBookingCode())
+                .verifiedBy(adminId)
+                .verifiedTime(java.time.LocalDateTime.now())
+                .build();
+        paymentRepository.save(payment);
+
+        // Block calendar permanently
+        blockAvailabilityCalendar(booking);
+
+        // Timeline History Log
+        BookingStatusHistory history = BookingStatusHistory.builder()
+                .booking(booking)
+                .status(BookingStatus.CONFIRMED.name())
+                .comment("Admin verified bank transaction and confirmed booking")
+                .changedBy(adminId)
+                .build();
+        bookingStatusHistoryRepository.save(history);
+
+        // Generate PDF Invoice and email to customer
+        try {
+            invoiceService.generateInvoiceForBooking(booking.getId(), adminId, true);
+        } catch (Exception e) {
+            log.error("Failed to generate and email PDF invoice: {}", e.getMessage());
+        }
+
+        // Complete Audit Log
+        auditService.log(
+            adminId,
+            "PAYMENT_APPROVED",
+            "Booking",
+            bookingId,
+            oldStatus.name(),
+            BookingStatus.CONFIRMED.name(),
+            ip,
+            userAgent
+        );
+
+        // Notify Customer & Owner
+        try {
+            notificationService.createNotification(
+                booking.getRenter().getId(),
+                "booking",
+                "Thanh toán được xác nhận",
+                "Thanh toán cho đơn đặt xe " + booking.getBookingCode() + " đã được xác nhận. Xe đã được giữ.",
+                "/dashboard/bookings"
+            );
+        } catch (Exception e) {
+            log.error("Failed to notify customer: {}", e.getMessage());
+        }
+
+        // Email Alert
+        try {
+            emailService.sendBookingConfirmation(booking.getRenter().getEmail(), booking);
+        } catch (Exception e) {
+            log.warn("Failed to send booking confirmation email async: {}", e.getMessage());
+        }
+
+        broadcastLifecycleEvent(booking, "PAYMENT_APPROVED");
+
+        return toResponse(booking);
+    }
+
+    @Transactional
+    public BookingDTOs.BookingResponse rejectPayment(String bookingId, String adminId, String reason, String ip, String userAgent) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+        if (booking.getStatus() != BookingStatus.PAYMENT_PENDING) {
+            throw new RuntimeException("Booking must be in PAYMENT_PENDING status to reject. Current status: " + booking.getStatus());
+        }
+
+        BookingStatus oldStatus = booking.getStatus();
+        booking.setStatus(BookingStatus.PAYMENT_REJECTED);
+        booking = bookingRepository.save(booking);
+
+        // Generate failed payment record
+        Payment payment = Payment.builder()
+                .booking(booking)
+                .user(booking.getRenter())
+                .amount(booking.getTotal())
+                .currency("VND")
+                .status(com.luxeway.enums.PaymentStatus.FAILED)
+                .method("BANK_TRANSFER")
+                .transactionId("REJ-" + booking.getBookingCode() + "-" + (System.currentTimeMillis() % 1000000))
+                .description("Manual bank transfer payment rejected. Reason: " + reason)
+                .transferContent(booking.getBookingCode())
+                .verifiedBy(adminId)
+                .verifiedTime(java.time.LocalDateTime.now())
+                .rejectedReason(reason)
+                .build();
+        paymentRepository.save(payment);
+
+        // Free Availability Calendar (release vehicle locks immediately)
+        freeAvailabilityCalendar(booking);
+
+        // Timeline History Log
+        BookingStatusHistory history = BookingStatusHistory.builder()
+                .booking(booking)
+                .status(BookingStatus.PAYMENT_REJECTED.name())
+                .comment("Admin rejected bank transaction. Reason: " + reason)
+                .changedBy(adminId)
+                .build();
+        bookingStatusHistoryRepository.save(history);
+
+        // Complete Audit Log
+        auditService.log(
+            adminId,
+            "PAYMENT_REJECTED",
+            "Booking",
+            bookingId,
+            oldStatus.name(),
+            BookingStatus.PAYMENT_REJECTED.name(),
+            ip,
+            userAgent
+        );
+
+        // Notify Customer
+        try {
+            notificationService.createNotification(
+                booking.getRenter().getId(),
+                "booking",
+                "Thanh toán bị từ chối",
+                "Yêu cầu thanh toán đơn đặt xe " + booking.getBookingCode() + " đã bị từ chối. Lý do: " + reason,
+                "/dashboard/bookings"
+            );
+        } catch (Exception e) {
+            log.error("Failed to notify customer: {}", e.getMessage());
+        }
+
+        broadcastLifecycleEvent(booking, "PAYMENT_REJECTED");
+
+        return toResponse(booking);
+    }
+
+    @org.springframework.scheduling.annotation.Scheduled(fixedRate = 60000)
+    @Transactional
+    public void checkExpiredBookings() {
+        java.time.LocalDateTime cutoff = java.time.LocalDateTime.now().minusMinutes(15);
+        List<Booking> expiredBookings = bookingRepository.findByStatusAndCreatedAtBefore(
+            BookingStatus.WAITING_PAYMENT, cutoff
+        );
+
+        for (Booking booking : expiredBookings) {
+            try {
+                BookingStatus oldStatus = booking.getStatus();
+                booking.setStatus(BookingStatus.PAYMENT_EXPIRED);
+                booking = bookingRepository.save(booking);
+
+                // Free Availability Calendar immediately
+                freeAvailabilityCalendar(booking);
+
+                // Timeline History Log
+                BookingStatusHistory history = BookingStatusHistory.builder()
+                        .booking(booking)
+                        .status(BookingStatus.PAYMENT_EXPIRED.name())
+                        .comment("Payment timeout. Booking automatically expired and released.")
+                        .changedBy("SYSTEM")
+                        .build();
+                bookingStatusHistoryRepository.save(history);
+
+                // Audit Log
+                auditService.log(
+                    "SYSTEM",
+                    "PAYMENT_TIMEOUT",
+                    "Booking",
+                    booking.getId(),
+                    oldStatus.name(),
+                    BookingStatus.PAYMENT_EXPIRED.name(),
+                    "127.0.0.1",
+                    "Scheduler"
+                );
+
+                // Notify Customer
+                notificationService.createNotification(
+                    booking.getRenter().getId(),
+                    "booking",
+                    "Đơn đặt xe hết hạn thanh toán",
+                    "Đơn đặt xe " + booking.getBookingCode() + " đã hết hạn thanh toán 15 phút. Xe đã được giải phóng.",
+                    "/dashboard/bookings"
+                );
+
+                broadcastLifecycleEvent(booking, "PAYMENT_EXPIRED");
+            } catch (Exception ex) {
+                log.error("Failed to process expiration for booking {}: {}", booking.getId(), ex.getMessage());
+            }
+        }
     }
 }

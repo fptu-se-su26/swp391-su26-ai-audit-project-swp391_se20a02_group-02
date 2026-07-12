@@ -11,7 +11,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Map;
 
 @Entity
 @Table(name = "payments")
@@ -77,6 +76,18 @@ public class Payment {
 
     @Column(name = "refunded_at")
     private LocalDateTime refundedAt;
+
+    @Column(name = "verified_by", length = 100)
+    private String verifiedBy;
+
+    @Column(name = "verified_time")
+    private LocalDateTime verifiedTime;
+
+    @Column(name = "rejected_reason", length = 500)
+    private String rejectedReason;
+
+    @Column(name = "transfer_content", length = 100)
+    private String transferContent;
 
     @PrePersist
     private void prePersist() {

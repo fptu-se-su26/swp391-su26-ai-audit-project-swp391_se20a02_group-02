@@ -3,12 +3,13 @@ import { Link, Outlet, useNavigate, useParams, useLocation } from 'react-router-
 import { motion, AnimatePresence } from 'framer-motion';
 import ImageUploader from '@/components/ui/ImageUploader';
 import { OwnerAnalyticsDashboard } from '@/components/enterprise/OwnerAnalyticsDashboard';
+import { LocationPickerMap } from '@/components/map/LocationPickerMap';
 
 import {
   LayoutDashboard, Car, Calendar, TrendingUp, Users, Settings,
   Plus, Edit, Trash2, Eye, CheckCircle, Clock, DollarSign,
   BarChart2, Shield, AlertTriangle, LogOut, Globe, Menu,
-  MapPin, Star, Activity, ArrowUpRight
+  MapPin, Star, Activity, ArrowUpRight, Play
 } from 'lucide-react';
 
 import { useAuthStore, useUIStore } from '@/store';
@@ -16,28 +17,31 @@ import { vehicleService } from '@/services/vehicleService';
 import { bookingService } from '@/services/bookingService';
 import apiClient from '@/services/api';
 import type { Vehicle, Booking } from '@/types';
-import { formatCurrency, formatDate, getStatusColor, convertCurrency } from '@/utils';
+import { formatCurrency, formatDate, getStatusColor, convertCurrency, cn } from '@/utils';
 import { staggerContainer, staggerItem, fadeUp } from '@/animations/variants';
 import { useToast } from '@/components/ui/Toast';
 import { useT } from '@/i18n/translations';
+import Avatar from '@/components/ui/Avatar';
+import StatusBadge from '@/components/ui/StatusBadge';
+import Breadcrumbs from '@/components/ui/Breadcrumbs';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, BarChart, Bar, Cell
 } from 'recharts';
 
-// Custom glassmorphic tooltip for charts
+// Custom glassmorphic tooltip for charts (styled as a premium white card with shadow)
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="glass-strong border border-slate-200/50 dark:border-white/10 p-3.5 rounded-2xl shadow-xl backdrop-blur-md text-xs font-semibold">
-        <p className="text-slate-400 dark:text-slate-500 font-bold mb-1">{label}</p>
-        <p className="text-slate-800 dark:text-white font-extrabold flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-gold inline-block" />
-          Revenue: <span className="text-gold">{formatCurrency(payload[0].value)}</span>
+      <div className="bg-white border border-slate-200 p-3.5 rounded-lg shadow-xl text-xs font-semibold text-slate-800">
+        <p className="text-slate-555 font-bold mb-1">{label}</p>
+        <p className="text-slate-800 font-extrabold flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" />
+          Revenue: <span className="text-amber-600">{formatCurrency(payload[0].value)}</span>
         </p>
         {payload[0].payload.bookings !== undefined && (
-          <p className="text-slate-600 dark:text-slate-300 font-medium mt-0.5 flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-blue-500 inline-block" />
+          <p className="text-slate-600 font-medium mt-0.5 flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block" />
             Bookings: {payload[0].payload.bookings}
           </p>
         )}
@@ -119,8 +123,7 @@ export const OwnerOverview: React.FC = () => {
         {/* Hero / Featured Vehicle Card */}
         <motion.div
           variants={fadeUp} initial="hidden" animate="visible"
-          className="lg:col-span-3 relative rounded-3xl overflow-hidden min-h-[260px] shadow-2xl"
-          style={{ boxShadow: '0 25px 60px rgba(0,0,0,0.5)' }}
+          className="lg:col-span-3 relative rounded-2xl overflow-hidden min-h-[260px] shadow-xl"
         >
           <img
             src={featuredVehicle?.thumbnailUrl || 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=900&q=80'}
@@ -147,20 +150,20 @@ export const OwnerOverview: React.FC = () => {
           <div className="absolute bottom-0 left-0 right-0 p-6">
             <div className="flex items-end justify-between gap-4">
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold mb-1 flex items-center gap-1.5" style={{ color: 'rgba(148,163,184,0.9)' }}>
+                <p className="text-xs font-semibold mb-1 flex items-center gap-1.5 text-slate-300">
                   <MapPin className="w-3 h-3" /> {featuredVehicle?.location?.city || 'Ho Chi Minh City'}, Vietnam
                 </p>
                 <h2 className="text-2xl font-extrabold text-white leading-tight tracking-tight">
                   {featuredVehicle?.name || 'Ferrari F8 Tributo'}
                 </h2>
-                <p className="text-xl font-extrabold mt-1" style={{ color: '#EAB308' }}>
+                <p className="text-xl font-extrabold mt-1 text-amber-400">
                   {formatCurrency(featuredVehicle?.pricePerDay || 8500000)}
-                  <span className="text-sm font-semibold ml-1" style={{ color: 'rgba(255,255,255,0.4)' }}>/day</span>
+                  <span className="text-sm font-semibold ml-1 text-white/50">/day</span>
                 </p>
               </div>
               <div className="flex flex-col gap-2 flex-shrink-0">
                 <Link to="/owner/vehicles/new"
-                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-black transition-all"
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-black bg-amber-550 hover:bg-amber-600 transition-all"
                   style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', boxShadow: '0 4px 15px rgba(245,158,11,0.4)' }}
                 >
                   <Plus className="w-3.5 h-3.5 inline mr-1" />
@@ -186,62 +189,58 @@ export const OwnerOverview: React.FC = () => {
             <motion.div
               key={stat.label}
               variants={staggerItem}
-              whileHover={{ y: -3, boxShadow: `0 15px 35px ${stat.glow}` }}
-              className="rounded-2xl p-4 cursor-default transition-all duration-300 relative overflow-hidden"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+              whileHover={{ y: -3 }}
+              className="lw-stat-card cursor-default group relative overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-lg transition-all duration-300"
             >
-              <div className="absolute top-0 right-0 w-14 h-14 rounded-full -translate-y-1/2 translate-x-1/2 opacity-40 blur-xl pointer-events-none"
-                style={{ background: stat.color }} />
-              <div className="relative z-10">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3"
-                  style={{ background: `${stat.color}22`, border: `1px solid ${stat.color}33` }}>
-                  <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
-                </div>
-                <p className="text-xl font-extrabold text-white tracking-tight leading-none">{stat.value}</p>
-                <p className="text-[10px] font-semibold uppercase tracking-wider mt-1.5" style={{ color: 'rgba(148,163,184,0.7)' }}>{stat.label}</p>
-                <p className="text-[10px] mt-1 font-semibold flex items-center gap-1" style={{ color: '#10B981' }}>
-                  <TrendingUp className="w-2.5 h-2.5" /> {stat.sub}
-                </p>
+              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <stat.icon className="w-12 h-12" style={{ color: stat.color }} />
               </div>
+              <div className="stat-icon" style={{ background: `${stat.color}15`, border: `1px solid ${stat.color}30` }}>
+                <stat.icon className="w-5 h-5" style={{ color: stat.color }} />
+              </div>
+              <p className="stat-value">{stat.value}</p>
+              <p className="stat-label">{stat.label}</p>
+              <p className="stat-sub flex items-center gap-1 text-emerald-600">
+                <TrendingUp className="w-2.5 h-2.5" /> {stat.sub}
+              </p>
             </motion.div>
           ))}
 
           {/* Goal ring */}
           <motion.div
             variants={staggerItem}
-            className="col-span-2 rounded-2xl p-4 relative overflow-hidden"
-            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+            className="lw-stat-card col-span-2 relative overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm"
           >
             <div className="flex items-center justify-between mb-3">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'rgba(148,163,184,0.6)' }}>Monthly Goal</p>
-                <p className="text-white font-bold text-sm mt-0.5">Revenue Target</p>
+                <p className="stat-label">Monthly Goal</p>
+                <p className="font-bold text-sm text-[var(--lw-text-primary)] mt-0.5">Revenue Target</p>
               </div>
               <div className="relative w-14 h-14">
                 <svg viewBox="0 0 48 48" className="w-full h-full -rotate-90">
-                  <circle cx="24" cy="24" r="20" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="5" />
+                  <circle cx="24" cy="24" r="20" fill="none" stroke="rgba(0,0,0,0.07)" strokeWidth="5" />
                   <circle cx="24" cy="24" r="20" fill="none" stroke="url(#ownerGoalGrad)" strokeWidth="5"
                     strokeDasharray={`${2 * Math.PI * 20 * goalPct / 100} ${2 * Math.PI * 20 * (1 - goalPct / 100)}`}
                     strokeLinecap="round" />
                   <defs>
                     <linearGradient id="ownerGoalGrad" x1="0%" y1="0%" x2="100%" y2="0%">
                       <stop offset="0%" stopColor="#F59E0B" />
-                      <stop offset="100%" stopColor="#EAB308" />
+                      <stop offset="100%" stopColor="#D97706" />
                     </linearGradient>
                   </defs>
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-xs font-extrabold text-white">{goalPct}%</span>
+                  <span className="text-xs font-extrabold text-[var(--lw-text-primary)]">{goalPct}%</span>
                 </div>
               </div>
             </div>
-            <div className="h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.08)' }}>
+            <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${goalPct}%` }}
                 transition={{ duration: 1.2, ease: 'easeOut', delay: 0.3 }}
                 className="h-full rounded-full"
-                style={{ background: 'linear-gradient(90deg, #F59E0B, #EAB308)' }}
+                style={{ background: 'linear-gradient(90deg, #6366F1, #8B5CF6)' }}
               />
             </div>
           </motion.div>
@@ -253,61 +252,58 @@ export const OwnerOverview: React.FC = () => {
         {/* Recent Vehicles */}
         <motion.div
           variants={fadeUp} initial="hidden" animate="visible"
-          className="lg:col-span-2 rounded-3xl p-5"
-          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
+          className="lw-stat-card lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm"
         >
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-white text-sm">Recent Properties</h3>
-            <Link to="/owner/vehicles" className="text-xs font-bold" style={{ color: '#F59E0B' }}>View all →</Link>
+            <h3 className="font-bold text-[var(--lw-text-primary)] text-sm">Recent Vehicles</h3>
+            <Link to="/owner/vehicles" className="text-xs font-bold text-amber-600 hover:text-amber-700 transition-colors">View all →</Link>
           </div>
           <div className="space-y-3">
             {vehicles.length === 0 ? (
-              [{
-                name: 'Luxury Villa in Bali', city: 'Bali', price: 7500000, status: 'available',
+              ([{
+                name: 'Honda Vision 2022', city: 'Ho Chi Minh City', price: 130000, status: 'available',
                 img: 'https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=120&q=80'
               }, {
-                name: 'Modern House in BSD', city: 'BSD City', price: 6200000, status: 'rented',
+                name: 'Honda Vision 2023 - Premium', city: 'Ho Chi Minh City', price: 150000, status: 'available',
                 img: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=120&q=80'
               }, {
-                name: 'Minimalist Home', city: 'Jakarta Selatan', price: 5800000, status: 'available',
+                name: 'Honda Vision 2021', city: 'Ho Chi Minh City', price: 120000, status: 'available',
                 img: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=120&q=80'
-              }].map((v, i) => (
+              }] as any[]).map((v, i) => (
                 <motion.div key={i} whileHover={{ x: 3 }}
-                  className="flex items-center gap-3 p-3 rounded-2xl transition-all duration-200"
-                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                  <img src={v.img} alt={v.name} className="w-14 h-10 rounded-xl object-cover flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-white truncate">{v.name}</p>
-                    <p className="text-[11px] flex items-center gap-1 mt-0.5" style={{ color: 'rgba(148,163,184,0.7)' }}>
-                      <MapPin className="w-2.5 h-2.5" />{v.city}
-                    </p>
+                  className="flex items-center gap-3 p-3.5 rounded-2xl transition-all duration-200 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-700/50">
+                <img src={v.thumbnailUrl || v.img} alt={v.name} className="w-16 h-12 rounded-xl object-cover flex-shrink-0 shadow-sm" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">{v.name}</p>
+                  <p className="text-[11px] font-medium flex items-center gap-1 mt-1 text-slate-500 dark:text-slate-400">
+                    <MapPin className="w-3 h-3" />{v.location?.city || v.city}
+                  </p>
                   </div>
                   <div className="text-right flex-shrink-0">
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg"
-                      style={{ background: v.status === 'available' ? 'rgba(16,185,129,0.15)' : 'rgba(99,102,241,0.15)', color: v.status === 'available' ? '#10B981' : '#818CF8' }}>
+                      style={{ background: v.status === 'available' ? 'rgba(16,185,129,0.12)' : 'rgba(99,102,241,0.12)', color: v.status === 'available' ? '#059669' : '#6366F1' }}>
                       {v.status === 'available' ? 'For Rent' : 'Rented'}
                     </span>
-                    <p className="text-xs font-bold text-white mt-1">{formatCurrency(v.price)}</p>
+                    <p className="text-xs font-bold text-[var(--lw-text-primary)] mt-1">{formatCurrency(v.price)}</p>
                   </div>
                 </motion.div>
               ))
             ) : vehicles.slice(0, 3).map(v => (
               <motion.div key={v.id} whileHover={{ x: 3 }}
-                className="flex items-center gap-3 p-3 rounded-2xl transition-all duration-200"
-                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                <img src={v.thumbnailUrl} alt={v.name} className="w-14 h-10 rounded-xl object-cover flex-shrink-0" />
+                className="flex items-center gap-3 p-3 rounded-xl transition-all duration-200 bg-[var(--lw-bg-secondary)] hover:bg-[var(--lw-bg-card-hover)]">
+                <img src={v.thumbnailUrl} alt={v.name} className="w-14 h-10 rounded-lg object-cover flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-white truncate">{v.name}</p>
-                  <p className="text-[11px] flex items-center gap-1 mt-0.5" style={{ color: 'rgba(148,163,184,0.7)' }}>
+                  <p className="text-sm font-semibold text-[var(--lw-text-primary)] truncate">{v.name}</p>
+                  <p className="text-[11px] flex items-center gap-1 mt-0.5 text-[var(--lw-text-muted)]">
                     <MapPin className="w-2.5 h-2.5" />{v.location?.city}
                   </p>
                 </div>
                 <div className="text-right flex-shrink-0">
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg"
-                    style={{ background: v.status === 'available' ? 'rgba(16,185,129,0.15)' : 'rgba(99,102,241,0.15)', color: v.status === 'available' ? '#10B981' : '#818CF8' }}>
+                    style={{ background: v.status === 'available' ? 'rgba(16,185,129,0.12)' : 'rgba(99,102,241,0.12)', color: v.status === 'available' ? '#059669' : '#6366F1' }}>
                     {v.status === 'available' ? 'For Rent' : 'Rented'}
                   </span>
-                  <p className="text-xs font-bold text-white mt-1">{formatCurrency(v.pricePerDay)}</p>
+                  <p className="text-xs font-bold text-[var(--lw-text-primary)] mt-1">{formatCurrency(v.pricePerDay)}</p>
                 </div>
               </motion.div>
             ))}
@@ -317,36 +313,34 @@ export const OwnerOverview: React.FC = () => {
         {/* Revenue Chart */}
         <motion.div
           variants={fadeUp} initial="hidden" animate="visible"
-          className="lg:col-span-3 rounded-3xl p-5"
-          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
+          className="lw-stat-card lg:col-span-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm"
         >
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h3 className="font-bold text-white text-sm">{t.ownerDashboard.revenueChartTitle}</h3>
-              <p className="text-[11px] mt-0.5" style={{ color: 'rgba(148,163,184,0.6)' }}>Your earnings this year</p>
+              <h3 className="font-bold text-[var(--lw-text-primary)] text-sm">{t.ownerDashboard.revenueChartTitle}</h3>
+              <p className="text-[11px] mt-0.5 text-[var(--lw-text-muted)]">Your earnings this year</p>
             </div>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl"
-              style={{ background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.25)' }}>
-              <Activity className="w-3 h-3 text-amber-400" />
-              <span className="text-xs font-bold text-amber-400">{t.ownerDashboard.liveAnalytics}</span>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800">
+              <Activity className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+              <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">{t.ownerDashboard.liveAnalytics}</span>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={revenueData} barSize={26}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fontWeight: 600, fill: 'rgba(148,163,184,0.6)' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 10, fill: 'rgba(148,163,184,0.5)' }} axisLine={false} tickLine={false} tickFormatter={v => `${(v / 1000000).toFixed(0)}M`} />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(245,158,11,0.08)', radius: 8 }} />
-              <Bar dataKey="revenue" radius={[6, 6, 0, 0]}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" strokeWidth={0.5} vertical={false} />
+              <XAxis dataKey="month" tick={{ fontSize: 11, fontWeight: 600, fill: '#94A3B8' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: '#94A3B8' }} axisLine={false} tickLine={false} tickFormatter={v => `${(v / 1000000).toFixed(0)}M`} />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(217,119,6,0.06)', radius: 8 }} />
+              <Bar dataKey="revenue" radius={[6, 6, 0, 0]} cursor="pointer" activeBar={{ fillOpacity: 0.8 }}>
                 {revenueData.map((_, index) => (
                   <Cell key={index}
-                    fill={index === revenueData.length - 1 ? 'url(#ownerBarGrad)' : 'rgba(245,158,11,0.30)'} />
+                    fill={index === revenueData.length - 1 ? 'url(#ownerBarGrad)' : 'rgba(217,119,6,0.25)'} />
                 ))}
               </Bar>
               <defs>
                 <linearGradient id="ownerBarGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#F59E0B" />
-                  <stop offset="100%" stopColor="#D97706" />
+                  <stop offset="0%" stopColor="#6366F1" />
+                  <stop offset="100%" stopColor="#8B5CF6" />
                 </linearGradient>
               </defs>
             </BarChart>
@@ -359,35 +353,30 @@ export const OwnerOverview: React.FC = () => {
         {/* Pending Bookings */}
         <motion.div
           variants={fadeUp} initial="hidden" animate="visible"
-          className="rounded-3xl p-5"
-          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
+          className="lw-stat-card"
         >
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-white text-sm">{t.ownerDashboard.pendingRequests}</h3>
-            <span className="text-[10px] font-bold px-2.5 py-1 rounded-lg"
-              style={{ background: 'rgba(239,68,68,0.15)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.2)' }}>
+            <h3 className="font-bold text-[var(--lw-text-primary)] text-sm">{t.ownerDashboard.pendingRequests}</h3>
+            <span className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-red-50 text-red-600 border border-red-200">
               {stats.pending} pending
             </span>
           </div>
           <div className="space-y-3">
             {bookings.filter(b => b.status === 'pending').slice(0, 4).map(booking => (
               <div key={booking.id}
-                className="flex items-center gap-3 p-3.5 rounded-2xl transition-all duration-200"
-                style={{ background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.15)' }}>
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.2)' }}>
-                  <AlertTriangle className="w-4 h-4 text-amber-400" />
+                className="flex items-center gap-3 p-4 rounded-2xl transition-all duration-200 bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/50 hover:shadow-md">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-amber-100 dark:bg-amber-800/40 border border-amber-200 dark:border-amber-700/50">
+                  <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-white truncate">Booking #{booking.id.slice(-6).toUpperCase()}</p>
-                  <p className="text-[11px] mt-0.5" style={{ color: 'rgba(148,163,184,0.7)' }}>
+                  <p className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">Booking #{booking.id.slice(-6).toUpperCase()}</p>
+                  <p className="text-xs font-medium mt-1 text-slate-500 dark:text-slate-400">
                     📅 {formatDate(booking.startDate)} · {formatCurrency(booking.pricing.total)}
                   </p>
                 </div>
                 <button
                   onClick={() => bookingService.updateStatus(booking.id, 'confirmed')}
-                  className="px-3 py-1.5 rounded-xl text-xs font-bold text-black transition-all flex-shrink-0"
-                  style={{ background: 'linear-gradient(135deg, #10B981, #059669)' }}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-white transition-all flex-shrink-0 bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-500/20"
                 >
                   Approve
                 </button>
@@ -395,8 +384,8 @@ export const OwnerOverview: React.FC = () => {
             ))}
             {bookings.filter(b => b.status === 'pending').length === 0 && (
               <div className="text-center py-10">
-                <CheckCircle className="w-10 h-10 mx-auto mb-3" style={{ color: 'rgba(148,163,184,0.3)' }} />
-                <p className="text-sm font-medium" style={{ color: 'rgba(148,163,184,0.5)' }}>No pending requests</p>
+                <CheckCircle className="w-10 h-10 mx-auto mb-3 text-slate-300" />
+                <p className="text-sm font-medium text-[var(--lw-text-muted)]">No pending requests</p>
               </div>
             )}
           </div>
@@ -405,71 +394,63 @@ export const OwnerOverview: React.FC = () => {
         {/* Tasks Panel */}
         <motion.div
           variants={fadeUp} initial="hidden" animate="visible"
-          className="rounded-3xl p-5"
-          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
+          className="lw-stat-card"
         >
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-                style={{ background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.2)' }}>
-                <BarChart2 className="w-4 h-4 text-amber-400" />
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800">
+                <BarChart2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
               </div>
-              <h3 className="font-bold text-white text-sm">Tasks</h3>
+              <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm">Tasks</h3>
             </div>
-            <span className="text-[10px] font-bold px-2.5 py-1 rounded-lg"
-              style={{ background: 'rgba(245,158,11,0.15)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.2)' }}>
+            <span className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800">
               {tasks.filter(t => !t.done).length} pending
             </span>
           </div>
           <div className="space-y-2.5">
             {tasks.map((task, i) => (
               <Link key={i} to={task.href}
-                className="flex items-center gap-3 p-3.5 rounded-2xl transition-all duration-200 group"
+                className="flex items-center gap-3 p-3.5 rounded-2xl transition-all duration-200 group hover:bg-slate-50 dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
                 style={{
-                  background: task.done ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.04)',
-                  border: `1px solid ${task.done ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.08)'}`,
+                  opacity: task.done ? 0.6 : 1,
                 }}>
-                <div className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0"
-                  style={{
-                    background: task.done ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.05)',
-                    border: task.done ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(255,255,255,0.1)'
-                  }}>
+                <div className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
                   {task.done
-                    ? <CheckCircle className="w-3 h-3 text-emerald-400" />
-                    : <div className="w-2 h-2 rounded-sm" style={{ background: 'rgba(148,163,184,0.3)' }} />}
+                    ? <CheckCircle className="w-3.5 h-3.5 text-indigo-500" />
+                    : <div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600" />}
                 </div>
-                <span className="text-sm flex-1 font-medium"
-                  style={{ color: task.done ? 'rgba(148,163,184,0.4)' : 'rgba(226,232,240,0.9)', textDecoration: task.done ? 'line-through' : 'none' }}>
+                <span className="text-sm flex-1 font-medium text-slate-700 dark:text-slate-300"
+                  style={{ textDecoration: task.done ? 'line-through' : 'none' }}>
                   {task.label}
                 </span>
                 <div className="flex items-center gap-2">
                   {!task.done && task.count > 0 && (
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg"
-                      style={{ background: `${task.color}22`, color: task.color, border: `1px solid ${task.color}33` }}>
+                      style={{ background: `${task.color}18`, color: task.color, border: `1px solid ${task.color}30` }}>
                       {task.count}
                     </span>
                   )}
-                  <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: '#F59E0B' }} />
+                  <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-amber-600" />
                 </div>
               </Link>
             ))}
           </div>
-          <div className="mt-4 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="mt-4 pt-4 border-t border-[var(--lw-border)]">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'rgba(148,163,184,0.4)' }}>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--lw-text-muted)]">
                 {tasks.filter(t => t.done).length} of {tasks.length} completed
               </span>
-              <span className="text-[10px] font-bold" style={{ color: '#F59E0B' }}>
+              <span className="text-[10px] font-bold text-amber-600">
                 {Math.round(tasks.filter(t => t.done).length / tasks.length * 100)}%
               </span>
             </div>
-            <div className="h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
+            <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${tasks.filter(t => t.done).length / tasks.length * 100}%` }}
                 transition={{ duration: 1, ease: 'easeOut', delay: 0.5 }}
                 className="h-full rounded-full"
-                style={{ background: 'linear-gradient(90deg, #F59E0B, #EAB308)' }}
+                style={{ background: 'linear-gradient(90deg, #6366F1, #8B5CF6)' }}
               />
             </div>
           </div>
@@ -504,14 +485,17 @@ export const VehicleManagePage: React.FC = () => {
     }
   };
 
+  const breadcrumbItems = [
+    { label: t.marketplace.home, href: '/' },
+    { label: 'Host Portal', href: '/owner' },
+    { label: t.ownerDashboard.myVehicles }
+  ];
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
-        <div>
-          <h1 className="font-display text-2.5xl font-extrabold text-slate-800 dark:text-white tracking-tight">{t.ownerDashboard.myVehicles}</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-xs font-semibold mt-0.5">{t.ownerDashboard.fleetSubtitle}</p>
-        </div>
-        <Link to="/owner/vehicles/new" className="btn-gold flex items-center gap-2 text-xs font-extrabold px-5 py-3 rounded-xl shadow-lg shadow-gold/20 hover:shadow-gold/30 hover-lift">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--lw-border)] pb-5">
+        <Breadcrumbs title={t.ownerDashboard.myVehicles} items={breadcrumbItems} backHref="/owner" backText="Back to Overview" className="mb-0 flex-1" />
+        <Link to="/owner/vehicles/new" className="btn-gold flex items-center gap-2 text-xs font-extrabold px-5 py-3 rounded-xl shadow-lg shadow-gold/20 hover:shadow-gold/30 hover-lift lw-btn-interactive">
           <Plus className="w-4 h-4" /> {t.ownerDashboard.addVehicle}
         </Link>
       </div>
@@ -529,54 +513,92 @@ export const VehicleManagePage: React.FC = () => {
         </div>
       ) : (
         <motion.div
-          variants={staggerContainer}
+          variants={fadeUp}
           initial="hidden"
           animate="visible"
-          className="grid grid-cols-1 md:grid-cols-2 gap-6"
+          className="overflow-x-auto bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-white/5 rounded-3xl shadow-sm"
         >
-          {vehicles.map(vehicle => (
-            <motion.div key={vehicle.id} variants={staggerItem} className="glass border border-slate-200/50 dark:border-white/5 overflow-hidden rounded-[2rem] hover-lift hover-glow shadow-md group transition-all duration-300 relative">
-              <div className="relative h-48 overflow-hidden">
-                <img src={vehicle.thumbnailUrl} alt={vehicle.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent" />
-                <div className="absolute bottom-4 left-4">
-                  <span className={`badge text-[9px] font-extrabold uppercase tracking-widest border-2 px-2.5 py-1 rounded-lg ${getStatusColor(vehicle.status)}`}>
-                    {vehicle.status.replace('_', ' ')}
-                  </span>
-                </div>
-              </div>
-              <div className="p-5.5">
-                <div className="flex items-start justify-between mb-4 border-b border-slate-200/10 dark:border-white/5 pb-3.5">
-                  <div>
-                    <h4 className="font-bold text-base text-slate-800 dark:text-slate-100 tracking-tight">{vehicle.name}</h4>
-                    <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-1">{vehicle.location.city} · <span className="text-gold font-extrabold">{formatCurrency(vehicle.pricePerDay)}</span>{t.marketplace.perDay}</p>
-                  </div>
-                  <div className="flex items-center gap-1 text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-500/5 dark:bg-white/5 border border-slate-200/10 dark:border-white/10 px-2.5 py-1 rounded-lg shadow-sm">
-                    <span className="text-amber-500">⭐</span> {vehicle.rating?.toFixed(1) ?? '5.0'}
-                  </div>
-                </div>
-                <div className="flex gap-2.5">
-                  <Link to={`/vehicles/${vehicle.id}`} className="btn-ghost border border-slate-200/60 dark:border-white/10 text-xs px-4 py-2.5 rounded-xl flex items-center gap-1.5 font-extrabold text-slate-600 dark:text-slate-300 hover:border-gold hover:text-gold transition-colors">
-                    <Eye className="w-4 h-4" /> {isVi ? 'Xem Tin Đăng' : 'View Listing'}
-                  </Link>
-                  <Link to={`/owner/vehicles/${vehicle.id}/edit`} className="btn-ghost border border-slate-200/60 dark:border-white/10 text-xs px-4 py-2.5 rounded-xl flex items-center gap-1.5 font-extrabold text-slate-600 dark:text-slate-300 hover:border-blue-500 hover:text-blue-500 transition-colors">
-                    <Edit className="w-4 h-4" /> {t.common.edit}
-                  </Link>
-                  <button
-                    onClick={() => handleDelete(vehicle.id, vehicle.name)}
-                    className="text-xs font-extrabold px-4 py-2.5 text-red-500 hover:bg-red-500/10 rounded-xl border border-red-500/20 hover:border-red-500/40 transition-all flex items-center gap-1.5 ml-auto shadow-sm"
-                  >
-                    <Trash2 className="w-4 h-4" /> {t.common.delete}
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          ))}
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                <th className="p-4 pl-6">Image</th>
+                <th className="p-4">Name</th>
+                <th className="p-4">Type</th>
+                <th className="p-4">Price</th>
+                <th className="p-4">Status</th>
+                <th className="p-4">Approval Note</th>
+                <th className="p-4 pr-6 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200/50 dark:divide-white/5 text-sm">
+              {vehicles.map(vehicle => {
+                const statusLower = (vehicle.approvalStatus || vehicle.status || '').toLowerCase();
+                const displayStatus = statusLower === 'approved' ? 'AVAILABLE' : statusLower.toUpperCase();
+                return (
+                  <tr key={vehicle.id} className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
+                    <td className="p-4 pl-6">
+                      <img 
+                        src={vehicle.thumbnailUrl || 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=120&q=80'} 
+                        alt={vehicle.name} 
+                        className="w-16 h-12 rounded-xl object-cover shadow-sm border border-slate-100 dark:border-slate-800"
+                      />
+                    </td>
+                    <td className="p-4 font-bold text-slate-800 dark:text-slate-100">
+                      {vehicle.name}
+                    </td>
+                    <td className="p-4 font-semibold text-xs text-slate-500 uppercase">
+                      {vehicle.vehicleType || 'CAR'}
+                    </td>
+                    <td className="p-4 font-bold text-slate-900 dark:text-slate-100">
+                      {formatCurrency(vehicle.pricePerDay)}
+                    </td>
+                    <td className="p-4">
+                      <span className={`px-2.5 py-1 text-[10px] font-black rounded-lg border uppercase tracking-wider ${
+                        displayStatus === 'AVAILABLE' || displayStatus === 'APPROVED' ? 'bg-green-50 text-green-700 border-green-200' :
+                        displayStatus === 'PENDING_APPROVAL' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                        displayStatus === 'REJECTED' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                        'bg-slate-50 text-slate-700 border-slate-200'
+                      }`}>
+                        {displayStatus}
+                      </span>
+                    </td>
+                    <td className="p-4 text-xs text-slate-500 max-w-[200px] truncate">
+                      {displayStatus === 'REJECTED' && vehicle.approvalNote ? (
+                        <span className="text-rose-600 font-medium">{vehicle.approvalNote}</span>
+                      ) : (
+                        <span className="text-slate-400">—</span>
+                      )}
+                    </td>
+                    <td className="p-4 pr-6 text-right">
+                      <div className="flex gap-2 justify-end">
+                        <Link to={`/vehicles/${vehicle.id}`} title={isVi ? 'Xem Tin Đăng' : 'View Listing'} className="p-2 border border-slate-200 dark:border-white/10 hover:border-gold hover:text-gold text-slate-500 rounded-lg transition-colors">
+                          <Eye className="w-4 h-4" />
+                        </Link>
+                        <Link to={`/owner/vehicles/${vehicle.id}/edit`} title={t.common.edit} className="p-2 border border-slate-200 dark:border-white/10 hover:border-blue-500 hover:text-blue-500 text-slate-500 rounded-lg transition-colors">
+                          <Edit className="w-4 h-4" />
+                        </Link>
+                        {(!vehicle.approvalStatus || vehicle.approvalStatus === 'draft' || vehicle.approvalStatus === 'rejected' || vehicle.approvalStatus === 'pending_approval') && (
+                          <button
+                            onClick={() => handleDelete(vehicle.id, vehicle.name)}
+                            title={t.common.delete}
+                            className="p-2 border border-red-500/20 hover:border-red-500 hover:text-red-500 text-red-500 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </motion.div>
       )}
     </div>
   );
 };
+
 
 // ====== VEHICLE FORM PAGE ======
 export const VehicleFormPage: React.FC = () => {
@@ -592,6 +614,8 @@ export const VehicleFormPage: React.FC = () => {
   const [fetching, setFetching] = useState(false);
   const [step, setStep] = useState(1);
   const [images, setImages] = useState<string[]>([]);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [vinLoading, setVinLoading] = useState(false);
 
   const [form, setForm] = useState({
     name: '', brand: '', category: 'supercar', year: new Date().getFullYear(),
@@ -600,7 +624,102 @@ export const VehicleFormPage: React.FC = () => {
     features: 'Bluetooth, Navigation, Backup Camera',
     address: '', city: '', state: '', zip: '', country: 'US',
     thumbnailUrl: 'https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=800&q=80',
+    lat: 10.762,
+    lng: 106.660,
+    vin: '',
   });
+
+  const handleVinFill = async () => {
+    if (!form.vin || form.vin.trim().length !== 17) {
+      toast.error(isVi ? 'Số VIN phải đủ 17 ký tự' : 'VIN must be exactly 17 characters');
+      return;
+    }
+
+    setVinLoading(true);
+    try {
+      const response = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/decodevinvaluesextended/${form.vin}?format=json`);
+      const data = await response.json();
+      
+      if (data && data.Results && data.Results[0]) {
+        const res = data.Results[0];
+        
+        if (!res.Make && !res.Model) {
+          toast.error(isVi ? 'Không tìm thấy thông tin xe với số VIN này.' : 'No vehicle information found for this VIN.');
+          setVinLoading(false);
+          return;
+        }
+
+        const brand = res.Make ? res.Make.trim() : '';
+        const model = res.Model ? res.Model.trim() : '';
+        const name = brand && model ? `${brand} ${model}` : (brand || model);
+        const year = res.ModelYear ? parseInt(res.ModelYear) : new Date().getFullYear();
+        const seats = res.Seats || res.NumberofSeats ? parseInt(res.Seats || res.NumberofSeats) : 5;
+        const doors = res.Doors ? parseInt(res.Doors) : 4;
+        
+        let fuelType = 'Gasoline';
+        const rawFuel = (res.FuelTypePrimary || '').toLowerCase();
+        if (rawFuel.includes('electric') || rawFuel.includes('battery')) {
+          fuelType = 'Electric';
+        } else if (rawFuel.includes('hybrid')) {
+          fuelType = 'Hybrid';
+        } else if (rawFuel.includes('diesel')) {
+          fuelType = 'Diesel';
+        }
+
+        let transmission = 'Automatic';
+        const rawTrans = (res.TransmissionStyle || res.TransmissionSpeeds || '').toLowerCase();
+        if (rawTrans.includes('manual')) {
+          transmission = 'Manual';
+        }
+
+        let category = 'sedan';
+        const bodyClass = (res.BodyClass || '').toLowerCase();
+        if (bodyClass.includes('sport utility') || bodyClass.includes('suv')) {
+          category = 'suv';
+        } else if (bodyClass.includes('convertible') || bodyClass.includes('cabriolet')) {
+          category = 'convertible';
+        } else if (bodyClass.includes('sedan')) {
+          category = 'sedan';
+        } else if (fuelType === 'Electric') {
+          category = 'electric';
+        } else if (bodyClass.includes('coupe') || bodyClass.includes('supercar') || bodyClass.includes('exotic')) {
+          category = 'supercar';
+        }
+
+        const horsepower = res.EngineHP ? `${res.EngineHP} HP` : '';
+        const desc = isVi
+          ? `Xe ${name} sản xuất năm ${year}. Động cơ ${res.DisplacementL || ''}L ${horsepower}, nhiên liệu ${fuelType}, số ${transmission}. Xe sở hữu cảm giác lái vượt trội, nội thất cao cấp và các trang bị hiện đại.`
+          : `${year} ${name} featuring a ${res.DisplacementL || ''}L engine with ${horsepower}, running on ${fuelType} and ${transmission} transmission. Exceptional driving experience with luxury interior and premium amenities.`;
+
+        setForm(f => ({
+          ...f,
+          brand: brand || f.brand,
+          name: name || f.name,
+          year: year || f.year,
+          seats: seats || f.seats,
+          doors: doors || f.doors,
+          fuelType: fuelType || f.fuelType,
+          transmission: transmission || f.transmission,
+          category: category || f.category,
+          description: desc || f.description,
+        }));
+
+        toast.success(
+          isVi ? 'Đọc thông tin VIN thành công!' : 'VIN decoded successfully!',
+          isVi 
+            ? `Đã nhận diện: ${brand} ${model} (${year}).`
+            : `Identified: ${brand} ${model} (${year}).`
+        );
+      } else {
+        toast.error(isVi ? 'Số VIN không hợp lệ hoặc không có kết quả.' : 'Invalid VIN or no results found.');
+      }
+    } catch (error) {
+      console.error('Error decoding VIN:', error);
+      toast.error(isVi ? 'Có lỗi xảy ra khi gọi API tra cứu số VIN.' : 'An error occurred while decoding the VIN.');
+    } finally {
+      setVinLoading(false);
+    }
+  };
 
   const getCurrencySymbol = (code: string) => {
     return {
@@ -639,6 +758,9 @@ export const VehicleFormPage: React.FC = () => {
           zip: (vehicle.location as any)?.zip || '',
           country: vehicle.location?.country || 'US',
           thumbnailUrl: vehicle.thumbnailUrl || 'https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=800&q=80',
+          lat: vehicle.location?.lat !== undefined ? vehicle.location.lat : ((vehicle as any).latitude || 10.762),
+          lng: vehicle.location?.lng !== undefined ? vehicle.location.lng : ((vehicle as any).longitude || 106.660),
+          vin: vehicle.vin || '',
         });
         setImages(vehicle.images || (vehicle.thumbnailUrl ? [vehicle.thumbnailUrl] : []));
       } else {
@@ -653,10 +775,50 @@ export const VehicleFormPage: React.FC = () => {
     });
   }, [id]);
 
-  const update = (k: string, v: string | number) => setForm(f => ({ ...f, [k]: v }));
+  const update = (k: string, v: string | number) => {
+    setForm(f => ({ ...f, [k]: v }));
+    if (errors[k]) {
+      setErrors(errs => {
+        const next = { ...errs };
+        delete next[k];
+        return next;
+      });
+    }
+  };
+
+  const validateStep = (currentStep: number): boolean => {
+    const newErrors: Record<string, string> = {};
+    if (currentStep === 1) {
+      if (!form.name.trim()) newErrors.name = isVi ? 'Tên xe không được để trống' : 'Vehicle name is required';
+      if (!form.brand.trim()) newErrors.brand = isVi ? 'Thương hiệu không được để trống' : 'Brand is required';
+      if (!form.year) newErrors.year = isVi ? 'Năm sản xuất không được để trống' : 'Year is required';
+      else if (form.year < 1950 || form.year > new Date().getFullYear() + 1) {
+        newErrors.year = isVi ? 'Năm sản xuất không hợp lệ' : 'Invalid manufacturing year';
+      }
+      if (!form.description.trim()) newErrors.description = isVi ? 'Mô tả không được để trống' : 'Description is required';
+    } else if (currentStep === 2) {
+      if (images.length === 0 && !form.thumbnailUrl) {
+        newErrors.images = isVi ? 'Vui lòng tải lên ít nhất một hình ảnh' : 'At least one image is required';
+      }
+    } else if (currentStep === 3) {
+      if (!form.pricePerDay || Number(form.pricePerDay) <= 0) {
+        newErrors.pricePerDay = isVi ? 'Giá thuê phải lớn hơn 0' : 'Daily rate must be greater than 0';
+      }
+      if (!form.city.trim()) newErrors.city = isVi ? 'Thành phố không được để trống' : 'City is required';
+      if (!form.state.trim()) newErrors.state = isVi ? 'Tỉnh/Bang không được để trống' : 'State/Province is required';
+      if (form.lat === undefined || isNaN(Number(form.lat))) newErrors.lat = isVi ? 'Vĩ độ không được để trống' : 'Latitude is required';
+      if (form.lng === undefined || isNaN(Number(form.lng))) newErrors.lng = isVi ? 'Kinh độ không được để trống' : 'Longitude is required';
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateStep(step)) {
+      toast.error(isVi ? 'Vui lòng kiểm tra lại thông tin nhập vào' : 'Please check your inputs');
+      return;
+    }
     if (step < 3) {
       setStep(s => s + 1);
       window.scrollTo(0, 0);
@@ -668,6 +830,7 @@ export const VehicleFormPage: React.FC = () => {
 
     const vehicleData: Omit<Vehicle, 'id'> = {
       ownerId: user?.id || '',
+      vin: form.vin || undefined,
       name: form.name,
       brand: form.brand,
       category: form.category as any,
@@ -697,12 +860,12 @@ export const VehicleFormPage: React.FC = () => {
         address: form.address,
         city: form.city,
         country: form.country,
-        lat: 34.0522,
-        lng: -118.2437,
-        timezone: 'America/Los_Angeles'
+        lat: Number(form.lat) || 10.762,
+        lng: Number(form.lng) || 106.660,
+        timezone: 'Asia/Ho_Chi_Minh'
       },
       model: 'Custom',
-      deposit: 0,
+      deposit: parseFloat(form.pricePerDay.toString()) * 0.1 || 500000,
       totalReviews: 0,
       totalBookings: 0,
       isVerified: false,
@@ -731,8 +894,12 @@ export const VehicleFormPage: React.FC = () => {
         );
       }
       navigate('/owner/vehicles');
-    } catch (error) {
-      toast.error(isVi ? 'Không thể lưu thông tin xe.' : 'Failed to save vehicle listing.');
+    } catch (error: any) {
+      const errMsg = error?.message || '';
+      toast.error(
+        isVi ? 'Không thể lưu thông tin xe.' : 'Failed to save vehicle listing.',
+        errMsg ? errMsg : undefined
+      );
       console.error(error);
     } finally {
       setLoading(false);
@@ -753,19 +920,21 @@ export const VehicleFormPage: React.FC = () => {
     { num: 3, label: isVi ? 'Giá Cả & Địa Điểm' : isJa ? '料金・所在地' : 'Rates & Location' }
   ];
 
+  const breadcrumbItems = [
+    { label: t.marketplace.home, href: '/' },
+    { label: 'Host Portal', href: '/owner' },
+    { label: t.ownerDashboard.myVehicles, href: '/owner/vehicles' },
+    { label: id ? (isVi ? 'Chỉnh sửa' : 'Edit') : (isVi ? 'Thêm mới' : 'Add New') }
+  ];
+
   return (
     <div className="max-w-3xl mx-auto animate-fade-in">
-      <div className="flex items-center gap-4 mb-8">
-        <Link to="/owner/vehicles" className="p-3 rounded-xl border border-slate-200/50 dark:border-white/10 hover:bg-slate-500/5 transition-colors text-slate-500 dark:text-slate-400 font-extrabold hover:text-[#EAB308]">
-          ← {isVi ? 'Quay Lại' : isJa ? '戻る' : 'Back'}
-        </Link>
-        <div>
-          <h1 className="font-display text-2.5xl font-extrabold text-slate-800 dark:text-white tracking-tight">
-            {id ? (isVi ? 'Chỉnh Sửa Phương Tiện' : isJa ? '車両情報を編集' : 'Edit Your Vehicle') : (isVi ? 'Đăng Xe Cao Cấp Mới' : isJa ? '高級車を掲載' : 'List a Luxury Vehicle')}
-          </h1>
-          <p className="text-slate-500 dark:text-slate-400 text-xs font-semibold mt-0.5">{isVi ? 'Định nghĩa trải nghiệm đẳng cấp của bạn' : 'Define your high-end experience'}</p>
-        </div>
-      </div>
+      <Breadcrumbs 
+        title={id ? (isVi ? 'Chỉnh Sửa Phương Tiện' : 'Edit Your Vehicle') : (isVi ? 'Đăng Xe Cao Cấp Mới' : 'List a Luxury Vehicle')} 
+        items={breadcrumbItems} 
+        backHref="/owner/vehicles" 
+        backText={isVi ? 'Quay lại danh sách' : 'Back to list'} 
+      />
 
       {/* Modern Capsule Step Indicators with labels */}
       <div className="mb-8">
@@ -785,18 +954,62 @@ export const VehicleFormPage: React.FC = () => {
         {step === 1 && (
           <motion.div variants={fadeUp} initial="hidden" animate="visible" className="space-y-6">
             <h3 className="font-display text-xl font-bold text-slate-800 dark:text-white border-b border-slate-200/10 dark:border-white/5 pb-3">{isVi ? 'Thông Tin Cơ Bản' : isJa ? '基本情報' : 'Basic Information'}</h3>
+            
+            <div className="md:col-span-2 bg-slate-50 dark:bg-white/5 p-5 rounded-2xl border border-slate-100 dark:border-white/5 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+                <div className="flex-1 lw-form-group mb-0">
+                  <label className="lw-form-label flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                    <span>🔑</span>
+                    {isVi ? 'Nhập Số VIN (Tra cứu thông số)' : 'Enter VIN (Decode specs)'}
+                  </label>
+                  <input
+                    value={form.vin}
+                    onChange={e => update('vin', e.target.value.toUpperCase())}
+                    placeholder="e.g. 1FA6P8CF0H5XXXXXX"
+                    className="lw-input-interactive"
+                    maxLength={17}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleVinFill}
+                  disabled={vinLoading || !form.vin || form.vin.trim().length < 17}
+                  className="px-5 py-3.5 bg-slate-900 hover:bg-slate-800 dark:bg-gold dark:hover:bg-[#CA9E26] text-white dark:text-slate-950 text-xs font-extrabold rounded-xl transition-all duration-150 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 whitespace-nowrap lw-btn-interactive border border-transparent dark:border-none"
+                >
+                  {vinLoading ? (
+                    <>
+                      <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      {isVi ? 'Đang đọc...' : 'Decoding...'}
+                    </>
+                  ) : (
+                    <>
+                      <span>⚡</span>
+                      {isVi ? 'Tự Động Điền' : 'Auto-fill Specs'}
+                    </>
+                  )}
+                </button>
+              </div>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
+                {isVi 
+                  ? 'Nhập 17 ký tự số VIN của xe và nhấn "Tự Động Điền" để tải thông tin chính thức từ cơ sở dữ liệu NHTSA.' 
+                  : 'Enter the 17-character Vehicle Identification Number and click "Auto-fill Specs" to fetch details from the NHTSA database.'}
+              </p>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div>
-                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? 'Tên Xe *' : isJa ? '車両名 *' : 'Vehicle Name *'}</label>
-                <input value={form.name} onChange={e => update('name', e.target.value)} required placeholder="e.g. Ferrari F8 Tributo" className="lux-input w-full bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl px-4 py-3 text-sm focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20" />
+              <div className="lw-form-group">
+                <label className="lw-form-label">{isVi ? 'Tên Xe *' : isJa ? '車両名 *' : 'Vehicle Name *'}</label>
+                <input value={form.name} onChange={e => update('name', e.target.value)} required placeholder="e.g. Ferrari F8 Tributo" className={`lw-input-interactive ${errors.name ? 'error' : ''}`} />
+                {errors.name && <p className="lw-form-error-text">{errors.name}</p>}
               </div>
-              <div>
-                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? 'Thương Hiệu *' : isJa ? 'ブランド *' : 'Brand *'}</label>
-                <input value={form.brand} onChange={e => update('brand', e.target.value)} required placeholder="e.g. Ferrari" className="lux-input w-full bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl px-4 py-3 text-sm focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20" />
+              <div className="lw-form-group">
+                <label className="lw-form-label">{isVi ? 'Thương Hiệu *' : isJa ? 'ブランド *' : 'Brand *'}</label>
+                <input value={form.brand} onChange={e => update('brand', e.target.value)} required placeholder="e.g. Ferrari" className={`lw-input-interactive ${errors.brand ? 'error' : ''}`} />
+                {errors.brand && <p className="lw-form-error-text">{errors.brand}</p>}
               </div>
-              <div>
-                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? 'Phân Khúc *' : isJa ? 'カテゴリー *' : 'Category *'}</label>
-                <select value={form.category} onChange={e => update('category', e.target.value)} className="lux-input w-full bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl px-4 py-3 text-sm text-slate-800 dark:text-slate-100 focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20">
+              <div className="lw-form-group">
+                <label className="lw-form-label">{isVi ? 'Phân Khúc *' : isJa ? 'カテゴリー *' : 'Category *'}</label>
+                <select value={form.category} onChange={e => update('category', e.target.value)} className="lw-input-interactive text-slate-800 dark:text-slate-100">
                   <option value="supercar">Supercar</option>
                   <option value="suv">Luxury SUV</option>
                   <option value="convertible">Convertible</option>
@@ -805,49 +1018,51 @@ export const VehicleFormPage: React.FC = () => {
                   <option value="classic">Classic</option>
                 </select>
               </div>
-              <div>
-                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? 'Năm Sản Xuất *' : isJa ? '製造年 *' : 'Year *'}</label>
-                <input type="number" value={form.year} onChange={e => update('year', e.target.value)} required min="1950" max={new Date().getFullYear() + 1} className="lux-input w-full bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl px-4 py-3 text-sm focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20" />
+              <div className="lw-form-group">
+                <label className="lw-form-label">{isVi ? 'Năm Sản Xuất *' : isJa ? '製造年 *' : 'Year *'}</label>
+                <input type="number" value={form.year} onChange={e => update('year', e.target.value)} required min="1950" max={new Date().getFullYear() + 1} className={`lw-input-interactive ${errors.year ? 'error' : ''}`} />
+                {errors.year && <p className="lw-form-error-text">{errors.year}</p>}
               </div>
-              <div className="md:col-span-2">
-                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? 'Mô Tả Chi Tiết *' : isJa ? '詳細説明 *' : 'Description *'}</label>
-                <textarea value={form.description} onChange={e => update('description', e.target.value)} required rows={4} className="lux-input w-full bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl px-4 py-3 text-sm resize-none focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20" placeholder={isVi ? 'Mô tả chi tiết về tình trạng xe, cảm giác lái và các trang bị độc đáo...' : 'Describe your vehicle\'s condition, drive feeling, and unique amenities...'} />
+              <div className="md:col-span-2 lw-form-group">
+                <label className="lw-form-label">{isVi ? 'Mô Tả Chi Tiết *' : isJa ? '詳細説明 *' : 'Description *'}</label>
+                <textarea value={form.description} onChange={e => update('description', e.target.value)} required rows={4} className={`lw-input-interactive resize-none ${errors.description ? 'error' : ''}`} placeholder={isVi ? 'Mô tả chi tiết về tình trạng xe, cảm giác lái và các trang bị độc đáo...' : 'Describe your vehicle\'s condition, drive feeling, and unique amenities...'} />
+                {errors.description && <p className="lw-form-error-text">{errors.description}</p>}
               </div>
             </div>
           </motion.div>
         )}
-
+ 
         {step === 2 && (
           <motion.div variants={fadeUp} initial="hidden" animate="visible" className="space-y-6">
             <h3 className="font-display text-xl font-bold text-slate-800 dark:text-white border-b border-slate-200/10 dark:border-white/5 pb-3">{isVi ? 'Thông Số & Tiện Nghi' : isJa ? 'スペック・装備' : 'Specs & Features'}</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? 'Số Chỗ' : isJa ? '座席数' : 'Seats'}</label>
-                <input type="number" value={form.seats} onChange={e => update('seats', e.target.value)} min="1" className="lux-input w-full bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl px-4 py-3 text-sm focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20" />
+              <div className="lw-form-group">
+                <label className="lw-form-label">{isVi ? 'Số Chỗ' : isJa ? '座席数' : 'Seats'}</label>
+                <input type="number" value={form.seats} onChange={e => update('seats', e.target.value)} min="1" className="lw-input-interactive" />
               </div>
-              <div>
-                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? 'Số Cửa' : isJa ? 'ドア数' : 'Doors'}</label>
-                <input type="number" value={form.doors} onChange={e => update('doors', e.target.value)} min="2" className="lux-input w-full bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl px-4 py-3 text-sm focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20" />
+              <div className="lw-form-group">
+                <label className="lw-form-label">{isVi ? 'Số Cửa' : isJa ? 'ドア数' : 'Doors'}</label>
+                <input type="number" value={form.doors} onChange={e => update('doors', e.target.value)} min="2" className="lw-input-interactive" />
               </div>
-              <div>
-                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? 'Hộp Số' : isJa ? 'ギア' : 'Transmission'}</label>
-                <select value={form.transmission} onChange={e => update('transmission', e.target.value)} className="lux-input w-full bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl px-4 py-3 text-sm text-slate-800 dark:text-slate-100 focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20">
+              <div className="lw-form-group">
+                <label className="lw-form-label">{isVi ? 'Hộp Số' : isJa ? 'ギア' : 'Transmission'}</label>
+                <select value={form.transmission} onChange={e => update('transmission', e.target.value)} className="lw-input-interactive text-slate-800 dark:text-slate-100">
                   <option>Automatic</option><option>Manual</option><option>Dual-Clutch</option>
                 </select>
               </div>
-              <div>
-                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? 'Nhiên Liệu' : isJa ? '燃料' : 'Fuel Type'}</label>
-                <select value={form.fuelType} onChange={e => update('fuelType', e.target.value)} className="lux-input w-full bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl px-4 py-3 text-sm text-slate-800 dark:text-slate-100 focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20">
+              <div className="lw-form-group">
+                <label className="lw-form-label">{isVi ? 'Nhiên Liệu' : isJa ? '燃料' : 'Fuel Type'}</label>
+                <select value={form.fuelType} onChange={e => update('fuelType', e.target.value)} className="lw-input-interactive text-slate-800 dark:text-slate-100">
                   <option>Gasoline</option><option>Electric</option><option>Hybrid</option><option>Diesel</option>
                 </select>
               </div>
             </div>
-            <div>
-              <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? 'Tiện Nghi (Ngăn Cách Bởi Dấu Phẩy)' : isJa ? '装備（カンマ区切り）' : 'Features (comma separated)'}</label>
-              <input value={form.features} onChange={e => update('features', e.target.value)} className="lux-input w-full bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl px-4 py-3 text-sm focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20" placeholder="Bluetooth, Apple CarPlay, Heated Seats..." />
+            <div className="lw-form-group">
+              <label className="lw-form-label">{isVi ? 'Tiện Nghi (Ngăn Cách Bởi Dấu Phẩy)' : isJa ? '装備（カンマ区切り）' : 'Features (comma separated)'}</label>
+              <input value={form.features} onChange={e => update('features', e.target.value)} className="lw-input-interactive" placeholder="Bluetooth, Apple CarPlay, Heated Seats..." />
             </div>
             <div className="mt-4">
-              <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">{isVi ? 'Hình Ảnh Xe' : isJa ? '車両画像' : 'Vehicle Image'}</label>
+              <label className="lw-form-label mb-3">{isVi ? 'Hình Ảnh Xe' : isJa ? '車両画像' : 'Vehicle Image'}</label>
               <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-gold rounded-3xl p-7 text-center transition-colors cursor-pointer relative bg-slate-500/5 hover:bg-slate-500/10 group animate-fade-in">
                 <input
                   type="file"
@@ -860,7 +1075,7 @@ export const VehicleFormPage: React.FC = () => {
                     formData.append('file', file);
                     try {
                       const token = localStorage.getItem('luxeway_access_token');
-                      const res = await fetch('http://localhost:8080/api/v1/upload/vehicle-image', {
+                      const res = await fetch('http://localhost:8080/upload/vehicle-image', {
                         method: 'POST',
                         headers: token ? { Authorization: `Bearer ${token}` } : {},
                         body: formData,
@@ -892,33 +1107,61 @@ export const VehicleFormPage: React.FC = () => {
                   </div>
                 )}
               </div>
+              {errors.images && <p className="lw-form-error-text mt-2">{errors.images}</p>}
             </div>
           </motion.div>
         )}
-
+ 
         {step === 3 && (
           <motion.div variants={fadeUp} initial="hidden" animate="visible" className="space-y-6">
             <h3 className="font-display text-xl font-bold text-slate-800 dark:text-white border-b border-slate-200/10 dark:border-white/5 pb-3">{isVi ? 'Giá Cả & Địa Điểm' : isJa ? '料金・所在地' : 'Pricing & Location'}</h3>
-            <div>
-              <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? `Giá Thuê Hàng Ngày (${currency}) *` : isJa ? `一日あたりの料金（${currency}） *` : `Daily Rate (${currency}) *`}</label>
+            <div className="lw-form-group">
+              <label className="lw-form-label">{isVi ? `Giá Thuê Hàng Ngày (${currency}) *` : isJa ? `一日あたりの料金（${currency}） *` : `Daily Rate (${currency}) *`}</label>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-extrabold">{getCurrencySymbol(currency)}</span>
-                <input type="number" value={form.pricePerDay} onChange={e => update('pricePerDay', e.target.value)} required min="1" className="lux-input w-full pl-9 pr-4 py-3 bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl text-slate-800 dark:text-white font-extrabold text-sm focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20" />
+                <input type="number" value={form.pricePerDay} onChange={e => update('pricePerDay', e.target.value)} required min="1" className={`lw-input-interactive pl-9 ${errors.pricePerDay ? 'error' : ''}`} />
               </div>
+              {errors.pricePerDay && <p className="lw-form-error-text">{errors.pricePerDay}</p>}
               <p className="text-xs text-slate-400 dark:text-slate-500 mt-2.5 font-medium">{isVi ? `Trung bình trên LuxeWay: ${formatCurrency(450 * 25400)} - ${formatCurrency(800 * 25400)} dựa trên phân khúc siêu xe.` : `LuxeWay average: ${formatCurrency(450 * 25400)} - ${formatCurrency(800 * 25400)} based on supercars.`}</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div className="md:col-span-2">
-                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? 'Địa Chỉ Cụ Thể' : isJa ? '所在地（住所）' : 'Street Address'}</label>
-                <input value={form.address} onChange={e => update('address', e.target.value)} className="lux-input w-full bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl px-4 py-3 text-sm focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20" />
+              <div className="md:col-span-2 lw-form-group">
+                <label className="lw-form-label">{isVi ? 'Địa Chỉ Cụ Thể' : isJa ? '所在地（住所）' : 'Street Address'}</label>
+                <input value={form.address} onChange={e => update('address', e.target.value)} className="lw-input-interactive" />
               </div>
-              <div>
-                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? 'Thành Phố *' : isJa ? '市区町村 *' : 'City *'}</label>
-                <input value={form.city} onChange={e => update('city', e.target.value)} required className="lux-input w-full bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl px-4 py-3 text-sm focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20" />
+              <div className="lw-form-group">
+                <label className="lw-form-label">{isVi ? 'Thành Phố *' : isJa ? '市区町村 *' : 'City *'}</label>
+                <input value={form.city} onChange={e => update('city', e.target.value)} required className={`lw-input-interactive ${errors.city ? 'error' : ''}`} />
+                {errors.city && <p className="lw-form-error-text">{errors.city}</p>}
               </div>
-              <div>
-                <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{isVi ? 'Tỉnh/Bang *' : isJa ? '都道府県 *' : 'State/Province *'}</label>
-                <input value={form.state} onChange={e => update('state', e.target.value)} required className="lux-input w-full bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 rounded-xl px-4 py-3 text-sm focus:border-[#EAB308]/50 focus:ring-2 focus:ring-[#EAB308]/20" />
+              <div className="lw-form-group">
+                <label className="lw-form-label">{isVi ? 'Tỉnh/Bang *' : isJa ? '都道府県 *' : 'State/Province *'}</label>
+                <input value={form.state} onChange={e => update('state', e.target.value)} required className={`lw-input-interactive ${errors.state ? 'error' : ''}`} />
+                {errors.state && <p className="lw-form-error-text">{errors.state}</p>}
+              </div>
+              
+              <div className="md:col-span-2 grid grid-cols-2 gap-4">
+                <div className="lw-form-group">
+                  <label className="lw-form-label">Latitude *</label>
+                  <input type="number" step="any" value={form.lat} onChange={e => update('lat', parseFloat(e.target.value) || 0)} required className={`lw-input-interactive font-mono ${errors.lat ? 'error' : ''}`} />
+                  {errors.lat && <p className="lw-form-error-text">{errors.lat}</p>}
+                </div>
+                <div className="lw-form-group">
+                  <label className="lw-form-label">Longitude *</label>
+                  <input type="number" step="any" value={form.lng} onChange={e => update('lng', parseFloat(e.target.value) || 0)} required className={`lw-input-interactive font-mono ${errors.lng ? 'error' : ''}`} />
+                  {errors.lng && <p className="lw-form-error-text">{errors.lng}</p>}
+                </div>
+              </div>
+ 
+              <div className="md:col-span-2 space-y-2.5">
+                <label className="lw-form-label">
+                  {isVi ? 'Vị Trí Trên Bản Đồ (Click để chọn tọa độ mới)' : 'Location on Map (Click to select new coordinates)'}
+                </label>
+                <div className="h-64 w-full rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md relative z-10">
+                  <LocationPickerMap lat={form.lat || 10.762} lng={form.lng || 106.660} onChange={(lat, lng) => {
+                    setForm(f => ({ ...f, lat, lng }));
+                  }} />
+                </div>
               </div>
             </div>
           </motion.div>
@@ -942,6 +1185,7 @@ export const VehicleFormPage: React.FC = () => {
 // ====== OWNER CALENDAR PAGE ======
 export const OwnerCalendarPage: React.FC = () => {
   const { user } = useAuthStore();
+  const t = useT();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -988,13 +1232,16 @@ export const OwnerCalendarPage: React.FC = () => {
     });
   };
 
+  const breadcrumbItems = [
+    { label: t.marketplace.home, href: '/' },
+    { label: 'Host Portal', href: '/owner' },
+    { label: t.ownerDashboard.calendar }
+  ];
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
-        <div>
-          <h1 className="font-display text-2.5xl font-extrabold text-slate-800 dark:text-white tracking-tight">Fleet Calendar</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-xs font-semibold mt-0.5">Manage your vehicle availability, blocked dates, and timelines</p>
-        </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--lw-border)] pb-5">
+        <Breadcrumbs title="Fleet Calendar" items={breadcrumbItems} backHref="/owner" backText="Back to Overview" className="mb-0 flex-1" />
         <div className="flex items-center gap-3">
           <select 
             value={selectedVehicle} 
@@ -1076,6 +1323,7 @@ export const OwnerBookingsPage: React.FC = () => {
   const [loading, setLoading] = React.useState(true);
   const [filter, setFilter] = React.useState('all');
   const toast = useToast();
+  const t = useT();
 
   React.useEffect(() => {
     if (!user) return;
@@ -1099,12 +1347,15 @@ export const OwnerBookingsPage: React.FC = () => {
     toast.success('Booking rejected', 'The renter has been notified.');
   };
 
+  const breadcrumbItems = [
+    { label: t.marketplace.home, href: '/' },
+    { label: 'Host Portal', href: '/owner' },
+    { label: 'Bookings' }
+  ];
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" className="mb-2">
-        <h1 className="font-display text-2.5xl font-extrabold text-slate-800 dark:text-white tracking-tight">Booking Requests</h1>
-        <p className="text-slate-500 dark:text-slate-400 text-xs font-semibold mt-0.5">Manage and respond to all bookings for your vehicles</p>
-      </motion.div>
+      <Breadcrumbs title="Booking Requests" items={breadcrumbItems} backHref="/owner" backText="Back to Overview" />
 
       {/* Filter Tabs - Premium Capsule Pills */}
       <div className="flex gap-2 overflow-x-auto pb-2 max-w-full scrollbar-none">
@@ -1158,7 +1409,7 @@ export const OwnerBookingsPage: React.FC = () => {
                       <p className="text-base font-extrabold text-emerald-500 dark:text-emerald-400 mt-2.5">{formatCurrency(booking.pricing.total)}</p>
                     </div>
                   </div>
-                  {isPending && (
+                  {isPending ? (
                     <div className="flex gap-2.5 flex-shrink-0 justify-end mt-2 sm:mt-0">
                       <motion.button
                         whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
@@ -1175,7 +1426,16 @@ export const OwnerBookingsPage: React.FC = () => {
                         Reject
                       </motion.button>
                     </div>
-                  )}
+                  ) : (booking.status === 'confirmed' || booking.status === 'active') ? (
+                    <div className="flex gap-2.5 flex-shrink-0 justify-end mt-2 sm:mt-0">
+                      <Link
+                        to={`/owner/bookings/${booking.id}/tracking`}
+                        className="flex items-center gap-1.5 px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-extrabold shadow-md shadow-blue-500/15 transition-all hover-lift"
+                      >
+                        <Play className="w-3.5 h-3.5 fill-white" /> Simulate & Track
+                      </Link>
+                    </div>
+                  ) : null}
                 </div>
               </motion.div>
             );
@@ -1187,7 +1447,19 @@ export const OwnerBookingsPage: React.FC = () => {
 };
 
 export const OwnerRevenuePage: React.FC = () => {
-  return <OwnerAnalyticsDashboard />;
+  const t = useT();
+  const breadcrumbItems = [
+    { label: t.marketplace.home, href: '/' },
+    { label: 'Host Portal', href: '/owner' },
+    { label: t.ownerDashboard.revenue }
+  ];
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <Breadcrumbs title={t.ownerDashboard.revenue} items={breadcrumbItems} backHref="/owner" backText="Back to Overview" />
+      <OwnerAnalyticsDashboard />
+    </div>
+  );
 };
 
 // ====== FLEET MANAGEMENT PAGE (SRS REQ-FLEET-001) ======
@@ -1196,6 +1468,7 @@ export const FleetManagementPage: React.FC = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedStatus, setSelectedStatus] = useState('all');
+  const t = useT();
 
   useEffect(() => {
     if (!user) return;
@@ -1216,17 +1489,20 @@ export const FleetManagementPage: React.FC = () => {
 
   const utilizationRate = stats.total > 0 ? Math.round((stats.rented / stats.total) * 100) : 0;
 
+  const breadcrumbItems = [
+    { label: t.marketplace.home, href: '/' },
+    { label: 'Host Portal', href: '/owner' },
+    { label: 'Fleet Management' }
+  ];
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
-        <div>
-          <h1 className="font-display text-2.5xl font-extrabold text-slate-800 dark:text-white tracking-tight">Fleet Management</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-xs font-semibold mt-0.5">Oversee and manage your entire luxury vehicle fleet</p>
-        </div>
-        <Link to="/owner/vehicles/new" className="btn-gold flex items-center gap-2 text-xs font-extrabold px-5 py-3 rounded-xl shadow-lg shadow-gold/20 hover:shadow-gold/30 hover-lift">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--lw-border)] pb-5">
+        <Breadcrumbs title="Fleet Management" items={breadcrumbItems} backHref="/owner" backText="Back to Overview" className="mb-0 flex-1" />
+        <Link to="/owner/vehicles/new" className="btn-gold flex items-center gap-2 text-xs font-extrabold px-5 py-3 rounded-xl shadow-lg shadow-gold/20 hover:shadow-gold/30 hover-lift lw-btn-interactive">
           <Plus className="w-4 h-4" /> Add to Fleet
         </Link>
-      </motion.div>
+      </div>
 
       {/* Fleet Stats Grid */}
       <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid grid-cols-2 lg:grid-cols-4 gap-5">
@@ -1365,6 +1641,7 @@ export const EmployeeManagementPage: React.FC = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [newEmployee, setNewEmployee] = useState({ name: '', email: '', phone: '', role: 'driver' });
   const toast = useToast();
+  const t = useT();
 
   useEffect(() => {
     apiClient.get<any>('/employees')
@@ -1426,17 +1703,20 @@ export const EmployeeManagementPage: React.FC = () => {
     return 'bg-slate-500/5 text-slate-500 border-slate-200/20';
   };
 
+  const breadcrumbItems = [
+    { label: t.marketplace.home, href: '/' },
+    { label: 'Host Portal', href: '/owner' },
+    { label: 'Team Management' }
+  ];
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
-        <div>
-          <h1 className="font-display text-2.5xl font-extrabold text-slate-800 dark:text-white tracking-tight">Team & Operations</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-xs font-semibold mt-0.5">Manage and assign roles for your fleet drivers, support staff, and managers</p>
-        </div>
-        <button onClick={() => setShowAddForm(true)} className="btn-gold flex items-center gap-2 text-xs font-extrabold px-5 py-3 rounded-xl shadow-lg shadow-gold/20 hover:shadow-gold/30 hover-lift">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--lw-border)] pb-5">
+        <Breadcrumbs title="Team & Operations" items={breadcrumbItems} backHref="/owner" backText="Back to Overview" className="mb-0 flex-1" />
+        <button onClick={() => setShowAddForm(true)} className="btn-gold flex items-center gap-2 text-xs font-extrabold px-5 py-3 rounded-xl shadow-lg shadow-gold/20 hover:shadow-gold/30 hover-lift lw-btn-interactive">
           <Plus className="w-4 h-4" /> Add Employee
         </button>
-      </motion.div>
+      </div>
 
       {/* Stats Row */}
       <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid grid-cols-3 gap-5 mb-6">
@@ -1595,12 +1875,13 @@ export const OwnerDashboardLayout: React.FC = () => {
   }, [isAuthenticated]);
 
   const links = [
-    { href: '/', icon: Globe, label: t.marketplace.home, exact: true },
-    { href: '/owner', icon: LayoutDashboard, label: t.ownerDashboard.overview, exact: true },
-    { href: '/owner/vehicles', icon: Car, label: t.ownerDashboard.myVehicles },
-    { href: '/owner/calendar', icon: Clock, label: t.ownerDashboard.calendar },
-    { href: '/owner/bookings', icon: Calendar, label: t.ownerDashboard.bookings },
-    { href: '/owner/revenue', icon: TrendingUp, label: t.ownerDashboard.revenue },
+    { href: '/owner', icon: LayoutDashboard, label: 'Overview', exact: true },
+    { href: '/owner/vehicles', icon: Car, label: 'My Vehicles' },
+    { href: '/owner/calendar', icon: Clock, label: 'Calendar' },
+    { href: '/owner/bookings', icon: Calendar, label: 'Bookings' },
+    { href: '/owner/revenue', icon: TrendingUp, label: 'Revenue' },
+    { href: '/owner/reviews', icon: Star, label: 'Reviews' },
+    { href: '/owner/settings', icon: Settings, label: 'Settings' },
   ];
 
   const getInitials = (name: string) => {
@@ -1614,17 +1895,9 @@ export const OwnerDashboardLayout: React.FC = () => {
 
   return (
     <div
-      className="min-h-screen relative overflow-hidden font-sans text-slate-100"
-      style={{ background: 'linear-gradient(135deg, #070B14 0%, #0B1221 50%, #070B14 100%)' }}
+      className="theme-owner min-h-screen relative font-sans bg-[var(--lw-bg-primary)] text-[var(--lw-text-primary)] transition-colors duration-300"
     >
-      {/* Ambient orbs */}
-      <div className="fixed top-0 right-0 w-[450px] h-[450px] rounded-full pointer-events-none opacity-10 blur-3xl"
-        style={{ background: 'radial-gradient(circle, #F59E0B 0%, transparent 70%)' }} />
-      <div className="fixed bottom-0 left-1/4 w-80 h-80 rounded-full pointer-events-none opacity-8 blur-3xl"
-        style={{ background: 'radial-gradient(circle, #6366F1 0%, transparent 70%)' }} />
-      <div className="absolute top-0 left-0 w-[500px] h-[500px] rounded-full opacity-10 blur-3xl pointer-events-none bg-amber-500" />
-      
-      {/* Mobile Sidebar Navigation Drawer (SRS REQ-RESP-001) */}
+      {/* Mobile Sidebar Navigation Drawer */}
       <AnimatePresence>
         {sidebarOpen && (
           <>
@@ -1634,48 +1907,35 @@ export const OwnerDashboardLayout: React.FC = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSidebarOpen(false)}
-              className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm"
+              className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
             />
-            {/* Sliding navigation drawer */}
+            {/* Sliding navigation drawer - mobile */}
             <motion.aside
               initial={{ x: -280 }}
               animate={{ x: 0 }}
               exit={{ x: -280 }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed left-0 top-0 h-full w-66 z-50 flex flex-col justify-between p-6 lg:hidden shadow-2xl border-r border-slate-200/50 dark:border-slate-800/80"
-              style={{
-                background: isDark
-                  ? 'linear-gradient(180deg, #080d16 0%, #0c1524 60%, #080d16 100%)'
-                  : 'linear-gradient(180deg, #f4f7fa 0%, #e9edf3 60%, #f4f7fa 100%)',
-              }}
+              className="lw-sidebar fixed left-0 top-0 h-full z-50 flex lg:hidden shadow-2xl"
             >
-              <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-amber-500/10 to-transparent pointer-events-none" />
-              
               <div className="relative z-10 flex flex-col flex-1 min-h-0">
                 {/* Branding */}
-                <div className="logo-wrapper flex items-center gap-3 px-2 mb-5">
-                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-600 flex items-center justify-center text-slate-905 shadow-lg">
-                    <Car className="w-5.5 h-5.5 text-slate-900" />
+                <div className="lw-sidebar-logo">
+                  <div className="w-8 h-8 rounded-xl bg-amber-500 flex items-center justify-center flex-shrink-0">
+                    <Car className="w-4 h-4 text-white" />
                   </div>
                   <div>
-                    <h2 className="font-sans font-black text-base tracking-wider text-slate-800 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-white dark:to-slate-400">
-                      LuxeWay
-                    </h2>
-                    <span className="text-[9px] font-black uppercase tracking-widest text-amber-500">
-                      {t.ownerDashboard.hostCommand}
-                    </span>
+                    <h2 className="lw-sidebar-logo-text text-[var(--lw-text-primary)]">LuxeWay</h2>
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-amber-500">Host Center</span>
                   </div>
                 </div>
 
-                <div className="mx-2 mb-6 px-3.5 py-1.5 rounded-xl border border-amber-500/20 bg-amber-500/5 text-[8px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-450 animate-ping" />
-                  {t.ownerDashboard.verifiedHost}
+                <div className="lw-sidebar-role-badge bg-amber-500/10 text-amber-600 border border-amber-500/20 m-0 mx-5 my-3">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                  Verified Host
                 </div>
 
-                <hr className="border-slate-200/50 dark:border-slate-800/80 mb-6" />
-
                 {/* Links */}
-                <nav className="space-y-1.5 flex-1 overflow-y-auto sidebar-scroll pr-1">
+                <div className="lw-sidebar-nav space-y-0.5">
                   {links.map(link => {
                     const active = isActive(link.href, link.exact);
                     return (
@@ -1683,36 +1943,30 @@ export const OwnerDashboardLayout: React.FC = () => {
                         key={link.href}
                         to={link.href}
                         onClick={() => setSidebarOpen(false)}
-                        className={`w-full flex items-center gap-3 px-4.5 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all duration-305 relative group ${
-                          active 
-                            ? 'bg-gradient-to-r from-amber-550 to-yellow-500 text-slate-900 shadow-xl shadow-amber-500/25 font-black' 
-                            : isDark 
-                              ? 'text-slate-400 hover:text-white hover:bg-slate-900/50' 
-                              : 'text-slate-655 hover:text-slate-900 hover:bg-slate-100/50'
-                        }`}
+                        className={cn(
+                          "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative lw-sidebar-nav-item",
+                          active && "active"
+                        )}
                       >
-                        {active && <span className="w-1 h-5 bg-slate-900 rounded-full absolute left-1" />}
-                        <link.icon className={`w-4.5 h-4.5 ${active ? 'text-slate-900' : 'text-slate-450 group-hover:text-slate-800 dark:group-hover:text-white'}`} />
+                        <link.icon className="w-4 h-4 flex-shrink-0" />
                         <span>{link.label}</span>
                       </Link>
                     );
                   })}
-                </nav>
+                </div>
               </div>
 
               {/* Bottom user card */}
-              <div className="relative z-10 mt-6 pt-5 border-t border-slate-200/50 dark:border-slate-800/80">
-                <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-100/50 dark:bg-slate-950/40 border border-slate-200/40 dark:border-slate-800/55 shadow-inner">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-500 text-slate-900 text-xs font-black flex items-center justify-center shadow-inner">
-                    {getInitials(user.displayName)}
-                  </div>
+              <div className="lw-sidebar-footer">
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-[var(--lw-bg-secondary)] border border-[var(--lw-border)]">
+                  <Avatar src={user.avatar} name={user.displayName} size="md" className="flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-black truncate text-slate-800 dark:text-white">{user.displayName}</p>
-                    <p className="text-[9px] font-black uppercase tracking-wider text-amber-550 dark:text-amber-400 mt-0.5">{t.ownerDashboard.vehicleHost}</p>
+                    <p className="text-xs font-semibold truncate text-[var(--lw-text-primary)]">{user.displayName}</p>
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-amber-500 mt-0.5">{t.ownerDashboard.vehicleHost}</p>
                   </div>
                   <button 
                     onClick={() => { logout(); setSidebarOpen(false); navigate('/auth/login'); }}
-                    className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                    className="p-2 text-[var(--lw-text-muted)] hover:text-red-500 transition-colors"
                     title={t.nav.logout}
                   >
                     <LogOut className="w-4 h-4" />
@@ -1724,73 +1978,52 @@ export const OwnerDashboardLayout: React.FC = () => {
         )}
       </AnimatePresence>
 
-      <div className="max-w-[1600px] mx-auto px-4 lg:px-8 py-6 relative z-10 flex flex-col lg:flex-row gap-6">
+      {/* Main dashboard flex layout */}
+      <div className="lw-flex-layout pt-16">
         
-        {/* Sticky Left Sidebar */}
-        <aside className="w-66 flex-shrink-0 sticky top-6 h-[calc(100vh-3rem)] rounded-[2.5rem] glass dark:glass-dark border border-slate-200/50 dark:border-slate-800/80 p-6 flex flex-col justify-between hidden lg:flex relative overflow-hidden shadow-2xl">
-          <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-amber-500/10 to-transparent pointer-events-none" />
-          
+        {/* ============ SIDEBAR ============ */}
+        <aside className="lw-sidebar hidden lg:flex border-r border-[var(--lw-border)] bg-[var(--lw-sidebar-bg)]">
           <div className="relative z-10 flex flex-col flex-1 min-h-0">
-            {/* Branding */}
-            <div className="logo-wrapper flex items-center gap-3 px-2 mb-5">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-600 flex items-center justify-center text-slate-905 shadow-lg">
-                <Car className="w-5.5 h-5.5 text-slate-900" />
-              </div>
-              <div>
-                <h2 className="font-sans font-black text-base tracking-wider text-slate-800 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-white dark:to-slate-400">
-                  LuxeWay
-                </h2>
-                <span className="text-[9px] font-black uppercase tracking-widest text-amber-500">
-                  Host Center
-                </span>
+            {/* Role Badge only, no double logo on desktop */}
+            <div className="px-5 py-4 border-b border-[var(--lw-border)]">
+              <div className="lw-sidebar-role-badge bg-amber-500/10 text-amber-600 border border-amber-500/20 m-0 w-full flex items-center justify-center py-2.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse mr-1.5" />
+                Verified Host
               </div>
             </div>
 
-            <div className="mx-2 mb-6 px-3.5 py-1.5 rounded-xl border border-amber-500/20 bg-amber-500/5 text-[8px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-450 animate-ping" />
-              Verified Host
-            </div>
-
-            <hr className="border-slate-200/50 dark:border-slate-800/80 mb-6" />
-
-            {/* Links */}
-            <nav className="space-y-1.5 flex-1 overflow-y-auto sidebar-scroll pr-1">
+            {/* Navigation Links */}
+            <div className="lw-sidebar-nav space-y-0.5">
               {links.map(link => {
                 const active = isActive(link.href, link.exact);
                 return (
                   <Link
                     key={link.href}
                     to={link.href}
-                    className={`w-full flex items-center gap-3 px-4.5 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all duration-305 relative group ${
-                      active 
-                        ? 'bg-gradient-to-r from-amber-550 to-yellow-500 text-slate-900 shadow-xl shadow-amber-500/25 font-black' 
-                        : isDark 
-                          ? 'text-slate-400 hover:text-white hover:bg-slate-900/50' 
-                          : 'text-slate-655 hover:text-slate-900 hover:bg-slate-100/50'
-                    }`}
+                    className={cn(
+                       "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative lw-sidebar-nav-item",
+                      active && "active"
+                    )}
                   >
-                    {active && <span className="w-1 h-5 bg-slate-900 rounded-full absolute left-1" />}
-                    <link.icon className={`w-4.5 h-4.5 ${active ? 'text-slate-900' : 'text-slate-450 group-hover:text-slate-800 dark:group-hover:text-white'}`} />
+                    <link.icon className="w-4 h-4 flex-shrink-0" />
                     <span>{link.label}</span>
                   </Link>
                 );
               })}
-            </nav>
+            </div>
           </div>
 
           {/* Bottom user card */}
-          <div className="relative z-10 mt-6 pt-5 border-t border-slate-200/50 dark:border-slate-800/80">
-            <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-100/50 dark:bg-slate-950/40 border border-slate-200/40 dark:border-slate-800/55 shadow-inner">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-500 text-slate-900 text-xs font-black flex items-center justify-center shadow-inner">
-                {getInitials(user.displayName)}
-              </div>
+          <div className="lw-sidebar-footer">
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-[var(--lw-bg-secondary)] border border-[var(--lw-border)]">
+              <Avatar src={user.avatar} name={user.displayName} size="md" className="flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-black truncate text-slate-800 dark:text-white">{user.displayName}</p>
-                <p className="text-[9px] font-black uppercase tracking-wider text-amber-550 dark:text-amber-400 mt-0.5">{t.ownerDashboard.vehicleHost}</p>
+                <p className="text-xs font-semibold truncate text-[var(--lw-text-primary)]">{user.displayName}</p>
+                <p className="text-[9px] font-bold uppercase tracking-wider text-amber-500 mt-0.5">{t.ownerDashboard.vehicleHost}</p>
               </div>
               <button 
                 onClick={() => { logout(); navigate('/auth/login'); }}
-                className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                className="p-2 text-[var(--lw-text-muted)] hover:text-red-500 transition-colors"
                 title={t.nav.logout}
               >
                 <LogOut className="w-4 h-4" />
@@ -1799,50 +2032,38 @@ export const OwnerDashboardLayout: React.FC = () => {
           </div>
         </aside>
 
-        {/* Content canvas */}
-        <div className="flex-1 min-w-0 flex flex-col gap-6">
-          <header className={`rounded-[2rem] border backdrop-blur-xl transition-all duration-500 ${
-            isDark 
-              ? 'bg-slate-900/60 border-slate-800/80 shadow-2xl shadow-slate-950/30' 
-              : 'bg-white/80 border-slate-200/60 shadow-xl shadow-slate-200/40'
-          } p-6 flex items-center justify-between`}>
-            
+        {/* ============ MAIN CONTENT ============ */}
+        <div className="lw-flex-main gap-0">
+          {/* Dashboard Header Bar */}
+          <header className="p-5 border-b border-[var(--lw-border)] flex items-center justify-between gap-4 bg-[var(--lw-bg-card)] mb-6 -mx-6 -mt-6 px-6">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="p-2 rounded-xl border border-slate-200/50 dark:border-white/10 hover:bg-slate-500/10 transition-all lg:hidden shadow-sm"
+                className="p-2 rounded-xl border border-[var(--lw-border)] hover:bg-[var(--lw-bg-secondary)] transition-all lg:hidden"
                 title="Menu"
               >
-                <Menu className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+                <Menu className="w-5 h-5 text-[var(--lw-text-secondary)]" />
               </button>
-              <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-550">
-                <Car className="w-5.5 h-5.5" />
+              <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                <Car className="w-4.5 h-4.5 text-amber-600" />
               </div>
               <div>
-                <h1 className="font-sans font-black text-lg tracking-tight text-slate-855 dark:text-white">
+                <h1 className="font-bold text-base tracking-tight text-[var(--lw-text-primary)]">
                   {t.ownerDashboard.hostCommand}
                 </h1>
-                <p className="text-[10px] text-amber-550 dark:text-amber-450 font-extrabold uppercase tracking-widest mt-0.5">
-                  Platform rental Room
+                <p className="text-[10px] text-amber-500 font-semibold uppercase tracking-widest">
+                  Owner Portal
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
-              <div className={`hidden md:flex items-center gap-2.5 px-4.5 py-2.5 border rounded-2xl shadow-inner ${
-                isDark ? 'bg-slate-950/40 border-slate-800' : 'bg-slate-50 border-slate-200'
-              }`}>
-                <Clock className="w-4 h-4 text-amber-500" />
-                <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+            <div className="flex items-center gap-3">
+              <div className="hidden md:flex items-center gap-2 px-3.5 py-2 border border-[var(--lw-border)] rounded-xl bg-[var(--lw-bg-secondary)]">
+                <Clock className="w-3.5 h-3.5 text-amber-500" />
+                <span className="text-[10px] font-semibold text-[var(--lw-text-secondary)]">
                   {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                 </span>
               </div>
-              <button 
-                onClick={() => { logout(); navigate('/auth/login'); }}
-                className="text-[9px] font-black uppercase tracking-widest px-5 py-3.5 rounded-2xl border bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-red-500 hover:bg-red-500/10 transition-all hover-lift"
-              >
-                {t.nav.logout}
-              </button>
             </div>
           </header>
 
@@ -1851,6 +2072,253 @@ export const OwnerDashboardLayout: React.FC = () => {
           </main>
         </div>
       </div>
+    </div>
+  );
+};
+
+export const OwnerReviewsPage: React.FC = () => {
+  const { user } = useAuthStore();
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const toast = useToast();
+
+  useEffect(() => {
+    if (user?.id) {
+      apiClient.get<any>(`/reviews/owner/${user.id}?page=0&size=100`)
+        .then(res => {
+          const data = res.data?.data || res.data;
+          setReviews(data?.content || res.content || []);
+          setLoading(false);
+        })
+        .catch(err => {
+          console.error(err);
+          setLoading(false);
+          toast.error('Error', 'Failed to load reviews');
+        });
+    }
+  }, [user]);
+
+  const ratingAvg = reviews.length > 0 
+    ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
+    : 'N/A';
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <div className="border-b border-[var(--lw-border)] pb-5">
+        <h2 className="text-xl font-bold tracking-tight text-[var(--lw-text-primary)]">Reviews & Feedback</h2>
+        <p className="text-xs text-[var(--lw-text-muted)] mt-1">Monitor passenger feedback and fleet service ratings</p>
+      </div>
+
+      {loading ? (
+        <div className="space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="skeleton h-24 rounded-2xl animate-pulse" />
+          ))}
+        </div>
+      ) : reviews.length === 0 ? (
+        <div className="glass border border-slate-200/50 dark:border-white/5 text-center py-16 rounded-[2rem] shadow-sm">
+          <Star className="w-14 h-14 text-slate-300 dark:text-slate-700 mx-auto mb-3 animate-pulse" />
+          <p className="text-slate-400 text-sm font-semibold">No reviews received yet</p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm flex flex-col md:flex-row items-center gap-6">
+            <div className="text-center md:border-r border-slate-200/20 md:pr-8 flex-shrink-0">
+              <p className="text-5xl font-black text-amber-500 tracking-tight">{ratingAvg}</p>
+              <div className="flex items-center justify-center gap-0.5 mt-2">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className={`w-4 h-4 fill-current ${i < Math.round(Number(ratingAvg) || 5) ? 'text-amber-500' : 'text-slate-200'}`} />
+                ))}
+              </div>
+              <p className="text-[10px] text-slate-450 dark:text-slate-500 font-extrabold uppercase tracking-widest mt-2">{reviews.length} total reviews</p>
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-bold text-slate-800 dark:text-slate-100">Host Score Metrics</p>
+              <p className="text-xs text-slate-400 dark:text-slate-550 mt-1">High ratings increase listing visibility and matching prioritization on the marketplace index.</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4">
+            {reviews.map(review => (
+              <div key={review.id} className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm hover-lift transition-all">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <Avatar src={review.user?.avatar} name={review.user?.displayName || 'Customer'} size="md" />
+                    <div>
+                      <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{review.user?.displayName || 'Customer'}</p>
+                      <p className="text-[10px] text-slate-450 dark:text-slate-500 font-medium">{formatDate(review.createdAt)}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-0.5 bg-amber-500/10 text-amber-500 px-2.5 py-1 rounded-xl text-xs font-black">
+                    <Star className="w-3.5 h-3.5 fill-current" />
+                    <span>{review.rating?.toFixed(1) || '5.0'}</span>
+                  </div>
+                </div>
+                <p className="text-slate-600 dark:text-slate-350 text-sm mt-4 leading-relaxed italic">"{review.comment || 'No comment provided'}"</p>
+                <div className="border-t border-slate-200/10 dark:border-white/5 mt-4 pt-3 flex items-center justify-between text-xs text-slate-400 dark:text-slate-550 font-semibold">
+                  <span>Vehicle: <strong className="text-slate-700 dark:text-slate-300">{review.vehicleName || 'Vehicle'}</strong></span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export const OwnerSettingsPage: React.FC = () => {
+  const { user, initAuth } = useAuthStore();
+  const toast = useToast();
+  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({
+    firstName: user?.firstName || '',
+    lastName: user?.lastName || '',
+    phone: user?.phone || '',
+    bio: user?.bio || '',
+    location: user?.location || '',
+    preferredLanguage: user?.preferredLanguage || 'en',
+    licenseClass: user?.licenseClass || '',
+    licenseNumber: user?.licenseNumber || '',
+  });
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.firstName || !form.lastName) {
+      toast.error('Missing Info', 'First and Last name are required.');
+      return;
+    }
+    setLoading(true);
+    try {
+      await apiClient.put(`/users/${user?.id}`, {
+        firstName: form.firstName,
+        lastName: form.lastName,
+        phone: form.phone,
+        bio: form.bio,
+        location: form.location,
+        preferredLanguage: form.preferredLanguage,
+        licenseClass: form.licenseClass,
+        licenseNumber: form.licenseNumber
+      });
+      
+      const stored = JSON.parse(localStorage.getItem('luxeway_user') || '{}');
+      const updatedUser = {
+        ...stored,
+        ...form,
+        displayName: `${form.firstName} ${form.lastName}`
+      };
+      localStorage.setItem('luxeway_user', JSON.stringify(updatedUser));
+      initAuth();
+      toast.success('Profile Saved', 'Your Host profile details have been synchronized.');
+    } catch (err: any) {
+      console.error(err);
+      toast.error('Save Failed', err.response?.data?.error || 'Failed to update host details.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <div className="border-b border-[var(--lw-border)] pb-5">
+        <h2 className="text-xl font-bold tracking-tight text-[var(--lw-text-primary)]">Host Settings</h2>
+        <p className="text-xs text-[var(--lw-text-muted)] mt-1">Configure your public host bio and registry profile parameters</p>
+      </div>
+
+      <form onSubmit={handleSave} className="space-y-6 max-w-2xl">
+        <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm space-y-4">
+          <h3 className="font-display text-sm font-bold text-amber-500 uppercase tracking-widest border-b border-slate-200/10 dark:border-white/5 pb-2.5">Personal Profile</h3>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">First Name</label>
+              <input 
+                type="text" 
+                value={form.firstName}
+                onChange={e => setForm(f => ({ ...f, firstName: e.target.value }))}
+                className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Last Name</label>
+              <input 
+                type="text" 
+                value={form.lastName}
+                onChange={e => setForm(f => ({ ...f, lastName: e.target.value }))}
+                className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Phone Number</label>
+            <input 
+              type="text" 
+              value={form.phone}
+              onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+              className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Host Bio</label>
+            <textarea 
+              value={form.bio}
+              onChange={e => setForm(f => ({ ...f, bio: e.target.value }))}
+              className="lux-input h-24 bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100 resize-none py-2"
+              placeholder="Tell prospective renters about your hosting history or luxury vehicle collection..."
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Operating Location</label>
+            <input 
+              type="text" 
+              value={form.location}
+              onChange={e => setForm(f => ({ ...f, location: e.target.value }))}
+              className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100"
+              placeholder="e.g. District 1, HCMC"
+            />
+          </div>
+        </div>
+
+        <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm space-y-4">
+          <h3 className="font-display text-sm font-bold text-amber-500 uppercase tracking-widest border-b border-slate-200/10 dark:border-white/5 pb-2.5">Verification & Driving License</h3>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">License Class</label>
+              <input 
+                type="text" 
+                value={form.licenseClass}
+                onChange={e => setForm(f => ({ ...f, licenseClass: e.target.value }))}
+                className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100 uppercase"
+                placeholder="e.g. B2"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">License Number</label>
+              <input 
+                type="text" 
+                value={form.licenseNumber}
+                onChange={e => setForm(f => ({ ...f, licenseNumber: e.target.value }))}
+                className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100"
+                placeholder="License ID number"
+              />
+            </div>
+          </div>
+        </div>
+
+        <motion.button 
+          whileHover={{ scale: 1.01 }} 
+          whileTap={{ scale: 0.99 }} 
+          type="submit" 
+          disabled={loading}
+          className="btn-gold flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-bold shadow-lg shadow-gold/20 hover:shadow-gold/30 hover-lift disabled:opacity-50"
+        >
+          {loading ? 'Saving...' : 'Save Settings'}
+        </motion.button>
+      </form>
     </div>
   );
 };
