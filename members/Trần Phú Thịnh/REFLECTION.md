@@ -829,6 +829,37 @@ Trong giai đoạn này (Phase 5.4), mình đã cùng Antigravity hoàn thành n
 
 ---
 
+## Reflection — Phase 5.5: PayOS Payment Audit Logging Implementation (2026-07-12)
+
+### Tóm tắt
+
+Trong giai đoạn này (Phase 5.5), mình đã cùng Antigravity triển khai tính năng Audit Logging (Nhật ký hành trình giao dịch và kiểm tra bảo mật) cho luồng thanh toán qua cổng PayOS ở Backend. Chúng tôi đã thiết kế transient fields `username` và `details` (kèm logic định dạng tự động) trong class `AuditLog` để tương thích hoàn toàn với dashboard của Frontend mà không làm ảnh hưởng tới cấu trúc database hiện tại. Ở tầng Service, mình đã mở rộng `AuditService` để tự động thu thập thông tin Client IP, User Agent từ Request Context và tiêm vào `PaymentService` để ghi vết đầy đủ 5 sự kiện thanh toán chính qua PayOS bao gồm: tạo hóa đơn thanh toán đặt xe, nạp ví LuxeWallet, webhook cập nhật kết quả giao dịch, redirect phản hồi về trang chủ và xử lý hoàn tiền từ quản trị viên. Kết quả biên dịch qua Gradle hoàn toàn sạch sẽ, đạt 0 lỗi biên dịch.
+
+### Những điều học được
+
+```text
+1. Thiết kế dữ liệu Transient để tương thích API/UI:
+   Khi Frontend mong muốn hiển thị các thông tin tổng hợp như "details" hay "username" của operator từ Audit Log, việc tạo các thuộc tính Transient (tạm thời, không lưu DB) trong JPA Entity kèm custom getter là một giải pháp cực kỳ thanh lịch. Nó giúp Jackson tự động tuần tự hóa thuộc tính này thành JSON mà không yêu cầu tạo thêm DTO hay làm phình to bảng trong cơ sở dữ liệu SQL Server.
+
+2. Tự động hóa trích xuất ngữ cảnh Request (Request Context Extraction):
+   Thay vì bắt buộc mọi phương thức ghi log phải truyền thủ công Client IP và User Agent, việc tận dụng RequestContextHolder và ServletRequestAttributes của Spring Web giúp trích xuất trực tiếp thông tin này từ HTTP Request hiện tại ở bất kỳ tầng Service nào. Điều này giúp tối giản hóa signature của hàm ghi log và nâng cao khả năng tái sử dụng.
+
+3. Bảo mật kiểm tra qua Webhook và Redirect (IPN & Redirect Audit):
+   Việc ghi log lại cả hai luồng xử lý Webhook (bất đồng bộ từ server PayOS) và Redirect Return (đồng bộ từ trình duyệt người dùng) giúp quản trị viên dễ dàng đối soát. Log ghi vết chính xác trạng thái cũ và mới (PENDING -> SUCCEEDED/FAILED) kèm chữ ký hợp lệ giúp phát hiện ngay lập tức các nỗ lực tấn công giả mạo dữ liệu thanh toán.
+```
+
+### Tự đánh giá Phase 5.5
+
+| Tiêu chí | Điểm | Ghi chú |
+|---|:---:|---|
+| Hiểu vấn đề trước khi fix | 5 | Hiểu rõ yêu cầu nghiệp vụ về ghi nhận lịch sử giao dịch bảo mật và cách biểu diễn dữ liệu transient |
+| Fix đúng nguyên nhân gốc | 5 | Triển khai ghi log tự động cho tất cả các nhánh điều hướng thanh toán PayOS ở Backend |
+| Kiểm chứng sau fix | 5 | Kiểm tra biên dịch Java Gradle wrapper thành công đạt 0 lỗi |
+| Ghi lại đầy đủ | 5 | Cập nhật đầy đủ cả 4 tài liệu phát triển trong thư mục members |
+| Sử dụng AI có trách nhiệm | 5 | Phê duyệt thiết kế kiến trúc audit log và tối ưu hóa định dạng hiển thị chi tiết |
+
+---
+
 ## 17. Cam kết Reflection
 
 Em/nhóm cam kết rằng nội dung reflection này phản ánh trung thực quá trình sử dụng AI và quá trình học tập trong bài tập/project.
@@ -842,5 +873,6 @@ Sinh viên/nhóm hiểu rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Trần Phú Thịnh - DE190371 | 2026-06-16 |
+| Trần Phú Thịnh - DE190371 | 2026-07-12 |
+
 

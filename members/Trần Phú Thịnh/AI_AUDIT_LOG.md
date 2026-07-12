@@ -99,6 +99,20 @@ Trần Phú Thịnh (DE190371) sử dụng AI (Antigravity/Codex) để:
 
 ---
 
+## Log #05
+
+- **Date:** 2026-07-12
+- **Author:** Trần Phú Thịnh (DE190371)
+- **AI Tool:** Antigravity
+- **Purpose:** Triển khai cơ chế ghi nhật ký hoạt động (Audit Log) cho luồng thanh toán qua cổng PayOS.
+- **Prompt:** "Thiết kế và triển khai cơ chế ghi audit log tự động cho luồng thanh toán PayOS bao gồm các sự kiện tạo thanh toán, nhận webhook, xử lý return redirect và hoàn tiền. Tự động thu thập IP address và User Agent từ RequestContextHolder."
+- **AI Output Summary:** Đề xuất bổ sung transient fields `username` và `details` vào entity `AuditLog`, thiết kế hàm nạp tên người vận hành từ cơ sở dữ liệu và viết các hooks log trạng thái cũ/mới trong `PaymentService`.
+- **Human Decision:** Phê duyệt thiết kế và tích hợp `AuditService` vào `PaymentService` để gọi hàm ghi log vào đúng các thời điểm then chốt (tạo giao dịch thanh toán đặt xe, nạp ví, webhook trả về, redirect return và hoàn tiền bởi admin), đảm bảo lưu trữ lịch sử giao dịch minh bạch để phục vụ công tác thanh tra (audit).
+- **Applied To:** `src/Back_end/src/main/java/com/luxeway/entity/AuditLog.java`, `src/Back_end/src/main/java/com/luxeway/service/AuditService.java`, và `src/Back_end/src/main/java/com/luxeway/service/PaymentService.java`.
+- **Verification:** Thực thi biên dịch thành công bằng công cụ Gradle, kiểm tra các luồng thanh toán ghi lại chính xác lịch sử hoạt động với thông tin IP/User Agent chi tiết.
+
+---
+
 ## 5. Bảng tổng hợp mức độ sử dụng AI
 
 | Hạng mục | Mức độ AI hỗ trợ | Phần do sinh viên quyết định/kiểm tra |
@@ -108,10 +122,12 @@ Trần Phú Thịnh (DE190371) sử dụng AI (Antigravity/Codex) để:
 | Bảo mật callback/HMAC | Trung bình | Tự tính toán lại chữ ký HMAC-SHA256 để so sánh thủ công |
 | Kết nối frontend | Trung bình | Thiết kế giao diện `MoMoReturnPage` và quản lý routing |
 | Kiểm thử | Cao | Giả lập IPN request để kiểm tra xử lý trùng lặp (Idempotency) |
+| Ghi nhật ký bảo mật (Audit Log) | Cao | Phê duyệt thiết kế transient username/details và ghi nhận nhật ký mọi thay đổi trạng thái của cổng thanh toán PayOS |
 
 AI được dùng như công cụ hỗ trợ phân tích và rà soát cấu trúc request/response. Quyết định tích hợp, kiểm tra mã nguồn và bảo mật khóa bí mật thuộc về sinh viên.
 
 ---
+
 
 ## 6. Các lỗi hoặc hạn chế từ AI
 

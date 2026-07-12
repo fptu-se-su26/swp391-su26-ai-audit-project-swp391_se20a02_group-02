@@ -1537,6 +1537,70 @@ AI đề xuất:
 
 ---
 
+### Prompt số 20
+
+| Nội dung | Thông tin |
+|---|---|
+| Ngày sử dụng | 2026-07-12 |
+| Công cụ AI | Antigravity |
+| Mục đích | Thiết kế và tích hợp cơ chế ghi nhật ký hoạt động (Audit Log) cho toàn bộ luồng thanh toán qua cổng PayOS. |
+| Phần việc liên quan | Backend / Security Audit Ledger |
+| Mức độ sử dụng | Hỏi sinh code & tích hợp |
+
+#### 5.1. Prompt nguyên văn
+
+```text
+Thiết kế và triển khai cơ chế ghi audit log tự động cho luồng thanh toán PayOS bao gồm các sự kiện tạo thanh toán, nhận webhook, xử lý return redirect và hoàn tiền. Tự động thu thập IP address và User Agent từ RequestContextHolder.
+```
+
+#### 5.2. Bối cảnh khi viết prompt
+
+```text
+Cần triển khai tính năng Audit Logging (Nhật ký hành trình giao dịch và kiểm tra bảo mật) cho các giao dịch được thực hiện qua cổng thanh toán PayOS ở Backend. Điều này đảm bảo tính minh bạch, hỗ trợ truy vết các yêu cầu thanh toán bị lỗi hoặc bị tấn công giả mạo signature.
+```
+
+#### 5.3. Kết quả AI trả về
+
+```text
+AI đề xuất:
+- Thêm hai transient fields `username` và `details` (kèm phương thức `getDetails()`) vào Entity `AuditLog.java`.
+- Cấu hình lại `AuditService.java` để tự động tiêm `UserRepository` hỗ trợ lấy thông tin `getFullName()` của operator, và viết nạp chồng phương thức `log(...)` 6 tham số tự động lấy IP Address, User Agent qua request context attributes của Spring Boot.
+- Thêm mã ghi nhật ký các sự kiện `PAYOS_PAYMENT_CREATE`, `PAYOS_TOPUP_CREATE`, `PAYOS_WEBHOOK_RECEIVED`, `PAYOS_RETURN_PROCESSED`, và `PAYOS_PAYMENT_REFUND` tại các khối xử lý tương ứng trong `PaymentService.java`.
+```
+
+#### 5.4. Kết quả đã áp dụng vào bài
+
+```text
+Áp dụng thành công toàn bộ thiết kế và code logic của AI. Dự án biên dịch thành công hoàn toàn bằng Gradle mà không gặp bất kỳ lỗi hay cảnh báo nào.
+```
+
+#### 5.5. Phần sinh viên/nhóm đã chỉnh sửa hoặc cải tiến
+
+```text
+- Viết định dạng JSON chi tiết cho `oldValues` và `newValues` bằng Jackson `ObjectMapper` trước khi chuyển sang `details` để hiển thị trực quan hơn ở giao diện Admin Audit Ledger.
+```
+
+#### 5.6. Đánh giá chất lượng prompt
+
+- [x] Prompt rõ ràng
+- [x] Prompt có đủ bối cảnh
+- [ ] Prompt còn thiếu thông tin
+- [x] Prompt tạo ra kết quả tốt
+- [ ] Prompt tạo ra kết quả chưa phù hợp
+- [ ] Cần hỏi lại AI nhiều lần
+- [x] Cần tự kiểm tra và chỉnh sửa nhiều
+- [ ] Kết quả AI có lỗi hoặc chưa chính xác
+
+#### 5.7. Minh chứng liên quan
+
+| Loại minh chứng | Nội dung |
+|---|---|
+| File liên quan | AuditLog.java, AuditService.java, PaymentService.java |
+| Kết quả chạy/test | Build bằng Gradle wrapper hoàn tất thành công (`BUILD SUCCESSFUL in 21s`) |
+| Link commit | [DE190371] feat: implement comprehensive audit logging for PayOS payment gateway events |
+
+---
+
 ## 11. Cam kết sử dụng prompt minh bạch
 
 Sinh viên/nhóm cam kết rằng:
@@ -1549,5 +1613,6 @@ Sinh viên/nhóm cam kết rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Trần Phú Thịnh - DE190371 | 2026-06-16 |
+| Trần Phú Thịnh - DE190371 | 2026-07-12 |
+
 

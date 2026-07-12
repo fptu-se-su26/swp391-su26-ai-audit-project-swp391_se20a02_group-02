@@ -1090,11 +1090,62 @@ Commit: [DE190371] feat: implement real Goong Map upgrade, temporary availabilit
 
 ---
 
+# [Phase 05.5] PayOS Payment Audit Logging Implementation
+
+## Ngày thực hiện
+
+```text
+2026-07-12
+```
+
+## Đã hoàn thành
+
+- [x] **Cấu trúc lại cơ sở dữ liệu và Entity**:
+  - Bổ sung các transient fields `username` và `details` vào Entity `AuditLog.java` để tự động hóa việc tuần tự hóa JSON chuẩn dữ liệu hiển thị trên Admin Ledger Dashboard của Frontend.
+- [x] **Mở rộng Audit Service**:
+  - Tiêm `UserRepository` vào `AuditService.java` để nạp tên đầy đủ (hoặc email làm phương án dự phòng) của người vận hành dựa vào `user_id` một cách an toàn.
+  - Viết nạp phương thức nạp chồng `log` 6 tham số tự động lấy IP Address và User Agent của phiên người dùng từ `RequestContextHolder` (hỗ trợ headers Proxy như X-Forwarded-For).
+- [x] **Tích hợp Audit Log vào luồng thanh toán PayOS**:
+  - Tiêm `AuditService` vào `PaymentService.java`.
+  - Thực hiện ghi nhận vết nhật ký Audit cho 5 trường hợp trọng yếu của PayOS: khởi tạo thanh toán thuê xe (`PAYOS_PAYMENT_CREATE`), khởi tạo nạp ví LuxeWallet (`PAYOS_TOPUP_CREATE`), webhook thông báo trạng thái (`PAYOS_WEBHOOK_RECEIVED`), redirect quay lại trang chủ (`PAYOS_RETURN_PROCESSED`), và hoàn tiền thanh toán (`PAYOS_PAYMENT_REFUND`).
+
+## Thay đổi chi tiết - Trần Phú Thịnh (DE190371)
+
+| STT | Nội dung thay đổi | Người thực hiện | File/Module liên quan | Minh chứng |
+|---:|---|---|---|---|
+| 1 | Bổ sung transient fields username/details | Trần Phú Thịnh | AuditLog.java | Class AuditLog compiled with transient fields |
+| 2 | Nạp chồng log() lấy IP/UA và truy vấn tên operator | Trần Phú Thịnh | AuditService.java | Method log() with request attribute lookup and populateUsernames |
+| 3 | Tích hợp các hooks audit log cho các sự kiện PayOS | Trần Phú Thịnh | PaymentService.java | Payment creation, webhook, return & refund write audit logs |
+
+## AI có hỗ trợ không?
+
+- [x] Có
+- [ ] Không
+
+Nếu có, mô tả AI đã hỗ trợ phần nào:
+
+```text
+AI (Antigravity) hỗ trợ:
+- Thiết kế transient fields username/details trên AuditLog.java để tương thích hoàn hảo với frontend.
+- Cung cấp giải pháp trích xuất Client IP và User Agent tự động từ RequestContextHolder trong Service Spring Boot.
+- Xác định và tích hợp các điểm ghi nhận audit log chính xác trong PaymentService.java.
+```
+
+## Commit/Screenshot minh chứng
+
+```text
+Branch: feature/DE190371-PaymentMomo1
+Commit: [DE190371] feat: implement comprehensive audit logging for PayOS payment gateway events
+```
+
+---
+
 # 5. Cam kết cập nhật Changelog
 
 Sinh viên/nhóm cam kết rằng nội dung changelog phản ánh đúng các thay đổi đã thực hiện trong quá trình làm bài tập/project.
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Trần Phú Thịnh - DE190371 | 2026-06-16 |
+| Trần Phú Thịnh - DE190371 | 2026-07-12 |
+
 
