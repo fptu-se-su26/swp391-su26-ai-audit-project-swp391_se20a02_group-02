@@ -12,7 +12,7 @@
 | Tên sinh viên / Nhóm | Hồ Thành Trung - Nhóm 2 |
 | MSSV / Danh sách MSSV | DE190928 |
 | Giảng viên hướng dẫn | (Giảng viên môn SWP391) |
-| Ngày hoàn thành reflection | 2026-06-28 |
+| Ngày hoàn thành reflection | 2026-07-12 |
 
 ---
 
@@ -27,6 +27,8 @@ File này dùng để Hồ Thành Trung (DE190928) tự đánh giá quá trình 
 ```text
 Mình sử dụng AI chủ yếu trong mảng hỗ trợ sinh code SQL boilerplate, quản trị phiên bản Git và giải quyết các lỗi biên dịch hệ thống phức tạp.
 Trong các tình huống quan trọng như lỗi push file lớn (vượt giới hạn 100MB của GitHub) hay khi gộp nhánh main có sự thay đổi lớn về cấu trúc (hơn 170 tệp tin thay đổi), AI đã giúp mình nhanh chóng phát hiện các thiếu sót về logic biên dịch, đề xuất nâng cấp dependency và phân quyền api client phù hợp.
+
+Cập nhật bổ sung: AI còn giúp tự động hóa quá trình sinh các entry log markdown hàng loạt (cập nhật 4 file cùng lúc) rất thông minh và tiết kiệm thời gian.
 ```
 
 ---
@@ -159,4 +161,4 @@ Em/nhóm cam kết rằng nội dung reflection này phản ánh trung thực qu
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Hồ Thành Trung - DE190928 | 2026-06-28 |
+| Hồ Thành Trung - DE190928 | 2026-07-12 |

@@ -27,6 +27,7 @@ File này dùng để ghi lại các thay đổi quan trọng trong quá trình 
 | Phase 02 | 2026-06-16 | Thiết kế Schema & eKYC feature | Completed |
 | Phase 03 | 2026-06-21 | Gộp code main và sửa lỗi biên dịch | Completed |
 | Phase 04 | 2026-06-28 | Nạp data motorbike & Fix lỗi cấu hình eKYC DB | Completed |
+| Phase 05 | 2026-07-12 | Thêm dữ liệu Car, thiết lập nhánh và tự động hóa AI Audit Log | Completed |
 
 ---
 
@@ -150,4 +151,43 @@ AI hỗ trợ cấu hình lại file yml để trỏ đúng vào Car_rental_DB v
 
 ```text
 Hệ thống đã chạy ổn định cả Backend lẫn Frontend.
+```
+
+---
+
+# [Phase 05] Thêm dữ liệu Car, thiết lập nhánh và tự động hóa AI Audit Log
+
+## Ngày thực hiện
+
+```text
+2026-07-12
+```
+
+## Đã hoàn thành
+
+- [x] Tạo nhánh `feature-de190928/Data-for-car`.
+- [x] Cập nhật và đẩy thư mục dữ liệu xe (Vehicle) lên GitHub.
+- [x] Tự động cập nhật 4 file AI Audit Log của cá nhân.
+
+## Thay đổi chi tiết
+
+| STT | Nội dung thay đổi | Người thực hiện | File/Module liên quan | Minh chứng |
+|---:|---|---|---|---|
+| 1 | Thêm dữ liệu Car và push nhánh | Hồ Thành Trung | Toàn bộ project | Lịch sử Git |
+
+## AI có hỗ trợ không?
+
+- [x] Có
+- [ ] Không
+
+Nếu có, mô tả AI đã hỗ trợ phần nào:
+
+```text
+AI hỗ trợ viết script tự động hóa update file markdown, thực hiện các lệnh Git flow.
+```
+
+## Ghi chú
+
+```text
+Các cập nhật đã được đồng bộ hoàn toàn với GitHub repository.
 ```
