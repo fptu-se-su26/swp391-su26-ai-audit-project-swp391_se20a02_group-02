@@ -75,9 +75,6 @@ public class VehicleWorkflowIntegrationTest {
 
     @BeforeEach
     public void setUp() {
-        // Clear all vehicles to ensure isolation
-        vehicleRepository.deleteAll();
-
         // Create standard test users
         adminUser = createTestUser("admin@workflow.com", UserRole.ADMIN);
         ownerUser = createTestUser("owner@workflow.com", UserRole.OWNER);
