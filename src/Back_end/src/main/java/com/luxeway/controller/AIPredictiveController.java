@@ -198,7 +198,12 @@ public class AIPredictiveController {
         return ResponseEntity.ok(cached.getInsights());
     }
 
-    // ---------------------------------------------------------------- helpers
+    // ---------------------------------------------------------------- GET /analytics/payload
+
+    @GetMapping("/analytics/payload")
+    public ResponseEntity<List<AnalyticsDataPoint>> getAnalyticsPayload() {
+        return ResponseEntity.ok(fetchAnalyticsPayload());
+    }
 
     private List<AnalyticsDataPoint> fetchAnalyticsPayload() {
         LocalDate end = LocalDate.now();
@@ -215,9 +220,15 @@ public class AIPredictiveController {
 
     /**
      * Sliding-window per-admin rate limiter for POST endpoints.
-     *
-     * @return 429 response if limit exceeded, null if allowed.
      */
+    @GetMapping("/rate-limit/status")
+    public ResponseEntity<?> getRateLimitStatus(Authentication auth) {
+        if (auth == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        ResponseEntity<?> rateCheck = checkRateLimit(auth);
+        if (rateCheck != null) return rateCheck;
+        return ResponseEntity.ok(Map.of("allowed", true));
+    }
+
     private ResponseEntity<?> checkRateLimit(Authentication auth) {
         if (auth == null) return null;
         String subject = auth.getName();
