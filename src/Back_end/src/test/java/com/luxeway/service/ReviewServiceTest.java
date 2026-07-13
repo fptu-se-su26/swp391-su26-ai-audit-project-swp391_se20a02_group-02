@@ -9,6 +9,7 @@ import com.luxeway.enums.BookingStatus;
 import com.luxeway.repository.BookingRepository;
 import com.luxeway.repository.ReviewRepository;
 import com.luxeway.repository.VehicleRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -24,6 +25,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -32,9 +34,15 @@ class ReviewServiceTest {
     @Mock private ReviewRepository reviewRepository;
     @Mock private BookingRepository bookingRepository;
     @Mock private VehicleRepository vehicleRepository;
+    @Mock private TranslationService translationService;
 
     @InjectMocks
     private ReviewService reviewService;
+
+    @BeforeEach
+    void setUpTranslation() {
+        lenient().when(translationService.getCurrentLanguageCode()).thenReturn("en");
+    }
 
     // =======================================================
     // createReview
@@ -55,7 +63,7 @@ class ReviewServiceTest {
         User renter = User.builder().id(reviewerId).build();
         User owner = User.builder().id("o1").build();
         Vehicle vehicle = Vehicle.builder().id("v1").build();
-        
+
         Booking booking = Booking.builder()
                 .id("b1")
                 .renter(renter)
@@ -71,7 +79,7 @@ class ReviewServiceTest {
             r.setId("r1");
             return r;
         });
-        
+
         when(reviewRepository.findAverageRatingByVehicleId("v1")).thenReturn(5.0);
         when(reviewRepository.countByVehicleId("v1")).thenReturn(1L);
         when(vehicleRepository.findById("v1")).thenReturn(Optional.of(vehicle));
@@ -86,7 +94,7 @@ class ReviewServiceTest {
         verify(reviewRepository).save(captor.capture());
         assertEquals(5, captor.getValue().getRating());
         assertEquals("Great!", captor.getValue().getComment());
-        
+
         verify(vehicleRepository).save(vehicle);
     }
 
@@ -105,7 +113,7 @@ class ReviewServiceTest {
         ReviewDTOs.CreateReviewRequest req = new ReviewDTOs.CreateReviewRequest();
         req.setBookingId("b1");
 
-        User renter = User.builder().id("u2").build(); // Not u1
+        User renter = User.builder().id("u2").build();
         Booking booking = Booking.builder().id("b1").renter(renter).build();
 
         when(bookingRepository.findById("b1")).thenReturn(Optional.of(booking));
@@ -162,7 +170,8 @@ class ReviewServiceTest {
 
     @Test
     void getAllReviews_ValidFilters_ReturnsPage() {
-        when(reviewRepository.findByRatingAndCommentContainingIgnoreCaseOrderByCreatedAtDesc(eq(5), eq("search"), any(Pageable.class)))
+        when(reviewRepository.findByRatingAndCommentContainingIgnoreCaseOrderByCreatedAtDesc(
+                eq(5), eq("search"), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of()));
         Page<ReviewDTOs.ReviewResponse> result = reviewService.getAllReviews(0, 10, 5, "search");
         assertEquals(0, result.getTotalElements());
@@ -178,11 +187,12 @@ class ReviewServiceTest {
 
     @Test
     void getReviewStats_ValidIds_ReturnsStats() {
-        Review r = Review.builder().rating(5).cleanliness(5).communication(5).accuracy(5).valueRating(5).build();
+        Review r = Review.builder()
+                .rating(5).cleanliness(5).communication(5).accuracy(5).valueRating(5).build();
         when(reviewRepository.findByVehicleId("v1")).thenReturn(List.of(r));
-        
+
         ReviewDTOs.ReviewStatsResponse stats = reviewService.getReviewStats("v1", null);
-        
+
         assertEquals(1L, stats.getTotalReviews());
         assertEquals(5.0, stats.getAverageRating());
     }
@@ -194,14 +204,15 @@ class ReviewServiceTest {
     @Test
     void respondToReview_ValidRequest_UpdatesReview() {
         User owner = User.builder().id("o1").build();
-        Review existingReview = Review.builder().id("r1").owner(owner).rating(5).cleanliness(5).communication(5).accuracy(5).valueRating(5).build();
-        
+        Review existingReview = Review.builder()
+                .id("r1").owner(owner).rating(5).cleanliness(5).communication(5).accuracy(5).valueRating(5).build();
+
         when(reviewRepository.findById("r1")).thenReturn(Optional.of(existingReview));
         when(reviewRepository.save(any(Review.class))).thenAnswer(i -> i.getArgument(0));
 
         ReviewDTOs.RespondRequest req = new ReviewDTOs.RespondRequest();
         req.setResponse("Thanks!");
-        
+
         reviewService.respondToReview("r1", "o1", req);
 
         ArgumentCaptor<Review> captor = ArgumentCaptor.forClass(Review.class);
@@ -213,12 +224,12 @@ class ReviewServiceTest {
     void respondToReview_WrongOwner_ThrowsException() {
         User owner = User.builder().id("o1").build();
         Review existingReview = Review.builder().id("r1").owner(owner).rating(5).build();
-        
+
         when(reviewRepository.findById("r1")).thenReturn(Optional.of(existingReview));
 
         ReviewDTOs.RespondRequest req = new ReviewDTOs.RespondRequest();
         req.setResponse("Bad");
-        
+
         assertThrows(RuntimeException.class, () -> reviewService.respondToReview("r1", "hacker", req));
     }
 

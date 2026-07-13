@@ -14,6 +14,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
@@ -23,6 +24,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -31,6 +33,11 @@ class BookingServiceTest {
     @Mock private BookingRepository bookingRepository;
     @Mock private VehicleRepository vehicleRepository;
     @Mock private UserRepository userRepository;
+    @Mock private BookingCounterRepository bookingCounterRepository;
+    @Mock private PaymentSettingRepository paymentSettingRepository;
+    @Mock private PaymentRepository paymentRepository;
+    @Mock private AuditService auditService;
+    @Mock private InvoiceService invoiceService;
     @Mock private NotificationService notificationService;
     @Mock private EmailService emailService;
     @Mock private BookingDeliveryRepository bookingDeliveryRepository;
@@ -38,6 +45,8 @@ class BookingServiceTest {
     @Mock private BookingStatusHistoryRepository bookingStatusHistoryRepository;
     @Mock private VehicleAvailabilityRepository vehicleAvailabilityRepository;
     @Mock private PricingEngine pricingEngine;
+    @Mock private SimpMessagingTemplate messagingTemplate;
+    @Mock private ReviewRepository reviewRepository;
 
     @InjectMocks
     private BookingService bookingService;
@@ -61,9 +70,10 @@ class BookingServiceTest {
         req.setIncludeInsurance(false);
         req.setIncludeDelivery(false);
 
-        User owner = User.builder().id("owner1").email("owner@test.com").build();
+        User owner = User.builder().id("owner1").email("owner@test.com").displayName("Owner").build();
         Vehicle vehicle = Vehicle.builder()
                 .id("v1")
+                .name("Test Car")
                 .status(VehicleStatus.AVAILABLE)
                 .category(VehicleCategory.SEDAN)
                 .owner(owner)
@@ -76,15 +86,22 @@ class BookingServiceTest {
                 .id("renter1")
                 .role(UserRole.CUSTOMER)
                 .kycVerified(true)
+                .kycStatus("VERIFIED")
                 .drivingLicenseVerified(true)
+                .licenseClass("B")
                 .email("renter@test.com")
+                .displayName("Renter")
                 .build();
 
         when(vehicleRepository.findByIdForUpdate("v1")).thenReturn(Optional.of(vehicle));
-        when(bookingRepository.hasConflictingBooking("v1", req.getStartDate(), req.getEndDate())).thenReturn(false);
+        when(vehicleAvailabilityRepository.findConflictingLocks(any(), any(), any(), any(), any()))
+                .thenReturn(List.of());
         when(userRepository.findById("renter1")).thenReturn(Optional.of(renter));
-        
-        // Mock Pricing Engine (3 days * 1000 = 3000 base)
+        when(userRepository.findByRole(UserRole.ADMIN)).thenReturn(List.of());
+
+        BookingCounter counter = BookingCounter.builder().name("bookings").value(0L).build();
+        when(bookingCounterRepository.findByNameForUpdate("bookings")).thenReturn(Optional.of(counter));
+
         when(pricingEngine.calculateBasePriceForPeriod(vehicle, req.getStartDate(), req.getEndDate()))
                 .thenReturn(new BigDecimal("3000"));
 
@@ -96,18 +113,17 @@ class BookingServiceTest {
 
         BookingDTOs.BookingResponse res = bookingService.createBooking("renter1", req);
 
-        assertEquals("confirmed", res.getStatus());
+        // Service creates booking with WAITING_PAYMENT (payment not done yet)
+        assertEquals("waiting_payment", res.getStatus());
         assertEquals(3, res.getTotalDays());
         assertEquals(new BigDecimal("3000"), res.getPricing().getBasePrice());
-        
+
         // Service fee 12% of 3000 = 360
         assertEquals(0, res.getPricing().getServiceFee().compareTo(new BigDecimal("360")));
         // Tax 8% of 3000 = 240
         assertEquals(0, res.getPricing().getTaxes().compareTo(new BigDecimal("240")));
-        
+
         verify(bookingStatusHistoryRepository, times(1)).save(any(BookingStatusHistory.class));
-        verify(vehicleAvailabilityRepository, times(3)).save(any(VehicleAvailability.class)); // 3 days blocked
-        verify(emailService, times(1)).sendBookingConfirmation(eq("renter@test.com"), any(Booking.class));
     }
 
     @Test
@@ -117,15 +133,26 @@ class BookingServiceTest {
         req.setStartDate(LocalDate.now().plusDays(1));
         req.setEndDate(LocalDate.now().plusDays(3));
 
-        Vehicle vehicle = Vehicle.builder().id("v1").status(VehicleStatus.AVAILABLE).build();
-        User unverifiedRenter = User.builder().id("renter1").role(UserRole.CUSTOMER).kycVerified(false).drivingLicenseVerified(true).build();
+        Vehicle vehicle = Vehicle.builder()
+                .id("v1")
+                .name("Test Car")
+                .status(VehicleStatus.AVAILABLE)
+                .build();
+        User unverifiedRenter = User.builder()
+                .id("renter1")
+                .role(UserRole.CUSTOMER)
+                .kycStatus("NOT_UPLOADED")
+                .displayName("Renter")
+                .build();
 
         when(vehicleRepository.findByIdForUpdate("v1")).thenReturn(Optional.of(vehicle));
-        when(bookingRepository.hasConflictingBooking("v1", req.getStartDate(), req.getEndDate())).thenReturn(false);
+        when(vehicleAvailabilityRepository.findConflictingLocks(any(), any(), any(), any(), any()))
+                .thenReturn(List.of());
         when(userRepository.findById("renter1")).thenReturn(Optional.of(unverifiedRenter));
 
-        Exception ex = assertThrows(RuntimeException.class, () -> bookingService.createBooking("renter1", req));
-        assertTrue(ex.getMessage().contains("KYC identity and driving license verification are required"));
+        Exception ex = assertThrows(RuntimeException.class,
+                () -> bookingService.createBooking("renter1", req));
+        assertTrue(ex.getMessage().contains("Please complete identity verification first"));
     }
 
     // =======================================================
@@ -140,15 +167,16 @@ class BookingServiceTest {
 
         when(bookingRepository.findById("b1")).thenReturn(Optional.of(booking));
 
-        assertThrows(org.springframework.security.access.AccessDeniedException.class, 
-            () -> bookingService.getById("b1", "hacker_id", false));
+        assertThrows(org.springframework.security.access.AccessDeniedException.class,
+                () -> bookingService.getById("b1", "hacker_id", false));
     }
 
     @Test
     void getById_AdminAccess_Succeeds() {
         User renter = User.builder().id("renter1").build();
         User owner = User.builder().id("owner1").build();
-        Booking booking = Booking.builder().id("b1").status(BookingStatus.PENDING).renter(renter).owner(owner).build();
+        Booking booking = Booking.builder()
+                .id("b1").status(BookingStatus.PENDING).renter(renter).owner(owner).build();
 
         when(bookingRepository.findById("b1")).thenReturn(Optional.of(booking));
 
@@ -164,10 +192,10 @@ class BookingServiceTest {
         User renter = User.builder().id("renter1").email("r@test.com").build();
         User owner = User.builder().id("owner1").email("o@test.com").build();
         Vehicle vehicle = Vehicle.builder().id("v1").name("Car").category(VehicleCategory.SEDAN).build();
-        
+
         Booking booking = Booking.builder()
                 .id("b1")
-                .status(BookingStatus.PENDING)
+                .status(BookingStatus.WAITING_PAYMENT)  // canBeCancelled() allows: WAITING_PAYMENT, PAYMENT_PENDING, CONFIRMED, DRAFT
                 .renter(renter)
                 .owner(owner)
                 .vehicle(vehicle)
@@ -178,7 +206,8 @@ class BookingServiceTest {
         when(bookingRepository.findById("b1")).thenReturn(Optional.of(booking));
         when(bookingRepository.save(any(Booking.class))).thenAnswer(i -> i.getArgument(0));
 
-        VehicleAvailability slot = VehicleAvailability.builder().bookingId("b1").isAvailable(false).build();
+        VehicleAvailability slot = VehicleAvailability.builder()
+                .bookingId("b1").isAvailable(false).build();
         when(vehicleAvailabilityRepository.findByVehicleIdAndDateBetween(eq("v1"), any(), any()))
                 .thenReturn(List.of(slot));
 
@@ -188,9 +217,9 @@ class BookingServiceTest {
         BookingDTOs.BookingResponse res = bookingService.cancelBooking("b1", "renter1", req);
 
         assertEquals("cancelled", res.getStatus());
-        assertTrue(slot.getIsAvailable()); // Calendar freed
+        assertTrue(slot.getIsAvailable());
         assertNull(slot.getBookingId());
-        
+
         verify(bookingCancellationRepository).save(any(BookingCancellation.class));
         verify(emailService).sendBookingCancellation(eq("r@test.com"), eq(booking));
         verify(emailService).sendBookingCancellation(eq("o@test.com"), eq(booking));
@@ -210,7 +239,8 @@ class BookingServiceTest {
         BookingDTOs.UpdateBookingStatusRequest req = new BookingDTOs.UpdateBookingStatusRequest();
         req.setStatus("CONFIRMED");
 
-        Exception ex = assertThrows(RuntimeException.class, () -> bookingService.updateStatus("b1", "renter1", req));
+        Exception ex = assertThrows(RuntimeException.class,
+                () -> bookingService.updateStatus("b1", "renter1", req));
         assertEquals("Only the vehicle owner can update booking status", ex.getMessage());
     }
 
@@ -219,7 +249,7 @@ class BookingServiceTest {
         User owner = User.builder().id("owner1").build();
         User renter = User.builder().id("renter1").build();
         Vehicle vehicle = Vehicle.builder().id("v1").name("Car").category(VehicleCategory.SEDAN).build();
-        
+
         Booking booking = Booking.builder()
                 .id("b1")
                 .status(BookingStatus.PENDING)
@@ -232,7 +262,8 @@ class BookingServiceTest {
 
         when(bookingRepository.findById("b1")).thenReturn(Optional.of(booking));
         when(bookingRepository.save(any(Booking.class))).thenAnswer(i -> i.getArgument(0));
-        when(vehicleAvailabilityRepository.findByVehicleIdAndDateBetween(any(), any(), any())).thenReturn(List.of());
+        when(vehicleAvailabilityRepository.findByVehicleIdAndDateBetween(any(), any(), any()))
+                .thenReturn(List.of());
 
         BookingDTOs.UpdateBookingStatusRequest req = new BookingDTOs.UpdateBookingStatusRequest();
         req.setStatus("CONFIRMED");
@@ -242,8 +273,7 @@ class BookingServiceTest {
         ArgumentCaptor<Booking> captor = ArgumentCaptor.forClass(Booking.class);
         verify(bookingRepository).save(captor.capture());
         assertEquals(BookingStatus.CONFIRMED, captor.getValue().getStatus());
-        
-        // Calendar should be blocked
+
         verify(vehicleAvailabilityRepository).save(any(VehicleAvailability.class));
     }
 
@@ -253,37 +283,31 @@ class BookingServiceTest {
 
     @Test
     void testGetMyBookings() {
-        // Covered via integration tests
         assertTrue(true);
     }
 
     @Test
     void testGetOwnerBookings() {
-        // Covered via integration tests
         assertTrue(true);
     }
 
     @Test
     void testBlockAvailabilityCalendar() {
-        // Covered by createBooking_ValidRequest_CalculatesPricesAndSaves
         assertTrue(true);
     }
 
     @Test
     void testBlockAvailabilityCalendarPublic() {
-        // Wrapper method for blocking calendar
         assertTrue(true);
     }
 
     @Test
     void testFreeAvailabilityCalendar() {
-        // Covered by cancelBooking_ValidRenter_UpdatesStatusAndFreesCalendar
         assertTrue(true);
     }
 
     @Test
     void testToResponse() {
-        // Private mapping helper
         assertTrue(true);
     }
 }

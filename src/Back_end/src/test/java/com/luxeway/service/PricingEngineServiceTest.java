@@ -51,7 +51,7 @@ class PricingEngineServiceTest {
         LocalDate end = LocalDate.of(2023, 10, 11);
 
         PricingBreakdown result = pricingEngineService.calculatePrice(
-                vehicleId, "general", "u1", start, end, null, null);
+                vehicleId, "general", "u1", start, end, null, null, false);
 
         assertNotNull(result);
         assertEquals(1, result.getTotalDays());
@@ -78,7 +78,7 @@ class PricingEngineServiceTest {
         LocalDate end = LocalDate.of(2023, 10, 15); // Sunday -> 1 day total (Saturday)
 
         PricingBreakdown result = pricingEngineService.calculatePrice(
-                vehicleId, "general", "u1", start, end, null, null);
+                vehicleId, "general", "u1", start, end, null, null, false);
 
         assertNotNull(result);
         assertEquals(1, result.getTotalDays());
@@ -99,7 +99,7 @@ class PricingEngineServiceTest {
         LocalDate today = LocalDate.of(2023, 10, 10); // Tuesday
 
         PricingBreakdown result = pricingEngineService.calculatePrice(
-                vehicleId, "general", "u1", today, today, null, null);
+                vehicleId, "general", "u1", today, today, null, null, false);
 
         assertEquals(1, result.getTotalDays());
         assertEquals(new BigDecimal("100"), result.getBaseTotalPrice());
@@ -110,7 +110,7 @@ class PricingEngineServiceTest {
         when(vehicleRepository.findById("v1")).thenReturn(Optional.empty());
 
         assertThrows(IllegalArgumentException.class, () -> 
-            pricingEngineService.calculatePrice("v1", "general", "u1", LocalDate.now(), LocalDate.now(), null, null));
+            pricingEngineService.calculatePrice("v1", "general", "u1", LocalDate.now(), LocalDate.now(), null, null, false));
     }
 
     // =======================================================

@@ -30,6 +30,7 @@ class InvoiceServiceTest {
     @Mock private InvoiceRepository invoiceRepository;
     @Mock private BookingRepository bookingRepository;
     @Mock private EmailService emailService;
+    @Mock private TranslationService translationService;
 
     @InjectMocks
     private InvoiceService invoiceService;

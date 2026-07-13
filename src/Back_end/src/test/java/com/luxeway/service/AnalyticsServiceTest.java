@@ -52,21 +52,28 @@ class AnalyticsServiceTest {
     // =======================================================
 
     @Test
-    void run_WhenCountBelow90_TriggersSeeding() {
-        when(analyticsRepository.count()).thenReturn(89L);
-        
+    void run_WhenCountIsZero_TriggersSeeding() {
+        // run() seeds only when count == 0
+        when(analyticsRepository.count()).thenReturn(0L);
+        // findByRecordDate returns empty so every day gets saved (31 days: today minus 30 to today)
+        when(analyticsRepository.findByRecordDate(any(LocalDate.class))).thenReturn(Optional.empty());
+        when(analyticsRepository.save(any(Analytics.class))).thenAnswer(i -> i.getArgument(0));
+
         analyticsService.run();
-        
-        verify(analyticsRepository, times(1)).deleteAll();
-        verify(analyticsRepository, times(91)).save(any(Analytics.class)); // 90 days inclusive
+
+        // deleteAll is NOT called — service just skips existing records, never clears them
+        verify(analyticsRepository, never()).deleteAll();
+        // 31 saves: LocalDate start=today-30, end=today, inclusive loop
+        verify(analyticsRepository, times(31)).save(any(Analytics.class));
     }
 
     @Test
-    void run_WhenCountIs90OrMore_SkipsSeeding() {
+    void run_WhenCountIsAboveZero_SkipsSeeding() {
+        // Any count > 0 means analytics exist — seeding is skipped entirely
         when(analyticsRepository.count()).thenReturn(90L);
-        
+
         analyticsService.run();
-        
+
         verify(analyticsRepository, never()).deleteAll();
         verify(analyticsRepository, never()).save(any(Analytics.class));
     }

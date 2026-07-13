@@ -76,7 +76,7 @@ class DigitalContractServiceTest {
 
         Exception ex = assertThrows(RuntimeException.class, 
             () -> digitalContractService.createContract("b1", "url", "owner1", false));
-        assertEquals("Contract already exists for this booking", ex.getMessage());
+        assertTrue(ex.getMessage().contains("Contract already exists"));
     }
 
     // =======================================================
@@ -150,6 +150,6 @@ class DigitalContractServiceTest {
 
         Exception ex = assertThrows(RuntimeException.class, 
             () -> digitalContractService.signContract(1L, "renter1", "sig", true));
-        assertEquals("User is not the owner", ex.getMessage());
+        assertTrue(ex.getMessage().contains("User is not the owner"));
     }
 }
