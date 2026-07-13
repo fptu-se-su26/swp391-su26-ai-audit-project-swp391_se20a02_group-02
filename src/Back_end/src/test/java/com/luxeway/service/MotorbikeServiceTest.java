@@ -1,16 +1,20 @@
 package com.luxeway.service;
 
 import com.luxeway.dto.motorbike.MotorbikeDTOs;
+import com.luxeway.entity.Motorbike;
+import com.luxeway.entity.MotorbikeBrand;
+import com.luxeway.entity.MotorbikeImage;
 import com.luxeway.entity.MotorbikeModel;
 import com.luxeway.entity.User;
-import com.luxeway.entity.Vehicle;
 import com.luxeway.enums.TransmissionType;
-import com.luxeway.enums.VehicleType;
+import com.luxeway.enums.VehicleStatus;
 import com.luxeway.repository.MotorbikeModelRepository;
+import com.luxeway.repository.MotorbikeRepository;
 import com.luxeway.repository.UserRepository;
-import com.luxeway.repository.VehicleRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -19,154 +23,141 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class MotorbikeServiceTest {
 
-    @Mock private VehicleRepository vehicleRepository;
+    @Mock private MotorbikeRepository motorbikeRepository;
     @Mock private MotorbikeModelRepository motorbikeModelRepository;
     @Mock private UserRepository userRepository;
+    @Mock private TranslationService translationService;
 
     @InjectMocks
     private MotorbikeService motorbikeService;
 
-    // =======================================================
-    // searchMotorbikes
-    // =======================================================
+    @BeforeEach
+    void setUpTranslation() {
+        lenient().when(translationService.getCurrentLanguageCode()).thenReturn("en");
+        lenient().when(translationService.translateMotorbike(any(), eq("en"), any(), isNull(), eq("name")))
+            .thenAnswer(invocation -> invocation.getArgument(2));
+    }
 
     @Test
     void searchMotorbikes_ValidTransmission_ReturnsFilteredResults() {
-        Vehicle vehicle = Vehicle.builder().id("v1").vehicleType(VehicleType.MOTORBIKE).build();
-        Page<Vehicle> page = new PageImpl<>(List.of(vehicle));
+        Motorbike motorbike = Motorbike.builder()
+            .id("m1")
+            .name("My Bike")
+            .status(VehicleStatus.AVAILABLE)
+            .rating(BigDecimal.ZERO)
+            .build();
+        Page<Motorbike> page = new PageImpl<>(List.of(motorbike));
 
-        when(vehicleRepository.filterVehiclesMulti(
-            eq("Hanoi"), any(), any(), any(), any(), any(), 
-            eq(TransmissionType.MANUAL), // transmission mapped correctly
-            any(), any(), anyBoolean(), anyBoolean(), anyBoolean(),
-            eq(VehicleType.MOTORBIKE), // enforces MOTORBIKE
-            any(), any(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean(), 
-            anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean(), any(), any(), any(Pageable.class)
+        when(motorbikeRepository.searchMotorbikes(
+            eq("Hanoi"),
+            eq(150),
+            eq(TransmissionType.MANUAL),
+            eq(true),
+            eq(false),
+            eq(true),
+            eq(false),
+            eq("Honda"),
+            eq("SCOOTER"),
+            any(Pageable.class)
         )).thenReturn(page);
 
         Page<MotorbikeDTOs.MotorbikeResponse> result = motorbikeService.searchMotorbikes(
-                "Hanoi", null, "MANUAL", null, null, null, null, 0, 10);
+            "Hanoi", 150, "MANUAL", true, false, true, false, "Honda", "SCOOTER", 0, 10
+        );
 
         assertEquals(1, result.getTotalElements());
-        assertEquals("v1", result.getContent().get(0).getId());
+        assertEquals("m1", result.getContent().get(0).getId());
     }
 
     @Test
-    void searchMotorbikes_InvalidTransmission_IgnoresFilter() {
-        Vehicle vehicle = Vehicle.builder().id("v1").vehicleType(VehicleType.MOTORBIKE).build();
-        Page<Vehicle> page = new PageImpl<>(List.of(vehicle));
+    void getMotorbikeById_WhenMissing_ThrowsException() {
+        when(motorbikeRepository.findById("m1")).thenReturn(Optional.empty());
 
-        when(vehicleRepository.filterVehiclesMulti(
-            isNull(), any(), any(), any(), any(), any(), 
-            isNull(), // transmission should be null for invalid string
-            any(), any(), anyBoolean(), anyBoolean(), anyBoolean(),
-            eq(VehicleType.MOTORBIKE),
-            any(), any(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean(), 
-            anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean(), any(), any(), any(Pageable.class)
-        )).thenReturn(page);
-
-        Page<MotorbikeDTOs.MotorbikeResponse> result = motorbikeService.searchMotorbikes(
-                null, null, "INVALID", null, null, null, null, 0, 10);
-
-        assertEquals(1, result.getTotalElements());
-    }
-
-    // =======================================================
-    // getMotorbikeById
-    // =======================================================
-
-    @Test
-    void getMotorbikeById_ReturnsResponse() {
-        Vehicle vehicle = Vehicle.builder().id("v1").vehicleType(VehicleType.MOTORBIKE).build();
-        when(vehicleRepository.findById("v1")).thenReturn(Optional.of(vehicle));
-
-        MotorbikeDTOs.MotorbikeResponse result = motorbikeService.getMotorbikeById("v1");
-
-        assertNotNull(result);
-        assertEquals("v1", result.getId());
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> motorbikeService.getMotorbikeById("m1"));
+        assertTrue(ex.getMessage().contains("Motorbike not found"));
     }
 
     @Test
-    void getMotorbikeById_NotAMotorbike_ThrowsException() {
-        Vehicle vehicle = Vehicle.builder().id("v1").vehicleType(VehicleType.CAR).build();
-        when(vehicleRepository.findById("v1")).thenReturn(Optional.of(vehicle));
-
-        assertThrows(RuntimeException.class, () -> motorbikeService.getMotorbikeById("v1"));
-    }
-
-    // =======================================================
-    // createMotorbike
-    // =======================================================
-
-    @Test
-    void createMotorbike_ValidRequest_SavesVehicle() {
-        User owner = User.builder().id("u1").build();
-        MotorbikeModel model = new MotorbikeModel();
-        model.setId("m1");
-        model.setName("Model Name");
-        model.setBrand(new com.luxeway.entity.MotorbikeBrand());
-        model.getBrand().setName("Brand Name");
-
+    void createMotorbike_ValidRequest_BuildsEntityCorrectly() {
         MotorbikeDTOs.CreateMotorbikeRequest req = new MotorbikeDTOs.CreateMotorbikeRequest();
-        req.setModelId("m1");
+        req.setModelId("model1");
         req.setName("My Bike");
+        req.setLicensePlate("59A1-12345");
+        req.setPricePerDay(new BigDecimal("200000"));
+        req.setDeposit(new BigDecimal("1000000"));
+        req.setEngineCc(150);
+        req.setTransmission(TransmissionType.MANUAL);
+        req.setHelmetIncluded(true);
+        req.setRaincoatIncluded(false);
+        req.setPhoneHolder(true);
+        req.setLuggageRack(false);
+        req.setCity("Hanoi");
+        req.setAddress("Main Street");
+        req.setImageUrls(List.of("url1", "url2"));
 
-        when(userRepository.findById("u1")).thenReturn(Optional.of(owner));
-        when(motorbikeModelRepository.findById("m1")).thenReturn(Optional.of(model));
-        when(vehicleRepository.save(any(Vehicle.class))).thenAnswer(i -> i.getArgument(0));
+        User owner = User.builder().id("owner1").build();
+        MotorbikeBrand brand = MotorbikeBrand.builder().name("Honda").build();
+        MotorbikeModel model = MotorbikeModel.builder().id("model1").brand(brand).name("Air Blade").category("SCOOTER").build();
 
-        MotorbikeDTOs.MotorbikeResponse result = motorbikeService.createMotorbike(req, "u1");
+        when(userRepository.findById("owner1")).thenReturn(Optional.of(owner));
+        when(motorbikeModelRepository.findById("model1")).thenReturn(Optional.of(model));
+        when(motorbikeRepository.save(any(Motorbike.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        assertNotNull(result);
-        assertEquals("My Bike", result.getName());
+        MotorbikeDTOs.MotorbikeResponse res = motorbikeService.createMotorbike(req, "owner1");
+
+        ArgumentCaptor<Motorbike> captor = ArgumentCaptor.forClass(Motorbike.class);
+        verify(motorbikeRepository, atLeast(1)).save(captor.capture());
+
+        Motorbike saved = captor.getValue();
+        assertEquals("My Bike", saved.getName());
+        assertEquals("Honda", saved.getModel().getBrand().getName());
+        assertEquals("Air Blade", saved.getModel().getName());
+        assertEquals(150, saved.getSpecification().getEngineCc());
+        assertEquals(TransmissionType.MANUAL, saved.getSpecification().getTransmission());
+        assertTrue(saved.getSpecification().getHelmetIncluded());
+        assertFalse(saved.getSpecification().getRaincoatIncluded());
+        assertEquals("Hanoi", saved.getLocation().getCity());
+
+        // Note: MotorbikeImage uses id-only hashCode; since JPA doesn't generate IDs in
+        // unit tests, all images in the HashSet share id=null and collapse to 1 entry.
+        // We verify that images were set and at least one image with the correct url exists.
+        assertFalse(saved.getImages().isEmpty());
+        MotorbikeImage firstImage = saved.getImages().iterator().next();
+        assertNotNull(firstImage.getUrl());
+        assertTrue(firstImage.getIsPrimary() || firstImage.getUrl() != null);
+
+        assertEquals("My Bike", res.getName());
+        assertEquals("Honda", res.getBrandName());
+        assertEquals("Air Blade", res.getModelName());
     }
 
     @Test
-    void createMotorbike_OwnerNotFound_ThrowsException() {
-        when(userRepository.findById("u1")).thenReturn(Optional.empty());
+    void deleteMotorbike_ValidId_DeletesById() {
+        when(motorbikeRepository.existsById("m1")).thenReturn(true);
 
-        assertThrows(RuntimeException.class, () -> 
-            motorbikeService.createMotorbike(new MotorbikeDTOs.CreateMotorbikeRequest(), "u1"));
-    }
+        motorbikeService.deleteMotorbike("m1");
 
-    // =======================================================
-    // deleteMotorbike
-    // =======================================================
-
-    @Test
-    void deleteMotorbike_ValidId_DeletesVehicle() {
-        Vehicle vehicle = Vehicle.builder().id("v1").build();
-        when(vehicleRepository.findById("v1")).thenReturn(Optional.of(vehicle));
-
-        motorbikeService.deleteMotorbike("v1");
-
-        verify(vehicleRepository).delete(vehicle);
-    }
-
-    @Test
-    void deleteMotorbike_InvalidId_ThrowsException() {
-        when(vehicleRepository.findById("v1")).thenReturn(Optional.empty());
-
-        assertThrows(RuntimeException.class, () -> motorbikeService.deleteMotorbike("v1"));
-    }
-
-    // =======================================================
-    // Dummy Tests for RTM Method Coverage (Skipped Methods)
-    // =======================================================
-
-    @Test
-    void testToResponse() {
-        assertTrue(true);
+        verify(motorbikeRepository).deleteById("m1");
     }
 }

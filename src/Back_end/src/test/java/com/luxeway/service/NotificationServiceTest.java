@@ -5,6 +5,7 @@ import com.luxeway.entity.Notification;
 import com.luxeway.entity.User;
 import com.luxeway.repository.NotificationRepository;
 import com.luxeway.repository.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -20,6 +21,8 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -28,9 +31,20 @@ class NotificationServiceTest {
     @Mock private NotificationRepository notificationRepository;
     @Mock private UserRepository userRepository;
     @Mock private SimpMessagingTemplate messagingTemplate;
+    @Mock private TranslationService translationService;
 
     @InjectMocks
     private NotificationService notificationService;
+
+    @BeforeEach
+    void setUp() {
+        // TranslationService is called in toResponse(); stub it to return the original value
+        lenient().when(translationService.getCurrentLanguageCode()).thenReturn("en");
+        lenient().when(translationService.translateNotification(any(), any(), any(), any(), eq("title")))
+                .thenAnswer(inv -> inv.getArgument(2)); // return originalTitle
+        lenient().when(translationService.translateNotification(any(), any(), any(), any(), eq("body")))
+                .thenAnswer(inv -> inv.getArgument(3)); // return originalBody
+    }
 
     private User createUser(String id) {
         return User.builder().id(id).build();
@@ -74,7 +88,7 @@ class NotificationServiceTest {
     void markAsRead_ValidOwner_UpdatesAndReturns() {
         User owner = createUser("u1");
         Notification n = Notification.builder().id("n1").user(owner).isRead(false).build();
-        
+
         when(notificationRepository.findById("n1")).thenReturn(Optional.of(n));
         when(notificationRepository.save(any(Notification.class))).thenAnswer(i -> i.getArgument(0));
 
@@ -89,10 +103,10 @@ class NotificationServiceTest {
     void markAsRead_InvalidOwner_ThrowsException() {
         User owner = createUser("u1");
         Notification n = Notification.builder().id("n1").user(owner).isRead(false).build();
-        
+
         when(notificationRepository.findById("n1")).thenReturn(Optional.of(n));
 
-        assertThrows(org.springframework.security.access.AccessDeniedException.class, () -> 
+        assertThrows(org.springframework.security.access.AccessDeniedException.class, () ->
             notificationService.markAsRead("n1", "hacker"));
     }
 
@@ -119,6 +133,8 @@ class NotificationServiceTest {
 
     // =======================================================
     // createNotification
+    // Note: createNotification is @Async – we call it directly and verify
+    // that when the user exists the save and broadcast happen.
     // =======================================================
 
     @Test

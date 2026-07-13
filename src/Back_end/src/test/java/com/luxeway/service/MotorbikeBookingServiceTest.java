@@ -1,16 +1,16 @@
 package com.luxeway.service;
 
 import com.luxeway.dto.motorbike.MotorbikeBookingDTOs;
-import com.luxeway.entity.Booking;
+import com.luxeway.entity.MotorbikeBooking;
+import com.luxeway.entity.Motorbike;
 import com.luxeway.entity.User;
-import com.luxeway.entity.Vehicle;
 import com.luxeway.enums.BookingStatus;
 import com.luxeway.enums.UserRole;
 import com.luxeway.enums.VehicleStatus;
-import com.luxeway.repository.BookingRepository;
+import com.luxeway.repository.MotorbikeBookingRepository;
+import com.luxeway.repository.MotorbikeRepository;
 import com.luxeway.repository.UserRepository;
-import com.luxeway.repository.VehicleAvailabilityRepository;
-import com.luxeway.repository.VehicleRepository;
+import com.luxeway.repository.MotorbikeAvailabilityRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -23,15 +23,17 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class MotorbikeBookingServiceTest {
 
-    @Mock private BookingRepository bookingRepository;
-    @Mock private VehicleRepository vehicleRepository;
+    @Mock private MotorbikeBookingRepository motorbikeBookingRepository;
+    @Mock private MotorbikeRepository motorbikeRepository;
     @Mock private UserRepository userRepository;
-    @Mock private VehicleAvailabilityRepository vehicleAvailabilityRepository;
+    @Mock private MotorbikeAvailabilityRepository motorbikeAvailabilityRepository;
     @Mock private NotificationService notificationService;
 
     @InjectMocks
@@ -49,10 +51,16 @@ class MotorbikeBookingServiceTest {
         req.setStartDate(LocalDate.now().plusDays(1));
         req.setEndDate(LocalDate.now().plusDays(3)); // 3 days
 
-        User renter = User.builder().id(renterId).kycVerified(true).drivingLicenseVerified(true).role(UserRole.CUSTOMER).build();
+        // Renter with kycStatus=VERIFIED and licenseClass=A (motorbike license)
+        User renter = User.builder()
+                .id(renterId)
+                .kycStatus("VERIFIED")
+                .licenseClass("A")
+                .role(UserRole.CUSTOMER)
+                .build();
         User owner = User.builder().id("o1").build();
-        
-        Vehicle vehicle = Vehicle.builder()
+
+        Motorbike motorbike = Motorbike.builder()
                 .id("v1")
                 .status(VehicleStatus.AVAILABLE)
                 .pricePerDay(new BigDecimal("100000"))
@@ -60,11 +68,11 @@ class MotorbikeBookingServiceTest {
                 .owner(owner)
                 .build();
 
-        when(vehicleRepository.findByIdForUpdate("v1")).thenReturn(Optional.of(vehicle));
-        when(bookingRepository.hasConflictingBooking("v1", req.getStartDate(), req.getEndDate())).thenReturn(false);
+        when(motorbikeRepository.findByIdForUpdate("v1")).thenReturn(Optional.of(motorbike));
+        when(motorbikeBookingRepository.hasConflictingBooking("v1", req.getStartDate(), req.getEndDate())).thenReturn(false);
         when(userRepository.findById(renterId)).thenReturn(Optional.of(renter));
-        when(bookingRepository.save(any(Booking.class))).thenAnswer(i -> {
-            Booking b = i.getArgument(0);
+        when(motorbikeBookingRepository.save(any(MotorbikeBooking.class))).thenAnswer(i -> {
+            MotorbikeBooking b = i.getArgument(0);
             b.setId("b1");
             return b;
         });
@@ -73,9 +81,9 @@ class MotorbikeBookingServiceTest {
 
         assertNotNull(result);
         assertEquals("confirmed", result.getStatus());
-        
-        verify(bookingRepository).save(any(Booking.class));
-        verify(vehicleAvailabilityRepository, atLeastOnce()).save(any());
+
+        verify(motorbikeBookingRepository).save(any(MotorbikeBooking.class));
+        verify(motorbikeAvailabilityRepository, atLeastOnce()).save(any());
         verify(notificationService).createNotification(eq("o1"), anyString(), anyString(), anyString(), anyString());
     }
 
@@ -114,7 +122,7 @@ class MotorbikeBookingServiceTest {
         req.setStartDate(LocalDate.now().plusDays(1));
         req.setEndDate(LocalDate.now().plusDays(3));
 
-        when(vehicleRepository.findByIdForUpdate("v1")).thenReturn(Optional.empty());
+        when(motorbikeRepository.findByIdForUpdate("v1")).thenReturn(Optional.empty());
 
         assertThrows(RuntimeException.class, () -> motorbikeBookingService.createBooking("u1", req));
     }
@@ -126,12 +134,12 @@ class MotorbikeBookingServiceTest {
         req.setStartDate(LocalDate.now().plusDays(1));
         req.setEndDate(LocalDate.now().plusDays(3));
 
-        Vehicle vehicle = Vehicle.builder()
+        Motorbike motorbike = Motorbike.builder()
                 .id("v1")
                 .status(VehicleStatus.MAINTENANCE)
                 .build();
 
-        when(vehicleRepository.findByIdForUpdate("v1")).thenReturn(Optional.of(vehicle));
+        when(motorbikeRepository.findByIdForUpdate("v1")).thenReturn(Optional.of(motorbike));
 
         assertThrows(RuntimeException.class, () -> motorbikeBookingService.createBooking("u1", req));
     }
@@ -143,13 +151,13 @@ class MotorbikeBookingServiceTest {
         req.setStartDate(LocalDate.now().plusDays(1));
         req.setEndDate(LocalDate.now().plusDays(3));
 
-        Vehicle vehicle = Vehicle.builder()
+        Motorbike motorbike = Motorbike.builder()
                 .id("v1")
                 .status(VehicleStatus.AVAILABLE)
                 .build();
 
-        when(vehicleRepository.findByIdForUpdate("v1")).thenReturn(Optional.of(vehicle));
-        when(bookingRepository.hasConflictingBooking("v1", req.getStartDate(), req.getEndDate())).thenReturn(true);
+        when(motorbikeRepository.findByIdForUpdate("v1")).thenReturn(Optional.of(motorbike));
+        when(motorbikeBookingRepository.hasConflictingBooking("v1", req.getStartDate(), req.getEndDate())).thenReturn(true);
 
         assertThrows(RuntimeException.class, () -> motorbikeBookingService.createBooking("u1", req));
     }
@@ -161,16 +169,20 @@ class MotorbikeBookingServiceTest {
         req.setStartDate(LocalDate.now().plusDays(1));
         req.setEndDate(LocalDate.now().plusDays(3));
 
-        Vehicle vehicle = Vehicle.builder()
+        Motorbike motorbike = Motorbike.builder()
                 .id("v1")
                 .status(VehicleStatus.AVAILABLE)
                 .build();
 
-        // Renter is NOT verified
-        User renter = User.builder().id("u1").kycVerified(false).drivingLicenseVerified(false).role(UserRole.CUSTOMER).build();
+        // Renter is NOT verified (kycStatus not VERIFIED)
+        User renter = User.builder()
+                .id("u1")
+                .kycStatus("NOT_UPLOADED")
+                .role(UserRole.CUSTOMER)
+                .build();
 
-        when(vehicleRepository.findByIdForUpdate("v1")).thenReturn(Optional.of(vehicle));
-        when(bookingRepository.hasConflictingBooking("v1", req.getStartDate(), req.getEndDate())).thenReturn(false);
+        when(motorbikeRepository.findByIdForUpdate("v1")).thenReturn(Optional.of(motorbike));
+        when(motorbikeBookingRepository.hasConflictingBooking("v1", req.getStartDate(), req.getEndDate())).thenReturn(false);
         when(userRepository.findById("u1")).thenReturn(Optional.of(renter));
 
         assertThrows(RuntimeException.class, () -> motorbikeBookingService.createBooking("u1", req));
@@ -182,18 +194,18 @@ class MotorbikeBookingServiceTest {
 
     @Test
     void updateStatus_ValidTransition_UpdatesState() {
-        Booking booking = Booking.builder()
+        MotorbikeBooking booking = MotorbikeBooking.builder()
                 .id("b1")
                 .status(BookingStatus.CONFIRMED)
                 .build();
 
-        when(bookingRepository.findById("b1")).thenReturn(Optional.of(booking));
-        when(bookingRepository.save(any(Booking.class))).thenAnswer(i -> i.getArgument(0));
+        when(motorbikeBookingRepository.findById("b1")).thenReturn(Optional.of(booking));
+        when(motorbikeBookingRepository.save(any(MotorbikeBooking.class))).thenAnswer(i -> i.getArgument(0));
 
         MotorbikeBookingDTOs.MotorbikeBookingResponse result = motorbikeBookingService.updateStatus("b1", "COMPLETED");
 
         assertEquals("completed", result.getStatus());
-        verify(bookingRepository).save(booking);
+        verify(motorbikeBookingRepository).save(booking);
     }
 
     // =======================================================

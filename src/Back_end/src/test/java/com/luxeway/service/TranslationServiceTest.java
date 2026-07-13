@@ -7,6 +7,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.MessageSource;
 import org.springframework.context.NoSuchMessageException;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.util.Locale;
 
@@ -20,6 +21,9 @@ class TranslationServiceTest {
 
     @Mock
     private MessageSource messageSource;
+
+    @Mock
+    private JdbcTemplate jdbcTemplate;
 
     @InjectMocks
     private TranslationService translationService;
@@ -86,8 +90,10 @@ class TranslationServiceTest {
 
     @Test
     void getLocale_UnsupportedCode_ReturnsEnglish() {
-        String unsupportedCode = "es";
-    
+        // "es" is mapped to Locale.forLanguageTag("es"), not Locale.ENGLISH;
+        // use a truly unsupported code to hit the default branch
+        String unsupportedCode = "xx";
+
         Locale result = translationService.getLocale(unsupportedCode);
 
         assertEquals(Locale.ENGLISH, result);
@@ -97,11 +103,11 @@ class TranslationServiceTest {
     void getMessage_EmptyKey_ReturnsRawKey() {
         String key = "";
         String langCode = "en";
-    
+
         when(messageSource.getMessage(eq(key), any(Object[].class), eq(Locale.ENGLISH))).thenThrow(new NoSuchMessageException("Empty"));
-    
+
         String result = translationService.getMessage(key, langCode);
-    
+
         assertEquals("", result);
     }
 }
