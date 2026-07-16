@@ -1,17 +1,17 @@
 spring:
   datasource:
     url: jdbc:sqlserver://${DB_HOST:localhost}:${DB_PORT:1433};databaseName=${DB_NAME:car_rental_platform};encrypt=false;trustServerCertificate=true
-    username: ${DB_USERNAME:sa}
-    password: ${DB_PASSWORD:123456}
+    username: sa
+    password: 123456
     driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
   sql:
     init:
       schema-locations: []
-      data-locations: classpath:data-sqlserver.sql
-      mode: always
+      data-locations: []
+      mode: never
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: update
     show-sql: true
     properties:
       hibernate:

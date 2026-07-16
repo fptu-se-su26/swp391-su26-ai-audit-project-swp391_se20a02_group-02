@@ -1,0 +1,102 @@
+package com.luxeway.service;
+
+import com.luxeway.entity.Booking;
+import com.luxeway.entity.User;
+import com.luxeway.entity.Vehicle;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class PromptBuilderService {
+
+    public String buildSystemPrompt(User user, List<Booking> recentBookings, Booking contextBooking, Vehicle contextVehicle, String currentPage) {
+        StringBuilder sb = new StringBuilder();
+        
+        // 1. Luxury Persona & Tone Guidance
+        sb.append("You are the LuxeWay Luxury Concierge, an elite AI advisor representing LuxeWay, the premier high-end vehicle rental platform.\n");
+        sb.append("Tone constraints: Extremely professional, polite, elegant, warm, and highly helpful. Use elite terminology. Address the user by name if known.\n\n");
+
+        // 2. Strict Boundary Rules: Cars vs Motorbikes
+        sb.append("CRITICAL ARCHITECTURE RULES (SEPARATION OF ECOSYSTEMS):\n");
+        sb.append("- LuxeWay operates TWO completely independent marketplaces: CARS and MOTORBIKES.\n");
+        sb.append("- DO NOT suggest motorbikes when the user is searching for or viewing a car. Keep recommendations specific to the category.\n");
+        sb.append("- Pathing rules:\n");
+        sb.append("  * Car details & marketplace: /cars and /cars/:id\n");
+        sb.append("  * Car booking: /car-booking/:id\n");
+        sb.append("  * Motorbike details & marketplace: /motorbikes and /motorbikes/:id\n");
+        sb.append("  * Motorbike booking: /motorbike-booking/:id\n\n");
+
+        // 3. User Identity Context
+        if (user != null) {
+            String name = (user.getDisplayName() != null) ? user.getDisplayName() : (user.getFirstName() + " " + user.getLastName());
+            sb.append("Renter Information:\n");
+            sb.append("- Name: ").append(name).append("\n");
+            sb.append("- Email: ").append(user.getEmail()).append("\n");
+            sb.append("- Tier: ").append(user.getRole().toString()).append("\n\n");
+        } else {
+            sb.append("Renter Information: Unauthenticated Guest\n\n");
+        }
+
+        // 4. Page Coordinate Context
+        if (currentPage != null && !currentPage.trim().isEmpty()) {
+            sb.append("Renter Current Location on LuxeWay App: ").append(currentPage).append("\n\n");
+        }
+
+        // 5. Active Context Vehicle Specs
+        if (contextVehicle != null) {
+            sb.append("Active Vehicle Being Viewed:\n");
+            sb.append("- ID: ").append(contextVehicle.getId()).append("\n");
+            sb.append("- Name: ").append(contextVehicle.getName()).append("\n");
+            sb.append("- Brand/Model: ").append(contextVehicle.getBrand()).append(" ").append(contextVehicle.getModel()).append("\n");
+            sb.append("- Category: ").append(contextVehicle.getCategory().toString()).append("\n");
+            sb.append("- Type: ").append(contextVehicle.getVehicleType().toString()).append("\n");
+            sb.append("- Cost: $").append(contextVehicle.getPricePerDay()).append(" per day\n");
+            if (contextVehicle.getDescription() != null) {
+                sb.append("- Overview: ").append(contextVehicle.getDescription()).append("\n");
+            }
+            sb.append("\n");
+        }
+
+        // 6. Active Context Booking Details
+        if (contextBooking != null) {
+            sb.append("Active Rental Booking Details:\n");
+            sb.append("- Booking Reference ID: ").append(contextBooking.getId()).append("\n");
+            if (contextBooking.getVehicle() != null) {
+                sb.append("- Vehicle: ").append(contextBooking.getVehicle().getName()).append(" (").append(contextBooking.getVehicle().getVehicleType().toString()).append(")\n");
+            }
+            sb.append("- Status: ").append(contextBooking.getStatus().toString()).append("\n");
+            sb.append("- Rental Period: ").append(contextBooking.getStartDate()).append(" to ").append(contextBooking.getEndDate()).append("\n");
+            sb.append("- Renter Total Cost: $").append(contextBooking.getTotal()).append("\n\n");
+        }
+
+        // 7. Historical Bookings
+        if (recentBookings != null && !recentBookings.isEmpty()) {
+            sb.append("Renter Booking History:\n");
+            for (Booking b : recentBookings) {
+                sb.append("- ID: ").append(b.getId())
+                        .append(" | ").append(b.getVehicle() != null ? b.getVehicle().getName() : "Vehicle")
+                        .append(" | Status: ").append(b.getStatus())
+                        .append(" | Period: ").append(b.getStartDate()).append(" to ").append(b.getEndDate())
+                        .append("\n");
+            }
+            sb.append("\n");
+        }
+
+        // 8. Help Center Action Instructions
+        sb.append("LUXEWAY CONCIERGE PLAYBOOK (HOW TO RESPOND TO ACTIONS):\n");
+        sb.append("- **Roadside / Damage Emergency:** Direct users to click **Priority Emergency Dispatch** at `/help/emergency`. Tell them our emergency support responds instantly.\n");
+        sb.append("- **Cancellation / Refund / Dispute:** Direct renters to the **Self-Service Support Hub** at `/help`. Mention our policy allows free cancellations 24 hours prior to the trip.\n");
+        sb.append("- **Delivery Tracking:** Ask them to provide a Booking ID or direct them to `/help?tab=delivery` to trace real-time Goong GPS delivery progress.\n");
+        sb.append("- **Host / Owner Success:** Direct hosts to `/help/owner-success`. Outline our **15% commission model**, Stripe configuration, Allianz insurance, and automatic tax invoicing.\n");
+        sb.append("- **Platform Offline / Errors:** Refer users to check `/help/status` for real-time status updates.\n\n");
+
+        sb.append("Please respond politely in Markdown. Keep your dialogue concise, structured, and luxurious. Maximum 200 words.");
+
+        return sb.toString();
+    }
+}

@@ -1,6 +1,5 @@
 import { getDb, dbCreate, dbUpdate, STORAGE_KEYS } from '@/mock/db';
 import type { Review, Notification, Message, Conversation } from '@/types';
-import { faker } from '@faker-js/faker';
 
 const delay = (ms = 400) => new Promise(r => setTimeout(r, ms));
 
@@ -54,11 +53,40 @@ export const reviewService = {
 // ====== NOTIFICATION SERVICE ======
 export const notificationService = {
   async getByUser(userId: string): Promise<Notification[]> {
+<<<<<<< HEAD
     await delay(200);
     const { notifications } = getDb();
     return notifications
       .filter(n => n.userId === userId)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+=======
+    try {
+      const response = await apiClient.get<any>('/notifications?page=0&size=50');
+      // ApiResponse wrapper: actual page is at response.data?.data
+      const pageData = response.data?.data || response.data;
+      const items = pageData?.content || [];
+      // Map backend field `isRead` → frontend field `read`
+      return items.map((n: any) => ({
+        ...n,
+        read: n.isRead ?? n.read ?? false,
+      })) as Notification[];
+    } catch (error) {
+      return [];
+    }
+>>>>>>> origin/main
+  },
+
+  async getUnreadCount(): Promise<number> {
+    try {
+      const response = await apiClient.get<any>('/notifications/unread-count');
+      // ApiResponse<UnreadCountResponse>: actual value is response.data?.data?.unreadCount
+      const inner = response.data?.data ?? response.data;
+      if (typeof inner?.unreadCount === 'number') return inner.unreadCount;
+      if (typeof inner === 'number') return inner;
+      return 0;
+    } catch (error) {
+      return 0;
+    }
   },
 
   async markRead(notificationId: string): Promise<void> {
@@ -78,6 +106,7 @@ export const notificationService = {
   },
 
   async create(data: Partial<Notification>): Promise<Notification> {
+<<<<<<< HEAD
     const { notifications } = getDb();
     const notification: Notification = {
       id: `notification-${faker.string.uuid()}`,
@@ -96,6 +125,9 @@ export const notificationService = {
   getUnreadCount(userId: string): number {
     const { notifications } = getDb();
     return notifications.filter(n => n.userId === userId && !n.read).length;
+=======
+    return { ...data, id: `notif-${Date.now()}`, read: false, createdAt: new Date().toISOString() } as Notification;
+>>>>>>> origin/main
   },
 };
 

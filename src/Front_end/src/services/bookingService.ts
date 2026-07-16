@@ -27,6 +27,7 @@ export const bookingService = {
     return bookings.find(b => b.id === id) || null;
   },
 
+<<<<<<< HEAD
   async create(wizardState: BookingWizardState, renterId: string): Promise<Booking> {
     await delay(800);
     const { bookings, vehicles } = getDb();
@@ -80,6 +81,63 @@ export const bookingService = {
 
     dbCreate(STORAGE_KEYS.BOOKINGS, bookings, newBooking);
     return newBooking;
+=======
+  async create(wizardState: BookingWizardState, renterId: string, vehicleType?: 'car' | 'motorbike', extras?: any): Promise<Booking> {
+    const isGeneralVehicle = wizardState.vehicleId?.startsWith('VM-') || wizardState.vehicleId?.startsWith('VC-');
+    if (vehicleType === 'car' && !isGeneralVehicle) {
+      const payload = {
+        carId: wizardState.vehicleId,
+        startDate: wizardState.startDate,
+        endDate: wizardState.endDate,
+        includeInsurance: wizardState.includeInsurance,
+        insuranceTier: extras?.insuranceTier || 'premium',
+        hasChauffeur: !!extras?.hasChauffeur,
+        airportDelivery: wizardState.includeDelivery,
+        weddingPackage: !!extras?.weddingPackage,
+        businessPackage: !!extras?.businessPackage,
+        deliveryAddress: wizardState.deliveryAddress,
+        notes: wizardState.notes,
+        couponCode: wizardState.couponCode,
+      };
+      const response = await apiClient.post<any>('/cars/bookings', payload);
+      const booking = response.booking || response.data || response;
+      if (!booking || !booking.id) throw new Error(response.message || 'Failed to create car booking');
+      return mapBooking(booking);
+    } else if (vehicleType === 'motorbike' && !isGeneralVehicle) {
+      const payload = {
+        motorbikeId: wizardState.vehicleId,
+        startDate: wizardState.startDate,
+        endDate: wizardState.endDate,
+        includeInsurance: wizardState.includeInsurance,
+        hasHelmet: !!extras?.hasHelmet,
+        hasRaincoat: !!extras?.hasRaincoat,
+        hasPhoneHolder: !!extras?.hasPhoneHolder,
+        hasTouringPackage: !!extras?.hasTouringPackage,
+        notes: wizardState.notes,
+        couponCode: wizardState.couponCode,
+      };
+      const response = await apiClient.post<any>('/motorbikes/bookings', payload);
+      const booking = response.booking || response.data || response;
+      if (!booking || !booking.id) throw new Error(response.message || 'Failed to create motorbike booking');
+      return mapBooking(booking);
+    } else {
+      const payload = {
+        vehicleId: wizardState.vehicleId,
+        startDate: wizardState.startDate,
+        endDate: wizardState.endDate,
+        includeInsurance: wizardState.includeInsurance,
+        includeDelivery: wizardState.includeDelivery,
+        deliveryAddress: wizardState.deliveryAddress,
+        couponCode: wizardState.couponCode,
+        notes: wizardState.notes,
+        addonIds: wizardState.selectedAddons,
+      };
+      const response = await apiClient.post<any>('/bookings', payload);
+      const booking = response.data || response;
+      if (!booking || !booking.id) throw new Error(response.message || 'Failed to create booking');
+      return mapBooking(booking);
+    }
+>>>>>>> origin/main
   },
 
   async cancel(bookingId: string, reason: string): Promise<Booking | null> {
@@ -100,6 +158,21 @@ export const bookingService = {
       status,
       updatedAt: new Date().toISOString(),
     } as Partial<Booking>);
+  },
+
+  async confirmTransfer(bookingId: string): Promise<any> {
+    const response = await apiClient.post<any>(`/bookings/${bookingId}/confirm-transfer`, {});
+    return response.data || response;
+  },
+
+  async verifyPayment(bookingId: string): Promise<any> {
+    const response = await apiClient.post<any>(`/bookings/${bookingId}/verify-payment`, {});
+    return response.data || response;
+  },
+
+  async rejectPayment(bookingId: string, reason: string): Promise<any> {
+    const response = await apiClient.post<any>(`/bookings/${bookingId}/reject-payment?reason=${encodeURIComponent(reason)}`, {});
+    return response.data || response;
   },
 
   async getAll(): Promise<Booking[]> {
@@ -128,6 +201,7 @@ export const bookingService = {
 };
 
 export const paymentService = {
+<<<<<<< HEAD
   async processPayment(bookingId: string, method: string, amount: number): Promise<{ success: boolean; transactionId: string }> {
     await delay(1500); // Simulate payment processing
     // 95% success rate
@@ -136,6 +210,84 @@ export const paymentService = {
       success,
       transactionId: success ? `txn_${faker.string.alphanumeric(20)}` : '',
     };
+=======
+  /**
+   * Process payment for a booking.
+   * Backend endpoint: POST /payments
+   * Returns ApiResponse<PaymentResponse> = { success, message, data: { id, transactionId, paymentUrl?, ... } }
+   */
+  async processPayment(
+    bookingId: string,
+    method: string,
+    amount: number,
+    returnUrl?: string
+  ): Promise<{ success: boolean; transactionId: string; paymentUrl?: string; errorMessage?: string }> {
+    try {
+      const payload = {
+        bookingId,
+        method: method.toUpperCase(),
+        amount,
+        currency: 'VND',
+        returnUrl: returnUrl || `${window.location.origin}/payment/${method.toLowerCase() === 'payos' ? 'payos' : 'momo'}/return`,
+        description: `Payment for booking ${bookingId}`,
+      };
+      // apiClient.post returns the full response body from backend
+      // Backend: ResponseEntity<ApiResponse<PaymentResponse>>
+      // So response here IS the ApiResponse object: { success, message, data }
+      const response = await apiClient.post<any>('/payments', payload);
+
+      const isSuccess = response.success === true || response.status === 'ok';
+      const paymentData = response.data;
+      const gatewayRequiresRedirect = ['momo', 'payos'].includes(method.toLowerCase());
+      const missingGatewayUrl = isSuccess && gatewayRequiresRedirect && !paymentData?.paymentUrl;
+
+      return {
+        success: isSuccess && !missingGatewayUrl,
+        transactionId: paymentData?.transactionId || '',
+        paymentUrl: paymentData?.paymentUrl || undefined,
+        errorMessage: missingGatewayUrl
+          ? `${method.toUpperCase()} checkout URL was not returned by backend`
+          : (!isSuccess ? (response.message || 'Payment failed') : undefined),
+      };
+    } catch (error: any) {
+      console.error('Payment processing failed', error);
+      const msg = error?.message || 'Payment processing failed. Please try again.';
+      return { success: false, transactionId: '', errorMessage: msg };
+    }
+  },
+
+  /**
+   * Top up LuxeWallet.
+   * Backend endpoint: POST /payments/wallet/topup
+   */
+  async topUpWallet(
+    amount: number,
+    method: string,
+    returnUrl?: string
+  ): Promise<{ success: boolean; paymentUrl?: string; errorMessage?: string }> {
+    try {
+      const payload = {
+        amount,
+        method: method.toUpperCase(),
+        currency: 'VND',
+        returnUrl: returnUrl || `${window.location.origin}/payment/${method.toLowerCase() === 'payos' ? 'payos' : 'momo'}/return`,
+      };
+      const response = await apiClient.post<any>('/payments/wallet/topup', payload);
+      const isSuccess = response.success === true;
+      const gatewayRequiresRedirect = ['momo', 'payos'].includes(method.toLowerCase());
+      const missingGatewayUrl = isSuccess && gatewayRequiresRedirect && !response.data?.paymentUrl;
+      return {
+        success: isSuccess && !missingGatewayUrl,
+        paymentUrl: response.data?.paymentUrl || undefined,
+        errorMessage: missingGatewayUrl
+          ? `${method.toUpperCase()} checkout URL was not returned by backend`
+          : (!isSuccess ? (response.message || 'Top up failed') : undefined),
+      };
+    } catch (error: any) {
+      console.error('Wallet top-up failed', error);
+      return { success: false, errorMessage: error?.message || 'Top up failed' };
+    }
+>>>>>>> origin/main
   },
 
   async getByUser(userId: string) {
@@ -166,5 +318,15 @@ export const paymentService = {
       : coupon.value;
 
     return { valid: true, discount, message: `${coupon.value}${coupon.type === 'percentage' ? '%' : '$'} discount applied!` };
+  },
+
+  async getPaymentSettings(): Promise<any> {
+    const response = await apiClient.get<any>('/payment-settings');
+    return response.data || response;
+  },
+
+  async updatePaymentSettings(settings: any): Promise<any> {
+    const response = await apiClient.put<any>('/payment-settings', settings);
+    return response.data || response;
   },
 };

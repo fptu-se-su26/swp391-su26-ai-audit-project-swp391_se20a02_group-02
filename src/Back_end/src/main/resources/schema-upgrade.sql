@@ -242,3 +242,177 @@ BEGIN
     );
 END
 GO
+
+-- 6. VEHICLE REAL-TIME TRACKING & ROUTING UPGRADES
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('vehicles') AND name = 'current_lat')
+BEGIN
+    ALTER TABLE vehicles ADD current_lat DECIMAL(10,8) NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('vehicles') AND name = 'current_lng')
+BEGIN
+    ALTER TABLE vehicles ADD current_lng DECIMAL(11,8) NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('vehicles') AND name = 'last_location_update')
+BEGIN
+    ALTER TABLE vehicles ADD last_location_update DATETIME2 NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('vehicles') AND name = 'location_status')
+BEGIN
+    ALTER TABLE vehicles ADD location_status NVARCHAR(50) NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('bookings') AND name = 'pickup_lat')
+BEGIN
+    ALTER TABLE bookings ADD pickup_lat DECIMAL(10,8) NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('bookings') AND name = 'pickup_lng')
+BEGIN
+    ALTER TABLE bookings ADD pickup_lng DECIMAL(11,8) NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('bookings') AND name = 'dropoff_lat')
+BEGIN
+    ALTER TABLE bookings ADD dropoff_lat DECIMAL(10,8) NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('bookings') AND name = 'dropoff_lng')
+BEGIN
+    ALTER TABLE bookings ADD dropoff_lng DECIMAL(11,8) NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('bookings') AND name = 'route_distance')
+BEGIN
+    ALTER TABLE bookings ADD route_distance DECIMAL(10,2) NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('bookings') AND name = 'estimated_time')
+BEGIN
+    ALTER TABLE bookings ADD estimated_time INT NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('bookings') AND name = 'route_polyline')
+BEGIN
+    ALTER TABLE bookings ADD route_polyline NVARCHAR(MAX) NULL;
+END
+GO
+
+IF OBJECT_ID('vehicle_tracking', 'U') IS NULL
+BEGIN
+    CREATE TABLE vehicle_tracking (
+        id NVARCHAR(36) PRIMARY KEY,
+        vehicle_id NVARCHAR(36) NOT NULL,
+        booking_id NVARCHAR(36) NULL,
+        lat DECIMAL(10,8) NOT NULL,
+        lng DECIMAL(11,8) NOT NULL,
+        speed DECIMAL(6,2) NULL,
+        heading DECIMAL(5,2) NULL,
+        created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+        FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE,
+        FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE SET NULL
+    );
+END
+GO
+
+-- 7. TEMPORARY AVAILABILITY LOCKING
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('vehicle_availability') AND name = 'locked_until')
+BEGIN
+    ALTER TABLE vehicle_availability ADD locked_until DATETIME2 NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('vehicle_availability') AND name = 'locked_by')
+BEGIN
+    ALTER TABLE vehicle_availability ADD locked_by NVARCHAR(36) NULL;
+END
+GO
+
+-- 8. AI SUPPORT CHATBOT PERSISTENCE
+IF OBJECT_ID('chat_sessions', 'U') IS NULL
+BEGIN
+    CREATE TABLE chat_sessions (
+        id NVARCHAR(36) PRIMARY KEY,
+        user_id NVARCHAR(36) NULL,
+        created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+    );
+END
+GO
+
+IF OBJECT_ID('chat_messages', 'U') IS NULL
+BEGIN
+    CREATE TABLE chat_messages (
+        id NVARCHAR(36) PRIMARY KEY,
+        session_id NVARCHAR(36) NOT NULL,
+        sender NVARCHAR(50) NOT NULL,
+        message NVARCHAR(MAX) NOT NULL,
+        created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+        FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE
+    );
+END
+GO-- 9. VIETNAM KYC & DRIVER LICENSE VERIFICATION UPGRADE
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('users') AND name = 'kyc_status')
+BEGIN
+    ALTER TABLE users ADD kyc_status NVARCHAR(20) NOT NULL DEFAULT 'REJECTED';
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('users') AND name = 'driver_license_status')
+BEGIN
+    ALTER TABLE users ADD driver_license_status NVARCHAR(20) NOT NULL DEFAULT 'NONE';
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('user_documents') AND name = 'file_url')
+BEGIN
+    ALTER TABLE user_documents ADD file_url NVARCHAR(500) NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('user_documents') AND name = 'ocr_data')
+BEGIN
+    ALTER TABLE user_documents ADD ocr_data NVARCHAR(MAX) NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('user_documents') AND name = 'verification_status')
+BEGIN
+    ALTER TABLE user_documents ADD verification_status NVARCHAR(20) NOT NULL DEFAULT 'NOT_UPLOADED';
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('user_documents') AND name = 'verified_by_admin')
+BEGIN
+    ALTER TABLE user_documents ADD verified_by_admin NVARCHAR(36) NULL;
+END
+GO
+
+-- 10. VEHICLE APPROVAL WORKFLOW UPGRADE
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('vehicles') AND name = 'approval_status')
+BEGIN
+    ALTER TABLE vehicles ADD approval_status VARCHAR(30) NOT NULL DEFAULT 'PENDING_APPROVAL';
+    ALTER TABLE vehicles ADD CONSTRAINT CHK_vehicles_approval_status CHECK (approval_status IN ('DRAFT','PENDING_APPROVAL','APPROVED','REJECTED','BLOCKED'));
+END
+GO
+
+IF EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CHK_notif_type' AND parent_object_id = OBJECT_ID('notifications'))
+BEGIN
+    ALTER TABLE notifications DROP CONSTRAINT CHK_notif_type;
+END
+GO
+ALTER TABLE notifications ADD CONSTRAINT CHK_notif_type CHECK (type IN ('booking','payment','message','review','system','promotion', 'VEHICLE_APPROVAL', 'VEHICLE_APPROVED', 'VEHICLE_REJECTED'));
+GO
+

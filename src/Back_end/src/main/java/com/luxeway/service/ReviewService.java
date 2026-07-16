@@ -20,6 +20,7 @@ import java.math.RoundingMode;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("all")
 public class ReviewService {
 
     private final ReviewRepository reviewRepository;

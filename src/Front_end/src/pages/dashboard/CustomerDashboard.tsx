@@ -4,16 +4,22 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Calendar, Heart, Bell, User, Shield, FileText,
   CreditCard, Settings, LogOut, ChevronRight, Car, Star, TrendingUp,
+<<<<<<< HEAD
   Package, Clock, CheckCircle, AlertCircle, X, Menu
+=======
+  Package, Clock, CheckCircle, AlertCircle, X, Menu, Eye, EyeOff, Users, Wallet,
+  Loader2, Globe, Gift, Building2, Trash2, Navigation
+>>>>>>> origin/main
 } from 'lucide-react';
 import { useAuthStore, useUIStore } from '@/store';
 import { bookingService } from '@/services/bookingService';
 import { notificationService } from '@/services/otherServices';
 import type { Booking, Notification } from '@/types';
-import { formatCurrency, formatDate, getStatusColor, getInitials } from '@/utils';
+import { formatCurrency, formatDate, getStatusColor, getInitials, cn } from '@/utils';
 import { staggerContainer, staggerItem, fadeUp } from '@/animations/variants';
 import { StatCardSkeleton, TableSkeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
+<<<<<<< HEAD
 
 // ====== DASHBOARD SIDEBAR ======
 const DashboardSidebar: React.FC<{ role: string }> = ({ role }) => {
@@ -47,10 +53,72 @@ const DashboardSidebar: React.FC<{ role: string }> = ({ role }) => {
 
   const links = (role === 'owner' || role === 'business') ? ownerLinks : customerLinks;
 
+=======
+import { useT, translateNotification } from '@/i18n/translations';
+import Avatar from '@/components/ui/Avatar';
+import StatusBadge from '@/components/ui/StatusBadge';
+import Breadcrumbs from '@/components/ui/Breadcrumbs';
+
+// ====== CUSTOMER DASHBOARD LAYOUT ======
+export const CustomerDashboardLayout: React.FC = () => {
+  const { user, isAuthenticated, logout } = useAuthStore();
+  const { sidebarOpen, setSidebarOpen } = useUIStore();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const language = useUIStore((s: any) => s.language) || 'en';
+  const t = useT();
+
+  useEffect(() => {
+    if (!isAuthenticated) navigate('/auth/login');
+    setSidebarOpen(window.innerWidth >= 1024);
+  }, [isAuthenticated]);
+
+  if (!user) return null;
+
+  const links = [
+    { href: '/', icon: Globe, label: t.marketplace.home, exact: true },
+    { href: '/dashboard', icon: LayoutDashboard, label: t.dashboard.overview, exact: true },
+    { href: '/dashboard/bookings', icon: Calendar, label: t.dashboard.myBookings },
+    { href: '/dashboard/wallet', icon: Wallet, label: t.wallet.title },
+    { href: '/dashboard/payments', icon: CreditCard, label: t.dashboard.payments },
+    { href: '/dashboard/documents', icon: FileText, label: t.dashboard.documents },
+    { href: '/dashboard/reviews', icon: Star, label: t.dashboard.myReviews },
+    {
+      href: '/dashboard/rewards',
+      icon: Gift,
+      label: language === 'vi' ? 'Đổi Thưởng' :
+        language === 'ja' ? 'ロイヤルティ特典' :
+          language === 'ko' ? '로열티 リワード' :
+            language === 'zh' ? '会员积分奖励' :
+              language === 'fr' ? 'Récompenses' :
+                language === 'de' ? 'Treueprämien' :
+                  language === 'es' ? 'Premios' :
+                    'Loyalty Rewards'
+    },
+    {
+      href: '/dashboard/corporate',
+      icon: Building2,
+      label: language === 'vi' ? 'Cổng Doanh Nghiệp' :
+        language === 'ja' ? '企業ポータル' :
+          language === 'ko' ? '기업 포탈' :
+            language === 'zh' ? '企业门户' :
+              language === 'fr' ? 'Portail Entreprise' :
+                language === 'de' ? 'Unternehmensportal' :
+                  language === 'es' ? 'Portal Corporativo' :
+                    'Corporate Portal'
+    },
+    { href: '/messages', icon: Bell, label: t.nav.messages },
+    { href: '/dashboard/notifications', icon: Heart, label: t.dashboard.notifications },
+    { href: '/dashboard/profile', icon: User, label: t.dashboard.profile },
+    { href: '/dashboard/settings', icon: Settings, label: t.dashboard.settings },
+  ];
+
+>>>>>>> origin/main
   const isActive = (href: string, exact?: boolean) =>
     exact ? location.pathname === href : location.pathname.startsWith(href);
 
   return (
+<<<<<<< HEAD
     <>
       {/* Mobile Overlay */}
       <AnimatePresence>
@@ -85,10 +153,122 @@ const DashboardSidebar: React.FC<{ role: string }> = ({ role }) => {
               <span className="inline-block text-[10px] font-bold uppercase tracking-wider text-gold mt-0.5">
                 {user?.role}
               </span>
+=======
+    <div className="theme-customer min-h-screen relative font-sans bg-[var(--lw-bg-primary)] text-[var(--lw-text-primary)] transition-colors duration-300">
+      
+      {/* Mobile Sidebar Navigation Drawer */}
+      <AnimatePresence>
+        {sidebarOpen && (
+          <>
+            {/* Backdrop blur overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSidebarOpen(false)}
+              className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
+            />
+            {/* Sliding navigation drawer - mobile */}
+            <motion.aside
+              initial={{ x: -280 }}
+              animate={{ x: 0 }}
+              exit={{ x: -280 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="lw-sidebar fixed left-0 top-0 h-full z-50 flex lg:hidden shadow-2xl"
+            >
+              <div className="relative z-10 flex flex-col flex-1 min-h-0">
+                {/* Branding */}
+                <div className="lw-sidebar-logo border-b border-[var(--lw-border)]">
+                  <img src="/logo.svg" alt="LuxeWay" style={{ height: '36px', width: 'auto', display: 'block' }} />
+                  <span className="lw-sidebar-logo-text font-black text-[var(--lw-text-primary)]">LuxeWay</span>
+                </div>
+
+                <div className="lw-sidebar-role-badge bg-[var(--lw-accent-glow)] text-[var(--lw-accent)] border border-[var(--lw-border-strong)] m-0 mx-5 my-3">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--lw-accent)] animate-pulse" />
+                  ✨ CUSTOMER
+                </div>
+
+                {/* Links */}
+                <div className="lw-sidebar-nav space-y-0.5">
+                  {links.map(link => {
+                    const active = isActive(link.href, link.exact);
+                    return (
+                      <Link
+                        key={link.href}
+                        to={link.href}
+                        onClick={() => setSidebarOpen(false)}
+                        className={cn(
+                          "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative lw-sidebar-nav-item",
+                          active && "active"
+                        )}
+                      >
+                        <link.icon className="w-4 h-4 flex-shrink-0" />
+                        <span>{link.label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Bottom user card */}
+              <div className="lw-sidebar-footer">
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-[var(--lw-bg-secondary)] border border-[var(--lw-border)]">
+                  <Avatar src={user.avatar} name={user.displayName} size="md" className="flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold truncate text-[var(--lw-text-primary)]">{user.displayName}</p>
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-[var(--lw-accent)] mt-0.5">CUSTOMER</p>
+                  </div>
+                  <button 
+                    onClick={() => { logout(); setSidebarOpen(false); navigate('/auth/login'); }}
+                    className="p-2 text-[var(--lw-text-muted)] hover:text-red-500 transition-colors"
+                    title={t.nav.logout}
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Main dashboard flex layout */}
+      <div className="lw-flex-layout pt-16">
+        
+        {/* ============ DESKTOP SIDEBAR ============ */}
+        <aside className="lw-sidebar hidden lg:flex border-r border-[var(--lw-border)] bg-[var(--lw-sidebar-bg)]">
+          <div className="relative z-10 flex flex-col flex-1 min-h-0">
+            {/* Role Badge only, no double logo on desktop */}
+            <div className="px-5 py-4 border-b border-[var(--lw-border)]">
+              <div className="lw-sidebar-role-badge bg-[var(--lw-accent-glow)] text-[var(--lw-accent)] border border-[var(--lw-border-strong)] m-0 w-full flex items-center justify-center py-2.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--lw-accent)] animate-pulse mr-1.5" />
+                ✨ CUSTOMER
+              </div>
+            </div>
+
+            {/* Navigation Links */}
+            <div className="lw-sidebar-nav space-y-0.5">
+              {links.map(link => {
+                const active = isActive(link.href, link.exact);
+                return (
+                  <Link
+                    key={link.href}
+                    to={link.href}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative lw-sidebar-nav-item",
+                      active && "active"
+                    )}
+                  >
+                    <link.icon className="w-4 h-4 flex-shrink-0" />
+                    <span>{link.label}</span>
+                  </Link>
+                );
+              })}
+>>>>>>> origin/main
             </div>
           </div>
-        </div>
 
+<<<<<<< HEAD
         {/* Nav Links */}
         <nav className="flex-1 overflow-y-auto p-3 space-y-1">
           {links.map(link => (
@@ -140,8 +320,66 @@ export const DashboardLayout: React.FC = () => {
         <main className="flex-1 overflow-y-auto">
           <div className="max-w-5xl mx-auto p-6">
             <Outlet />
+=======
+          {/* Bottom user card */}
+          <div className="lw-sidebar-footer">
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-[var(--lw-bg-secondary)] border border-[var(--lw-border)]">
+              <Avatar src={user.avatar} name={user.displayName} size="md" className="flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold truncate text-[var(--lw-text-primary)]">{user.displayName}</p>
+                <p className="text-[9px] font-bold uppercase tracking-wider text-[var(--lw-accent)] mt-0.5">CUSTOMER</p>
+              </div>
+              <button 
+                onClick={() => { logout(); navigate('/auth/login'); }}
+                className="p-2 text-[var(--lw-text-muted)] hover:text-red-500 transition-colors"
+                title={t.nav.logout}
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+>>>>>>> origin/main
           </div>
-        </main>
+        </aside>
+
+        {/* ============ MAIN CONTENT ============ */}
+        <div className="lw-flex-main gap-0">
+          {/* Dashboard Header Bar */}
+          <header className="p-5 border-b border-[var(--lw-border)] flex items-center justify-between gap-4 bg-[var(--lw-bg-card)] mb-6 -mx-6 -mt-6 px-6">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="p-2 rounded-xl border border-[var(--lw-border)] hover:bg-[var(--lw-bg-secondary)] transition-all lg:hidden"
+                title="Menu"
+              >
+                <Menu className="w-5 h-5 text-[var(--lw-text-secondary)]" />
+              </button>
+              <div className="w-9 h-9 rounded-xl bg-[var(--lw-accent-glow)] border border-[var(--lw-border-strong)] flex items-center justify-center">
+                <LayoutDashboard className="w-4.5 h-4.5 text-[var(--lw-accent)]" />
+              </div>
+              <div>
+                <h1 className="font-bold text-base tracking-tight text-[var(--lw-text-primary)]">
+                  {t.dashboard.overview}
+                </h1>
+                <p className="text-[10px] text-[var(--lw-accent)] font-semibold uppercase tracking-widest">
+                  Customer Portal
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="hidden md:flex items-center gap-2 px-3.5 py-2 border border-[var(--lw-border)] rounded-xl bg-[var(--lw-bg-secondary)]">
+                <Clock className="w-3.5 h-3.5 text-[var(--lw-accent)]" />
+                <span className="text-[10px] font-semibold text-[var(--lw-text-secondary)]">
+                  {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                </span>
+              </div>
+            </div>
+          </header>
+
+          <main className="flex-1">
+            <Outlet />
+          </main>
+        </div>
       </div>
     </div>
   );
@@ -153,6 +391,10 @@ export const CustomerOverview: React.FC = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+<<<<<<< HEAD
+=======
+  const t = useT();
+>>>>>>> origin/main
 
   useEffect(() => {
     if (!user) return;
@@ -173,6 +415,24 @@ export const CustomerOverview: React.FC = () => {
     spent: bookings.filter(b => b.status === 'completed').reduce((sum, b) => sum + b.pricing.total, 0),
   };
 
+<<<<<<< HEAD
+=======
+  const statCards = [
+    { label: t.dashboard.totalBookings, value: stats.total, icon: Calendar, color: '#2563EB', glow: 'rgba(37,99,235,0.2)', sub: t.dashboard.totalBookingsChange },
+    { label: t.dashboard.activeRentals, value: stats.active, icon: Car, color: '#10B981', glow: 'rgba(16,185,129,0.2)', sub: t.dashboard.activeRentalsDesc },
+    { label: t.dashboard.completedTrips, value: stats.completed, icon: CheckCircle, color: '#F59E0B', glow: 'rgba(245,158,11,0.2)', sub: t.dashboard.completedTripsDesc },
+    { label: t.dashboard.totalSpent, value: formatCurrency(stats.spent), icon: CreditCard, color: '#EC4899', glow: 'rgba(236,72,153,0.2)', sub: t.dashboard.totalSpentDesc, isStr: true },
+  ];
+
+  const statusStyle: Record<string, { bg: string; text: string }> = {
+    pending: { bg: 'rgba(245,158,11,0.15)', text: '#F59E0B' },
+    confirmed: { bg: 'rgba(37,99,235,0.15)', text: '#2563EB' },
+    active: { bg: 'rgba(16,185,129,0.15)', text: '#10B981' },
+    completed: { bg: 'rgba(16,185,129,0.15)', text: '#10B981' },
+    cancelled: { bg: 'rgba(239,68,68,0.15)', text: '#EF4444' },
+  };
+
+>>>>>>> origin/main
   return (
     <div>
       <motion.div variants={fadeUp} initial="hidden" animate="visible">
@@ -189,6 +449,7 @@ export const CustomerOverview: React.FC = () => {
         </div>
       ) : (
         <motion.div
+<<<<<<< HEAD
           variants={staggerContainer}
           initial="hidden"
           animate="visible"
@@ -203,17 +464,119 @@ export const CustomerOverview: React.FC = () => {
             <motion.div key={stat.label} variants={staggerItem} className="stat-card">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${stat.color}`}>
                 <stat.icon className="w-5 h-5" />
+=======
+          variants={fadeUp} initial="hidden" animate="visible"
+          className="lg:col-span-3 relative rounded-3xl overflow-hidden min-h-[260px] shadow-lg"
+        >
+          <img
+            src="https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=900&q=80"
+            alt="Featured luxury car"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(7,11,20,0.85) 0%, rgba(7,11,20,0.45) 55%, rgba(7,11,20,0.10) 100%)' }} />
+
+          <div className="absolute top-4 left-4">
+            <span className="text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg bg-[var(--lw-accent)] text-white">✨ Recommended For You</span>
+          </div>
+
+          <div className="absolute top-4 right-4 flex gap-2">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 border border-white/20 backdrop-blur-md">
+              <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+              <span className="text-[10px] font-bold text-white">Available</span>
+            </div>
+          </div>
+
+          <div className="absolute bottom-0 left-0 right-0 p-6">
+            <div className="flex items-end justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold mb-1 flex items-center gap-1.5 text-slate-300">
+                  📍 Ho Chi Minh City, Vietnam
+                </p>
+                <h2 className="text-2xl font-extrabold text-white leading-tight tracking-tight">Ferrari F8 Tributo</h2>
+                <p className="text-xl font-extrabold mt-1 text-yellow-400">
+                  {formatCurrency(8500000)}
+                  <span className="text-sm font-semibold ml-1 text-white/55">/day</span>
+                </p>
+              </div>
+              <div className="flex flex-col gap-2 flex-shrink-0">
+                <Link to="/marketplace"
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-white transition-all bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md shadow-blue-500/20"
+                >
+                  Book Now
+                </Link>
+                <div className="flex items-center gap-1 justify-center">
+                  <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                  <span className="text-xs font-bold text-white">5.0</span>
+                  <span className="text-[10px] text-white/60">(128)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Stat Cards */}
+        <motion.div
+          variants={staggerContainer} initial="hidden" animate="visible"
+          className="lg:col-span-2 grid grid-cols-2 gap-3"
+        >
+          {statCards.map(stat => (
+            <motion.div
+              key={stat.label}
+              variants={staggerItem}
+              whileHover={{ y: -3 }}
+              className="lw-stat-card cursor-default hover:shadow-xl hover:shadow-[var(--lw-accent-glow)] transition-all duration-300"
+            >
+              <div className="absolute top-0 right-0 w-14 h-14 rounded-full -translate-y-1/2 translate-x-1/2 opacity-20 blur-xl pointer-events-none"
+                style={{ background: stat.color }} />
+              <div className="relative z-10">
+                <div className="stat-icon"
+                  style={{ background: `${stat.color}15`, border: `1px solid ${stat.color}25` }}>
+                  <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
+                </div>
+                <p className="stat-value">
+                  {loading ? '—' : stat.value}
+                </p>
+                <p className="stat-label">{stat.label}</p>
+                <p className="stat-sub">{stat.sub}</p>
+>>>>>>> origin/main
               </div>
               <p className="text-2xl font-bold text-[#0F172A]">{stat.value}</p>
               <p className="text-sm text-slate-500 mt-0.5">{stat.label}</p>
               <p className="text-xs text-slate-400 mt-1">{stat.change}</p>
             </motion.div>
           ))}
+<<<<<<< HEAD
+=======
+
+          {/* Quick links card */}
+          <motion.div
+            variants={staggerItem}
+            className="col-span-2 rounded-2xl p-4 bg-[var(--lw-bg-card)] border border-[var(--lw-border)]"
+          >
+            <p className="text-[10px] font-bold uppercase tracking-widest mb-3 text-[var(--lw-text-muted)]">Quick Actions</p>
+            <div className="flex gap-2 flex-wrap">
+              {[
+                { label: 'Explore Cars', href: '/marketplace', color: '#2563EB' },
+                { label: 'Explore Motorbikes', href: '/motorbikes', color: '#8B5CF6' },
+                { label: 'My Bookings', href: '/dashboard/bookings', color: '#F59E0B' },
+                { label: 'My Profile', href: '/dashboard/profile', color: '#10B981' },
+              ].map(q => (
+                <Link key={q.label} to={q.href}
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all hover:scale-105"
+                  style={{ background: `${q.color}12`, color: q.color, border: `1px solid ${q.color}25` }}
+                >
+                  {q.label}
+                </Link>
+              ))}
+            </div>
+          </motion.div>
+>>>>>>> origin/main
         </motion.div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Bookings */}
+<<<<<<< HEAD
         <div className="lg:col-span-2 luxury-card p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-display text-lg font-bold text-[#0F172A]">Recent Bookings</h3>
@@ -244,18 +607,83 @@ export const CustomerOverview: React.FC = () => {
                   </div>
                 </div>
               ))}
+=======
+        <motion.div
+          variants={fadeUp} initial="hidden" animate="visible"
+          className="lg:col-span-2 rounded-3xl p-5 bg-[var(--lw-bg-card)] border border-[var(--lw-border)]"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-[var(--lw-text-primary)] text-sm">{t.dashboard.recentBookings}</h3>
+            <Link to="/dashboard/bookings" className="text-xs font-bold text-[var(--lw-accent)]">{t.dashboard.viewAll} →</Link>
+          </div>
+
+          {loading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="h-16 rounded-2xl animate-pulse bg-[var(--lw-bg-secondary)]" />
+              ))}
+            </div>
+          ) : bookings.length === 0 ? (
+            <div className="text-center py-12">
+              <Calendar className="w-10 h-10 mx-auto mb-3 text-[var(--lw-text-muted)]" />
+              <p className="text-sm font-medium mb-4 text-[var(--lw-text-secondary)]">{t.dashboard.noBookings}</p>
+              <Link to="/marketplace"
+                className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-[var(--lw-accent)] hover:bg-[var(--lw-accent-alt)] transition-colors">
+                {t.dashboard.exploreVehicles}
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {bookings.slice(0, 5).map(booking => {
+                const st = statusStyle[booking.status] || statusStyle['pending'];
+                return (
+                  <motion.div
+                    key={booking.id}
+                    whileHover={{ x: 3 }}
+                    className="flex items-center gap-3 p-3.5 rounded-2xl transition-all duration-200 bg-[var(--lw-bg-secondary)] border border-[var(--lw-border)] hover:bg-[var(--lw-bg-card-hover)]"
+                  >
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-[var(--lw-bg-card)] border border-[var(--lw-border)]">
+                      <Car className="w-5 h-5 text-[var(--lw-text-secondary)]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-[var(--lw-text-primary)] truncate">Booking #{booking.id.slice(-6).toUpperCase()}</p>
+                      <p className="text-[11px] mt-0.5 text-[var(--lw-text-secondary)]">
+                        {formatDate(booking.startDate)} → {formatDate(booking.endDate)}
+                      </p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg block mb-1"
+                        style={{ background: st.bg, color: st.text }}>{booking.status}</span>
+                      <p className="text-xs font-bold text-[var(--lw-text-primary)]">{formatCurrency(booking.pricing.total)}</p>
+                    </div>
+                  </motion.div>
+                );
+              })}
+>>>>>>> origin/main
             </div>
           )}
         </div>
 
+<<<<<<< HEAD
         {/* Recent Notifications */}
         <div className="luxury-card p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-display text-lg font-bold text-[#0F172A]">Notifications</h3>
             <Link to="/dashboard/notifications" className="text-xs text-accent font-medium">View All</Link>
+=======
+        {/* Notifications */}
+        <motion.div
+          variants={fadeUp} initial="hidden" animate="visible"
+          className="rounded-3xl p-5 flex flex-col bg-[var(--lw-bg-card)] border border-[var(--lw-border)]"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-[var(--lw-text-primary)] text-sm">{t.dashboard.notifications}</h3>
+            <Link to="/dashboard/notifications" className="text-xs font-bold text-[var(--lw-accent)]">{t.dashboard.viewAll}</Link>
+>>>>>>> origin/main
           </div>
           <div className="space-y-3">
             {notifications.length === 0 ? (
+<<<<<<< HEAD
               <p className="text-slate-400 text-sm text-center py-6">No new notifications</p>
             ) : (
               notifications.map(notif => (
@@ -263,6 +691,30 @@ export const CustomerOverview: React.FC = () => {
                   <p className={`font-semibold text-xs ${!notif.read ? 'text-accent' : 'text-[#0F172A]'}`}>{notif.title}</p>
                   <p className="text-slate-500 text-xs mt-0.5 line-clamp-2">{notif.body}</p>
                   <p className="text-slate-400 text-[10px] mt-1">{formatDate(notif.createdAt, 'relative')}</p>
+=======
+              <div className="text-center py-12 my-auto">
+                <Bell className="w-10 h-10 mx-auto mb-3 text-[var(--lw-text-muted)]" />
+                <p className="text-xs font-medium text-[var(--lw-text-secondary)]">{t.dashboard.noNotifications}</p>
+              </div>
+            ) : (
+              notifications.map(notif => (
+                <div key={notif.id}
+                  className="p-3.5 rounded-2xl transition-all duration-200"
+                  style={{
+                    background: !notif.read ? 'var(--lw-accent-glow)' : 'var(--lw-bg-secondary)',
+                    border: `1px solid ${!notif.read ? 'var(--lw-border-strong)' : 'var(--lw-border)'}`,
+                  }}
+                >
+                  {!notif.read && (
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[var(--lw-accent)]" />
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--lw-accent)]">New</span>
+                    </div>
+                  )}
+                  <p className="font-bold text-xs text-[var(--lw-text-primary)]">{translateNotification(notif.title)}</p>
+                  <p className="text-[11px] mt-0.5 leading-relaxed line-clamp-2 text-[var(--lw-text-secondary)]">{translateNotification(notif.body)}</p>
+                  <p className="text-[9px] mt-2 text-[var(--lw-text-muted)]">{formatDate(notif.createdAt, 'relative')}</p>
+>>>>>>> origin/main
                 </div>
               ))
             )}
@@ -299,7 +751,32 @@ export const MyBookingsPage: React.FC = () => {
     }
   };
 
+  const breadcrumbItems = [
+    { label: t.marketplace.home, href: '/' },
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: t.dashboard.myBookings }
+  ];
+  const statusConfig: Record<string, { bg: string; color: string; border: string; label: string }> = {
+    pending: { bg: 'rgba(245,158,11,0.12)', color: '#F59E0B', border: 'rgba(245,158,11,0.3)', label: 'PENDING' },
+    confirmed: { bg: 'rgba(37,99,235,0.12)', color: '#2563EB', border: 'rgba(37,99,235,0.3)', label: 'CONFIRMED' },
+    active: { bg: 'rgba(16,185,129,0.12)', color: '#10B981', border: 'rgba(16,185,129,0.3)', label: 'ACTIVE' },
+    completed: { bg: 'rgba(16,185,129,0.12)', color: '#10B981', border: 'rgba(16,185,129,0.3)', label: 'COMPLETED' },
+    cancelled: { bg: 'rgba(239,68,68,0.12)', color: '#EF4444', border: 'rgba(239,68,68,0.3)', label: 'CANCELLED' },
+  };
+
+  const filterDefs = [
+    { key: 'all', label: 'All' },
+    { key: 'pending', label: 'Pending' },
+    { key: 'confirmed', label: 'Confirmed' },
+    { key: 'active', label: 'Active' },
+    { key: 'completed', label: 'Completed' },
+    { key: 'cancelled', label: 'Cancelled' },
+  ];
+
+  const countFor = (key: string) => key === 'all' ? bookings.length : bookings.filter(b => b.status === key).length;
+
   return (
+<<<<<<< HEAD
     <div>
       <motion.div variants={fadeUp} initial="hidden" animate="visible" className="mb-6">
         <h1 className="font-display text-2xl font-bold text-[#0F172A] mb-4">My Bookings</h1>
@@ -311,17 +788,67 @@ export const MyBookingsPage: React.FC = () => {
               className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap border-2 transition-all ${
                 filter === status ? 'border-accent bg-blue-50 text-accent' : 'border-slate-200 text-slate-600 hover:border-slate-300'
               }`}
-            >
-              {status.charAt(0).toUpperCase() + status.slice(1)}
-              {status === 'all' && ` (${bookings.length})`}
-            </button>
-          ))}
+=======
+    <div className="space-y-6">
+      {/* ── Header row ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <Breadcrumbs title={t.dashboard.myBookings} items={breadcrumbItems} backHref="/dashboard" backText="Dashboard" className="mb-1" />
         </div>
-      </motion.div>
+        {/* Book a New Car CTA */}
+        <Link
+          to="/marketplace"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-all duration-200 flex-shrink-0"
+          style={{
+            background: 'linear-gradient(135deg, var(--lw-accent), var(--lw-accent-alt))',
+            color: '#fff',
+            boxShadow: '0 4px 20px var(--lw-accent-glow)',
+          }}
+        >
+          <Car className="w-4 h-4" />
+          Book a New Car
+        </Link>
+      </div>
 
+      {/* ── Filter pills ── */}
+      <div className="flex gap-2 overflow-x-auto p-2 rounded-2xl bg-[var(--lw-bg-card)] border border-[var(--lw-border)]" style={{ scrollbarWidth: 'none' }}>
+        {filterDefs.map(f => {
+          const active = filter === f.key;
+          const count = countFor(f.key);
+          return (
+            <button
+              key={f.key}
+              onClick={() => setFilter(f.key)}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200 flex-shrink-0"
+              style={active ? {
+                background: 'var(--lw-accent-glow)',
+                color: 'var(--lw-accent)',
+                border: '1px solid var(--lw-border-strong)',
+                boxShadow: '0 4px 12px var(--lw-accent-glow)',
+              } : {
+                background: 'var(--lw-bg-secondary)',
+                color: 'var(--lw-text-secondary)',
+                border: '1px solid var(--lw-border)',
+              }}
+>>>>>>> origin/main
+            >
+              {f.label}
+              <span
+                className="text-[10px] font-black px-1.5 py-0.5 rounded-full"
+                style={active ? { background: 'var(--lw-border-strong)', color: 'var(--lw-accent)' } : { background: 'var(--lw-border)', color: 'var(--lw-text-muted)' }}
+              >
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── Content ── */}
       {loading ? (
-        <TableSkeleton rows={5} />
+        <TableSkeleton rows={4} />
       ) : filtered.length === 0 ? (
+<<<<<<< HEAD
         <div className="text-center py-20">
           <Package className="w-12 h-12 text-slate-300 mx-auto mb-3" />
           <h3 className="font-semibold text-[#0F172A] mb-1">No {filter !== 'all' ? filter : ''} bookings</h3>
@@ -385,6 +912,151 @@ export const MyBookingsPage: React.FC = () => {
               </div>
             </motion.div>
           ))}
+=======
+        <div className="flex flex-col items-center justify-center text-center py-20 rounded-3xl bg-[var(--lw-bg-card)] border border-[var(--lw-border)]">
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5 bg-[var(--lw-accent-glow)] border border-[var(--lw-border-strong)]">
+            <Calendar className="w-8 h-8 text-[var(--lw-accent)]" />
+          </div>
+          <h3 className="text-base font-bold text-[var(--lw-text-primary)] mb-2">{t.dashboard.noBookingsStatus}</h3>
+          <p className="text-sm mb-6 max-w-xs text-[var(--lw-text-secondary)]">{t.dashboard.noBookingsDesc}</p>
+          <Link to="/marketplace"
+            className="px-6 py-3 rounded-xl text-sm font-bold text-white transition-all"
+            style={{ background: 'linear-gradient(135deg, var(--lw-accent), var(--lw-accent-alt))', boxShadow: '0 6px 20px var(--lw-accent-glow)' }}>
+            {t.dashboard.exploreVehicles}
+          </Link>
+        </div>
+      ) : (
+        <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filtered.map(booking => {
+            const sc = statusConfig[booking.status] || statusConfig['pending'];
+            return (
+              <motion.div
+                key={booking.id}
+                variants={staggerItem}
+                className="rounded-[2rem] p-6 transition-all duration-300 group flex flex-col justify-between relative overflow-hidden bg-[var(--lw-bg-card)] border border-[var(--lw-border)] shadow-md animate-fade-in"
+                whileHover={{ y: -6, boxShadow: '0 20px 40px var(--lw-accent-glow)', borderColor: 'var(--lw-border-strong)' }}
+              >
+                <div>
+                  {/* Status & Booking ID */}
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-base font-extrabold text-[var(--lw-text-primary)] tracking-tight">Booking #{booking.id.slice(-6).toUpperCase()}</h4>
+                    <span className="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full"
+                      style={{ background: sc.bg, color: sc.color, border: `1px solid ${sc.border}` }}>
+                      {sc.label}
+                    </span>
+                  </div>
+
+                  {/* Dates & Duration */}
+                  <div className="flex items-center gap-2 text-xs font-semibold mb-6 text-[var(--lw-text-secondary)]">
+                    <Car className="w-3.5 h-3.5" />
+                    <Calendar className="w-3.5 h-3.5" />
+                    <span>{formatDate(booking.startDate)} – {formatDate(booking.endDate)} · {booking.totalDays} {t.booking.totalDays}</span>
+                  </div>
+
+                  {/* Amounts 2 Columns */}
+                  <div className="grid grid-cols-2 gap-4 py-4 mb-6" style={{ borderTop: '1px solid var(--lw-border)', borderBottom: '1px solid var(--lw-border)' }}>
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-wider mb-1 text-[var(--lw-text-muted)]">{t.dashboard.bookingAmount}</p>
+                      <p className="text-base font-extrabold text-[var(--lw-text-primary)]">{formatCurrency(booking.pricing.total)}</p>
+                    </div>
+                    <div className="pl-4" style={{ borderLeft: '1px solid var(--lw-border)' }}>
+                      <p className="text-[10px] font-bold uppercase tracking-wider mb-1 text-[var(--lw-text-muted)]">{t.dashboard.refundableDeposit}</p>
+                      <p className="text-base font-extrabold text-[var(--lw-text-primary)]">{formatCurrency(booking.pricing.deposit)}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action buttons */}
+                <div className="grid grid-cols-2 gap-3 mt-auto">
+                  <Link
+                    to={`/vehicles/${booking.vehicleId}`}
+                    className={cn(
+                      "py-2.5 rounded-xl text-xs font-bold text-center transition-all duration-200 flex items-center justify-center",
+                      ((booking.status !== 'completed' && booking.status !== 'pending' && booking.status !== 'confirmed' && booking.status !== 'active') || (booking.status === 'completed' && booking.reviewId))
+                        ? "col-span-2"
+                        : ""
+                    )}
+                    style={{
+                      background: 'var(--lw-bg-secondary)',
+                      color: 'var(--lw-accent)',
+                      border: '1px solid var(--lw-border)',
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.background = 'var(--lw-accent-glow)';
+                      e.currentTarget.style.borderColor = 'var(--lw-border-strong)';
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.background = 'var(--lw-bg-secondary)';
+                      e.currentTarget.style.borderColor = 'var(--lw-border)';
+                    }}
+                  >
+                    {t.dashboard.viewVehicle}
+                  </Link>
+
+                  {booking.status === 'active' && (
+                    <Link
+                      to={`/dashboard/bookings/${booking.id}/tracking`}
+                      className="py-2.5 rounded-xl text-xs font-bold text-center transition-all duration-200 flex items-center justify-center gap-1.5"
+                      style={{
+                        background: 'linear-gradient(135deg, #10B981, #059669)',
+                        color: '#fff',
+                        boxShadow: '0 4px 15px rgba(16,185,129,0.3)',
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.filter = 'brightness(1.1)';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.filter = 'none';
+                      }}
+                    >
+                      <Navigation className="w-3.5 h-3.5 transform rotate-45" />
+                      Track Delivery
+                    </Link>
+                  )}
+
+                  {booking.status === 'completed' && !booking.reviewId && (
+                    <button
+                      className="py-2.5 rounded-xl text-xs font-bold text-center transition-all duration-200"
+                      style={{
+                        background: 'linear-gradient(135deg, #F59E0B, #FBBF24)',
+                        color: '#0B0E17',
+                        boxShadow: '0 4px 15px rgba(245,158,11,0.3)',
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.filter = 'brightness(1.1)';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.filter = 'none';
+                      }}
+                    >
+                      {t.dashboard.leaveReview}
+                    </button>
+                  )}
+
+                  {(booking.status === 'pending' || booking.status === 'confirmed') && (
+                    <button
+                      onClick={() => handleCancel(booking.id)}
+                      className="py-2.5 rounded-xl text-xs font-bold text-center transition-all duration-200"
+                      style={{
+                        background: 'rgba(239,68,68,0.1)',
+                        color: '#EF4444',
+                        border: '1px solid rgba(239,68,68,0.2)',
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.background = 'rgba(239,68,68,0.2)';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.background = 'rgba(239,68,68,0.1)';
+                      }}
+                    >
+                      {t.dashboard.cancelBooking}
+                    </button>
+                  )}
+                </div>
+              </motion.div>
+            );
+          })}
+>>>>>>> origin/main
         </motion.div>
       )}
     </div>
@@ -420,22 +1092,38 @@ export const ProfilePage: React.FC = () => {
     toast.success('Profile updated!', 'Your changes have been saved.');
   };
 
+  const breadcrumbItems = [
+    { label: t.marketplace.home, href: '/' },
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: t.dashboard.profile }
+  ];
+
   return (
+<<<<<<< HEAD
     <div>
       <motion.h1 variants={fadeUp} initial="hidden" animate="visible" className="font-display text-2xl font-bold text-[#0F172A] mb-6">
         My Profile
       </motion.h1>
+=======
+    <div className="space-y-6 animate-fade-in">
+      <Breadcrumbs title={t.dashboard.myProfile} items={breadcrumbItems} backHref="/dashboard" backText="Back to Dashboard" />
+>>>>>>> origin/main
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Avatar Card */}
         <div className="luxury-card p-6 text-center">
           <div className="relative inline-block mb-4">
+<<<<<<< HEAD
             {user?.avatar ? (
               <img src={user.avatar} alt="" className="w-24 h-24 rounded-3xl object-cover mx-auto" />
             ) : (
               <div className="avatar w-24 h-24 rounded-3xl text-2xl mx-auto">{getInitials(user?.displayName || '')}</div>
             )}
             <button className="absolute -bottom-1 -right-1 w-8 h-8 bg-accent text-white rounded-xl flex items-center justify-center text-xs">✏️</button>
+=======
+            <Avatar src={user?.avatar} name={user?.displayName || ''} size="xl" className="mx-auto ring-4 ring-gold/20" />
+            <button className="absolute -bottom-1 -right-1 w-8 h-8 bg-accent text-white rounded-xl flex items-center justify-center text-xs shadow-md shadow-blue-500/30">✏️</button>
+>>>>>>> origin/main
           </div>
           <h3 className="font-display text-xl font-bold text-[#0F172A]">{user?.displayName}</h3>
           <p className="text-slate-400 text-sm">{user?.email}</p>
@@ -509,3 +1197,1150 @@ export const ProfilePage: React.FC = () => {
     </div>
   );
 };
+<<<<<<< HEAD
+=======
+
+// ====== SECURITY PAGE ======
+export const SecurityPage: React.FC = () => {
+  const toast = useToast();
+  const t = useT();
+  const [currentPw, setCurrentPw] = React.useState('');
+  const [newPw, setNewPw] = React.useState('');
+  const [confirmPw, setConfirmPw] = React.useState('');
+  const [saving, setSaving] = React.useState(false);
+  const [twoFA, setTwoFA] = React.useState(false);
+  const [showCurrent, setShowCurrent] = React.useState(false);
+  const [showNew, setShowNew] = React.useState(false);
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPw !== confirmPw) { toast.error(t.auth.passwordMismatch, ''); return; }
+    if (newPw.length < 8) { toast.error(t.auth.weakPassword, ''); return; }
+    setSaving(true);
+    await new Promise(r => setTimeout(r, 800));
+    setSaving(false);
+    setCurrentPw(''); setNewPw(''); setConfirmPw('');
+    toast.success(t.dashboard.passwordSuccess, t.dashboard.passwordSuccessDesc);
+  };
+
+  const breadcrumbItems = [
+    { label: t.marketplace.home, href: '/' },
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: t.dashboard.security }
+  ];
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <Breadcrumbs title={t.dashboard.securitySettings} items={breadcrumbItems} backHref="/dashboard" backText="Back to Dashboard" />
+      <div className="space-y-6">
+        {/* Change Password */}
+        <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm">
+          <div className="flex items-center gap-3 mb-6 border-b border-slate-200/30 dark:border-white/5 pb-4">
+            <div className="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center">
+              <Shield className="w-5 h-5 text-accent" />
+            </div>
+            <div>
+              <h3 className="font-display text-lg font-bold text-slate-800 dark:text-white">{t.dashboard.changePassword}</h3>
+              <p className="text-slate-400 dark:text-slate-500 text-xs font-semibold">{t.dashboard.changePasswordDesc}</p>
+            </div>
+          </div>
+          <form onSubmit={handleChangePassword} className="space-y-4 max-w-md">
+            <div>
+              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">{t.dashboard.currentPassword}</label>
+              <div className="relative">
+                <input type={showCurrent ? 'text' : 'password'} value={currentPw} onChange={e => setCurrentPw(e.target.value)} className="lux-input pr-12" placeholder="••••••••" required />
+                <button type="button" onClick={() => setShowCurrent(!showCurrent)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                  {showCurrent ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">{t.dashboard.newPassword}</label>
+              <div className="relative">
+                <input type={showNew ? 'text' : 'password'} value={newPw} onChange={e => setNewPw(e.target.value)} className="lux-input pr-12" placeholder="Min. 8 characters" required />
+                <button type="button" onClick={() => setShowNew(!showNew)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                  {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">{t.dashboard.confirmNewPassword}</label>
+              <input type="password" value={confirmPw} onChange={e => setConfirmPw(e.target.value)} className={`lux-input ${confirmPw && newPw !== confirmPw ? 'border-danger' : ''}`} placeholder="Repeat new password" required />
+              {confirmPw && newPw !== confirmPw && <p className="text-danger text-xs mt-1">{t.auth.passwordMismatch}</p>}
+            </div>
+            <motion.button type="submit" disabled={saving} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} className="btn-primary py-3 px-6 disabled:opacity-70 mt-2">
+              {saving ? t.dashboard.saving : t.dashboard.updatePasswordBtn}
+            </motion.button>
+          </form>
+        </div>
+
+        {/* Two-Factor Authentication */}
+        <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-green-500/10 rounded-xl flex items-center justify-center">
+                <CheckCircle className="w-5 h-5 text-success" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-800 dark:text-white text-sm">{t.dashboard.twoFactorAuth}</h3>
+                <p className="text-slate-400 dark:text-slate-500 text-xs font-semibold mt-0.5">{t.dashboard.twoFactorAuthDesc}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => { setTwoFA(!twoFA); toast.success(twoFA ? '2FA Disabled' : '2FA Enabled', twoFA ? 'Two-factor auth disabled.' : '2FA is now active.'); }}
+              className={`relative w-12 h-6 rounded-full transition-colors duration-300 ${twoFA ? 'bg-success' : 'bg-slate-200 dark:bg-slate-800'}`}
+            >
+              <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all duration-300 ${twoFA ? 'left-7' : 'left-1'}`} />
+            </button>
+          </div>
+        </div>
+
+        {/* Active Sessions */}
+        <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm">
+          <h3 className="font-display text-lg font-bold text-slate-800 dark:text-white mb-4">Active Sessions</h3>
+          <div className="space-y-3">
+            {[
+              { device: 'Chrome · Windows 11', location: 'Ho Chi Minh City, VN', time: 'Now', current: true },
+              { device: 'Safari · iPhone 15', location: 'Ho Chi Minh City, VN', time: '2 hours ago', current: false },
+            ].map((session, i) => (
+              <div key={i} className="flex items-center justify-between p-3.5 bg-slate-500/5 dark:bg-white/5 border border-slate-200/10 dark:border-white/5 rounded-2xl">
+                <div className="flex items-center gap-3">
+                  <div className={`w-2.5 h-2.5 rounded-full ${session.current ? 'bg-success shadow-lg shadow-green-500/40 animate-pulse' : 'bg-slate-300 dark:bg-slate-700'}`} />
+                  <div>
+                    <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{session.device}</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-0.5">{session.location} · {session.time}</p>
+                  </div>
+                </div>
+                {session.current ? (
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-green-700 bg-green-500/10 border border-green-200/10 px-2.5 py-1 rounded-lg">{t.dashboard.currentSession}</span>
+                ) : (
+                  <button className="text-xs font-bold text-red-500 hover:bg-red-500/10 px-3 py-1.5 rounded-xl border border-red-200/30 transition-colors" onClick={() => toast.success(t.dashboard.sessionRevoked)}>{t.dashboard.revokeBtn}</button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ====== DOCUMENTS PAGE ======
+export const DocumentsPage: React.FC = () => {
+  const { user } = useAuthStore();
+  const toast = useToast();
+  const t = useT();
+
+  const [backendDocs, setBackendDocs] = React.useState<any[]>([]);
+  const [loadingDocs, setLoadingDocs] = React.useState(true);
+  const [uploading, setUploading] = React.useState<string | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [selectedDocId, setSelectedDocId] = React.useState<string | null>(null);
+  const [localPreviews, setLocalPreviews] = React.useState<Record<string, string>>({});
+  const localPreviewsRef = React.useRef<Record<string, string>>({});
+  const [deletingDocId, setDeletingDocId] = React.useState<string | null>(null);
+  const [deletedDrivingLicense, setDeletedDrivingLicense] = React.useState(false);
+
+  const apiBaseUrl = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8080/api/v1';
+  const resolveDocumentUrl = (url?: string) => {
+    if (!url) return '';
+    if (url.startsWith('blob:') || url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+      return url;
+    }
+    return `${apiBaseUrl}${url}`;
+  };
+
+  const isPdfDocument = (url?: string) => Boolean(url && !url.startsWith('blob:') && url.toLowerCase().endsWith('.pdf'));
+
+  const fetchDocuments = React.useCallback(async () => {
+    if (!user) return;
+    try {
+      const data = await apiClient.get<any[]>('/users/documents');
+      setBackendDocs(data || []);
+      if ((data || []).some(doc => doc.documentType === 'DRIVING_LICENSE')) {
+        setDeletedDrivingLicense(false);
+      }
+    } catch (err) {
+      console.error('Failed to fetch documents', err);
+    } finally {
+      setLoadingDocs(false);
+    }
+  }, [user]);
+
+  React.useEffect(() => {
+    fetchDocuments();
+  }, [fetchDocuments]);
+
+  React.useEffect(() => {
+    localPreviewsRef.current = localPreviews;
+  }, [localPreviews]);
+
+  React.useEffect(() => () => {
+    Object.values(localPreviewsRef.current).forEach(url => URL.revokeObjectURL(url));
+  }, []);
+
+  const getDocInfo = (docId: string) => {
+    let matched: any = null;
+    if (docId === 'license') {
+      matched = backendDocs.find(d => d.documentType === 'DRIVING_LICENSE');
+    } else if (docId === 'id_card') {
+      matched = backendDocs.find(d => d.documentType === 'PASSPORT' || d.documentType === 'NATIONAL_ID');
+    } else if (docId === 'selfie') {
+      matched = backendDocs.find(d => d.documentType === 'SELFIE');
+    } else if (docId === 'insurance') {
+      matched = backendDocs.find(d => d.documentType === 'INSURANCE');
+    }
+
+    if (matched) {
+      return {
+        id: matched.id,
+        status: matched.status.toLowerCase(),
+        reason: matched.rejectionReason,
+        url: localPreviews[docId] || matched.url,
+        savedUrl: matched.url,
+        licenseClass: matched.licenseClass,
+        licenseNumber: matched.licenseNumber,
+        licenseFullName: matched.licenseFullName,
+        licenseDateOfBirth: matched.licenseDateOfBirth,
+        licenseResidence: matched.licenseResidence,
+        licenseNationality: matched.licenseNationality,
+        isLocalPreview: Boolean(localPreviews[docId])
+      };
+    }
+
+    if (localPreviews[docId]) {
+      return {
+        id: undefined,
+        status: 'pending',
+        reason: undefined,
+        url: localPreviews[docId],
+        savedUrl: undefined,
+        licenseClass: undefined,
+        licenseNumber: undefined,
+        licenseFullName: undefined,
+        licenseDateOfBirth: undefined,
+        licenseResidence: undefined,
+        licenseNationality: undefined,
+        isLocalPreview: true
+      };
+    }
+
+    // Fallback using user attributes
+    if (docId === 'license' && user?.drivingLicenseVerified && !deletedDrivingLicense) {
+      return {
+        id: undefined,
+        status: 'verified',
+        reason: undefined,
+        url: undefined,
+        savedUrl: undefined,
+        licenseClass: user?.licenseClass,
+        licenseNumber: user?.licenseNumber,
+        licenseFullName: undefined,
+        licenseDateOfBirth: undefined,
+        licenseResidence: undefined,
+        licenseNationality: undefined,
+        isLocalPreview: false
+      };
+    }
+    if (docId === 'id_card' && user?.kycVerified) {
+      return { id: undefined, status: 'verified', reason: undefined, url: undefined, savedUrl: undefined, isLocalPreview: false };
+    }
+
+    return {
+      id: undefined,
+      status: 'not_uploaded',
+      reason: undefined,
+      url: undefined,
+      savedUrl: undefined,
+      licenseClass: undefined,
+      licenseNumber: undefined,
+      licenseFullName: undefined,
+      licenseDateOfBirth: undefined,
+      licenseResidence: undefined,
+      licenseNationality: undefined,
+      isLocalPreview: false
+    };
+  };
+
+  const triggerFileInput = (docId: string) => {
+    setSelectedDocId(docId);
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedDocId) return;
+
+    let documentType = 'DRIVING_LICENSE';
+    if (selectedDocId === 'id_card') documentType = 'PASSPORT';
+    else if (selectedDocId === 'selfie') documentType = 'SELFIE';
+    else if (selectedDocId === 'insurance') documentType = 'INSURANCE';
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('documentType', documentType);
+
+    if (selectedDocId !== 'license') {
+      const previewUrl = URL.createObjectURL(file);
+      setLocalPreviews(prev => {
+        if (prev[selectedDocId]) URL.revokeObjectURL(prev[selectedDocId]);
+        return { ...prev, [selectedDocId]: previewUrl };
+      });
+    }
+    setUploading(selectedDocId);
+    try {
+      await apiClient.post<any>('/users/documents', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      if (selectedDocId === 'license') {
+        setDeletedDrivingLicense(false);
+      }
+      toast.success('Document uploaded!', 'Our team will review it within 24 hours.');
+      await fetchDocuments();
+      setLocalPreviews(prev => {
+        const current = prev[selectedDocId];
+        if (current) URL.revokeObjectURL(current);
+        const next = { ...prev };
+        delete next[selectedDocId];
+        return next;
+      });
+    } catch (err: any) {
+      console.error(err);
+      setLocalPreviews(prev => {
+        const current = prev[selectedDocId];
+        if (current) URL.revokeObjectURL(current);
+        const next = { ...prev };
+        delete next[selectedDocId];
+        return next;
+      });
+      toast.error('Upload failed', err.response?.data?.error || err.message || 'Failed to upload document.');
+    } finally {
+      setUploading(null);
+      setSelectedDocId(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleDeleteDrivingLicense = async (documentId?: string) => {
+    if (!documentId) {
+      toast.error('Cannot delete document', 'No saved driving license document was found.');
+      return;
+    }
+
+    const previousDocs = backendDocs;
+    setDeletingDocId(documentId);
+    setBackendDocs(prev => prev.filter(doc => doc.id !== documentId));
+    setDeletedDrivingLicense(true);
+    setLocalPreviews(prev => {
+      const current = prev.license;
+      if (current) URL.revokeObjectURL(current);
+      const next = { ...prev };
+      delete next.license;
+      return next;
+    });
+
+    try {
+      await apiClient.delete(`/users/documents/${documentId}`);
+      toast.success('Driving license deleted', 'You can upload a new driving license anytime.');
+    } catch (err: any) {
+      console.error(err);
+      setBackendDocs(previousDocs);
+      setDeletedDrivingLicense(false);
+      toast.error('Delete failed', err.message || 'Failed to delete driving license.');
+    } finally {
+      setDeletingDocId(null);
+    }
+  };
+
+  const docs = [
+    { id: 'license', title: t.dashboard.docLicenseTitle, desc: t.dashboard.docLicenseDesc, icon: '🪪', required: true },
+    { id: 'id_card', title: t.dashboard.docIdTitle, desc: t.dashboard.docIdDesc, icon: '🛂', required: true },
+    { id: 'selfie', title: t.dashboard.docSelfieTitle, desc: t.dashboard.docSelfieDesc, icon: '🤳', required: true },
+    { id: 'insurance', title: t.dashboard.docInsuranceTitle, desc: t.dashboard.docInsuranceDesc, icon: '📋', required: false },
+  ];
+
+  const statusBadge = (status: string, reason?: string) => {
+    if (status === 'verified') return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-green-200/20 text-green-600 bg-green-500/10">{t.dashboard.verifiedDoc}</span>;
+    if (status === 'pending') return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-yellow-200/20 text-yellow-600 bg-yellow-500/10">{t.dashboard.underReviewDoc}</span>;
+    if (status === 'rejected') {
+      return (
+        <span
+          title={reason || 'Rejected'}
+          className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-red-200/20 text-red-600 bg-red-500/10 cursor-help"
+        >
+          ❌ Rejected {reason ? `: ${reason}` : ''}
+        </span>
+      );
+    }
+    return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-slate-200/30 text-slate-500 bg-slate-500/5">{t.dashboard.notUploadedDoc}</span>;
+  };
+
+  const breadcrumbItems = [
+    { label: t.marketplace.home, href: '/' },
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: t.dashboard.documents }
+  ];
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        style={{ display: 'none' }}
+        accept="image/*,application/pdf"
+      />
+
+      <Breadcrumbs title={t.dashboard.myDocuments} items={breadcrumbItems} backHref="/dashboard" backText="Back to Dashboard" />
+
+      <div className={`p-4 rounded-[1.5rem] flex items-center gap-3 border ${user?.verified
+        ? 'bg-green-500/10 border-green-500/20 text-green-800 dark:text-green-300'
+        : 'bg-yellow-500/10 border-yellow-500/20 text-yellow-800 dark:text-yellow-300'
+        }`}>
+        {user?.verified ? (
+          <><Shield className="w-6 h-6 text-success flex-shrink-0" /><div><p className="font-bold text-sm">{t.dashboard.identityVerified}</p><p className="text-xs opacity-80 mt-0.5">{t.common.success}</p></div></>
+        ) : (
+          <><AlertCircle className="w-6 h-6 text-yellow-600 flex-shrink-0" /><div><p className="font-bold text-sm">{t.dashboard.verificationRequired}</p><p className="text-xs opacity-80 mt-0.5">{t.dashboard.verificationRequiredDesc}</p></div></>
+        )}
+      </div>
+
+      {loadingDocs ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-accent" />
+        </div>
+      ) : (
+        <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-4">
+          {docs.map(doc => {
+            const docInfo = getDocInfo(doc.id);
+            return (
+              <motion.div key={doc.id} variants={staggerItem} className="glass border border-slate-200/50 dark:border-white/5 p-5 rounded-[2rem] shadow-sm">
+                <div className="flex items-start gap-4">
+                  <div className="text-3xl flex-shrink-0">{doc.icon}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 flex-wrap mb-1">
+                      <h3 className="font-bold text-slate-800 dark:text-white text-sm">{doc.title}</h3>
+                      {doc.required && <span className="text-[9px] font-bold text-red-500 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-md uppercase tracking-wider">{t.dashboard.requiredDoc}</span>}
+                      {statusBadge(docInfo.status, docInfo.reason)}
+                    </div>
+                    <p className="text-slate-400 dark:text-slate-500 text-xs font-semibold mb-3">{doc.desc}</p>
+                    {docInfo.status !== 'verified' && docInfo.status !== 'pending' && (
+                      <motion.button
+                        whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
+                        onClick={() => triggerFileInput(doc.id)}
+                        disabled={uploading === doc.id}
+                        className="btn-ghost border border-slate-200 dark:border-white/10 text-xs px-4 py-2.5 rounded-xl flex items-center gap-2 disabled:opacity-60 font-bold"
+                      >
+                        {uploading === doc.id ? (<><Clock className="w-3.5 h-3.5 animate-spin" /> {t.dashboard.uploading}</>) : (<><FileText className="w-3.5 h-3.5" /> {t.dashboard.uploadFile}</>)}
+                      </motion.button>
+                    )}
+                    <div className="flex flex-col gap-3 mt-2">
+                      {doc.id !== 'license' && docInfo.url && (
+                        <>
+                          {!docInfo.isLocalPreview && (
+                            <a
+                              href={resolveDocumentUrl(docInfo.url)}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-xs text-accent hover:underline inline-flex items-center gap-1 font-bold"
+                            >
+                              <Eye className="w-3.5 h-3.5" /> {t.dashboard.viewVehicle || 'View Document'}
+                            </a>
+                          )}
+
+                          <div className="mt-1 relative rounded-2xl overflow-hidden border border-slate-200/50 dark:border-white/10 max-w-sm shadow-sm bg-slate-500/5 max-h-56">
+                            {!isPdfDocument(docInfo.url) ? (
+                              <img
+                                src={resolveDocumentUrl(docInfo.url)}
+                                alt={doc.title}
+                                className="w-full h-auto object-cover max-h-56 rounded-2xl transition-all duration-300 hover:scale-105"
+                              />
+                            ) : (
+                              <div className="p-4 flex items-center gap-3">
+                                <span className="text-2xl">📄</span>
+                                <div className="min-w-0">
+                                  <p className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">{docInfo.url.split('/').pop()}</p>
+                                  <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">PDF Document</span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </>
+                      )}
+                      {doc.id === 'license' && docInfo.id && (
+                        <motion.button
+                          whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
+                          onClick={() => handleDeleteDrivingLicense(docInfo.id)}
+                          disabled={deletingDocId === docInfo.id || uploading === doc.id}
+                          className="w-fit border border-red-200/40 bg-red-500/5 text-red-600 dark:text-red-400 text-xs px-4 py-2.5 rounded-xl flex items-center gap-2 disabled:opacity-60 font-bold hover:bg-red-500/10 transition-colors"
+                        >
+                          {deletingDocId === docInfo.id ? (
+                            <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Deleting...</>
+                          ) : (
+                            <><Trash2 className="w-3.5 h-3.5" /> Delete driving license</>
+                          )}
+                        </motion.button>
+                      )}
+                    </div>
+                    {doc.id === 'license' && docInfo.status === 'verified' && (
+                      <div className="mt-3 p-3 bg-slate-500/5 dark:bg-white/5 border border-slate-200/10 dark:border-white/5 rounded-2xl max-w-2xl">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Tên trên bằng lái</span>
+                            <p className="text-sm font-bold text-slate-800 dark:text-slate-100 mt-0.5 break-words">{docInfo.licenseFullName || 'N/A'}</p>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Ngày sinh</span>
+                            <p className="text-sm font-bold text-slate-800 dark:text-slate-100 mt-0.5 break-words">{docInfo.licenseDateOfBirth || 'N/A'}</p>
+                          </div>
+                          <div className="sm:col-span-2">
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Nơi cư trú</span>
+                            <p className="text-sm font-bold text-slate-800 dark:text-slate-100 mt-0.5 break-words">{docInfo.licenseResidence || 'N/A'}</p>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Quốc tịch</span>
+                            <p className="text-sm font-bold text-slate-800 dark:text-slate-100 mt-0.5 break-words">{docInfo.licenseNationality || 'N/A'}</p>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Hạng bằng lái (Class)</span>
+                            <p className="text-sm font-extrabold text-amber-500 dark:text-gold mt-0.5">{docInfo.licenseClass || user?.licenseClass || 'N/A'}</p>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Số bằng lái (No.)</span>
+                            <p className="text-sm font-bold text-slate-800 dark:text-slate-100 mt-0.5">{docInfo.licenseNumber || user?.licenseNumber || 'N/A'}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </motion.div>
+      )}
+    </div>
+  );
+};
+
+// ====== PAYMENT HISTORY PAGE ======
+export const PaymentHistoryPage: React.FC = () => {
+  const { user } = useAuthStore();
+  const [loading, setLoading] = React.useState(true);
+  const [paymentData, setPaymentData] = React.useState<any[]>([]);
+  const t = useT();
+  const isVi = t.common.loading.includes('Đang');
+  const isJa = t.common.loading.includes('読み込み');
+
+  React.useEffect(() => {
+    if (!user) return;
+    bookingService.getByUser(user.id).then(bookings => {
+      // Create mock payment history from bookings
+      const payments = bookings.map(b => ({
+        id: `pay-${b.id}`,
+        bookingId: b.id,
+        method: 'card',
+        amount: b.pricing.total,
+        status: b.status === 'cancelled' ? 'refunded' : 'succeeded',
+        createdAt: b.createdAt || new Date().toISOString()
+      }));
+      setPaymentData(payments);
+      setLoading(false);
+    });
+  }, [user]);
+
+  const handleDownloadInvoice = async (bookingId: string) => {
+    try {
+      const response = await apiClient.post<any>(`/invoices/generate/${bookingId}`, {});
+      const invoice = response?.data;
+      const invoiceId = invoice?.id;
+      if (invoiceId) {
+        const token = localStorage.getItem('luxeway_access_token');
+        const fileRes = await fetch(`http://localhost:8080/invoices/download/${invoiceId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        const blob = await fileRes.blob();
+        const link = document.createElement('a');
+        link.href = window.URL.createObjectURL(blob);
+        link.download = `invoice-${invoice.invoiceNumber || invoiceId}.pdf`;
+        link.click();
+      }
+    } catch (error) {
+      console.error('Failed to download invoice', error);
+    }
+  };
+
+  const statusStyle = (status: string) => {
+    if (status === 'succeeded') return 'text-green-700 bg-green-500/10 border-green-200/20';
+    if (status === 'refunded') return 'text-blue-700 bg-blue-500/10 border-blue-200/20';
+    if (status === 'pending') return 'text-yellow-700 bg-yellow-500/10 border-yellow-200/20';
+    return 'text-red-700 bg-red-500/10 border-red-200/20';
+  };
+
+  const methodIcon = (m: string) => ({ card: '💳', vnpay: '🏦', stripe: '🔵', wallet: '💰' }[m] || '💳');
+
+  const totalPaid = paymentData.filter((p: any) => p.status === 'succeeded').reduce((s: number, p: any) => s + p.amount, 0);
+  const totalRefunded = paymentData.filter((p: any) => p.status === 'refunded').reduce((s: number, p: any) => s + p.amount, 0);
+
+  const getHeaders = () => {
+    if (isVi) return ['Mã Giao Dịch', 'Đơn Đặt Xe', 'Phương Thức', 'Ngày', 'Số Tiền', 'Trạng Thái', 'Hóa Đơn'];
+    if (isJa) return ['取引ID', '予約', '支払い方法', '日付', '金額', 'ステータス', '請求書'];
+    return ['Transaction ID', 'Booking', 'Method', 'Date', 'Amount', 'Status', 'Invoice'];
+  };
+
+  const breadcrumbItems = [
+    { label: t.marketplace.home, href: '/' },
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: t.dashboard.payments }
+  ];
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <Breadcrumbs title={t.dashboard.payments} items={breadcrumbItems} backHref="/dashboard" backText="Back to Dashboard" />
+
+      {!loading && paymentData.length > 0 && (
+        <div className="grid grid-cols-3 gap-4">
+          {[
+            { label: t.dashboard.totalPaid, value: formatCurrency(totalPaid), color: 'text-slate-800 dark:text-white' },
+            { label: t.dashboard.totalRefunded, value: formatCurrency(totalRefunded), color: 'text-blue-600 dark:text-blue-400' },
+            { label: t.dashboard.transactionsCount, value: paymentData.length.toString(), color: 'text-accent' },
+          ].map(s => (
+            <div key={s.label} className="glass border border-slate-200/50 dark:border-white/5 p-4 rounded-2xl text-center">
+              <p className={`text-lg font-extrabold ${s.color}`}>{s.value}</p>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-1">{s.label}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {loading ? (
+        <TableSkeleton rows={5} />
+      ) : paymentData.length === 0 ? (
+        <div className="glass border border-slate-200/50 dark:border-white/5 text-center py-16 rounded-[2rem]">
+          <CreditCard className="w-12 h-12 text-slate-300 dark:text-slate-700 mx-auto mb-3" />
+          <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-1">{t.dashboard.noPayments}</h3>
+          <p className="text-slate-400 text-xs font-medium">{t.dashboard.noPaymentsDesc}</p>
+        </div>
+      ) : (
+        <div className="glass border border-slate-200/50 dark:border-white/5 rounded-[2.5rem] overflow-hidden shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-slate-500/5 border-b border-slate-200/30 dark:border-white/5">
+                <tr>
+                  {getHeaders().map(h => (
+                    <th key={h} className="text-left px-4 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200/20 dark:divide-white/5">
+                {paymentData.map((p: any) => (
+                  <tr key={p.id} className="hover:bg-slate-500/5 transition-colors">
+                    <td className="px-4 py-3.5 text-xs font-bold font-mono text-slate-800 dark:text-slate-100">#{p.id.slice(-8).toUpperCase()}</td>
+                    <td className="px-4 py-3.5 text-xs text-slate-500 font-semibold">#{p.bookingId.slice(-6).toUpperCase()}</td>
+                    <td className="px-4 py-3.5 text-sm font-semibold text-slate-700 dark:text-slate-200">{methodIcon(p.method)} <span className="text-xs text-slate-500 capitalize">{p.method}</span></td>
+                    <td className="px-4 py-3.5 text-xs text-slate-400 dark:text-slate-500 font-bold">{formatDate(p.createdAt, 'short')}</td>
+                    <td className="px-4 py-3.5 text-sm font-extrabold text-slate-800 dark:text-white">{formatCurrency(p.amount)}</td>
+                    <td className="px-4 py-3.5"><span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border uppercase tracking-wider ${statusStyle(p.status)}`}>{p.status}</span></td>
+                    <td className="px-4 py-3.5">
+                      <button
+                        onClick={() => handleDownloadInvoice(p.bookingId)}
+                        className="text-xs text-accent hover:underline font-bold"
+                      >
+                        {t.dashboard.invoiceBtn}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ====== SETTINGS PAGE ======
+export const SettingsPage: React.FC = () => {
+  const toast = useToast();
+  const t = useT();
+  const isVi = t.common.loading.includes('Đang');
+  const isJa = t.common.loading.includes('読み込み');
+  const { theme, language, setLanguage, currency, setCurrency } = useUIStore();
+  const [prefs, setPrefs] = React.useState({
+    emailBooking: true, emailMarketing: false, emailReview: true, pushNotif: true,
+    language: language, currency: currency,
+  });
+
+  const handleSave = () => {
+    setLanguage(prefs.language as any);
+    setCurrency(prefs.currency);
+    toast.success(t.dashboard.settingsSaved, t.dashboard.settingsSavedDesc);
+  };
+
+  const Toggle: React.FC<{ value: boolean; onChange: () => void; label: string; desc?: string }> = ({ value, onChange, label, desc }) => (
+    <div className="flex items-center justify-between py-4">
+      <div>
+        <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{label}</p>
+        {desc && <p className="text-xs text-slate-400 dark:text-slate-500 font-medium mt-0.5">{desc}</p>}
+      </div>
+      <button onClick={onChange} className={`relative w-12 h-6 rounded-full transition-colors duration-300 flex-shrink-0 ml-4 ${value ? 'bg-accent' : 'bg-slate-200 dark:bg-slate-800'}`}>
+        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all duration-300 ${value ? 'left-7' : 'left-1'}`} />
+      </button>
+    </div>
+  );
+
+  const breadcrumbItems = [
+    { label: t.marketplace.home, href: '/' },
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: t.dashboard.settings }
+  ];
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <Breadcrumbs title={t.dashboard.settings} items={breadcrumbItems} backHref="/dashboard" backText="Back to Dashboard" />
+      <div className="space-y-6">
+        <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm">
+          <h3 className="font-display text-lg font-bold text-slate-800 dark:text-white mb-1">{t.dashboard.emailNotifications}</h3>
+          <p className="text-slate-400 dark:text-slate-500 text-xs font-semibold mb-4 border-b border-slate-200/30 dark:border-white/5 pb-2">{t.dashboard.emailNotificationsDesc}</p>
+          <div className="divide-y divide-slate-200/20 dark:divide-white/5">
+            <Toggle value={prefs.emailBooking} onChange={() => setPrefs(p => ({ ...p, emailBooking: !p.emailBooking }))} label={t.dashboard.bookingUpdates} desc={t.dashboard.bookingUpdatesDesc} />
+            <Toggle value={prefs.emailReview} onChange={() => setPrefs(p => ({ ...p, emailReview: !p.emailReview }))} label={t.dashboard.reviewRequests} desc={t.dashboard.reviewRequestsDesc} />
+            <Toggle value={prefs.emailMarketing} onChange={() => setPrefs(p => ({ ...p, emailMarketing: !p.emailMarketing }))} label={t.dashboard.promoOffers} desc={t.dashboard.promoOffersDesc} />
+          </div>
+        </div>
+
+        <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm">
+          <h3 className="font-display text-lg font-bold text-slate-800 dark:text-white mb-1">{t.dashboard.pushNotifications}</h3>
+          <p className="text-slate-400 dark:text-slate-500 text-xs font-semibold mb-4 border-b border-slate-200/30 dark:border-white/5 pb-2">{t.dashboard.pushNotificationsDesc}</p>
+          <div className="divide-y divide-slate-200/20 dark:divide-white/5">
+            <Toggle value={prefs.pushNotif} onChange={() => setPrefs(p => ({ ...p, pushNotif: !p.pushNotif }))} label={t.dashboard.inAppNotifications} desc={t.dashboard.inAppNotificationsDesc} />
+          </div>
+        </div>
+
+        <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm">
+          <h3 className="font-display text-lg font-bold text-slate-800 dark:text-white mb-4">{t.dashboard.displayPreferences}</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">{isVi ? 'Ngôn Ngữ' : isJa ? '言語' : 'Language'}</label>
+              <select value={prefs.language} onChange={e => setPrefs(p => ({ ...p, language: e.target.value as any }))} className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100">
+                <option value="en">English</option>
+                <option value="vi">Tiếng Việt</option>
+                <option value="ja">日本語</option>
+                <option value="ko">한국어</option>
+                <option value="zh">中文</option>
+                <option value="fr">Français</option>
+                <option value="de">Deutsch</option>
+                <option value="es">Español</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">{isVi ? 'Tiền Tệ' : isJa ? '通貨' : 'Currency'}</label>
+              <select value={prefs.currency} onChange={e => setPrefs(p => ({ ...p, currency: e.target.value }))} className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100">
+                <option value="USD">USD ($)</option>
+                <option value="VND">VND (₫)</option>
+                <option value="EUR">EUR (€)</option>
+                <option value="GBP">GBP (£)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} onClick={handleSave} className="btn-primary py-3 px-8 font-bold">
+          {t.dashboard.saveSettingsBtn}
+        </motion.button>
+      </div>
+    </div>
+  );
+};
+
+// ====== MY REVIEWS PAGE ======
+export const MyReviewsPage: React.FC = () => {
+  const { user } = useAuthStore();
+  const [reviews, setReviews] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const t = useT();
+
+  React.useEffect(() => {
+    if (!user) return;
+    reviewService.getByUser(user.id).then(userReviews => {
+      setReviews(userReviews);
+      setLoading(false);
+    });
+  }, [user]);
+
+  const breadcrumbItems = [
+    { label: t.marketplace.home, href: '/' },
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: t.dashboard.myReviews }
+  ];
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <Breadcrumbs title={t.dashboard.myReviews} items={breadcrumbItems} backHref="/dashboard" backText="Back to Dashboard" />
+      {loading ? <TableSkeleton rows={4} /> : reviews.length === 0 ? (
+        <div className="flex flex-col items-center justify-center text-center py-16 px-4 rounded-[2rem] bg-[var(--lw-bg-card)] border border-[var(--lw-border)] shadow-xl max-w-lg mx-auto">
+          <div className="w-16 h-16 rounded-full bg-indigo-500/10 flex items-center justify-center mb-6 border border-indigo-500/20">
+            <Star className="w-8 h-8 text-[var(--lw-accent)]" />
+          </div>
+          <h3 className="text-base font-semibold text-[var(--lw-text-primary)] mb-2 select-none">
+            {t.dashboard.noReviewsYet}
+          </h3>
+          <p className="text-sm text-[var(--lw-text-secondary)] mb-6 max-w-[280px] text-center">
+            {t.dashboard.noReviewsYetDesc}
+          </p>
+          <a href="/marketplace" className="btn-primary bg-[var(--lw-accent)] hover:bg-[var(--lw-accent-alt)] text-white shadow-lg font-bold transition-all px-6 py-3 rounded-xl lw-btn-interactive">
+            {t.dashboard.exploreVehicles}
+          </a>
+        </div>
+      ) : (
+        <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-4">
+          {reviews.map((r: any) => (
+            <motion.div key={r.id} variants={staggerItem} className="glass border border-slate-200/50 dark:border-white/5 p-5 rounded-[2rem] hover-lift hover-glow shadow-sm transition-all duration-300">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="flex">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className={`w-4 h-4 ${i < Math.round(r.rating) ? 'fill-yellow-400 text-yellow-400' : 'text-slate-200 dark:text-slate-700'}`} />
+                  ))}
+                </div>
+                <span className="text-sm font-extrabold text-slate-800 dark:text-white">{r.rating}/5</span>
+                <span className="text-xs text-slate-400 dark:text-slate-500 font-semibold">· {formatDate(r.createdAt, 'short')}</span>
+              </div>
+              <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed italic mb-3 font-medium">"{r.comment}"</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">{t.dashboard.vehicleId}: <span className="font-mono text-slate-800 dark:text-slate-200">#{r.vehicleId.slice(-6).toUpperCase()}</span></p>
+              {r.ownerResponse && (
+                <div className="mt-4 p-3.5 bg-slate-500/5 dark:bg-white/5 border border-slate-200/10 dark:border-white/5 rounded-2xl">
+                  <p className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">{t.dashboard.ownerReplied}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 italic font-medium">"{r.ownerResponse}"</p>
+                </div>
+              )}
+            </motion.div>
+          ))}
+        </motion.div>
+      )}
+    </div>
+  );
+};
+
+// ====== LUXEWALLET PAGE ======
+export const LuxeWalletPage: React.FC = () => {
+  const t = useT();
+  const { user, refreshUser } = useAuthStore();
+  const toast = useToast();
+  const [topUpAmount, setTopUpAmount] = useState<number>(100000);
+  const [customAmount, setCustomAmount] = useState<string>('100000');
+  const [method, setMethod] = useState<'card' | 'stripe' | 'vnpay'>('card');
+  const [processing, setProcessing] = useState(false);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [txLoading, setTxLoading] = useState(true);
+
+  const fetchTransactions = async () => {
+    if (!user) return;
+    try {
+      const txs = await paymentService.getByUser(user.id);
+      setTransactions(txs);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setTxLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTransactions();
+    refreshUser();
+  }, [user?.id]);
+
+  const handlePresetSelect = (amt: number) => {
+    setTopUpAmount(amt);
+    setCustomAmount(amt.toString());
+  };
+
+  const handleCustomAmountChange = (val: string) => {
+    const numeric = val.replace(/\D/g, '');
+    setCustomAmount(numeric);
+    setTopUpAmount(Number(numeric) || 0);
+  };
+
+  const handleTopUpSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (topUpAmount < 10000) {
+      toast.warning(t.wallet.invalidAmount, t.wallet.invalidAmountDesc);
+      return;
+    }
+    setProcessing(true);
+    try {
+      const returnUrl = window.location.origin + '/payment/vnpay/return';
+      const result = await paymentService.topUpWallet(topUpAmount, method, returnUrl);
+      if (result.success) {
+        if (result.paymentUrl) {
+          window.location.href = result.paymentUrl;
+        } else {
+          toast.success(t.wallet.topUpSuccess, t.wallet.topUpSuccessDesc.replace('{amount}', formatCurrency(topUpAmount)));
+          setCustomAmount('100000');
+          setTopUpAmount(100000);
+          await refreshUser();
+          await fetchTransactions();
+        }
+      } else {
+        toast.error(t.wallet.topUpFailed, t.wallet.topUpFailedDesc);
+      }
+    } catch (err: any) {
+      toast.error(t.common.error, err.message || t.wallet.topUpFailedDesc);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const balance = user?.walletBalance || 0;
+
+  const breadcrumbItems = [
+    { label: t.marketplace.home, href: '/' },
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: t.wallet.title }
+  ];
+
+  return (
+    <div className="space-y-8 animate-fade-in">
+      <Breadcrumbs title={t.wallet.title} items={breadcrumbItems} backHref="/dashboard" backText="Back to Dashboard" />
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left Columns - Card & Top Up Form */}
+        <div className="lg:col-span-2 space-y-6">
+
+          {/* Card & Quick Summary */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* Deluxe Wallet Card */}
+            <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A] p-6 text-white shadow-xl min-h-[190px] flex flex-col justify-between border border-white/10 hover-glow">
+              {/* Shiny overlay effects */}
+              <div className="absolute -right-16 -top-16 w-48 h-48 rounded-full bg-white/5 blur-xl pointer-events-none" />
+              <div className="absolute -left-16 -bottom-16 w-48 h-48 rounded-full bg-blue-500/10 blur-xl pointer-events-none" />
+
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-xs uppercase tracking-widest text-slate-400 font-bold">LuxeWallet</p>
+                  <p className="text-[10px] text-gold font-bold uppercase tracking-wider mt-0.5">{t.wallet.premiumBalance}</p>
+                </div>
+                <div className="text-2xl font-extrabold text-slate-300 tracking-wider">LW</div>
+              </div>
+
+              <div className="my-2">
+                <p className="text-xs text-slate-400 font-semibold">{t.wallet.availableBalance}</p>
+                <h3 className="text-3xl font-display font-extrabold mt-1 tracking-tight text-white">{formatCurrency(balance)}</h3>
+              </div>
+
+              <div className="flex justify-between items-center text-xs text-slate-400 border-t border-white/10 pt-3">
+                <span className="font-bold truncate max-w-[150px]">{user?.displayName}</span>
+                <span className="bg-green-500/20 text-green-400 border border-green-500/30 px-2.5 py-0.5 rounded-lg font-bold text-[9px] uppercase tracking-wider">ACTIVE</span>
+              </div>
+            </div>
+
+            {/* Quick stats / info card */}
+            <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm flex flex-col justify-between">
+              <div>
+                <h4 className="font-bold text-slate-800 dark:text-white text-sm mb-3">{t.wallet.whyTitle}</h4>
+                <ul className="space-y-2 text-xs text-slate-500 dark:text-slate-400 font-semibold">
+                  <li className="flex items-center gap-2">
+                    <span className="text-green-500 text-sm">✓</span> {t.wallet.whyBenefit1}
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-green-500 text-sm">✓</span> {t.wallet.whyBenefit2}
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-green-500 text-sm">✓</span> {t.wallet.whyBenefit3}
+                  </li>
+                </ul>
+              </div>
+              <div className="mt-5 pt-3 border-t border-slate-200/40 dark:border-white/10 flex items-center justify-between text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">
+                <span>{t.wallet.verificationStatus}</span>
+                <span className="text-success font-bold flex items-center gap-1">
+                  <Shield className="w-3.5 h-3.5" /> {t.wallet.secureWallet}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Top Up Wallet Form */}
+          <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm">
+            <h3 className="font-display text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+              💰 {t.wallet.topUpTitle}
+            </h3>
+
+            <form onSubmit={handleTopUpSubmit} className="space-y-6">
+              {/* Preset buttons */}
+              <div>
+                <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2.5">
+                  {t.wallet.quickSelect}
+                </label>
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                  {[50000, 100000, 200000, 500000, 1000000, 2000000].map(amt => (
+                    <button
+                      key={amt}
+                      type="button"
+                      onClick={() => handlePresetSelect(amt)}
+                      className={`py-2.5 px-1 text-xs rounded-xl border-2 font-bold transition-all duration-300 text-center ${topUpAmount === amt
+                        ? 'border-accent bg-blue-500/10 text-accent font-extrabold shadow-sm'
+                        : 'border-slate-200/50 dark:border-white/5 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-white/15'
+                        }`}
+                    >
+                      {formatCurrency(amt).replace('₫', '').trim()} ₫
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Input for custom amount */}
+              <div>
+                <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">
+                  {t.wallet.enterAmount}
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={customAmount}
+                    onChange={e => handleCustomAmountChange(e.target.value)}
+                    className="lux-input text-lg font-bold pr-12 text-slate-800 dark:text-white bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-white/5"
+                    placeholder={t.wallet.enterAmountPlaceholder}
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 font-extrabold text-slate-400 text-sm">VND</span>
+                </div>
+                {topUpAmount > 0 && (
+                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-1.5 italic font-medium">
+                    {t.wallet.formattedAmount}: <strong className="text-slate-600 dark:text-slate-300 font-bold">{formatCurrency(topUpAmount)}</strong>
+                  </p>
+                )}
+              </div>
+
+              {/* Payment Methods */}
+              <div>
+                <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2.5">
+                  {t.wallet.selectMethod}
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {[
+                    { id: 'card', label: 'Credit Card', desc: 'Simulated 100% success', icon: '💳' },
+                    { id: 'stripe', label: 'Stripe', desc: 'Simulated 100% success', icon: '🔵' },
+                    { id: 'vnpay', label: 'VNPay Sandbox', desc: 'Real VNPay Gateway Redirect', icon: '🏦' },
+                  ].map(m => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => setMethod(m.id as any)}
+                      className={`p-4 rounded-[1.5rem] border-2 text-left transition-all duration-300 ${method === m.id
+                        ? 'border-accent bg-blue-500/10'
+                        : 'border-slate-200/50 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/10 bg-slate-500/5'
+                        }`}
+                    >
+                      <div className="text-2xl mb-1.5">{m.icon}</div>
+                      <p className="text-xs font-bold text-slate-800 dark:text-white">{m.label}</p>
+                      <p className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold mt-0.5">{m.desc}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Button Top-up */}
+              <motion.button
+                type="submit"
+                disabled={processing || topUpAmount < 10000}
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                className="btn-primary w-full py-4 font-bold disabled:opacity-50 mt-4 rounded-2xl flex items-center justify-center text-sm"
+              >
+                {processing ? (
+                  <><Loader2 className="w-5 h-5 animate-spin mr-2" /> {t.wallet.processing}</>
+                ) : (
+                  <>{t.wallet.numpadTopUp.replace('{amount}', formatCurrency(topUpAmount))}</>
+                )}
+              </motion.button>
+            </form>
+          </div>
+        </div>
+
+        {/* Right Column - Recent Transactions */}
+        <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm flex flex-col h-full">
+          <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-200/30 dark:border-white/5">
+            <h3 className="font-display text-lg font-bold text-slate-800 dark:text-white">{t.wallet.transactions}</h3>
+            <button onClick={fetchTransactions} className="text-xs text-accent hover:underline font-bold">
+              {t.wallet.refresh}
+            </button>
+          </div>
+
+          {txLoading ? (
+            <div className="space-y-4 py-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="flex gap-3 items-center">
+                  <div className="w-8 h-8 rounded-full bg-slate-200/20 skeleton animate-pulse" />
+                  <div className="flex-1 space-y-1.5">
+                    <div className="h-3 bg-slate-200/20 rounded w-2/3 skeleton animate-pulse" />
+                    <div className="h-2 bg-slate-200/20 rounded w-1/3 skeleton animate-pulse" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : transactions.length === 0 ? (
+            <div className="text-center py-12 flex-1 flex flex-col items-center justify-center">
+              <span className="text-4xl mb-3">📜</span>
+              <p className="text-slate-400 text-xs font-semibold">{t.wallet.noTransactions}</p>
+            </div>
+          ) : (
+            <div className="space-y-4 divide-y divide-slate-200/20 dark:divide-white/5 overflow-y-auto max-h-[420px] pr-1">
+              {transactions.map((tx, idx) => {
+                const isTopUp = tx.bookingId === null || tx.description?.toLowerCase().includes('top up') || tx.transactionId?.startsWith('TOPUP');
+                const isSuccess = tx.status === 'succeeded';
+                const isFailed = tx.status === 'failed';
+
+                return (
+                  <div key={tx.id || idx} className="flex items-start gap-3 pt-4 first:pt-0">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold ${isFailed
+                      ? 'bg-red-500/10 text-danger'
+                      : isTopUp
+                        ? 'bg-green-500/10 text-green-600'
+                        : 'bg-blue-500/10 text-accent'
+                      }`}>
+                      {isFailed ? '✕' : isTopUp ? '↓' : '↑'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+                        {tx.description || (isTopUp ? t.wallet.walletTopUp : t.wallet.bookingPayment)}
+                      </p>
+                      <p className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold mt-0.5">
+                        {tx.createdAt ? formatDate(tx.createdAt, 'short') : ''} · <span className="uppercase">{tx.method}</span>
+                      </p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className={`text-xs font-extrabold ${isFailed
+                        ? 'text-slate-400 line-through'
+                        : isTopUp
+                          ? 'text-green-600'
+                          : 'text-red-500'
+                        }`}>
+                        {isTopUp ? '+' : '-'}{formatCurrency(tx.amount)}
+                      </p>
+                      <span className={`text-[8px] font-extrabold uppercase tracking-widest px-1.5 py-0.2 rounded border mt-1 inline-block ${isSuccess
+                        ? 'bg-green-500/10 text-green-600 border-green-200/20'
+                        : isFailed
+                          ? 'bg-red-500/10 text-red-600 border-red-200/20'
+                          : 'bg-yellow-500/10 text-yellow-600 border-yellow-200/20'
+                        }`}>
+                        {tx.status}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+>>>>>>> origin/main

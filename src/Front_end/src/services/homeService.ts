@@ -1,5 +1,6 @@
 // ====== HOME SERVICE – Landing Page API Client ======
 import apiClient from './api';
+import { resolveImageUrl } from '@/utils';
 
 const BASE = '/home';
 
@@ -42,6 +43,7 @@ export interface TrendingVehicle {
   instantBook: boolean;
   city: string;
   isOwnerVerified: boolean;
+  vehicleType?: string;
 }
 
 export interface CategoryData {
@@ -114,16 +116,7 @@ async function fetchWithDiagnostics<T>(endpoint: string): Promise<T | null> {
   }
 }
 
-const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8080/api/v1';
 
-const resolveImageUrl = (url: string | null | undefined): string => {
-  if (!url) return '';
-  if (url.startsWith('/uploads') || url.startsWith('uploads')) {
-    const cleanUrl = url.startsWith('/') ? url : '/' + url;
-    return `${API_BASE}${cleanUrl}`;
-  }
-  return url;
-};
 
 // ======= Service methods — return null on failure (no fake zeros) =======
 export const homeService = {
@@ -142,10 +135,21 @@ export const homeService = {
   getTrending: async (): Promise<TrendingVehicle[] | null> => {
     const data = await fetchWithDiagnostics<TrendingVehicle[]>(`${BASE}/trending`);
     if (!data) return null;
-    return data.map(v => ({
-      ...v,
-      thumbnailUrl: resolveImageUrl(v.thumbnailUrl)
-    }));
+    const motorbikeCategories = [
+      'MOTORBIKE', 'SCOOTER', 'AUTOMATIC_SCOOTER', 'MANUAL_MOTORCYCLE',
+      'SPORT_BIKE', 'TOURING_BIKE', 'ADVENTURE_BIKE', 'CLASSIC_BIKE', 'ELECTRIC_BIKE',
+      'motorbike', 'scooter', 'automatic_scooter', 'manual_motorcycle',
+      'sport_bike', 'touring_bike', 'adventure_bike', 'classic_bike', 'electric_bike'
+    ];
+    return data.map(v => {
+      const inferredType = v.vehicleType?.toLowerCase() ||
+        (motorbikeCategories.includes(v.category) ? 'motorbike' : 'car');
+      return {
+        ...v,
+        vehicleType: inferredType,
+        thumbnailUrl: resolveImageUrl(v.thumbnailUrl)
+      };
+    });
   },
 
   getCategories: (): Promise<CategoryData | null> =>
@@ -177,6 +181,30 @@ export const homeService = {
 
   getFaqs: (): Promise<FAQ[] | null> =>
     fetchWithDiagnostics<FAQ[]>(`${BASE}/faqs`),
+
+  getHomeVehicles: async (): Promise<{ popular: TrendingVehicle[]; latest: TrendingVehicle[] } | null> => {
+    const data = await fetchWithDiagnostics<{ popular: TrendingVehicle[]; latest: TrendingVehicle[] }>(`${BASE}/vehicles`);
+    if (!data) return null;
+    const motorbikeCategories = [
+      'MOTORBIKE', 'SCOOTER', 'AUTOMATIC_SCOOTER', 'MANUAL_MOTORCYCLE',
+      'SPORT_BIKE', 'TOURING_BIKE', 'ADVENTURE_BIKE', 'CLASSIC_BIKE', 'ELECTRIC_BIKE',
+      'motorbike', 'scooter', 'automatic_scooter', 'manual_motorcycle',
+      'sport_bike', 'touring_bike', 'adventure_bike', 'classic_bike', 'electric_bike'
+    ];
+    const normalize = (v: TrendingVehicle) => {
+      const inferredType = v.vehicleType?.toLowerCase() ||
+        (motorbikeCategories.includes(v.category) ? 'motorbike' : 'car');
+      return {
+        ...v,
+        vehicleType: inferredType,
+        thumbnailUrl: resolveImageUrl(v.thumbnailUrl)
+      };
+    };
+    return {
+      popular: (data.popular || []).map(normalize),
+      latest: (data.latest || []).map(normalize)
+    };
+  },
 };
 
 export default homeService;

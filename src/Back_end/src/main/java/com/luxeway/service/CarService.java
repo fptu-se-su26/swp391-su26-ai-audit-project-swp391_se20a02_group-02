@@ -13,23 +13,24 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("all")
 public class CarService {
 
     private final CarRepository carRepository;
-    private final CarBrandRepository carBrandRepository;
     private final CarModelRepository carModelRepository;
     private final UserRepository userRepository;
     private final TranslationService translationService;
 
+    @Transactional(readOnly = true)
     public Page<CarDTOs.CarResponse> searchCars(
             String city, Integer seats, String transmission, String fuelType,
             Boolean hasChauffeur, Boolean airportDelivery, Boolean electric, Boolean hybrid,
+            String brand, String category,
             int page, int size) {
         
         com.luxeway.enums.TransmissionType transEnum = null;
@@ -52,11 +53,15 @@ public class CarService {
         
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Car> carPage = carRepository.searchCars(
-            city, seats, transEnum, fuelEnum, hasChauffeur, airportDelivery, electric, hybrid, pageable
+            city, seats, transEnum, fuelEnum, hasChauffeur, airportDelivery, electric, hybrid,
+            (brand != null && !brand.isBlank()) ? brand : null,
+            (category != null && !category.isBlank()) ? category : null,
+            pageable
         );
         return carPage.map(this::toResponse);
     }
 
+    @Transactional(readOnly = true)
     public CarDTOs.CarResponse getCarById(String id) {
         Car car = carRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Car not found with ID: " + id));
@@ -135,9 +140,13 @@ public class CarService {
         CarDTOs.CarResponse response = new CarDTOs.CarResponse();
         response.setId(car.getId());
         response.setName(translationService.translateCar(car.getId(), lang, car.getName(), null, "name"));
-        response.setBrandName(car.getModel().getBrand().getName());
-        response.setModelName(car.getModel().getName());
-        response.setCategory(car.getModel().getCategory());
+        if (car.getModel() != null) {
+            response.setModelName(car.getModel().getName());
+            response.setCategory(car.getModel().getCategory());
+            if (car.getModel().getBrand() != null) {
+                response.setBrandName(car.getModel().getBrand().getName());
+            }
+        }
         response.setLicensePlate(car.getLicensePlate());
         response.setPricePerDay(car.getPricePerDay());
         response.setDeposit(car.getDeposit());

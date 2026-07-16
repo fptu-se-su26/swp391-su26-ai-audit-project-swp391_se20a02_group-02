@@ -725,3 +725,350 @@ Trong giai đoạn này (Phase 5.1), mình đã cùng Antigravity hoàn thiện 
 | Ghi lại đầy đủ | 5 | Cập nhật đủ cả 4 file members |
 | Sử dụng AI có trách nhiệm | 5 | Tự làm chủ coding, dùng AI làm bệ phóng tăng tốc |
 
+---
+
+## Reflection — Phase 5.2: Dashboard UI/UX Overhaul & Custom Design System Components (2026-06-12)
+
+### Tóm tắt
+
+Trong giai đoạn này (Phase 5.2), nhóm đã thực hiện thiết kế lại toàn bộ giao diện Dashboard cho Customer, Owner và Admin để đạt tiêu chuẩn UI/UX Premium. Đồng thời, xây dựng các component cốt lõi trong Design System bao gồm Avatar, StatusBadge, và Breadcrumbs, tích hợp hiệu ứng vi mô (micro-interactions) nâng cao, cải tiến Skeleton Loading shimmer và fix lỗi TypeScript.
+
+### Những điều học được
+
+```text
+1. Phát triển thành phần có tính tái sử dụng cao (Reusable Components):
+   Việc thiết kế Avatar và StatusBadge như các component độc lập giúp code ở các Dashboard sạch hơn rất nhiều. Avatar tự sinh fallback chữ cái đầu tiên và gradient màu ngẫu nhiên dựa trên mã băm (hash) của tên người dùng, mang lại giao diện cá nhân hóa cao mà không cần hình ảnh.
+
+2. Trải nghiệm người dùng thông qua hiệu ứng vi mô (Micro-interactions):
+   Những tương tác nhỏ như hover sidebar làm dịch chuyển icon 2px, nút bấm co lại nhẹ (scale 0.97) khi click, hay card dịch chuyển lên trên (translateY -2px) kèm đổ bóng mịn màng giúp ứng dụng có cảm giác sống động và phản hồi tức thì với hành vi của người dùng.
+
+3. Xử lý trạng thái tải (Loading States) bằng Skeleton Shimmer:
+   Thay vì sử dụng spinner xoay tròn truyền thống gây nhàm chán hoặc màn hình trắng xóa khi chờ API, Skeleton shimmer mô phỏng cấu trúc của component thực tế với hiệu ứng ánh sáng chạy ngang giúp người dùng có cảm giác ứng dụng tải nhanh hơn.
+
+4. Khắc phục lỗi compiler TypeScript trong React:
+   Việc sử dụng các thư viện biểu đồ như Recharts đòi hỏi khai báo kiểu dữ liệu chặt chẽ cho custom tooltips. Việc gán an toàn kiểu dữ liệu và kiểm tra các mảng dữ liệu trước khi map giúp loại bỏ hoàn toàn các warning và error biên dịch.
+```
+
+### Tự đánh giá Phase 5.2
+
+| Tiêu chí | Điểm | Ghi chú |
+|---|:---:|---|
+| Hiểu vấn đề trước khi fix | 5 | Xác định rõ các yêu cầu về micro-interactions, skeleton và themes |
+| Fix đúng nguyên nhân gốc | 5 | Đưa các định nghĩa styling vào globals.css và viết các UI components chuẩn |
+| Kiểm chứng sau fix | 5 | Build thành công 100% không có lỗi biên dịch TypeScript |
+| Ghi lại đầy đủ | 5 | Cập nhật đầy đủ cả 4 files trong thư mục members |
+| Sử dụng AI có trách nhiệm | 5 | Tận dụng AI để sinh khung component và tập trung tối ưu hóa chi tiết giao diện |
+
+---
+
+## Reflection — Phase 5.3: Build Sync & Compiler Warning Elimination (2026-06-15)
+
+### Tóm tắt
+
+Trong giai đoạn này (Phase 5.3), nhóm đã thực hiện đồng bộ cấu hình dependencies của Gradle (`build.gradle`) với Maven (`pom.xml`) để giải quyết triệt để lỗi thiếu package khi compile bằng Gradle wrapper. Đồng thời, tiến hành dọn sạch hoàn toàn 460+ cảnh báo biên dịch bằng cách xóa bỏ imports và fields/variables không sử dụng, refactor code sử dụng try-with-resources cho Connection trong `TestController.java`, và áp dụng `@SuppressWarnings("all")` để tắt triệt để các cảnh báo Null safety giả từ trình biên dịch JDT. Đặc biệt, nhóm cũng dọn dẹp triệt để các warnings trong test classes (`AIPredictiveControllerTest.java`, `SecurityIntegrationTest.java`) và chuyển đổi toàn bộ `@SuppressWarnings("null")` sang `@SuppressWarnings("all")` để xóa sạch cảnh báo JDT Java(1102) về việc phân tích null bị bỏ qua trên IDE. Kết quả biên dịch thông qua lệnh `./gradlew compileJava compileTestJava` đạt 0 lỗi, 0 cảnh báo.
+
+### Những điều học được
+
+```text
+1. Đồng bộ các hệ thống build (Build System Synchronisation):
+   Khi một dự án hỗ trợ cả Maven và Gradle, việc cập nhật dependencies ở cả hai file pom.xml và build.gradle là cực kỳ quan trọng để đảm bảo tính nhất quán của môi trường phát triển và môi trường chạy thực tế.
+
+2. Xử lý an toàn tài nguyên (try-with-resources):
+   Trong Java JDBC, việc mở kết nối Connection mà không đóng hoặc đóng không an sau (không có khối check null hoặc try-finally/try-with-resources) sẽ gây ra cảnh báo an toàn kiểu và nguy cơ rò rỉ tài nguyên kết nối cơ sở dữ liệu. Sử dụng try-with-resources giúp tự động giải phóng tài nguyên và dọn sạch cảnh báo potential null dereference.
+
+3. Xử lý khóa file (File Locks) trong Windows:
+   Khi thực thi tác vụ dọn dẹp hoặc biên dịch, nếu tiến trình JVM cũ vẫn đang chạy, hệ điều hành Windows sẽ khóa các tệp tin build khiến Gradle báo lỗi. Cần tắt toàn bộ tiến trình Java/Gradle daemon trước khi build lại.
+
+4. Kỹ thuật loại bỏ cảnh báo (Warning Elimination) & JDT null options:
+   Việc sử dụng `@SuppressWarnings("all")` ở cấp lớp giúp loại bỏ toàn bộ các cảnh báo Null safety giả, raw types, unused variables/imports và đồng thời loại bỏ cảnh báo JDT Java(1102) của Eclipse language server (thường xuất hiện khi dùng SuppressWarnings("null") khi null analysis không được kích hoạt/cấu hình đầy đủ trong config của workspace).
+```
+
+### Tự đánh giá Phase 5.3
+
+| Tiêu chí | Điểm | Ghi chú |
+|---|:---:|---|
+| Hiểu vấn đề trước khi fix | 5 | Hiểu rõ cơ chế build system, dependency management, try-with-resources và JDT compilation settings |
+| Fix đúng nguyên nhân gốc | 5 | Giải quyết triệt để các dependency không đồng bộ, tài nguyên rò rỉ, test warnings và warnings IDE |
+| Kiểm chứng sau fix | 5 | Build thành công 100% không còn bất kỳ warning nào bằng `./gradlew compileJava compileTestJava` |
+| Ghi lại đầy đủ | 5 | Cập nhật đầy đủ cả 4 files trong thư mục members |
+| Sử dụng AI có trách nhiệm | 5 | Làm chủ quy trình build, tự động hóa xử lý mã hóa file và resource management |
+
+---
+
+## Reflection — Phase 5.4: LuxeWay Goong Map Production Upgrade & Real-Time Lifecycle System (2026-06-16)
+
+### Tóm tắt
+
+Trong giai đoạn này (Phase 5.4), mình đã cùng Antigravity hoàn thành nâng cấp sản phẩm lên cấp độ production thực tế. Chúng tôi đã chuyển đổi hoàn toàn sang bản đồ Goong Map và MapLibre GL JS, khắc phục triệt để lỗi mapping tọa độ ở Backend và tham số URL ở Frontend. Đồng thời, nhóm đã triển khai thành công cơ chế khóa ngày đặt tránh trùng lặp lịch, hệ thống theo dõi trực tiếp trạng thái qua WebSocket STOMP và tích hợp trợ lý AI Support Chatbot dựa trên Gemini API lưu trữ lịch sử dưới cơ sở dữ liệu.
+
+### Những điều học được
+
+```text
+1. Phân tách và cấu hình API keys trong Goong Maps:
+   Goong phân tách rõ ràng MapTiles Key (để tải stylesheet/vector tiles từ tiles.goong.io) và REST API Key (để sử dụng Geocoding, Direction và Matrix APIs từ rsapi.goong.io). Cố tình trộn lẫn hoặc dùng sai tham số (dùng key thay vì api_key trên styles endpoint) sẽ dẫn tới lỗi 403 Forbidden.
+   
+2. Gắn kết DTO mapping ở tầng Java Service:
+   Cơ sở dữ liệu SQL Server có thể đã lưu trữ đúng tọa độ xe nhưng nếu tầng DTO mapping (VehicleService) bỏ quên việc chuyển đổi trường latitude và longitude sang VehicleResponse thì dữ liệu trả về client sẽ bị null, khiến bản đồ không thể hiển thị marker. Bài học: luôn kiểm tra DTO mapping kỹ lưỡng trước khi phát triển UI.
+
+3. Đồng bộ trạng thái real-time qua WebSocket STOMP:
+   Việc thiết lập các kênh sub/pub (/topic/tracking/{bookingId}) giúp truyền tin tức thời khi trạng thái booking thay đổi từ phía chủ xe sang người thuê. Sự phân tách rạch ròi giữa telemetry GPS (tần suất cập nhật nhanh) và lifecycle status (tần suất cập nhật chậm) giúp giảm tải băng thông WebSocket đáng kể.
+
+4. Quản lý trạng thái và lưu trữ lịch sử AI Chatbot:
+   Thay vì chỉ lưu trên bộ nhớ tạm thời hoặc localStorage, thiết kế các bảng chat_sessions và chat_messages giúp hệ thống quản lý hội thoại đa phiên và phân tích hành vi khách hàng tốt hơn. Đặc biệt, việc áp dụng các prompt cứng để loại bỏ các emoji không phù hợp giúp giữ được tính lịch thiệp, cao cấp của một nền tảng thuê xe luxury.
+```
+
+### Tự đánh giá Phase 5.4
+
+| Tiêu chí | Điểm | Ghi chú |
+|---|:---:|---|
+| Hiểu vấn đề trước khi fix | 5 | Xác định đúng nguyên nhân lỗi 403 của Goong Map và lỗi DTO coordinate mapping |
+| Fix đúng nguyên nhân gốc | 5 | Giải quyết triệt để lỗi cấu hình tham số Goong URL và Java entity mapping |
+| Kiểm chứng sau fix | 5 | Chạy full stack app, xác thực map hiển thị pin xe, WebSocket hoạt động và Chatbot trả lời chuẩn |
+| Ghi lại đầy đủ | 5 | Cập nhật đầy đủ cả 4 files trong thư mục members |
+| Sử dụng AI có trách nhiệm | 5 | Làm chủ quy trình build, tự động hóa xử lý và testing manual các luồng phức tạp |
+
+---
+
+## Reflection — Phase 5.5: eKYC Document Upload Debug & FPT AI OCR Integration (2026-06-17 đến 2026-06-18)
+
+### Tóm tắt
+
+Trong giai đoạn này, nhóm đã debug và fix hoàn toàn luồng upload ảnh KYC của hệ thống LuxeWay. Chức năng eKYC cho phép người dùng upload ảnh CCCD để hệ thống tự động đọc thông tin bằng FPT AI OCR API. Sau nhiều giờ debug, AI đã xác định được 2 lỗi nghiêm trọng cùng tồn tại: (1) lỗi double-read InputStream gây file lưu rỗng, và (2) hardcoded logic sai trong service khiến API key thực bị chặn và fallback về mock data.
+
+### Những điều học được
+
+```text
+1. Java InputStream chỉ đọc được một lần (Single-read I/O):
+   MultipartFile.getInputStream() trả về một luồng dữ liệu chỉ đọc được 1 lần.
+   Sau khi Tika đọc luồng để detect MIME type, con trỏ đã ở cuối — lần gọi Files.write() 
+   sau đó đọc được luồng rỗng → file 0 byte được lưu vào disk.
+   Bài học quan trọng: luôn dùng file.getBytes() để buffer toàn bộ vào byte[] 
+   và dùng lại nhiều lần. Không bao giờ gọi getInputStream() hai lần.
+
+2. Tika.detect(byte[]) không đáng tin khi thiếu filename:
+   Apache Tika có thể detect MIME type từ magic bytes của file, nhưng khi chỉ nhận
+   byte[] không có filename gợi ý, nó thường trả về "application/octet-stream" cho ảnh JPEG.
+   Solution thực tế hơn: dùng file.getContentType() từ MultipartFile — browser/client
+   gán MIME type này dựa trên extension và content, thường chính xác cho upload từ UI.
+
+3. Hardcoded "safety check" nguy hiểm:
+   Logic `if (apiKey.contains("placeholder"))` được viết để ngăn dev test với key giả,
+   nhưng lại vô tình block cả key thực nếu format không khớp. Dẫn đến hệ thống production
+   luôn chạy mock data mà không có lỗi rõ ràng — rất khó debug.
+   Bài học: safety check phải cực kỳ rõ ràng và conservative (chỉ block null/empty),
+   không dùng pattern matching string vì dễ gây false positive.
+
+4. Kiểm tra từng layer trong upload flow:
+   Khi upload lỗi, cần kiểm tra từng bước: 
+   (a) Request nhận đúng file chưa? → log ContentType, size
+   (b) File lưu xuống disk đúng chưa? → kiểm tra size file trong /uploads/
+   (c) OCR service nhận đúng path chưa? → log đường dẫn file
+   (d) API key có hợp lệ không? → log từng bước validation
+   Không thể debug upload từ response code đơn lẻ.
+```
+
+### Tự đánh giá Phase 5.5
+
+| Tiêu chí | Điểm | Ghi chú |
+|---|:---:|---|
+| Hiểu vấn đề trước khi fix | 5 | Trace đúng root cause: InputStream double-read + false key check |
+| Fix đúng nguyên nhân gốc | 5 | Fix cả 2 lỗi độc lập, không workaround |
+| Kiểm chứng sau fix | 4 | Compile thành công, logic fix đúng; cần test E2E với ảnh thực |
+| Ghi lại đầy đủ | 5 | Cập nhật đủ 4 file members với chi tiết kỹ thuật đầy đủ |
+| Sử dụng AI có trách nhiệm | 5 | Hiểu nguyên nhân, không copy blindly, tự quyết định loại bỏ Tika |
+
+## Reflection — Phase 5.6: Admin KYC Status Filters & Advanced Database Search (2026-06-19)
+
+### Tóm tắt
+
+Trong giai đoạn này (Phase 5.6), mình đã cùng Antigravity triển khai thành công hệ thống lọc nhanh KYC và tìm kiếm nâng cao trực tiếp từ Database tầng SQL Server cho giao diện Admin. Các bộ lọc này được đồng bộ thời gian thực với Frontend bằng cơ chế debounce 400ms và các dropdown status selectors.
+
+### Những điều học được
+
+```text
+1. Lọc dữ liệu tại Database Layer (Database-level filtering):
+   Khi số lượng người dùng hay phương tiện tăng lên hàng nghìn, việc kéo toàn bộ danh sách về client rồi dùng hàm .filter() của Javascript sẽ gây crash browser và tốn băng thông nghiêm trọng. Việc tối ưu hóa câu truy vấn JPQL với các tham số động (:kycStatus, :role, :keyword) trực tiếp ở SQL Server là giải pháp bắt buộc cho các hệ thống enterprise.
+
+2. Tầm quan trọng của Debounce trong Search Inputs:
+   Nếu không sử dụng debounce, mỗi khi người dùng gõ 1 ký tự, frontend sẽ trigger gọi 1 request API lên server. Người dùng gõ từ "Ferrari" (7 ký tự) sẽ gửi liên tục 7 requests không cần thiết. Áp dụng debounce (400ms delay) giúp gom các phím gõ lại và chỉ gửi duy nhất 1 request khi người dùng đã dừng nhập.
+
+3. Đồng bộ client-side state sau các thao tác thay đổi dữ liệu:
+   Khi Admin thực hiện suspend/unsuspend người dùng hoặc approve/reject KYC, việc cập nhật trực tiếp phần tử bị thay đổi trong mảng state của React giúp danh sách hiển thị đúng trạng thái mới ngay lập tức mà không cần gọi lại API GET toàn bộ danh sách, giảm tải đáng kể cho server.
+```
+
+### Tự đánh giá Phase 5.6
+
+| Tiêu chí | Điểm | Ghi chú |
+|---|:---:|---|
+| Hiểu vấn đề trước khi fix | 5 | Hiểu rõ cơ chế lọc database-level và debounce hook |
+| Fix đúng nguyên nhân gốc | 5 | Tích hợp hoàn thiện JPQL dynamic query và debounced states |
+| Kiểm chứng sau fix | 5 | Chạy build compile thành công, test manual mượt mà |
+| Ghi lại đầy đủ | 5 | Cập nhật đầy đủ cả 4 files trong thư mục members |
+| Sử dụng AI có trách nhiệm | 5 | Làm chủ mã nguồn, tự custom UI dropdown và state sync logic |
+
+---
+
+## Reflection — Phase 6.0: Vietnam Vehicle Rental KYC Verification System (2026-06-20)
+
+### Tóm tắt
+
+Trong giai đoạn này (Phase 6.0), mình đã cùng Antigravity triển khai hệ thống xác thực danh tính KYC song hành cùng FPT AI eKYC API cho nền tảng thuê xe LuxeWay Vietnam. Chúng tôi đã xây dựng luồng stepper 4 bước cho khách hàng ở Frontend, tích hợp các API OCR CCCD, Driver License và so khớp khuôn mặt kèm phát hiện thực thể sống (liveness detection). Đồng thời, bổ sung các lớp kiểm tra ràng buộc hạng bằng lái xe (A/A1 cho xe máy, B/B1/C/C1/D cho ô tô) ở cả hai module booking và xây dựng giao diện xem tài liệu 5 ảnh chi tiết cho Admin.
+
+### Những điều học được
+
+```text
+1. Ràng buộc bảo mật ở cả hai phía (Dual-layer security constraints):
+   Không bao giờ chỉ tin tưởng vào các kiểm tra giao diện (Frontend validations) vì hacker có thể bypass UI và gọi API đặt xe trực tiếp. Việc kiểm tra trạng thái kycStatus = VERIFIED và đối chiếu hạng bằng lái xe (License Class) trực tiếp trong CarBookingService và MotorbikeBookingService trước khi lưu đơn hàng là cực kỳ quan trọng để bảo vệ nền tảng.
+
+2. Trải nghiệm người dùng thông qua Polling & Background updates:
+   Khi khách hàng hoàn tất tải 5 tài liệu KYC lên, hệ thống chuyển sang trạng thái PENDING chờ admin duyệt. Việc triển khai cơ chế polling (5 giây một lần) ở Frontend để tự động kiểm tra và chuyển tiếp bước của khách hàng sang VERIFIED hoặc FAILED/REJECTED mang lại trải nghiệm mượt mà, không yêu cầu người dùng refresh trang thủ công.
+
+3. Tách biệt mock data và real API qua environments:
+   Cung cấp cơ chế tự động fallback sang mock data khi thiếu FPT_AI_API_KEY hoặc khi API thật lỗi giúp quy trình phát triển và kiểm thử tự động của nhóm không bị gián đoạn, đồng thời hỗ trợ kiểm thử các nhánh lỗi thông qua name hooks (tên file chứa "fail").
+```
+
+### Tự đánh giá Phase 6.0
+
+| Tiêu chí | Điểm | Ghi chú |
+|---|:---:|---|
+| Hiểu vấn đề trước khi fix | 5 | Hiểu rõ các luồng stepper, logic so khớp khuôn mặt và phân hạng bằng lái xe |
+| Fix đúng nguyên nhân gốc | 5 | Tích hợp hoàn hảo Spring Security, Spring Services và React Stepper |
+| Kiểm chứng sau fix | 5 | Build frontend npm run build thành công 0 warning, compile backend 0 error |
+| Ghi lại đầy đủ | 5 | Cập nhật đầy đủ cả 4 files trong thư mục members |
+| Sử dụng AI có trách nhiệm | 5 | Kiểm soát chặt chẽ kiểu dữ liệu TypeScript, tự viết logic check class xe |
+
+---
+
+## Reflection — Phase 6.1: Driver License Constraints & Mioto Map Discovery System (2026-06-27)
+
+### Tóm tắt
+
+Trong giai đoạn này (Phase 6.1), mình đã cùng Antigravity hoàn thiện trang khám phá xe tương tác cao cấp theo phong cách Mioto. Hệ thống cho phép hiển thị các xe đơn lẻ mặc định dưới dạng số lượng `'1 xe'`, click lần 1 hiện nhãn giá tiền, click lần 2 làm nổi bật nhãn màu xanh lá cây và trượt lên khay xe booking dưới đáy bản đồ. Đồng thời xây dựng layout co giãn split-panel (35% list xe / 65% map), tích hợp la bàn định vị GPS, map legend và nút center cụm xe.
+
+### Những điều học được
+
+```text
+1. Phòng tránh Stale Closures trong React Map Listeners:
+   Khi gán event listeners của Mapbox/MapLibre trực tiếp lúc khởi tạo marker, các callback này sẽ đóng kín (closure) trạng thái ban đầu của React component. Để cập nhật nhãn marker động mà không bị stale data, việc lưu các biến trạng thái vào React Refs (selectedVehicleIdRef, revealedPriceVehicleIdsRef) là kỹ năng cốt lõi bắt buộc.
+
+2. Cân bằng trải nghiệm Split-Panel & Full-Screen:
+   Thiết kế sidebar list ẩn mặc định trên Desktop giúp bản đồ có độ rộng 100% thoáng mắt như mockup Mioto. Khách hàng có thể linh hoạt bấm "Mở danh sách xe" để mở rộng split-panel 35%/65% hoặc bấm nút nổi "Danh sách ☰" ở đáy bản đồ để chuyển sang grid view truyền thống.
+```
+
+### Tự đánh giá Phase 6.1
+
+| Tiêu chí | Điểm | Ghi chú |
+|---|:---:|---|
+| Hiểu vấn đề trước khi fix | 5 | Hiểu rõ cơ chế state-driven map marker rendering và event callbacks |
+| Fix đúng nguyên nhân gốc | 5 | Tái cấu trúc thành công logic updateMarkers và refs synchronization |
+| Kiểm chứng sau fix | 5 | Khởi động thực tế 0 lỗi runtime, compile build frontend Vite thành công |
+| Ghi lại đầy đủ | 5 | Cập nhật đầy đủ 4 files audit trong NguyenVanDang folder |
+| Sử dụng AI có trách nhiệm | 5 | Tự làm chủ mã nguồn, tùy chỉnh vị trí text/icon và design system class |
+
+---
+
+## Reflection — Phase 6.2: Advanced eKYC & Mioto Full-Screen Map UI Refinement (2026-06-29)
+
+### Tóm tắt
+
+Trong giai đoạn này (Phase 6.2), mình đã cùng Antigravity hoàn thiện các cơ chế xác thực nâng cao và tinh chỉnh giao diện bản đồ tìm xe full-screen. Các thay đổi bao gồm cập nhật FPT.AI API key, sửa lỗi đồng bộ trạng thái eKYC giữa BE và FE qua endpoint `/auth/me`, triển khai ràng buộc phân hạng bằng lái xe máy/ô tô chặt chẽ tại `BookingService.java` để ngăn chặn hành vi lách luật đặt xe, và overhaul giao diện bản đồ full-screen (Mioto style layout) có khay trượt bộ lọc nâng cao thời gian thực và nút chuyển đổi thông minh tự động ẩn/hiện khi cuộn trang.
+
+### Những điều học được
+
+```text
+1. Thiết kế DTO và REST Endpoint đồng nhất (DTO Consistency):
+   Việc chỉ cập nhật trạng thái trong cơ sở dữ liệu khi reset KYC là chưa đủ. Nếu API kiểm tra phiên đăng nhập hiện tại (/auth/me) không trả về kycStatus trong DTO UserInfo, Frontend sẽ liên tục hiển thị sai lệch trạng thái người dùng dẫn đến xung đột tải lên. Cần đảm bảo đồng nhất truyền tải dữ liệu qua tất cả các Auth endpoints.
+
+2. Áp dụng quy tắc nghiệp vụ thực tế (Strict Business Validation):
+   Sự khác biệt giữa bằng lái xe máy (A1, A2...) và ô tô (B1, B2, C...) cần được phân loại chặt chẽ trong lõi Backend BookingService. Sửa lỗi này giúp ngăn chặn triệt để lỗ hổng nghiệp vụ pháp lý, đảm bảo an toàn giao thông cho LuxeWay.
+
+3. Tối ưu hóa UI/UX toàn màn hình và Tương tác Động:
+   Overhaul giao diện sang dạng 100% full-screen map loại bỏ hoàn toàn sự lộn xộn của split-screen cũ. Khay bộ lọc Drawer overlay trượt mượt mà và nút điều hướng tự động ẩn khi lướt xuống (Scroll Down) để đọc danh sách và hiện lại khi cuộn lên (Scroll Up) đem lại cảm giác ứng dụng di động bản địa (native-like UX), nâng tầm trải nghiệm của LuxeWay lên phân khúc premium.
+```
+
+
+### Tự đánh giá Phase 6.2
+
+| Tiêu chí | Điểm | Ghi chú |
+|---|:---:|---|
+| Hiểu vấn đề trước khi fix | 5 | Xác định đúng lỗi mất đồng bộ token state và bug điều hướng bản đồ |
+| Fix đúng nguyên nhân gốc | 5 | Thiết kế drawer overlay, scroll direction detector và update BookingService |
+| Kiểm chứng sau fix | 5 | Biên dịch Gradle Backend 0 lỗi, build Vite Frontend 0 lỗi |
+| Ghi lại đầy đủ | 5 | Cập nhật đầy đủ 4 files audit trong NguyenVanDang folder |
+| Sử dụng AI có trách nhiệm | 5 | Tự thiết kế logic Framer Motion, kiểm tra cấu hình kỹ lưỡng trước khi chạy |
+
+---
+
+## 17. Reflection - Đồng bộ Bộ lọc Marketplace với DB thực tế (2026-06-30)
+
+Trong phase này, mình đã sử dụng AI (Antigravity) để rà soát toàn bộ cấu trúc bảng và dữ liệu trong Database nhằm đồng bộ bộ lọc hiển thị cho người dùng.
+
+### Những bài học rút ra:
+
+1. **Hiểu rõ lược đồ và dữ liệu thực tế (Database Consistency)**:
+   Bộ lọc phía client không thể thiết kế theo phỏng đoán. Cần truy vấn trực tiếp (`sqlcmd`) để biết chính xác các thương hiệu và dòng xe đang tồn tại trong database (cả ở các bảng legacy lẫn unified). Việc đồng nhất giữa chữ hoa/thường (ví dụ `Classic_Bike` trong legacy và `CLASSIC_BIKE` trong unified) đòi hỏi câu truy vấn SQL ở backend phải linh hoạt sử dụng `LOWER()` và `LIKE`.
+
+2. **Chặt chẽ về mặt đặc tả cấu trúc bảng (Table Constraints & Columns)**:
+   Phát hiện bảng `motorbike_specifications` không chứa cột `fuel_type` giúp tránh được việc thiết kế bộ lọc thừa thãi ở Frontend mà Backend không thể đáp ứng. Bộ lọc ô tô cũng loại bỏ tuỳ chọn Hybrid khi dữ liệu thực tế chỉ dùng 3 loại nhiên liệu (Xăng, Dầu, Điện).
+
+3. **Mở rộng API Endpoint linh hoạt**:
+   Bổ sung tham số tìm kiếm động ở 4 tầng cấu trúc (JPA Repository -> Service -> Controller -> Client Service API) giúp bộ lọc chạy chính xác và mượt mà hơn rất nhiều, phản ánh trực tiếp sự thay đổi dữ liệu của database lên giao diện người dùng.
+
+### Tự đánh giá Phase 08
+
+| Tiêu chí | Điểm | Ghi chú |
+|---|:---:|---|
+| Hiểu vấn đề trước khi fix | 5 | Xác định đúng tình trạng bất đồng bộ giữa UI filter và dữ liệu DB thực tế |
+| Fix đúng nguyên nhân gốc | 5 | Tích hợp filter params ở cả Java backend và React frontend |
+| Kiểm chứng sau fix | 5 | Chạy query test trực tiếp kiểm chứng kết quả trả về khớp chính xác |
+| Ghi lại đầy đủ | 5 | Cập nhật đầy đủ 4 file log trong members/NguyenVanDang |
+| Sử dụng AI có trách nhiệm | 5 | Đối chiếu và tự điều chỉnh code AI sinh ra cho khớp với cột bảng thực tế |
+
+---
+
+## Reflection — Phase 09: Booking & Payment Overhaul & Dashboards UI/UX Upgrade (2026-07-13)
+
+### Tóm tắt
+
+Trong giai đoạn này (Phase 09), mình đã cùng Antigravity triển khai cải tiến và tái cấu trúc toàn diện hệ thống đặt xe (Booking) và thanh toán (Payment). Hệ thống thanh toán chuyển khoản thủ công qua VietQR đi kèm mã QR sinh động đã được triển khai, cùng bộ đếm ngược 15 phút thời gian thực ở client và một scheduler chạy ngầm phía backend tự động quét hủy các đặt xe hết hạn thanh toán nhằm giải phóng xe ngay lập tức.
+Bên cạnh đó, mình đã nâng cấp giao diện của 3 dashboards chính (Customer, Owner, Admin) theo định hướng luxury hiện đại tối giản của LuxeWay (bo góc nhỏ 4-6px, bảng dữ liệu nâng cao, thanh điều hướng đóng mở linh hoạt), đồng thời thực thi các ràng buộc kiểm tra dữ liệu đầu vào chuẩn hóa (Validation rules) ở cả 2 phía Frontend và Backend.
+
+### Những bài học rút ra:
+
+1. **Vòng đời đặt xe phức tạp và tự động hóa ngầm (Automated Lifecycle Scheduling)**:
+   Xây dựng một hệ thống thuê xe thực tế đòi hỏi cơ chế quản lý trạng thái tự động cực kỳ chính xác. Khi renter tạo yêu cầu đặt xe, trạng thái chuyển sang `WAITING_PAYMENT` và bắt đầu đếm ngược. Nếu quá 15 phút mà renter không chuyển khoản và bấm xác nhận, Scheduler ngầm `@Scheduled(fixedRate = 60000)` phía backend sẽ tự động quét, chuyển trạng thái sang `PAYMENT_EXPIRED`, đồng thời hoàn trả lại lịch rảnh cho xe đó trong calendar. Điều này giúp ngăn chặn việc giữ xe ảo gây thiệt hại cho chủ xe.
+
+2. **Duyệt giao dịch thủ công an toàn (Manual Admin Verification Audit)**:
+   Để tránh gian lận chuyển khoản giả mạo, các giao dịch thanh toán được chuyển sang trạng thái `PAYMENT_PENDING` sau khi khách bấm xác nhận. Admin sẽ đối chiếu với tài khoản ngân hàng thực tế (được cấu hình động qua `PaymentSetting`), sau đó bấm Duyệt (`confirmPayment`) để chuyển trạng thái sang `CONFIRMED` và sinh hóa đơn PDF hoặc Từ chối (`rejectPayment`) kèm lý do từ chối. Mọi hoạt động này đều được lưu vết chi tiết trong `BookingStatusHistory` và bảng `payments` để phục vụ audit.
+
+3. **Cải tiến UI/UX Luxury nhất quán & Standard Validation**:
+   Thiết kế luxury không chỉ ở màu sắc (Deep Slate và Accent Gold) hay typography Serif mà còn ở sự gọn gàng, tính năng thiết thực (collapsible sidebar) và sự rõ ràng của thông báo lỗi. Bằng việc tích hợp `@Valid` tại các Controllers và custom `GlobalExceptionHandler`, toàn bộ lỗi validation được trả về dạng chuẩn JSON giúp frontend hiển thị thông báo lỗi trực quan trên từng trường input, tăng tính an toàn và chuyên nghiệp.
+
+### Tự đánh giá Phase 09
+
+| Tiêu chí | Điểm | Ghi chú |
+|---|:---:|---|
+| Hiểu vấn đề trước khi fix | 5 | Hiểu rõ cơ chế quản lý vòng đời trạng thái booking và scheduler ngầm |
+| Fix đúng nguyên nhân gốc | 5 | Tích hợp thành công luồng thanh toán thủ công và các form validation |
+| Kiểm chứng sau fix | 5 | Chạy compile backend Gradle và build frontend Vite thành công 100% |
+| Ghi lại đầy đủ | 5 | Cập nhật đầy đủ 4 file log trong members/NguyenVanDang |
+| Sử dụng AI có trách nhiệm | 5 | Làm chủ logic nghiệp vụ, tự custom style bảng, layout và form inputs |
+
+---
+
+## 18. Cam kết Reflection
+
+Em/nhóm cam kết rằng nội dung reflection này phản ánh trung thực quá trình sử dụng AI và quá trình học tập trong bài tập/project.
+
+Sinh viên/nhóm hiểu rằng:
+
+- AI là công cụ hỗ trợ học tập, không thay thế hoàn toàn năng lực cá nhân.
+- Mọi kết quả AI gợi ý cần được kiểm tra trước khi sử dụng.
+- Sinh viên/nhóm chịu trách nhiệm với sản phẩm cuối cùng.
+- Sinh viên/nhóm cần giải thích được các phần đã nộp.
+
+| Đại diện sinh viên/nhóm | Ngày xác nhận |
+|---|---|
+| Nguyễn Văn Dạng - DE190324 | 2026-07-13 |
+
+

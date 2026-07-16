@@ -17,17 +17,27 @@ const staggerItem = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] } },
 };
 
+import imgEconomy from '../../../image/economic_car.jpg';
+import imgFamily from '../../../image/family_car.avif';
+import imgSUV from '../../../image/SUV_car.webp';
+import imgBusiness from '../../../image/business_car.webp';
+import imgElectric from '../../../image/eletric_Car.jpg';
+
+import imgScooter from '../../../image/motobike.jpg';
+import imgCityBike from '../../../image/city_car.jpg';
+import imgTourism from '../../../image/touriim_car.webp';
+
 const CAR_CATEGORIES = [
-  { key: 'economy', label: 'Economy', icon: '🚗', image: 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?q=80&w=800&auto=format&fit=crop' },
-  { key: 'family', label: 'Family', icon: '👨‍👩‍👧‍👦', image: 'https://images.unsplash.com/photo-1559416523-140ddc3d238c?q=80&w=800&auto=format&fit=crop' },
-  { key: 'suv', label: 'SUV', icon: '🚙', image: 'https://images.unsplash.com/photo-1609166214994-502d326bafee?q=80&w=800&auto=format&fit=crop' },
-  { key: 'business', label: 'Business', icon: '💼', image: 'https://images.unsplash.com/photo-1549924231-f129b911e442?q=80&w=800&auto=format&fit=crop' },
-  { key: 'electric', label: 'Electric', icon: '⚡', image: 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7?q=80&w=800&auto=format&fit=crop' },
+  { key: 'economy', label: 'Economy', icon: '🚗', image: imgEconomy },
+  { key: 'family', label: 'Family', icon: '👨‍👩‍👧‍👦', image: imgFamily },
+  { key: 'suv', label: 'SUV', icon: '🚙', image: imgSUV },
+  { key: 'business', label: 'Business', icon: '💼', image: imgBusiness },
+  { key: 'electric', label: 'Electric', icon: '⚡', image: imgElectric },
 ];
 const MOTO_CATEGORIES = [
-  { key: 'motorbike', label: 'Scooter', icon: '🛵', image: 'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=800&auto=format&fit=crop' },
-  { key: 'city_car', label: 'City Bike', icon: '🏍️', image: 'https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?q=80&w=800&auto=format&fit=crop' },
-  { key: 'tourism', label: 'Touring', icon: '🏕️', image: 'https://images.unsplash.com/photo-1599819811279-d5ad9cccf838?q=80&w=800&auto=format&fit=crop' },
+  { key: 'motorbike', label: 'Scooter', icon: '🛵', image: imgScooter },
+  { key: 'city_car', label: 'City Bike', icon: '🏍️', image: imgCityBike },
+  { key: 'tourism', label: 'Touring', icon: '🏕️', image: imgTourism },
 ];
 
 interface CategoryGridProps {

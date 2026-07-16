@@ -22,6 +22,8 @@ CREATE TABLE users (
     verified                    BIT             NOT NULL DEFAULT 0,
     kyc_verified                BIT             NOT NULL DEFAULT 0,
     driving_license_verified    BIT             NOT NULL DEFAULT 0,
+    kyc_status                  NVARCHAR(20)    NOT NULL DEFAULT 'REJECTED',
+    driver_license_status       NVARCHAR(20)    NOT NULL DEFAULT 'NONE',
     rating                      DECIMAL(3,2)    NOT NULL DEFAULT 0.00,
     total_reviews               INT             NOT NULL DEFAULT 0,
     total_rentals               INT             NOT NULL DEFAULT 0,
@@ -48,10 +50,20 @@ BEGIN
 CREATE TABLE user_documents (
     id              NVARCHAR(36)    NOT NULL PRIMARY KEY,
     user_id         NVARCHAR(36)    NOT NULL,
-    document_type   NVARCHAR(30)    NOT NULL CONSTRAINT CHK_user_docs_type CHECK (document_type IN ('PASSPORT','NATIONAL_ID','DRIVING_LICENSE','INSURANCE')),
-    status          NVARCHAR(20)    NOT NULL DEFAULT 'PENDING' CONSTRAINT CHK_user_docs_status CHECK (status IN ('PENDING','VERIFIED','REJECTED')),
+    document_type   NVARCHAR(30)    NOT NULL CONSTRAINT CHK_user_docs_type CHECK (document_type IN ('PASSPORT','NATIONAL_ID','DRIVING_LICENSE','INSURANCE','CCCD_FRONT','CCCD_BACK','DRIVER_LICENSE_FRONT','DRIVER_LICENSE_BACK','SELFIE','SELFIE_WITH_ID','INSURANCE_CERTIFICATE')),
+    status          NVARCHAR(20)    NOT NULL DEFAULT 'PENDING' CONSTRAINT CHK_user_docs_status CHECK (status IN ('PENDING','VERIFIED','REJECTED','NOT_UPLOADED','UNDER_REVIEW')),
     url             NVARCHAR(500)   NOT NULL,
+    file_url        NVARCHAR(500)   NULL,
+    ocr_data        NVARCHAR(MAX)   NULL,
+    verification_status NVARCHAR(20) NOT NULL DEFAULT 'NOT_UPLOADED',
+    verified_by_admin NVARCHAR(36)  NULL,
     rejection_reason NVARCHAR(MAX),
+    license_class   NVARCHAR(10),
+    license_number  NVARCHAR(50),
+    license_full_name NVARCHAR(200),
+    license_date_of_birth NVARCHAR(50),
+    license_residence NVARCHAR(500),
+    license_nationality NVARCHAR(100),
     uploaded_at     DATETIME2       NOT NULL DEFAULT GETDATE(),
     verified_at     DATETIME2,
     CONSTRAINT FK_user_documents_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -98,7 +110,7 @@ CREATE TABLE vehicles (
     brand                   NVARCHAR(100)   NOT NULL,
     model                   NVARCHAR(100)   NOT NULL,
     year                    INT             NOT NULL,
-    category                NVARCHAR(20)    NOT NULL CONSTRAINT CHK_vehicles_category CHECK (category IN ('ECONOMY','FAMILY','BUSINESS','ELECTRIC','MOTORBIKE','SUV','CITY_CAR','TOURISM')),
+    category                NVARCHAR(20)    NOT NULL,
     description             NVARCHAR(MAX),
     thumbnail_url           NVARCHAR(500),
     price_per_day           DECIMAL(12,0)   NOT NULL,
@@ -124,6 +136,10 @@ CREATE TABLE vehicles (
     max_rental_days         INT             NOT NULL DEFAULT 30,
     advance_booking_days    INT             NOT NULL DEFAULT 365,
     status                  NVARCHAR(20)    NOT NULL DEFAULT 'PENDING_APPROVAL' CONSTRAINT CHK_vehicles_status CHECK (status IN ('AVAILABLE','RENTED','MAINTENANCE','PENDING_APPROVAL','REJECTED','INACTIVE')),
+    approval_status         NVARCHAR(30)    NOT NULL DEFAULT 'PENDING_APPROVAL' CONSTRAINT CHK_vehicles_approval_status CHECK (approval_status IN ('DRAFT','PENDING_APPROVAL','APPROVED','REJECTED','BLOCKED')),
+    approval_note           NVARCHAR(500),
+    approved_by             NVARCHAR(36),
+    approved_at             DATETIME2,
     rating                  DECIMAL(3,2)    NOT NULL DEFAULT 0.00,
     total_reviews           INT             NOT NULL DEFAULT 0,
     total_bookings          INT             NOT NULL DEFAULT 0,
@@ -226,7 +242,7 @@ CREATE TABLE bookings (
     vehicle_id          NVARCHAR(36)    NOT NULL,
     renter_id           NVARCHAR(36)    NOT NULL,
     owner_id            NVARCHAR(36)    NOT NULL,
-    status              NVARCHAR(20)    NOT NULL DEFAULT 'PENDING' CONSTRAINT CHK_bookings_status CHECK (status IN ('PENDING','CONFIRMED','ACTIVE','COMPLETED','CANCELLED','DISPUTED')),
+    status              NVARCHAR(20)    NOT NULL DEFAULT 'PENDING' CONSTRAINT CHK_bookings_status CHECK (status IN ('PENDING','CONFIRMED','PICKING_UP','IN_PROGRESS','ACTIVE','DISPUTED','DRAFT','WAITING_PAYMENT','PAYMENT_PENDING','PAYMENT_VERIFIED','OWNER_APPROVED','READY_FOR_PICKUP','CHECKED_OUT','IN_RENTAL','RETURN_PENDING','RETURN_COMPLETED','COMPLETED','PAYMENT_EXPIRED','PAYMENT_REJECTED','CUSTOMER_CANCELLED','OWNER_CANCELLED','SYSTEM_CANCELLED')),
     start_date          DATE            NOT NULL,
     end_date            DATE            NOT NULL,
     total_days          INT             NOT NULL,
@@ -439,7 +455,7 @@ BEGIN
 CREATE TABLE notifications (
     id          NVARCHAR(36)    NOT NULL PRIMARY KEY,
     user_id     NVARCHAR(36)    NOT NULL,
-    type        NVARCHAR(20)    NOT NULL CONSTRAINT CHK_notif_type CHECK (type IN ('booking','payment','message','review','system','promotion')),
+    type        NVARCHAR(20)    NOT NULL CONSTRAINT CHK_notif_type CHECK (type IN ('booking','payment','message','review','system','promotion', 'VEHICLE_APPROVAL', 'VEHICLE_APPROVED', 'VEHICLE_REJECTED')),
     title       NVARCHAR(200)   NOT NULL,
     body        NVARCHAR(MAX)   NOT NULL,
     icon        NVARCHAR(100),
@@ -527,19 +543,16 @@ GO
 IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'analytics')
 BEGIN
 CREATE TABLE analytics (
-    id          NVARCHAR(36)    NOT NULL PRIMARY KEY,
-    entity_type NVARCHAR(20)    NOT NULL CONSTRAINT CHK_analytics_entity CHECK (entity_type IN ('vehicle','user','booking','platform')),
-    entity_id   NVARCHAR(36),
-    metric_type NVARCHAR(50)    NOT NULL,
-    period      NVARCHAR(10)    NOT NULL CONSTRAINT CHK_analytics_period CHECK (period IN ('day','week','month','year')),
-    date        DATE            NOT NULL,
-    value       DECIMAL(15,2)   NOT NULL,
-    metadata    NVARCHAR(MAX),
-    created_at  DATETIME2       NOT NULL DEFAULT GETDATE()
+    id              NVARCHAR(36)    NOT NULL PRIMARY KEY,
+    record_date     DATE            NOT NULL UNIQUE,
+    revenue         DECIMAL(18,2)   NOT NULL DEFAULT 0,
+    bookings_count  INT             NOT NULL DEFAULT 0,
+    active_rentals  INT             NOT NULL DEFAULT 0,
+    new_users       INT             NOT NULL DEFAULT 0,
+    new_vehicles    INT             NOT NULL DEFAULT 0,
+    created_at      DATETIME2       NOT NULL DEFAULT GETDATE()
 );
-CREATE INDEX IDX_analytics_entity ON analytics(entity_type, entity_id);
-CREATE INDEX IDX_analytics_metric ON analytics(metric_type);
-CREATE INDEX IDX_analytics_date   ON analytics(date);
+CREATE INDEX IDX_analytics_record_date ON analytics(record_date);
 END
 GO
 

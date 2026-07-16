@@ -1,6 +1,5 @@
 package com.luxeway.dto.booking;
 
-import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -34,6 +33,8 @@ public class BookingDTOs {
     @Data
     public static class BookingResponse {
         private String id;
+        private String bookingCode;
+        private Long version;
         private VehicleInfo vehicle;
         private UserInfo renter;
         private UserInfo owner;
@@ -53,6 +54,7 @@ public class BookingDTOs {
         private String updatedAt;
         private String cancelledAt;
         private String cancellationReason;
+        private String reviewId;
 
         @Data
         public static class VehicleInfo {
@@ -83,6 +85,7 @@ public class BookingDTOs {
             private BigDecimal serviceFee;
             private BigDecimal taxes;
             private BigDecimal discount;
+            private BigDecimal cleaningFee;
             private BigDecimal total;
             private BigDecimal deposit;
             private boolean depositRefunded;

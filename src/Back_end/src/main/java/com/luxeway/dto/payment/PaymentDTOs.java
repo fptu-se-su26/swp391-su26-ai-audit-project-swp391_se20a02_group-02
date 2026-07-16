@@ -14,7 +14,7 @@ public class PaymentDTOs {
         private String bookingId;
 
         /**
-         * Payment method: stripe, vnpay, bank_transfer, wallet
+         * Payment method: stripe, vnpay, momo, payos, bank_transfer, wallet
          */
         @NotBlank(message = "Payment method is required")
         private String method;
@@ -40,7 +40,7 @@ public class PaymentDTOs {
         private BigDecimal refundAmount;
         private String createdAt;
         private String processedAt;
-        /** VNPay checkout URL (if method = vnpay) */
+        /** Gateway checkout URL (if method = vnpay/momo/payos) */
         private String paymentUrl;
     }
 

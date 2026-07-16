@@ -4,7 +4,6 @@ import jakarta.validation.constraints.*;
 import lombok.Data;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 public class UserDTOs {
 
@@ -32,6 +31,9 @@ public class UserDTOs {
         private String companyName;
 
         private String preferredLanguage;
+
+        private String licenseClass;
+        private String licenseNumber;
     }
 
     @Data
@@ -54,6 +56,10 @@ public class UserDTOs {
         private Boolean verified;
         private Boolean kycVerified;
         private Boolean drivingLicenseVerified;
+        private String kycStatus;
+        private String driverLicenseStatus;
+        private String licenseClass;
+        private String licenseNumber;
         private Boolean isActive;
         private String joinedAt;
         private String lastActive;
@@ -74,10 +80,23 @@ public class UserDTOs {
         private String id;
         private String documentType;
         private String url;
+        private String fileUrl;
+        private String ocrData;
         private String status;
+        private String verificationStatus;
+        private String verifiedByAdmin;
         private String uploadedAt;
         private String verifiedAt;
         private String rejectionReason;
+        private String licenseClass;
+        private String licenseNumber;
+        private String licenseFullName;
+        private String licenseDateOfBirth;
+        private String licenseResidence;
+        private String licenseNationality;
+        private String ekycIdNumber;
+        private String ekycFullName;
+        private String ekycDob;
     }
 
     @Data

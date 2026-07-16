@@ -29,6 +29,7 @@ public class PricingBreakdown {
     private String loyaltyTier;
     private BigDecimal finalTotal;
     private BigDecimal deposit;
+    private BigDecimal deliveryFee;
 
     @Data
     @NoArgsConstructor

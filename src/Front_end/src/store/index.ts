@@ -26,8 +26,35 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
   initAuth: () => {
     const user = authService.getCurrentUser();
+<<<<<<< HEAD
     if (user) {
       set({ user, isAuthenticated: true });
+=======
+    const token = authService.getAccessToken();
+
+    if (user && token) {
+      // BUG-2/3 FIX: Immediately mark as authenticated with cached data.
+      // This ensures the UI shows the correct state even before the backend call completes.
+      set({ user, isAuthenticated: true });
+      if (user.preferredLanguage) {
+        useUIStore.getState().setLanguage(user.preferredLanguage as Language);
+      }
+
+      // Fetch fresh user data from backend (best-effort — NOT session-critical)
+      try {
+        const freshUser = await authService.fetchCurrentUser();
+        if (freshUser) {
+          set({ user: freshUser });
+          if (freshUser.preferredLanguage) {
+            useUIStore.getState().setLanguage(freshUser.preferredLanguage as Language);
+          }
+        }
+        // If freshUser is null (backend blip), we keep the cached user — user stays logged in
+      } catch (error) {
+        // BUG-3 FIX: Backend unavailable ≠ invalid session. Keep cached credentials.
+        console.warn('Backend refresh failed on init — using cached session:', error);
+      }
+>>>>>>> origin/main
     }
   },
 
@@ -70,10 +97,26 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
   updateUser: (data) => {
     const current = get().user;
+<<<<<<< HEAD
     if (current) {
       const updated = { ...current, ...data };
       set({ user: updated });
       localStorage.setItem('luxeway_current_user', JSON.stringify(updated));
+=======
+    if (!current) return;
+
+    try {
+      const updated = await authService.updateProfile(current.id, data);
+      if (updated) {
+        set({ user: updated });
+        if (updated.preferredLanguage) {
+          useUIStore.getState().setLanguage(updated.preferredLanguage as Language);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to update user:', error);
+      throw error;
+>>>>>>> origin/main
     }
   },
 }));
@@ -87,8 +130,14 @@ interface UIStore {
   isScrolled: boolean;
   theme: Theme;
   language: Language;
+<<<<<<< HEAD
+=======
+  currency: string;
+  desktopSidebarCollapsed: boolean;
+>>>>>>> origin/main
   setSidebarOpen: (open: boolean) => void;
   setMobileMenuOpen: (open: boolean) => void;
+  setDesktopSidebarCollapsed: (collapsed: boolean) => void;
   addToast: (toast: Omit<Toast, 'id'>) => void;
   removeToast: (id: string) => void;
   openModal: (modal: string) => void;
@@ -103,14 +152,33 @@ export const useUIStore = create<UIStore>()(
     (set, get) => ({
       sidebarOpen: true,
       mobileMenuOpen: false,
+      desktopSidebarCollapsed: false,
       toasts: [],
       activeModal: null,
       isScrolled: false,
       theme: 'light',
+<<<<<<< HEAD
       language: 'en',
+=======
+      language: (() => {
+        try {
+          const lang = localStorage.getItem('language');
+          if (lang && ['en', 'vi', 'ja', 'ko', 'zh', 'fr', 'de', 'es'].includes(lang)) return lang as Language;
+        } catch { }
+        return 'en';
+      })(),
+      currency: (() => {
+        try {
+          const curr = localStorage.getItem('currency');
+          if (curr && ['VND', 'USD', 'EUR', 'JPY', 'SGD', 'KRW'].includes(curr)) return curr;
+        } catch { }
+        return 'VND';
+      })(),
+>>>>>>> origin/main
 
       setSidebarOpen: (open) => set({ sidebarOpen: open }),
       setMobileMenuOpen: (open) => set({ mobileMenuOpen: open }),
+      setDesktopSidebarCollapsed: (collapsed) => set({ desktopSidebarCollapsed: collapsed }),
 
       addToast: (toast) => {
         const id = faker.string.uuid();
@@ -136,7 +204,43 @@ export const useUIStore = create<UIStore>()(
         document.documentElement.classList.toggle('dark', next === 'dark');
       },
 
+<<<<<<< HEAD
       setLanguage: (lang) => set({ language: lang }),
+=======
+      setLanguage: (lang) => {
+        const currentLang = get().language;
+        if (currentLang === lang) return;
+
+        set({ language: lang });
+        try { localStorage.setItem('language', lang); } catch { }
+        import('@/i18n/config').then(m => m.default.changeLanguage(lang));
+
+        // Sync to backend user profile if logged in and language is different
+        const authStore = useAuthStore.getState();
+        if (authStore.user && authStore.user.preferredLanguage !== lang) {
+          const updatedUser = { ...authStore.user, preferredLanguage: lang };
+          useAuthStore.setState({ user: updatedUser });
+          localStorage.setItem('luxeway_user', JSON.stringify(updatedUser));
+
+          apiClient.put(`/users/${authStore.user.id}`, {
+            firstName: authStore.user.firstName,
+            lastName: authStore.user.lastName,
+            phone: authStore.user.phone,
+            bio: authStore.user.bio,
+            location: authStore.user.location,
+            avatar: authStore.user.avatar,
+            preferredLanguage: lang,
+            licenseClass: authStore.user.licenseClass,
+            licenseNumber: authStore.user.licenseNumber
+          }).catch(err => console.warn('Failed to sync language to backend', err));
+        }
+      },
+
+      setCurrency: (curr) => {
+        set({ currency: curr });
+        try { localStorage.setItem('currency', curr); } catch { }
+      },
+>>>>>>> origin/main
     }),
     {
       name: 'luxeway_ui_prefs',

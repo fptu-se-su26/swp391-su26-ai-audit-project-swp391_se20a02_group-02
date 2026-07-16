@@ -61,9 +61,8 @@ if (Test-Path $EnvFile) {
     Write-Host "  [WARN] .env not found" -ForegroundColor Yellow
 }
 
-# 5. Build -D args for JVM
-$dArgs = ($envVars.Keys | ForEach-Object { "-D$_=`"$($envVars[$_])`"" }) -join ' '
-$javaCmd = "java $dArgs -jar `"$Jar`" --spring.profiles.active=sqlserver"
+# 5. Define Java Command (automatically inherits environment variables)
+$javaCmd = "java -jar `"$Jar`" --spring.profiles.active=sqlserver"
 
 $dbHost = if ($envVars['DB_HOST']) { $envVars['DB_HOST'] } else { 'localhost' }
 $dbPort = if ($envVars['DB_PORT']) { $envVars['DB_PORT'] } else { '1433' }
@@ -88,13 +87,13 @@ Write-Host "  Waiting 15s for Backend to boot..." -ForegroundColor Gray
 Start-Sleep -Seconds 15
 
 Start-Process "http://localhost:5173/"
-Start-Process "http://localhost:8080/api/v1/swagger-ui.html"
+Start-Process "http://localhost:8080/swagger-ui.html"
 
 Write-Host ""
 Write-Host "  Services running in separate windows:" -ForegroundColor Green
 Write-Host "  Frontend  >  http://localhost:5173" -ForegroundColor White
-Write-Host "  Backend   >  http://localhost:8080/api/v1" -ForegroundColor White
-Write-Host "  Swagger   >  http://localhost:8080/api/v1/swagger-ui.html" -ForegroundColor White
+Write-Host "  Backend   >  http://localhost:8080" -ForegroundColor White
+Write-Host "  Swagger   >  http://localhost:8080/swagger-ui.html" -ForegroundColor White
 Write-Host "  DB        >  SQL Server @ $dbHost`:$dbPort ($dbName)" -ForegroundColor White
 Write-Host ""
 Read-Host "Press Enter to close this window"

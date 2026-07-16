@@ -7,12 +7,14 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "motorbike_models")
 @Data
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class MotorbikeModel {
     @Id
     @Column(length = 36)
+    @EqualsAndHashCode.Include
     private String id;
 
     @ManyToOne(fetch = FetchType.LAZY)

@@ -26,6 +26,7 @@ import java.math.BigDecimal;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("all")
 public class AdminService {
 
     private final UserRepository userRepository;
@@ -40,6 +41,7 @@ public class AdminService {
     private final UserDocumentRepository userDocumentRepository;
     private final AnalyticsRepository analyticsRepository;
     private final EmailService emailService;
+    private final NotificationService notificationService;
 
     // ====== Dashboard Statistics ======
 
@@ -74,21 +76,27 @@ public class AdminService {
 
     // ====== User Management ======
 
-    public Page<UserDTOs.UserProfileResponse> listUsers(String role, String keyword, int page, int size) {
+    public Page<UserDTOs.UserProfileResponse> listUsers(String role, String kycStatus, String keyword, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("joinedAt").descending());
 
-        if (keyword != null && !keyword.isBlank()) {
-            return userRepository.searchUsers(keyword, pageable).map(userService::toProfileResponse);
-        }
-
-        if (role != null && !role.isBlank()) {
+        UserRole userRole = null;
+        if (role != null && !role.isBlank() && !role.equalsIgnoreCase("ALL")) {
             try {
-                UserRole userRole = UserRole.valueOf(role.toUpperCase());
-                return userRepository.findByRole(userRole, pageable).map(userService::toProfileResponse);
+                userRole = UserRole.valueOf(role.toUpperCase());
             } catch (IllegalArgumentException ignored) {}
         }
 
-        return userRepository.findAll(pageable).map(userService::toProfileResponse);
+        String kycStatusVal = null;
+        if (kycStatus != null && !kycStatus.isBlank() && !kycStatus.equalsIgnoreCase("ALL")) {
+            kycStatusVal = kycStatus.toUpperCase();
+        }
+
+        String kw = null;
+        if (keyword != null && !keyword.isBlank()) {
+            kw = keyword.trim();
+        }
+
+        return userRepository.searchUsersAdvanced(userRole, kycStatusVal, kw, pageable).map(userService::toProfileResponse);
     }
 
     @Transactional
@@ -110,14 +118,24 @@ public class AdminService {
     public Page<VehicleDTOs.VehicleResponse> listPendingVehicles(int page, int size) {
         // Do NOT add Sort here - 'OrderByCreatedAtDesc' in method name already handles ordering
         Pageable pageable = PageRequest.of(page, size);
-        return vehicleRepository.findByStatusOrderByCreatedAtDesc(VehicleStatus.PENDING_APPROVAL, pageable)
+        return vehicleRepository.findByApprovalStatusOrderByCreatedAtDesc(VehicleStatus.PENDING_APPROVAL, pageable)
                 .map(vehicleService::toResponse);
     }
 
-    public Page<VehicleDTOs.VehicleResponse> listAllVehicles(String status, int page, int size) {
+    public Page<VehicleDTOs.VehicleResponse> listAllVehicles(String status, String keyword, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
-        if (status != null && !status.isBlank()) {
+        if (keyword != null && !keyword.isBlank()) {
+            if (status != null && !status.isBlank() && !status.equalsIgnoreCase("ALL")) {
+                try {
+                    VehicleStatus vehicleStatus = VehicleStatus.valueOf(status.toUpperCase());
+                    return vehicleRepository.searchVehicles(keyword, vehicleStatus, pageable).map(vehicleService::toResponse);
+                } catch (IllegalArgumentException ignored) {}
+            }
+            return vehicleRepository.searchVehicles(keyword, pageable).map(vehicleService::toResponse);
+        }
+
+        if (status != null && !status.isBlank() && !status.equalsIgnoreCase("ALL")) {
             try {
                 VehicleStatus vehicleStatus = VehicleStatus.valueOf(status.toUpperCase());
                 return vehicleRepository.findByStatus(vehicleStatus, pageable).map(vehicleService::toResponse);
@@ -127,16 +145,36 @@ public class AdminService {
         return vehicleRepository.findAll(pageable).map(vehicleService::toResponse);
     }
 
-    @Transactional
-    public VehicleDTOs.VehicleResponse approveVehicle(String vehicleId) {
+    @Transactional(rollbackFor = Exception.class)
+    public VehicleDTOs.VehicleResponse approveVehicle(String vehicleId, String adminId) {
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
                 .orElseThrow(() -> new RuntimeException("Vehicle not found"));
 
+        if (vehicle.getApprovalStatus() != VehicleStatus.PENDING_APPROVAL) {
+            throw new IllegalStateException("Vehicle is not pending approval");
+        }
+
         vehicle.setStatus(VehicleStatus.AVAILABLE);
+        vehicle.setApprovalStatus(VehicleStatus.APPROVED);
+        vehicle.setApprovedBy(adminId);
+        vehicle.setApprovedAt(java.time.LocalDateTime.now());
         vehicle.setIsVerified(true);
         vehicle = vehicleRepository.save(vehicle);
 
-        log.info("Vehicle {} approved by admin", vehicleId);
+        log.info("Vehicle {} approved by admin {}", vehicleId, adminId);
+        
+        try {
+            notificationService.createNotification(
+                vehicle.getOwner().getId(),
+                "VEHICLE_APPROVED",
+                "Your vehicle has been approved.",
+                "Your vehicle " + vehicle.getName() + " has been approved.",
+                "/owner/vehicles"
+            );
+        } catch (Exception e) {
+            log.warn("Failed to send vehicle approval in-app notification: {}", e.getMessage());
+        }
+
         try {
             emailService.sendVehicleApprovalStatus(vehicle.getOwner().getEmail(), vehicle, "AVAILABLE", null);
         } catch (Exception e) {
@@ -145,15 +183,34 @@ public class AdminService {
         return vehicleService.toResponse(vehicle);
     }
 
-    @Transactional
-    public VehicleDTOs.VehicleResponse rejectVehicle(String vehicleId, String reason) {
+    @Transactional(rollbackFor = Exception.class)
+    public VehicleDTOs.VehicleResponse rejectVehicle(String vehicleId, String reason, String adminId) {
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
                 .orElseThrow(() -> new RuntimeException("Vehicle not found"));
 
+        if (vehicle.getApprovalStatus() != VehicleStatus.PENDING_APPROVAL) {
+            throw new IllegalStateException("Vehicle is not pending approval");
+        }
+
         vehicle.setStatus(VehicleStatus.REJECTED);
+        vehicle.setApprovalStatus(VehicleStatus.REJECTED);
+        vehicle.setApprovalNote(reason);
         vehicle = vehicleRepository.save(vehicle);
 
-        log.info("Vehicle {} rejected: {}", vehicleId, reason);
+        log.info("Vehicle {} rejected by admin {}: {}", vehicleId, adminId, reason);
+        
+        try {
+            notificationService.createNotification(
+                vehicle.getOwner().getId(),
+                "VEHICLE_REJECTED",
+                "Vehicle Rejected",
+                "Vehicle rejected. Reason: " + reason,
+                "/owner/vehicles"
+            );
+        } catch (Exception e) {
+            log.warn("Failed to send vehicle rejection in-app notification: {}", e.getMessage());
+        }
+
         try {
             emailService.sendVehicleApprovalStatus(vehicle.getOwner().getEmail(), vehicle, "REJECTED", reason);
         } catch (Exception e) {
@@ -195,6 +252,17 @@ public class AdminService {
 
     public java.util.List<Dispute> listAllDisputes() {
         return disputeRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
+    }
+
+    public java.util.List<UserDTOs.DocumentResponse> getUserDocuments(String userId) {
+        return userDocumentRepository.findByUserIdOrderByUploadedAtDesc(userId)
+                .stream().map(userService::toDocumentResponse).collect(java.util.stream.Collectors.toList());
+    }
+
+    public java.util.List<UserDTOs.UserProfileResponse> getPendingKycUsers() {
+        return userRepository.findByKycStatus("PENDING_APPROVAL").stream()
+                .map(userService::toProfileResponse)
+                .collect(java.util.stream.Collectors.toList());
     }
 
     @Transactional
@@ -252,6 +320,123 @@ public class AdminService {
         }
 
         return userService.toDocumentResponse(doc);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public UserDTOs.UserProfileResponse approveUserKyc(String userId, String adminId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!"PENDING_APPROVAL".equalsIgnoreCase(user.getKycStatus())) {
+            throw new IllegalStateException("User KYC is not in PENDING_APPROVAL status");
+        }
+
+        user.setKycStatus("VERIFIED");
+        user.setKycVerified(true);
+        
+        java.util.List<com.luxeway.entity.UserDocument> docs = userDocumentRepository.findByUserIdOrderByUploadedAtDesc(userId);
+        boolean hasDl = false;
+        for (com.luxeway.entity.UserDocument doc : docs) {
+            String docType = doc.getDocumentType().toUpperCase();
+            if (docType.contains("DRIVER_LICENSE") || docType.equals("DRIVING_LICENSE")) {
+                hasDl = true;
+                if (doc.getLicenseNumber() != null) {
+                    user.setLicenseNumber(doc.getLicenseNumber());
+                }
+                if (doc.getLicenseClass() != null) {
+                    user.setLicenseClass(doc.getLicenseClass());
+                }
+            }
+            
+            if ("PENDING".equals(doc.getStatus()) || "UNDER_REVIEW".equals(doc.getVerificationStatus())) {
+                doc.setStatus("VERIFIED");
+                doc.setVerificationStatus("VERIFIED");
+                doc.setVerifiedByAdmin(adminId);
+                doc.setVerifiedAt(java.time.LocalDateTime.now());
+                userDocumentRepository.save(doc);
+            }
+        }
+
+        if (hasDl) {
+            user.setDriverLicenseStatus("VERIFIED");
+            user.setDrivingLicenseVerified(true);
+        }
+        
+        user.setVerified(true);
+        user = userRepository.save(user);
+        
+        log.info("KYC approved for user: {}", userId);
+        
+        try {
+            notificationService.createNotification(
+                userId,
+                "KYC",
+                "KYC Approved",
+                "KYC approved. You can rent vehicles now.",
+                "/dashboard/documents"
+            );
+        } catch (Exception e) {
+            log.warn("Failed to send KYC approval in-app notification: {}", e.getMessage());
+        }
+        
+        try {
+            emailService.sendKycStatus(user.getEmail(), "KYC_VERIFICATION", "VERIFIED", null);
+        } catch (Exception e) {
+            log.warn("Failed to send KYC email: {}", e.getMessage());
+        }
+        
+        return userService.toProfileResponse(user);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public UserDTOs.UserProfileResponse rejectUserKyc(String userId, String reason, String adminId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!"PENDING_APPROVAL".equalsIgnoreCase(user.getKycStatus())) {
+            throw new IllegalStateException("User KYC is not in PENDING_APPROVAL status");
+        }
+
+        user.setKycStatus("REJECTED");
+        user.setDriverLicenseStatus("REJECTED");
+        user.setKycVerified(false);
+        user.setDrivingLicenseVerified(false);
+        user.setVerified(false);
+        user = userRepository.save(user);
+
+        java.util.List<com.luxeway.entity.UserDocument> docs = userDocumentRepository.findByUserIdOrderByUploadedAtDesc(userId);
+        for (com.luxeway.entity.UserDocument doc : docs) {
+            if ("PENDING".equals(doc.getStatus()) || "UNDER_REVIEW".equals(doc.getVerificationStatus())) {
+                doc.setStatus("REJECTED");
+                doc.setVerificationStatus("REJECTED");
+                doc.setRejectionReason(reason);
+                doc.setVerifiedByAdmin(adminId);
+                doc.setVerifiedAt(java.time.LocalDateTime.now());
+                userDocumentRepository.save(doc);
+            }
+        }
+
+        log.info("KYC rejected for user: {} because: {}", userId, reason);
+        
+        try {
+            notificationService.createNotification(
+                userId,
+                "KYC",
+                "KYC Rejected",
+                "KYC rejected. Reason: " + reason,
+                "/dashboard/documents"
+            );
+        } catch (Exception e) {
+            log.warn("Failed to send KYC rejection in-app notification: {}", e.getMessage());
+        }
+        
+        try {
+            emailService.sendKycStatus(user.getEmail(), "KYC_VERIFICATION", "REJECTED", reason);
+        } catch (Exception e) {
+            log.warn("Failed to send KYC email: {}", e.getMessage());
+        }
+
+        return userService.toProfileResponse(user);
     }
 
     // ====== Report Exporters ======

@@ -38,6 +38,19 @@ public class UserDocument {
     @NotBlank(message = "Document URL is required")
     private String url;
 
+    @Column(name = "file_url", length = 500)
+    private String fileUrl;
+
+    @Column(name = "ocr_data", columnDefinition = "TEXT")
+    private String ocrData;
+
+    @Column(name = "verification_status", nullable = false, length = 20)
+    @Builder.Default
+    private String verificationStatus = "NOT_UPLOADED";
+
+    @Column(name = "verified_by_admin", length = 36)
+    private String verifiedByAdmin;
+
     /**
      * Verification status: PENDING, VERIFIED, REJECTED
      */
@@ -54,6 +67,37 @@ public class UserDocument {
 
     @Column(name = "rejection_reason", columnDefinition = "TEXT")
     private String rejectionReason;
+
+    @Column(name = "license_class", length = 10)
+    private String licenseClass;
+
+    @Column(name = "license_number", length = 50)
+    private String licenseNumber;
+
+    @Column(name = "license_full_name", length = 200)
+    private String licenseFullName;
+
+    @Column(name = "license_date_of_birth", length = 50)
+    private String licenseDateOfBirth;
+
+    @Column(name = "license_residence", length = 500)
+    private String licenseResidence;
+
+    @Column(name = "license_nationality", length = 100)
+    private String licenseNationality;
+
+    // ─── eKYC / OCR extracted fields ───────────────────────────────────────
+    @Column(name = "ekyc_id_number", length = 20)
+    private String ekycIdNumber;
+
+    @Column(name = "ekyc_full_name", length = 200)
+    private String ekycFullName;
+
+    @Column(name = "ekyc_dob", length = 20)
+    private String ekycDob;
+
+    @Column(name = "ekyc_raw_data", columnDefinition = "TEXT")
+    private String ekycRawData;
 
     @PrePersist
     private void prePersist() {

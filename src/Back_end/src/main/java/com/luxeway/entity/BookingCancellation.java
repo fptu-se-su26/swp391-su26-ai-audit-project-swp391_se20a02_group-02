@@ -36,10 +36,12 @@ public class BookingCancellation {
 
     @NotNull
     @Column(name = "refund_amount", precision = 18, scale = 2)
+    @Builder.Default
     private BigDecimal refundAmount = BigDecimal.ZERO;
 
     @NotNull
     @Column(name = "penalty_amount", precision = 18, scale = 2)
+    @Builder.Default
     private BigDecimal penaltyAmount = BigDecimal.ZERO;
 
     @CreationTimestamp

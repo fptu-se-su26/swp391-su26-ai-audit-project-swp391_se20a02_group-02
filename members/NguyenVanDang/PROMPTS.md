@@ -66,6 +66,12 @@ Sinh viên/nhóm cần ghi lại:
 | 12 | 2026-05-28 | Antigravity | Tích hợp ImageUploader & REST API vào form xe | Hỏi cách tích hợp kéo-thả ImageUploader vào VehicleFormPage và gọi API lưu xe | VehicleFormPage gọi REST API create/update xe, tích hợp ImageUploader | Có | src/pages/dashboard/OwnerDashboard.tsx |
 | 13 | 2026-05-28 | Antigravity | Khắc phục lỗi biên dịch TypeScript & whitelisting | Hỏi cách sửa lỗi Settings sidebar link, Loader2 import, null check vehicle và config SecurityConfig | Gợi ý code sửa Settings, import Loader2, vehicle null check và whitelist return redirect | Có | src/pages/dashboard/CustomerDashboard.tsx |
 | 14 | 2026-06-03 | Antigravity | Hệ thống Help Center & Sửa lỗi stats Landing Page | Hỏi về thiết kế entities và controller/service cho help categories/articles/tickets, debug JPA query, và sửa lỗi làm tròn stats card | Các entity và controller, API client, JPA fix, và stats card fix | Có | src/Back_end/, src/Front_end/ |
+| 15 | 2026-06-06 | Antigravity | Tách thực thể Vehicle thành Car và Motorbike chuyên biệt | Hỏi về cách phân chia Vehicle thành Car và Motorbike | Tạo các thực thể Car/Motorbike riêng, các API service/controller tương ứng ở backend và các page marketplace riêng ở frontend | Có | src/Back_end/, src/Front_end/ |
+| 16 | 2026-06-07 | Antigravity | Redesign Landing Page Premium, promotions table, và translate notifications | Hỏi redesign Landing Page premium, promotions DB table và dịch notifications song ngữ | LiveActivitySection, RevenueCalculator, promotions migration và translateNotification | Có | LandingPage.tsx, translations.ts |
+| 17 | 2026-06-12 | Antigravity | Tối ưu hóa UI/UX Dashboard, Design System components | Hỏi đại tu giao diện Dashboard, tạo Avatar, StatusBadge, Breadcrumbs, và shimmer skeletons | globals.css, dashboards (Customer, Owner, Admin), Avatar, StatusBadge, Breadcrumbs, Skeleton | Có | dashboards, globals.css, components/ui/ |
+| 18 | 2026-06-20 | Antigravity | Hệ thống eKYC & Ràng buộc bằng lái xe | Hỏi cách tích hợp FPT.AI eKYC API, xử lý stepper 4 bước và cấu hình ràng buộc bằng lái xe máy/ô tô ở Backend | VnptEkycService, EkycScanner, BookingService checks, Admin KYC reviews tab | Có | src/Back_end/, MyDocuments.tsx |
+| 19 | 2026-06-27 | Antigravity | Bản đồ tìm xe & Marker 3 cấp | Hỏi cách sửa lỗi CHK_vehicles_category constraint, đăng ký route /map và thiết kế 3-tier markers tương tác | CHK_category fix, /map route, red Navbar badge, 3-tier Map marker handlers | Có | LuxeWayMap.tsx, MarketplacePage.tsx |
+| 20 | 2026-06-29 | Antigravity | Overhaul Map Full-Screen & Advanced Filters Drawer | Hỏi cách cập nhật FPT.AI API Key mới, đồng bộ kycStatus ở /auth/me, chặn xe máy thuê ô tô và overhaul map 100% có drawer lọc nâng cao | .env key update, Auth DTOs sync, strict license check error, w-full map with filters drawer, scroll-hiding button | Có | .env, BookingService.java, MarketplacePage.tsx |
 
 ---
 
@@ -1322,7 +1328,740 @@ Tối ưu hóa giao diện LiveActivitySection và công thức tính toán lợ
 
 ---
 
-## 11. Cam kết sử dụng prompt minh bạch
+### Prompt số 17
+
+| Nội dung | Thông tin |
+|---|---|
+| Ngày sử dụng | 2026-06-12 |
+| Công cụ AI | Antigravity |
+| Mục đích | Đại tu giao diện Dashboard, xây dựng các component Design System (Avatar, StatusBadge, Breadcrumbs) và shimmer loaders |
+| Phần việc liên quan | Frontend / UI/UX Design |
+| Mức độ sử dụng | Hỏi sinh code |
+
+#### 5.1. Prompt nguyên văn
+
+```text
+Overhaul the Customer, Owner, and Admin dashboards of LuxeWay:
+1. Build reusable Design System components:
+   - Avatar: displays user initials with a random background gradient fallback when avatar url is missing.
+   - StatusBadge: maps booking/vehicle status string to appropriate colors and icons.
+   - Breadcrumbs: responsive breadcrumbs component using page paths.
+2. Implement micro-interactions (sidebar hover transition 100ms, icon shift 2px right, active nav border-left 3px solid, button click scale(0.97), card hover translateY(-2px)).
+3. Upgrade Skeleton loading: add CSS shimmer animation, limit StatCardSkeleton to exactly 2 lines.
+4. Replace emojis with clean SVG icons for Empty States.
+5. Standardize layout and colors: Owner Dashboard is Dark Theme (#0D0F14), Admin Dashboard is Light Theme (#F4F6FA), and Customer Dashboard is Dark Navy Theme (#0F1117). Fix charts with clean interactive tooltips.
+```
+
+#### 5.2. Bối cảnh khi viết prompt
+
+```text
+Cần nâng cao chất lượng trải nghiệm các Dashboard để đạt giao diện premium, chuyên nghiệp, loại bỏ các emoji cũ và cấu hình loading skeletons tốt hơn, đồng thời giải quyết các lỗi biên dịch TypeScript.
+```
+
+#### 5.3. Kết quả AI trả về
+
+```text
+AI cung cấp mã nguồn các component Avatar, StatusBadge, Breadcrumbs và cập nhật cho Skeleton.tsx, globals.css, CustomerDashboard.tsx, OwnerDashboard.tsx, và AdminDashboard.tsx.
+```
+
+#### 5.4. Kết quả đã áp dụng vào bài
+
+```text
+Tích hợp thành công toàn bộ các component và styling mới. Frontend biên dịch thành công 100% không cảnh báo hay lỗi.
+```
+
+#### 5.5. Phần sinh viên/nhóm đã chỉnh sửa hoặc cải tiến
+
+```text
+- Tối ưu hóa các biểu đồ Recharts cho responsive, điều chỉnh kích thước nhãn và white tooltip background.
+- Ép kiểu và bổ sung render helpers cho StatusBadge và Avatar trong các table rows để tránh lỗi build compiler.
+```
+
+#### 5.6. Đánh giá chất lượng prompt
+
+- [x] Prompt rõ ràng
+- [x] Prompt có đủ bối cảnh
+- [ ] Prompt còn thiếu thông tin
+- [x] Prompt tạo ra kết quả tốt
+- [ ] Prompt tạo ra kết quả chưa phù hợp
+- [ ] Cần hỏi lại AI nhiều lần
+- [x] Cần tự kiểm tra và chỉnh sửa nhiều
+- [ ] Kết quả AI có lỗi hoặc chưa chính xác
+
+#### 5.7. Minh chứng liên quan
+
+| Loại minh chứng | Nội dung |
+|---|---|
+| File liên quan | CustomerDashboard.tsx, OwnerDashboard.tsx, AdminDashboard.tsx, globals.css, Avatar.tsx, StatusBadge.tsx, Breadcrumbs.tsx, Skeleton.tsx |
+| Kết quả chạy/test | Build Vite thành công, dashboard hiển thị mượt mà với premium components |
+| Link commit | [DE190324] feat: overhaul dashboard UI/UX with premium design system components and micro-interactions |
+
+---
+
+---
+
+### Prompt số 18
+
+| Nội dung | Thông tin |
+|---|---|
+| Ngày sử dụng | 2026-06-15 |
+| Công cụ AI | Antigravity |
+| Mục đích | Đồng bộ build.gradle với pom.xml, dọn sạch 460+ compiler warnings (Java & Tests) và tắt triệt để JDT null warnings |
+| Phần việc liên quan | Backend / Build Config & Debug |
+| Mức độ sử dụng | Hỏi debug & sinh code |
+
+#### 5.1. Prompt nguyên văn
+
+```text
+Sync build.gradle with pom.xml to add Webflux, Redis, Resilience4j, AOP and MySQL dependencies.
+Check all compiler warnings in current_problems (unused imports, unused fields/variables, raw types, and null type safety).
+Help me remove unused imports and fields. For TestController, resolve the potential null pointer access warning on the Connection variable.
+How can I suppress null safety warnings in JpaAuditingConfig, AIChatService, and all other controllers/services without touching the business logic?
+How can I fix the compile warnings in AIPredictiveControllerTest.java and SecurityIntegrationTest.java, and resolve the JDT warning "At least one of the problems in category 'null' is not analysed due to a compiler option being ignored" caused by @SuppressWarnings("null")?
+```
+
+#### 5.2. Bối cảnh khi viết prompt
+
+```text
+Dự án đang chạy compileJava bằng Gradle wrapper nhưng bị lỗi không tìm thấy package (Redis, Webflux, Resilience4j, AOP) do build.gradle chưa được đồng bộ với pom.xml. Sau khi đồng bộ, hệ thống có nhiều cảnh báo biên dịch (warnings) cần dọn sạch (hơn 460 warnings ban đầu, dọn tiếp 251 warnings và các test classes warnings còn sót lại).
+```
+
+#### 5.3. Kết quả AI trả về
+
+```text
+AI cung cấp các blocks dependencies cần thêm vào build.gradle, chỉ ra các imports/variables dư thừa cần xoá ở các class Service, đề xuất sử dụng try-with-resources cho Connection trong TestController.java để tự động đóng kết nối và loại bỏ warning potential null pointer, đề xuất sử dụng @SuppressWarnings("all") và @SuppressWarnings("null") cho các lớp, dọn dẹp imports dư thừa và null checks trong test classes, và đổi @SuppressWarnings("null") thành @SuppressWarnings("all") ở cấp lớp để JDT compiler không cảnh báo.
+```
+
+#### 5.4. Kết quả đã áp dụng vào bài
+
+```text
+Đồng bộ build.gradle, xoá các imports và fields/variables không dùng trên toàn bộ codebase, refactor TestController với try-with-resources, dọn sạch test classes, chuyển @SuppressWarnings("null") sang @SuppressWarnings("all") thành công. Backend build bằng Gradle wrapper (compileJava & compileTestJava) thành công 100% đạt 0 errors, 0 warnings.
+```
+
+#### 5.5. Phần sinh viên/nhóm đã chỉnh sửa hoặc cải tiến
+
+```text
+- Tự phát hiện và tắt tất cả các tiến trình Java/Gradle đang chạy ẩn để giải phóng file lock trước khi thực hiện clean build.
+- Viết script PowerShell chuyển đổi encoding các tệp Java bị ảnh hưởng sang UTF-8 Without BOM để khắc phục lỗi compiler '\ufeff'.
+- Kiểm tra thủ công và đảm bảo tài nguyên database connection được giải phóng an toàn qua try-with-resources.
+- Dọn dẹp test classes và JDT compiler warning để đạt 0 warning, 0 error thực tế trên Problems panel của IDE.
+```
+
+#### 5.6. Đánh giá chất lượng prompt
+
+- [x] Prompt rõ ràng
+- [x] Prompt có đủ bối cảnh
+- [ ] Prompt còn thiếu thông tin
+- [x] Prompt tạo ra kết quả tốt
+- [ ] Prompt tạo ra kết quả chưa phù hợp
+- [ ] Cần hỏi lại AI nhiều lần
+- [x] Cần tự kiểm tra và chỉnh sửa nhiều
+- [ ] Kết quả AI có lỗi hoặc chưa chính xác
+
+#### 5.7. Minh chứng liên quan
+
+| Loại minh chứng | Nội dung |
+|---|---|
+| File liên quan | build.gradle, AIChatService.java, CarService.java, BookingService.java, JavaFallbackService.java, các Java controllers, AIPredictiveControllerTest.java, SecurityIntegrationTest.java |
+| Kết quả chạy/test | `./gradlew compileJava compileTestJava` thành công không có lỗi và warning |
+| Link commit | [DE190324] fix: resolve all compiler warnings and clean compile backend with 0 errors 0 warnings |
+
+---
+
+### Prompt số 19 — Phase 5.4: LuxeWay Goong Map Production Upgrade & Real-Time Lifecycle System
+
+| Nội dung | Thông tin |
+|---|---|
+| Ngày sử dụng | 2026-06-16 |
+| Công cụ AI | Antigravity |
+| Mục đích | Nâng cấp bản đồ Goong Map, tích hợp Temporary Date Locking, WebSocket STOMP Live tracking, và AI Support Chatbot (Gemini). |
+| Phần việc liên quan | Fullstack / Map & Tracking & AI Chatbot |
+| Mức độ sử dụng | Hỏi sinh code & debug |
+
+#### 5.1. Prompt nguyên văn
+
+```text
+Help me upgrade the LuxeWay vehicle details, booking, tracking and map systems to production-level:
+1. Map: Implement a MapLibre GL JS integration using Goong MapTiles with dark luxury theme, smooth zoom, 3D buildings, and custom HTML glass-style markers for cars and motorbikes with glow effects.
+2. Coordinates mapping fix: In VehicleService.java, map the latitude and longitude columns from SQL Server to the VehicleResponse DTO.
+3. Fix map rendering error: MapLibre requests are getting 403 Forbidden on stylesheet styles. The Goong map tiles style URL is style.json?key=VITE_GOONG_MAPTILES_KEY, does it require api_key query param?
+4. Real-time availability booking card: Fetch calendar availability GET /api/vehicles/{id}/availability. Implement date selection locking (POST /api/vehicles/{id}/lock for 10 minutes) and dynamic pricing calculations.
+5. Live location tracking: Integrate WebSocket STOMP for booking events (BOOKING_CREATED, PAYMENT_COMPLETED, VEHICLE_PICKING_UP, TRIP_STARTED, TRIP_COMPLETED) and location coordinates telemetry.
+6. AI Chatbot: Add a bottom-right floating support chatbot button. Use Gemini API backend POST /api/chat. Store chat sessions and messages in SQL Server database. The chatbot response must be helpful, professional and strictly emoji-free.
+```
+
+#### 5.2. Bối cảnh khi viết prompt
+
+```text
+Cần nâng cấp toàn bộ hệ thống bản đồ, theo dõi trực tiếp trạng thái đơn đặt xe qua WebSockets STOMP và tích hợp trợ lý chatbot Gemini ở Backend lưu database thay vì mock data, đồng thời fix lỗi map tiles 403 authorization.
+```
+
+#### 5.3. Kết quả AI trả về
+
+```text
+AI đề xuất:
+- Thay đổi style query param trong 5 tệp tin Frontend từ `?key=` thành `?api_key=`.
+- Sửa mapping code trong VehicleService toResponse và update.
+- Cấu hình DDL sql và các Entity ChatSession, ChatMessage kèm ChatController và ChatBotService tích hợp Gemini API.
+- Cấu hình WebSocket config STOMP và UI components listener và animation marker trên bản đồ.
+```
+
+#### 5.4. Kết quả đã áp dụng vào bài
+
+```text
+Đã áp dụng toàn bộ logic sửa đổi. Bản đồ lên tiles sắc nét, chatbot trả lời chuẩn và lưu DB tốt, WebSockets đồng bộ booking status tức thì giữa Customer và Owner.
+```
+
+#### 5.5. Phần sinh viên/nhóm đã chỉnh sửa hoặc cải tiến
+
+```text
+- Tùy biến CSS glassmorphism cho chatbot bong bóng nổi và khung chat ăn khớp với design system.
+- Kiểm thử luồng GPS coordinates bằng cách tích hợp mô phỏng di chuyển mượt mà trên bản đồ.
+```
+
+#### 5.6. Đánh giá chất lượng prompt
+
+- [x] Prompt rõ ràng
+- [x] Prompt có đủ bối cảnh
+- [ ] Prompt còn thiếu thông tin
+- [x] Prompt tạo ra kết quả tốt
+- [ ] Prompt tạo ra kết quả chưa phù hợp
+- [ ] Cần hỏi lại AI nhiều lần
+- [x] Cần tự kiểm tra và chỉnh sửa nhiều
+- [ ] Kết quả AI có lỗi hoặc chưa chính xác
+
+#### 5.7. Minh chứng liên quan
+
+| Loại minh chứng | Nội dung |
+|---|---|
+| File liên quan | LuxeWayMap.tsx, CustomerBookingPage.tsx, OwnerBookingTrackingPage.tsx, VehicleService.java, ChatController.java, ChatBotService.java, SupportChatbot.tsx |
+| Kết quả chạy/test | Map tiles render successfully, STOMP broadcasts and coordinates mapping validated, Gemini chatbot works |
+| Link commit | [DE190324] feat: implement real Goong Map upgrade, temporary availability locking, live WebSocket tracking and AI support chatbot |
+
+---
+
+---
+
+### Prompt số 20
+
+| Nội dung | Thông tin |
+|---|---|
+| Ngày sử dụng | 2026-06-17 đến 2026-06-18 |
+| Công cụ AI | Antigravity |
+| Mục đích | Debug và fix luồng upload ảnh KYC — tìm nguyên nhân lỗi 400 Bad Request và tích hợp FPT AI OCR thật |
+| Phần việc liên quan | Backend / eKYC Integration |
+| Mức độ sử dụng | Hỏi debug + sinh code |
+
+#### 5.1. Prompt nguyên văn
+
+```text
+sao KYC của hệ thống vẫn ko chạy đc
+...
+up lên ko đc
+Api của fpt ai mà up lên có quét mà
+vẫn upda ảnh để quét ko đc
+```
+
+#### 5.2. Bối cảnh khi viết prompt
+
+```text
+Hệ thống đã có FptAiEkycService.java kết nối FPT AI Vision API để đọc CCCD.
+Nhưng mỗi lần upload ảnh qua endpoint POST /users/documents đều nhận 400 Bad Request.
+Phần file được lưu vào thư mục /uploads/ nhưng file lại rỗng (0 byte).
+API key FPT AI đã được cấu hình nhưng service vẫn trả về mock data.
+```
+
+#### 5.3. Kết quả AI trả về
+
+```text
+AI phát hiện 2 nguyên nhân gốc rễ:
+
+Lỗi 1 — Double-read InputStream:
+- Dòng `tika.detect(file.getInputStream())` đọc toàn bộ InputStream của MultipartFile.
+- InputStream của Spring MultipartFile CHỈ đọc được 1 lần, sau đó stream rỗng.
+- Khi gọi `Files.write(filePath, fileBytes)` sau đó, bytes nhận được là [] (rỗng).
+- FPT AI OCR nhận ảnh rỗng → trả về lỗi 400 Invalid image.
+- Fix: thay toàn bộ bằng `byte[] fileBytes = file.getBytes()` và dùng fileBytes cho mọi thao tác.
+
+Lỗi 2 — False "demo key" check:
+- Trong FptAiEkycService.java có đoạn:
+  if (apiKey == null || apiKey.contains("placeholder") || apiKey.length() < 10)
+  { return mockScanResult(); }
+- API key thực sự không chứa "placeholder" nhưng vẫn bị trigger mock vì check sai lệch.
+- Fix: xóa check `apiKey.contains("placeholder")`, chỉ giữ null/blank check.
+
+Lỗi 3 — Tika false-positive:
+- Tika.detect(byte[]) khi không có filename-hint thường trả về "application/octet-stream".
+- Dù file là JPEG hợp lệ, Tika vẫn trả sai → blocked.
+- Fix: thay bằng file.getContentType() do browser/client gán đúng MIME type.
+```
+
+#### 5.4. Kết quả đã áp dụng vào bài
+
+```text
+1. UserController.java: buffer byte[] một lần, dùng cho cả validate và Files.write.
+2. FptAiEkycService.java: xóa hardcoded "demo key" check, chỉ giữ null/blank validation.
+3. application.yml: cập nhật fptai.api-key với key thực.
+4. UserController.java: thay Tika bằng file.getContentType() check.
+Backend compile BUILD SUCCESSFUL. Frontend Vite server restart thành công.
+```
+
+#### 5.5. Phần sinh viên/nhóm đã chỉnh sửa hoặc cải tiến
+
+```text
+- Quyết định loại bỏ hoàn toàn Apache Tika khỏi validation flow thay vì chạy song song
+  vì Tika unreliable khi không có filename hint.
+- Thêm log rõ ràng: "FPT.AI: Scanning CCCD for file: {filename}" để dễ debug sau này.
+- Giữ lại kiểm tra file size (5MB limit) để bảo vệ server.
+```
+
+#### 5.6. Đánh giá chất lượng prompt
+
+- [ ] Prompt rõ ràng
+- [ ] Prompt có đủ bối cảnh
+- [x] Prompt còn thiếu thông tin
+- [x] Prompt tạo ra kết quả tốt
+- [ ] Prompt tạo ra kết quả chưa phù hợp
+- [ ] Cần hỏi lại AI nhiều lần
+- [x] Cần tự kiểm tra và chỉnh sửa nhiều
+- [ ] Kết quả AI có lỗi hoặc chưa chính xác
+
+#### 5.7. Minh chứng liên quan
+
+| Loại minh chứng | Nội dung |
+|---|---|
+| File liên quan | `UserController.java`, `FptAiEkycService.java`, `application.yml` |
+| Kết quả chạy/test | `./gradlew compileJava` → `BUILD SUCCESSFUL in 10s` |
+| Link commit | `[DE190324] fix: resolve eKYC document upload — fix InputStream double-read, remove false demo-key check, replace Tika with Content-Type validation` |
+
+#### 5.8. Ghi chú thêm
+
+```text
+Lỗi này là bài học điển hình về Java I/O: InputStream chỉ đọc được một lần.
+Khi dùng Spring MultipartFile, luôn phải gọi file.getBytes() hoặc file.getInputStream() một lần duy nhất,
+lưu vào biến và dùng lại. Không được gọi getInputStream() nhiều lần.
+Đây là gotcha phổ biến khi làm file upload trong Spring Boot.
+```
+
+---
+
+### Prompt số 21
+
+| Nội dung | Thông tin |
+|---|---|
+| Ngày sử dụng | 2026-06-19 |
+| Công cụ AI | Antigravity |
+| Mục đích | Tích hợp bộ lọc KYC nâng cao cho user và tìm kiếm xe/người dùng trực tiếp ở Database tầng Admin |
+| Phần việc liên quan | Fullstack / Coding & Integration |
+| Mức độ sử dụng | Hỏi sinh code & debug |
+
+#### 5.1. Prompt nguyên văn
+
+```text
+Help me add advanced search and filtering to the admin panel:
+1. In UserRepository.java, add a dynamic query method (JPQL) searchUsersAdvanced that filters users by role (CUSTOMER, OWNER, ADMIN), kycStatus (PENDING, VERIFIED, REJECTED), and a search keyword matching their name or email or displayName.
+2. Update AdminService.java and AdminController.java to expose kycStatus query parameter on GET /admin/users, and search keyword query parameter on GET /admin/vehicles.
+3. In React Frontend: update adminService.ts to support passing these query filters.
+4. In AdminDashboard.tsx, add state hooks and UI dropdown inputs for:
+   - KYC Verification Hub (kycStatusFilter: All, Pending, Verified, Rejected)
+   - Platform Accounts Directory (userRoleFilter, userKycStatusFilter)
+   - Vehicle Approval Roster (vehicleStatusFilter, search keyword for vehicles)
+5. Implement a 400ms debounce timer for the search keyword to avoid spamming the backend API, and ensure lists are updated when filters change.
+```
+
+#### 5.2. Bối cảnh khi viết prompt
+
+```text
+Danh sách người dùng và xe trên nền tảng LuxeWay ngày càng nhiều. Admin gặp khó khăn lớn khi phải lướt thủ công qua hàng nghìn dòng để duyệt KYC hoặc quản lý xe. Cần thực hiện các bộ lọc nhanh và tìm kiếm trực tiếp tại database layer (SQL Server) để tối ưu hóa hiệu năng và tăng trải nghiệm sử dụng.
+```
+
+#### 5.3. Kết quả AI trả về
+
+```text
+AI cung cấp:
+- Câu truy vấn JPQL động sử dụng conditional parameters: u.kycStatus = :kycStatus AND (u.firstName LIKE :keyword OR u.lastName LIKE :keyword...)
+- Cập nhật các service và controller Spring Boot để nhận tham số kycStatus và keyword.
+- Cấu hình API client adminService.ts và code UI dropdowns, search inputs kèm logic debounce sử dụng setTimeout trong useEffect.
+```
+
+#### 5.4. Kết quả đã áp dụng vào bài
+
+```text
+Áp dụng toàn bộ logic lọc và tìm kiếm ở cả hai phía Backend và Frontend. Danh sách Admin Dashboard giờ đây tải dữ liệu tức thì từ SQL Server theo bộ lọc được chọn mà không bị lag.
+```
+
+#### 5.5. Phần sinh viên/nhóm đã chỉnh sửa hoặc cải tiến
+
+```text
+- Tùy chỉnh CSS dropdowns và ô search inputs phù hợp với phong cách Glassmorphism của Admin Dashboard.
+- Điều chỉnh logic để các hoạt động duyệt KYC và suspend/unsuspend người dùng cập nhật trực tiếp local state của danh sách thay vì phải refresh toàn bộ trang, giúp tối ưu hóa hiệu năng phản hồi.
+```
+
+#### 5.6. Đánh giá chất lượng prompt
+
+- [x] Prompt rõ ràng
+- [x] Prompt có đủ bối cảnh
+- [ ] Prompt còn thiếu thông tin
+- [x] Prompt tạo ra kết quả tốt
+- [ ] Prompt tạo ra kết quả chưa phù hợp
+- [ ] Cần hỏi lại AI nhiều lần
+- [x] Cần tự kiểm tra và chỉnh sửa nhiều
+- [ ] Kết quả AI có lỗi hoặc chưa chính xác
+
+#### 5.7. Minh chứng liên quan
+
+| Loại minh chứng | Nội dung |
+|---|---|
+| File liên quan | `UserRepository.java`, `AdminService.java`, `AdminController.java`, `adminService.ts`, `AdminDashboard.tsx` |
+| Kết quả chạy/test | Biên dịch backend 0 warning/error, chạy E2E lọc KYC và tìm kiếm xe hoạt động mượt mà |
+| Link commit | `docs: [DE190324] implement admin kyc filters, database-level search and update documentation` |
+
+#### 5.8. Ghi chú thêm
+
+```text
+Việc thực hiện các bộ lọc tìm kiếm trực tiếp tại Database (database-level search) thay vì lọc client-side là nguyên tắc bắt buộc đối với các hệ thống lớn để tránh overload tài nguyên đường truyền mạng và RAM của browser.
+```
+
+---
+
+### Prompt số 22
+
+| Nội dung | Thông tin |
+|---|---|
+| Ngày sử dụng | 2026-06-20 |
+| Công cụ AI | Antigravity |
+| Mục đích | Triển khai hệ thống xác thực danh tính KYC song hành FPT AI eKYC và kiểm tra phân hạng bằng lái khi booking. |
+| Phần việc liên quan | Fullstack / Security & UI/UX |
+| Mức độ sử dụng | Hỏi thiết kế & debug |
+
+#### 5.1. Prompt nguyên văn
+
+```text
+Help me implement a production-level Vietnam vehicle rental KYC verification system:
+1. In MyDocuments.tsx, redesign the customer document stepper to support 4 steps (Identity CCCD front/back, Driver License front/back, Selfie holding CCCD, Admin Approval status). Add status badges, retry callbacks, and a 5-second background polling when status is PENDING.
+2. In AdminDashboard.tsx, initialize the kycStatusFilter to default to 'PENDING'. Modify the KYC details drawer to fetch and render all 5 document images (CCCD Front/Back, DL Front/Back, Selfie holding CCCD), show all extracted OCR attributes (dob, citizen id, name, license class, and expiry date parsed from cccdFront.ocrData), and show face matching similarity and liveness result (parsed from selfie.ocrData).
+3. In CarBookingService.java and MotorbikeBookingService.java, block checkouts if kycStatus != 'VERIFIED' with message "Please complete KYC verification first.". Enforce license class limits: Car requires B, B1, C, C1, D (if user holds A/A1, throw "Your driving license only supports motorcycle rental."); Motorbike requires A or A1 (else throw "Your driving license does not support motorcycle rental.").
+4. I am getting TypeScript errors when building the frontend:
+   - "This comparison appears to be unintentional because the types '"REJECTED" | undefined' and '"FAILED"' have no overlap" in MyDocuments.tsx.
+   - "Argument of type 'number' is not assignable to parameter of type 'string'" in AdminDashboard.tsx listUsers call.
+   How can I resolve them?
+```
+
+#### 5.2. Bối cảnh khi viết prompt
+
+```text
+Cần triển khai hệ thống xác thực KYC hoàn chỉnh tích hợp FPT AI để tự động hóa quy trình phê duyệt danh tính và hạng bằng lái xe của khách hàng thuê xe, đảm bảo chỉ khách hàng có bằng lái xe phù hợp mới được đặt xe, đồng thời sửa các lỗi biên dịch TypeScript khi đóng gói ứng dụng.
+```
+
+#### 5.3. Kết quả AI trả về
+
+```text
+AI cung cấp:
+- Hướng dẫn thiết kế stepper và review drawer hiển thị 5 ảnh kèm metadata OCR, so khớp khuôn mặt trên React Frontend.
+- Sửa đổi logic validate kycStatus và licenseClass trong các java service backend.
+- Hướng dẫn thêm 'FAILED' vào union types của kycStatus và driverLicenseStatus trong types/index.ts, và sửa lại danh sách tham số listUsers/listAllVehicles trong AdminDashboard.tsx để fix các lỗi TypeScript.
+```
+
+#### 5.4. Kết quả đã áp dụng vào bài
+
+```text
+Tích hợp stepper và drawer review hoàn hảo, compile backend thành công và build frontend đạt 0 warnings, 0 errors.
+```
+
+#### 5.5. Phần sinh viên/nhóm đã chỉnh sửa hoặc cải tiến
+
+```text
+- Custom lại giao diện review drawer đẹp mắt, gọn gàng bằng các thẻ grid CSS.
+- Bổ sung logic hiển thị thông báo lỗi chi tiết khi so khớp khuôn mặt hoặc liveness thất bại ở stepper.
+```
+
+#### 5.6. Đánh giá chất lượng prompt
+
+- [x] Prompt rõ ràng
+- [x] Prompt có đủ bối cảnh
+- [ ] Prompt còn thiếu thông tin
+- [x] Prompt tạo ra kết quả tốt
+- [ ] Prompt tạo ra kết quả chưa phù hợp
+- [ ] Cần hỏi lại AI nhiều lần
+- [x] Cần tự kiểm tra và chỉnh sửa nhiều
+- [ ] Kết quả AI có lỗi hoặc chưa chính xác
+
+| File liên quan | `MyDocuments.tsx`, `AdminDashboard.tsx`, `CarBookingService.java`, `MotorbikeBookingService.java`, `types/index.ts` |
+| Kết quả chạy/test | `./gradlew bootJar` thành công, `npm run build` thành công 100% |
+| Link commit | `feat: implement production-level Vietnam vehicle rental KYC verification system with FPT AI OCR and license class validation` |
+
+---
+
+### Prompt số 23
+
+| Nội dung | Thông tin |
+|---|---|
+| Ngày sử dụng | 2026-06-27 |
+| Công cụ AI | Antigravity |
+| Mục đích | Triển khai Driver License Constraints & Mioto Map Discovery System. |
+| Phần việc liên quan | Fullstack / Map & UI/UX |
+| Mức độ sử dụng | Thiết kế tương tác & Code |
+
+#### 5.1. Prompt nguyên văn
+
+```text
+1. How can I resolve the CHK_vehicles_category check constraint error on startup so Java Enum values like SEDAN/MPV seed correctly?
+2. Set up a dedicated /map page route in App.tsx and dynamic map badge in Navbar.tsx displaying nearby available vehicles count.
+3. How can I implement a collapsible left sidebar list panel and a 3-tier MapLibre map marker interactive system in LuxeWayMap.tsx and MarketplacePage.tsx?
+- Level 1: Default markers show count "1 xe".
+- Level 2: Click once to reveal price tag (e.g. 680K).
+- Level 3: Click price tag again to select and highlight in green, sliding up bottom horizontal cards. Click background to reset.
+Avoid React stale closure warnings in map event listeners.
+```
+
+#### 5.2. Bối cảnh khi viết prompt
+
+```text
+Cần triển khai hệ thống bản đồ khám phá xe cao cấp tương thích với mockup Mioto, cho phép hiển thị vị trí chuẩn xác, nhãn xe linh hoạt, la bàn định vị GPS và khay trượt ngang thông tin chi tiết xe.
+```
+
+#### 5.3. Kết quả AI trả về
+
+```text
+AI cung cấp:
+- Hướng dẫn xóa CHECK constraint CHK_vehicles_category trong schema.sql.
+- Cấu hình route /map trong App.tsx và logic hiển thị badge [25] màu đỏ trong Navbar.tsx.
+- Cấu trúc state-driven updateMarkers trong LuxeWayMap.tsx sử dụng React refs để tránh stale closures, đồng thời thiết kế layout Flex co giãn cho MarketplacePage.tsx khi sidebar ẩn/hiện.
+```
+
+#### 5.4. Kết quả đã áp dụng vào bài
+
+```text
+Bản đồ được tích hợp thành công, tương tác 3 cấp hoạt động mượt mà, build check front-end đạt 100% thành công.
+```
+
+#### 5.5. Phần sinh viên/nhóm đã chỉnh sửa hoặc cải tiến
+
+```text
+- Tự thiết kế và căn chỉnh màu sắc cho các trạng thái nhãn ghim (xanh lá cây khi select, trắng chữ đen khi revealed, xám khi default).
+- Căn chỉnh vị trí icon trong nút nổi toggle bottom center sang bên phải đúng mockup "Danh sách ☰".
+```
+
+#### 5.6. Đánh giá chất lượng prompt
+
+- [x] Prompt rõ ràng
+- [x] Prompt có đủ bối cảnh
+- [ ] Prompt còn thiếu thông tin
+- [x] Prompt tạo ra kết quả tốt
+- [ ] Prompt tạo ra kết quả chưa phù hợp
+- [ ] Cần hỏi lại AI nhiều lần
+- [x] Cần tự kiểm tra và chỉnh sửa nhiều
+- [ ] Kết quả AI có lỗi hoặc chưa chính xác
+
+#### 5.7. Minh chứng liên quan
+
+| Loại minh chứng | Nội dung |
+|---|---|
+| File liên quan | `App.tsx`, `Navbar.tsx`, `LuxeWayMap.tsx`, `MarketplacePage.tsx`, `schema.sql` |
+| Kết quả chạy/test | npm run build thành công, map chạy thực tế 0 lỗi |
+| Link commit | `feat: implement Vietnam vehicle rental map discovery page with collapsible list and 3-tier marker interactions` |
+
+---
+
+### Prompt số 20
+
+| Nội dung | Thông tin |
+|---|---|
+| Ngày sử dụng | 2026-06-29 |
+| Công cụ AI | Antigravity |
+| Mục đích | Overhaul bản đồ full-screen, sửa lỗi kẹt trạng thái KYC và chặn bằng xe máy thuê ô tô |
+| Phần việc liên quan | Frontend UI/UX & Backend Core Validation |
+| Mức độ sử dụng | Thiết kế tương tác & Code |
+
+#### 5.1. Prompt nguyên văn
+
+```text
+1. I need to update the FPT.AI API key to "jTvJG13HCzWUlM5ZIt4oZdP7t2EChMhP" in .env and run-be.bat.
+2. Map the kycStatus and driverLicenseStatus properties in AuthDTOs and /auth/me profile responses so the frontend store is in sync.
+3. Ensure a motorbike license class (starts with A) blocks car booking and throws a clear Vietnamese error message: "Bằng lái xe máy hạng A1 không được phép thuê xe ô tô. Vui lòng sử dụng bằng lái xe ô tô (B1, B2, C...)".
+4. Redesign the marketplace map layout on desktop to be a full-screen toggle instead of split screen. Add a sliding Advanced Filters drawer overlay and implement scroll-aware hiding logic on the floating toggle button.
+```
+
+#### 5.2. Bối cảnh khi viết prompt
+
+```text
+Cần tinh chỉnh toàn bộ luồng eKYC và giao diện bản đồ cho khớp hoàn toàn với trải nghiệm cao cấp của ứng dụng thuê xe thực tế Mioto tại Việt Nam.
+```
+
+#### 5.3. Kết quả AI trả về
+
+```text
+AI cung cấp:
+- Hướng dẫn cấu hình FPTAI_API_KEY mới.
+- Code sửa đổi DTO và endpoints /auth/me ở Backend cùng authService ở Frontend.
+- Logic kiểm tra phân hạng bằng lái xe máy/ô tô tại BookingService.java.
+- Tái cấu trúc class JSX và CSS của MarketplacePage.tsx để ẩn/hiện full-screen bản đồ, tạo Drawer bộ lọc nâng cao trượt Framer Motion và scroll listener ẩn nút.
+```
+
+#### 5.4. Kết quả đã áp dụng vào bài
+
+```text
+Tích hợp thành công 100%. Bản đồ tự động toggle toàn màn hình, nút bấm tự động ẩn khi cuộn xuống và trượt lên khi cuộn lên rất mượt mà.
+```
+
+#### 5.5. Phần sinh viên/nhóm đã chỉnh sửa hoặc cải tiến
+
+```text
+- Căn chỉnh thiết kế ngăn lọc Drawer và overlay màu tối mờ (backdrop-blur-sm) khớp chuẩn với giao diện chung.
+- Sửa lỗi điều hướng đường dẫn card xe trên bản đồ khớp với luồng /cars/ và /motorbikes/.
+```
+
+#### 5.6. Đánh giá chất lượng prompt
+
+- [x] Prompt rõ ràng
+- [x] Prompt có đủ bối cảnh
+- [ ] Prompt còn thiếu thông tin
+- [x] Prompt tạo ra kết quả tốt
+- [ ] Prompt tạo ra kết quả chưa phù hợp
+- [ ] Cần hỏi lại AI nhiều lần
+- [x] Cần tự kiểm tra và chỉnh sửa nhiều
+- [ ] Kết quả AI có lỗi hoặc chưa chính xác
+
+#### 5.7. Minh chứng liên quan
+
+| Loại minh chứng | Nội dung |
+|---|---|
+| File liên quan | `.env`, `BookingService.java`, `MarketplacePage.tsx`, `AuthController.java`, `AuthService.java` |
+| Kết quả chạy/test | npm run build thành công 0 lỗi, gradle build compile backend 0 lỗi |
+| Link commit | `feat: implement premium full-screen Mioto-style map toggle layout with advanced filters drawer and scroll-aware button` |
+
+
+---
+
+## 11. Prompt #24 — Đồng bộ bộ lọc Marketplace với Database thực tế
+
+### 11.1. Thông tin chung
+
+| Thông tin | Nội dung |
+|---|---|
+| Ngày | 2026-06-30 |
+| Công cụ AI | Antigravity |
+| Giai đoạn | Giai đoạn 8 — Audit database và tối ưu hóa bộ lọc |
+| Phần bài tập / Module | Marketplace Filter, Spring Boot API integration |
+
+### 11.2. Prompt chính
+
+```text
+Truy vấn database để thống kê tất cả các hãng xe (brand) và loại xe (category) thực tế đang có cho cả Car và Motorbike. Cập nhật các array constants trong file frontend tương ứng (CarsMarketplace.tsx, MotorbikeMarketplace.tsx) sao cho khớp 100%. Đồng thời mở rộng API GET /cars và GET /motorbikes nhận thêm tham số brand và category, bổ sung logic lọc tại JPA Repository sử dụng JPQL LIKE và bằng để lọc chính xác kết quả từ dữ liệu thực tế.
+```
+
+### 11.3. Kết quả gợi ý từ AI
+
+```text
+1. Cung cấp câu lệnh sqlcmd SELECT DISTINCT để quét dữ liệu thương hiệu và dòng xe.
+2. Code bổ sung @Param("brand") và @Param("category") vào JPQL trong CarRepository và MotorbikeRepository.
+3. Code map tham số URLSearchParams tại carService.ts và motorbikeService.ts để truyền filter lên Backend.
+4. Danh sách 20 thương hiệu ô tô và 14 thương hiệu xe máy đầy đủ khớp DB.
+```
+
+### 11.4. Kết quả đã áp dụng vào bài
+
+```text
+Áp dụng thành công toàn bộ code Java API và code React Frontend. Bộ lọc hiện đã đồng bộ hoàn hảo 100% với dữ liệu thực tế.
+```
+
+### 11.5. Phần sinh viên/nhóm đã chỉnh sửa hoặc cải tiến
+
+```text
+- Loại bỏ tuỳ chọn Hybrid khỏi bộ lọc nhiên liệu ô tô do database thực tế chỉ lưu trữ GASOLINE, DIESEL, ELECTRIC.
+- Loại bỏ hoàn toàn bộ lọc Fuel Type khỏi xe máy do bảng đặc tả motorbike_specifications không chứa thuộc tính này.
+- Rebuild lại backend Spring Boot thành công (BUILD SUCCESSFUL).
+```
+
+### 11.6. Đánh giá chất lượng prompt
+
+- [x] Prompt rõ ràng
+- [x] Prompt có đủ bối cảnh
+- [ ] Prompt còn thiếu thông tin
+- [x] Prompt tạo ra kết quả tốt
+- [ ] Prompt tạo ra kết quả chưa phù hợp
+- [ ] Cần hỏi lại AI nhiều lần
+- [x] Cần tự kiểm tra và chỉnh sửa nhiều
+- [ ] Kết quả AI có lỗi hoặc chưa chính xác
+
+### 11.7. Minh chứng liên quan
+
+| Loại minh chứng | Nội dung |
+|---|---|
+| File liên quan | `CarsMarketplace.tsx`, `MotorbikeMarketplace.tsx`, `CarRepository.java`, `MotorbikeRepository.java`, `CarController.java`, `MotorbikeController.java`, `carService.ts`, `motorbikeService.ts` |
+| Kết quả chạy/test | `./gradlew bootJar` thành công 100%, test query SQL cho ra kết quả khớp (Toyota: 12 xe, Sedan: 35 xe, Honda: 13 xe, Scooter: 28 xe) |
+| Link commit | `feat: sync marketplace filters (brands/categories) with real DB data and extend search APIs` |
+
+---
+
+## 12. Prompt #25 — Tái cấu trúc luồng Booking/Payment và Nâng cấp UI/UX Dashboard kèm Standard Validation
+
+### 12.1. Thông tin chung
+
+| Thông tin | Nội dung |
+|---|---|
+| Ngày | 2026-07-13 |
+| Công cụ AI | Antigravity |
+| Giai đoạn | Giai đoạn 9 — Booking & Payment Overhaul & Dashboards UI/UX Upgrade |
+| Phần bài tập / Module | Customer, Owner, Admin Dashboards, Spring Boot Validations, Scheduler |
+
+### 12.2. Prompt chính
+
+```text
+Hãy thực hiện nâng cấp toàn diện giao diện và tính năng cho hệ thống LuxeWay:
+1. Thiết kế và triển khai cơ chế thanh toán chuyển khoản thủ công: Tạo bảng `payment_settings` lưu thông tin ngân hàng admin (MB Bank, 0377096245, NGUYEN VAN DANG). Khi booking được tạo, trạng thái ban đầu là WAITING_PAYMENT. Thiết kế trang `BookingPaymentPage.tsx` hiển thị thông tin chuyển khoản kèm mã QR VietQR động (số tiền và nội dung là mã booking) và đếm ngược 15 phút.
+2. Xử lý logic đếm ngược 15 phút: Viết Scheduler chạy ngầm mỗi phút quét các booking WAITING_PAYMENT quá 15 phút để chuyển trạng thái sang PAYMENT_EXPIRED, đồng thời giải phóng lịch rảnh của xe.
+3. Admin duyệt giao dịch: Khi khách bấm "Đã chuyển khoản", trạng thái đổi thành PAYMENT_PENDING. Thêm tính năng ở AdminDashboard cho phép Admin duyệt (đổi thành CONFIRMED, lưu Payment SUCCEEDED, sinh hóa đơn PDF) hoặc từ chối duyệt (đổi thành PAYMENT_REJECTED kèm lý do từ chối, giải phóng lịch xe).
+4. Nâng cấp UI/UX cho 3 Dashboards (Customer, Owner, Admin Dashboard): Sử dụng phong cách tối giản luxury với bảng dữ liệu nâng cao, thanh sidebar collapsible đóng mở linh hoạt, bo góc nhỏ 4-6px, custom skeleton loader và thông tin trống trực quan.
+5. Standard Validation: Áp dụng `@Valid` kiểm tra dữ liệu đầu vào cho các form cá nhân (User profile), thay đổi mật khẩu (Change password), tạo xe mới (VehicleDTO), nạp rút tiền ví (WalletDTO), đánh giá (ReviewDTO), tranh chấp (DisputeDTO) ở backend; bắt lỗi tập trung qua GlobalExceptionHandler để trả về JSON dạng chuẩn và hiển thị thông báo lỗi tương ứng trên input phía Frontend.
+```
+
+### 12.3. Kết quả gợi ý từ AI
+
+```text
+- File migration database `V5__booking_payment_overhaul.sql` và cấu trúc các bảng bổ sung.
+- Mã nguồn Java cập nhật logic cho `BookingService.java`, endpoints của `BookingController.java` để duyệt và hủy booking, scheduler xử lý tự động ngầm.
+- Component `BookingPaymentPage.tsx` ở Frontend với tính năng copy nhanh, mã QR VietQR, đếm ngược thời gian thực.
+- Giao diện Admin/Owner/Customer Dashboard nâng cấp với layout flex/grid chuyên nghiệp, sidebar thu gọn, bảng dữ liệu đẹp mắt.
+- Cấu hình validation annotations và GlobalExceptionHandler bắt lỗi chuẩn.
+```
+
+### 12.4. Kết quả đã áp dụng vào bài
+
+```text
+Áp dụng thành công 100% mã nguồn Frontend và Backend. Hệ thống hoạt động trơn tru không lỗi, các form submit được bảo mật và giao diện có phản hồi lỗi trực quan.
+```
+
+### 12.5. Phần sinh viên/nhóm đã chỉnh sửa hoặc cải tiến
+
+```text
+- Tự căn chỉnh layout VietQR hiển thị cân đối trên cả mobile và desktop.
+- Custom logic WebSocket thông báo tức thì khi Admin xác nhận thanh toán để cập nhật giao diện Renting/Tracking phía khách hàng.
+- Xử lý mượt mà trạng thái loading của nút bấm và bảng dữ liệu.
+```
+
+### 12.6. Đánh giá chất lượng prompt
+
+- [x] Prompt rõ ràng
+- [x] Prompt có đủ bối cảnh
+- [ ] Prompt còn thiếu thông tin
+- [x] Prompt tạo ra kết quả tốt
+- [ ] Prompt tạo ra kết quả chưa phù hợp
+- [ ] Cần hỏi lại AI nhiều lần
+- [x] Cần tự kiểm tra và chỉnh sửa nhiều
+- [ ] Kết quả AI có lỗi hoặc chưa chính xác
+
+### 12.7. Minh chứng liên quan
+
+| Loại minh chứng | Nội dung |
+|---|---|
+| File liên quan | `BookingService.java`, `BookingPaymentPage.tsx`, `AdminDashboard.tsx`, `CustomerDashboard.tsx`, `OwnerDashboard.tsx`, `GlobalExceptionHandler.java`, `V5__booking_payment_overhaul.sql` |
+| Kết quả chạy/test | Compile backend Gradle thành công, build frontend Vite thành công, chạy thử nghiệm toàn bộ luồng thanh toán và hết hạn tự động đều khớp 100% |
+| Link commit | `feat: implement booking & payment overhaul with VietQR and 15min expiration scheduler, upgrade dashboards UI/UX with standard validations` |
+
+---
+
+## 13. Cam kết sử dụng prompt minh bạch
 
 Sinh viên/nhóm cam kết rằng:
 
@@ -1334,5 +2073,69 @@ Sinh viên/nhóm cam kết rằng:
 
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
-| Nguyễn Văn Dạng - DE190324 | 2026-06-07 |
+| Nguyễn Văn Dạng - DE190324 | 2026-07-13 |
+
+---
+
+## 13. Prompt #26 — Dọn dẹp code rác Frontend và Khắc phục lỗi H2 Database Reserved Word ở Backend
+
+### 13.1. Thông tin chung
+
+| Thông tin | Nội dung |
+|---|---|
+| Ngày | 2026-07-13 |
+| Công cụ AI | Antigravity |
+| Giai đoạn | Đánh giá hoàn thiện dự án & Sửa lỗi kiểm thử |
+| Phần bài tập / Module | Code Cleanup & H2 Integration Testing |
+
+### 13.2. Prompt chính
+
+```text
+1. Đọc codebase Frontend và chỉ ra các thư mục, files rác (như mockup data cũ hoặc các dashboard bị nhân bản) không còn sử dụng để xóa sạch đi.
+2. Kiểm tra lỗi chạy kiểm thử tích hợp (integration tests) Backend khi gặp lỗi syntax H2 Database với cột `value` trong bảng `booking_counters`. Hãy đề xuất cách sửa đổi an toàn (đổi tên cột sang `counter_value` bằng JPA `@Column(name = "counter_value")` và điều chỉnh các script khởi tạo / migration liên quan) mà không gây ảnh hưởng đến phần code Java đang chạy.
+3. Tách biệt hoàn toàn phần câu lệnh CREATE TABLE và INSERT INTO trong DatabaseMigration.java để đảm bảo dữ liệu seed (hàng 'bookings' và 'P1') vẫn được nạp đầy đủ khi database được khởi tạo từ JPA/Hibernate ddl-auto.
+4. Mở rộng check constraint trạng thái booking CHK_bookings_status trực tiếp trong schema.sql và V0.1__schema.sql để đồng bộ với các trạng thái đơn hàng mới ở Backend, giải quyết lỗi check constraint violation khi chạy test.
+```
+
+### 13.3. Kết quả gợi ý từ AI
+
+```text
+- Chỉ ra thư mục src/Front_end/src/mock/ và file src/Front_end/src/pages/dashboard/AdminDashboard.tsx không được import ở bất kỳ đâu để thực hiện xóa.
+- Gợi ý đổi tên cột từ value sang counter_value trong BookingCounter.java, DatabaseMigration.java, V5__booking_payment_overhaul.sql.
+- Đề xuất tách câu lệnh tạo bảng và nạp seed dữ liệu thành các khối try-catch riêng lẻ để nạp dữ liệu độc lập.
+- Gợi ý bổ sung danh sách enum các trạng thái đặt xe mới vào check constraint trong file schema.sql.
+```
+
+### 13.4. Kết quả đã áp dụng vào bài
+
+```text
+Đã dọn sạch code rác, sửa JPA column mapping và câu lệnh SQL, mở rộng check constraint và xóa cache file luxeway_db.mv.db.
+```
+
+### 13.5. Phần sinh viên/nhóm đã chỉnh sửa hoặc cải tiến
+
+```text
+- Xóa cache database file H2 luxeway_db.mv.db và luxeway_db.trace.db trên ổ đĩa để bắt buộc H2 build lại schema mới tinh từ schema.sql đã sửa đổi.
+- Chạy tích hợp toàn bộ quy trình biên dịch gradle test backend và npm build frontend để kiểm tra kết quả cuối cùng.
+```
+
+### 13.6. Đánh giá chất lượng prompt
+
+- [x] Prompt rõ ràng
+- [x] Prompt có đủ bối cảnh
+- [ ] Prompt còn thiếu thông tin
+- [x] Prompt tạo ra kết quả tốt
+- [ ] Prompt tạo ra kết quả chưa phù hợp
+- [ ] Cần hỏi lại AI nhiều lần
+- [x] Cần tự kiểm tra và chỉnh sửa nhiều
+- [ ] Kết quả AI có lỗi hoặc chưa chính xác
+
+### 13.7. Minh chứng liên quan
+
+| Loại minh chứng | Nội dung |
+|---|---|
+| File liên quan | `AdminDashboard.tsx` (Xóa), `src/mock/` (Xóa), `BookingCounter.java`, `DatabaseMigration.java`, `V5__booking_payment_overhaul.sql`, `schema.sql` |
+| Kết quả chạy/test | `./gradlew test` thành công 100% (20 tests passed), `npm run build` thành công 100% |
+| Link commit | `chore: clean up unused mock files and duplicate admin dashboard, fix H2 reserved word value column and check constraint violations in integration tests` |
+
 

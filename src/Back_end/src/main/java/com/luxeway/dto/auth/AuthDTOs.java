@@ -68,6 +68,8 @@ public class AuthDTOs {
             private boolean kycVerified;
             private java.math.BigDecimal walletBalance;
             private String preferredLanguage;
+            private String kycStatus;
+            private String driverLicenseStatus;
         }
     }
 

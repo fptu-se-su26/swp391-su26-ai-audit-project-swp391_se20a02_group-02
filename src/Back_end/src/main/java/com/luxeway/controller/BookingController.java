@@ -12,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -22,7 +23,7 @@ public class BookingController {
 
     private final BookingService bookingService;
 
-    @PostMapping
+    @PostMapping(value = {"", "/create"})
     @Operation(summary = "Create a new booking request")
     public ResponseEntity<ApiResponse<BookingDTOs.BookingResponse>> createBooking(
             @AuthenticationPrincipal User user,
@@ -30,6 +31,15 @@ public class BookingController {
         BookingDTOs.BookingResponse booking = bookingService.createBooking(user.getId(), request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Booking created successfully", booking));
+    }
+
+    @PostMapping("/validate-pre-book")
+    @Operation(summary = "Validate booking criteria before proceeding to checkout")
+    public ResponseEntity<ApiResponse<java.util.Map<String, Object>>> validatePreBook(
+            @AuthenticationPrincipal User user,
+            @Valid @RequestBody BookingDTOs.CreateBookingRequest request) {
+        bookingService.validatePreBook(user.getId(), request);
+        return ResponseEntity.ok(ApiResponse.success("Validation successful", java.util.Map.of("valid", true)));
     }
 
     @GetMapping
@@ -101,5 +111,44 @@ public class BookingController {
             @Valid @RequestBody BookingDTOs.UpdateBookingStatusRequest request) {
         BookingDTOs.BookingResponse booking = bookingService.updateStatus(id, user.getId(), request);
         return ResponseEntity.ok(ApiResponse.success("Booking status updated", booking));
+    }
+
+    @PostMapping("/{id}/confirm-transfer")
+    @Operation(summary = "Renter confirms bank transfer has been executed")
+    public ResponseEntity<ApiResponse<BookingDTOs.BookingResponse>> confirmTransfer(
+            @PathVariable String id,
+            @AuthenticationPrincipal User user,
+            jakarta.servlet.http.HttpServletRequest request) {
+        String ip = request.getRemoteAddr();
+        String userAgent = request.getHeader("User-Agent");
+        BookingDTOs.BookingResponse booking = bookingService.confirmTransfer(id, user.getId(), ip, userAgent);
+        return ResponseEntity.ok(ApiResponse.success("Transfer confirmation submitted. Waiting verification.", booking));
+    }
+
+    @PostMapping("/{id}/verify-payment")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @Operation(summary = "Admin verifies payment and confirms booking")
+    public ResponseEntity<ApiResponse<BookingDTOs.BookingResponse>> verifyPayment(
+            @PathVariable String id,
+            @AuthenticationPrincipal User user,
+            jakarta.servlet.http.HttpServletRequest request) {
+        String ip = request.getRemoteAddr();
+        String userAgent = request.getHeader("User-Agent");
+        BookingDTOs.BookingResponse booking = bookingService.verifyPayment(id, user.getId(), ip, userAgent);
+        return ResponseEntity.ok(ApiResponse.success("Payment verified successfully. Booking is now CONFIRMED.", booking));
+    }
+
+    @PostMapping("/{id}/reject-payment")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @Operation(summary = "Admin rejects payment")
+    public ResponseEntity<ApiResponse<BookingDTOs.BookingResponse>> rejectPayment(
+            @PathVariable String id,
+            @AuthenticationPrincipal User user,
+            @RequestParam String reason,
+            jakarta.servlet.http.HttpServletRequest request) {
+        String ip = request.getRemoteAddr();
+        String userAgent = request.getHeader("User-Agent");
+        BookingDTOs.BookingResponse booking = bookingService.rejectPayment(id, user.getId(), reason, ip, userAgent);
+        return ResponseEntity.ok(ApiResponse.success("Payment transfer request rejected.", booking));
     }
 }

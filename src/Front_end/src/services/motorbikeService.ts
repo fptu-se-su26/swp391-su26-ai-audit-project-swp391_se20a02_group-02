@@ -1,16 +1,6 @@
 import apiClient from './api';
 import type { Vehicle, VehicleFilters, ApiResponse } from '@/types';
-
-const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8080/api/v1';
-
-const resolveImageUrl = (url: string | null | undefined): string => {
-  if (!url) return '';
-  if (url.startsWith('/uploads') || url.startsWith('uploads')) {
-    const cleanUrl = url.startsWith('/') ? url : '/' + url;
-    return `${API_BASE}${cleanUrl}`;
-  }
-  return url;
-};
+import { resolveImageUrl } from '@/utils';
 
 const mapMotorbike = (v: any): Vehicle => {
   if (!v) return v;
@@ -89,12 +79,12 @@ const mapMotorbike = (v: any): Vehicle => {
     instantBook: v.instantBook !== undefined && v.instantBook !== null ? v.instantBook : false,
     deposit: v.deposit !== undefined && v.deposit !== null ? v.deposit : 0,
     engineCc: v.engineCc || null,
-    hasHelmet: v.hasHelmet || false,
-    hasPhoneHolder: v.hasPhoneHolder || false,
-    hasRaincoat: v.hasRaincoat || false,
-    hasTouringPackage: v.hasTouringPackage || false,
-    deliveryAvailable: false,
-    deliveryFee: 0,
+    hasHelmet: v.helmetIncluded || v.hasHelmet || false,
+    hasPhoneHolder: v.phoneHolder || v.hasPhoneHolder || false,
+    hasRaincoat: v.raincoatIncluded || v.hasRaincoat || false,
+    hasTouringPackage: v.luggageRack || v.hasTouringPackage || false,
+    deliveryAvailable: v.deliveryAvailable !== undefined ? v.deliveryAvailable : true,
+    deliveryFee: v.deliveryFee || 100000,
   };
 };
 
@@ -116,6 +106,14 @@ export const motorbikeService = {
         if (filters.hasRaincoat) queryParams.append('raincoatIncluded', 'true');
         if (filters.hasPhoneHolder) queryParams.append('phoneHolder', 'true');
         if (filters.hasTouringPackage) queryParams.append('luggageRack', 'true');
+        // brand filter - send first brand selected
+        if (filters.brands && filters.brands.length > 0) {
+          queryParams.append('brand', filters.brands[0]);
+        }
+        // category filter - send first category selected (uppercase to match DB)
+        if (filters.category && filters.category.length > 0) {
+          queryParams.append('category', filters.category[0].toUpperCase());
+        }
       }
       
       const response = await apiClient.get<any>(`/motorbikes?${queryParams.toString()}`);
@@ -137,7 +135,7 @@ export const motorbikeService = {
 
   async getById(id: string): Promise<Vehicle | null> {
     try {
-      const endpoint = id.startsWith('VM-') ? `/vehicles/${id}` : `/motorbikes/${id}`;
+      const endpoint = id.startsWith('VM-') || id.startsWith('V-') ? `/vehicles/${id}` : `/motorbikes/${id}`;
       const response = await apiClient.get<any>(endpoint);
       return response.vehicle ? mapMotorbike(response.vehicle) : null;
     } catch (error) {

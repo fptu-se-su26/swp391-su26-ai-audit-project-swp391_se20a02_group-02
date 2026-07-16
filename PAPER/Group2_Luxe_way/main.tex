@@ -1,0 +1,94 @@
+% ==========================================
+% MAIN.TEX - LUXEWAY RESEARCH PAPER
+% IEEE Conference Format (IEEEtran)
+% ==========================================
+\documentclass[conference]{IEEEtran}
+
+% --- Core packages ---
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{cite}          % IEEE-style numeric citations [1], [2,3]
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}      % Professional table formatting
+\usepackage{array}         % Advanced column alignment
+\usepackage{url}           % URL formatting in references
+\usepackage{hyperref}
+\usepackage{balance}       % Balance columns on last page
+
+% --- Hyperref config (minimal for IEEE) ---
+\hypersetup{
+    colorlinks=false,       % IEEE print standard: no colored links
+    pdfborder={0 0 0},
+    pdftitle={LuxeWay: Trusted E-Commerce Platform for Vehicle Rental},
+    pdfauthor={Le Van Hau et al.},
+}
+
+% ==========================================
+% TITLE & AUTHORS  (IEEE format)
+% ==========================================
+\title{LuxeWay: Design and Implementation of a Trusted Peer-to-Peer\\
+       E-Commerce Platform for Vehicle Rental}
+
+\author{
+    \IEEEauthorblockN{Le Van Hau\IEEEauthorrefmark{1},
+                      Nguyen Van Dang\IEEEauthorrefmark{1},
+                      Nguyen Bui Quang Vinh\IEEEauthorrefmark{1},
+                      Ho Thanh Trung\IEEEauthorrefmark{1},
+                      Tran Phu Thinh\IEEEauthorrefmark{1}}
+    \IEEEauthorblockA{\IEEEauthorrefmark{1}%
+        FPT University, Ho Chi Minh City, Vietnam\\
+        Course: SWP391 -- Class: SE20A02 -- Group: 02\\
+        \{levanhaude190968, nguyenvandangde190324, nguyenbuiquangvinhde190264,\\
+         hothanhtrongde190928, tranphuthinhde190371\}@fpt.edu.vn}
+}
+
+% ==========================================
+% DOCUMENT BODY
+% ==========================================
+\begin{document}
+
+\maketitle
+
+% --- Abstract (mandatory in IEEE) ---
+\begin{abstract}
+This paper presents the design rationale and implementation approach of
+\textbf{LuxeWay}, a full-stack peer-to-peer (P2P) e-commerce platform
+for vehicle rental targeting the Vietnamese market. Existing platforms
+suffer from persistent limitations in owner-renter communication,
+single-dimension trust evaluation, and the absence of localized payment
+infrastructure. LuxeWay addresses these gaps through a hybrid Car
+Rental and Car Sharing business model, a React 18 + TypeScript
+single-page application, a Spring Boot 3 / Java 21 RESTful backend,
+Microsoft SQL Server data persistence, VNPay payment gateway
+integration, WebSocket-based real-time messaging, automated PDF
+contract generation, and a five-dimension review system grounded in
+related academic literature. The system is fully deployed and
+documented, contributing a production-grade reference implementation to
+a literature domain that has historically favored theoretical models
+over practical engineering.
+\end{abstract}
+
+% --- Keywords (mandatory in IEEE) ---
+\begin{IEEEkeywords}
+peer-to-peer vehicle rental, car sharing, e-commerce marketplace,
+JWT authentication, VNPay, Spring Boot, React, reputation system,
+digital contract, Vietnam
+\end{IEEEkeywords}
+
+% --- Section files ---
+\input{sections/1_introduction}
+\input{sections/2_scope}
+\input{sections/3_existing_systems}
+\input{sections/4_literature_review}
+\input{sections/5_comparative_analysis}
+\input{sections/6_research_gaps}
+\input{sections/7_proposed_solution}
+\input{sections/8_conclusion}
+
+% --- References ---
+\balance  % Balance the two columns on the final page
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}

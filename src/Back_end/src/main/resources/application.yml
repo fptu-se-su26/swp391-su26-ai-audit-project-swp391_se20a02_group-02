@@ -45,9 +45,10 @@ app:
 
 # Server Configuration
 server:
-  port: 8080
+  port: ${PORT:8080}
   servlet:
     context-path: /
+  forward-headers-strategy: framework
 
 # JWT Configuration
 # SECURITY: MUST set JWT_SECRET environment variable with 256-bit random key
@@ -104,9 +105,24 @@ payment:
     return-url: ${FRONTEND_URL}/payment/vnpay/return
     # VNPay callback IP whitelist for security (comma-separated)
     allowed-ips: ${VNPAY_ALLOWED_IPS:203.171.19.146,203.171.19.147,203.171.19.148}
+  momo:
+    partner-code: ${MOMO_PARTNER_CODE:MOMO}
+    access-key: ${MOMO_ACCESS_KEY:F8BBA842ECF85}
+    secret-key: ${MOMO_SECRET_KEY:K951B6PE1waDMi640xX08PD3vg6EkVlz}
+    endpoint: ${MOMO_ENDPOINT:https://test-payment.momo.vn/v2/gateway/api/create}
+    return-url: ${MOMO_RETURN_URL:http://localhost:5173/payment/momo/return}
+    ipn-url: ${MOMO_IPN_URL:http://localhost:5101/api/payment/momo-ipn}
+    request-type: ${MOMO_REQUEST_TYPE:payWithMethod}
+  payos:
+    client-id: ${PAYOS_CLIENT_ID:df05a25a-08ed-4ca8-b98a-8d41530faba0}
+    api-key: ${PAYOS_API_KEY:df869361-323d-4db6-89d8-8f3b04e9bc91}
+    checksum-key: ${PAYOS_CHECKSUM_KEY:5863a512571ebfbde1321dbce7d57d1f9bd1e80f680d2c2172aef87d919fe1fa}
+    endpoint: ${PAYOS_ENDPOINT:https://api-merchant.payos.vn/v2/payment-requests}
+    return-url: ${PAYOS_RETURN_URL:http://localhost:5173/payment/payos/return}
+    cancel-url: ${PAYOS_CANCEL_URL:http://localhost:5173/payment/payos/return}
   stripe:
-    public-key: ${STRIPE_PUBLIC_KEY}
-    secret-key: ${STRIPE_SECRET_KEY}
+    public-key: ${STRIPE_PUBLIC_KEY:pk_test_mock}
+    secret-key: ${STRIPE_SECRET_KEY:sk_test_mock}
 
 # Business Rules
 business:
@@ -119,3 +135,22 @@ business:
     service-fee-rate: 0.12
     tax-rate: 0.08
     platform-commission: 0.15
+
+gemini:
+  api-key: ${GEMINI_API_KEY:mock_key}
+  model: ${GEMINI_MODEL:gemini-2.5-flash}
+
+goong:
+  api-key: ${GOONG_API_KEY:mock_goong_key}
+
+fptai:
+  api-key: ${FPTAI_API_KEY:BKfUiImFD4DI3RI2OEjoCahBTQOgVtPf}
+
+# VNPT eKYC Configuration
+# SECURITY: Set these via environment variables - NEVER hardcode credentials
+vnpt:
+  ekyc:
+    base-url: ${VNPT_EKYC_BASE_URL:https://api.idg.vnpt.vn}
+    token-id: 548912eb-b82f-57e6-e063-62199f0ad342
+    token-key: MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAIWfTHKzNAdm4BAdHunAcY89kjF0IXJZiXGMtO0Lcxioq0DTnZ5VGkIcvzyHrk/TqvGijLGqj4kRgZLukwKWmjcCAwEAAQ==
+    access-token: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0cmFuc2FjdGlvbl9pZCI6IjFmNGNlYWQzLTg5NzUtNDIzYi05NDhhLTUyNDc2ZWZmYzJjNyIsInN1YiI6ImQwNDgzODMzLTZiMjItMTFmMS04ZmE3LTkxMDU3YTdhMmYxNiIsImF1ZCI6WyJyZXN0c2VydmljZSJdLCJ1c2VyX25hbWUiOiJuZ3V5ZW52YW5naWFuZzIzMjAwNUBnbWFpbC5jb20iLCJzY29wZSI6WyJyZWFkIl0sImlzcyI6Imh0dHBzOi8vbG9jYWxob3N0IiwibmFtZSI6Im5ndXllbnZhbmdpYW5nMjMyMDA1QGdtYWlsLmNvbSIsImV4cCI6MTc4MTg3OTg3NywidXVpZF9hY2NvdW50IjoiZDA0ODM4MzMtNmIyMi0xMWYxLThmYTctOTEwNTdhN2EyZjE2IiwiYXV0aG9yaXRpZXMiOlsiVVNFUiJdLCJqdGkiOiIzMjk3Yzk1NS1hZDlkLTRmY2ItYTk5NS1iNGYwOTY5MGE2NWIiLCJjbGllbnRfaWQiOiJjbGllbnRhcHAifQ.EaD1nFmyQNEoW2PxSKhr_1uD4hsldUrLewukN3ZVPzb2eVNZU8Tb_5cS0AH4oAoBI3JX7Re6ZpxVhY0oJx2b0O77mk2z_L_m4fsNyKYjdxQjQEx8E8Jz1Uzvb_h_7nomnWywiFxIjCJQjldMdDKQFc6Wf4DWclOSaq49qshuVhTqMLgxRP-zHu1sXV9rarpcIw2aD0Qs36ZusV_BZXy3Iw3Z_MLqADio1pw7GoLCTS54qRQM-ALWZDjOlpb480xV7CSzgMh4HZFgEa13NwyCe1ivRYsKqNfZ0aoAZ3kpQLNuoUoD_VHP6IJQ6BF2nhfstC2hZGH9ooLue-vzOlanrA

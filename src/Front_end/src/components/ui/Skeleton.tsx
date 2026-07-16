@@ -7,8 +7,10 @@ interface SkeletonProps {
   rounded?: string;
 }
 
+
+
 export const Skeleton: React.FC<SkeletonProps> = ({ className, rounded = 'rounded-xl' }) => (
-  <div className={cn('skeleton', rounded, className)} />
+  <div className={cn('skeleton lw-shimmer-bg', rounded, className)} />
 );
 
 // ====== VEHICLE CARD SKELETON ======
@@ -36,7 +38,6 @@ export const StatCardSkeleton: React.FC = () => (
   <div className="luxury-card p-6 space-y-3">
     <Skeleton className="h-4 w-24" />
     <Skeleton className="h-8 w-32" />
-    <Skeleton className="h-3 w-20" />
   </div>
 );
 

@@ -32,6 +32,7 @@ public class OwnerProfile {
     private String bio;
 
     @Column(name = "account_type", nullable = false, length = 20)
+    @Builder.Default
     private String accountType = "INDIVIDUAL"; // INDIVIDUAL, BUSINESS
 
     @Column(name = "company_name", length = 200)
@@ -41,9 +42,11 @@ public class OwnerProfile {
     private String stripeAccountId;
 
     @Column(name = "wallet_balance", precision = 18, scale = 2, nullable = false)
+    @Builder.Default
     private BigDecimal walletBalance = BigDecimal.ZERO;
 
     @Column(name = "is_active", nullable = false)
+    @Builder.Default
     private Boolean isActive = true;
 
     @OneToOne(mappedBy = "owner", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

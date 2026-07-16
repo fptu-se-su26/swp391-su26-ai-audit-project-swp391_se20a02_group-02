@@ -1,7 +1,6 @@
 package com.luxeway.dto.motorbike;
 
 import com.luxeway.enums.TransmissionType;
-import com.luxeway.enums.VehicleStatus;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.util.List;

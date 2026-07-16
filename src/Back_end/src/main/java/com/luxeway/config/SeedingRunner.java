@@ -16,9 +16,16 @@ public class SeedingRunner implements CommandLineRunner {
 
     private final SeedingService seedingService;
     private final NotificationHubService notificationHubService;
+    private final org.springframework.core.env.Environment environment;
 
     @Override
     public void run(String... args) {
+        if (java.util.Arrays.asList(environment.getActiveProfiles()).contains("h2") ||
+            java.util.Arrays.asList(environment.getActiveProfiles()).contains("test")) {
+            log.info("Skipping data seeding in test/h2 environment to keep DB clean for unit tests.");
+            return;
+        }
+
         log.info("Running LuxeWay enterprise data seeder...");
         try {
             notificationHubService.seedTemplates();

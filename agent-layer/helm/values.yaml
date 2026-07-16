@@ -1,0 +1,45 @@
+replicaCount: 3
+
+image:
+  repository: ghcr.io/fptu-se-su26/agent-service
+  pullPolicy: Always
+  tag: "latest"
+
+service:
+  type: ClusterIP
+  port: 8001
+
+resources:
+  requests:
+    cpu: "250m"
+    memory: "512Mi"
+  limits:
+    cpu: "1000m"
+    memory: "2Gi"
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+
+env:
+  ENVIRONMENT: "production"
+  ML_SERVICE_URL: "http://ml-sidecar:8000"
+  BACKEND_URL: "http://spring-backend:8080"
+  MLFLOW_TRACKING_URI: "http://mlflow:5000"
+  WORKERS: "4"
+  ENABLE_HUMAN_IN_LOOP: "true"
+
+secrets:
+  jwtSecretKeySecretName: "luxeway-secrets"
+  jwtSecretKeyKey: "jwt-secret-key"
+  agentApiKeySecretName: "luxeway-secrets"
+  agentApiKeyKey: "agent-api-key"
+
+prometheus:
+  enabled: true
+  path: "/metrics"
+  port: 8001
+
+namespace: luxeway

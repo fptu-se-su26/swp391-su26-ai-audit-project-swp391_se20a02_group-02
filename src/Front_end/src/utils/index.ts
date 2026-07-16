@@ -5,8 +5,57 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+<<<<<<< HEAD
 export function formatCurrency(amount: number, currency = 'USD'): string {
   return new Intl.NumberFormat('en-US', {
+=======
+export function convertCurrency(amount: number, from = 'VND', to = 'VND'): number {
+  if (from === to) return amount;
+
+  // Current approximate exchange rates relative to VND (base rates)
+  const ratesToVND: Record<string, number> = {
+    VND: 1,
+    USD: 25400,
+    EUR: 27500,
+    JPY: 162,
+    SGD: 18800,
+    CAD: 18500,
+    AUD: 16850,
+    GBP: 32300,
+    KRW: 18.5,
+  };
+
+  const amountInVND = amount * (ratesToVND[from] || 1);
+  return amountInVND / (ratesToVND[to] || 1);
+}
+
+export function formatCurrency(amount: number, currency?: string): string {
+  let activeCurrency = 'VND';
+  let activeLang = 'en';
+  try {
+    const uiState = useUIStore.getState();
+    activeCurrency = uiState.currency || 'VND';
+    activeLang = uiState.language || 'en';
+  } catch { }
+
+  const targetCurrency = currency || activeCurrency;
+
+  // Assumes database amount is always in VND base currency
+  const convertedAmount = convertCurrency(amount, 'VND', targetCurrency);
+
+  const langLocaleMap: Record<string, string> = {
+    en: 'en-US',
+    vi: 'vi-VN',
+    ja: 'ja-JP',
+    ko: 'ko-KR',
+    zh: 'zh-CN',
+    fr: 'fr-FR',
+    de: 'de-DE',
+  };
+  const locale = langLocaleMap[activeLang] || 'en-US';
+  const isZeroDecimal = ['VND', 'JPY', 'KRW'].includes(targetCurrency.toUpperCase());
+  return new Intl.NumberFormat(locale, {
+>>>>>>> origin/main
     style: 'currency',
     currency,
     minimumFractionDigits: 0,
@@ -16,6 +65,24 @@ export function formatCurrency(amount: number, currency = 'USD'): string {
 
 export function formatDate(dateStr: string, format: 'short' | 'long' | 'relative' = 'short'): string {
   const date = new Date(dateStr);
+<<<<<<< HEAD
+=======
+  let activeLang = 'en';
+  try {
+    activeLang = useUIStore.getState().language || 'en';
+  } catch { }
+
+  const localeMap: Record<string, string> = {
+    en: 'en-US',
+    vi: 'vi-VN',
+    ja: 'ja-JP',
+    ko: 'ko-KR',
+    zh: 'zh-CN',
+    fr: 'fr-FR',
+    de: 'de-DE',
+  };
+  const targetLocale = localeMap[activeLang] || 'en-US';
+>>>>>>> origin/main
 
   if (format === 'relative') {
     const now = new Date();
@@ -84,6 +151,7 @@ export function generateBookingId(): string {
 }
 
 export function getStatusColor(status: string): string {
+  const normalized = status?.toLowerCase() || '';
   const colors: Record<string, string> = {
     pending: 'bg-yellow-50 text-yellow-700 border-yellow-200',
     confirmed: 'bg-blue-50 text-blue-700 border-blue-200',
@@ -94,15 +162,20 @@ export function getStatusColor(status: string): string {
     available: 'bg-green-50 text-green-700 border-green-200',
     rented: 'bg-blue-50 text-blue-700 border-blue-200',
     maintenance: 'bg-yellow-50 text-yellow-700 border-yellow-200',
-    pending_approval: 'bg-orange-50 text-orange-700 border-orange-200',
+    pending_approval: 'bg-yellow-50 text-yellow-700 border-yellow-200',
+    approved: 'bg-green-50 text-green-700 border-green-200',
+    rejected: 'bg-red-50 text-red-700 border-red-200',
+    draft: 'bg-slate-100 text-slate-600 border-slate-300',
+    blocked: 'bg-red-100 text-red-800 border-red-300',
     succeeded: 'bg-green-50 text-green-700 border-green-200',
     failed: 'bg-red-50 text-red-700 border-red-200',
     refunded: 'bg-purple-50 text-purple-700 border-purple-200',
   };
-  return colors[status] || 'bg-slate-50 text-slate-700 border-slate-200';
+  return colors[normalized] || 'bg-slate-50 text-slate-700 border-slate-200';
 }
 
 export function getStatusIcon(status: string): string {
+  const normalized = status?.toLowerCase() || '';
   const icons: Record<string, string> = {
     pending: '⏳',
     confirmed: '✅',
@@ -113,11 +186,16 @@ export function getStatusIcon(status: string): string {
     available: '✅',
     rented: '🚗',
     maintenance: '🔧',
+    pending_approval: '⏳',
+    approved: '✅',
+    rejected: '❌',
+    draft: '📝',
+    blocked: '🚫',
     succeeded: '💰',
     failed: '❌',
     refunded: '↩️',
   };
-  return icons[status] || '•';
+  return icons[normalized] || '•';
 }
 
 export function debounce<T extends (...args: any[]) => void>(fn: T, delay: number): (...args: Parameters<T>) => void {
@@ -160,9 +238,107 @@ export function isStrongPassword(password: string): { valid: boolean; strength: 
     if (check.test.test(password)) strength++;
   });
 
+  const strengthLabels = ['', 'Very Weak', 'Weak', 'Fair', 'Strong', 'Very Strong'];
+  const message = strengthLabels[strength] || 'Very Weak';
+
   return {
-    valid: strength >= 4,
+    valid: strength >= 3,
     strength,
-    message: strength < 4 ? 'Password is too weak' : strength === 5 ? 'Password is very strong' : 'Password is strong',
+    message
   };
 }
+
+const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8080/api/v1';
+const SERVER_BASE = API_BASE.replace('/api/v1', '');
+
+export function getVehicleFallbackImage(url: string | null | undefined): string {
+  if (!url) return '';
+  const lower = url.toLowerCase();
+  if (lower.includes('honda_city')) return 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=800&auto=format&fit=crop&q=80';
+  if (lower.includes('toyota_vios')) return 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?w=800&auto=format&fit=crop&q=80';
+  if (lower.includes('honda_airblade')) return 'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=800&auto=format&fit=crop&q=80';
+  if (lower.includes('mercedes_c200')) return 'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=800&auto=format&fit=crop&q=80';
+  if (lower.includes('bmw_x3')) return 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&auto=format&fit=crop&q=80';
+  if (lower.includes('toyota_camry')) return 'https://images.unsplash.com/photo-1621007947382-cc34aa864ee3?w=800&auto=format&fit=crop&q=80';
+  if (lower.includes('honda_crv')) return 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=800&auto=format&fit=crop&q=80';
+  if (lower.includes('vinfast_vf8')) return 'https://images.unsplash.com/photo-1563720223185-11003d516935?w=800&auto=format&fit=crop&q=80';
+  if (lower.includes('mazda_cx5')) return 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=800&auto=format&fit=crop&q=80';
+  if (lower.includes('hyundai_tucson')) return 'https://images.unsplash.com/photo-1567818735868-e71b99932e29?w=800&auto=format&fit=crop&q=80';
+  if (lower.includes('kia_morning')) return 'https://images.unsplash.com/photo-1590362891991-f776e747a588?w=800&auto=format&fit=crop&q=80';
+  if (lower.includes('ford_everest')) return 'https://images.unsplash.com/photo-1533513780-f38b4d4f0f00?w=800&auto=format&fit=crop&q=80';
+  return '';
+}
+
+export function resolveImageUrl(url: string | null | undefined): string {
+  if (!url) return '';
+
+  // Normalize backslashes to forward slashes
+  let normalizedUrl = url.replace(/\\/g, '/').trim();
+
+  // Check for fallbacks first
+  const fallback = getVehicleFallbackImage(normalizedUrl);
+  if (fallback) return fallback;
+
+  // Handle absolute URLs
+  if (normalizedUrl.startsWith('http://') || normalizedUrl.startsWith('https://')) {
+    return normalizedUrl.replace(/ /g, '%20');
+  }
+
+  // Handle backend uploads (starts with /uploads, uploads, or contains /uploads/)
+  const isUpload = normalizedUrl.startsWith('/uploads') || normalizedUrl.startsWith('uploads') || normalizedUrl.includes('/uploads/');
+  if (isUpload) {
+    let cleanUrl = normalizedUrl;
+    const uploadsIndex = normalizedUrl.indexOf('uploads');
+    if (uploadsIndex !== -1) {
+      cleanUrl = '/' + normalizedUrl.substring(uploadsIndex);
+    } else {
+      cleanUrl = normalizedUrl.startsWith('/') ? normalizedUrl : '/' + normalizedUrl;
+    }
+    const parts = cleanUrl.split('/');
+    const encodedParts = parts.map((p, i) => i === parts.length - 1 ? encodeURIComponent(p) : p);
+    return `${SERVER_BASE}${encodedParts.join('/')}`;
+  }
+
+  // Handle local public folder assets (starts with /images, images, or contains /images/)
+  const isLocalImage = normalizedUrl.startsWith('/images') || normalizedUrl.startsWith('images') || normalizedUrl.includes('/images/');
+  if (isLocalImage) {
+    let cleanUrl = normalizedUrl;
+    const imagesIndex = normalizedUrl.indexOf('images');
+    if (imagesIndex !== -1) {
+      cleanUrl = '/' + normalizedUrl.substring(imagesIndex);
+    } else {
+      cleanUrl = normalizedUrl.startsWith('/') ? normalizedUrl : '/' + normalizedUrl;
+    }
+
+    // Split to encode ONLY the filename (last segment), to avoid breaking spaces
+    const parts = cleanUrl.split('/');
+    const encodedParts = parts.map((p, i) => i === parts.length - 1 ? encodeURIComponent(p) : p);
+    return encodedParts.join('/');
+  }
+
+  return normalizedUrl.replace(/ /g, '%20');
+}
+
+export function sanitizeLocation(text: string | null | undefined): string {
+  if (!text) return '';
+  let clean = text.trim();
+  // Replace typical replacement characters or question marks in "Hồ Chí Minh"
+  clean = clean.replace(/H\? Ch\u00ED Minh/g, 'H\u1ED3 Ch\u00ED Minh')
+    .replace(/H\? Ch\u00ED/g, 'H\u1ED3 Ch\u00ED')
+    .replace(/H\uFFFD Ch\u00ED Minh/g, 'H\u1ED3 Ch\u00ED Minh')
+    .replace(/H\uFFFD Ch\u00ED/g, 'H\u1ED3 Ch\u00ED');
+
+  // Standard fallback replacement for any "H?" representing "Hồ"
+  if (clean.startsWith('H? ') || clean.startsWith('H\uFFFD ')) {
+    clean = 'H\u1ED3 ' + clean.substring(2);
+  }
+  if (clean.includes(' H? ') || clean.includes(' H\uFFFD ')) {
+    clean = clean.replace(/ H\? /g, ' H\u1ED3 ').replace(/ H\uFFFD /g, ' H\u1ED3 ');
+  }
+  if (clean === 'H?' || clean === 'H\uFFFD') {
+    clean = 'H\u1ED3';
+  }
+  return clean;
+}
+
+

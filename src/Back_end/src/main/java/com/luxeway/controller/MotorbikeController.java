@@ -36,11 +36,13 @@ public class MotorbikeController {
             @RequestParam(required = false) Boolean raincoatIncluded,
             @RequestParam(required = false) Boolean phoneHolder,
             @RequestParam(required = false) Boolean luggageRack,
+            @RequestParam(required = false) String brand,
+            @RequestParam(required = false) String category,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size) {
         try {
             Page<MotorbikeDTOs.MotorbikeResponse> motorbikes = motorbikeService.searchMotorbikes(
-                city, engineCc, transmission, helmetIncluded, raincoatIncluded, phoneHolder, luggageRack, page, size
+                city, engineCc, transmission, helmetIncluded, raincoatIncluded, phoneHolder, luggageRack, brand, category, page, size
             );
             Map<String, Object> response = new HashMap<>();
             response.put("vehicles", motorbikes.getContent());
@@ -190,8 +192,12 @@ public class MotorbikeController {
                 return ResponseEntity.status(401).body(error);
             }
             MotorbikeBookingDTOs.MotorbikeBookingResponse booking = motorbikeBookingService.getBookingById(id);
-            if (!booking.getRenter().getId().equals(user.getId()) &&
-                !booking.getOwner().getId().equals(user.getId()) &&
+            
+            String renterId = booking.getRenter() != null ? booking.getRenter().getId() : "";
+            String ownerId = booking.getOwner() != null ? booking.getOwner().getId() : "";
+            
+            if (!renterId.equals(user.getId()) &&
+                !ownerId.equals(user.getId()) &&
                 user.getRole() != com.luxeway.enums.UserRole.ADMIN) {
                 Map<String, Object> error = new HashMap<>();
                 error.put("error", "Forbidden");

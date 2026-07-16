@@ -15,7 +15,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -23,6 +22,7 @@ import java.util.List;
 @RequestMapping("/pricing")
 @RequiredArgsConstructor
 @Tag(name = "Pricing Rules & Engine", description = "Calculate real-time prices & manage pricing multipliers")
+@SuppressWarnings("all")
 public class PricingRuleController {
 
     private final PricingEngineService pricingEngineService;
@@ -42,7 +42,8 @@ public class PricingRuleController {
                 request.getStartDate(),
                 request.getEndDate(),
                 request.getAddonIds(),
-                request.getInsuranceId()
+                request.getInsuranceId(),
+                request.isIncludeDelivery()
         );
         return ResponseEntity.ok(ApiResponse.success("Price calculated successfully", breakdown));
     }
@@ -78,5 +79,6 @@ public class PricingRuleController {
         private LocalDate endDate;
         private List<String> addonIds;
         private String insuranceId;
+        private boolean includeDelivery;
     }
 }

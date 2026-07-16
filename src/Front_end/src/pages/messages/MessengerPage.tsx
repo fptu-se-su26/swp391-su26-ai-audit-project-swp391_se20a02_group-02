@@ -5,7 +5,12 @@ import { useAuthStore } from '@/store';
 import { messageService } from '@/services/otherServices';
 import type { Conversation, Message } from '@/types';
 import { formatDate, getInitials } from '@/utils';
+<<<<<<< HEAD
 import { getDb } from '@/mock/db';
+=======
+import { cn } from '@/utils';
+import SockJS from 'sockjs-client';
+>>>>>>> origin/main
 
 const MessengerPage: React.FC = () => {
   const { user } = useAuthStore();
@@ -17,7 +22,11 @@ const MessengerPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+<<<<<<< HEAD
   const { users } = getDb();
+=======
+  const wsRef = useRef<WebSocket | null>(null);
+>>>>>>> origin/main
 
   useEffect(() => {
     if (!user) return;
@@ -33,6 +42,59 @@ const MessengerPage: React.FC = () => {
     messageService.getMessages(activeConv.id).then(msgs => {
       setMessages(msgs);
     });
+<<<<<<< HEAD
+=======
+
+    // Establish WebSocket Connection via native SockJS + STOMP frames (no stompjs)
+    let ws: WebSocket | null = null;
+    let subscribed = false;
+    try {
+      ws = new SockJS('http://localhost:8080/ws') as unknown as WebSocket;
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        ws!.send('CONNECT\naccept-version:1.1,1.0\nheart-beat:0,0\n\n\0');
+      };
+
+      ws.onmessage = (event: MessageEvent) => {
+        const data: string = typeof event.data === 'string' ? event.data : '';
+        if (!data) return;
+        if (data.startsWith('CONNECTED') && !subscribed) {
+          subscribed = true;
+          ws!.send(`SUBSCRIBE\nid:sub-chat\ndestination:/topic/chat/${activeConv.id}\n\n\0`);
+        }
+        if (data.startsWith('MESSAGE')) {
+          try {
+            const bodyStart = data.indexOf('\n\n');
+            if (bodyStart !== -1) {
+              const body = data.substring(bodyStart + 2).replace(/\0$/, '');
+              const msg: Message = JSON.parse(body);
+              setMessages(prev => {
+                if (prev.some(m => m.id === msg.id)) return prev;
+                return [...prev, msg];
+              });
+            }
+          } catch (parseErr) {
+            console.warn('Failed to parse STOMP message body:', parseErr);
+          }
+        }
+      };
+
+      ws.onerror = (error) => {
+        console.error('WebSocket connection error:', error);
+      };
+    } catch (wsErr) {
+      console.warn('Failed to instantiate WebSocket client:', wsErr);
+    }
+
+    return () => {
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        try { wsRef.current.send('DISCONNECT\n\n\0'); } catch {}
+        wsRef.current.close();
+      }
+      wsRef.current = null;
+    };
+>>>>>>> origin/main
   }, [activeConv]);
 
   // Auto-scroll to latest message

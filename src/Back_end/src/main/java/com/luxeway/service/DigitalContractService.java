@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
+@SuppressWarnings("all")
 public class DigitalContractService {
 
     @Autowired

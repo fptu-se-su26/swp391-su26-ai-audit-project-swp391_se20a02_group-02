@@ -8,12 +8,14 @@ import java.util.Set;
 @Entity
 @Table(name = "car_brands")
 @Data
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class CarBrand {
     @Id
     @Column(length = 36)
+    @EqualsAndHashCode.Include
     private String id;
 
     @Column(nullable = false, unique = true, length = 100)

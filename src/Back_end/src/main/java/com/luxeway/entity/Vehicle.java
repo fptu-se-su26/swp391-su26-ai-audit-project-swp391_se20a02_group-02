@@ -35,6 +35,8 @@ public class Vehicle {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id", nullable = false)
     @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private User owner;
     
     @Column(nullable = false, length = 200)
@@ -138,6 +140,18 @@ public class Vehicle {
     
     @Column(precision = 11, scale = 8)
     private BigDecimal longitude;
+
+    @Column(name = "current_lat", precision = 10, scale = 8)
+    private BigDecimal currentLat;
+    
+    @Column(name = "current_lng", precision = 11, scale = 8)
+    private BigDecimal currentLng;
+    
+    @Column(name = "last_location_update")
+    private LocalDateTime lastLocationUpdate;
+    
+    @Column(name = "location_status", length = 50)
+    private String locationStatus;
     
     // Specs fields
     private Integer horsepower;
@@ -173,6 +187,13 @@ public class Vehicle {
     
     @Column(name = "license_plate", length = 20, unique = true)
     private String licensePlate;
+
+    @Column(length = 50)
+    private String vin;
+
+    @Column(name = "is_locked", nullable = false)
+    @Builder.Default
+    private Boolean isLocked = true;
     
     // Availability fields
     @Column(name = "min_rental_days")
@@ -192,6 +213,20 @@ public class Vehicle {
     @Column(nullable = false)
     @Builder.Default
     private VehicleStatus status = VehicleStatus.PENDING_APPROVAL;
+    
+    @Enumerated(EnumType.STRING)
+    @Column(name = "approval_status", nullable = false)
+    @Builder.Default
+    private VehicleStatus approvalStatus = VehicleStatus.PENDING_APPROVAL;
+
+    @Column(name = "approval_note", length = 500)
+    private String approvalNote;
+
+    @Column(name = "approved_by", length = 36)
+    private String approvedBy;
+
+    @Column(name = "approved_at")
+    private LocalDateTime approvedAt;
     
     @Column(precision = 3, scale = 2)
     @Builder.Default
@@ -235,27 +270,41 @@ public class Vehicle {
     
     // Relationships
     @OneToOne(mappedBy = "vehicle", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private VehicleSpecification specification;
 
     @OneToOne(mappedBy = "vehicle", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private VehicleLocation location;
 
     @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Set<VehicleAvailability> availabilities;
 
     @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Set<VehiclePricingRule> pricingRules;
 
-    @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Set<VehicleImage> images;
     
-    @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Set<VehicleFeature> features;
     
     @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Set<Booking> bookings;
     
     // Helper methods

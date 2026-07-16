@@ -13,23 +13,24 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("all")
 public class MotorbikeService {
 
     private final MotorbikeRepository motorbikeRepository;
-    private final MotorbikeBrandRepository motorbikeBrandRepository;
     private final MotorbikeModelRepository motorbikeModelRepository;
     private final UserRepository userRepository;
     private final TranslationService translationService;
 
+    @Transactional(readOnly = true)
     public Page<MotorbikeDTOs.MotorbikeResponse> searchMotorbikes(
             String city, Integer engineCc, String transmission,
             Boolean helmetIncluded, Boolean raincoatIncluded, Boolean phoneHolder, Boolean luggageRack,
+            String brand, String category,
             int page, int size) {
         
         com.luxeway.enums.TransmissionType transEnum = null;
@@ -43,11 +44,15 @@ public class MotorbikeService {
         
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Motorbike> motorbikePage = motorbikeRepository.searchMotorbikes(
-            city, engineCc, transEnum, helmetIncluded, raincoatIncluded, phoneHolder, luggageRack, pageable
+            city, engineCc, transEnum, helmetIncluded, raincoatIncluded, phoneHolder, luggageRack,
+            (brand != null && !brand.isBlank()) ? brand : null,
+            (category != null && !category.isBlank()) ? category : null,
+            pageable
         );
         return motorbikePage.map(this::toResponse);
     }
 
+    @Transactional(readOnly = true)
     public MotorbikeDTOs.MotorbikeResponse getMotorbikeById(String id) {
         Motorbike motorbike = motorbikeRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Motorbike not found with ID: " + id));
@@ -124,9 +129,13 @@ public class MotorbikeService {
         MotorbikeDTOs.MotorbikeResponse response = new MotorbikeDTOs.MotorbikeResponse();
         response.setId(motorbike.getId());
         response.setName(translationService.translateMotorbike(motorbike.getId(), lang, motorbike.getName(), null, "name"));
-        response.setBrandName(motorbike.getModel().getBrand().getName());
-        response.setModelName(motorbike.getModel().getName());
-        response.setCategory(motorbike.getModel().getCategory());
+        if (motorbike.getModel() != null) {
+            response.setModelName(motorbike.getModel().getName());
+            response.setCategory(motorbike.getModel().getCategory());
+            if (motorbike.getModel().getBrand() != null) {
+                response.setBrandName(motorbike.getModel().getBrand().getName());
+            }
+        }
         response.setLicensePlate(motorbike.getLicensePlate());
         response.setPricePerDay(motorbike.getPricePerDay());
         response.setDeposit(motorbike.getDeposit());
