@@ -144,7 +144,7 @@ public class FptAiEkycService {
             body.add("image", new FileSystemResource(filePath.toFile()));
 
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-            String url = "https://api.fpt.ai/vision/idr/vnm/";
+            String url = "https://api.fpt.ai/vision/idr/vnm";
             ResponseEntity<String> response = restTemplate.postForEntity(url, requestEntity, String.class);
 
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
@@ -210,7 +210,7 @@ public class FptAiEkycService {
             body.add("image", new FileSystemResource(filePath.toFile()));
 
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-            String url = "https://api.fpt.ai/vision/dlr/vnm/";
+            String url = "https://api.fpt.ai/vision/dlr/vnm";
             ResponseEntity<String> response = restTemplate.postForEntity(url, requestEntity, String.class);
 
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
@@ -285,7 +285,7 @@ public class FptAiEkycService {
             body.add("file[]", new FileSystemResource(selfiePath.toFile()));
 
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-            String url = "https://api.fpt.ai/dmp/checkface/v1/";
+            String url = "https://api.fpt.ai/dmp/checkface/v1";
             ResponseEntity<String> response = restTemplate.postForEntity(url, requestEntity, String.class);
 
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {

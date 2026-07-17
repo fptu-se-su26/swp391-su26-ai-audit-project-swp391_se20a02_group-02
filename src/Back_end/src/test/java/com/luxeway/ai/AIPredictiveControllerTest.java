@@ -19,6 +19,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
@@ -160,18 +161,18 @@ class AIPredictiveControllerTest {
                     .build());
         }
         BookingDemandDTO stubDemand = BookingDemandDTO.builder()
-                .forecasts(pts)
+                .dailyForecasts(pts)
                 .peakDay("Saturday")
-                .averageDailyDemand(52.0)
+                .avgDailyDemand(52.0)
                 .warningFlag(false)
                 .build();
 
-        when(mlSidecarClient.forecastBookingDemand(anyList(), anyInt())).thenReturn(stubDemand);
+        when(mlSidecarClient.forecastDemand(anyList(), anyInt())).thenReturn(stubDemand);
 
         mockMvc.perform(post("/api/v1/admin/ai/booking/demand?horizon=7").with(csrf()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.forecasts").isArray())
-                .andExpect(jsonPath("$.forecasts.length()").value(7));
+                .andExpect(jsonPath("$.daily_forecasts").isArray())
+                .andExpect(jsonPath("$.daily_forecasts.length()").value(7));
     }
 
     @Test
@@ -189,17 +190,18 @@ class AIPredictiveControllerTest {
     @WithMockUser(roles = "ADMIN")
     void vehicleUtilization_returns200WithUtilizationData() throws Exception {
         VehicleUtilizationDTO stubUtil = VehicleUtilizationDTO.builder()
-                .averageUtilizationRate(72.5)
-                .topVehicles(Collections.emptyList())
-                .utilizationByCategory(Collections.emptyMap())
+                .byCategory(Collections.emptyMap())
+                .currentRates(Map.of("SEDAN", 0.725))
+                .lowestCategory("SUV")
+                .highestCategory("SEDAN")
                 .warningFlag(false)
                 .build();
 
-        when(mlSidecarClient.forecastUtilization(anyList(), anyList())).thenReturn(stubUtil);
+        when(mlSidecarClient.forecastUtilization(anyMap(), anyInt())).thenReturn(stubUtil);
 
         mockMvc.perform(post("/api/v1/admin/ai/vehicle/utilization?horizon=7").with(csrf()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.average_utilization_rate").value(72.5));
+                .andExpect(jsonPath("$.current_rates.SEDAN").value(0.725));
     }
 
     // ===================================================================
@@ -211,11 +213,11 @@ class AIPredictiveControllerTest {
     void anomalies_returns200WithAnomalyList() throws Exception {
         List<AnomalyDTO> stubAnomalies = List.of(
                 AnomalyDTO.builder()
-                        .date(java.time.LocalDate.now().minusDays(3))
+                        .date(java.time.LocalDate.now().minusDays(3).toString())
                         .metric("revenue")
                         .actualValue(5_000_000.0)
                         .expectedValue(20_000_000.0)
-                        .deviationPercent(-75.0)
+                        .zScore(-3.5)
                         .severity("HIGH")
                         .build()
         );
@@ -234,8 +236,25 @@ class AIPredictiveControllerTest {
     @Test
     @WithMockUser(roles = "ADMIN")
     void insights_cacheNotNull_returnsInsightList() throws Exception {
+        List<InsightDTO> stubInsights = List.of(
+                InsightDTO.builder()
+                        .type("REVENUE")
+                        .title("Revenue Trend")
+                        .description("Revenue is up 15% this week")
+                        .severity("INFO")
+                        .confidence(0.85)
+                        .build(),
+                InsightDTO.builder()
+                        .type("CHURN")
+                        .title("Churn Risk")
+                        .description("Churn risk detected for 3 users")
+                        .severity("WARNING")
+                        .confidence(0.75)
+                        .build()
+        );
+
         AIPredictiveDashboardDTO dashboardWithInsights = AIPredictiveDashboardDTO.builder()
-                .insights(List.of("Revenue is up 15% this week", "Churn risk detected for 3 users"))
+                .insights(stubInsights)
                 .build();
 
         when(cacheService.getCached()).thenReturn(dashboardWithInsights);

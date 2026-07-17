@@ -109,6 +109,10 @@ public class VnptEkycService {
 
         // Mark user as KYC verified
         user.setKycVerified(true);
+        user.setKycStatus("VERIFIED");
+        if (Boolean.TRUE.equals(user.getDrivingLicenseVerified())) {
+            user.setVerified(true);
+        }
         userRepository.save(user);
 
         log.info("eKYC: User {} KYC verified successfully. CCCD: {}", userId, frontDoc.getEkycIdNumber());

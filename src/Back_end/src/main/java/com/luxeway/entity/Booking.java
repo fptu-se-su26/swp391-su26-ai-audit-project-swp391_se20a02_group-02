@@ -31,12 +31,12 @@ public class Booking {
     @Column(name = "booking_code", unique = true, length = 50)
     private String bookingCode;
 
-    @Column(name = "cleaning_fee", nullable = false, precision = 12, scale = 0)
+    @Column(name = "cleaning_fee", nullable = false, precision = 12, scale = 0, columnDefinition = "numeric(12,0) DEFAULT 0")
     @Builder.Default
     private BigDecimal cleaningFee = BigDecimal.ZERO;
 
     @Version
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "BIGINT DEFAULT 0")
     private Long version;
     
     @ManyToOne(fetch = FetchType.LAZY)

@@ -70,6 +70,10 @@ $vnpIps = if ($env:VNPAY_ALLOWED_IPS) { $env:VNPAY_ALLOWED_IPS } else { '203.171
 $stripePub = if ($env:STRIPE_PUBLIC_KEY) { $env:STRIPE_PUBLIC_KEY } else { 'pk_test_placeholder' }
 $stripeSec = if ($env:STRIPE_SECRET_KEY) { $env:STRIPE_SECRET_KEY } else { 'sk_test_placeholder' }
 
+$payosClientId = if ($env:PAYOS_CLIENT_ID) { $env:PAYOS_CLIENT_ID } else { 'df05a25a-08ed-4ca8-b98a-8d41530faba0' }
+$payosApiKey = if ($env:PAYOS_API_KEY) { $env:PAYOS_API_KEY } else { 'df869361-323d-4db6-89d8-8f3b04e9bc91' }
+$payosChecksumKey = if ($env:PAYOS_CHECKSUM_KEY) { $env:PAYOS_CHECKSUM_KEY } else { '5863a512571ebfbde1321dbce7d57d1f9bd1e80f680d2c2172aef87d919fe1fa' }
+
 $feUrl = if ($env:FRONTEND_URL) { $env:FRONTEND_URL } else { 'http://localhost:5173' }
 $logLevel = if ($env:LOG_LEVEL) { $env:LOG_LEVEL } else { 'INFO' }
 $goongKey = if ($env:GOONG_API_KEY) { $env:GOONG_API_KEY } else { 'mock_goong_key' }
@@ -99,6 +103,12 @@ $javaCmd = "java " +
   "-DVNPAY_ALLOWED_IPS=`"$vnpIps`" " +
   "-DSTRIPE_PUBLIC_KEY=`"$stripePub`" " +
   "-DSTRIPE_SECRET_KEY=`"$stripeSec`" " +
+  "-DPAYOS_CLIENT_ID=`"$payosClientId`" " +
+  "-DPAYOS_API_KEY=`"$payosApiKey`" " +
+  "-DPAYOS_CHECKSUM_KEY=`"$payosChecksumKey`" " +
+  "-Dpayment.payos.client-id=`"$payosClientId`" " +
+  "-Dpayment.payos.api-key=`"$payosApiKey`" " +
+  "-Dpayment.payos.checksum-key=`"$payosChecksumKey`" " +
   "-DFRONTEND_URL=`"$feUrl`" " +
   "-DLOG_LEVEL=`"$logLevel`" " +
   "-DGOONG_API_KEY=`"$goongKey`" " +

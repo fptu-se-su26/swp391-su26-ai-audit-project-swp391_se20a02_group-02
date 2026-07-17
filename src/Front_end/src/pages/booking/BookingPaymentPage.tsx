@@ -18,9 +18,12 @@ const BookingPaymentPage: React.FC = () => {
   const [booking, setBooking] = useState<Booking | null>(null);
   const [paymentSetting, setPaymentSetting] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [confirming, setConfirming] = useState(false);
   const [countdown, setCountdown] = useState<number>(900); // 15 minutes default
   const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  const isExpired = countdown <= 0 || booking?.status === 'payment_expired';
+  const isPendingApproval = booking?.status === 'payment_pending';
+  const isConfirmed = booking?.status === 'confirmed' || booking?.status === 'payment_verified' || booking?.status === 'owner_approved';
 
   // Load booking and payment credentials
   useEffect(() => {
@@ -29,12 +32,24 @@ const BookingPaymentPage: React.FC = () => {
     const loadData = async () => {
       try {
         setLoading(true);
-        const [bookingData, settingsData] = await Promise.all([
-          bookingService.getById(bookingId),
-          paymentService.getPaymentSettings()
-        ]);
+        
+        let bookingData = null;
+        try {
+          bookingData = await bookingService.getById(bookingId);
+        } catch (err) {
+          console.error('Error fetching booking detail:', err);
+        }
 
         if (bookingData) {
+          // If booking is already confirmed, redirect to success page immediately
+          const isConf = bookingData.status === 'confirmed' || 
+                         bookingData.status === 'payment_verified' || 
+                         bookingData.status === 'owner_approved';
+          if (isConf) {
+            navigate('/success');
+            return;
+          }
+
           setBooking(bookingData);
 
           // Calculate initial countdown based on booking's createdAt time
@@ -42,12 +57,29 @@ const BookingPaymentPage: React.FC = () => {
           const endTime = createdTime + 15 * 60 * 1000;
           const remainingSeconds = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
           setCountdown(remainingSeconds);
+
+          // Auto-confirm transfer (transition to pending approval) on load
+          if (bookingData.status === 'waiting_payment') {
+            try {
+              const updated = await bookingService.confirmTransfer(bookingData.id);
+              if (updated) {
+                setBooking(updated);
+              }
+            } catch (err) {
+              console.error('Error auto-confirming transfer:', err);
+            }
+          }
         } else {
           toast.error(isVi ? 'Không tìm thấy đặt xe' : 'Booking Not Found');
         }
 
-        if (settingsData && settingsData.data) {
-          setPaymentSetting(settingsData.data);
+        try {
+          const settingsData = await paymentService.getPaymentSettings();
+          if (settingsData && settingsData.data) {
+            setPaymentSetting(settingsData.data);
+          }
+        } catch (err) {
+          console.error('Error loading payment settings:', err);
         }
       } catch (err: any) {
         console.error('Error loading checkout page data:', err);
@@ -58,7 +90,7 @@ const BookingPaymentPage: React.FC = () => {
     };
 
     loadData();
-  }, [bookingId, isVi]);
+  }, [bookingId, isVi, navigate]);
 
   // Live timer countdown logic
   useEffect(() => {
@@ -95,31 +127,37 @@ const BookingPaymentPage: React.FC = () => {
     setTimeout(() => setCopiedField(null), 2000);
   };
 
-  const handleConfirmTransfer = async () => {
-    if (!booking) return;
+  // Poll booking status when it's not confirmed or expired
+  useEffect(() => {
+    if (!bookingId || loading || !booking || isConfirmed || isExpired) return;
 
-    setConfirming(true);
-    try {
-      const updated = await bookingService.confirmTransfer(booking.id);
-      if (updated) {
-        toast.success(
-          isVi ? 'Đã xác nhận chuyển khoản' : 'Transfer Submitted',
-          isVi ? 'Đang chờ Admin duyệt giao dịch của bạn.' : 'Awaiting manual Admin verification.'
-        );
-        navigate(`/dashboard/bookings/${booking.id}/tracking`);
-      } else {
-        toast.error(isVi ? 'Xác nhận thất bại' : 'Verification Submission Failed');
+    const interval = setInterval(async () => {
+      try {
+        const updatedBooking = await bookingService.getById(bookingId);
+        if (updatedBooking) {
+          if (updatedBooking.status !== booking.status) {
+            setBooking(updatedBooking);
+            
+            const isNowConfirmed = updatedBooking.status === 'confirmed' || 
+                                   updatedBooking.status === 'payment_verified' || 
+                                   updatedBooking.status === 'owner_approved';
+            if (isNowConfirmed) {
+              clearInterval(interval);
+              toast.success(
+                isVi ? 'Thanh toán thành công!' : 'Payment successful!',
+                isVi ? 'Đơn đặt xe của bạn đã được xác nhận.' : 'Your booking has been confirmed.'
+              );
+              navigate('/success');
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error polling booking status:', err);
       }
-    } catch (err: any) {
-      console.error(err);
-      toast.error(
-        isVi ? 'Lỗi xác nhận' : 'Confirmation Error',
-        err.message || (isVi ? 'Có lỗi xảy ra khi xác nhận thanh toán.' : 'Failed to submit payment confirmation.')
-      );
-    } finally {
-      setConfirming(false);
-    }
-  };
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [bookingId, loading, booking, isConfirmed, isExpired, isVi, navigate, toast]);
 
   if (loading) {
     return (
@@ -156,9 +194,7 @@ const BookingPaymentPage: React.FC = () => {
 
   const vietQrUrl = `https://img.vietqr.io/image/${bankName}-${accountNumber}-compact2.png?amount=${amountToPay}&addInfo=${transferMemo}&accountName=${encodeURIComponent(ownerName)}`;
 
-  const isExpired = countdown <= 0 || booking.status === 'payment_expired';
-  const isPendingApproval = booking.status === 'payment_pending';
-  const isConfirmed = booking.status === 'confirmed' || booking.status === 'payment_verified' || booking.status === 'owner_approved';
+  // Status computed variables are declared at the top of the component
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pt-24 pb-16 transition-colors">
@@ -213,48 +249,48 @@ const BookingPaymentPage: React.FC = () => {
               <div className="space-y-3.5 text-xs text-slate-600 dark:text-slate-400">
                 <div className="flex justify-between">
                   <span>{isVi ? 'Giá thuê xe' : 'Rental Rate'}</span>
-                  <span className="font-bold text-foreground">{formatCurrency(booking.pricing?.basePrice || 0, language)}</span>
+                  <span className="font-bold text-foreground">{formatCurrency(booking.pricing?.basePrice || 0)}</span>
                 </div>
                 {booking.pricing?.discount > 0 && (
                   <div className="flex justify-between text-red-500">
                     <span>{isVi ? 'Khuyến mãi' : 'Discount'}</span>
-                    <span className="font-bold">-{formatCurrency(booking.pricing.discount, language)}</span>
+                    <span className="font-bold">-{formatCurrency(booking.pricing.discount)}</span>
                   </div>
                 )}
                 {booking.includeInsurance && (
                   <div className="flex justify-between">
                     <span>{isVi ? 'Bảo hiểm chuyến đi' : 'Insurance'}</span>
-                    <span className="font-bold text-foreground">+{formatCurrency(booking.pricing?.insuranceFee || 0, language)}</span>
+                    <span className="font-bold text-foreground">+{formatCurrency(booking.pricing?.insuranceFee || 0)}</span>
                   </div>
                 )}
                 {booking.includeDelivery && (
                   <div className="flex justify-between">
                     <span>{isVi ? 'Phí giao xe' : 'Delivery Fee'}</span>
-                    <span className="font-bold text-foreground">+{formatCurrency(booking.pricing?.deliveryFee || 0, language)}</span>
+                    <span className="font-bold text-foreground">+{formatCurrency(booking.pricing?.deliveryFee || 0)}</span>
                   </div>
                 )}
                 {booking.pricing?.serviceFee > 0 && (
                   <div className="flex justify-between">
                     <span>{isVi ? 'Phí dịch vụ' : 'Service Fee'}</span>
-                    <span className="font-bold text-foreground">+{formatCurrency(booking.pricing.serviceFee, language)}</span>
+                    <span className="font-bold text-foreground">+{formatCurrency(booking.pricing.serviceFee)}</span>
                   </div>
                 )}
                 {booking.pricing?.taxes > 0 && (
                   <div className="flex justify-between">
                     <span>{isVi ? 'Thuế VAT' : 'VAT & Taxes'}</span>
-                    <span className="font-bold text-foreground">+{formatCurrency(booking.pricing.taxes, language)}</span>
+                    <span className="font-bold text-foreground">+{formatCurrency(booking.pricing.taxes)}</span>
                   </div>
                 )}
                 {booking.pricing?.deposit > 0 && (
                   <div className="flex justify-between pt-1 border-t border-slate-200/55 dark:border-white/5 text-amber-600 dark:text-amber-500">
                     <span>{isVi ? 'Tiền đặt cọc thế chấp' : 'Security Deposit'}</span>
-                    <span className="font-bold">{formatCurrency(booking.pricing.deposit, language)}</span>
+                    <span className="font-bold">{formatCurrency(booking.pricing.deposit)}</span>
                   </div>
                 )}
                 
                 <div className="flex justify-between text-sm font-black pt-3 border-t border-dashed border-border text-foreground">
                   <span>{isVi ? 'TỔNG THANH TOÁN' : 'TOTAL PAYMENT'}</span>
-                  <span className="text-blue-500 font-display font-black text-base">{formatCurrency(amountToPay, language)}</span>
+                  <span className="text-blue-500 font-display font-black text-base">{formatCurrency(amountToPay)}</span>
                 </div>
               </div>
 
@@ -308,7 +344,7 @@ const BookingPaymentPage: React.FC = () => {
             )}
 
             {/* main bank transfer module */}
-            {!isExpired && !isPendingApproval && !isConfirmed && (
+            {!isExpired && !isConfirmed && (
               <div className="bg-card border border-border rounded-3xl p-8 shadow-xl space-y-6 relative overflow-hidden">
                 
                 {/* Timer Countdown Header */}
@@ -374,7 +410,7 @@ const BookingPaymentPage: React.FC = () => {
                       <div>
                         <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-0.5">{isVi ? 'Số tiền' : 'Amount'}</span>
                         <div className="flex items-center justify-between">
-                          <span className="font-black text-sm text-blue-500">{formatCurrency(amountToPay, language)}</span>
+                          <span className="font-black text-sm text-blue-500">{formatCurrency(amountToPay)}</span>
                           <button onClick={() => handleCopyToClipboard(amountToPay.toString(), isVi ? 'Số tiền' : 'Amount')} className="text-slate-400 hover:text-foreground transition-colors p-1">
                             {copiedField === (isVi ? 'Số tiền' : 'Amount') ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
                           </button>
@@ -408,23 +444,13 @@ const BookingPaymentPage: React.FC = () => {
                   </p>
                 </div>
 
-                {/* Confirm Submission Action */}
-                <button
-                  onClick={handleConfirmTransfer}
-                  disabled={confirming}
-                  className="w-full py-4 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 text-white font-display font-black uppercase text-xs tracking-wider rounded-2xl transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
-                >
-                  {confirming ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      {isVi ? 'ĐANG GỬI XÁC NHẬN...' : 'SUBMITTING CONFIRMATION...'}
-                    </>
-                  ) : (
-                    <>
-                      {isVi ? 'TÔI ĐÃ CHUYỂN KHOẢN' : 'I HAVE TRANSFERRED'}
-                    </>
-                  )}
-                </button>
+                {/* Automatic checking status indicator */}
+                <div className="w-full py-4 bg-slate-50 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 rounded-2xl flex items-center justify-center gap-3">
+                  <div className="w-4.5 h-4.5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                  <span className="text-xs font-bold text-slate-500 dark:text-slate-400 animate-pulse">
+                    {isVi ? 'HỆ THỐNG ĐANG TỰ ĐỘNG KIỂM TRA TRẠNG THÁI THANH TOÁN...' : 'AUTOMATICALLY CHECKING PAYMENT STATUS...'}
+                  </span>
+                </div>
 
               </div>
             )}

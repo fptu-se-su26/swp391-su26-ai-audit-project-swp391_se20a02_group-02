@@ -113,7 +113,12 @@ export const bookingService = {
   },
 
   async create(wizardState: BookingWizardState, renterId: string, vehicleType?: 'car' | 'motorbike', extras?: any): Promise<Booking> {
-    const isGeneralVehicle = wizardState.vehicleId?.startsWith('VM-') || wizardState.vehicleId?.startsWith('VC-');
+    const isGeneralVehicle = 
+      wizardState.vehicleId?.startsWith('VM-') || 
+      wizardState.vehicleId?.startsWith('VC-') ||
+      wizardState.vehicleId?.startsWith('car-') ||
+      wizardState.vehicleId?.startsWith('motorbike-') ||
+      wizardState.vehicleId?.startsWith('featured-');
     if (vehicleType === 'car' && !isGeneralVehicle) {
       const payload = {
         carId: wizardState.vehicleId,

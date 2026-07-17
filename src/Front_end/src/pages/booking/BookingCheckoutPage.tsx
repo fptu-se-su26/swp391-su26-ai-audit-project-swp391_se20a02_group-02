@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { Calendar, Shield, CreditCard, Loader2, ArrowRight, CheckCircle, Tag, MapPin, Sparkles, Star } from 'lucide-react';
 import { vehicleService } from '@/services/vehicleService';
-import { bookingService } from '@/services/bookingService';
+import { bookingService, paymentService } from '@/services/bookingService';
 import type { Vehicle } from '@/types';
 import { useAuthStore, useUIStore } from '@/store';
 import { useToast } from '@/components/ui/Toast';
@@ -138,7 +138,7 @@ const BookingCheckoutPage: React.FC = () => {
 
   // Duration calculations
   const days = (startDate && endDate) 
-    ? Math.max(1, Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)))
+    ? Math.max(1, Math.round((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1)
     : 0;
 
   if (days === 0) {
@@ -200,8 +200,28 @@ const BookingCheckoutPage: React.FC = () => {
       );
 
       if (booking && booking.id) {
-        toast.success(isVi ? 'Đặt xe thành công' : 'Booking Created', isVi ? 'Đơn đặt xe đã được tạo. Vui lòng thanh toán.' : 'Booking created. Please make payment.');
-        navigate(`/booking/${booking.id}/payment`);
+        toast.success(isVi ? 'Đặt xe thành công' : 'Booking Created', isVi ? 'Đơn đặt xe đã được tạo. Đang chuyển hướng sang cổng thanh toán...' : 'Booking created. Redirecting to payment...');
+        
+        // Call PayOS payment creation
+        const amount = booking.pricing?.total || 0;
+        const returnUrl = `${window.location.origin}/payment/payos/return`;
+        const paymentResult = await paymentService.processPayment(
+          booking.id,
+          'payos',
+          amount,
+          returnUrl
+        );
+        
+        if (paymentResult.success && paymentResult.paymentUrl) {
+          window.location.href = paymentResult.paymentUrl;
+        } else {
+          toast.error(
+            isVi ? 'Không khởi tạo được cổng thanh toán PayOS' : 'Failed to initialize PayOS checkout',
+            paymentResult.errorMessage || (isVi ? 'Vui lòng thử lại sau.' : 'Please try again later.')
+          );
+          // Fallback to manual payment page if PayOS gateway request fails
+          navigate(`/booking/${booking.id}/payment`);
+        }
       } else {
         toast.error(isVi ? 'Đặt xe thất bại' : 'Submission failed', isVi ? 'Không khởi tạo được lịch trình.' : 'Failed to initialize booking.');
       }
@@ -409,45 +429,45 @@ const BookingCheckoutPage: React.FC = () => {
               <div className="text-xs space-y-3.5 text-slate-600 dark:text-slate-400">
                 <div className="flex justify-between">
                   <span>{isVi ? 'Giá thuê xe' : 'Vehicle Rent'}</span>
-                  <span className="font-bold text-foreground">{formatCurrency(rawBase, language)}</span>
+                  <span className="font-bold text-foreground">{formatCurrency(rawBase)}</span>
                 </div>
                 {discountAmt > 0 && (
                   <div className="flex justify-between text-red-500">
                     <span>{isVi ? 'Ưu đãi giảm giá' : 'Special promo discount'}</span>
-                    <span className="font-bold">-{formatCurrency(discountAmt, language)}</span>
+                    <span className="font-bold">-{formatCurrency(discountAmt)}</span>
                   </div>
                 )}
                 {includeInsurance && (
                   <div className="flex justify-between">
                     <span className="text-slate-400">{isVi ? 'Phí bảo hiểm' : 'Insurance'}</span>
-                    <span className="font-bold text-foreground">+{formatCurrency(insuranceFee, language)}</span>
+                    <span className="font-bold text-foreground">+{formatCurrency(insuranceFee)}</span>
                   </div>
                 )}
                 {includeDelivery && (
                   <div className="flex justify-between">
                     <span className="text-slate-400">{isVi ? 'Phí giao xe' : 'Delivery fee'}</span>
-                    <span className="font-bold text-foreground">+{formatCurrency(deliveryFee, language)}</span>
+                    <span className="font-bold text-foreground">+{formatCurrency(deliveryFee)}</span>
                   </div>
                 )}
                 <div className="flex justify-between">
                   <span>{isVi ? 'Phí nền tảng' : 'Service fee'} (12%)</span>
-                  <span className="font-bold text-foreground">+{formatCurrency(serviceFee, language)}</span>
+                  <span className="font-bold text-foreground">+{formatCurrency(serviceFee)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>{isVi ? 'Thuế VAT' : 'Taxes & VAT'} (8%)</span>
-                  <span className="font-bold text-foreground">+{formatCurrency(taxes, language)}</span>
+                  <span className="font-bold text-foreground">+{formatCurrency(taxes)}</span>
                 </div>
 
                 {deposit > 0 && (
                   <div className="flex justify-between pt-2 text-amber-600">
                     <span>{isVi ? 'Tiền đặt cọc thế chấp' : 'Security Deposit'}</span>
-                    <span className="font-bold">{formatCurrency(deposit, language)}</span>
+                    <span className="font-bold">{formatCurrency(deposit)}</span>
                   </div>
                 )}
 
                 <div className="flex justify-between text-base font-bold pt-3 border-t border-dashed border-border">
                   <span className="text-foreground">{isVi ? 'TỔNG CỘNG' : 'TOTAL PRICE'}</span>
-                  <span className="text-blue-500 font-display font-black">{formatCurrency(totalCost, language)}</span>
+                  <span className="text-blue-500 font-display font-black">{formatCurrency(totalCost)}</span>
                 </div>
               </div>
 

@@ -17,6 +17,7 @@ import java.util.Map;
 public class HomeController {
 
     private final HomeService homeService;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     @GetMapping("/stats")
     @Operation(summary = "Get landing page statistics: total vehicles, customers, bookings, avg rating")
@@ -76,12 +77,30 @@ public class HomeController {
     @Operation(summary = "Public health check to verify database connection")
     public ResponseEntity<Map<String, Object>> healthCheck() {
         boolean isConnected = homeService.checkDatabaseConnection();
-        Map<String, Object> response = Map.of(
-            "status", isConnected ? "SUCCESS" : "ERROR",
-            "message", isConnected ? "LuxeWay Backend is running!" : "Database connection failed",
-            "database_connected", isConnected,
-            "timestamp", System.currentTimeMillis()
-        );
+        Map<String, Object> response = new java.util.HashMap<>();
+        response.put("status", isConnected ? "SUCCESS" : "ERROR");
+        response.put("message", isConnected ? "LuxeWay Backend is running!" : "Database connection failed");
+        response.put("database_connected", isConnected);
+        response.put("timestamp", System.currentTimeMillis());
+
+        if (isConnected) {
+            try {
+                String dbName = jdbcTemplate.queryForObject("SELECT DB_NAME()", String.class);
+                String serverName = jdbcTemplate.queryForObject("SELECT @@SERVERNAME", String.class);
+                Integer userCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM users", Integer.class);
+                Integer carCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM cars", Integer.class);
+                Integer vehicleCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM vehicles", Integer.class);
+                
+                response.put("db_name", dbName);
+                response.put("server_name", serverName);
+                response.put("user_count", userCount);
+                response.put("car_count", carCount);
+                response.put("vehicle_count", vehicleCount);
+            } catch (Exception e) {
+                response.put("diagnostic_error", e.getMessage());
+            }
+        }
+        
         return isConnected 
             ? ResponseEntity.ok(response) 
             : ResponseEntity.status(500).body(response);

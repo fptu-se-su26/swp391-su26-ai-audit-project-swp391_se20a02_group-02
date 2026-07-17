@@ -135,7 +135,12 @@ export const motorbikeService = {
 
   async getById(id: string): Promise<Vehicle | null> {
     try {
-      const endpoint = id.startsWith('VM-') || id.startsWith('V-') ? `/vehicles/${id}` : `/motorbikes/${id}`;
+      const isGeneral = 
+        id.startsWith('VM-') || 
+        id.startsWith('V-') || 
+        id.startsWith('motorbike-') || 
+        id.startsWith('featured-');
+      const endpoint = isGeneral ? `/vehicles/${id}` : `/motorbikes/${id}`;
       const response = await apiClient.get<any>(endpoint);
       return response.vehicle ? mapMotorbike(response.vehicle) : null;
     } catch (error) {

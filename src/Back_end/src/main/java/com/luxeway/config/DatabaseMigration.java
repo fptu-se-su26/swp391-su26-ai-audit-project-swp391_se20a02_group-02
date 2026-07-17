@@ -92,12 +92,67 @@ public class DatabaseMigration implements CommandLineRunner {
         } catch (Exception e) {
             log.debug("Failed to alter check constraint (already updated or non-SQL Server environment): {}", e.getMessage());
         }
-        
+
+        // --- Critical fixes that must ALWAYS run (even if DB is "fully migrated") ---
+
+        // Drop/recreate CHK_bookings_status to include all enterprise statuses
+        try {
+            // Drop named constraint
+            try {
+                jdbcTemplate.execute("IF EXISTS (SELECT 1 FROM sys.objects WHERE name = 'CHK_bookings_status' AND type = 'C') " +
+                        "ALTER TABLE bookings DROP CONSTRAINT CHK_bookings_status");
+            } catch (Exception ignore) {}
+            // Drop ALL auto-named CK__bookings__status__* constraints
+            try {
+                jdbcTemplate.execute(
+                    "DECLARE @sql NVARCHAR(MAX) = ''; " +
+                    "SELECT @sql = @sql + 'ALTER TABLE bookings DROP CONSTRAINT [' + cc.name + ']; ' " +
+                    "FROM sys.check_constraints cc " +
+                    "JOIN sys.tables t ON cc.parent_object_id = t.object_id " +
+                    "WHERE t.name = 'bookings' AND cc.name LIKE 'CK__bookings__status%'; " +
+                    "IF LEN(@sql) > 0 EXEC sp_executesql @sql");
+            } catch (Exception ignore) {}
+            jdbcTemplate.execute("ALTER TABLE bookings ADD CONSTRAINT CHK_bookings_status CHECK (status IN (" +
+                    "'PENDING', 'CONFIRMED', 'PICKING_UP', 'IN_PROGRESS', 'ACTIVE', 'DISPUTED', 'CANCELLED', " +
+                    "'DRAFT', 'WAITING_PAYMENT', 'PAYMENT_PENDING', 'PAYMENT_VERIFIED', " +
+                    "'OWNER_APPROVED', 'READY_FOR_PICKUP', 'CHECKED_OUT', 'IN_RENTAL', " +
+                    "'RETURN_PENDING', 'RETURN_COMPLETED', 'COMPLETED', 'PAYMENT_EXPIRED', " +
+                    "'PAYMENT_REJECTED', 'CUSTOMER_CANCELLED', 'OWNER_CANCELLED', 'SYSTEM_CANCELLED'))");
+            log.info("Successfully updated CHK_bookings_status constraint with all enterprise statuses");
+        } catch (Exception e) {
+            log.debug("Failed to update CHK_bookings_status: {}", e.getMessage());
+        }
+
+        // Add missing columns to bookings
+        addNullableColumn("bookings", "booking_code", "NVARCHAR(50)", "VARCHAR(50)");
+        addNullableColumn("bookings", "cleaning_fee", "DECIMAL(12,0) NOT NULL DEFAULT 0", "DECIMAL(12,0) NOT NULL DEFAULT 0");
+        addNullableColumn("bookings", "version", "BIGINT NOT NULL DEFAULT 0", "BIGINT NOT NULL DEFAULT 0");
+        addNullableColumn("bookings", "estimated_time", "NVARCHAR(100)", "VARCHAR(100)");
+        addNullableColumn("bookings", "pickup_lat", "DECIMAL(18,8)", "DECIMAL(18,8)");
+        addNullableColumn("bookings", "pickup_lng", "DECIMAL(18,8)", "DECIMAL(18,8)");
+        addNullableColumn("bookings", "dropoff_lat", "DECIMAL(18,8)", "DECIMAL(18,8)");
+        addNullableColumn("bookings", "dropoff_lng", "DECIMAL(18,8)", "DECIMAL(18,8)");
+        addNullableColumn("bookings", "route_distance", "DECIMAL(18,2)", "DECIMAL(18,2)");
+        addNullableColumn("bookings", "route_polyline", "NVARCHAR(MAX)", "TEXT");
+
+        // Add unique index on booking_code
+        try {
+            jdbcTemplate.execute("CREATE UNIQUE INDEX UQ_bookings_booking_code ON bookings (booking_code) WHERE booking_code IS NOT NULL");
+        } catch (Exception ignore) {}
+
+        // Add missing columns to payments
+        addNullableColumn("payments", "verified_by", "NVARCHAR(100)", "VARCHAR(100)");
+        addNullableColumn("payments", "verified_time", "DATETIME2", "TIMESTAMP");
+        addNullableColumn("payments", "rejected_reason", "NVARCHAR(500)", "VARCHAR(500)");
+        addNullableColumn("payments", "transfer_content", "NVARCHAR(100)", "VARCHAR(100)");
+
+        // --- End critical fixes ---
+
         try {
             Integer tablesCount = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME IN ('notification_translations', 'disputes')", Integer.class);
-            if (tablesCount != null && tablesCount >= 2) {
-                log.info("Database is already fully migrated (found notification_translations and disputes tables). Skipping DDL migration scripts to boot faster.");
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME IN ('notification_translations', 'disputes', 'booking_counters', 'payment_settings')", Integer.class);
+            if (tablesCount != null && tablesCount >= 4) {
+                log.info("Database is already fully migrated (found notification_translations, disputes, booking_counters, and payment_settings tables). Skipping DDL migration scripts to boot faster.");
                 return;
             }
         } catch (Exception e) {
@@ -834,48 +889,7 @@ public class DatabaseMigration implements CommandLineRunner {
             log.warn("Failed to seed payment_settings: {}", e.getMessage());
         }
 
-        // Drop/recreate CHK_bookings_status constraint
-        try {
-            try {
-                jdbcTemplate.execute("IF EXISTS (SELECT 1 FROM sys.objects WHERE name = 'CHK_bookings_status' AND type = 'C') " +
-                        "ALTER TABLE bookings DROP CONSTRAINT CHK_bookings_status");
-            } catch (Exception ex) {
-                // Standard SQL fallback
-                try {
-                    jdbcTemplate.execute("ALTER TABLE bookings DROP CONSTRAINT CHK_bookings_status");
-                } catch (Exception ignore) {}
-            }
-            jdbcTemplate.execute("ALTER TABLE bookings ADD CONSTRAINT CHK_bookings_status CHECK (status IN (" +
-                    "'PENDING', 'CONFIRMED', 'PICKING_UP', 'IN_PROGRESS', 'ACTIVE', 'DISPUTED', " +
-                    "'DRAFT', 'WAITING_PAYMENT', 'PAYMENT_PENDING', 'PAYMENT_VERIFIED', " +
-                    "'OWNER_APPROVED', 'READY_FOR_PICKUP', 'CHECKED_OUT', 'IN_RENTAL', " +
-                    "'RETURN_PENDING', 'RETURN_COMPLETED', 'COMPLETED', 'PAYMENT_EXPIRED', " +
-                    "'PAYMENT_REJECTED', 'CUSTOMER_CANCELLED', 'OWNER_CANCELLED', 'SYSTEM_CANCELLED'))");
-            log.info("Successfully updated CHK_bookings_status constraint");
-        } catch (Exception e) {
-            log.debug("Failed to update CHK_bookings_status check constraint: {}", e.getMessage());
-        }
-
-        // Add columns to bookings
-        addNullableColumn("bookings", "booking_code", "NVARCHAR(50)", "VARCHAR(50)");
-        addNullableColumn("bookings", "cleaning_fee", "DECIMAL(12,0) NOT NULL DEFAULT 0", "DECIMAL(12,0) NOT NULL DEFAULT 0");
-        addNullableColumn("bookings", "version", "INT NOT NULL DEFAULT 0", "INT NOT NULL DEFAULT 0");
-
-        // Add unique index on booking_code
-        try {
-            jdbcTemplate.execute("CREATE UNIQUE INDEX UQ_bookings_booking_code ON bookings (booking_code) WHERE booking_code IS NOT NULL");
-            log.info("Successfully created index: UQ_bookings_booking_code");
-        } catch (Exception e) {
-            try {
-                jdbcTemplate.execute("CREATE UNIQUE INDEX UQ_bookings_booking_code ON bookings (booking_code)");
-            } catch (Exception ignore) {}
-        }
-
-        // Add columns to payments
-        addNullableColumn("payments", "verified_by", "NVARCHAR(100)", "VARCHAR(100)");
-        addNullableColumn("payments", "verified_time", "DATETIME2", "TIMESTAMP");
-        addNullableColumn("payments", "rejected_reason", "NVARCHAR(500)", "VARCHAR(500)");
-        addNullableColumn("payments", "transfer_content", "NVARCHAR(100)", "VARCHAR(100)");
+        // NOTE: Constraint fixes and column additions moved BEFORE the early-return check above.
     }
 
     private void addNullableColumn(String tableName, String columnName, String sqlServerType, String standardType) {

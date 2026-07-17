@@ -42,6 +42,7 @@ class AdminServiceTest {
     @Mock private UserDocumentRepository userDocumentRepository;
     @Mock private AnalyticsRepository analyticsRepository;
     @Mock private EmailService emailService;
+    @Mock private NotificationService notificationService;
 
     @InjectMocks
     private AdminService adminService;
@@ -109,41 +110,49 @@ class AdminServiceTest {
     @Test
     void testListUsers_WithKeyword() {
         Page<User> page = new PageImpl<>(List.of(new User()));
-        when(userRepository.searchUsers(eq("John"), any(Pageable.class))).thenReturn(page);
+        when(userRepository.searchUsersAdvanced(isNull(), isNull(), eq("John"), any(Pageable.class))).thenReturn(page);
+        when(userService.toProfileResponse(any(User.class))).thenReturn(new UserDTOs.UserProfileResponse());
         
-        adminService.listUsers(null, "John", 0, 10);
-        verify(userRepository).searchUsers(eq("John"), any(Pageable.class));
+        adminService.listUsers(null, null, "John", 0, 10);
+        verify(userRepository).searchUsersAdvanced(isNull(), isNull(), eq("John"), any(Pageable.class));
         verifyNoMoreInteractions(userRepository);
     }
 
     @Test
     void testListUsers_WithValidRole() {
         Page<User> page = new PageImpl<>(List.of(new User()));
-        when(userRepository.findByRole(eq(UserRole.ADMIN), any(Pageable.class))).thenReturn(page);
+        when(userRepository.searchUsersAdvanced(eq(UserRole.ADMIN), isNull(), isNull(), any(Pageable.class))).thenReturn(page);
+        when(userService.toProfileResponse(any(User.class))).thenReturn(new UserDTOs.UserProfileResponse());
         
-        adminService.listUsers("ADMIN", null, 0, 10);
-        verify(userRepository).findByRole(eq(UserRole.ADMIN), any(Pageable.class));
+        adminService.listUsers("ADMIN", null, null, 0, 10);
+        verify(userRepository).searchUsersAdvanced(eq(UserRole.ADMIN), isNull(), isNull(), any(Pageable.class));
     }
 
     @Test
     void testListUsers_WithInvalidRole() {
         Page<User> page = new PageImpl<>(List.of(new User()));
-        when(userRepository.findAll(any(Pageable.class))).thenReturn(page);
+        when(userRepository.searchUsersAdvanced(isNull(), isNull(), isNull(), any(Pageable.class))).thenReturn(page);
+        when(userService.toProfileResponse(any(User.class))).thenReturn(new UserDTOs.UserProfileResponse());
         
-        adminService.listUsers("INVALID_ROLE", null, 0, 10);
-        verify(userRepository).findAll(any(Pageable.class));
+        adminService.listUsers("INVALID_ROLE", null, null, 0, 10);
+        verify(userRepository).searchUsersAdvanced(isNull(), isNull(), isNull(), any(Pageable.class));
     }
 
     // ====== Vehicle Management ======
     @Test
     void testApproveVehicle_Valid() {
-        User owner = User.builder().email("test@test.com").build();
-        Vehicle v = Vehicle.builder().id("v1").owner(owner).status(VehicleStatus.PENDING_APPROVAL).build();
+        User owner = User.builder().id("o1").email("test@test.com").build();
+        Vehicle v = Vehicle.builder()
+                .id("v1")
+                .owner(owner)
+                .status(VehicleStatus.PENDING_APPROVAL)
+                .approvalStatus(VehicleStatus.PENDING_APPROVAL)
+                .build();
 
         when(vehicleRepository.findById("v1")).thenReturn(Optional.of(v));
         when(vehicleRepository.save(v)).thenReturn(v);
 
-        adminService.approveVehicle("v1");
+        adminService.approveVehicle("v1", "admin1");
 
         assertEquals(VehicleStatus.AVAILABLE, v.getStatus());
         assertTrue(v.getIsVerified());
@@ -152,13 +161,18 @@ class AdminServiceTest {
 
     @Test
     void testRejectVehicle_Valid() {
-        User owner = User.builder().email("test@test.com").build();
-        Vehicle v = Vehicle.builder().id("v1").owner(owner).status(VehicleStatus.PENDING_APPROVAL).build();
+        User owner = User.builder().id("o1").email("test@test.com").build();
+        Vehicle v = Vehicle.builder()
+                .id("v1")
+                .owner(owner)
+                .status(VehicleStatus.PENDING_APPROVAL)
+                .approvalStatus(VehicleStatus.PENDING_APPROVAL)
+                .build();
 
         when(vehicleRepository.findById("v1")).thenReturn(Optional.of(v));
         when(vehicleRepository.save(v)).thenReturn(v);
 
-        adminService.rejectVehicle("v1", "Bad quality");
+        adminService.rejectVehicle("v1", "Bad quality", "admin1");
 
         assertEquals(VehicleStatus.REJECTED, v.getStatus());
         verify(emailService).sendVehicleApprovalStatus(eq("test@test.com"), eq(v), eq("REJECTED"), eq("Bad quality"));
@@ -205,16 +219,20 @@ class AdminServiceTest {
     @Test
     void testListPendingVehicles() {
         Page<Vehicle> page = new PageImpl<>(List.of(new Vehicle()));
-        when(vehicleRepository.findByStatusOrderByCreatedAtDesc(eq(VehicleStatus.PENDING_APPROVAL), any(Pageable.class))).thenReturn(page);
+        when(vehicleRepository.findByApprovalStatusOrderByCreatedAtDesc(eq(VehicleStatus.PENDING_APPROVAL), any(Pageable.class))).thenReturn(page);
+        when(vehicleService.toResponse(any(Vehicle.class))).thenReturn(new VehicleDTOs.VehicleResponse());
+        
         adminService.listPendingVehicles(0, 10);
-        verify(vehicleRepository).findByStatusOrderByCreatedAtDesc(eq(VehicleStatus.PENDING_APPROVAL), any(Pageable.class));
+        verify(vehicleRepository).findByApprovalStatusOrderByCreatedAtDesc(eq(VehicleStatus.PENDING_APPROVAL), any(Pageable.class));
     }
 
     @Test
     void testListAllVehicles() {
         Page<Vehicle> page = new PageImpl<>(List.of(new Vehicle()));
         when(vehicleRepository.findByStatus(eq(VehicleStatus.AVAILABLE), any(Pageable.class))).thenReturn(page);
-        adminService.listAllVehicles("AVAILABLE", 0, 10);
+        when(vehicleService.toResponse(any(Vehicle.class))).thenReturn(new VehicleDTOs.VehicleResponse());
+        
+        adminService.listAllVehicles("AVAILABLE", null, 0, 10);
         verify(vehicleRepository).findByStatus(eq(VehicleStatus.AVAILABLE), any(Pageable.class));
     }
 
@@ -222,6 +240,8 @@ class AdminServiceTest {
     void testListAllBookings() {
         Page<com.luxeway.entity.Booking> page = new PageImpl<>(List.of(new com.luxeway.entity.Booking()));
         when(bookingRepository.findByStatus(eq(com.luxeway.enums.BookingStatus.COMPLETED), any(Pageable.class))).thenReturn(page);
+        when(bookingService.toResponse(any(com.luxeway.entity.Booking.class))).thenReturn(new com.luxeway.dto.booking.BookingDTOs.BookingResponse());
+        
         adminService.listAllBookings("COMPLETED", 0, 10);
         verify(bookingRepository).findByStatus(eq(com.luxeway.enums.BookingStatus.COMPLETED), any(Pageable.class));
     }
@@ -230,6 +250,8 @@ class AdminServiceTest {
     void testListAllPayments() {
         Page<com.luxeway.entity.Payment> page = new PageImpl<>(List.of(new com.luxeway.entity.Payment()));
         when(paymentRepository.findAllByOrderByCreatedAtDesc(any(Pageable.class))).thenReturn(page);
+        when(paymentService.toResponse(any(com.luxeway.entity.Payment.class))).thenReturn(new com.luxeway.dto.payment.PaymentDTOs.PaymentResponse());
+        
         adminService.listAllPayments(0, 10);
         verify(paymentRepository).findAllByOrderByCreatedAtDesc(any(Pageable.class));
     }

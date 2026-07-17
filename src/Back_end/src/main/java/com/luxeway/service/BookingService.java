@@ -166,7 +166,12 @@ public class BookingService {
 
         // Concurrency-safe sequential booking code generation
         BookingCounter counter = bookingCounterRepository.findByNameForUpdate("bookings")
-                .orElseThrow(() -> new RuntimeException("Booking counter sequence not initialized"));
+                .orElseGet(() -> {
+                    // Auto-initialize counter if not found (self-healing)
+                    log.warn("Booking counter not found in DB — auto-initializing at 100000");
+                    BookingCounter newCounter = new BookingCounter("bookings", 100000L);
+                    return bookingCounterRepository.saveAndFlush(newCounter);
+                });
         long nextValue = counter.getValue() + 1;
         counter.setValue(nextValue);
         bookingCounterRepository.saveAndFlush(counter);

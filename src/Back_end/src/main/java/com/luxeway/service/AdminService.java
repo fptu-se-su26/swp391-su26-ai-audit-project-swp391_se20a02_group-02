@@ -327,8 +327,8 @@ public class AdminService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (!"PENDING_APPROVAL".equalsIgnoreCase(user.getKycStatus())) {
-            throw new IllegalStateException("User KYC is not in PENDING_APPROVAL status");
+        if (!"PENDING_APPROVAL".equalsIgnoreCase(user.getKycStatus()) && !"VERIFYING".equalsIgnoreCase(user.getKycStatus())) {
+            throw new IllegalStateException("User KYC is not in PENDING_APPROVAL or VERIFYING status");
         }
 
         user.setKycStatus("VERIFIED");
@@ -393,8 +393,8 @@ public class AdminService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (!"PENDING_APPROVAL".equalsIgnoreCase(user.getKycStatus())) {
-            throw new IllegalStateException("User KYC is not in PENDING_APPROVAL status");
+        if (!"PENDING_APPROVAL".equalsIgnoreCase(user.getKycStatus()) && !"VERIFYING".equalsIgnoreCase(user.getKycStatus())) {
+            throw new IllegalStateException("User KYC is not in PENDING_APPROVAL or VERIFYING status");
         }
 
         user.setKycStatus("REJECTED");

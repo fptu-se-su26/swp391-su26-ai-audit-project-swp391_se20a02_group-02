@@ -137,7 +137,12 @@ export const carService = {
 
   async getById(id: string): Promise<Vehicle | null> {
     try {
-      const endpoint = id.startsWith('VC-') || id.startsWith('V-') ? `/vehicles/${id}` : `/cars/${id}`;
+      const isGeneral = 
+        id.startsWith('VC-') || 
+        id.startsWith('V-') || 
+        id.startsWith('car-') || 
+        id.startsWith('featured-');
+      const endpoint = isGeneral ? `/vehicles/${id}` : `/cars/${id}`;
       const response = await apiClient.get<any>(endpoint);
       return response.vehicle ? mapCar(response.vehicle) : null;
     } catch (error) {
