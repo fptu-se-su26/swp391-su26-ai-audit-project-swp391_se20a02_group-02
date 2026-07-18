@@ -136,6 +136,9 @@ services:
     container_name: luxeway-frontend
     ports:
       - "5173:80"
+    depends_on:
+      spring-backend:
+        condition: service_started
     networks:
       - luxeway-network
 
