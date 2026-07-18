@@ -64,8 +64,7 @@ public class AuthService {
             
             // Auto-verify KYC ONLY for test accounts or admins
             if ("customer@luxeway.vn".equalsIgnoreCase(email) || 
-                user.getRole() == com.luxeway.enums.UserRole.ADMIN || 
-                user.getRole() == com.luxeway.enums.UserRole.OWNER) {
+                user.getRole() == com.luxeway.enums.UserRole.ADMIN) {
                 user.setKycVerified(true);
                 user.setKycStatus("VERIFIED");
                 user.setDrivingLicenseVerified(true);
@@ -155,8 +154,7 @@ public class AuthService {
                 
         // Auto-verify KYC ONLY for test accounts or admins
         if ("customer@luxeway.vn".equalsIgnoreCase(user.getEmail()) || 
-            user.getRole() == com.luxeway.enums.UserRole.ADMIN || 
-            user.getRole() == com.luxeway.enums.UserRole.OWNER) {
+            user.getRole() == com.luxeway.enums.UserRole.ADMIN) {
             user.setKycVerified(true);
             user.setKycStatus("VERIFIED");
             user.setDrivingLicenseVerified(true);
@@ -456,8 +454,7 @@ public class AuthService {
                         
                 // Auto-verify KYC ONLY for test accounts or admins
                 if ("customer@luxeway.vn".equalsIgnoreCase(user.getEmail()) || 
-                    user.getRole() == com.luxeway.enums.UserRole.ADMIN || 
-                    user.getRole() == com.luxeway.enums.UserRole.OWNER) {
+                    user.getRole() == com.luxeway.enums.UserRole.ADMIN) {
                     user.setKycVerified(true);
                     user.setKycStatus("VERIFIED");
                     user.setDrivingLicenseVerified(true);
