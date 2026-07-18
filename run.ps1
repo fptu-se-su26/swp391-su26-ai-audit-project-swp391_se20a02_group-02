@@ -154,13 +154,13 @@ Write-Host "  Waiting 10s for Backend to boot..." -ForegroundColor Gray
 Start-Sleep -Seconds 10
 
 Start-Process "http://localhost:5173/"
-Start-Process "http://localhost:8080/api/v1/swagger-ui.html"
+Start-Process "http://localhost:8080/swagger-ui/index.html"
 
 Write-Host ""
 Write-Host "  ==============================" -ForegroundColor Green
 Write-Host "  Frontend  > http://localhost:5173" -ForegroundColor White
 Write-Host "  Backend   > http://localhost:8080/api/v1" -ForegroundColor White
-Write-Host "  Swagger   > http://localhost:8080/api/v1/swagger-ui.html" -ForegroundColor White
+Write-Host "  Swagger   > http://localhost:8080/swagger-ui/index.html" -ForegroundColor White
 Write-Host "  DB        > car_rental_platform @ localhost:1433" -ForegroundColor White
 Write-Host "  ==============================" -ForegroundColor Green
 Write-Host ""
