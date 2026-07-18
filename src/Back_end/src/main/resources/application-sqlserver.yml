@@ -2,7 +2,7 @@ spring:
   datasource:
     url: jdbc:sqlserver://${DB_HOST:localhost}:${DB_PORT:1433};databaseName=${DB_NAME:car_rental_platform};encrypt=false;trustServerCertificate=true
     username: sa
-    password: 123456
+    password: ${DB_PASSWORD:SqlserverPass123!}
     driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
   sql:
     init:
