@@ -3,7 +3,7 @@ uvicorn
 scikit-learn
 statsmodels
 pandas
-numpy
+numpy<2.0
 pydantic
 pytest
 httpx
