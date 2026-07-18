@@ -22,6 +22,7 @@ build_temp/
 
 # Build outputs
 dist/
+!src/Front_end/dist/
 dist-ssr/
 *.tsbuildinfo
 *.local
