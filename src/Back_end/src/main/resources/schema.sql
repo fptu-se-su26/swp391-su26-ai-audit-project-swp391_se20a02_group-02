@@ -33,6 +33,11 @@ CREATE TABLE users (
     company_name                NVARCHAR(200),
     stripe_customer_id          NVARCHAR(100),
     preferred_language          NVARCHAR(10)    NULL DEFAULT 'en',
+    wallet_balance              DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
+    provider                    NVARCHAR(20)    NOT NULL DEFAULT 'LOCAL',
+    provider_id                 NVARCHAR(200)   NULL,
+    license_class               NVARCHAR(10)    NULL,
+    license_number              NVARCHAR(50)    NULL,
     is_active                   BIT             NOT NULL DEFAULT 1,
     joined_at                   DATETIME2       NOT NULL DEFAULT GETDATE(),
     last_active                 DATETIME2       NOT NULL DEFAULT GETDATE(),
@@ -124,10 +129,10 @@ CREATE TABLE vehicles (
     horsepower              INT,
     top_speed               INT,
     acceleration            DECIMAL(4,2),
-    seats                   INT             NOT NULL,
+    seats                   INT             NOT NULL DEFAULT 5,
     doors                   INT,
-    transmission            NVARCHAR(20)    NOT NULL CONSTRAINT CHK_vehicles_transmission CHECK (transmission IN ('AUTOMATIC','MANUAL')),
-    fuel_type               NVARCHAR(20)    NOT NULL CONSTRAINT CHK_vehicles_fuel CHECK (fuel_type IN ('GASOLINE','DIESEL','ELECTRIC','HYBRID')),
+    transmission            NVARCHAR(20)    NOT NULL DEFAULT 'AUTOMATIC' CONSTRAINT CHK_vehicles_transmission CHECK (transmission IN ('AUTOMATIC','MANUAL')),
+    fuel_type               NVARCHAR(20)    NOT NULL DEFAULT 'GASOLINE' CONSTRAINT CHK_vehicles_fuel CHECK (fuel_type IN ('GASOLINE','DIESEL','ELECTRIC','HYBRID')),
     range_km                INT,
     engine_size             NVARCHAR(20),
     color                   NVARCHAR(50),
@@ -148,6 +153,15 @@ CREATE TABLE vehicles (
     instant_book            BIT             NOT NULL DEFAULT 0,
     delivery_available      BIT             NOT NULL DEFAULT 0,
     delivery_fee            DECIMAL(10,0)   NOT NULL DEFAULT 0,
+    vehicle_type            NVARCHAR(20)    NOT NULL DEFAULT 'CAR',
+    engine_cc               INT             NULL,
+    has_helmet              BIT             NOT NULL DEFAULT 0,
+    has_phone_holder        BIT             NOT NULL DEFAULT 0,
+    has_raincoat            BIT             NOT NULL DEFAULT 0,
+    has_touring_package     BIT             NOT NULL DEFAULT 0,
+    has_chauffeur           BIT             NOT NULL DEFAULT 0,
+    airport_delivery        BIT             NOT NULL DEFAULT 0,
+    wedding_rental          BIT             NOT NULL DEFAULT 0,
     created_at              DATETIME2       NOT NULL DEFAULT GETDATE(),
     updated_at              DATETIME2       NOT NULL DEFAULT GETDATE(),
     CONSTRAINT FK_vehicles_owner FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
@@ -271,6 +285,9 @@ CREATE TABLE bookings (
     cancellation_reason NVARCHAR(MAX),
     created_at          DATETIME2       NOT NULL DEFAULT GETDATE(),
     updated_at          DATETIME2       NOT NULL DEFAULT GETDATE(),
+    cleaning_fee        DECIMAL(12,0)   NOT NULL DEFAULT 0,
+    version             INT             NOT NULL DEFAULT 0,
+    booking_code        NVARCHAR(50)    NULL,
     CONSTRAINT FK_bookings_vehicle FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE NO ACTION,
     CONSTRAINT FK_bookings_renter  FOREIGN KEY (renter_id)  REFERENCES users(id)    ON DELETE NO ACTION,
     CONSTRAINT FK_bookings_owner   FOREIGN KEY (owner_id)   REFERENCES users(id)    ON DELETE NO ACTION
@@ -888,11 +905,125 @@ CREATE INDEX IDX_feature_flags_is_enabled ON feature_flags(is_enabled);
 END
 GO
 
-PRINT 'LuxeWay - All 35 tables created successfully on SQL Server.';
+-- ============================================================
+-- OWNERS (must exist before import-data.sql runs)
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'owners')
+BEGIN
+CREATE TABLE owners (
+    owner_id            NVARCHAR(36)    NOT NULL PRIMARY KEY,
+    bio                 NVARCHAR(MAX)   NULL,
+    account_type        NVARCHAR(20)    NOT NULL DEFAULT 'INDIVIDUAL',
+    company_name        NVARCHAR(200)   NULL,
+    stripe_account_id   NVARCHAR(100)   NULL,
+    wallet_balance      DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
+    is_active           BIT             NOT NULL DEFAULT 1,
+    created_at          DATETIME2       NOT NULL DEFAULT GETDATE(),
+    updated_at          DATETIME2       NULL,
+    CONSTRAINT FK_owners_user FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
+);
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'owner_ratings')
+BEGIN
+CREATE TABLE owner_ratings (
+    owner_id                    NVARCHAR(36)    NOT NULL PRIMARY KEY,
+    avg_rating                  DECIMAL(3,2)    NOT NULL DEFAULT 5.00,
+    total_reviews               INT             NOT NULL DEFAULT 0,
+    response_rate               DECIMAL(5,2)    NOT NULL DEFAULT 100.00,
+    avg_response_time_minutes   INT             NOT NULL DEFAULT 15,
+    CONSTRAINT FK_owner_ratings_owner FOREIGN KEY (owner_id) REFERENCES owners(owner_id) ON DELETE CASCADE
+);
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'owner_verifications')
+BEGIN
+CREATE TABLE owner_verifications (
+    id                  NVARCHAR(36)    NOT NULL PRIMARY KEY,
+    owner_id            NVARCHAR(36)    NOT NULL,
+    document_type       NVARCHAR(50)    NOT NULL,
+    document_number     NVARCHAR(100)   NOT NULL,
+    document_image_url  NVARCHAR(500)   NOT NULL,
+    status              NVARCHAR(20)    NOT NULL DEFAULT 'PENDING',
+    reviewer_comment    NVARCHAR(500)   NULL,
+    verified_at         DATETIME2       NULL,
+    created_at          DATETIME2       NOT NULL DEFAULT GETDATE(),
+    CONSTRAINT FK_owner_verifications_owner FOREIGN KEY (owner_id) REFERENCES owners(owner_id) ON DELETE CASCADE
+);
+END
 GO
 
 -- ============================================================
--- MIGRATION: Vietnam Market — Vehicle Type & Specs Columns
+-- FAQS
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'faqs')
+BEGIN
+CREATE TABLE faqs (
+    id              INT             IDENTITY(1,1) PRIMARY KEY,
+    question        NVARCHAR(500)   NOT NULL,
+    answer          NVARCHAR(MAX)   NOT NULL,
+    is_active       BIT             NOT NULL DEFAULT 1,
+    display_order   INT             NOT NULL DEFAULT 0
+);
+END
+GO
+
+-- ============================================================
+-- PROMOTIONS
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'promotions')
+BEGIN
+CREATE TABLE promotions (
+    id              NVARCHAR(36)    NOT NULL PRIMARY KEY,
+    title           NVARCHAR(200)   NOT NULL,
+    description     NVARCHAR(MAX)   NULL,
+    image_url       NVARCHAR(500)   NULL,
+    discount_percent INT            NOT NULL DEFAULT 0,
+    badge_text      NVARCHAR(50)    NULL,
+    cta_text        NVARCHAR(100)   NULL,
+    cta_url         NVARCHAR(500)   NULL,
+    active          BIT             NOT NULL DEFAULT 1,
+    display_order   INT             NOT NULL DEFAULT 0,
+    created_at      DATETIME2       NOT NULL DEFAULT GETDATE()
+);
+END
+GO
+
+-- ============================================================
+-- DESTINATION_ANALYTICS
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'destination_analytics')
+BEGIN
+CREATE TABLE destination_analytics (
+    id              INT             IDENTITY(1,1) PRIMARY KEY,
+    city            NVARCHAR(100)   NOT NULL,
+    vehicle_count   INT             NOT NULL DEFAULT 0,
+    average_price   DECIMAL(12,0)   NOT NULL DEFAULT 0,
+    top_category    NVARCHAR(50)    NULL,
+    image_url       NVARCHAR(500)   NULL,
+    display_order   INT             NOT NULL DEFAULT 0,
+    active          BIT             NOT NULL DEFAULT 1
+);
+END
+GO
+
+-- ============================================================
+-- BOOKING_COUNTERS
+-- ============================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'booking_counters')
+BEGIN
+CREATE TABLE booking_counters (
+    id              INT             IDENTITY(1,1) PRIMARY KEY,
+    name            NVARCHAR(50)    NOT NULL UNIQUE,
+    counter_value   BIGINT          NOT NULL DEFAULT 0
+);
+END
+GO
+
+PRINT 'LuxeWay - All 35 tables created successfully on SQL Server.';
+GO
 -- Added: vehicle_type, engine_cc, motorbike accessories, car services
 -- Safe to re-run: all statements use IF COL_LENGTH guard
 -- ============================================================

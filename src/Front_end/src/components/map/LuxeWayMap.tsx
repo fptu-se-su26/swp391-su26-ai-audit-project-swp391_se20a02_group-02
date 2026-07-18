@@ -100,7 +100,7 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
   const lastFitBoundsVehiclesRef = useRef<string>('');
   const { theme } = useUIStore();
   const isDark = theme === 'dark';
-  const hasGoongKey = GOONG_MAPTILES_KEY && GOONG_MAPTILES_KEY !== 'mock_goong_key';
+  const hasGoongKey = GOONG_MAPTILES_KEY && GOONG_MAPTILES_KEY !== 'mock_goong_key' && !GOONG_MAPTILES_KEY.includes('your-');
 
   const mapStyleUrl = hasGoongKey
     ? (isDark

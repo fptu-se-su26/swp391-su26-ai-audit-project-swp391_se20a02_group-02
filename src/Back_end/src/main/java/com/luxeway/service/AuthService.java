@@ -62,10 +62,8 @@ public class AuthService {
 
             user.setLastActive(java.time.LocalDateTime.now());
             
-            // Auto-verify KYC ONLY for test accounts or admins
-            if ("customer@luxeway.vn".equalsIgnoreCase(email) || 
-                user.getRole() == com.luxeway.enums.UserRole.ADMIN || 
-                user.getRole() == com.luxeway.enums.UserRole.OWNER) {
+            // Auto-verify KYC ONLY for admins
+            if (user.getRole() == com.luxeway.enums.UserRole.ADMIN) {
                 user.setKycVerified(true);
                 user.setKycStatus("VERIFIED");
                 user.setDrivingLicenseVerified(true);
@@ -153,10 +151,8 @@ public class AuthService {
                 .preferredLanguage(request.getPreferredLanguage() != null ? request.getPreferredLanguage() : "en")
                 .build();
                 
-        // Auto-verify KYC ONLY for test accounts or admins
-        if ("customer@luxeway.vn".equalsIgnoreCase(user.getEmail()) || 
-            user.getRole() == com.luxeway.enums.UserRole.ADMIN || 
-            user.getRole() == com.luxeway.enums.UserRole.OWNER) {
+        // Auto-verify KYC ONLY for admins
+        if (user.getRole() == com.luxeway.enums.UserRole.ADMIN) {
             user.setKycVerified(true);
             user.setKycStatus("VERIFIED");
             user.setDrivingLicenseVerified(true);
@@ -454,10 +450,8 @@ public class AuthService {
                         .providerId(providerId)
                         .build();
                         
-                // Auto-verify KYC ONLY for test accounts or admins
-                if ("customer@luxeway.vn".equalsIgnoreCase(user.getEmail()) || 
-                    user.getRole() == com.luxeway.enums.UserRole.ADMIN || 
-                    user.getRole() == com.luxeway.enums.UserRole.OWNER) {
+                // Auto-verify KYC ONLY for admins
+                if (user.getRole() == com.luxeway.enums.UserRole.ADMIN) {
                     user.setKycVerified(true);
                     user.setKycStatus("VERIFIED");
                     user.setDrivingLicenseVerified(true);

@@ -3,7 +3,10 @@ import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 const GOONG_MAPTILES_KEY = (import.meta as any).env.VITE_GOONG_MAPTILES_KEY || 'mock_goong_key';
-const MAP_STYLE_URL = `https://tiles.goong.io/assets/goong_map_web.json?api_key=${GOONG_MAPTILES_KEY}`;
+const hasGoongKey = GOONG_MAPTILES_KEY && GOONG_MAPTILES_KEY !== 'mock_goong_key' && !GOONG_MAPTILES_KEY.includes('your-');
+const MAP_STYLE_URL = hasGoongKey
+  ? `https://tiles.goong.io/assets/goong_map_web.json?api_key=${GOONG_MAPTILES_KEY}`
+  : 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
 
 interface LocationPickerMapProps {
   lat: number;
