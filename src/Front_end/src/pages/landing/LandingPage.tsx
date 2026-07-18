@@ -43,11 +43,11 @@ const fadeUp = {
 };
 const staggerContainer = {
   hidden: {},
-  visible: { transition: { staggerChildren: 0.08 } },
+  visible: { transition: { staggerChildren: 0.15 } },
 };
 const staggerItem = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] } },
+  hidden: { opacity: 0, y: 40, scale: 0.95 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } },
 };
 
 // =====================================================
@@ -158,9 +158,9 @@ const HeroSection: React.FC<{ stats: HomeStats | null }> = ({ stats }) => {
 
   const today = new Date().toISOString().split('T')[0];
   const HERO_IMAGES = [
-    'https://images.unsplash.com/photo-1525609004556-c46c7d6cf023?q=80&w=2560&auto=format&fit=crop', // Ferrari red
-    'https://images.unsplash.com/photo-1544636331-e26879cd4d9b?q=80&w=2560&auto=format&fit=crop', // luxury car interior/exterior
-    'https://images.unsplash.com/photo-1611016186353-9af58c69a533?q=80&w=2560&auto=format&fit=crop', // luxury car Vietnam road
+    'https://images.unsplash.com/photo-1544636331-e26879cd4d9b?q=80&w=2560&auto=format&fit=crop', // Bugatti / Luxury car
+    'https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?q=80&w=2560&auto=format&fit=crop', // Mercedes Benz
+    'https://images.unsplash.com/photo-1503376712394-6d97a61d1558?q=80&w=2560&auto=format&fit=crop', // Clean sports car
   ];
 
   useEffect(() => {
@@ -233,13 +233,65 @@ const HeroSection: React.FC<{ stats: HomeStats | null }> = ({ stats }) => {
           {/* H1 */}
           <motion.h1
             variants={staggerItem}
-            className="font-medium text-white leading-tight tracking-tight mb-5 display-font"
-            style={{ fontSize: 'clamp(2.5rem, 6.5vw, 5rem)' }}
+            className="font-black text-white leading-tight tracking-tight mb-5 display-font drop-shadow-2xl cursor-default"
+            style={{ fontSize: 'clamp(3rem, 7vw, 5.5rem)', textShadow: '0 4px 20px rgba(0,0,0,0.5)' }}
           >
-            {t.landing.hero.title1}{' '}
-            <span className="block text-[#D4AF37] font-semibold mt-2">
-              {t.landing.hero.title2}
-            </span>
+            <motion.span
+              initial="hidden"
+              animate="visible"
+              variants={{
+                visible: { transition: { staggerChildren: 0.06 } }
+              }}
+              className="inline-block"
+            >
+              {String(t.landing.hero.title1).split('').map((char, i) => (
+                <motion.span
+                  key={i}
+                  variants={{
+                    hidden: { opacity: 0, y: 20, filter: 'blur(4px)' },
+                    visible: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { type: "spring", damping: 12, stiffness: 200 } }
+                  }}
+                  whileHover={{ 
+                    y: -12, 
+                    scale: 1.15, 
+                    color: '#FFE270',
+                    textShadow: '0px 10px 25px rgba(212,175,55,0.8)'
+                  }}
+                  className="inline-block transition-colors duration-200"
+                >
+                  {char === ' ' ? '\u00A0' : char}
+                </motion.span>
+              ))}
+            </motion.span>
+            {' '}
+            <motion.span
+              initial="hidden"
+              animate="visible"
+              variants={{
+                hidden: { opacity: 0, scale: 0.8 },
+                visible: { opacity: 1, scale: 1, transition: { delay: 1.2, duration: 0.8, type: "spring", staggerChildren: 0.06 } }
+              }}
+              className="inline-block bg-gradient-to-r from-[#D4AF37] via-[#FFE270] to-[#D4AF37] text-transparent bg-clip-text font-black mt-2 drop-shadow-lg"
+              style={{ paddingBottom: '0.1em' }}
+            >
+              {String(t.landing.hero.title2).split('').map((char, i) => (
+                <motion.span
+                  key={i}
+                  variants={{
+                    hidden: { opacity: 0, y: 20 },
+                    visible: { opacity: 1, y: 0, transition: { type: "spring", damping: 12, stiffness: 200 } }
+                  }}
+                  whileHover={{ 
+                    y: -12, 
+                    scale: 1.15,
+                    filter: 'brightness(1.3)'
+                  }}
+                  className="inline-block"
+                >
+                  {char === ' ' ? '\u00A0' : char}
+                </motion.span>
+              ))}
+            </motion.span>
           </motion.h1>
 
           {/* Subtitle */}
@@ -1557,6 +1609,8 @@ const FEATURED_CARS = [
   { brand: 'Hyundai', model: 'Santa Fe 2024', price: 1500000, rating: 4.8, city: 'Hà Nội', img: '/images/cars/santa-fe2024.jpg', badge: 'SUV' },
   { brand: 'VinFast', model: 'VF8 Plus', price: 1600000, rating: 4.7, city: 'Đà Nẵng', img: '/images/cars/vf8_plus.jpg', badge: 'Electric' },
   { brand: 'Mazda', model: 'CX-5 Premium', price: 1200000, rating: 4.8, city: 'Nha Trang', img: '/images/cars/2025-Mazda-CX-5_premium.avif', badge: 'SUV' },
+  { brand: 'Mercedes', model: 'E300 AMG', price: 2500000, rating: 5.0, city: 'TP.HCM', img: 'https://images.unsplash.com/photo-1617531653332-bd46c24f2068?q=80&w=600&auto=format&fit=crop', badge: 'Luxury' },
+  { brand: 'Porsche', model: 'Macan', price: 3500000, rating: 4.9, city: 'Hà Nội', img: 'https://images.unsplash.com/photo-1503376712394-6d97a61d1558?q=80&w=600&auto=format&fit=crop', badge: 'Sport' },
 ];
 
 const FEATURED_MOTORBIKES = [
@@ -1564,6 +1618,8 @@ const FEATURED_MOTORBIKES = [
   { brand: 'Yamaha', model: 'Exciter 155', price: 280000, rating: 4.8, city: 'Hà Nội', img: '/images/motorbikes/exciter_155.jpg', badge: 'Sport' },
   { brand: 'Honda', model: 'Winner X', price: 250000, rating: 4.7, city: 'Đà Nẵng', img: '/images/motorbikes/winner_x.jpg', badge: 'Sport' },
   { brand: 'VinFast', model: 'Klara S', price: 180000, rating: 4.6, city: 'Đà Lạt', img: '/images/motorbikes/kalara_s.jpg', badge: 'Electric' },
+  { brand: 'Vespa', model: 'Sprint', price: 350000, rating: 4.9, city: 'TP.HCM', img: 'https://images.unsplash.com/photo-1627464303350-0259cce322ea?q=80&w=600&auto=format&fit=crop', badge: 'Classic' },
+  { brand: 'Kawasaki', model: 'Ninja 400', price: 800000, rating: 4.8, city: 'Hà Nội', img: 'https://images.unsplash.com/photo-1568772585407-9361f9bf3c87?q=80&w=600&auto=format&fit=crop', badge: 'Sport' },
 ];
 
 const getCityName = (city: string, lang: string) => {
@@ -1588,7 +1644,19 @@ const VehicleTypeShowcase: React.FC = () => {
 
   return (
     <section className="py-20 bg-white">
-      <div className="max-w-7xl mx-auto px-6">
+      <style>{`
+        @keyframes marquee-train {
+          0% { transform: translateX(0%); }
+          100% { transform: translateX(-50%); }
+        }
+        .animate-train {
+          animation: marquee-train 35s linear infinite;
+        }
+        .group-hover-pause:hover .animate-train {
+          animation-play-state: paused;
+        }
+      `}</style>
+      <div className="max-w-7xl mx-auto px-6 overflow-hidden">
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-10">
           <span className="text-xs font-bold tracking-widest uppercase text-[#D4AF37] mb-2 block">{t.landingPage.showcase.label}</span>
           <h2 className="font-medium text-3xl md:text-4xl text-[#0B1221] mb-3 display-font">{t.landingPage.showcase.title}</h2>
@@ -1596,7 +1664,7 @@ const VehicleTypeShowcase: React.FC = () => {
         </motion.div>
 
         {/* Type Tabs */}
-        <div className="flex justify-center mb-8 font-sans">
+        <div className="flex justify-center mb-10 font-sans">
           <div className="inline-flex bg-slate-100 p-1 gap-1 rounded-md">
             <button
               onClick={() => setActiveTab('cars')}
@@ -1613,48 +1681,46 @@ const VehicleTypeShowcase: React.FC = () => {
           </div>
         </div>
 
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.25 }}
-            className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-5 font-sans"
-          >
-            {list.map((v, idx) => (
-              <motion.div
-                key={v.model}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.07 }}
-                whileHover={{ y: -3 }}
-                className="bg-white rounded-md overflow-hidden shadow-sm hover:border-[#D4AF37]/35 transition-all duration-300 cursor-pointer border border-slate-100 group"
-                onClick={() => navigate(`/marketplace?type=${activeTab === 'cars' ? 'car' : 'motorbike'}&q=${encodeURIComponent(v.model)}`)}
-              >
-                <div className="relative h-40 overflow-hidden bg-slate-50">
-                  <img src={v.img} alt={v.model} loading="lazy" className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                  <span className={`absolute top-2.5 left-2.5 text-[9px] font-bold px-2 py-0.5 rounded-sm ${activeTab === 'cars' ? 'bg-[#0B1221] text-white' : 'bg-[#D4AF37] text-[#0B1221]'}`}>{v.badge}</span>
-                  <div className="absolute bottom-2 right-2.5 bg-black/70 rounded-md px-2 py-1">
-                    <p className="text-white text-xs font-bold">{formatCurrency(v.price)}<span className="text-white/60 font-normal">{language === 'vi' ? '/ngày' : '/day'}</span></p>
-                  </div>
-                </div>
-                <div className="p-4">
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">{v.brand}</p>
-                  <h3 className="font-bold text-slate-800 text-sm mb-2 truncate group-hover:text-[#D4AF37] transition-colors">{v.model}</h3>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1">
-                      <Star className="w-3.5 h-3.5 fill-[#D4AF37] text-[#D4AF37]" />
-                      <span className="text-xs font-bold text-slate-700">{v.rating}</span>
+        <div className="w-full relative group-hover-pause pb-4">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="flex w-max gap-5 font-sans animate-train"
+            >
+              {[...list, ...list].map((v, idx) => (
+                <div
+                  key={idx}
+                  className="w-[280px] sm:w-[320px] flex-shrink-0 bg-white rounded-md overflow-hidden shadow-sm hover:border-[#D4AF37]/35 hover:shadow-md transition-all duration-300 cursor-pointer border border-slate-100 group"
+                  onClick={() => navigate(`/marketplace?type=${activeTab === 'cars' ? 'car' : 'motorbike'}&q=${encodeURIComponent(v.model)}`)}
+                >
+                  <div className="relative h-44 overflow-hidden bg-slate-50">
+                    <img src={v.img} alt={v.model} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                    <span className={`absolute top-2.5 left-2.5 text-[9px] font-bold px-2 py-0.5 rounded-sm ${activeTab === 'cars' ? 'bg-[#0B1221] text-white' : 'bg-[#D4AF37] text-[#0B1221]'}`}>{v.badge}</span>
+                    <div className="absolute bottom-2 right-2.5 bg-black/70 rounded-md px-2 py-1">
+                      <p className="text-white text-xs font-bold">{formatCurrency(v.price)}<span className="text-white/60 font-normal">{language === 'vi' ? '/ngày' : '/day'}</span></p>
                     </div>
-                    <span className="text-xs text-slate-400 flex items-center gap-1"><MapPin className="w-3 h-3" />{getCityName(v.city, language)}</span>
+                  </div>
+                  <div className="p-4">
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">{v.brand}</p>
+                    <h3 className="font-bold text-slate-800 text-sm mb-2 truncate group-hover:text-[#D4AF37] transition-colors">{v.model}</h3>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1">
+                        <Star className="w-3.5 h-3.5 fill-[#D4AF37] text-[#D4AF37]" />
+                        <span className="text-xs font-bold text-slate-700">{v.rating}</span>
+                      </div>
+                      <span className="text-xs text-slate-400 flex items-center gap-1"><MapPin className="w-3 h-3" />{getCityName(v.city, language)}</span>
+                    </div>
                   </div>
                 </div>
-              </motion.div>
-            ))}
-          </motion.div>
-        </AnimatePresence>
+              ))}
+            </motion.div>
+          </AnimatePresence>
+        </div>
 
         <div className="text-center mt-8">
           <button

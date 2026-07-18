@@ -60,14 +60,46 @@ public class AuthService {
             // Clear login failure counts on success
             loginFailures.remove(email);
 
-            // Update last active
             user.setLastActive(java.time.LocalDateTime.now());
+            
+            // Auto-verify KYC ONLY for test accounts or admins
+            if ("customer@luxeway.vn".equalsIgnoreCase(email) || 
+                user.getRole() == com.luxeway.enums.UserRole.ADMIN || 
+                user.getRole() == com.luxeway.enums.UserRole.OWNER) {
+                user.setKycVerified(true);
+                user.setKycStatus("VERIFIED");
+                user.setDrivingLicenseVerified(true);
+                user.setDriverLicenseStatus("VERIFIED");
+                if (user.getLicenseClass() == null || user.getLicenseClass().isBlank()) {
+                    user.setLicenseClass("B1");
+                }
+                if (user.getLicenseNumber() == null || user.getLicenseNumber().isBlank()) {
+                    user.setLicenseNumber("222222222222");
+                }
+            }
             userRepository.save(user);
 
             String accessToken  = jwtTokenProvider.generateToken(user);
             String refreshToken = jwtTokenProvider.generateRefreshToken(user);
 
             log.info("User logged in: {}", user.getEmail());
+            
+            // Send login alert to the user
+            try {
+                emailService.sendLoginAlert(user.getEmail(), user.getFirstName());
+            } catch (Exception ex) {
+                log.warn("Failed to send login alert to user: {}", ex.getMessage());
+            }
+            
+            // Send login notification to the admin
+            try {
+                String adminMsg = String.format("A successful login was detected.\nUser Email: %s\nTime: %s", 
+                    user.getEmail(), java.time.LocalDateTime.now().toString());
+                emailService.sendAdminNotification("User Login Notification", adminMsg);
+            } catch (Exception ex) {
+                log.warn("Failed to send admin login notification: {}", ex.getMessage());
+            }
+
             return buildAuthResponse(user, accessToken, refreshToken);
 
         } catch (BadCredentialsException e) {
@@ -114,10 +146,24 @@ public class AuthService {
                 .companyName(request.getCompanyName())
                 .verified(isDevelopment)   // Auto-verify only in development
                 .kycVerified(false)
+                .kycStatus("PENDING")
                 .drivingLicenseVerified(false)
+                .driverLicenseStatus("PENDING")
                 .isActive(true)
                 .preferredLanguage(request.getPreferredLanguage() != null ? request.getPreferredLanguage() : "en")
                 .build();
+                
+        // Auto-verify KYC ONLY for test accounts or admins
+        if ("customer@luxeway.vn".equalsIgnoreCase(user.getEmail()) || 
+            user.getRole() == com.luxeway.enums.UserRole.ADMIN || 
+            user.getRole() == com.luxeway.enums.UserRole.OWNER) {
+            user.setKycVerified(true);
+            user.setKycStatus("VERIFIED");
+            user.setDrivingLicenseVerified(true);
+            user.setDriverLicenseStatus("VERIFIED");
+            user.setLicenseClass("B1");
+            user.setLicenseNumber("222222222222");
+        }
 
         user = userRepository.save(user);
 
@@ -310,6 +356,7 @@ public class AuthService {
         userInfo.setPreferredLanguage(user.getPreferredLanguage());
         userInfo.setKycStatus(user.getKycStatus());
         userInfo.setDriverLicenseStatus(user.getDriverLicenseStatus());
+        userInfo.setLicenseClass(user.getLicenseClass());
 
         AuthDTOs.AuthResponse response = new AuthDTOs.AuthResponse();
         response.setAccessToken(accessToken);
@@ -399,11 +446,25 @@ public class AuthService {
                         .role(UserRole.CUSTOMER)
                         .verified(true)
                         .kycVerified(false)
+                        .kycStatus("PENDING")
                         .drivingLicenseVerified(false)
+                        .driverLicenseStatus("PENDING")
                         .isActive(true)
                         .provider("GOOGLE")
                         .providerId(providerId)
                         .build();
+                        
+                // Auto-verify KYC ONLY for test accounts or admins
+                if ("customer@luxeway.vn".equalsIgnoreCase(user.getEmail()) || 
+                    user.getRole() == com.luxeway.enums.UserRole.ADMIN || 
+                    user.getRole() == com.luxeway.enums.UserRole.OWNER) {
+                    user.setKycVerified(true);
+                    user.setKycStatus("VERIFIED");
+                    user.setDrivingLicenseVerified(true);
+                    user.setDriverLicenseStatus("VERIFIED");
+                    user.setLicenseClass("B1");
+                    user.setLicenseNumber("222222222222");
+                }
                 user = userRepository.save(user);
                 log.info("Google OAuth registration: created new user {}", email);
             }
@@ -411,6 +472,22 @@ public class AuthService {
             String accessToken = jwtTokenProvider.generateToken(user);
             String refreshToken = jwtTokenProvider.generateRefreshToken(user);
             
+            // Send login alert to the user
+            try {
+                emailService.sendLoginAlert(user.getEmail(), user.getFirstName());
+            } catch (Exception ex) {
+                log.warn("Failed to send login alert to user: {}", ex.getMessage());
+            }
+            
+            // Send login notification to the admin
+            try {
+                String adminMsg = String.format("A successful Google OAuth login was detected.\nUser Email: %s\nTime: %s", 
+                    user.getEmail(), java.time.LocalDateTime.now().toString());
+                emailService.sendAdminNotification("User Login Notification (Google)", adminMsg);
+            } catch (Exception ex) {
+                log.warn("Failed to send admin login notification: {}", ex.getMessage());
+            }
+
             return buildAuthResponse(user, accessToken, refreshToken);
             
         } catch (Exception e) {

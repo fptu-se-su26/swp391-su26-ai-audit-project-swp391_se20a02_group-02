@@ -1590,3 +1590,55 @@ Sinh viên/nhóm cam kết rằng nội dung changelog phản ánh đúng các t
 | Đại diện sinh viên/nhóm | Ngày xác nhận |
 |---|---|
 | Nguyễn Văn Dạng - DE190324 | 2026-07-13 |
+
+
+---
+
+## Change #26
+
+### Chi tiết thay đổi
+
+- **File/Class**: \`EmailService.java\`, \`OAuth2AuthenticationSuccessHandler.java\`, \`OAuth2RedirectHandler.tsx\`, \`BookingDetailPage.tsx\`, \`PayOSReturnPage.tsx\`, \`Dockerfile\`, \`docker-compose.yml\`, \`nginx.conf\`
+- **Mô tả**: Tích hợp PayOS real-time webhook & return redirect, xây dựng giao diện Booking Journey Tracking siêu cấp, nâng cấp Email đăng nhập. Cùng với đó là sửa hàng loạt lỗi (fix bugs): vòng lặp toast vô hạn ở OAuth2 callback, lỗi logic trả về trạng thái BookingStatus, email cảnh báo đăng nhập lỗi hiển thị, và cấu hình Docker Multi-stage với Nginx cho môi trường Production.
+
+### Loại thay đổi
+
+- [x] Thêm tính năng mới (Feature)
+- [x] Sửa lỗi (Bug fix)
+- [x] Tái cấu trúc mã nguồn (Refactor)
+- [x] Nâng cấp UI/UX
+
+### Lý do thay đổi
+
+- Sửa triệt để các lỗi vặt (bugs) phát sinh trong hệ thống. Tối ưu trải nghiệm khách hàng sau khi thanh toán, giảm rác console/toasts, và chuẩn bị hệ thống ở trạng thái tốt nhất (Production level) cho việc chấm điểm.
+
+### Người thực hiện / Chịu trách nhiệm
+
+- Nguyễn Văn Dạng - DE190324
+
+### Ngày thực hiện
+
+- 2026-07-17 / 2026-07-18
+
+## AI có hỗ trợ không?
+
+- [x] Có
+- [ ] Không
+
+Nếu có, mô tả AI đã hỗ trợ phần nào:
+
+\`\`\`text
+AI (Antigravity) hỗ trợ:
+- Sửa lỗi infinite loop và duplicate toasts trong OAuth2 Frontend.
+- Sửa lỗi logic Backend trả về BookingStatus.
+- Code template HTML đẹp cho Email thông báo đăng nhập.
+- Viết giao diện Booking Tracking với thanh timeline đếm ngược.
+- Nâng cấp Frontend Dockerfile sang Nginx đa tầng và sửa file docker-compose.yml.
+\`\`\`
+
+## Commit/Screenshot minh chứng
+
+```text
+Branch: feature/de190324-vehicle-rental-platform
+Commit: feat: implement real PayOS integration, premium Booking Journey UI, login email templates, and Production Docker Nginx setup
+```

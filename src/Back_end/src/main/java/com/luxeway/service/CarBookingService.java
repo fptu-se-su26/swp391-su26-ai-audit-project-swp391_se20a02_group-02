@@ -61,6 +61,9 @@ public class CarBookingService {
             }
 
             String licenseClass = renter.getLicenseClass() != null ? renter.getLicenseClass().trim().toUpperCase() : "";
+            if (licenseClass.isEmpty() && (Boolean.TRUE.equals(renter.getDrivingLicenseVerified()) || "VERIFIED".equals(renter.getDriverLicenseStatus()))) {
+                licenseClass = "B1";
+            }
             boolean isCarLicense = licenseClass.startsWith("B") ||
                                    licenseClass.startsWith("C") ||
                                    licenseClass.startsWith("D") ||

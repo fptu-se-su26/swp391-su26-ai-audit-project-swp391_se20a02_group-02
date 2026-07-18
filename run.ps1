@@ -75,6 +75,7 @@ $logLevel = if ($env:LOG_LEVEL) { $env:LOG_LEVEL } else { 'INFO' }
 $goongKey = if ($env:GOONG_API_KEY) { $env:GOONG_API_KEY } else { 'mock_goong_key' }
 $geminiKey = if ($env:GEMINI_API_KEY) { $env:GEMINI_API_KEY } else { 'mock_key' }
 $fptaiKey = if ($env:FPTAI_API_KEY) { $env:FPTAI_API_KEY } else { 'BKfUiImFD4DI3RI2OEjoCahBTQOgVtPf' }
+$ekycProvider = if ($env:EKYC_PROVIDER) { $env:EKYC_PROVIDER } else { 'FPTAI' }
 $port = if ($env:PORT) { $env:PORT } else { '8080' }
 
 $javaCmd = "java " +
@@ -104,6 +105,7 @@ $javaCmd = "java " +
   "-DGOONG_API_KEY=`"$goongKey`" " +
   "-DGEMINI_API_KEY=`"$geminiKey`" " +
   "-Dfptai.api-key=`"$fptaiKey`" " +
+  "-Dekyc.provider=`"$ekycProvider`" " +
   "-DPORT=`"$port`" " +
   "-jar `"$shortJar`" --spring.profiles.active=sqlserver"
 

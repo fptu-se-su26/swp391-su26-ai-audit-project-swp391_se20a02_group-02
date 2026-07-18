@@ -588,3 +588,84 @@ export const ForgotPasswordPage: React.FC = () => {
     </div>
   );
 };
+
+// ====== RESET PASSWORD PAGE ======
+export const ResetPasswordPage: React.FC = () => {
+  const t = useT();
+  const navigate = useNavigate();
+  const toast = useToast();
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token');
+  
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    if (!token) {
+      toast.error('Invalid Link', 'No reset token found in the URL. Please request a new password reset link.');
+      navigate('/auth/forgot-password');
+    }
+  }, [token, navigate, toast]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      toast.error('Mismatch', 'Passwords do not match.');
+      return;
+    }
+    setLoading(true);
+    try {
+      await authService.resetPassword(token!, newPassword);
+      setSuccess(true);
+      toast.success('Success', 'Your password has been securely updated.');
+    } catch (err: any) {
+      toast.error('Reset Failed', err.message || 'Invalid or expired token. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center p-6 bg-background">
+      <motion.div variants={fadeUp} initial="hidden" animate="visible" className="w-full max-w-md">
+        <Link to="/" className="flex items-center gap-2 mb-10 justify-center logo-wrapper">
+          <img src={logoImage} alt="LuxeWay" className="logo-effect h-12 w-auto object-contain" />
+        </Link>
+
+        <div className="luxury-card p-8">
+          {!success ? (
+            <>
+              <h1 className="font-display text-2xl font-bold text-foreground mb-2">Secure Reset</h1>
+              <p className="text-muted-foreground text-sm mb-6">Choose a strong, new password for your LuxeWay account.</p>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1.5">New Password</label>
+                  <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="••••••••" className="lux-input" minLength={6} required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1.5">Confirm New Password</label>
+                  <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="••••••••" className="lux-input" minLength={6} required />
+                </div>
+                <button type="submit" disabled={loading} className="btn-primary w-full py-3.5 disabled:opacity-70 mt-4">
+                  {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> ...</> : 'Update Password'}
+                </button>
+              </form>
+            </>
+          ) : (
+            <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center">
+              <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="w-8 h-8 text-success" />
+              </div>
+              <h2 className="font-display text-xl font-bold text-foreground mb-2">Password Updated</h2>
+              <p className="text-muted-foreground text-sm mb-6">Your password has been successfully reset. You can now securely log into your account.</p>
+              <Link to="/auth/login" className="btn-primary w-full py-3 justify-center">Return to Login →</Link>
+            </motion.div>
+          )}
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+

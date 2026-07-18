@@ -21,7 +21,7 @@ import { CorporateDashboard } from '@/components/enterprise/CorporateDashboard';
 
 // Pages (Eager loaded - critical path)
 import LandingPage from '@/pages/landing/LandingPage';
-import { LoginPage, RegisterPage, ForgotPasswordPage } from '@/pages/auth/AuthPages';
+import { LoginPage, RegisterPage, ForgotPasswordPage, ResetPasswordPage } from '@/pages/auth/AuthPages';
 import OAuth2RedirectHandler from '@/pages/auth/OAuth2RedirectHandler';
 import MarketplacePage from '@/pages/marketplace/MarketplacePage';
 import VehicleDetailPage from '@/pages/marketplace/VehicleDetailPage';
@@ -47,6 +47,7 @@ import { SupportAnalyticsDash } from '@/pages/admin/SupportAnalyticsDash';
 const CustomerDashboardLayout = lazy(() => import('@/pages/dashboard/CustomerDashboard').then(m => ({ default: m.CustomerDashboardLayout })));
 const CustomerOverview = lazy(() => import('@/pages/dashboard/CustomerDashboard').then(m => ({ default: m.CustomerOverview })));
 const MyBookingsPage = lazy(() => import('@/pages/dashboard/CustomerDashboard').then(m => ({ default: m.MyBookingsPage })));
+const BookingDetailPage = lazy(() => import('@/pages/dashboard/BookingDetailPage'));
 const ProfilePage = lazy(() => import('@/pages/dashboard/CustomerDashboard').then(m => ({ default: m.ProfilePage })));
 const SecurityPage = lazy(() => import('@/pages/dashboard/CustomerDashboard').then(m => ({ default: m.SecurityPage })));
 const MyDocuments = lazy(() => import('@/pages/dashboard/MyDocuments').then(m => ({ default: m.MyDocuments })));
@@ -555,7 +556,7 @@ const App: React.FC = () => {
             } />
             <Route path="success" element={<BookingSuccessPage />} />
             <Route path="bookings/:bookingId" element={
-              <ProtectedRoute><Navigate to="/dashboard/bookings" replace /></ProtectedRoute>
+              <ProtectedRoute><Navigate to={(location) => `/dashboard/bookings/${location.pathname.split('/').pop()}`} replace /></ProtectedRoute>
             } />
             <Route path="owner/bookings/:bookingId" element={
               <ProtectedRoute><Navigate to="/owner/bookings" replace /></ProtectedRoute>
@@ -588,6 +589,7 @@ const App: React.FC = () => {
             <Route path="dashboard" element={<ProtectedRoute requiredRole="customer"><CustomerDashboardLayout /></ProtectedRoute>}>
               <Route index element={<CustomerOverview />} />
               <Route path="bookings" element={<MyBookingsPage />} />
+              <Route path="bookings/:bookingId" element={<BookingDetailPage />} />
               <Route path="bookings/:bookingId/tracking" element={<CustomerBookingPage />} />
               <Route path="profile" element={<ProfilePage />} />
               <Route path="wishlist" element={<WishlistPage />} />
@@ -625,6 +627,7 @@ const App: React.FC = () => {
             <Route path="login" element={<LoginPage />} />
             <Route path="register" element={<RegisterPage />} />
             <Route path="forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="reset-password" element={<ResetPasswordPage />} />
             <Route path="otp" element={<OTPPage />} />
           </Route>
 

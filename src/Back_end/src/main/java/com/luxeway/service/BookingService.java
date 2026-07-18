@@ -103,10 +103,17 @@ public class BookingService {
         // Enforce KYC verification & license class matching
         if (renter.getRole() != com.luxeway.enums.UserRole.ADMIN) {
             if (!"VERIFIED".equals(renter.getKycStatus())) {
-                throw new RuntimeException("Please complete identity verification first");
+                throw new RuntimeException("Vui lòng xác minh danh tính KYC trước khi đặt xe.");
+            }
+
+            if (!"VERIFIED".equals(renter.getDriverLicenseStatus()) || !Boolean.TRUE.equals(renter.getDrivingLicenseVerified())) {
+                throw new RuntimeException("Bạn bắt buộc phải tải lên Bằng lái xe và chờ xác duyệt thành công trước khi đặt xe.");
             }
 
             String licenseClass = renter.getLicenseClass() != null ? renter.getLicenseClass().trim().toUpperCase() : "";
+            if (licenseClass.isEmpty()) {
+                throw new RuntimeException("Chưa xác định được hạng bằng lái. Vui lòng cập nhật thông tin bằng lái.");
+            }
             if (vehicle.getVehicleType() == com.luxeway.enums.VehicleType.MOTORBIKE) {
                 boolean isMotorbikeLicense = licenseClass.startsWith("A");
                 if (!isMotorbikeLicense) {

@@ -94,10 +94,11 @@ public class VehicleService {
         }
 
         boolean isNearestSort = "nearest".equalsIgnoreCase(filter.getSortBy()) && filter.getUserLat() != null && filter.getUserLng() != null;
-        boolean needsManualProcessing = isNearestSort || (filter.getKeyword() != null && !filter.getKeyword().isBlank());
+        boolean needsManualProcessing = isNearestSort;
         Pageable queryPageable = needsManualProcessing ? PageRequest.of(0, 10000) : pageable;
 
         Page<Vehicle> page = vehicleRepository.filterVehiclesMulti(
+            filter.getKeyword() != null && !filter.getKeyword().isBlank() ? filter.getKeyword().trim() : null,
             resolvedLocation,
             categoryList,
             brandList,
@@ -128,15 +129,7 @@ public class VehicleService {
 
         List<Vehicle> list = page.getContent();
 
-        // 1. Filter by keyword in Java
-        if (filter.getKeyword() != null && !filter.getKeyword().isBlank()) {
-            String kw = filter.getKeyword().toLowerCase().trim();
-            list = list.stream()
-                .filter(v -> (v.getName() != null && v.getName().toLowerCase().contains(kw)) ||
-                             (v.getBrand() != null && v.getBrand().toLowerCase().contains(kw)) ||
-                             (v.getModel() != null && v.getModel().toLowerCase().contains(kw)))
-                .collect(Collectors.toList());
-        }
+        // 1. (Keyword filtering moved to database)
 
         // 2. Map and calculate distance
         List<VehicleDTOs.VehicleResponse> responses = list.stream().map(v -> {
@@ -177,57 +170,54 @@ public class VehicleService {
      * Handles both diacritic form ("Hà Nội") and plain ASCII form ("Ha Noi", "ha noi").
      * If no mapping is found, returns the original string (allows partial matching via LIKE).
      */
-    private String resolveLocation(String location) {
-        if (location == null || location.isBlank()) return null;
-
-        // Mapping table: lowercase form (both with and without diacritics) → English form in DB
-        java.util.Map<String, String> cityMap = new java.util.HashMap<>();
+    private String resolveLocation(String rawLocation) {
+        if (rawLocation == null || rawLocation.isEmpty()) {
+            return null;
+        }
+        
+        String lowerLoc = rawLocation.toLowerCase().trim();
+        
         // Ho Chi Minh
-        cityMap.put("ho chi minh",   "Ho Chi Minh");
-        cityMap.put("hồ chí minh",   "Ho Chi Minh");
-        cityMap.put("hổ chí minh",   "Ho Chi Minh");
-        cityMap.put("hcm",           "Ho Chi Minh");
-        cityMap.put("tp hcm",        "Ho Chi Minh");
-        cityMap.put("tp. hồ chí minh","Ho Chi Minh");
-        cityMap.put("sai gon",       "Ho Chi Minh");
-        cityMap.put("saigon",        "Ho Chi Minh");
-        // Ha Noi
-        cityMap.put("ha noi",        "Ha Noi");
-        cityMap.put("hà nội",        "Ha Noi");
-        cityMap.put("hanoi",         "Ha Noi");
+        if (lowerLoc.contains("ho chi minh") || lowerLoc.contains("hồ chí minh") || lowerLoc.contains("hcm") || 
+            lowerLoc.contains("chí minh") || lowerLoc.contains("ch minh") || lowerLoc.contains("cha- minh") || 
+            lowerLoc.contains("sai gon") || lowerLoc.contains("saigon") || 
+            (lowerLoc.contains("h") && lowerLoc.contains("ch") && lowerLoc.contains("m"))) {
+            return "Ho Chi Minh";
+        }
+        // Hanoi
+        if (lowerLoc.contains("ha noi") || lowerLoc.contains("hà nội") || lowerLoc.contains("hanoi") || lowerLoc.contains("hà n") || lowerLoc.contains("ha n")) {
+            return "Hanoi";
+        }
         // Da Nang
-        cityMap.put("da nang",       "Da Nang");
-        cityMap.put("đà nẵng",       "Da Nang");
-        cityMap.put("danang",        "Da Nang");
+        if (lowerLoc.contains("da nang") || lowerLoc.contains("đà nẵng") || lowerLoc.contains("danang") || lowerLoc.contains("nẵng") || lowerLoc.contains("à n") || lowerLoc.contains("a n")) {
+            return "Da Nang";
+        }
         // Nha Trang
-        cityMap.put("nha trang",     "Nha Trang");
-        cityMap.put("nhatrang",      "Nha Trang");
+        if (lowerLoc.contains("nha trang") || lowerLoc.contains("nhatrang") || lowerLoc.contains("nha")) {
+            return "Nha Trang";
+        }
         // Da Lat
-        cityMap.put("da lat",        "Da Lat");
-        cityMap.put("đà lạt",        "Da Lat");
-        cityMap.put("dalat",         "Da Lat");
-        // Hai Phong
-        cityMap.put("hai phong",     "Hai Phong");
-        cityMap.put("hải phòng",     "Hai Phong");
-        cityMap.put("haiphong",      "Hai Phong");
+        if (lowerLoc.contains("da lat") || lowerLoc.contains("đà lạt") || lowerLoc.contains("dalat") || lowerLoc.contains("lạt") || lowerLoc.contains("à l") || lowerLoc.contains("a l")) {
+            return "Da Lat";
+        }
         // Hue
-        cityMap.put("hue",           "Hue");
-        cityMap.put("huế",           "Hue");
+        if (lowerLoc.contains("hue") || lowerLoc.contains("huế") || lowerLoc.contains("hu?") || lowerLoc.contains("hu")) {
+            return "Hue";
+        }
         // Can Tho
-        cityMap.put("can tho",       "Can Tho");
-        cityMap.put("cần thơ",       "Can Tho");
-        cityMap.put("cantho",        "Can Tho");
+        if (lowerLoc.contains("can tho") || lowerLoc.contains("cần thơ") || lowerLoc.contains("cantho")) {
+            return "Can Tho";
+        }
         // Vung Tau
-        cityMap.put("vung tau",      "Vung Tau");
-        cityMap.put("vũng tàu",      "Vung Tau");
-        cityMap.put("vungtau",       "Vung Tau");
-        // Phu Quoc
-        cityMap.put("phu quoc",      "Phu Quoc");
-        cityMap.put("phú quốc",      "Phu Quoc");
-        cityMap.put("phuquoc",       "Phu Quoc");
+        if (lowerLoc.contains("vung tau") || lowerLoc.contains("vũng tàu") || lowerLoc.contains("vungtau")) {
+            return "Vung Tau";
+        }
+        // Hai Phong
+        if (lowerLoc.contains("hai phong") || lowerLoc.contains("hải phòng") || lowerLoc.contains("haiphong")) {
+            return "Hai Phong";
+        }
 
-        String key = location.toLowerCase().trim();
-        return cityMap.getOrDefault(key, location); // fallback: use as-is
+        return rawLocation;
     }
 
     // ====== Search ======
@@ -1156,6 +1146,7 @@ public class VehicleService {
         }
 
         Page<Vehicle> page = vehicleRepository.filterVehiclesMulti(
+            filter.getKeyword(),
             resolvedLocation,
             categoryList,
             brandList,

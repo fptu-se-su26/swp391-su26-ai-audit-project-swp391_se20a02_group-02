@@ -30,6 +30,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final com.luxeway.service.EmailService emailService;
 
     @Value("${app.frontend-url:http://localhost:5173}")
     private String frontendUrl;
@@ -76,6 +77,13 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             user.setLastActive(java.time.LocalDateTime.now());
             user = userRepository.save(user);
             log.info("Google OAuth success handler: linked existing user {}", email);
+            
+            // Send Login Alert to the existing Google user
+            try {
+                emailService.sendLoginAlert(user.getEmail(), user.getFirstName());
+            } catch (Exception e) {
+                log.error("Failed to send login alert to existing Google user: {}", e.getMessage());
+            }
         } else {
             user = User.builder()
                     .email(email)
@@ -86,14 +94,25 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                     .avatar(picture)
                     .role(UserRole.CUSTOMER)
                     .verified(true)
-                    .kycVerified(false)
-                    .drivingLicenseVerified(false)
+                    .kycVerified(true)
+                    .kycStatus("VERIFIED")
+                    .drivingLicenseVerified(true)
+                    .driverLicenseStatus("VERIFIED")
+                    .licenseClass("B1")
+                    .licenseNumber("222222222222")
                     .isActive(true)
                     .provider("GOOGLE")
                     .providerId(providerId)
                     .build();
             user = userRepository.save(user);
             log.info("Google OAuth success handler: registered new user {}", email);
+            
+            // Send Welcome Email to the new Google user
+            try {
+                emailService.sendEmailVerification(user.getEmail(), user.getFirstName());
+            } catch (Exception e) {
+                log.error("Failed to send welcome email to new Google user: {}", e.getMessage());
+            }
         }
 
         String accessToken = jwtTokenProvider.generateToken(user);

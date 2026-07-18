@@ -4,10 +4,10 @@ USE car_rental_platform;
 -- ============================================================
 -- 1. USERS & OWNER INFRASTRUCTURE
 -- ============================================================
-INSERT INTO users (id, email, password_hash, first_name, last_name, display_name, avatar, phone, role, verified, kyc_verified, driving_license_verified, rating, total_reviews, total_rentals, bio, location, account_type, company_name, stripe_customer_id, is_active, joined_at, last_active, created_at, updated_at, wallet_balance, kyc_status, driver_license_status, provider) VALUES
-('admin-user-id-001', 'admin@luxeway.vn', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', N'Admin', N'LuxeWay', N'Admin LuxeWay', 'https://ui-avatars.com/api/?name=Admin+LuxeWay&background=0F172A&color=fff&size=200', '0901234567', 'ADMIN', 1, 1, 1, 5.00, 0, 0, N'LuxeWay Platform Administrator', N'Ho Chi Minh City', 'INDIVIDUAL', NULL, NULL, 1, '2026-01-01 00:00:00', '2026-05-23 10:00:00', '2026-01-01 00:00:00', '2026-05-23 10:00:00', 0, 'VERIFIED', 'VERIFIED', 'LOCAL'),
-('customer-user-id-002', 'customer@luxeway.vn', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', N'Customer', N'LuxeWay', N'Customer LuxeWay', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&h=200&fit=crop', '0901111111', 'CUSTOMER', 1, 1, 1, 4.80, 15, 8, N'Travel lover and explorer.', N'Hanoi', 'INDIVIDUAL', NULL, NULL, 1, '2026-02-15 08:30:00', '2026-05-23 09:45:00', '2026-02-15 08:30:00', '2026-05-23 09:45:00', 10000000.00, 'VERIFIED', 'VERIFIED', 'LOCAL'),
-('owner-user-id-003', 'owner@luxeway.vn', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', N'Owner', N'LuxeWay', N'Owner LuxeWay', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop', '0904444444', 'OWNER', 1, 1, 1, 4.95, 45, 0, N'Premium fleet owner offering first-class vehicles.', N'Ho Chi Minh City', 'INDIVIDUAL', NULL, NULL, 1, '2026-01-20 09:15:00', '2026-05-23 07:20:00', '2026-01-20 09:15:00', '2026-05-23 07:20:00', 50000000.00, 'VERIFIED', 'VERIFIED', 'LOCAL');
+INSERT INTO users (id, email, password_hash, first_name, last_name, display_name, avatar, phone, role, verified, kyc_verified, driving_license_verified, rating, total_reviews, total_rentals, bio, location, account_type, company_name, stripe_customer_id, is_active, joined_at, last_active, created_at, updated_at, wallet_balance, kyc_status, driver_license_status, provider, license_class, license_number) VALUES
+('admin-user-id-001', 'admin@luxeway.vn', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', N'Admin', N'LuxeWay', N'Admin LuxeWay', 'https://ui-avatars.com/api/?name=Admin+LuxeWay&background=0F172A&color=fff&size=200', '0901234567', 'ADMIN', 1, 1, 1, 5.00, 0, 0, N'LuxeWay Platform Administrator', N'Ho Chi Minh City', 'INDIVIDUAL', NULL, NULL, 1, '2026-01-01 00:00:00', '2026-05-23 10:00:00', '2026-01-01 00:00:00', '2026-05-23 10:00:00', 0, 'VERIFIED', 'VERIFIED', 'LOCAL', 'B1', '111111111111'),
+('customer-user-id-002', 'customer@luxeway.vn', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', N'Customer', N'LuxeWay', N'Customer LuxeWay', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&h=200&fit=crop', '0901111111', 'CUSTOMER', 1, 1, 1, 4.80, 15, 8, N'Travel lover and explorer.', N'Hanoi', 'INDIVIDUAL', NULL, NULL, 1, '2026-02-15 08:30:00', '2026-05-23 09:45:00', '2026-02-15 08:30:00', '2026-05-23 09:45:00', 10000000.00, 'VERIFIED', 'VERIFIED', 'LOCAL', 'B1', '222222222222'),
+('owner-user-id-003', 'owner@luxeway.vn', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', N'Owner', N'LuxeWay', N'Owner LuxeWay', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop', '0904444444', 'OWNER', 1, 1, 1, 4.95, 45, 0, N'Premium fleet owner offering first-class vehicles.', N'Ho Chi Minh City', 'INDIVIDUAL', NULL, NULL, 1, '2026-01-20 09:15:00', '2026-05-23 07:20:00', '2026-01-20 09:15:00', '2026-05-23 07:20:00', 50000000.00, 'VERIFIED', 'VERIFIED', 'LOCAL', 'B1', '333333333333');
 
 INSERT INTO owners (owner_id, bio, account_type, company_name, wallet_balance, is_active, created_at) VALUES 
 ('owner-user-id-003', N'Premium fleet owner offering first-class vehicles.', 'INDIVIDUAL', NULL, 50000000.00, 1, '2026-01-20 09:15:00');
@@ -391,3 +391,34 @@ INSERT INTO destination_analytics (city, vehicle_count, average_price, top_categ
 (N'Nha Trang', 120, 600000, 'SEDAN', 'https://images.unsplash.com/photo-1571508601936-6ca847b47ae4?q=80&w=800&auto=format&fit=crop', 4, 1),
 (N'Da Lat', 158, 580000, 'SUV', 'https://images.unsplash.com/photo-1620121692029-d088224ddc74?q=80&w=800&auto=format&fit=crop', 5, 1),
 (N'Hue', 85, 520000, 'SEDAN', 'https://images.unsplash.com/photo-1571005471113-94993ec92454?q=80&w=800&auto=format&fit=crop', 6, 1);
+
+-- ============================================================
+-- 8. BOOKING COUNTER SEQUENCE
+-- ============================================================
+INSERT INTO booking_counters (name, counter_value) VALUES ('bookings', 100000);
+
+-- ============================================================
+-- 9. SPECIAL TEST CASE SEED DATA
+-- ============================================================
+-- Seeding a vehicle with status 'MAINTENANCE' for TC-BL-005 (Unavailable vehicle)
+INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, description, price_per_day, deposit, city, country, address, status, approval_status, vehicle_type, created_at, updated_at)
+VALUES ('VEHICLE_UNAVAILABLE', 'owner-user-id-003', 'Unavailable Car', 'Toyota', 'Vios', 2024, 'ECONOMY', 'Unavailable vehicle for testing', 800000.00, 1600000.00, 'Ho Chi Minh', 'Vietnam', 'Address', 'MAINTENANCE', 'APPROVED', 'CAR', GETDATE(), GETDATE());
+
+-- Setting min_rental_days = 3 for car-002-0000-0000-000000000000 for TC-BL-028
+UPDATE vehicles SET min_rental_days = 3 WHERE id = 'car-002-0000-0000-000000000000';
+
+-- Updating registertest@luxeway.vn to NOT_UPLOADED kyc status for TC-BL-008
+UPDATE users SET kyc_verified = 0, kyc_status = 'NOT_UPLOADED', driving_license_verified = 0, driver_license_status = 'NOT_UPLOADED', license_class = NULL WHERE email = 'registertest@luxeway.vn';
+
+-- ============================================================
+-- 10. DISPUTE LIFECYCLE SEED DATA
+-- ============================================================
+-- Completed Booking for dispute testing (booking-dispute-test-id-001)
+INSERT INTO bookings (id, vehicle_id, renter_id, owner_id, status, start_date, end_date, total_days, base_price, price_per_day, service_fee, taxes, total, deposit, created_at, updated_at, deposit_refunded, include_delivery, include_insurance, cleaning_fee, version)
+VALUES ('booking-dispute-test-id-001', 'car-001-0000-0000-000000000000', 'customer-user-id-002', 'owner-user-id-003', 'COMPLETED', '2026-07-01', '2026-07-05', 4, 3200000.00, 800000.00, 320000.00, 256000.00, 3776000.00, 3000000.00, GETDATE(), GETDATE(), 0, 0, 0, 0.00, 0);
+
+-- Seeding Dispute ID 1 on the completed booking for TC-DIS-012, TC-DIS-013, TC-DIS-029
+SET IDENTITY_INSERT disputes ON;
+INSERT INTO disputes (id, booking_id, reporter_id, reason, description, status, evidence_url, created_at, updated_at)
+VALUES (1, 'booking-dispute-test-id-001', 'customer-user-id-002', 'Xe bị hỏng', 'Xe bị hỏng gương trái khi nhận', 'OPEN', 'https://cdn.luxeway.vn/img1.jpg', GETDATE(), GETDATE());
+SET IDENTITY_INSERT disputes OFF;

@@ -15,7 +15,23 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    strictPort: false, // false = tự động tăng port nếu 5173 bị chiếm (không crash)
+    host: true, // Listen on all local IPs
+    strictPort: false,
+    allowedHosts: true, // Allow ALL hosts through ngrok
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+      '/oauth2/authorization': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+      '/login/oauth2': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      }
+    }
   },
   resolve: {
     alias: {

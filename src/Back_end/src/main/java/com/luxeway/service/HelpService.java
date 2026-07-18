@@ -109,7 +109,7 @@ public class HelpService {
         m.put("categoryTitle", a.getCategory() != null ? a.getCategory().getTitle() : null);
         // Include first 200 chars as excerpt
         String content = a.getContent() != null ? a.getContent() : "";
-        m.put("excerpt", content.length() > 200 ? content.substring(0, 200) + "…" : content);
+        m.put("excerpt", content.length() > 200 ? content.substring(0, 200) + "..." : content);
         m.put("createdAt", a.getCreatedAt() != null ? a.getCreatedAt().toString() : null);
         m.put("updatedAt", a.getUpdatedAt() != null ? a.getUpdatedAt().toString() : null);
         return m;

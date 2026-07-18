@@ -719,7 +719,90 @@ public class PaymentService {
         }
     }
 
+    // ====== VNPay Integration (LW-162, LW-164, LW-165) ======
+
+    public String buildVNPayUrl(Payment payment, String returnUrl) {
+        try {
+            String vnp_Version = "2.1.0";
+            String vnp_Command = "pay";
+            String vnp_TxnRef = payment.getTransactionId();
+            String vnp_OrderInfo = "LuxeWay payment for booking " + (payment.getBooking() != null ? payment.getBooking().getId() : "topup");
+            String vnp_OrderType = "other";
+            String vnp_Amount = String.valueOf(payment.getAmount().multiply(new BigDecimal("100")).longValue());
+            String vnp_Locale = "vn";
+            String vnp_IpAddr = "127.0.0.1";
+            
+            java.util.Map<String, String> vnp_Params = new java.util.HashMap<>();
+            vnp_Params.put("vnp_Version", vnp_Version);
+            vnp_Params.put("vnp_Command", vnp_Command);
+            vnp_Params.put("vnp_TmnCode", "TMNCODE123");
+            vnp_Params.put("vnp_Amount", vnp_Amount);
+            vnp_Params.put("vnp_CurrCode", "VND");
+            vnp_Params.put("vnp_TxnRef", vnp_TxnRef);
+            vnp_Params.put("vnp_OrderInfo", vnp_OrderInfo);
+            vnp_Params.put("vnp_OrderType", vnp_OrderType);
+            vnp_Params.put("vnp_Locale", vnp_Locale);
+            vnp_Params.put("vnp_ReturnUrl", returnUrl);
+            vnp_Params.put("vnp_IpAddr", vnp_IpAddr);
+            vnp_Params.put("vnp_CreateDate", java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
+
+            java.util.List<String> fieldNames = new java.util.ArrayList<>(vnp_Params.keySet());
+            java.util.Collections.sort(fieldNames);
+            StringBuilder hashData = new StringBuilder();
+            StringBuilder query = new StringBuilder();
+            for (String fieldName : fieldNames) {
+                String fieldValue = vnp_Params.get(fieldName);
+                if ((fieldValue != null) && (fieldValue.length() > 0)) {
+                    hashData.append(fieldName).append('=').append(java.net.URLEncoder.encode(fieldValue, java.nio.charset.StandardCharsets.US_ASCII.toString())).append('&');
+                    query.append(java.net.URLEncoder.encode(fieldName, java.nio.charset.StandardCharsets.US_ASCII.toString())).append('=').append(java.net.URLEncoder.encode(fieldValue, java.nio.charset.StandardCharsets.US_ASCII.toString())).append('&');
+                }
+            }
+            if (hashData.length() > 0) {
+                hashData.setLength(hashData.length() - 1);
+            }
+            if (query.length() > 0) {
+                query.setLength(query.length() - 1);
+            }
+            String vnpSecureHash = hmacSHA512("SECRETKEY123", hashData.toString());
+            return "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html?" + query.toString() + "&vnp_SecureHash=" + vnpSecureHash;
+        } catch (Exception e) {
+            log.error("Failed to build VNPay URL", e);
+            return "";
+        }
+    }
+
+    @Transactional
+    public PaymentDTOs.PaymentResponse processVNPayCallback(java.util.Map<String, String> params) {
+        String txnRef = params.getOrDefault("vnp_TxnRef", "");
+        String responseCode = params.getOrDefault("vnp_ResponseCode", "");
+        Payment payment = paymentRepository.findByTransactionId(txnRef)
+                .orElseThrow(() -> new RuntimeException("Payment not found for VNPay txnRef: " + txnRef));
+        
+        boolean success = "00".equals(responseCode);
+        payment = completeGatewayPayment(payment, success, "VNPay Callback");
+        return toResponse(payment);
+    }
+
+    public String hmacSHA512(String key, String data) {
+        try {
+            javax.crypto.Mac hmac = javax.crypto.Mac.getInstance("HmacSHA512");
+            byte[] hmacKeyBytes = key.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            javax.crypto.spec.SecretKeySpec secretKey = new javax.crypto.spec.SecretKeySpec(hmacKeyBytes, "HmacSHA512");
+            hmac.init(secretKey);
+            byte[] result = hmac.doFinal(data.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder(2 * result.length);
+            for (byte b : result) {
+                sb.append(String.format("%02x", b & 0xff));
+            }
+            return sb.toString();
+        } catch (Exception ex) {
+            log.error("Error in hmacSHA512 generation", ex);
+            return "";
+        }
+    }
+
     // ====== DTO Mapping ======
+
 
     public PaymentDTOs.PaymentResponse toResponse(Payment p) {
         PaymentDTOs.PaymentResponse resp = new PaymentDTOs.PaymentResponse();

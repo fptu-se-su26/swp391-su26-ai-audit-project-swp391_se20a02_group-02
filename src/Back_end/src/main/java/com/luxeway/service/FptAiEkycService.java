@@ -14,14 +14,22 @@ import org.springframework.web.client.RestTemplate;
 
 import java.nio.file.Path;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Slf4j
 @Service
 @SuppressWarnings("all")
 public class FptAiEkycService {
 
+
+
     @Value("${fptai.api-key:BKfUiImFD4DI3RI2OEjoCahBTQOgVtPf}")
     private String apiKey;
+
+    @Value("${ekyc.provider:FPTAI}")
+    private String ekycProvider;
+
+    private LivenessResult cachedLivenessResult = null;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final RestTemplate restTemplate = new RestTemplate();
@@ -76,7 +84,8 @@ public class FptAiEkycService {
     }
 
     public LivenessResult verifyLiveness(java.nio.file.Path selfiePath) {
-        log.info("FPT.AI: Verifying liveness for file: {}", selfiePath);
+        log.info("Verifying liveness for file: {}", selfiePath);
+
         if (isMockMode() || selfiePath.getFileName().toString().toLowerCase().contains("mock")) {
             return mockLiveness(selfiePath);
         }
@@ -105,9 +114,19 @@ public class FptAiEkycService {
                 return result;
             }
             throw new RuntimeException("API response error");
+        } catch (org.springframework.web.client.HttpStatusCodeException e) {
+            String errorMsg = e.getResponseBodyAsString();
+            log.error("FPT.AI Liveness API HTTP error: {} - {}", e.getStatusCode(), errorMsg);
+            if (isMockMode()) {
+                return mockLiveness(selfiePath);
+            }
+            throw new RuntimeException("FPT.AI Liveness API error: " + errorMsg, e);
         } catch (Exception e) {
-            log.warn("FPT.AI Liveness API call failed, falling back to mock response. Error: {}", e.getMessage());
-            return mockLiveness(selfiePath);
+            log.error("FPT.AI Liveness API call failed: {}", e.getMessage(), e);
+            if (isMockMode()) {
+                return mockLiveness(selfiePath);
+            }
+            throw new RuntimeException("FPT.AI Liveness API connection failed: " + e.getMessage(), e);
         }
     }
 
@@ -131,7 +150,8 @@ public class FptAiEkycService {
      * Scan CCCD using FPT AI OCR API.
      */
     public CccdOcrResult scanCccd(Path filePath) {
-        log.info("FPT.AI: Scanning CCCD for file: {}", filePath);
+        log.info("CCCD Scanning: provider={}, file={}", ekycProvider, filePath);
+
         if (isMockMode() || filePath.getFileName().toString().toLowerCase().contains("mock")) {
             return mockCccd(filePath);
         }
@@ -168,14 +188,26 @@ public class FptAiEkycService {
             }
             throw new RuntimeException("API response error");
 
+        } catch (org.springframework.web.client.HttpStatusCodeException e) {
+            String errorMsg = e.getResponseBodyAsString();
+            log.error("FPT.AI CCCD API HTTP error: {} - {}", e.getStatusCode(), errorMsg);
+            if (isMockMode()) {
+                return mockCccd(filePath);
+            }
+            throw new RuntimeException("FPT.AI CCCD API error: " + errorMsg, e);
         } catch (Exception e) {
-            log.warn("FPT.AI CCCD API call failed, falling back to mock response. Error: {}", e.getMessage());
-            return mockCccd(filePath);
+            log.error("FPT.AI CCCD API call failed: {}", e.getMessage(), e);
+            if (isMockMode()) {
+                return mockCccd(filePath);
+            }
+            throw new RuntimeException("FPT.AI CCCD API connection failed: " + e.getMessage(), e);
         }
     }
 
     private boolean isMockMode() {
-        return apiKey == null || apiKey.isBlank() || apiKey.contains("placeholder") || "BKfUiImFD4DI3RI2OEjoCahBTQOgVtPf".equals(apiKey);
+        return apiKey == null || apiKey.isBlank() || apiKey.contains("placeholder") 
+            || "BKfUiImFD4DI3RI2OEjoCahBTQOgVtPf".equals(apiKey) 
+            || "YOUR_FPTAI_API_KEY".equals(apiKey);
     }
 
     private CccdOcrResult mockCccd(Path filePath) {
@@ -197,7 +229,8 @@ public class FptAiEkycService {
      * Scan Driver License using FPT AI OCR API.
      */
     public DlOcrResult scanDriverLicense(Path filePath) {
-        log.info("FPT.AI: Scanning Driver License for file: {}", filePath);
+        log.info("Driver License Scanning: provider={}, file={}", ekycProvider, filePath);
+
         if (isMockMode() || filePath.getFileName().toString().toLowerCase().contains("mock")) {
             return mockDriverLicense(filePath);
         }
@@ -238,9 +271,19 @@ public class FptAiEkycService {
             }
             throw new RuntimeException("API response error");
 
+        } catch (org.springframework.web.client.HttpStatusCodeException e) {
+            String errorMsg = e.getResponseBodyAsString();
+            log.error("FPT.AI DL API HTTP error: {} - {}", e.getStatusCode(), errorMsg);
+            if (isMockMode()) {
+                return mockDriverLicense(filePath);
+            }
+            throw new RuntimeException("FPT.AI DL API error: " + errorMsg, e);
         } catch (Exception e) {
-            log.warn("FPT.AI Driver License API call failed, falling back to mock response. Error: {}", e.getMessage());
-            return mockDriverLicense(filePath);
+            log.error("FPT.AI DL API call failed: {}", e.getMessage(), e);
+            if (isMockMode()) {
+                return mockDriverLicense(filePath);
+            }
+            throw new RuntimeException("FPT.AI DL API connection failed: " + e.getMessage(), e);
         }
     }
 
@@ -271,7 +314,10 @@ public class FptAiEkycService {
      * Match face between ID Card and Selfie.
      */
     public FaceMatchResult matchFaces(Path idCardPath, Path selfiePath) {
-        log.info("FPT.AI: Comparing faces between {} and {}", idCardPath, selfiePath);
+        log.info("Comparing faces between {} and {}", idCardPath, selfiePath);
+        
+
+
         if (isMockMode() || selfiePath.getFileName().toString().toLowerCase().contains("mock")) {
             return mockFaceMatch(idCardPath, selfiePath);
         }
@@ -302,9 +348,19 @@ public class FptAiEkycService {
             }
             throw new RuntimeException("API response error");
 
+        } catch (org.springframework.web.client.HttpStatusCodeException e) {
+            String errorMsg = e.getResponseBodyAsString();
+            log.error("FPT.AI Face Match API HTTP error: {} - {}", e.getStatusCode(), errorMsg);
+            if (isMockMode()) {
+                return mockFaceMatch(idCardPath, selfiePath);
+            }
+            throw new RuntimeException("FPT.AI Face Match API error: " + errorMsg, e);
         } catch (Exception e) {
-            log.warn("FPT.AI Face Match API call failed, falling back to mock response. Error: {}", e.getMessage());
-            return mockFaceMatch(idCardPath, selfiePath);
+            log.error("FPT.AI Face Match API call failed: {}", e.getMessage(), e);
+            if (isMockMode()) {
+                return mockFaceMatch(idCardPath, selfiePath);
+            }
+            throw new RuntimeException("FPT.AI Face Match API connection failed: " + e.getMessage(), e);
         }
     }
 
@@ -338,5 +394,227 @@ public class FptAiEkycService {
             }
         }
         return null;
+    }
+
+    private CccdOcrResult parseCccdOcr(String rawText) {
+        CccdOcrResult result = new CccdOcrResult();
+        result.setRawResponse(rawText);
+        
+        if (rawText == null || rawText.isBlank()) {
+            return result;
+        }
+        
+        String[] lines = rawText.split("\\n");
+        
+        // 1. Extract citizenId (12 digits or 9 digits)
+        for (String line : lines) {
+            String clean = line.replaceAll("\\s+", "");
+            if (clean.matches(".*\\d{12}.*")) {
+                java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\d{12}").matcher(clean);
+                if (m.find()) {
+                    result.setCitizenId(m.group());
+                    break;
+                }
+            }
+        }
+        if (result.getCitizenId() == null) {
+            for (String line : lines) {
+                String clean = line.replaceAll("\\s+", "");
+                if (clean.matches(".*\\d{9}.*")) {
+                    java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\d{9}").matcher(clean);
+                    if (m.find()) {
+                        result.setCitizenId(m.group());
+                        break;
+                    }
+                }
+            }
+        }
+        
+        // 2. Extract fullName
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i].toLowerCase();
+            if (line.contains("họ và tên") || line.contains("full name") || line.contains("họ tên")) {
+                if (i + 1 < lines.length) {
+                    result.setFullName(lines[i+1].trim().toUpperCase());
+                    break;
+                }
+            }
+        }
+        // Fallback for fullName: find the first line in ALL CAPS that contains at least 2 words
+        if (result.getFullName() == null) {
+            for (String line : lines) {
+                String trimmed = line.trim();
+                if (trimmed.length() > 5 && trimmed.equals(trimmed.toUpperCase()) 
+                    && !trimmed.contains("CỘNG HÒA") && !trimmed.contains("VIỆT NAM") 
+                    && !trimmed.contains("CĂN CƯỚC") && !trimmed.contains("CÔNG DÂN")) {
+                    result.setFullName(trimmed);
+                    break;
+                }
+            }
+        }
+        
+        // 3. Extract dateOfBirth
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i].toLowerCase();
+            if (line.contains("ngày sinh") || line.contains("date of birth") || line.contains("sinh ngày")) {
+                java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\d{2}/\\d{2}/\\d{4}").matcher(lines[i]);
+                if (m.find()) {
+                    result.setDateOfBirth(m.group());
+                    break;
+                }
+                if (i + 1 < lines.length) {
+                    java.util.regex.Matcher m2 = java.util.regex.Pattern.compile("\\d{2}/\\d{2}/\\d{4}").matcher(lines[i+1]);
+                    if (m2.find()) {
+                        result.setDateOfBirth(m2.group());
+                        break;
+                    }
+                }
+            }
+        }
+        // Fallback for dateOfBirth
+        if (result.getDateOfBirth() == null) {
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\b\\d{2}/\\d{2}/\\d{4}\\b").matcher(rawText);
+            if (m.find()) {
+                result.setDateOfBirth(m.group());
+            }
+        }
+        
+        // 4. Extract expiryDate
+        for (String line : lines) {
+            String lower = line.toLowerCase();
+            if (lower.contains("có giá trị đến") || lower.contains("đến ngày") || lower.contains("giá trị đến") || lower.contains("date of expiry") || lower.contains("expires")) {
+                java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\d{2}/\\d{2}/\\d{4}").matcher(line);
+                if (m.find()) {
+                    result.setExpiryDate(m.group());
+                    break;
+                }
+            }
+        }
+        
+        // 5. Extract address
+        StringBuilder addressBuilder = new StringBuilder();
+        boolean startAddress = false;
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i];
+            String lower = line.toLowerCase();
+            if (lower.contains("nơi thường trú") || lower.contains("residence")) {
+                startAddress = true;
+                String rest = "";
+                int idxRes = lower.indexOf("residence");
+                int idxTru = lower.indexOf("trú");
+                int cutIdx = idxRes != -1 ? idxRes + 9 : (idxTru != -1 ? idxTru + 3 : 0);
+                if (cutIdx < line.length()) {
+                    rest = line.substring(cutIdx).replaceAll("^[^a-zA-Z0-9]+", "").trim();
+                }
+                if (!rest.isEmpty()) {
+                    addressBuilder.append(rest);
+                }
+                continue;
+            }
+            if (startAddress) {
+                if (lower.contains("giá trị") || lower.contains("expired") || lower.contains("hạng") || lower.contains("class")) {
+                    break;
+                }
+                if (addressBuilder.length() > 0) {
+                    addressBuilder.append(", ");
+                }
+                addressBuilder.append(line.trim());
+            }
+        }
+        if (addressBuilder.length() > 0) {
+            result.setAddress(addressBuilder.toString().replaceAll(", ,", ",").trim());
+        }
+        
+        return result;
+    }
+
+    private DlOcrResult parseDlOcr(String rawText) {
+        DlOcrResult result = new DlOcrResult();
+        result.setRawResponse(rawText);
+        
+        if (rawText == null || rawText.isBlank()) {
+            return result;
+        }
+        
+        String[] lines = rawText.split("\\n");
+        
+        // 1. Extract licenseNumber (12 digits)
+        for (String line : lines) {
+            String clean = line.replaceAll("\\s+", "");
+            if (clean.matches(".*\\d{12}.*")) {
+                java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\d{12}").matcher(clean);
+                if (m.find()) {
+                    result.setLicenseNumber(m.group());
+                    break;
+                }
+            }
+        }
+        
+        // 2. Extract fullName
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i].toLowerCase();
+            if (line.contains("họ tên") || line.contains("full name")) {
+                if (i + 1 < lines.length) {
+                    result.setFullName(lines[i+1].trim().toUpperCase());
+                    break;
+                }
+            }
+        }
+        if (result.getFullName() == null) {
+            for (String line : lines) {
+                String trimmed = line.trim();
+                if (trimmed.length() > 5 && trimmed.equals(trimmed.toUpperCase()) 
+                    && !trimmed.contains("CỘNG HÒA") && !trimmed.contains("VIỆT NAM") 
+                    && !trimmed.contains("SỞ GIAO THÔNG") && !trimmed.contains("GIẤY PHÉP")) {
+                    result.setFullName(trimmed);
+                    break;
+                }
+            }
+        }
+        
+        // 3. Extract licenseClass
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i].toLowerCase();
+            if (line.contains("hạng") || line.contains("class")) {
+                if (i + 1 < lines.length) {
+                    result.setLicenseClass(lines[i+1].trim().toUpperCase());
+                    break;
+                }
+                java.util.regex.Matcher m = java.util.regex.Pattern.compile("hạng/class\\s*:\\s*([a-zA-Z0-9]+)", java.util.regex.Pattern.CASE_INSENSITIVE).matcher(lines[i]);
+                if (m.find()) {
+                    result.setLicenseClass(m.group(1).toUpperCase());
+                    break;
+                }
+            }
+        }
+        if (result.getLicenseClass() == null) {
+            for (String line : lines) {
+                if (line.trim().matches("^(A1|A2|A3|A4|B1|B2|C|D|E|F)$")) {
+                    result.setLicenseClass(line.trim().toUpperCase());
+                    break;
+                }
+            }
+        }
+        
+        // 4. Extract dateOfBirth
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i].toLowerCase();
+            if (line.contains("ngày sinh") || line.contains("date of birth")) {
+                java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\d{2}/\\d{2}/\\d{4}").matcher(lines[i]);
+                if (m.find()) {
+                    result.setDateOfBirth(m.group());
+                    break;
+                }
+                if (i + 1 < lines.length) {
+                    java.util.regex.Matcher m2 = java.util.regex.Pattern.compile("\\d{2}/\\d{2}/\\d{4}").matcher(lines[i+1]);
+                    if (m2.find()) {
+                        result.setDateOfBirth(m2.group());
+                        break;
+                    }
+                }
+            }
+        }
+        
+        return result;
     }
 }

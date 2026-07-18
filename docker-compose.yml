@@ -122,20 +122,20 @@ services:
     build:
       context: ./src/Front_end
       dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=${VITE_API_URL:-http://localhost:8080/api/v1}
+        - VITE_AUTH_API_URL=${VITE_AUTH_API_URL:-https://crept-sprinkled-mutiny.ngrok-free.dev}
+        - VITE_GOOGLE_REDIRECT_URI=${VITE_GOOGLE_REDIRECT_URI:-https://luxeway-4add3.web.app/auth/google/success}
+        - VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID:-your-google-client-id}
+        - VITE_GOONG_MAPTILES_KEY=${VITE_GOONG_MAPTILES_KEY:-your-goong-maptiles-key}
+        - VITE_FIREBASE_API_KEY=${VITE_FIREBASE_API_KEY:-your-firebase-api-key}
+        - VITE_FIREBASE_AUTH_DOMAIN=${VITE_FIREBASE_AUTH_DOMAIN:-luxeway-4add3.firebaseapp.com}
+        - VITE_FIREBASE_PROJECT_ID=${VITE_FIREBASE_PROJECT_ID:-luxeway-4add3}
+        - VITE_FIREBASE_MESSAGING_SENDER_ID=${VITE_FIREBASE_MESSAGING_SENDER_ID:-167557599901}
+        - VITE_FIREBASE_APP_ID=${VITE_FIREBASE_APP_ID:-1:167557599901:web:8620b719b942660de7ba74}
     container_name: luxeway-frontend
     ports:
-      - "5173:5173"
-    environment:
-      - VITE_API_URL=${VITE_API_URL:-http://localhost:8080/api/v1}
-      - VITE_AUTH_API_URL=${VITE_AUTH_API_URL:-https://crept-sprinkled-mutiny.ngrok-free.dev}
-      - VITE_GOOGLE_REDIRECT_URI=${VITE_GOOGLE_REDIRECT_URI:-https://luxeway-4add3.web.app/auth/google/success}
-      - VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID:-your-google-client-id}
-      - VITE_GOONG_MAPTILES_KEY=${VITE_GOONG_MAPTILES_KEY:-your-goong-maptiles-key}
-      - VITE_FIREBASE_API_KEY=${VITE_FIREBASE_API_KEY:-your-firebase-api-key}
-      - VITE_FIREBASE_AUTH_DOMAIN=${VITE_FIREBASE_AUTH_DOMAIN:-luxeway-4add3.firebaseapp.com}
-      - VITE_FIREBASE_PROJECT_ID=${VITE_FIREBASE_PROJECT_ID:-luxeway-4add3}
-      - VITE_FIREBASE_MESSAGING_SENDER_ID=${VITE_FIREBASE_MESSAGING_SENDER_ID:-167557599901}
-      - VITE_FIREBASE_APP_ID=${VITE_FIREBASE_APP_ID:-1:167557599901:web:8620b719b942660de7ba74}
+      - "5173:80"
     networks:
       - luxeway-network
 

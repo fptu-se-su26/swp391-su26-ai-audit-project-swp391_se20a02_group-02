@@ -38,6 +38,7 @@ export const authService = {
           phone: userInfo.phone || '',
           avatar: resolveImageUrl(userInfo.avatar),
           verified: userInfo.verified || false,
+          kycVerified: userInfo.kycVerified || false,
           rating: userInfo.rating || 5.0,
           totalReviews: userInfo.totalReviews || 0,
           joinedAt: userInfo.joinedAt || new Date().toISOString(),
@@ -48,6 +49,7 @@ export const authService = {
           preferredLanguage: userInfo.preferredLanguage || 'en',
           kycStatus: userInfo.kycStatus || 'NOT_UPLOADED',
           driverLicenseStatus: userInfo.driverLicenseStatus || 'NOT_UPLOADED',
+          licenseClass: userInfo.licenseClass || '',
         } as unknown as User;
         
         localStorage.setItem(USER_KEY, JSON.stringify(user));
@@ -94,17 +96,19 @@ export const authService = {
           role: userInfo.role?.toLowerCase() || 'customer',
           phone: userInfo.phone || '',
           avatar: resolveImageUrl(userInfo.avatar),
-          verified: false,
-          rating: 0,
-          totalReviews: 0,
-          joinedAt: new Date().toISOString(),
-          location: '',
-          bio: '',
-          badges: [],
-           accountType: payload.accountType as any,
+          verified: userInfo.verified || false,
+          kycVerified: userInfo.kycVerified || false,
+          rating: userInfo.rating || 0,
+          totalReviews: userInfo.totalReviews || 0,
+          joinedAt: userInfo.joinedAt || new Date().toISOString(),
+          location: userInfo.location || '',
+          bio: userInfo.bio || '',
+          badges: userInfo.badges || [],
+          accountType: payload.accountType as any,
           preferredLanguage: userInfo.preferredLanguage || 'en',
-          kycStatus: 'NOT_UPLOADED',
-          driverLicenseStatus: 'NOT_UPLOADED',
+          kycStatus: userInfo.kycStatus || 'NOT_UPLOADED',
+          driverLicenseStatus: userInfo.driverLicenseStatus || 'NOT_UPLOADED',
+          licenseClass: userInfo.licenseClass || '',
         } as unknown as User;
         
         localStorage.setItem(USER_KEY, JSON.stringify(user));
@@ -177,6 +181,7 @@ export const authService = {
         phone: userInfo.phone || '',
         avatar: resolveImageUrl(userInfo.avatar || userInfo.profilePicture),
         verified: userInfo.verified || userInfo.isVerified || false,
+        kycVerified: userInfo.kycVerified || false,
         rating: userInfo.rating || 0,
         totalReviews: userInfo.totalReviews || 0,
         joinedAt: userInfo.joinedAt || userInfo.createdAt || '2024-01-15T09:00:00Z',
@@ -187,6 +192,7 @@ export const authService = {
         preferredLanguage: userInfo.preferredLanguage || 'en',
         kycStatus: userInfo.kycStatus || 'NOT_UPLOADED',
         driverLicenseStatus: userInfo.driverLicenseStatus || 'NOT_UPLOADED',
+        licenseClass: userInfo.licenseClass || '',
       } as unknown as User;
       
       localStorage.setItem(USER_KEY, JSON.stringify(user));

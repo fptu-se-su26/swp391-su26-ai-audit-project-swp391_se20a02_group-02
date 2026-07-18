@@ -1072,3 +1072,33 @@ Sinh viên/nhóm hiểu rằng:
 | Nguyễn Văn Dạng - DE190324 | 2026-07-13 |
 
 
+
+
+---
+
+## Reflection Phase 10: Production Readiness & Premium UI/UX
+
+### Những bài học rút ra:
+
+1. **Ứng dụng Kỹ năng thiết kế Chuyên nghiệp (Impeccable UI/UX)**:
+   Để tạo ra một ứng dụng 5 sao (như LuxeWay), chức năng chạy đúng là chưa đủ. Mọi thao tác phải mượt mà. Việc xây dựng một **Booking Timeline Journey** (Hiển thị các bước Thanh toán -> Chờ giao xe -> Đang thuê -> Trả xe) thay cho một danh sách khô khan mang lại trải nghiệm người dùng khác biệt hoàn toàn. Ngoài ra, việc tự động điều hướng (Auto-redirect) với đếm ngược 3 giây sau khi thanh toán PayOS giúp giảm bớt thao tác click thừa của người dùng.
+
+2. **Tối ưu hóa Docker Multi-stage Build cho Frontend SPA**:
+   Ban đầu, việc chạy React/Vite bằng lệnh `npm run dev` bên trong Docker là một anti-pattern đối với môi trường Production (tốn RAM và thiếu bảo mật). Khi chuyển sang **Multi-stage build**:
+   - Tầng Builder dùng Node để đóng gói tĩnh.
+   - Tầng Runtime dùng **Nginx** (chỉ tốn vài MB RAM) để host các file HTML tĩnh.
+   Đồng thời, cấu hình `nginx.conf` với cờ `try_files $uri /index.html` khắc phục được hoàn toàn lỗi 404 khi f5 lại trình duyệt do React Router xử lý định tuyến phía client.
+
+3. **Biến môi trường trong Vite (Build-time vs Run-time)**:
+   Bài học quan trọng về cách truyền biến môi trường (ENV) qua Docker. Khác với Backend có thể nạp ENV lúc chạy (Runtime), Vite đóng gói ứng dụng tại thời điểm build (Build-time). Do đó, cần truyền biến vào mục `args:` trong Docker Compose thay vì `environment:`, nếu không Frontend sau khi build sẽ không nhận được bất kỳ API key nào.
+
+### Tự đánh giá Phase 10
+
+| Tiêu chí | Điểm | Ghi chú |
+|---|:---:|---|
+| Hiểu vấn đề trước khi fix | 5 | Hiểu rõ kiến trúc Multi-stage Docker và Nginx. |
+| Fix đúng nguyên nhân gốc | 5 | Giải quyết triệt để lỗi React Router 404 qua cấu hình nginx. |
+| Kiểm chứng sau fix | 5 | `docker-compose up --build` thành công, Web load siêu nhanh. |
+| Ghi lại đầy đủ | 5 | Cập nhật đủ 4 file nhật ký cuối cùng. |
+| Sử dụng AI có trách nhiệm | 5 | Định hướng đúng đắn, không lạm dụng AI, hiểu mọi dòng code sinh ra. |
+

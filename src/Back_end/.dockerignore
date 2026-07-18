@@ -1,0 +1,9 @@
+.gradle
+build
+target
+out
+.idea
+*.iml
+.vscode
+luxeway_db.mv.db
+luxeway_db.trace.db

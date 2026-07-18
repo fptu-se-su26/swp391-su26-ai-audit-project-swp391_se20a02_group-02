@@ -28,7 +28,12 @@ export const OAuth2RedirectHandler: React.FC = () => {
   const { initAuth } = useAuthStore();
   const [errorInfo, setErrorInfo] = useState<{ title: string; message: string } | null>(null);
 
+  const handledRef = React.useRef(false);
+
   useEffect(() => {
+    if (handledRef.current) return;
+    handledRef.current = true;
+
     const params = new URLSearchParams(location.search);
     const token = params.get('token');
     const refreshToken = params.get('refresh_token');
@@ -82,7 +87,7 @@ export const OAuth2RedirectHandler: React.FC = () => {
       toast.error('Authentication Failed', 'No token was provided by Google.');
       navigate('/auth/login', { replace: true });
     }
-  }, [location, navigate, toast, initAuth]);
+  }, [location.search, navigate, toast, initAuth]);
 
   if (errorInfo) {
     return (

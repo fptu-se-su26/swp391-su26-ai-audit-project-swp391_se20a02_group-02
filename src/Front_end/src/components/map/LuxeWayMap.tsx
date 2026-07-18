@@ -149,50 +149,52 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
     spiderLegsRef.current = [];
   };
 
-  // ====== MARKER STYLING ======
   const applyMarkerStyle = (el: HTMLElement, vehicle: any, isSelected: boolean, isHovered: boolean) => {
     const thumbnailSrc = vehicle.thumbnailUrl || vehicle.thumbnail || vehicle.image || FALLBACK_IMAGE;
     const displayPrice = formatPrice(vehicle.pricePerDay || vehicle.finalPrice || 0);
-    const active = isSelected || isHovered;
 
-    el.style.cssText = `
-      display:flex; align-items:center; gap:5px;
-      padding:3px 10px 3px 3px; background:#fff;
-      border:${isSelected ? '2px' : '1.5px'} solid ${isSelected ? '#D4AF37' : isHovered ? '#D4AF37' : '#E5E7EB'};
-      border-radius:20px;
-      box-shadow:${isSelected
-        ? '0 0 0 3px rgba(212,175,55,0.25), 0 4px 12px rgba(0,0,0,0.18)'
-        : isHovered
-          ? '0 0 0 2px rgba(212,175,55,0.2), 0 2px 8px rgba(0,0,0,0.14)'
-          : '0 1px 4px rgba(0,0,0,0.1)'};
-      font-size:12px; font-weight:800; color:#111827;
-      cursor:pointer; user-select:none;
-      transform:scale(${isSelected ? '1.08' : '1'});
-      transition:all 250ms cubic-bezier(0.4,0,0.2,1);
-      z-index:${isSelected ? '999' : isHovered ? '45' : '30'};
-      white-space:nowrap;
-    `;
-
+    el.style.zIndex = isSelected ? '999' : isHovered ? '45' : '30';
     el.innerHTML = `
-      <img src="${thumbnailSrc}" alt="" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1px solid #f3f4f6;" onerror="this.style.display='none'" />
-      <span>${displayPrice}</span>
+      <div style="
+        display:flex; align-items:center; gap:5px;
+        padding:3px 10px 3px 3px; background:#fff;
+        border:${isSelected ? '2px' : '1.5px'} solid ${isSelected ? '#D4AF37' : isHovered ? '#D4AF37' : '#E5E7EB'};
+        border-radius:20px;
+        box-shadow:${isSelected
+          ? '0 0 0 3px rgba(212,175,55,0.25), 0 4px 12px rgba(0,0,0,0.18)'
+          : isHovered
+            ? '0 0 0 2px rgba(212,175,55,0.2), 0 2px 8px rgba(0,0,0,0.14)'
+            : '0 1px 4px rgba(0,0,0,0.1)'};
+        font-size:12px; font-weight:800; color:#111827;
+        cursor:pointer; user-select:none;
+        transform:scale(${isSelected ? '1.08' : isHovered ? '1.04' : '1'});
+        transition:all 250ms cubic-bezier(0.4,0,0.2,1);
+        white-space:nowrap;
+      ">
+        <img src="${thumbnailSrc}" alt="" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1px solid #f3f4f6;" onerror="this.style.display='none'" />
+        <span>${displayPrice}</span>
+      </div>
     `;
   };
 
   const applyClusterStyle = (el: HTMLElement, count: number, isHovered: boolean = false) => {
     const label = count >= 100 ? '99+' : `${count} xe`;
-    el.style.cssText = `
-      display:flex; align-items:center; justify-content:center;
-      min-width:44px; height:30px; padding:0 12px;
-      background:#ffffff; border:1.5px solid #d1d5db;
-      border-radius:15px;
-      box-shadow:${isHovered ? '0 2px 8px rgba(0,0,0,0.18)' : '0 1px 4px rgba(0,0,0,0.12)'};
-      font-size:12px; font-weight:700; color:#374151;
-      cursor:pointer; user-select:none;
-      transform:scale(${isHovered ? '1.05' : '1'});
-      transition:all 200ms ease-out;
+    el.style.zIndex = isHovered ? '50' : '40';
+    el.innerHTML = `
+      <div style="
+        display:flex; align-items:center; justify-content:center;
+        min-width:44px; height:30px; padding:0 12px;
+        background:#ffffff; border:1.5px solid #d1d5db;
+        border-radius:15px;
+        box-shadow:${isHovered ? '0 2px 8px rgba(0,0,0,0.18)' : '0 1px 4px rgba(0,0,0,0.12)'};
+        font-size:12px; font-weight:700; color:#374151;
+        cursor:pointer; user-select:none;
+        transform:scale(${isHovered ? '1.05' : '1'});
+        transition:all 200ms ease-out;
+      ">
+        ${label}
+      </div>
     `;
-    el.textContent = label;
   };
 
   // ====== MARKER CLICK ANIMATION ======

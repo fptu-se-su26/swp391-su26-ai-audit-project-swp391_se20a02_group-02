@@ -3797,3 +3797,525 @@ END;
 
 INSERT INTO raw_vehicle_data (source, original_price, vehicle_name, location, raw_json)
 VALUES ('MIOTO', 1102000, 'HONDA BRV-G 2024', 'Phường 25, Quận Bình Thạnh', '{"source": "MIOTO", "name": "HONDA BRV-G 2024", "brand": "HONDA", "model": "BRV-G 2024", "year": "2024", "original_price": "1102000982000", "location": "Phường 25, Quận Bình Thạnh", "image_url": "https://n1-pstg.mioto.vn/cho_thue_xe_o_to_tu_lai_thue_xe_du_lich_hochiminh/honda_brv-g_2024/p/g/2024/10/25/15/k4JaPXVImOJvxQH-V3Va-w.jpg", "seats": 5, "transmission": "Auto", "fuel": "Gasoline", "base_price": 1102000982000, "local_image_url": "/images/cars/MIOTO_honda_brv-g 2024_2024_mioto.jpg"}');
+
+
+-- ===========================================================
+-- APPENDING MISSING VEHICLES FROM IMAGE FOLDERS
+-- ===========================================================
+
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1000')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'2025-MAZDA-CX-5 PREMIUM', N'UNKNOWN', N'2025-MAZDA-CX-5 PREMIUM', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/2025-Mazda-CX-5_premium.avif', 5, 'AVAILABLE', GETDATE(), 'APP-C-1000', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1001')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'AUDI Q4', N'UNKNOWN', N'AUDI Q4', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/audi_Q4.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1001', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1002')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'AUDI Q5', N'UNKNOWN', N'AUDI Q5', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/audi_Q5.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1002', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1003')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'BMW 320I', N'UNKNOWN', N'BMW 320I', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/BMW_320i.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1003', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1004')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'BMW 520I', N'UNKNOWN', N'BMW 520I', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/BMW_520i.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1004', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1005')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'BMW X5', N'UNKNOWN', N'BMW X5', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/BMW_X5.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1005', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1006')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'BUSINESS CAR', N'UNKNOWN', N'BUSINESS CAR', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/business_car.webp', 5, 'AVAILABLE', GETDATE(), 'APP-C-1006', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1007')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'CARAMY 2.5Q', N'UNKNOWN', N'CARAMY 2.5Q', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/caramy_2.5Q.avif', 5, 'AVAILABLE', GETDATE(), 'APP-C-1007', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1008')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'CITY-DALAT', N'UNKNOWN', N'CITY-DALAT', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/city-dalat.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1008', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1009')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'CITY-DANANG', N'UNKNOWN', N'CITY-DANANG', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/city-danang.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1009', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1010')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'CITY-HANOI', N'UNKNOWN', N'CITY-HANOI', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/city-hanoi.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1010', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1011')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'CITY-HOCHIMINH', N'UNKNOWN', N'CITY-HOCHIMINH', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/city-hochiminh.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1011', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1012')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'CITY-HUE', N'UNKNOWN', N'CITY-HUE', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/city-hue.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1012', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1013')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'CITY-NHATRANG', N'UNKNOWN', N'CITY-NHATRANG', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/city-nhatrang.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1013', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1014')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'CITY CAR', N'UNKNOWN', N'CITY CAR', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/city_car.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1014', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1015')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'DALAT''', N'UNKNOWN', N'DALAT''', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/Dalat'.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1015', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1016')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'DALAT', N'UNKNOWN', N'DALAT', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/dalat.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1016', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1017')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'DANANG', N'UNKNOWN', N'DANANG', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/danang.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1017', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1018')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'ECONOMIC CAR', N'UNKNOWN', N'ECONOMIC CAR', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/economic_car.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1018', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1019')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'ELETRIC CAR', N'UNKNOWN', N'ELETRIC CAR', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/eletric_Car.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1019', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1020')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'EXCITER 155', N'UNKNOWN', N'EXCITER 155', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/exciter_155.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1020', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1021')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'FAMILY CAR', N'UNKNOWN', N'FAMILY CAR', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/family_car.avif', 5, 'AVAILABLE', GETDATE(), 'APP-C-1021', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1022')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'FORD EVEREST', N'UNKNOWN', N'FORD EVEREST', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/ford_everest.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1022', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1023')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'FORD RANGER', N'UNKNOWN', N'FORD RANGER', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/ford_ranger.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1023', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1024')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'HANOI', N'UNKNOWN', N'HANOI', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/HaNoi.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1024', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1025')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'HOCHIMINH', N'UNKNOWN', N'HOCHIMINH', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/HoChiMinh.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1025', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1026')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'HONDA CITY', N'UNKNOWN', N'HONDA CITY', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/honda_city.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1026', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1027')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'HONDA CRV', N'UNKNOWN', N'HONDA CRV', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/Honda_CrV.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1027', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1028')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'HUE', N'UNKNOWN', N'HUE', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/hue.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1028', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1029')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'HYUNDAI-ACEENT', N'UNKNOWN', N'HYUNDAI-ACEENT', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/Hyundai-Aceent.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1029', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1030')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'HYUNDAI SANTA FE', N'UNKNOWN', N'HYUNDAI SANTA FE', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/hyundai_santa_fe.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1030', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1031')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'HYUNDAI TUSCON', N'UNKNOWN', N'HYUNDAI TUSCON', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/hyundai_tuscon.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1031', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1032')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'HẾU', N'UNKNOWN', N'HẾU', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/hếu.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1032', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1033')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'KALARA S', N'UNKNOWN', N'KALARA S', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/kalara_s.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1033', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1034')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'KIA CARNIVAL', N'UNKNOWN', N'KIA CARNIVAL', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/kia_carnival.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1034', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1035')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'KIA MORNING', N'UNKNOWN', N'KIA MORNING', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/kia_morning.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1035', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1036')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'KIA SORENTO', N'UNKNOWN', N'KIA SORENTO', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/kia_sorento.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1036', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1037')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'LEXUS ES250', N'UNKNOWN', N'LEXUS ES250', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/Lexus_es250.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1037', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1038')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'LEXUS RX350', N'UNKNOWN', N'LEXUS RX350', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/Lexus_Rx350.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1038', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1039')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'LOGO', N'UNKNOWN', N'LOGO', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/logo.png', 5, 'AVAILABLE', GETDATE(), 'APP-C-1039', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1040')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'MADAZ  CX8', N'UNKNOWN', N'MADAZ  CX8', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/Madaz _CX8.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1040', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1041')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'MAZDA CX5', N'UNKNOWN', N'MAZDA CX5', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/Mazda_cx5.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1041', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1042')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'MAZDA MAZDA3', N'UNKNOWN', N'MAZDA MAZDA3', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/Mazda_mazda3.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1042', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1043')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'MEREEDES BENZ C200', N'UNKNOWN', N'MEREEDES BENZ C200', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/mereedes_benz_c200.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1043', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1044')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'MEREEDES BENZ E300', N'UNKNOWN', N'MEREEDES BENZ E300', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/Mereedes_benz_e300.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1044', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1045')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'MEREEDES BENZ GLC300', N'UNKNOWN', N'MEREEDES BENZ GLC300', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/mereedes_benz_glc300.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1045', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1046')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'MITSIBISHI XPANNDER', N'UNKNOWN', N'MITSIBISHI XPANNDER', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/Mitsibishi_xpannder.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1046', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1047')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'MITSUBISHI OUTLANDER', N'UNKNOWN', N'MITSUBISHI OUTLANDER', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/mitsubishi_outlander.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1047', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1048')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'MOTOBIKE', N'UNKNOWN', N'MOTOBIKE', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/motobike.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1048', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1049')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'NHATRANG', N'UNKNOWN', N'NHATRANG', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/nhatrang.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1049', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1050')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'NISSAN ALMERA', N'UNKNOWN', N'NISSAN ALMERA', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/Nissan_Almera.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1050', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1051')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'NISSAN NAVARA', N'UNKNOWN', N'NISSAN NAVARA', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/Nissan_navara.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1051', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1052')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'PORSCHE CAYENNE', N'UNKNOWN', N'PORSCHE CAYENNE', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/porsche_cayenne.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1052', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1053')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'PORSCHE MACAN', N'UNKNOWN', N'PORSCHE MACAN', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/porsche_macan.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1053', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1054')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'SANTA-FE2024', N'UNKNOWN', N'SANTA-FE2024', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/santa-fe2024.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1054', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1055')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'SH350 I', N'UNKNOWN', N'SH350 I', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/Sh350_i.webp', 5, 'AVAILABLE', GETDATE(), 'APP-C-1055', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1056')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'SUV CAR', N'UNKNOWN', N'SUV CAR', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/SUV_car.webp', 5, 'AVAILABLE', GETDATE(), 'APP-C-1056', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1057')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'TOURIIM CAR', N'UNKNOWN', N'TOURIIM CAR', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/touriim_car.webp', 5, 'AVAILABLE', GETDATE(), 'APP-C-1057', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1058')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'TOYOTA FORLUNER', N'UNKNOWN', N'TOYOTA FORLUNER', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/toyota_forluner.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1058', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1059')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'TOYOTA INNOVA', N'UNKNOWN', N'TOYOTA INNOVA', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/toyota_innova.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1059', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1060')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'TOYOTA VIOS', N'UNKNOWN', N'TOYOTA VIOS', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/toyota_vios.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1060', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1061')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'VF8 PLUS', N'UNKNOWN', N'VF8 PLUS', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/vf8_plus.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1061', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1062')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'VINFAST FADIL', N'UNKNOWN', N'VINFAST FADIL', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/vinfast_fadil.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1062', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1063')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'VINFAST V8', N'UNKNOWN', N'VINFAST V8', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/vinfast_v8.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1063', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1064')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'VINFAST V9', N'UNKNOWN', N'VINFAST V9', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/vinfast_v9.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1064', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-C-1065')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'WINNER X', N'UNKNOWN', N'WINNER X', 2024, 'ECONOMY', 800000, 0, N'Hồ Chí Minh', 'AUTOMATIC', 'GASOLINE', '/images/cars/winner_x.jpg', 5, 'AVAILABLE', GETDATE(), 'APP-C-1065', 'CAR')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-M-1000')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'BMW MOTORRAD GS130GS', N'UNKNOWN', N'BMW MOTORRAD GS130GS', 2024, 'MOTORBIKE', 200000, 0, N'Hồ Chí Minh', 'MANUAL', 'GASOLINE', '/images/motorbikes/BMW_Motorrad_Gs130Gs.jpg', 2, 'AVAILABLE', GETDATE(), 'APP-M-1000', 'MOTORBIKE')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-M-1001')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'EXCITER 155', N'UNKNOWN', N'EXCITER 155', 2024, 'MOTORBIKE', 200000, 0, N'Hồ Chí Minh', 'MANUAL', 'GASOLINE', '/images/motorbikes/exciter_155.jpg', 2, 'AVAILABLE', GETDATE(), 'APP-M-1001', 'MOTORBIKE')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-M-1002')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'HONDA AIR BLADE', N'UNKNOWN', N'HONDA AIR BLADE', 2024, 'MOTORBIKE', 200000, 0, N'Hồ Chí Minh', 'MANUAL', 'GASOLINE', '/images/motorbikes/Honda_air_blade.jpg', 2, 'AVAILABLE', GETDATE(), 'APP-M-1002', 'MOTORBIKE')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-M-1003')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'HONDA SH 150I', N'UNKNOWN', N'HONDA SH 150I', 2024, 'MOTORBIKE', 200000, 0, N'Hồ Chí Minh', 'MANUAL', 'GASOLINE', '/images/motorbikes/Honda_Sh_150i.jpg', 2, 'AVAILABLE', GETDATE(), 'APP-M-1003', 'MOTORBIKE')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-M-1004')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'HONDA VISION', N'UNKNOWN', N'HONDA VISION', 2024, 'MOTORBIKE', 200000, 0, N'Hồ Chí Minh', 'MANUAL', 'GASOLINE', '/images/motorbikes/Honda_vision.jpg', 2, 'AVAILABLE', GETDATE(), 'APP-M-1004', 'MOTORBIKE')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-M-1005')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'HONDA WINER X', N'UNKNOWN', N'HONDA WINER X', 2024, 'MOTORBIKE', 200000, 0, N'Hồ Chí Minh', 'MANUAL', 'GASOLINE', '/images/motorbikes/Honda_winer_X.jpg', 2, 'AVAILABLE', GETDATE(), 'APP-M-1005', 'MOTORBIKE')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-M-1006')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'KALARA S', N'UNKNOWN', N'KALARA S', 2024, 'MOTORBIKE', 200000, 0, N'Hồ Chí Minh', 'MANUAL', 'GASOLINE', '/images/motorbikes/kalara_s.jpg', 2, 'AVAILABLE', GETDATE(), 'APP-M-1006', 'MOTORBIKE')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-M-1007')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'KAWASAKI Z400', N'UNKNOWN', N'KAWASAKI Z400', 2024, 'MOTORBIKE', 200000, 0, N'Hồ Chí Minh', 'MANUAL', 'GASOLINE', '/images/motorbikes/Kawasaki_Z400.jpg', 2, 'AVAILABLE', GETDATE(), 'APP-M-1007', 'MOTORBIKE')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-M-1008')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'KAWASKI NINJA 400', N'UNKNOWN', N'KAWASKI NINJA 400', 2024, 'MOTORBIKE', 200000, 0, N'Hồ Chí Minh', 'MANUAL', 'GASOLINE', '/images/motorbikes/Kawaski_ninja_400.jpg', 2, 'AVAILABLE', GETDATE(), 'APP-M-1008', 'MOTORBIKE')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-M-1009')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'KTM ADVENTURE 390', N'UNKNOWN', N'KTM ADVENTURE 390', 2024, 'MOTORBIKE', 200000, 0, N'Hồ Chí Minh', 'MANUAL', 'GASOLINE', '/images/motorbikes/KTM_adventure_390.jpg', 2, 'AVAILABLE', GETDATE(), 'APP-M-1009', 'MOTORBIKE')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-M-1010')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'KTM DUKE 390', N'UNKNOWN', N'KTM DUKE 390', 2024, 'MOTORBIKE', 200000, 0, N'Hồ Chí Minh', 'MANUAL', 'GASOLINE', '/images/motorbikes/KTM_Duke_390.jpg', 2, 'AVAILABLE', GETDATE(), 'APP-M-1010', 'MOTORBIKE')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-M-1011')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'ROYAL ENFIELD CLASSIC-250', N'UNKNOWN', N'ROYAL ENFIELD CLASSIC-250', 2024, 'MOTORBIKE', 200000, 0, N'Hồ Chí Minh', 'MANUAL', 'GASOLINE', '/images/motorbikes/Royal_Enfield_classic-250.jpg', 2, 'AVAILABLE', GETDATE(), 'APP-M-1011', 'MOTORBIKE')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-M-1012')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'ROYAL ENFIELD HIMALAYAN', N'UNKNOWN', N'ROYAL ENFIELD HIMALAYAN', 2024, 'MOTORBIKE', 200000, 0, N'Hồ Chí Minh', 'MANUAL', 'GASOLINE', '/images/motorbikes/Royal_Enfield_himalayan.jpg', 2, 'AVAILABLE', GETDATE(), 'APP-M-1012', 'MOTORBIKE')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-M-1013')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'SH350 I', N'UNKNOWN', N'SH350 I', 2024, 'MOTORBIKE', 200000, 0, N'Hồ Chí Minh', 'MANUAL', 'GASOLINE', '/images/motorbikes/Sh350_i.webp', 2, 'AVAILABLE', GETDATE(), 'APP-M-1013', 'MOTORBIKE')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-M-1014')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'SYM ATTILA', N'UNKNOWN', N'SYM ATTILA', 2024, 'MOTORBIKE', 200000, 0, N'Hồ Chí Minh', 'MANUAL', 'GASOLINE', '/images/motorbikes/SYM_attila.jpg', 2, 'AVAILABLE', GETDATE(), 'APP-M-1014', 'MOTORBIKE')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-M-1015')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'WINNER X', N'UNKNOWN', N'WINNER X', 2024, 'MOTORBIKE', 200000, 0, N'Hồ Chí Minh', 'MANUAL', 'GASOLINE', '/images/motorbikes/winner_x.jpg', 2, 'AVAILABLE', GETDATE(), 'APP-M-1015', 'MOTORBIKE')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-M-1016')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'YAMAHA ECEITER 155', N'UNKNOWN', N'YAMAHA ECEITER 155', 2024, 'MOTORBIKE', 200000, 0, N'Hồ Chí Minh', 'MANUAL', 'GASOLINE', '/images/motorbikes/Yamaha_eceiter_155.jpg', 2, 'AVAILABLE', GETDATE(), 'APP-M-1016', 'MOTORBIKE')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-M-1017')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'YAMAHA GRANDE', N'UNKNOWN', N'YAMAHA GRANDE', 2024, 'MOTORBIKE', 200000, 0, N'Hồ Chí Minh', 'MANUAL', 'GASOLINE', '/images/motorbikes/Yamaha_Grande.jpg', 2, 'AVAILABLE', GETDATE(), 'APP-M-1017', 'MOTORBIKE')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-M-1018')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'YAMAHA NVX 155', N'UNKNOWN', N'YAMAHA NVX 155', 2024, 'MOTORBIKE', 200000, 0, N'Hồ Chí Minh', 'MANUAL', 'GASOLINE', '/images/motorbikes/Yamaha_NVX_155.webp', 2, 'AVAILABLE', GETDATE(), 'APP-M-1018', 'MOTORBIKE')
+END;
+
+IF NOT EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'APP-M-1019')
+BEGIN
+    INSERT INTO vehicles (id, owner_id, name, brand, model, year, category, price_per_day, deposit, city, transmission, fuel_type, thumbnail_url, seats, status, created_at, license_plate, vehicle_type)
+    VALUES (NEWID(), 'A1B2C3D4-E5F6-7890-ABCD-123456789012', N'YAMAHA SIRIUS', N'UNKNOWN', N'YAMAHA SIRIUS', 2024, 'MOTORBIKE', 200000, 0, N'Hồ Chí Minh', 'MANUAL', 'GASOLINE', '/images/motorbikes/Yamaha_sirius.jpg', 2, 'AVAILABLE', GETDATE(), 'APP-M-1019', 'MOTORBIKE')
+END;

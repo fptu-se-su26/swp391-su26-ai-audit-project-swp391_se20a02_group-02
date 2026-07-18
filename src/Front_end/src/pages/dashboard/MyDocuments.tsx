@@ -335,7 +335,7 @@ export const MyDocuments: React.FC = () => {
         ].map((s) => (
           <button
             key={s.step}
-            disabled={s.step === 4 || isKycPending}
+            disabled={(s.step === 4 && (!cccdCompleted || !dlCompleted || !selfieCompleted)) || isKycPending}
             onClick={() => setActiveStep(s.step)}
             className={`p-4 rounded-2xl text-left border transition-all duration-200 relative overflow-hidden ${
               activeStep === s.step 
@@ -722,6 +722,14 @@ export const MyDocuments: React.FC = () => {
                 >
                   Back to Step 2
                 </button>
+                {selfieCompleted && (
+                  <button 
+                    onClick={() => setActiveStep(4)}
+                    className="flex items-center gap-2 py-3 px-5 bg-indigo-600 hover:bg-indigo-750 text-white font-semibold rounded-xl text-xs transition-colors"
+                  >
+                    Proceed to Step 4 <ArrowRight className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             </motion.div>
           )}
@@ -766,7 +774,7 @@ export const MyDocuments: React.FC = () => {
                     Reset & Test KYC Upload Again
                   </button>
                 </>
-              ) : user?.kycStatus === 'REJECTED' ? (
+              ) : user?.kycStatus === 'REJECTED' && (!cccdCompleted || !dlCompleted || !selfieCompleted) ? (
                 <>
                   <div className="w-16 h-16 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto mb-4">
                     <AlertCircle className="w-8 h-8" />
@@ -785,7 +793,7 @@ export const MyDocuments: React.FC = () => {
                     Retry Verification
                   </button>
                 </>
-              ) : user?.kycStatus === 'FAILED' ? (
+              ) : user?.kycStatus === 'FAILED' && (!cccdCompleted || !dlCompleted || !selfieCompleted) ? (
                 <>
                   <div className="w-16 h-16 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto mb-4">
                     <AlertCircle className="w-8 h-8" />
@@ -845,7 +853,7 @@ export const MyDocuments: React.FC = () => {
       )}
 
       {/* Action Footer */}
-      {!isKycPending && user?.kycStatus !== 'VERIFIED' && user?.kycStatus !== 'FAILED' && user?.kycStatus !== 'REJECTED' && (
+      {!isKycPending && user?.kycStatus !== 'VERIFIED' && cccdCompleted && dlCompleted && selfieCompleted && (
         <div className="flex items-center justify-between p-6 bg-slate-50 rounded-2xl border border-slate-100">
           <div className="text-xs text-slate-400 max-w-md">
             Once you submit, your files will be locked and reviewed by an administrator. Review typically takes 5-10 minutes.

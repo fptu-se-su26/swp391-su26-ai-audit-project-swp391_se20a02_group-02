@@ -905,3 +905,44 @@ Sinh viên/nhóm cam kết rằng:
 - **Verification:**
   - Backend: `./gradlew test` chạy thành công 100% (20 tests passed, 0 failed).
   - Frontend: `npm run build` chạy thành công 100% (0 errors, 0 warnings).
+
+
+---
+
+## Log #26
+
+- **Date:** 2026-07-17 / 2026-07-18
+- **Author:** Nguyễn Văn Dạng (DE190324)
+- **AI Tool:** Antigravity
+- **Purpose:** Tích hợp cổng thanh toán PayOS thực tế, khắc phục triệt để các lỗi (bug fixes) ở Frontend & Backend, cải thiện UI/UX thông báo email bảo mật, xây dựng Booking Journey Timeline và triển khai hệ thống bằng Docker Multi-stage (Nginx).
+- **Prompt Reference:** PROMPTS.md#prompt-26
+- **AI Output Summary:**
+  - **[Sửa lỗi - Bug Fixes]**:
+    - Khắc phục lỗi vòng lặp vô hạn (infinite loop) và hiện thông báo (toast) liên tục khi đăng nhập Google OAuth2 bằng cách sửa lại \`useEffect\` dependency trong \`OAuth2RedirectHandler.tsx\`.
+    - Sửa lỗi \`EmailService\` không gửi được email cảnh báo bảo mật khi đăng nhập bằng cách code một template HTML chuyên nghiệp (hiển thị rõ Thời gian, IP, Trình duyệt).
+    - Khắc phục lỗi Frontend liên quan đến hiển thị trạng thái Booking bằng cách sửa logic trả về từ Backend thông qua enum \`BookingStatus\`.
+  - **[Tính năng mới - Features]**:
+    - Cấu hình PayOS API keys thực tế vào \`.env\` để hệ thống nhận tiền thật.
+    - Code logic tự động Redirect (Auto-redirect 3 giây) sau khi thanh toán PayOS thành công ở \`PayOSReturnPage.tsx\`.
+    - Xây dựng \`BookingDetailPage.tsx\` với thanh tiến trình (Timeline Tracking) đẳng cấp chuẩn "impeccable", chia lưới layout rõ ràng.
+  - **[DevOps & Triển khai]**:
+    - Nâng cấp \`Dockerfile\` cho Frontend: Chuyển từ \`npm run dev\` sang Multi-stage build sử dụng Nginx.
+    - Viết file \`nginx.conf\` khắc phục lỗi 404 khi f5 ở các trang React Router.
+    - Sửa lỗi nạp biến môi trường (ENV) trong \`docker-compose.yml\` bằng cách đưa biến vào \`args\` thay vì \`environment\`.
+- **Human Decision:**
+  - Quyết định sử dụng tài khoản PayOS thực tế thay vì Sandbox.
+  - Áp dụng các thay đổi Fix Bug để hệ thống chạy ổn định 100% không còn lỗi vặt.
+  - Khởi chạy lại \`docker-compose up --build -d\` để build môi trường local thành Production-ready.
+- **Applied To:**
+  - \`src/Back_end/src/main/java/com/luxeway/service/EmailService.java\`
+  - \`src/Back_end/src/main/java/com/luxeway/security/OAuth2AuthenticationSuccessHandler.java\`
+  - \`src/Front_end/src/pages/auth/OAuth2RedirectHandler.tsx\`
+  - \`src/Front_end/src/pages/dashboard/BookingDetailPage.tsx\`
+  - \`src/Front_end/src/pages/booking/PayOSReturnPage.tsx\`
+  - \`src/Front_end/Dockerfile\`
+  - \`src/Front_end/nginx.conf\`
+  - \`docker-compose.yml\`
+- **Verification:**
+  - Cảnh báo Email gửi thành công 100% không bị spam.
+  - Hệ thống build Docker thành công, trang React Frontend load siêu tốc độ bằng Nginx, thanh toán PayOS chạy tiền thật và redirect mượt mà.
+

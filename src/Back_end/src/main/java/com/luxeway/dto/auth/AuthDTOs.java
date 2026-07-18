@@ -70,6 +70,7 @@ public class AuthDTOs {
             private String preferredLanguage;
             private String kycStatus;
             private String driverLicenseStatus;
+            private String licenseClass;
         }
     }
 

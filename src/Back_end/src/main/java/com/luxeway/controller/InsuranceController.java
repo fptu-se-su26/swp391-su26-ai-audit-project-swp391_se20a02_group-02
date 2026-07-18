@@ -28,7 +28,7 @@ public class InsuranceController {
     @GetMapping("/car/{carId}")
     @Operation(summary = "Get specific insurances available for a car listing")
     public ResponseEntity<ApiResponse<List<CarInsurance>>> getCarInsurances(@PathVariable String carId) {
-        List<CarInsurance> carInsurances = carInsuranceRepository.findByCarIdAndIsActiveTrue(carId);
+        List<CarInsurance> carInsurances = new java.util.ArrayList<>(carInsuranceRepository.findByCarIdAndIsActiveTrue(carId));
         // Fallback to standard global packages if no specific car insurances are configured
         if (carInsurances.isEmpty()) {
             List<InsurancePackage> globals = insurancePackageRepository.findAll();

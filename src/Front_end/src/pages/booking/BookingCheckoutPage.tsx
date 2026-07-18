@@ -13,20 +13,20 @@ const BookingCheckoutPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const toast = useToast();
-  
+
   const { user } = useAuthStore();
   const { language } = useUIStore();
   const isVi = language === 'vi';
 
   const [loading, setLoading] = useState(true);
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
-  
+
   // Checkout options initialized from query parameters
   const [startDate, setStartDate] = useState(searchParams.get('start') || '');
   const [endDate, setEndDate] = useState(searchParams.get('end') || '');
   const [includeInsurance, setIncludeInsurance] = useState(searchParams.get('insurance') === 'true');
   const [includeDelivery, setIncludeDelivery] = useState(searchParams.get('delivery') === 'true');
-  
+
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -39,7 +39,7 @@ const BookingCheckoutPage: React.FC = () => {
 
   useEffect(() => {
     if (!vehicle) return;
-    
+
     // Default coordinates or fallback based on DB values
     const lat = vehicle.location?.lat || 10.762;
     const lng = vehicle.location?.lng || 106.660;
@@ -91,7 +91,7 @@ const BookingCheckoutPage: React.FC = () => {
 
   useEffect(() => {
     if (!vehicleId) return;
-    
+
     setLoading(true);
     vehicleService.getVehicleDetail(vehicleId)
       .then(data => {
@@ -137,7 +137,7 @@ const BookingCheckoutPage: React.FC = () => {
   }
 
   // Duration calculations
-  const days = (startDate && endDate) 
+  const days = (startDate && endDate)
     ? Math.max(1, Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)))
     : 0;
 
@@ -216,16 +216,16 @@ const BookingCheckoutPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pt-24 pb-16 transition-colors">
       <div className="max-w-4xl mx-auto px-4">
-        
+
         <h1 className="text-3xl font-display font-black text-foreground uppercase tracking-tight mb-8">
           {isVi ? 'Thông Tin Đặt Xe' : 'Booking Checkout'}
         </h1>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          
+
           {/* LEFT: Checkout Info Fields (2 cols) */}
           <div className="md:col-span-2 space-y-6">
-            
+
             {/* Vehicle Summary Box */}
             <div className="bg-card border border-border p-6 rounded-3xl shadow-sm flex items-center gap-4">
               <div className="w-24 h-16 rounded-2xl overflow-hidden border border-border bg-slate-100 flex-shrink-0">
@@ -247,7 +247,7 @@ const BookingCheckoutPage: React.FC = () => {
             {/* Selected Booking Info */}
             <div className="bg-card border border-border p-6 rounded-3xl shadow-sm space-y-4">
               <h3 className="text-base font-bold text-foreground border-b border-border pb-2.5">{isVi ? 'Lịch trình thuê xe' : 'Rental Duration'}</h3>
-              
+
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">{isVi ? 'NHẬN XE' : 'PICK-UP'}</p>
@@ -277,7 +277,7 @@ const BookingCheckoutPage: React.FC = () => {
                   {vehicle.location?.city || 'Vietnam'}
                 </span>
               </div>
-              
+
               {weatherLoading ? (
                 <div className="flex items-center justify-center py-4">
                   <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
@@ -290,10 +290,10 @@ const BookingCheckoutPage: React.FC = () => {
                       const minTemp = weather.temperature_2m_min[idx];
                       const code = weather.weathercode[idx];
                       const date = new Date(timeStr);
-                      const dayLabel = idx === 0 
-                        ? (isVi ? 'Hôm nay' : 'Today') 
+                      const dayLabel = idx === 0
+                        ? (isVi ? 'Hôm nay' : 'Today')
                         : date.toLocaleDateString(isVi ? 'vi-VN' : 'en-US', { weekday: 'short' });
-                      
+
                       return (
                         <div key={timeStr} className="bg-slate-50 dark:bg-white/5 p-3 rounded-2xl border border-slate-100 dark:border-white/5 text-center space-y-1">
                           <span className="text-2xl block">{getWeatherIcon(code)}</span>
@@ -304,16 +304,16 @@ const BookingCheckoutPage: React.FC = () => {
                       );
                     })}
                   </div>
-                  
+
                   <div className="bg-blue-50/40 dark:bg-blue-950/20 border border-blue-100/50 dark:border-blue-900/30 p-3.5 rounded-2xl flex items-start gap-2.5 text-xs text-blue-600 dark:text-blue-400 leading-normal font-medium">
                     <span className="text-base mt-0.5">ℹ️</span>
                     <p>
-                      {[51, 53, 55, 61, 63, 65, 80, 81, 82, 95, 96, 99].includes(weather.weathercode[0]) 
-                        ? (isVi 
-                          ? 'Dự báo hôm nay có mưa lớn hoặc dông sét tại điểm nhận xe. Hãy lái xe cẩn thận và liên hệ trước với chủ xe để thống nhất phương án giao nhận.' 
+                      {[51, 53, 55, 61, 63, 65, 80, 81, 82, 95, 96, 99].includes(weather.weathercode[0])
+                        ? (isVi
+                          ? 'Dự báo hôm nay có mưa lớn hoặc dông sét tại điểm nhận xe. Hãy lái xe cẩn thận và liên hệ trước với chủ xe để thống nhất phương án giao nhận.'
                           : 'Heavy rain or storm is expected today at the pick-up location. Please drive carefully and coordinate delivery with the host.')
-                        : (isVi 
-                          ? 'Thời tiết lý tưởng cho việc thuê xe tự lái. Hãy khởi hành vui vẻ và nhớ kiểm tra kỹ tình trạng xe trước khi nhận!' 
+                        : (isVi
+                          ? 'Thời tiết lý tưởng cho việc thuê xe tự lái. Hãy khởi hành vui vẻ và nhớ kiểm tra kỹ tình trạng xe trước khi nhận!'
                           : 'Ideal weather conditions for a drive. Have a wonderful trip and remember to inspect the vehicle prior to acceptance!')}
                     </p>
                   </div>
@@ -334,7 +334,7 @@ const BookingCheckoutPage: React.FC = () => {
                   Base: VND
                 </span>
               </div>
-              
+
               {ratesLoading ? (
                 <div className="flex items-center justify-center py-4">
                   <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
@@ -342,8 +342,8 @@ const BookingCheckoutPage: React.FC = () => {
               ) : exchangeRates ? (
                 <div className="space-y-3">
                   <p className="text-xs text-slate-500 leading-normal">
-                    {isVi 
-                      ? 'Dành cho khách quốc tế, tổng giá trị đặt xe quy đổi sang các ngoại tệ phổ biến dựa trên tỷ giá trực tiếp:' 
+                    {isVi
+                      ? 'Dành cho khách quốc tế, tổng giá trị đặt xe quy đổi sang các ngoại tệ phổ biến dựa trên tỷ giá trực tiếp:'
                       : 'For international cards, the estimated total converted rates based on live mid-market rates are:'}
                   </p>
                   <div className="grid grid-cols-2 gap-3 text-xs">
@@ -357,7 +357,7 @@ const BookingCheckoutPage: React.FC = () => {
                     </div>
                     <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5">
                       <span className="font-extrabold text-slate-400">💴 JPY</span>
-                      <span className="font-black text-foreground">¥{(totalCost * (exchangeRates.JPY || 0.0061)).toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
+                      <span className="font-black text-foreground">¥{(totalCost * (exchangeRates.JPY || 0.0061)).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                     </div>
                     <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5">
                       <span className="font-extrabold text-slate-400">🪙 SGD</span>
@@ -377,8 +377,8 @@ const BookingCheckoutPage: React.FC = () => {
                   <MapPin className="w-4 h-4 text-blue-500" />
                   {isVi ? 'Địa chỉ giao xe tận nơi' : 'Delivery Address'}
                 </h3>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={deliveryAddress}
                   onChange={(e) => setDeliveryAddress(e.target.value)}
                   placeholder={isVi ? 'Nhập địa chỉ giao xe chi tiết...' : 'Enter your specific address for delivery...'}
@@ -390,7 +390,7 @@ const BookingCheckoutPage: React.FC = () => {
             {/* Notes Section */}
             <div className="bg-card border border-border p-6 rounded-3xl shadow-sm space-y-4">
               <h3 className="text-base font-bold text-foreground">{isVi ? 'Ghi chú cho chủ xe (Tùy chọn)' : 'Notes for Host (Optional)'}</h3>
-              <textarea 
+              <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder={isVi ? 'Lời nhắn, yêu cầu giao xe hoặc lưu ý khi sử dụng xe...' : 'Instructions, pick-up details or notes when driving...'}
@@ -403,51 +403,51 @@ const BookingCheckoutPage: React.FC = () => {
           {/* RIGHT: Price breakdown & Submit Widget (1 col) */}
           <div className="space-y-6">
             <div className="bg-card border border-border rounded-3xl p-6 shadow-lg space-y-5">
-              
+
               <h3 className="text-base font-bold text-foreground pb-2 border-b border-border">{isVi ? 'Chi tiết bảng giá' : 'Price Breakdown'}</h3>
-              
+
               <div className="text-xs space-y-3.5 text-slate-600 dark:text-slate-400">
                 <div className="flex justify-between">
                   <span>{isVi ? 'Giá thuê xe' : 'Vehicle Rent'}</span>
-                  <span className="font-bold text-foreground">{formatCurrency(rawBase, language)}</span>
+                  <span className="font-bold text-foreground">{formatCurrency(rawBase)}</span>
                 </div>
                 {discountAmt > 0 && (
                   <div className="flex justify-between text-red-500">
                     <span>{isVi ? 'Ưu đãi giảm giá' : 'Special promo discount'}</span>
-                    <span className="font-bold">-{formatCurrency(discountAmt, language)}</span>
+                    <span className="font-bold">-{formatCurrency(discountAmt)}</span>
                   </div>
                 )}
                 {includeInsurance && (
                   <div className="flex justify-between">
                     <span className="text-slate-400">{isVi ? 'Phí bảo hiểm' : 'Insurance'}</span>
-                    <span className="font-bold text-foreground">+{formatCurrency(insuranceFee, language)}</span>
+                    <span className="font-bold text-foreground">+{formatCurrency(insuranceFee)}</span>
                   </div>
                 )}
                 {includeDelivery && (
                   <div className="flex justify-between">
                     <span className="text-slate-400">{isVi ? 'Phí giao xe' : 'Delivery fee'}</span>
-                    <span className="font-bold text-foreground">+{formatCurrency(deliveryFee, language)}</span>
+                    <span className="font-bold text-foreground">+{formatCurrency(deliveryFee)}</span>
                   </div>
                 )}
                 <div className="flex justify-between">
                   <span>{isVi ? 'Phí nền tảng' : 'Service fee'} (12%)</span>
-                  <span className="font-bold text-foreground">+{formatCurrency(serviceFee, language)}</span>
+                  <span className="font-bold text-foreground">+{formatCurrency(serviceFee)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>{isVi ? 'Thuế VAT' : 'Taxes & VAT'} (8%)</span>
-                  <span className="font-bold text-foreground">+{formatCurrency(taxes, language)}</span>
+                  <span className="font-bold text-foreground">+{formatCurrency(taxes)}</span>
                 </div>
 
                 {deposit > 0 && (
                   <div className="flex justify-between pt-2 text-amber-600">
                     <span>{isVi ? 'Tiền đặt cọc thế chấp' : 'Security Deposit'}</span>
-                    <span className="font-bold">{formatCurrency(deposit, language)}</span>
+                    <span className="font-bold">{formatCurrency(deposit)}</span>
                   </div>
                 )}
 
                 <div className="flex justify-between text-base font-bold pt-3 border-t border-dashed border-border">
                   <span className="text-foreground">{isVi ? 'TỔNG CỘNG' : 'TOTAL PRICE'}</span>
-                  <span className="text-blue-500 font-display font-black">{formatCurrency(totalCost, language)}</span>
+                  <span className="text-blue-500 font-display font-black">{formatCurrency(totalCost)}</span>
                 </div>
               </div>
 
@@ -470,8 +470,8 @@ const BookingCheckoutPage: React.FC = () => {
               </button>
 
               <div className="text-[10px] text-slate-450 leading-normal text-center pt-2">
-                {isVi 
-                  ? 'Bằng việc nhấp vào đặt xe, bạn đồng ý với Điều khoản Dịch vụ và Chính sách hủy chuyến của LuxeWay.' 
+                {isVi
+                  ? 'Bằng việc nhấp vào đặt xe, bạn đồng ý với Điều khoản Dịch vụ và Chính sách hủy chuyến của LuxeWay.'
                   : 'By confirming this request, you agree to LuxeWay Terms of Service and Cancellation Policies.'}
               </div>
 

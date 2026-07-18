@@ -4,6 +4,7 @@ import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
+import com.itextpdf.text.pdf.BaseFont;
 import com.luxeway.entity.Booking;
 import com.luxeway.entity.Invoice;
 import com.luxeway.entity.User;
@@ -128,12 +129,20 @@ public class InvoiceService {
 
         document.open();
 
-        // Styles & Fonts
-        Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 22, new BaseColor(15, 23, 42)); // Slate 900
-        Font subtitleFont = FontFactory.getFont(FontFactory.HELVETICA, 10, new BaseColor(100, 116, 139)); // Slate 500
-        Font boldLabelFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, new BaseColor(15, 23, 42));
-        Font regularFont = FontFactory.getFont(FontFactory.HELVETICA, 10, new BaseColor(51, 65, 85)); // Slate 700
-        Font totalFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, new BaseColor(79, 70, 229)); // Indigo 600
+        // Styles & Fonts (Using Roboto to support Vietnamese UTF-8)
+        BaseFont baseFont;
+        try {
+            baseFont = BaseFont.createFont("fonts/Roboto-Regular.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+        } catch (Exception e) {
+            log.warn("Could not load Roboto font, falling back to Helvetica. Error: {}", e.getMessage());
+            baseFont = BaseFont.createFont(BaseFont.HELVETICA, BaseFont.WINANSI, BaseFont.NOT_EMBEDDED);
+        }
+        
+        Font titleFont = new Font(baseFont, 22, Font.BOLD, new BaseColor(15, 23, 42)); // Slate 900
+        Font subtitleFont = new Font(baseFont, 10, Font.NORMAL, new BaseColor(100, 116, 139)); // Slate 500
+        Font boldLabelFont = new Font(baseFont, 10, Font.BOLD, new BaseColor(15, 23, 42));
+        Font regularFont = new Font(baseFont, 10, Font.NORMAL, new BaseColor(51, 65, 85)); // Slate 700
+        Font totalFont = new Font(baseFont, 14, Font.BOLD, new BaseColor(79, 70, 229)); // Indigo 600
 
         // 1. HEADER SECTION
         PdfPTable headerTable = new PdfPTable(2);

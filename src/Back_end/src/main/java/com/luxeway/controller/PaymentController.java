@@ -132,6 +132,31 @@ public class PaymentController {
         return ResponseEntity.ok(ApiResponse.success("PayOS payment return processed", payment));
     }
 
+    /**
+     * VNPay Callback endpoint - public endpoint.
+     * Path: GET /payments/vnpay/callback
+     */
+    @GetMapping("/vnpay/callback")
+    @Operation(summary = "Handle VNPay callback - public endpoint")
+    public ResponseEntity<ApiResponse<PaymentDTOs.PaymentResponse>> vnpayCallback(
+            @RequestParam Map<String, String> params) {
+        PaymentDTOs.PaymentResponse payment = paymentService.processVNPayCallback(params);
+        return ResponseEntity.ok(ApiResponse.success("VNPay payment callback processed", payment));
+    }
+
+    /**
+     * VNPay Return endpoint - public endpoint.
+     * Path: GET /payments/vnpay/return
+     */
+    @GetMapping("/vnpay/return")
+    @Operation(summary = "Handle VNPay return redirect - public endpoint")
+    public ResponseEntity<ApiResponse<PaymentDTOs.PaymentResponse>> vnpayReturn(
+            @RequestParam Map<String, String> params) {
+        PaymentDTOs.PaymentResponse payment = paymentService.processVNPayCallback(params);
+        return ResponseEntity.ok(ApiResponse.success("VNPay payment return processed", payment));
+    }
+
+
     @PostMapping("/wallet/topup")
     @Operation(summary = "Top up LuxeWallet balance")
     public ResponseEntity<ApiResponse<PaymentDTOs.PaymentResponse>> topUpWallet(

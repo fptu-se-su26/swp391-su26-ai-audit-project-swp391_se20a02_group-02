@@ -517,7 +517,7 @@ export const MotorbikeDetails: React.FC = () => {
 
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, user, refreshUser } = useAuthStore();
   const { isWishlisted, addToWishlist, removeFromWishlist, addRecentlyViewed, compareList, addToCompare, removeFromCompare } = useVehicleStore();
   const toast = useToast();
 
@@ -823,7 +823,7 @@ export const MotorbikeDetails: React.FC = () => {
   const subtotal = basePrice + helmetFee + raincoatFee + phoneHolderFee + luggageRackFee + goproFee + insuranceFee + serviceFee + taxes + deliveryFee;
   const totalCost = subtotal - (couponApplied ? Math.round(subtotal * couponDiscount) : 0);
 
-  const handleBookingRedirect = () => {
+  const handleBookingRedirect = async () => {
     if (!isAuthenticated) {
       toast.warning('Authentication Required', 'Please log in to complete your booking.');
       navigate('/auth/login');
@@ -831,6 +831,12 @@ export const MotorbikeDetails: React.FC = () => {
     }
 
     const isVi = language === 'vi';
+
+    try {
+      await refreshUser();
+    } catch (e) {
+      console.warn('Failed to refresh user before booking:', e);
+    }
 
     // Mandatory Scan Check: Verify KYC is completed
     if (!user?.kycVerified && user?.kycStatus !== 'VERIFIED') {

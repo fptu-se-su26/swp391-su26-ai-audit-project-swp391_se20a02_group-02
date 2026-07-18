@@ -673,7 +673,7 @@ export const MyBookingsPage: React.FC = () => {
                 {/* Action buttons */}
                 <div className="grid grid-cols-2 gap-3 mt-auto">
                   <Link
-                    to={`/vehicles/${booking.vehicleId}`}
+                    to={`/dashboard/bookings/${booking.id}`}
                     className={cn(
                       "py-2.5 rounded-xl text-xs font-bold text-center transition-all duration-200 flex items-center justify-center",
                       ((booking.status !== 'completed' && booking.status !== 'pending' && booking.status !== 'confirmed' && booking.status !== 'active') || (booking.status === 'completed' && booking.reviewId))
@@ -694,7 +694,7 @@ export const MyBookingsPage: React.FC = () => {
                       e.currentTarget.style.borderColor = 'var(--lw-border)';
                     }}
                   >
-                    {t.dashboard.viewVehicle}
+                    {isVi ? 'Chi tiết hành trình' : 'View Journey'}
                   </Link>
 
                   {booking.status === 'active' && (

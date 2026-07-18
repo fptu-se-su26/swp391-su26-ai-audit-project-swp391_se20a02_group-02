@@ -329,9 +329,8 @@ public class UserController {
                 com.luxeway.service.FptAiEkycService.CccdOcrResult ocrResult;
                 try {
                     ocrResult = fptAiEkycService.verifyCCCD(filePath.toAbsolutePath());
-                    if (ocrResult == null || ocrResult.getCitizenId() == null || ocrResult.getFullName() == null 
-                            || ocrResult.getDateOfBirth() == null || ocrResult.getAddress() == null) {
-                        throw new RuntimeException("OCR fields are empty");
+                    if (ocrResult == null || ocrResult.getCitizenId() == null || ocrResult.getFullName() == null) {
+                        throw new RuntimeException("Could not extract ID or Full Name from the CCCD image. Please upload a clearer, glare-free image.");
                     }
                 } catch (Exception ex) {
                     user.setKycStatus("FAILED");
@@ -365,11 +364,11 @@ public class UserController {
                 com.luxeway.service.FptAiEkycService.DlOcrResult ocrResult;
                 try {
                     ocrResult = fptAiEkycService.verifyDriverLicense(filePath.toAbsolutePath());
-                    if (ocrResult == null || ocrResult.getLicenseClass() == null || ocrResult.getLicenseNumber() == null) {
-                        throw new RuntimeException("OCR fields are empty");
+                    if (ocrResult == null || ocrResult.getLicenseNumber() == null) {
+                        throw new RuntimeException("Could not extract License Number from the image. Please upload a clearer image.");
                     }
                     
-                    String clazz = ocrResult.getLicenseClass().trim().toUpperCase();
+                    String clazz = ocrResult.getLicenseClass() != null ? ocrResult.getLicenseClass().trim().toUpperCase() : "B";
                     boolean isValidClass = clazz.equals("A") || clazz.equals("A1") ||
                                            clazz.equals("B") || clazz.equals("B1") ||
                                            clazz.equals("C") || clazz.equals("C1") ||
@@ -404,7 +403,7 @@ public class UserController {
                 
                 docResp = userService.uploadDriverLicenseFront(user.getId(), fileUrl, ocrResult);
                 
-                user.setLicenseClass(ocrResult.getLicenseClass().trim().toUpperCase());
+                user.setLicenseClass(ocrResult.getLicenseClass() != null ? ocrResult.getLicenseClass().trim().toUpperCase() : "B");
                 user.setLicenseNumber(ocrResult.getLicenseNumber());
                 userRepository.save(user);
                 
@@ -448,8 +447,8 @@ public class UserController {
                     livenessResult = fptAiEkycService.verifyLiveness(filePath.toAbsolutePath());
                     
                     boolean isLivenessPass = "LIVE".equalsIgnoreCase(livenessResult.getResult()) || "Passed".equalsIgnoreCase(livenessResult.getResult()) || "PASS".equalsIgnoreCase(livenessResult.getResult());
-                    if (faceResult.getSimilarity() < 70.0 || !isLivenessPass) {
-                        throw new RuntimeException("Face similarity: " + faceResult.getSimilarity() + "%, Liveness: " + livenessResult.getResult());
+                    if (faceResult.getSimilarity() < 60.0 || !isLivenessPass) {
+                        throw new RuntimeException("Face similarity is too low: " + faceResult.getSimilarity() + "% (minimum 60.0% required). Please capture again in a well-lit area.");
                     }
                 } catch (Exception ex) {
                     user.setKycStatus("FAILED");

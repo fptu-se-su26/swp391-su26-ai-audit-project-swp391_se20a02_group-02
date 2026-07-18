@@ -1,12 +1,14 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Copy, Clock, Check, ChevronLeft, Info, AlertTriangle, ShieldCheck, Download, ExternalLink, QrCode } from 'lucide-react';
+import { Copy, Clock, Check, ChevronLeft, Info, AlertTriangle, ShieldCheck, Download, ExternalLink, QrCode, CreditCard, Banknote, Smartphone } from 'lucide-react';
 import { bookingService, paymentService } from '@/services/bookingService';
 import type { Booking } from '@/types';
 import { useAuthStore, useUIStore } from '@/store';
 import { useToast } from '@/components/ui/Toast';
 import { formatCurrency, resolveImageUrl } from '@/utils';
+
+type PaymentMethod = 'bank_transfer' | 'payos' | 'momo';
 
 const BookingPaymentPage: React.FC = () => {
   const { bookingId } = useParams<{ bookingId: string }>();
@@ -21,6 +23,8 @@ const BookingPaymentPage: React.FC = () => {
   const [confirming, setConfirming] = useState(false);
   const [countdown, setCountdown] = useState<number>(900); // 15 minutes default
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('bank_transfer');
+  const [processingGateway, setProcessingGateway] = useState(false);
 
   // Load booking and payment credentials
   useEffect(() => {
@@ -121,6 +125,33 @@ const BookingPaymentPage: React.FC = () => {
     }
   };
 
+  const handleGatewayPayment = async () => {
+    if (!booking) return;
+    setProcessingGateway(true);
+    try {
+      const returnUrl = `${window.location.origin}/payment/${paymentMethod === 'payos' ? 'payos' : 'momo'}/return`;
+      const result = await paymentService.processPayment(
+        booking.id,
+        paymentMethod,
+        booking.pricing?.total || 0,
+        returnUrl
+      );
+      if (result.success && result.paymentUrl) {
+        window.location.href = result.paymentUrl;
+      } else {
+        toast.error(
+          isVi ? 'Không thể kết nối cổng thanh toán' : 'Gateway Error',
+          result.errorMessage || (isVi ? 'Vui lòng thử lại hoặc chọn phương thức khác.' : 'Please try again or select another method.')
+        );
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast.error(isVi ? 'Lỗi thanh toán' : 'Payment Error', err.message || 'An error occurred.');
+    } finally {
+      setProcessingGateway(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen pt-24 pb-12 flex items-center justify-center bg-slate-50 dark:bg-slate-950">
@@ -173,6 +204,54 @@ const BookingPaymentPage: React.FC = () => {
           {isVi ? 'Quay lại danh sách' : 'Back to Bookings'}
         </button>
 
+        {/* Payment Method Selector */}
+        {!isExpired && !isPendingApproval && !isConfirmed && (
+          <div className="mb-6">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">{isVi ? 'Chọn phương thức thanh toán' : 'Select Payment Method'}</p>
+            <div className="grid grid-cols-3 gap-3">
+              {/* Bank Transfer */}
+              <button
+                onClick={() => setPaymentMethod('bank_transfer')}
+                className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all ${
+                  paymentMethod === 'bank_transfer'
+                    ? 'border-blue-500 bg-blue-500/10 text-blue-500'
+                    : 'border-border bg-card text-slate-400 hover:border-blue-300'
+                }`}
+              >
+                <Banknote className="w-6 h-6" />
+                <span className="text-xs font-black uppercase tracking-wide">{isVi ? 'Ngân hàng' : 'Bank Transfer'}</span>
+                <span className="text-[10px] text-center leading-tight opacity-75">{isVi ? 'VietQR / Chuyển khoản' : 'VietQR / Wire'}</span>
+              </button>
+              {/* PayOS */}
+              <button
+                onClick={() => setPaymentMethod('payos')}
+                className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all ${
+                  paymentMethod === 'payos'
+                    ? 'border-indigo-500 bg-indigo-500/10 text-indigo-500'
+                    : 'border-border bg-card text-slate-400 hover:border-indigo-300'
+                }`}
+              >
+                <CreditCard className="w-6 h-6" />
+                <span className="text-xs font-black uppercase tracking-wide">PayOS</span>
+                <span className="text-[10px] text-center leading-tight opacity-75">{isVi ? 'QR / Thẻ / Ví điện tử' : 'QR / Card / E-Wallet'}</span>
+              </button>
+              {/* MoMo */}
+              <button
+                onClick={() => setPaymentMethod('momo')}
+                className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all ${
+                  paymentMethod === 'momo'
+                    ? 'border-pink-500 bg-pink-500/10 text-pink-500'
+                    : 'border-border bg-card text-slate-400 hover:border-pink-300'
+                }`}
+              >
+                <Smartphone className="w-6 h-6" />
+                <span className="text-xs font-black uppercase tracking-wide">MoMo</span>
+                <span className="text-[10px] text-center leading-tight opacity-75">{isVi ? 'Ví MoMo' : 'MoMo Wallet'}</span>
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
           {/* LEFT PANEL: Summary & Checkout Details (1 col) */}
@@ -213,48 +292,48 @@ const BookingPaymentPage: React.FC = () => {
               <div className="space-y-3.5 text-xs text-slate-600 dark:text-slate-400">
                 <div className="flex justify-between">
                   <span>{isVi ? 'Giá thuê xe' : 'Rental Rate'}</span>
-                  <span className="font-bold text-foreground">{formatCurrency(booking.pricing?.basePrice || 0, language)}</span>
+                  <span className="font-bold text-foreground">{formatCurrency(booking.pricing?.basePrice || 0)}</span>
                 </div>
                 {booking.pricing?.discount > 0 && (
                   <div className="flex justify-between text-red-500">
                     <span>{isVi ? 'Khuyến mãi' : 'Discount'}</span>
-                    <span className="font-bold">-{formatCurrency(booking.pricing.discount, language)}</span>
+                    <span className="font-bold">-{formatCurrency(booking.pricing.discount)}</span>
                   </div>
                 )}
                 {booking.includeInsurance && (
                   <div className="flex justify-between">
                     <span>{isVi ? 'Bảo hiểm chuyến đi' : 'Insurance'}</span>
-                    <span className="font-bold text-foreground">+{formatCurrency(booking.pricing?.insuranceFee || 0, language)}</span>
+                    <span className="font-bold text-foreground">+{formatCurrency(booking.pricing?.insuranceFee || 0)}</span>
                   </div>
                 )}
                 {booking.includeDelivery && (
                   <div className="flex justify-between">
                     <span>{isVi ? 'Phí giao xe' : 'Delivery Fee'}</span>
-                    <span className="font-bold text-foreground">+{formatCurrency(booking.pricing?.deliveryFee || 0, language)}</span>
+                    <span className="font-bold text-foreground">+{formatCurrency(booking.pricing?.deliveryFee || 0)}</span>
                   </div>
                 )}
                 {booking.pricing?.serviceFee > 0 && (
                   <div className="flex justify-between">
                     <span>{isVi ? 'Phí dịch vụ' : 'Service Fee'}</span>
-                    <span className="font-bold text-foreground">+{formatCurrency(booking.pricing.serviceFee, language)}</span>
+                    <span className="font-bold text-foreground">+{formatCurrency(booking.pricing.serviceFee)}</span>
                   </div>
                 )}
                 {booking.pricing?.taxes > 0 && (
                   <div className="flex justify-between">
                     <span>{isVi ? 'Thuế VAT' : 'VAT & Taxes'}</span>
-                    <span className="font-bold text-foreground">+{formatCurrency(booking.pricing.taxes, language)}</span>
+                    <span className="font-bold text-foreground">+{formatCurrency(booking.pricing.taxes)}</span>
                   </div>
                 )}
                 {booking.pricing?.deposit > 0 && (
                   <div className="flex justify-between pt-1 border-t border-slate-200/55 dark:border-white/5 text-amber-600 dark:text-amber-500">
                     <span>{isVi ? 'Tiền đặt cọc thế chấp' : 'Security Deposit'}</span>
-                    <span className="font-bold">{formatCurrency(booking.pricing.deposit, language)}</span>
+                    <span className="font-bold">{formatCurrency(booking.pricing.deposit)}</span>
                   </div>
                 )}
                 
                 <div className="flex justify-between text-sm font-black pt-3 border-t border-dashed border-border text-foreground">
                   <span>{isVi ? 'TỔNG THANH TOÁN' : 'TOTAL PAYMENT'}</span>
-                  <span className="text-blue-500 font-display font-black text-base">{formatCurrency(amountToPay, language)}</span>
+                  <span className="text-blue-500 font-display font-black text-base">{formatCurrency(amountToPay)}</span>
                 </div>
               </div>
 
@@ -307,8 +386,75 @@ const BookingPaymentPage: React.FC = () => {
               </div>
             )}
 
+            {/* Gateway Payment (PayOS / MoMo) */}
+            {!isExpired && !isPendingApproval && !isConfirmed && (paymentMethod === 'payos' || paymentMethod === 'momo') && (
+              <div className="bg-card border border-border rounded-3xl p-8 shadow-xl space-y-6">
+                <div className="flex items-center justify-between border-b border-border pb-4">
+                  <div>
+                    <h2 className="text-xl font-bold text-foreground">
+                      {paymentMethod === 'payos' ? 'Thanh toán qua PayOS' : 'Thanh toán qua MoMo'}
+                    </h2>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      {isVi ? 'Bạn sẽ được chuyển hướng đến cổng thanh toán để hoàn tất giao dịch.' : 'You will be redirected to the payment gateway to complete the transaction.'}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 text-amber-500 rounded-2xl border border-amber-500/20">
+                    <Clock className="w-4 h-4 animate-pulse" />
+                    <span className="font-mono font-bold text-sm">{formatTime(countdown)}</span>
+                  </div>
+                </div>
+
+                {/* Gateway info */}
+                <div className={`rounded-2xl p-6 border flex flex-col items-center gap-4 text-center ${
+                  paymentMethod === 'payos'
+                    ? 'bg-indigo-500/5 border-indigo-500/20'
+                    : 'bg-pink-500/5 border-pink-500/20'
+                }`}>
+                  {paymentMethod === 'payos' ? (
+                    <CreditCard className="w-12 h-12 text-indigo-500" />
+                  ) : (
+                    <Smartphone className="w-12 h-12 text-pink-500" />
+                  )}
+                  <div>
+                    <h3 className={`text-lg font-black ${ paymentMethod === 'payos' ? 'text-indigo-500' : 'text-pink-500' }`}>
+                      {paymentMethod === 'payos' ? 'PayOS' : 'MoMo'}
+                    </h3>
+                    <p className="text-sm text-slate-400 mt-1">
+                      {isVi
+                        ? `Thanh toán ${formatCurrency(booking.pricing?.total || 0)} qua ${paymentMethod === 'payos' ? 'cổng PayOS (QR Code, Internet Banking, ATM, thẻ visa)' : 'ví điện tử MoMo'}.`
+                        : `Pay ${formatCurrency(booking.pricing?.total || 0)} via ${paymentMethod === 'payos' ? 'PayOS gateway (QR, Banking, Cards)' : 'MoMo E-Wallet'}.`}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleGatewayPayment}
+                  disabled={processingGateway}
+                  className={`w-full py-4 font-display font-black uppercase text-xs tracking-wider rounded-2xl transition-all shadow-lg flex items-center justify-center gap-2 text-white disabled:opacity-50 ${
+                    paymentMethod === 'payos'
+                      ? 'bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 shadow-indigo-500/20'
+                      : 'bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 shadow-pink-500/20'
+                  }`}
+                >
+                  {processingGateway ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      {isVi ? 'ĐANG KẾT NỐI CỔNG...' : 'CONNECTING TO GATEWAY...'}
+                    </>
+                  ) : (
+                    <>
+                      <ExternalLink className="w-4 h-4" />
+                      {isVi
+                        ? `THANH TOÁN QUA ${paymentMethod === 'payos' ? 'PAYOS' : 'MOMO'}`
+                        : `PAY WITH ${paymentMethod === 'payos' ? 'PAYOS' : 'MOMO'}`}
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+
             {/* main bank transfer module */}
-            {!isExpired && !isPendingApproval && !isConfirmed && (
+            {!isExpired && !isPendingApproval && !isConfirmed && paymentMethod === 'bank_transfer' && (
               <div className="bg-card border border-border rounded-3xl p-8 shadow-xl space-y-6 relative overflow-hidden">
                 
                 {/* Timer Countdown Header */}
@@ -374,7 +520,7 @@ const BookingPaymentPage: React.FC = () => {
                       <div>
                         <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-0.5">{isVi ? 'Số tiền' : 'Amount'}</span>
                         <div className="flex items-center justify-between">
-                          <span className="font-black text-sm text-blue-500">{formatCurrency(amountToPay, language)}</span>
+                          <span className="font-black text-sm text-blue-500">{formatCurrency(amountToPay)}</span>
                           <button onClick={() => handleCopyToClipboard(amountToPay.toString(), isVi ? 'Số tiền' : 'Amount')} className="text-slate-400 hover:text-foreground transition-colors p-1">
                             {copiedField === (isVi ? 'Số tiền' : 'Amount') ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
                           </button>

@@ -39,6 +39,12 @@ export const PayOSReturnPage: React.FC = () => {
           toast.success(topUpTx
             ? (isVi ? 'Nạp tiền thành công!' : 'Wallet top-up successful!')
             : (isVi ? 'Thanh toán thành công!' : 'Payment successful!'));
+
+          // AUTO REDIRECT for professional UX
+          setTimeout(() => {
+            navigate(topUpTx ? '/dashboard/wallet' : `/dashboard/bookings/${paymentData.bookingId}`);
+          }, 3000);
+          
         } else {
           setStatus('failed');
           toast.error(
@@ -56,7 +62,7 @@ export const PayOSReturnPage: React.FC = () => {
     };
 
     verifyPayment();
-  }, [searchParams]);
+  }, [searchParams, navigate]);
 
   const payosStatus = searchParams.get('status');
 
@@ -107,6 +113,9 @@ export const PayOSReturnPage: React.FC = () => {
                   <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-200 mb-2">
                     {isTopUp ? (isVi ? 'Nạp tiền thành công!' : 'Top-up Successful!') : (isVi ? 'Thanh toán thành công!' : 'Payment Successful!')}
                   </h2>
+                  <p className="text-emerald-600 dark:text-emerald-400 text-sm font-semibold mb-2">
+                    {isVi ? 'Tự động chuyển hướng sau 3 giây...' : 'Redirecting in 3 seconds...'}
+                  </p>
                   <p className="text-slate-500 text-sm">
                     {isTopUp
                       ? (isVi ? 'Số dư ví LuxeWay của bạn đã được cộng.' : 'Your LuxeWay wallet has been credited.')
@@ -140,7 +149,7 @@ export const PayOSReturnPage: React.FC = () => {
                     onClick={() => navigate(isTopUp ? '/dashboard/wallet' : '/dashboard/bookings')}
                     className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-sky-600 text-white font-bold text-sm shadow-lg hover:bg-sky-700 transition-colors"
                   >
-                    {isTopUp ? <><Wallet className="w-4 h-4" /> {isVi ? 'Xem ví' : 'View Wallet'}</> : <>{isVi ? 'Xem đặt xe của tôi' : 'My Bookings'} <ArrowRight className="w-4 h-4" /></>}
+                    {isTopUp ? <><Wallet className="w-4 h-4" /> {isVi ? 'Đến ví ngay' : 'Go to Wallet Now'}</> : <>{isVi ? 'Xem xe ngay lập tức' : 'View Booking Now'} <ArrowRight className="w-4 h-4" /></>}
                   </button>
                   <button
                     onClick={() => navigate('/')}

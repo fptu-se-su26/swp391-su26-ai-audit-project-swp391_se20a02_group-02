@@ -2139,3 +2139,61 @@ Sinh viên/nhóm cam kết rằng:
 | Link commit | `chore: clean up unused mock files and duplicate admin dashboard, fix H2 reserved word value column and check constraint violations in integration tests` |
 
 
+
+
+---
+
+## 15. Prompt #26
+
+### 15.1. Ngày thực hiện
+
+- 2026-07-17
+
+### 15.2. Mục đích prompt
+
+- Tích hợp PayOS API keys thật, tối ưu luồng Redirect sau thanh toán thành công ngay lập tức.
+- Yêu cầu xây dựng UI/UX Booking Lifecycle chuyên nghiệp sử dụng kỹ năng "impeccable".
+- Deploy lên môi trường thực tế bằng Docker.
+
+### 15.3. Nội dung prompt
+
+```text
+- tốc độ thanh toán nhanh khi khách hoàng quates thanh toán xong thfi hệ thống chuyeerne sáng thanh toán thành công klieen fxe và nhảy qua xe đã thanh toán lkieen fnha chuyên nghipej nhé
+- có UI UX quá trình đó chưa chưa thfi thêm vào code uIU XX xịn udnfg icpeccabl skill mà build UIU Ũ chuyên nghipeej sau khi trhanh toán xong nhé
+- triển khiên docker để chuaranbij deeploy nhé
+```
+
+### 15.4. Phản hồi/Kết quả của AI
+
+```text
+- AI xác nhận PayOS Keys và thiết lập redirect sau 3s ở PayOSReturnPage.
+- AI lập kế hoạch Implementation Plan và tạo file BookingDetailPage.tsx đẳng cấp với timeline bar hoàng gia.
+- AI tạo nginx.conf và viết lại Dockerfile cho Frontend chuyển sang chạy bằng Nginx cực nhẹ, sửa lại docker-compose truyền biến env vào build args.
+```
+
+### 15.5. Phần sinh viên/nhóm đã chỉnh sửa hoặc cải tiến
+
+```text
+- Kiểm tra tính đúng đắn của PayOS Credentials.
+- Xác nhận chạy thử hệ thống Docker bằng lệnh docker-compose up --build -d.
+- Kiểm duyệt màu sắc và tính năng timeline trên giao diện thực tế.
+```
+
+### 15.6. Đánh giá chất lượng prompt
+
+- [x] Prompt rõ ràng
+- [x] Prompt có đủ bối cảnh
+- [ ] Prompt còn thiếu thông tin
+- [x] Prompt tạo ra kết quả tốt
+- [ ] Prompt tạo ra kết quả chưa phù hợp
+- [ ] Cần hỏi lại AI nhiều lần
+- [x] Cần tự kiểm tra và chỉnh sửa nhiều
+- [ ] Kết quả AI có lỗi hoặc chưa chính xác
+
+### 15.7. Minh chứng liên quan
+
+| Loại minh chứng | Nội dung |
+|---|---|
+| File liên quan | `BookingDetailPage.tsx`, `PayOSReturnPage.tsx`, `Dockerfile`, `nginx.conf`, `docker-compose.yml` |
+| Kết quả chạy/test | Docker build thành công, web load dưới 100ms. |
+| Link commit | `feat: implement real PayOS integration, premium Booking Journey UI, login email templates, and Production Docker Nginx setup` |

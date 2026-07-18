@@ -207,22 +207,30 @@ public class HomeService {
     private String normalizeCityName(String city) {
         if (city == null) return "";
         String lower = city.toLowerCase().trim();
-        if (lower.contains("ho chi minh") || lower.contains("hcm")) {
+        
+        // Ho Chi Minh ("tp. h? chí minh")
+        if (lower.contains("ho chi minh") || lower.contains("hồ chí minh") || lower.contains("hcm") || 
+            lower.contains("chí minh") || lower.contains("ch minh") || lower.contains("cha- minh") || (lower.contains("h") && lower.contains("ch") && lower.contains("m"))) {
             return "Ho Chi Minh";
         }
-        if (lower.contains("ha noi") || lower.contains("hanoi")) {
-            return "Ha Noi";
+        // Hanoi ("hà n?i", "ha n?i")
+        if (lower.contains("ha noi") || lower.contains("hà nội") || lower.contains("hanoi") || lower.contains("hà n") || lower.contains("ha n")) {
+            return "Hanoi";
         }
-        if (lower.contains("da nang") || lower.contains("danang")) {
+        // Da Nang ("đà n?ng", "a?a n?ng", "ðà n?ng")
+        if (lower.contains("da nang") || lower.contains("đà nẵng") || lower.contains("danang") || lower.contains("n?ng") || lower.contains("nẵng") || lower.contains("à n") || lower.contains("a n")) {
             return "Da Nang";
         }
-        if (lower.contains("nha trang")) {
+        // Nha Trang
+        if (lower.contains("nha trang") || lower.contains("nhatrang") || lower.contains("nha")) {
             return "Nha Trang";
         }
-        if (lower.contains("da lat") || lower.contains("dalat")) {
+        // Da Lat ("đà l?t", "a?a l?t", "ðà l?t")
+        if (lower.contains("da lat") || lower.contains("đà lạt") || lower.contains("dalat") || lower.contains("l?t") || lower.contains("lạt") || lower.contains("à l") || lower.contains("a l")) {
             return "Da Lat";
         }
-        if (lower.contains("hue")) {
+        // Hue ("hu?")
+        if (lower.contains("hue") || lower.contains("huế") || lower.contains("hu?") || lower.contains("hu")) {
             return "Hue";
         }
         return city;
@@ -415,19 +423,25 @@ public class HomeService {
             // Fetch live vehicle count from DB (never use hardcoded values)
             long liveCount = 0;
             try {
-                liveCount = vehicleRepository.findByCityContainingIgnoreCase(d[1])
-                    .stream()
-                    .filter(v -> v.getStatus() == VehicleStatus.AVAILABLE
-                              && v.getApprovalStatus() == VehicleStatus.APPROVED)
-                    .count();
-                // Also count with partial match for city variants (e.g. "TP. Hồ Chí Minh")
-                if (liveCount == 0 && d[1].equals("Hồ Chí Minh")) {
-                    liveCount = vehicleRepository.findByCityContainingIgnoreCase("Ho Chi Minh")
-                        .stream()
-                        .filter(v -> v.getStatus() == VehicleStatus.AVAILABLE
-                                  && v.getApprovalStatus() == VehicleStatus.APPROVED)
-                        .count();
+                Set<String> vehicleIds = new HashSet<>();
+                long count = 0;
+                
+                // Match with accents
+                for (Vehicle v : vehicleRepository.findByCityContainingIgnoreCase(d[0])) {
+                    if (v.getStatus() == VehicleStatus.AVAILABLE && v.getApprovalStatus() == VehicleStatus.APPROVED) {
+                        if (vehicleIds.add(v.getId())) count++;
+                    }
                 }
+                
+                // Match without accents (if different)
+                if (!d[0].equalsIgnoreCase(d[1])) {
+                    for (Vehicle v : vehicleRepository.findByCityContainingIgnoreCase(d[1])) {
+                        if (v.getStatus() == VehicleStatus.AVAILABLE && v.getApprovalStatus() == VehicleStatus.APPROVED) {
+                            if (vehicleIds.add(v.getId())) count++;
+                        }
+                    }
+                }
+                liveCount = count;
             } catch (Exception ex) {
                 // Ignore - leave as 0
             }

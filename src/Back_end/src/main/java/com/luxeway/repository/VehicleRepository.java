@@ -113,6 +113,7 @@ public interface VehicleRepository extends JpaRepository<Vehicle, String> {
 
     // Multi-select filter: supports multiple categories and brands
     @Query("SELECT v FROM Vehicle v WHERE " +
+           "(:keyword IS NULL OR LOWER(v.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(v.brand) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(v.model) LIKE LOWER(CONCAT('%', :keyword, '%'))) AND " +
            "(:location IS NULL OR LOWER(v.city) LIKE LOWER(CONCAT('%', :location, '%')) OR LOWER(v.country) LIKE LOWER(CONCAT('%', :location, '%'))) AND " +
            "(:#{#categories == null || #categories.isEmpty()} = true OR v.category IN :categories) AND " +
            "(:#{#brands == null || #brands.isEmpty()} = true OR LOWER(v.brand) IN :brands) AND " +
@@ -142,7 +143,8 @@ public interface VehicleRepository extends JpaRepository<Vehicle, String> {
            "  b.startDate <= :endDate AND b.endDate >= :startDate" +
            ")) AND " +
            "v.status = 'AVAILABLE' AND v.approvalStatus = 'APPROVED'")
-    Page<Vehicle> filterVehiclesMulti(@Param("location") String location,
+    Page<Vehicle> filterVehiclesMulti(@Param("keyword") String keyword,
+                                      @Param("location") String location,
                                       @Param("categories") List<VehicleCategory> categories,
                                       @Param("brands") List<String> brands,
                                       @Param("minPrice") BigDecimal minPrice,

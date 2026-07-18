@@ -310,7 +310,7 @@ export const MotorbikeMarketplace: React.FC = () => {
 
             {/* Quick City Filters */}
             <div className="hidden lg:flex items-center gap-1.5 pl-3">
-              {['Hồ Chí Minh', 'Hà Nội', 'Đà Nẵng', 'Nha Trang', 'Đà Lạt'].map(city => (
+              {['Hồ Chí Minh', 'Hà Nội', 'Đà Nẵng', 'Nha Trang', 'Đà Lạt', 'Huế'].map(city => (
                 <button
                   key={city}
                   onClick={() => handleFilterChange({ ...filters, location: filters.location === city ? undefined : city })}
