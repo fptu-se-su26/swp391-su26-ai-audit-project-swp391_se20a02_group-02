@@ -1,18 +1,44 @@
-# Serve the pre-built React application using Nginx
+# Stage 1: Build the React application
+FROM node:20-alpine AS build
+WORKDIR /app
+
+# Install dependencies
+COPY package*.json ./
+RUN npm install
+
+# Copy source code and build
+COPY . .
+
+# Pass build arguments to environment variables so Vite can use them
+ARG VITE_API_URL
+ARG VITE_AUTH_API_URL
+ARG VITE_GOOGLE_REDIRECT_URI
+ARG VITE_GOOGLE_CLIENT_ID
+ARG VITE_GOONG_MAPTILES_KEY
+ARG VITE_FIREBASE_API_KEY
+ARG VITE_FIREBASE_AUTH_DOMAIN
+ARG VITE_FIREBASE_PROJECT_ID
+ARG VITE_FIREBASE_MESSAGING_SENDER_ID
+ARG VITE_FIREBASE_APP_ID
+
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_AUTH_API_URL=$VITE_AUTH_API_URL
+ENV VITE_GOOGLE_REDIRECT_URI=$VITE_GOOGLE_REDIRECT_URI
+ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
+ENV VITE_GOONG_MAPTILES_KEY=$VITE_GOONG_MAPTILES_KEY
+ENV VITE_FIREBASE_API_KEY=$VITE_FIREBASE_API_KEY
+ENV VITE_FIREBASE_AUTH_DOMAIN=$VITE_FIREBASE_AUTH_DOMAIN
+ENV VITE_FIREBASE_PROJECT_ID=$VITE_FIREBASE_PROJECT_ID
+ENV VITE_FIREBASE_MESSAGING_SENDER_ID=$VITE_FIREBASE_MESSAGING_SENDER_ID
+ENV VITE_FIREBASE_APP_ID=$VITE_FIREBASE_APP_ID
+
+RUN npm run build
+
+# Stage 2: Serve with Nginx
 FROM nginx:alpine
-
-# Remove default nginx static assets
 RUN rm -rf /usr/share/nginx/html/*
-
-# Copy the pre-built static assets from local build output
-COPY dist /usr/share/nginx/html
-
-# Copy the custom nginx configuration
+COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-# Expose port 80
 EXPOSE 80
-
-# Start Nginx
 CMD ["nginx", "-g", "daemon off;"]
 
