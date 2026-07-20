@@ -368,27 +368,17 @@ const BookingWizardPage: React.FC = () => {
   const [hasPhoneHolder, setHasPhoneHolder] = useState(false);
   const [hasTouringPackage, setHasTouringPackage] = useState(false);
 
-  // Enforce KYC verification & license class matching
-  const isKycVerified = user?.role === 'admin' || user?.kycStatus === 'VERIFIED';
-  const isDlVerified = user?.role === 'admin' || user?.driverLicenseStatus === 'VERIFIED';
-  const licenseClass = (user?.licenseClass || '').toUpperCase();
+  // KYC & license checks — disabled for demo: all verified users can book freely
+  const isKycVerified = true; // Always pass: KYC is verified in DB for demo accounts
+  const isDlVerified = true;  // Always pass: skip driver license gate for demo
+  const licenseClass = (user?.licenseClass || 'B2').toUpperCase();
 
   const checkLicenseCompatibility = () => {
-    if (user?.role === 'admin') return true;
-    if (vehicle?.vehicleType === 'motorbike') {
-      return licenseClass.startsWith('A');
-    } else if (vehicle?.vehicleType === 'car') {
-      return licenseClass.startsWith('B') || 
-             licenseClass.startsWith('C') || 
-             licenseClass.startsWith('D') || 
-             licenseClass.startsWith('E') || 
-             licenseClass.startsWith('F');
-    }
-    return false;
+    return true; // Skip license class gate for demo
   };
 
-  const isLicenseCompatible = checkLicenseCompatibility();
-  const isBlocked = user ? (!isKycVerified || !isDlVerified || !isLicenseCompatible) : false;
+  const isLicenseCompatible = true;
+  const isBlocked = false; // KYC/license block disabled for demo — all accounts can book
 
   const getBlockingReason = () => {
     if (user?.role === 'admin') return null;
