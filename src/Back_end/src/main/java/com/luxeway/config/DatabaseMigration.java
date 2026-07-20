@@ -22,43 +22,11 @@ public class DatabaseMigration implements CommandLineRunner {
     public void run(String... args) {
         log.info("Running custom database migrations...");
 
-        // Reset corrupt database diacritics (e.g., C?n Tho or Mu B?O Hi?M) to force fresh clean English seeding
-        try {
-            boolean needsReset = false;
-            try {
-                Integer countCity = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM vehicles WHERE city LIKE '%?%'", Integer.class);
-                if (countCity != null && countCity > 0) {
-                    needsReset = true;
-                }
-            } catch (Exception e) {}
-            
-            try {
-                Integer countFeature = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM vehicle_features WHERE name LIKE '%?%'", Integer.class);
-                if (countFeature != null && countFeature > 0) {
-                    needsReset = true;
-                }
-            } catch (Exception e) {}
-
-            if (needsReset) {
-                log.info("Detected encoding errors or question marks in database values. Performing database tables cleanup for fresh English seeding...");
-                String[] tables = {
-                    "booking_payments", "payments", "bookings", "vehicle_reviews", "reviews", 
-                    "vehicle_features", "vehicle_images", "vehicle_translations", "employee_vehicle_assignments",
-                    "employees", "invoices", "messages", "conversation_participants", "conversations",
-                    "vehicles", "owner_verifications", "owner_ratings", "owners", "users"
-                };
-                for (String table : tables) {
-                    try {
-                        jdbcTemplate.execute("DELETE FROM " + table);
-                    } catch (Exception ex) {
-                        log.debug("Could not delete from table " + table + ": " + ex.getMessage());
-                    }
-                }
-                log.info("Database cleanup completed successfully.");
-            }
-        } catch (Exception e) {
-            log.error("Failed database diacritics reset check: {}", e.getMessage());
-        }
+        // DISABLED: Auto-reset was wiping entire DB on every restart when Vietnamese chars had '?' encoding
+        // This was the root cause of vehicles/users disappearing from DB on each reboot.
+        // The import-data.sql now uses English-only values so this check is no longer needed.
+        // DO NOT re-enable without ensuring import-data.sql has no '?' chars in vehicle.city or vehicle_features.name
+        log.info("Database diacritics auto-reset is DISABLED. DB will not be wiped on restart.");
 
         // Programmatically run sample data seeding if database is empty
         try {
