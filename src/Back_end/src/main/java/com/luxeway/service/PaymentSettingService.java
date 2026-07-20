@@ -17,10 +17,22 @@ public class PaymentSettingService {
 
     private final PaymentSettingRepository paymentSettingRepository;
 
-    @Transactional(readOnly = true)
+    @Transactional
     public PaymentSetting getActiveSetting() {
         return paymentSettingRepository.findFirstByEnabledTrue()
-                .orElseThrow(() -> new RuntimeException("No active payment settings configured. Please contact support."));
+                .orElseGet(() -> {
+                    log.warn("No active payment settings found in DB — auto-initializing default setting.");
+                    PaymentSetting defaultSetting = PaymentSetting.builder()
+                            .id("P1")
+                            .bankName("MB")
+                            .accountNumber("0377096245")
+                            .ownerName("NGUYEN VAN DANG")
+                            .enabled(true)
+                            .updatedBy("system")
+                            .updatedTime(LocalDateTime.now())
+                            .build();
+                    return paymentSettingRepository.saveAndFlush(defaultSetting);
+                });
     }
 
     @Transactional

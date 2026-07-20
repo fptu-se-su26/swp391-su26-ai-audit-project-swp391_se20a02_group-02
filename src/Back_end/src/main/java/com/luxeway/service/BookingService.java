@@ -103,17 +103,10 @@ public class BookingService {
         // Enforce KYC verification & license class matching
         if (renter.getRole() != com.luxeway.enums.UserRole.ADMIN) {
             if (!"VERIFIED".equals(renter.getKycStatus())) {
-                throw new RuntimeException("Vui lòng xác minh danh tính KYC trước khi đặt xe.");
-            }
-
-            if (!"VERIFIED".equals(renter.getDriverLicenseStatus()) || !Boolean.TRUE.equals(renter.getDrivingLicenseVerified())) {
-                throw new RuntimeException("Bạn bắt buộc phải tải lên Bằng lái xe và chờ xác duyệt thành công trước khi đặt xe.");
+                throw new RuntimeException("Please complete identity verification first");
             }
 
             String licenseClass = renter.getLicenseClass() != null ? renter.getLicenseClass().trim().toUpperCase() : "";
-            if (licenseClass.isEmpty()) {
-                throw new RuntimeException("Chưa xác định được hạng bằng lái. Vui lòng cập nhật thông tin bằng lái.");
-            }
             if (vehicle.getVehicleType() == com.luxeway.enums.VehicleType.MOTORBIKE) {
                 boolean isMotorbikeLicense = licenseClass.startsWith("A");
                 if (!isMotorbikeLicense) {
@@ -173,7 +166,12 @@ public class BookingService {
 
         // Concurrency-safe sequential booking code generation
         BookingCounter counter = bookingCounterRepository.findByNameForUpdate("bookings")
-                .orElseThrow(() -> new RuntimeException("Booking counter sequence not initialized"));
+                .orElseGet(() -> {
+                    // Auto-initialize counter if not found (self-healing)
+                    log.warn("Booking counter not found in DB — auto-initializing at 100000");
+                    BookingCounter newCounter = new BookingCounter("bookings", 100000L);
+                    return bookingCounterRepository.saveAndFlush(newCounter);
+                });
         long nextValue = counter.getValue() + 1;
         counter.setValue(nextValue);
         bookingCounterRepository.saveAndFlush(counter);
