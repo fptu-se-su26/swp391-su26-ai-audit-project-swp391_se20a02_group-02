@@ -539,7 +539,7 @@ const App: React.FC = () => {
             <Route path="cars/:id" element={<VehicleDetailPage />} />
             <Route path="motorbikes/:id" element={<VehicleDetailPage />} />
             <Route path="booking/:vehicleId" element={
-              <ProtectedRoute><BookingCheckoutPage /></ProtectedRoute>
+              <ProtectedRoute><BookingWizardPage /></ProtectedRoute>
             } />
             <Route path="booking/:bookingId/contract" element={
               <ProtectedRoute><DigitalContractPage /></ProtectedRoute>
@@ -548,7 +548,7 @@ const App: React.FC = () => {
               <ProtectedRoute><BookingPaymentPage /></ProtectedRoute>
             } />
             <Route path="payment/:bookingId" element={
-              <ProtectedRoute><BookingWizardPage /></ProtectedRoute>
+              <ProtectedRoute><BookingCheckoutPage /></ProtectedRoute>
             } />
             <Route path="payment/vnpay/return" element={
               <ProtectedRoute><VNPayReturnPage /></ProtectedRoute>
