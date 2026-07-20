@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Copy, Clock, Check, ChevronLeft, Info, AlertTriangle, ShieldCheck, Download, ExternalLink, QrCode, CreditCard, Banknote, Smartphone } from 'lucide-react';
 import { bookingService, paymentService } from '@/services/bookingService';
+import { contractService } from '@/services/contractService';
 import type { Booking } from '@/types';
 import { useAuthStore, useUIStore } from '@/store';
 import { useToast } from '@/components/ui/Toast';
@@ -46,6 +47,14 @@ const BookingPaymentPage: React.FC = () => {
           const endTime = createdTime + 15 * 60 * 1000;
           const remainingSeconds = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
           setCountdown(remainingSeconds);
+
+          // Check for contract signature
+          const contract = await contractService.getContractByBooking(bookingId);
+          if (!contract || !contract.renterSignature) {
+            toast.warning(isVi ? 'Vui lòng ký hợp đồng trước khi thanh toán' : 'Please sign the contract before payment');
+            navigate(`/booking/${bookingId}/contract`);
+            return;
+          }
         } else {
           toast.error(isVi ? 'Không tìm thấy đặt xe' : 'Booking Not Found');
         }

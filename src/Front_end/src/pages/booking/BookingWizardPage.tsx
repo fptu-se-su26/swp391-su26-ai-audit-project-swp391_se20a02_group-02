@@ -8,12 +8,10 @@ import {
   AlertTriangle, Info, Sparkles, UserCircle, Heart, Briefcase,
   Check, CloudRain, Smartphone, HelpCircle, Users, Activity
 } from 'lucide-react';
-import { DigitalContractModal } from '@/components/booking/DigitalContractModal';
 import { vehicleService } from '@/services/vehicleService';
 import { bookingService, paymentService, paymentMethodService } from '@/services/bookingService';
 import type { Vehicle } from '@/types';
-import { useAuthStore, useBookingWizardStore } from '@/store';
-import { useToast } from '@/components/ui/Toast';
+import { useAuthStore, useUIStore } from '@/store';
 import { formatCurrency, formatDate, calculateDays } from '@/utils';
 import { fadeUp, staggerContainer, staggerItem, scaleIn } from '@/animations/variants';
 import { useT } from '@/i18n/translations';
@@ -338,8 +336,6 @@ const BookingWizardPage: React.FC = () => {
   const [walletBalance, setWalletBalance] = useState<number>(0);
   const [walletLoading, setWalletLoading] = useState<boolean>(true);
   
-  // Contract Modal State
-  const [showContractModal, setShowContractModal] = useState(false);
   const [pendingBookingId, setPendingBookingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
@@ -587,10 +583,9 @@ const BookingWizardPage: React.FC = () => {
           setPendingBookingId(booking.id);
         }
 
-        // 2. Show Digital Contract Modal if not signed yet
-        if (!showContractModal && currentBookingId) {
-          setShowContractModal(true);
-          setProcessing(false);
+        // 2. Navigate to Contract Page
+        if (currentBookingId) {
+          navigate(`/booking/${currentBookingId}/contract`);
           return;
         }
       } catch (err: any) {
@@ -601,58 +596,6 @@ const BookingWizardPage: React.FC = () => {
     } else {
       wizard.nextStep();
     }
-  };
-
-  const processPaymentFlow = async () => {
-    if (!pendingBookingId) return;
-    setProcessing(true);
-    try {
-        const returnUrl = `${window.location.origin}/payment/${paymentMethod === 'payos' ? 'payos' : 'momo'}/return`;
-        const paymentResult = await paymentService.processPayment(
-          pendingBookingId,
-          paymentMethod,
-          totalCost,
-          returnUrl
-        );
-
-        if (paymentResult.success) {
-          if (paymentResult.paymentUrl) {
-            // Redirect to MoMo payment gateway
-            window.location.href = paymentResult.paymentUrl;
-          } else {
-            // Save card details if enabled
-            if (saveCard && cardNumber && cardName && (paymentMethod === 'card' || paymentMethod === 'stripe')) {
-              const last4 = cardNumber.replace(/\s+/g, '').slice(-4);
-              paymentMethodService.addCard({
-                type: 'card',
-                provider: 'Stripe',
-                brand: cardName.toUpperCase() || 'Visa',
-                last4: last4,
-                expiryMonth: 12,
-                expiryYear: 30,
-                isDefault: savedCards.length === 0,
-                stripePaymentMethodId: 'pm_mock_' + Math.random().toString(36).substring(2, 10)
-              }).catch(err => console.error('Failed to save credit card:', err));
-            }
-            // Direct payment success (wallet/card)
-            setBookingId(pendingBookingId);
-            wizard.setStep(5);
-          }
-        } else {
-          toast.error(
-            isVi ? 'Thanh toán thất bại' : 'Payment failed',
-            paymentResult.errorMessage || (isVi ? 'Vui lòng thử phương thức thanh toán khác.' : 'Please try a different payment method.')
-          );
-        }
-      } catch (err: any) {
-        const msg =
-          err.response?.data?.message ||
-          err.message ||
-          (isVi ? 'Đã xảy ra lỗi. Vui lòng thử lại.' : 'Something went wrong. Please try again.');
-        toast.error(isVi ? 'Đặt xe thất bại' : 'Booking failed', msg);
-      } finally {
-        setProcessing(false);
-      }
   };
 
   const handleApplyCoupon = async () => {
@@ -1727,20 +1670,6 @@ const BookingWizardPage: React.FC = () => {
         </div>
       )}
 
-      {/* Digital Contract Modal */}
-      {pendingBookingId && user && vehicle && (
-        <DigitalContractModal
-          isOpen={showContractModal}
-          onClose={() => setShowContractModal(false)}
-          bookingId={pendingBookingId}
-          vehicleName={`${vehicle.brand} ${vehicle.model}`}
-          customerName={user.displayName || user.firstName + ' ' + user.lastName}
-          onSigned={(contract) => {
-            // Trigger payment immediately after signing
-            processPaymentFlow();
-          }}
-        />
-      )}
     </div>
   );
 };

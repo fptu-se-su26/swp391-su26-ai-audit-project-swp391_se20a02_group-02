@@ -32,6 +32,7 @@ import MotorbikeDetails from '@/pages/marketplace/MotorbikeDetails';
 import BookingWizardPage from '@/pages/booking/BookingWizardPage';
 import BookingCheckoutPage from '@/pages/booking/BookingCheckoutPage';
 import BookingPaymentPage from '@/pages/booking/BookingPaymentPage';
+import DigitalContractPage from '@/pages/booking/DigitalContractPage';
 import VNPayReturnPage from '@/pages/booking/VNPayReturnPage';
 import MoMoReturnPage from '@/pages/booking/MoMoReturnPage';
 import PayOSReturnPage from '@/pages/booking/PayOSReturnPage';
@@ -539,6 +540,9 @@ const App: React.FC = () => {
             <Route path="motorbikes/:id" element={<VehicleDetailPage />} />
             <Route path="booking/:vehicleId" element={
               <ProtectedRoute><BookingCheckoutPage /></ProtectedRoute>
+            } />
+            <Route path="booking/:bookingId/contract" element={
+              <ProtectedRoute><DigitalContractPage /></ProtectedRoute>
             } />
             <Route path="booking/:bookingId/payment" element={
               <ProtectedRoute><BookingPaymentPage /></ProtectedRoute>
