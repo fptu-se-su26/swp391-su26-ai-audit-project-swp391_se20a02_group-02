@@ -28,21 +28,30 @@ public class DatabaseMigration implements CommandLineRunner {
         // DO NOT re-enable without ensuring import-data.sql has no '?' chars in vehicle.city or vehicle_features.name
         log.info("Database diacritics auto-reset is DISABLED. DB will not be wiped on restart.");
 
-        // Programmatically run sample data seeding if database is empty
+        // Programmatically run sample data seeding if database is empty OR vehicles were wiped
         try {
             Integer count = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'users'", Integer.class);
             if (count != null && count > 0) {
                 Integer userCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM users WHERE email = 'admin@luxeway.vn'", Integer.class);
-                if (userCount == null || userCount == 0) {
-                    log.info("No sample data detected. Seeding database using import-data.sql...");
+                Integer vehicleCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM vehicles", Integer.class);
+                boolean needsSeeding = (userCount == null || userCount == 0) || (vehicleCount == null || vehicleCount < 10);
+                if (needsSeeding) {
+                    log.info("No sample data or vehicles missing (vehicleCount={}, userCount={}). Seeding database using import-data.sql...", vehicleCount, userCount);
+                    // Clear existing partial data to avoid conflicts before re-seeding
+                    try {
+                        String[] clearTables = {"booking_payments","payments","bookings","vehicle_features","vehicle_images","vehicle_translations","vehicles","users"};
+                        for (String t : clearTables) {
+                            try { jdbcTemplate.execute("DELETE FROM " + t); } catch (Exception ignored) {}
+                        }
+                    } catch (Exception ignored) {}
                     ResourceDatabasePopulator populator = new ResourceDatabasePopulator(
                         new ClassPathResource("import-data.sql")
                     );
                     populator.execute(Objects.requireNonNull(jdbcTemplate.getDataSource()));
                     log.info("Database successfully seeded with sample data.");
                 } else {
-                    log.info("Sample data already exists. Skipping import-data.sql seeding.");
+                    log.info("Sample data exists: {} users, {} vehicles. Skipping re-seed.", userCount, vehicleCount);
                 }
             } else {
                 log.warn("users table does not exist yet! Skipping import-data.sql seeding.");
