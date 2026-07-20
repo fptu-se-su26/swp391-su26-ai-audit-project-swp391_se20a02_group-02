@@ -83,6 +83,76 @@ public class DatabaseMigration implements CommandLineRunner {
             log.error("Failed to seed database using import-data.sql: {}", e.getMessage(), e);
         }
 
+        // CRITICAL: Fix password hashes and ensure demo accounts exist for login
+        // BCrypt hash for "password": $2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi
+        final String DEMO_HASH = "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi";
+        try {
+            // Fix any corrupted/duplicated password hashes
+            jdbcTemplate.update(
+                "UPDATE users SET password_hash = ? WHERE password_hash LIKE '%$2a$10$92IXUNpkjO0rOQ5byMi$2a$10$%'",
+                DEMO_HASH
+            );
+            // Ensure all known demo accounts have the correct hash
+            jdbcTemplate.update(
+                "UPDATE users SET password_hash = ? WHERE email IN ('admin@luxeway.vn', 'owner@luxeway.vn', 'customer@luxeway.vn', 'nguyen.van.a@gmail.com', 'pham.minh.d@gmail.com')",
+                DEMO_HASH
+            );
+            log.info("Demo account password hashes verified and fixed.");
+        } catch (Exception e) {
+            log.warn("Could not fix password hashes: {}", e.getMessage());
+        }
+
+        // Ensure nguyen.van.a@gmail.com demo customer exists
+        try {
+            Integer nvaCount = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM users WHERE email = 'nguyen.van.a@gmail.com'", Integer.class);
+            if (nvaCount == null || nvaCount == 0) {
+                jdbcTemplate.update(
+                    "INSERT INTO users (id, account_type, avatar, bio, created_at, display_name, driver_license_status, driving_license_verified, email, first_name, is_active, joined_at, kyc_status, kyc_verified, last_active, last_name, license_class, license_number, location, password_hash, phone, preferred_language, provider, rating, role, total_rentals, total_reviews, updated_at, verified, wallet_balance) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                    "customer-nguyen-van-a", "INDIVIDUAL",
+                    "https://ui-avatars.com/api/?name=Nguyen+Van+A&background=0D8ABC&color=fff&size=200",
+                    "Customer demo account",
+                    java.time.LocalDateTime.now(), "Nguyen Van A",
+                    "VERIFIED", true,
+                    "nguyen.van.a@gmail.com", "Nguyen", true,
+                    java.time.LocalDateTime.now(), "VERIFIED", true,
+                    java.time.LocalDateTime.now(), "Van A", "B2", "123456789", "Hanoi",
+                    DEMO_HASH, "0900000001", "vi", "LOCAL",
+                    java.math.BigDecimal.valueOf(5.0), "CUSTOMER", 0, 0,
+                    java.time.LocalDateTime.now(), true, java.math.BigDecimal.ZERO
+                );
+                log.info("Demo customer nguyen.van.a@gmail.com created successfully.");
+            }
+        } catch (Exception e) {
+            log.warn("Could not create demo customer account: {}", e.getMessage());
+        }
+
+        // Ensure pham.minh.d@gmail.com demo owner exists
+        try {
+            Integer pmdCount = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM users WHERE email = 'pham.minh.d@gmail.com'", Integer.class);
+            if (pmdCount == null || pmdCount == 0) {
+                jdbcTemplate.update(
+                    "INSERT INTO users (id, account_type, avatar, bio, created_at, display_name, driver_license_status, driving_license_verified, email, first_name, is_active, joined_at, kyc_status, kyc_verified, last_active, last_name, license_class, license_number, location, password_hash, phone, preferred_language, provider, rating, role, total_rentals, total_reviews, updated_at, verified, wallet_balance) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                    "owner-pham-minh-d", "INDIVIDUAL",
+                    "https://ui-avatars.com/api/?name=Pham+Minh+D&background=E53E3E&color=fff&size=200",
+                    "Owner demo account",
+                    java.time.LocalDateTime.now(), "Pham Minh D",
+                    "VERIFIED", true,
+                    "pham.minh.d@gmail.com", "Pham", true,
+                    java.time.LocalDateTime.now(), "VERIFIED", true,
+                    java.time.LocalDateTime.now(), "Minh D", "B2", "987654321", "HCM",
+                    DEMO_HASH, "0900000002", "vi", "LOCAL",
+                    java.math.BigDecimal.valueOf(5.0), "OWNER", 0, 0,
+                    java.time.LocalDateTime.now(), true, java.math.BigDecimal.ZERO
+                );
+                log.info("Demo owner pham.minh.d@gmail.com created successfully.");
+            }
+        } catch (Exception e) {
+            log.warn("Could not create demo owner account: {}", e.getMessage());
+        }
+
+
         // Fix CHK_user_docs_type check constraint to include 'SELFIE'
         try {
             jdbcTemplate.execute("IF EXISTS (SELECT 1 FROM sys.objects WHERE name = 'CHK_user_docs_type' AND type = 'C') " +

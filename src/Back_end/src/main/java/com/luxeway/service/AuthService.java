@@ -62,18 +62,24 @@ public class AuthService {
 
             user.setLastActive(java.time.LocalDateTime.now());
             
-            // Auto-verify KYC ONLY for test accounts or admins
-            if ("customer@luxeway.vn".equalsIgnoreCase(email) || 
-                user.getRole() == com.luxeway.enums.UserRole.ADMIN) {
+            // Auto-verify KYC for all demo/test accounts and admins
+            boolean isDemoAccount = "customer@luxeway.vn".equalsIgnoreCase(email) 
+                || "nguyen.van.a@gmail.com".equalsIgnoreCase(email)
+                || "pham.minh.d@gmail.com".equalsIgnoreCase(email)
+                || "owner@luxeway.vn".equalsIgnoreCase(email)
+                || "admin@luxeway.vn".equalsIgnoreCase(email)
+                || user.getRole() == com.luxeway.enums.UserRole.ADMIN
+                || user.getRole() == com.luxeway.enums.UserRole.OWNER;
+            if (isDemoAccount) {
                 user.setKycVerified(true);
                 user.setKycStatus("VERIFIED");
                 user.setDrivingLicenseVerified(true);
                 user.setDriverLicenseStatus("VERIFIED");
                 if (user.getLicenseClass() == null || user.getLicenseClass().isBlank()) {
-                    user.setLicenseClass("B1");
+                    user.setLicenseClass("B2");
                 }
                 if (user.getLicenseNumber() == null || user.getLicenseNumber().isBlank()) {
-                    user.setLicenseNumber("222222222222");
+                    user.setLicenseNumber("123456789");
                 }
             }
             userRepository.save(user);
