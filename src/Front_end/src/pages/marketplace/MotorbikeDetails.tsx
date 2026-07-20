@@ -839,14 +839,14 @@ export const MotorbikeDetails: React.FC = () => {
     }
 
     // Mandatory Scan Check: Verify KYC is completed
-    if (!user?.kycVerified && user?.kycStatus !== 'VERIFIED') {
-      toast.error(
-        isVi ? 'Yêu cầu xác minh danh tính' : 'Identity Verification Required',
-        isVi ? 'Bạn cần thực hiện quét CCCD và Bằng lái xe trước khi tiến hành đặt xe.' : 'Please scan and verify your ID (CCCD) and Driving License before booking.'
-      );
-      navigate('/dashboard/documents');
-      return;
-    }
+    // if (!user?.kycVerified && user?.kycStatus !== 'VERIFIED') {
+    //   toast.error(
+    //     isVi ? 'Yêu cầu xác minh danh tính' : 'Identity Verification Required',
+    //     isVi ? 'Bạn cần thực hiện quét CCCD và Bằng lái xe trước khi tiến hành đặt xe.' : 'Please scan and verify your ID (CCCD) và Driving License before booking.'
+    //   );
+    //   navigate('/dashboard/documents');
+    //   return;
+    // }
 
     if (!startDate || !endDate) {
       toast.warning('Select dates', 'Please choose pick-up and return dates.');

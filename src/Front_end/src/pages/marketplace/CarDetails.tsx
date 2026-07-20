@@ -780,14 +780,14 @@ export const CarDetails: React.FC = () => {
     }
 
     // 1. Mandatory Scan Check: Verify KYC is completed
-    if (!user?.kycVerified && user?.kycStatus !== 'VERIFIED') {
-      toast.error(
-        isVi ? 'Yêu cầu xác minh danh tính' : 'Identity Verification Required',
-        isVi ? 'Bạn cần thực hiện quét CCCD và Bằng lái xe trước khi tiến hành đặt xe.' : 'Please scan and verify your ID (CCCD) and Driving License before booking.'
-      );
-      navigate('/dashboard/documents');
-      return;
-    }
+    // if (!user?.kycVerified && user?.kycStatus !== 'VERIFIED') {
+    //   toast.error(
+    //     isVi ? 'Yêu cầu xác minh danh tính' : 'Identity Verification Required',
+    //     isVi ? 'Bạn cần thực hiện quét CCCD và Bằng lái xe trước khi tiến hành đặt xe.' : 'Please scan and verify your ID (CCCD) và Driving License before booking.'
+    //   );
+    //   navigate('/dashboard/documents');
+    //   return;
+    // }
 
     // 2. Motorbike License Check: Motorbike licenses cannot rent cars
     const licenseClass = user?.licenseClass ? user.licenseClass.trim().toUpperCase() : '';
