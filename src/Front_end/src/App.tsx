@@ -41,6 +41,7 @@ import HelpPage from '@/pages/help/HelpPage';
 import { OwnerSuccessHub } from '@/pages/help/OwnerSuccessHub';
 import { PlatformStatus } from '@/pages/help/PlatformStatus';
 import { SupportAnalyticsDash } from '@/pages/admin/SupportAnalyticsDash';
+import { TestBackendPage } from '@/pages/help/TestBackendPage';
 
 // Lazy loaded pages
 
@@ -574,6 +575,7 @@ const App: React.FC = () => {
             <Route path="help/owner-success" element={
               <ProtectedRoute><OwnerSuccessHub /></ProtectedRoute>
             } />
+            <Route path="test-backend" element={<TestBackendPage />} />
             <Route path="admin/support-analytics" element={
               <ProtectedRoute requiredRole="admin"><SupportAnalyticsDash /></ProtectedRoute>
             } />
