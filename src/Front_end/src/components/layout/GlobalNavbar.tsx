@@ -270,7 +270,7 @@ export const GlobalNavbar: React.FC = () => {
     { href: '/marketplace', label: 'Marketplace' },
     { href: '/map', label: 'Map' },
     { href: '/dashboard/bookings', label: 'Trips' },
-    { href: '/owner/register', label: 'Become Owner' },
+    { href: '/become-owner', label: 'Become Owner' },
   ];
 
   const currentLang = LANGS.find(lang => lang.code === language) || LANGS[0];
@@ -297,10 +297,10 @@ export const GlobalNavbar: React.FC = () => {
     >
       {/* Full width container with large horizontal padding matching high-end layout standards */}
       <div className="w-full px-4 sm:px-8 lg:px-12 flex items-center justify-between">
-        
+
         {/* Left Side: Logo & Brand (ALWAYS visible on all pages) */}
-        <Link 
-          to="/" 
+        <Link
+          to="/"
           className="flex items-center gap-3 group transition-all duration-200"
         >
           <img
@@ -369,7 +369,7 @@ export const GlobalNavbar: React.FC = () => {
               <span className="uppercase">{currentLang.code}</span>
               <ChevronDown className="w-3 h-3 opacity-60" />
             </button>
-            
+
             <AnimatePresence>
               {langDropdownOpen && (
                 <motion.div
@@ -422,7 +422,7 @@ export const GlobalNavbar: React.FC = () => {
               <span className="uppercase">{currentCurr.code}</span>
               <ChevronDown className="w-3 h-3 opacity-60" />
             </button>
-            
+
             <AnimatePresence>
               {currDropdownOpen && (
                 <motion.div

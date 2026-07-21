@@ -33,14 +33,19 @@ export const MoMoReturnPage: React.FC = () => {
 
         if (isSuccess) {
           setStatus('success');
-          const isTopUpTx = !paymentData.bookingId || paymentData.transactionId?.startsWith('TOPUP');
+          const bId = paymentData.bookingId || paymentData.booking?.id || '';
+          const isTopUpTx = !bId || paymentData.transactionId?.startsWith('TOPUP');
           setIsTopUp(isTopUpTx);
-          setBookingId(paymentData.bookingId || '');
+          setBookingId(bId);
           setTransactionId(paymentData.transactionId || searchParams.get('orderId') || '');
-          setAmount(paymentData.amount || searchParams.get('amount') || '');
+          setAmount(paymentData.amount ? String(paymentData.amount) : searchParams.get('amount') || '');
           toast.success(isTopUpTx
             ? (isVi ? 'Nạp tiền thành công!' : 'Wallet top-up successful!')
             : (isVi ? 'Thanh toán thành công!' : 'Payment successful!'));
+          // BUG-5 FIX: Auto-redirect 3s after success
+          setTimeout(() => {
+            navigate(isTopUpTx ? '/dashboard/wallet' : (bId ? `/dashboard/bookings/${bId}` : '/dashboard/bookings'));
+          }, 3000);
         } else {
           setStatus('failed');
           toast.error(
@@ -59,6 +64,7 @@ export const MoMoReturnPage: React.FC = () => {
           setTransactionId(orderId);
           setAmount(searchParams.get('amount') || '');
           toast.success(isVi ? 'Thanh toán thành công!' : 'Payment successful!');
+          setTimeout(() => navigate(isTopUpTx ? '/dashboard/wallet' : '/dashboard/bookings'), 3000);
         } else {
           setStatus('failed');
           toast.error(
@@ -200,7 +206,7 @@ export const MoMoReturnPage: React.FC = () => {
                   className="flex flex-col gap-3"
                 >
                   <button
-                    onClick={() => navigate(isTopUp ? '/dashboard/wallet' : '/dashboard/bookings')}
+                    onClick={() => navigate(isTopUp ? '/dashboard/wallet' : (bookingId ? `/dashboard/bookings/${bookingId}` : '/dashboard/bookings'))}
                     className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-white font-bold text-sm shadow-lg transition-all hover:opacity-90"
                     style={{ background: 'linear-gradient(135deg, #E91E8C, #C2185B)' }}
                   >

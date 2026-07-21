@@ -30,21 +30,28 @@ export const PayOSReturnPage: React.FC = () => {
           (paymentData?.status === 'succeeded' || paymentData?.status === 'SUCCEEDED');
 
         if (isSuccess) {
-          const topUpTx = !paymentData.bookingId;
+          const bId = paymentData.bookingId || paymentData.booking?.id || '';
+          const topUpTx = !bId;
           setStatus('success');
           setIsTopUp(topUpTx);
-          setBookingId(paymentData.bookingId || '');
+          setBookingId(bId);
           setTransactionId(paymentData.transactionId || searchParams.get('orderCode') || '');
-          setAmount(paymentData.amount || searchParams.get('amount') || '');
+          setAmount(paymentData.amount ? String(paymentData.amount) : searchParams.get('amount') || '');
           toast.success(topUpTx
             ? (isVi ? 'Nạp tiền thành công!' : 'Wallet top-up successful!')
             : (isVi ? 'Thanh toán thành công!' : 'Payment successful!'));
 
-          // AUTO REDIRECT for professional UX
+          // AUTO REDIRECT: 3s countdown then navigate
           setTimeout(() => {
-            navigate(topUpTx ? '/dashboard/wallet' : `/dashboard/bookings/${paymentData.bookingId}`);
+            if (topUpTx) {
+              navigate('/dashboard/wallet');
+            } else if (bId) {
+              navigate(`/dashboard/bookings/${bId}`);
+            } else {
+              navigate('/dashboard/bookings');
+            }
           }, 3000);
-          
+
         } else {
           setStatus('failed');
           toast.error(
@@ -53,11 +60,24 @@ export const PayOSReturnPage: React.FC = () => {
           );
         }
       } catch (err: any) {
-        setStatus('failed');
-        toast.error(
-          isVi ? 'Không thể xác minh giao dịch' : 'Cannot verify transaction',
-          isVi ? 'Vui lòng liên hệ hỗ trợ nếu tiền đã bị trừ.' : 'Please contact support if money was deducted.'
-        );
+        // Fallback: check PayOS status param from URL
+        const payosStatus = searchParams.get('status');
+        const orderCode = searchParams.get('orderCode') || '';
+        if (payosStatus === 'PAID') {
+          const topUpTx = orderCode.startsWith('TOPUP');
+          setStatus('success');
+          setIsTopUp(topUpTx);
+          setTransactionId(orderCode);
+          setAmount(searchParams.get('amount') || '');
+          toast.success(isVi ? 'Thanh toán thành công!' : 'Payment successful!');
+          setTimeout(() => navigate(topUpTx ? '/dashboard/wallet' : '/dashboard/bookings'), 3000);
+        } else {
+          setStatus('failed');
+          toast.error(
+            isVi ? 'Không thể xác minh giao dịch' : 'Cannot verify transaction',
+            isVi ? 'Vui lòng liên hệ hỗ trợ nếu tiền đã bị trừ.' : 'Please contact support if money was deducted.'
+          );
+        }
       }
     };
 
@@ -144,12 +164,12 @@ export const PayOSReturnPage: React.FC = () => {
                   </div>
                 )}
 
-                <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-3">
                   <button
-                    onClick={() => navigate(isTopUp ? '/dashboard/wallet' : '/dashboard/bookings')}
+                    onClick={() => navigate(isTopUp ? '/dashboard/wallet' : (bookingId ? `/dashboard/bookings/${bookingId}` : '/dashboard/bookings'))}
                     className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-sky-600 text-white font-bold text-sm shadow-lg hover:bg-sky-700 transition-colors"
                   >
-                    {isTopUp ? <><Wallet className="w-4 h-4" /> {isVi ? 'Đến ví ngay' : 'Go to Wallet Now'}</> : <>{isVi ? 'Xem xe ngay lập tức' : 'View Booking Now'} <ArrowRight className="w-4 h-4" /></>}
+                    {isTopUp ? <><Wallet className="w-4 h-4" /> {isVi ? 'Đến ví ngay' : 'Go to Wallet Now'}</> : <>{isVi ? 'Xem đơn đặt xe' : 'View Booking'} <ArrowRight className="w-4 h-4" /></>}
                   </button>
                   <button
                     onClick={() => navigate('/')}

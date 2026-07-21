@@ -89,21 +89,23 @@ public class AuthService {
 
             log.info("User logged in: {}", user.getEmail());
             
-            // Send login alert to the user
-            try {
-                emailService.sendLoginAlert(user.getEmail(), user.getFirstName());
-            } catch (Exception ex) {
-                log.warn("Failed to send login alert to user: {}", ex.getMessage());
-            }
-            
-            // Send login notification to the admin
-            try {
-                String adminMsg = String.format("A successful login was detected.\nUser Email: %s\nTime: %s", 
-                    user.getEmail(), java.time.LocalDateTime.now().toString());
-                emailService.sendAdminNotification("User Login Notification", adminMsg);
-            } catch (Exception ex) {
-                log.warn("Failed to send admin login notification: {}", ex.getMessage());
-            }
+            // Send login alert to the user asynchronously to prevent login delays
+            java.util.concurrent.CompletableFuture.runAsync(() -> {
+                try {
+                    emailService.sendLoginAlert(user.getEmail(), user.getFirstName());
+                } catch (Exception ex) {
+                    log.warn("Failed to send login alert to user: {}", ex.getMessage());
+                }
+                
+                // Send login notification to the admin
+                try {
+                    String adminMsg = String.format("A successful login was detected.\nUser Email: %s\nTime: %s", 
+                        user.getEmail(), java.time.LocalDateTime.now().toString());
+                    emailService.sendAdminNotification("User Login Notification", adminMsg);
+                } catch (Exception ex) {
+                    log.warn("Failed to send admin login notification: {}", ex.getMessage());
+                }
+            });
 
             return buildAuthResponse(user, accessToken, refreshToken);
 

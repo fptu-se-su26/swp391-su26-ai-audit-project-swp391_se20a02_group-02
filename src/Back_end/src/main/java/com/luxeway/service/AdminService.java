@@ -42,6 +42,8 @@ public class AdminService {
     private final AnalyticsRepository analyticsRepository;
     private final EmailService emailService;
     private final NotificationService notificationService;
+    private final OwnerApplicationRepository ownerApplicationRepository;
+    private final OwnerProfileRepository ownerProfileRepository;
 
     // ====== Dashboard Statistics ======
 
@@ -72,6 +74,124 @@ public class AdminService {
         stats.setTotalRevenue(revenue != null ? revenue : BigDecimal.ZERO);
 
         return stats;
+    }
+
+    // ====== Owner Applications ======
+    
+    @Transactional(readOnly = true)
+    public Page<com.luxeway.dto.ownerapplication.OwnerApplicationDTOs.OwnerApplicationResponse> listOwnerApplications(String status, int page, int size) {
+        com.luxeway.enums.OwnerApplicationStatus appStatus = null;
+        if (status != null && !status.isEmpty()) {
+            appStatus = com.luxeway.enums.OwnerApplicationStatus.valueOf(status);
+        }
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        return ownerApplicationRepository.findAllWithFilters(appStatus, pageable)
+                .map(this::mapApplicationToResponse);
+    }
+    
+    @Transactional
+    public com.luxeway.dto.ownerapplication.OwnerApplicationDTOs.OwnerApplicationResponse approveApplication(String id, User admin) {
+        com.luxeway.entity.OwnerApplication app = ownerApplicationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Application not found"));
+                
+        if (app.getStatus() != com.luxeway.enums.OwnerApplicationStatus.SUBMITTED && app.getStatus() != com.luxeway.enums.OwnerApplicationStatus.UNDER_REVIEW) {
+            throw new IllegalStateException("Application is not in a valid state for approval");
+        }
+        
+        app.setStatus(com.luxeway.enums.OwnerApplicationStatus.APPROVED);
+        app.setReviewedAt(java.time.LocalDateTime.now());
+        app.setReviewedBy(admin);
+        
+        User user = app.getUser();
+        if (user.getRole() == UserRole.CUSTOMER) {
+            user.setRole(UserRole.OWNER);
+            userRepository.save(user);
+        }
+        
+        // Ensure OwnerProfile exists
+        if (user.getOwnerProfile() == null) {
+            com.luxeway.entity.OwnerProfile profile = com.luxeway.entity.OwnerProfile.builder()
+                    .user(user)
+                    .bio(app.getBio())
+                    .build();
+            ownerProfileRepository.save(profile);
+            user.setOwnerProfile(profile);
+            userRepository.save(user);
+        }
+        
+        // Notify
+        notificationService.createNotification(
+                user.getId(),
+                "SYSTEM",
+                "Application Approved",
+                "Congratulations! Your LuxeWay Owner Application has been approved.",
+                "/owner-application"
+        );
+        
+        return mapApplicationToResponse(ownerApplicationRepository.save(app));
+    }
+    
+    @Transactional
+    public com.luxeway.dto.ownerapplication.OwnerApplicationDTOs.OwnerApplicationResponse rejectApplication(String id, String reason, User admin) {
+        com.luxeway.entity.OwnerApplication app = ownerApplicationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Application not found"));
+                
+        app.setStatus(com.luxeway.enums.OwnerApplicationStatus.REJECTED);
+        app.setRejectionReason(reason);
+        app.setReviewedAt(java.time.LocalDateTime.now());
+        app.setReviewedBy(admin);
+        
+        // Notify
+        notificationService.createNotification(
+                app.getUser().getId(),
+                "SYSTEM",
+                "Application Requires Changes",
+                "Your Owner Application was reviewed and needs changes: " + reason,
+                "/owner-application"
+        );
+        
+        return mapApplicationToResponse(ownerApplicationRepository.save(app));
+    }
+    
+    private com.luxeway.dto.ownerapplication.OwnerApplicationDTOs.OwnerApplicationResponse mapApplicationToResponse(com.luxeway.entity.OwnerApplication app) {
+        com.luxeway.dto.ownerapplication.OwnerApplicationDTOs.OwnerApplicationResponse res = com.luxeway.dto.ownerapplication.OwnerApplicationDTOs.OwnerApplicationResponse.builder()
+                .id(app.getId())
+                .userId(app.getUser().getId())
+                .status(app.getStatus())
+                .currentStep(app.getCurrentStep())
+                .rejectionReason(app.getRejectionReason())
+                .fullName(app.getFullName())
+                .dob(app.getDob())
+                .phone(app.getPhone())
+                .address(app.getAddress())
+                .city(app.getCity())
+                .displayName(app.getDisplayName())
+                .bio(app.getBio())
+                .serviceArea(app.getServiceArea())
+                .bankName(app.getBankName())
+                .accountHolderName(app.getAccountHolderName())
+                .maskedAccountNumber(app.getMaskedAccountNumber())
+                .termsAccepted(app.getTermsAccepted())
+                .termsVersion(app.getTermsVersion())
+                .submittedAt(app.getSubmittedAt())
+                .reviewedAt(app.getReviewedAt())
+                .createdAt(app.getCreatedAt())
+                .updatedAt(app.getUpdatedAt())
+                .build();
+        
+        if (app.getDocuments() != null) {
+            res.setDocuments(app.getDocuments().stream().map(doc -> 
+                com.luxeway.dto.ownerapplication.OwnerApplicationDTOs.OwnerApplicationDocumentResponse.builder()
+                    .id(doc.getId())
+                    .documentType(doc.getDocumentType().name())
+                    .fileReference(doc.getFileReference())
+                    .verificationStatus(doc.getVerificationStatus())
+                    .rejectionReason(doc.getRejectionReason())
+                    .createdAt(doc.getCreatedAt())
+                    .build()
+            ).collect(java.util.stream.Collectors.toList()));
+        }
+        return res;
     }
 
     // ====== User Management ======

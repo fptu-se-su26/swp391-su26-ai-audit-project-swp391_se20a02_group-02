@@ -26,9 +26,21 @@ const initTheme = () => {
 
 const initLanguage = () => {
   try {
-    const lang = localStorage.getItem('language');
+    // Primary: Zustand persist store (most reliable)
+    const stored = localStorage.getItem('luxeway_ui_prefs');
+    let lang: string | null = null;
+    if (stored) {
+      const prefs = JSON.parse(stored);
+      lang = prefs.state?.language || null;
+    }
+    // Fallback: direct localStorage key
+    if (!lang) {
+      lang = localStorage.getItem('language');
+    }
     if (lang && ['en', 'vi', 'ja', 'ko', 'zh', 'fr', 'de', 'es'].includes(lang)) {
       i18n.changeLanguage(lang);
+      // Also keep direct key in sync for API headers
+      localStorage.setItem('language', lang);
     }
   } catch (error) {
     console.warn('[LuxeWay] Failed to init language:', error);

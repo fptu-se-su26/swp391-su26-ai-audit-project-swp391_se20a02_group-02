@@ -287,11 +287,11 @@ export const VehicleDetailPage: React.FC = () => {
                 <div className="flex items-center gap-1">
                   <Star className="w-4 h-4 text-[#D4AF37] fill-[#D4AF37]" />
                   <span className="font-black text-slate-850 dark:text-white text-sm">{vehicle.rating?.toFixed(1) || '5.0'}</span>
-                  <span className="font-medium text-slate-455">({vehicle.totalReviews || 0} đánh giá)</span>
+                  <span className="font-medium text-slate-455">({vehicle.totalReviews || 0} reviews)</span>
                 </div>
                 <div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700" />
                 <div>
-                  <span className="font-black text-slate-850 dark:text-white text-sm">{vehicle.totalBookings || 12}</span> {isVi ? 'chuyến đi' : 'trips'}
+                  <span className="font-black text-slate-850 dark:text-white text-sm">{vehicle.totalBookings || 12}</span> {isVi ? 'trips đi' : 'trips'}
                 </div>
                 <div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700" />
                 <div className="flex items-center gap-1 font-medium">
@@ -303,16 +303,16 @@ export const VehicleDetailPage: React.FC = () => {
               {/* Status Badges */}
               <div className="flex flex-wrap gap-2 pt-2 select-none">
                 <span className="text-[10px] font-black bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-3 py-1.5 rounded-xl border border-emerald-500/20">
-                  Miễn thế chấp
+                  No Deposit Required
                 </span>
                 {vehicle.deliveryAvailable && (
                   <span className="text-[10px] font-black bg-blue-500/10 text-blue-600 dark:text-blue-400 px-3 py-1.5 rounded-xl border border-blue-500/20">
-                    Giao xe tận nơi
+                    Delivery Available
                   </span>
                 )}
                 {vehicle.instantBook && (
                   <span className="text-[10px] font-black bg-amber-500/10 text-amber-600 dark:text-amber-400 px-3 py-1.5 rounded-xl border border-amber-500/20">
-                    Đặt xe nhanh
+                    Instant Book
                   </span>
                 )}
               </div>
@@ -321,45 +321,45 @@ export const VehicleDetailPage: React.FC = () => {
             {/* Structured Specifications Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div className="bg-white dark:bg-[#131F35] border border-slate-200/50 dark:border-white/5 p-4 rounded-2xl shadow-sm text-center">
-                <p className="text-[9px] uppercase font-black tracking-wider text-slate-400 mb-1">Hộp số</p>
-                <p className="font-extrabold text-slate-800 dark:text-white capitalize text-sm">{vehicle.specs?.transmission || 'Số tự động'}</p>
+                <p className="text-[9px] uppercase font-black tracking-wider text-slate-400 mb-1">Transmission</p>
+                <p className="font-extrabold text-slate-800 dark:text-white capitalize text-sm">{vehicle.specs?.transmission || 'Automatic'}</p>
               </div>
               <div className="bg-white dark:bg-[#131F35] border border-slate-200/50 dark:border-white/5 p-4 rounded-2xl shadow-sm text-center">
-                <p className="text-[9px] uppercase font-black tracking-wider text-slate-400 mb-1">Số chỗ</p>
-                <p className="font-extrabold text-slate-800 dark:text-white text-sm">{vehicle.seatNumber || vehicle.specs?.seats || 5} chỗ</p>
+                <p className="text-[9px] uppercase font-black tracking-wider text-slate-400 mb-1">Seats</p>
+                <p className="font-extrabold text-slate-800 dark:text-white text-sm">{vehicle.seatNumber || vehicle.specs?.seats || 5} seats</p>
               </div>
               <div className="bg-white dark:bg-[#131F35] border border-slate-200/50 dark:border-white/5 p-4 rounded-2xl shadow-sm text-center">
-                <p className="text-[9px] uppercase font-black tracking-wider text-slate-400 mb-1">Nhiên liệu</p>
-                <p className="font-extrabold text-slate-800 dark:text-white capitalize text-sm">{vehicle.specs?.fuelType || 'Xăng'}</p>
+                <p className="text-[9px] uppercase font-black tracking-wider text-slate-400 mb-1">Fuel Type</p>
+                <p className="font-extrabold text-slate-800 dark:text-white capitalize text-sm">{vehicle.specs?.fuelType || 'Gasoline'}</p>
               </div>
               <div className="bg-white dark:bg-[#131F35] border border-slate-200/50 dark:border-white/5 p-4 rounded-2xl shadow-sm text-center">
-                <p className="text-[9px] uppercase font-black tracking-wider text-slate-400 mb-1">Tiêu hao</p>
+                <p className="text-[9px] uppercase font-black tracking-wider text-slate-400 mb-1">Fuel Economy</p>
                 <p className="font-extrabold text-slate-800 dark:text-white text-sm">{vehicle.vehicleType === 'motorbike' ? '2.5L/100km' : '7.0L/100km'}</p>
               </div>
             </div>
 
             {/* Description Collapsible block */}
             <div className="bg-white dark:bg-[#131F35] border border-slate-200/50 dark:border-white/5 p-6 sm:p-8 rounded-3xl shadow-sm">
-              <h3 className="text-base font-black text-slate-850 dark:text-white uppercase tracking-wider mb-4 border-l-4 border-[#D4AF37] pl-3">Mô tả chi tiết</h3>
+              <h3 className="text-base font-black text-slate-850 dark:text-white uppercase tracking-wider mb-4 border-l-4 border-[#D4AF37] pl-3">Description</h3>
               <p className={cn(
                 "text-slate-650 dark:text-slate-350 text-xs leading-relaxed whitespace-pre-line",
                 !descExpanded && "line-clamp-4"
               )}>
-                {vehicle.description || 'Chủ xe chưa cập nhật mô tả chi tiết cho phương tiện này. Tuy nhiên bạn có thể liên hệ trực tiếp để giải đáp các thắc mắc về tình trạng vận hành.'}
+                {vehicle.description || 'The owner has not provided a detailed description for this vehicle. However, you can contact them directly for any inquiries regarding its operating condition.'}
               </p>
               
               <button 
                 onClick={() => setDescExpanded(!descExpanded)}
                 className="mt-3 text-xs font-black text-[#D4AF37] hover:underline"
               >
-                {descExpanded ? 'Rút gọn ▲' : 'Xem thêm ▼'}
+                {descExpanded ? 'Show less ▲' : 'Read more ▼'}
               </button>
             </div>
 
             {/* Amenities Grid */}
             {vehicle.features && vehicle.features.length > 0 && (
               <div className="bg-white dark:bg-[#131F35] border border-slate-200/50 dark:border-white/5 p-6 sm:p-8 rounded-3xl shadow-sm">
-                <h3 className="text-base font-black text-slate-850 dark:text-white uppercase tracking-wider mb-6 border-l-4 border-[#D4AF37] pl-3">Tính năng tiện ích</h3>
+                <h3 className="text-base font-black text-slate-850 dark:text-white uppercase tracking-wider mb-6 border-l-4 border-[#D4AF37] pl-3">Features & Amenities</h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                   {vehicle.features.map((feature, idx) => {
                     const cleanKey = feature.toLowerCase().trim();
@@ -383,7 +383,7 @@ export const VehicleDetailPage: React.FC = () => {
 
             {/* Required Rental Documents with tab selectors */}
             <div className="bg-white dark:bg-[#131F35] border border-slate-200/50 dark:border-white/5 p-6 sm:p-8 rounded-3xl shadow-sm">
-              <h3 className="text-base font-black text-slate-850 dark:text-white uppercase tracking-wider mb-6 border-l-4 border-[#D4AF37] pl-3">Giấy tờ thuê xe bắt buộc</h3>
+              <h3 className="text-base font-black text-slate-850 dark:text-white uppercase tracking-wider mb-6 border-l-4 border-[#D4AF37] pl-3">Required Rental Documents</h3>
               
               {/* Tab options selector */}
               <div className="flex border-b border-slate-200 dark:border-slate-800 mb-5">
@@ -394,7 +394,7 @@ export const VehicleDetailPage: React.FC = () => {
                     selectedDocTab === 'gplx' ? "border-[#D4AF37] text-[#D4AF37]" : "border-transparent text-slate-400 hover:text-slate-300"
                   )}
                 >
-                  GPLX & Căn cước định danh
+                  Driver License & ID
                 </button>
                 <button
                   onClick={() => setSelectedDocTab('passport')}
@@ -403,7 +403,7 @@ export const VehicleDetailPage: React.FC = () => {
                     selectedDocTab === 'passport' ? "border-[#D4AF37] text-[#D4AF37]" : "border-transparent text-slate-400 hover:text-slate-300"
                   )}
                 >
-                  Hộ chiếu (Passport)
+                  Passport
                 </button>
               </div>
 
@@ -412,12 +412,12 @@ export const VehicleDetailPage: React.FC = () => {
                   <div className="flex gap-3 text-xs bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-2xl text-emerald-600 dark:text-emerald-400">
                     <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
                     <div>
-                      <p className="font-extrabold">Yêu cầu GPLX hạng B1 / B2 trở lên (đối với xe ô tô)</p>
-                      <p className="mt-1 font-medium text-[11px] opacity-90">Bản gốc thẻ PET hoặc thông tin tài khoản VNeID định danh mức độ 2 chứa giấy phép lái xe hợp lệ.</p>
+                      <p className="font-extrabold">Requires Driver License B1 / B2 or above (for cars)</p>
+                      <p className="mt-1 font-medium text-[11px] opacity-90">Original PET card or VNeID level 2 account containing valid driver license information.</p>
                     </div>
                   </div>
                   <p className="text-xs font-medium text-slate-500 dark:text-slate-400 pl-1 leading-relaxed">
-                    Khách thuê cần mang theo bản gốc giấy phép lái xe để chủ xe đối chiếu khi ký hợp đồng giao nhận xe.
+                    Renters must bring their original driver license for the owner to verify when signing the vehicle delivery contract.
                   </p>
                 </div>
               ) : (
@@ -425,8 +425,8 @@ export const VehicleDetailPage: React.FC = () => {
                   <div className="flex gap-3 text-xs bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl text-amber-600 dark:text-amber-400">
                     <AlertCircle className="w-5 h-5 flex-shrink-0" />
                     <div>
-                      <p className="font-extrabold">Áp dụng cho người nước ngoài hoặc khách du lịch</p>
-                      <p className="mt-1 font-medium text-[11px] opacity-90">Hộ chiếu còn hạn trên 6 tháng kèm tài sản thế chấp trị giá 15 triệu VNĐ hoặc đặt cọc tiền mặt tương đương.</p>
+                      <p className="font-extrabold">Applicable for foreigners or tourists</p>
+                      <p className="mt-1 font-medium text-[11px] opacity-90">Passport valid for over 6 months along with collateral worth 15 million VND or equivalent cash deposit.</p>
                     </div>
                   </div>
                 </div>
@@ -435,44 +435,44 @@ export const VehicleDetailPage: React.FC = () => {
 
             {/* Collateral Details */}
             <div className="bg-white dark:bg-[#131F35] border border-slate-200/50 dark:border-white/5 p-6 sm:p-8 rounded-3xl shadow-sm">
-              <h3 className="text-base font-black text-slate-850 dark:text-white uppercase tracking-wider mb-4 border-l-4 border-[#D4AF37] pl-3">Tài sản thế chấp</h3>
+              <h3 className="text-base font-black text-slate-850 dark:text-white uppercase tracking-wider mb-4 border-l-4 border-[#D4AF37] pl-3">Collateral</h3>
               <div className="p-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl flex gap-3.5 items-center">
                 <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 text-lg">💰</div>
                 <div>
-                  <h4 className="font-extrabold text-xs text-slate-850 dark:text-white">Không cần đặt cọc thế chấp tài sản</h4>
-                  <p className="text-[11px] font-medium text-slate-455 mt-0.5">LuxeWay bảo lãnh hoàn toàn khoản cọc thế chấp. Khách hàng chỉ cần xuất trình giấy tờ hợp lệ.</p>
+                  <h4 className="font-extrabold text-xs text-slate-850 dark:text-white">No Collateral Deposit Required</h4>
+                  <p className="text-[11px] font-medium text-slate-455 mt-0.5">LuxeWay fully guarantees the collateral deposit. Customers only need to present valid documents.</p>
                 </div>
               </div>
             </div>
 
             {/* Policies and Terms Grid Cancellation Table */}
             <div className="bg-white dark:bg-[#131F35] border border-slate-200/50 dark:border-white/5 p-6 sm:p-8 rounded-3xl shadow-sm space-y-6">
-              <h3 className="text-base font-black text-slate-850 dark:text-white uppercase tracking-wider border-l-4 border-[#D4AF37] pl-3">Điều khoản & Chính sách</h3>
+              <h3 className="text-base font-black text-slate-850 dark:text-white uppercase tracking-wider border-l-4 border-[#D4AF37] pl-3">Terms & Policies</h3>
               
               <div className="space-y-4">
-                <h4 className="font-bold text-xs text-slate-500 uppercase tracking-wide">Quy định hủy chuyến</h4>
+                <h4 className="font-bold text-xs text-slate-500 uppercase tracking-wide">Cancellation Policy</h4>
                 
                 {/* Cancellation Refund Table */}
                 <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden text-xs">
                   <div className="grid grid-cols-3 bg-slate-50 dark:bg-slate-900/60 p-3 font-extrabold border-b border-slate-200 dark:border-slate-800 text-slate-850 dark:text-white">
-                    <span>Thời điểm hủy chuyến</span>
-                    <span>Khách thuê nhận lại</span>
-                    <span>Phí dịch vụ LuxeWay</span>
+                    <span>Time of Cancellation</span>
+                    <span>Renter Receives</span>
+                    <span>LuxeWay Service Fee</span>
                   </div>
                   <div className="grid grid-cols-3 p-3 border-b border-slate-200 dark:border-slate-800 font-medium text-slate-600 dark:text-slate-400">
-                    <span>Trước chuyến đi &gt; 7 ngày</span>
-                    <span className="text-emerald-500 font-extrabold">Hoàn trả 100%</span>
-                    <span>Miễn phí</span>
+                    <span>Before trip &gt; 7 days</span>
+                    <span className="text-emerald-500 font-extrabold">100% Refund</span>
+                    <span>Free</span>
                   </div>
                   <div className="grid grid-cols-3 p-3 border-b border-slate-200 dark:border-slate-800 font-medium text-slate-600 dark:text-slate-400">
-                    <span>Từ 1 - 7 ngày trước đi</span>
-                    <span className="text-amber-500 font-extrabold">Hoàn trả 90%</span>
-                    <span>10% phí thuê xe</span>
+                    <span>1 - 7 days before trip</span>
+                    <span className="text-amber-500 font-extrabold">90% Refund</span>
+                    <span>10% rental fee</span>
                   </div>
                   <div className="grid grid-cols-3 p-3 font-medium text-slate-600 dark:text-slate-400">
-                    <span>Trong vòng 24 giờ</span>
-                    <span className="text-red-500 font-extrabold">Không hoàn trả</span>
-                    <span>100% phí cọc giữ chỗ</span>
+                    <span>Within 24 hours</span>
+                    <span className="text-red-500 font-extrabold">No Refund</span>
+                    <span>100% phí cọc giữ seats</span>
                   </div>
                 </div>
               </div>
@@ -480,7 +480,7 @@ export const VehicleDetailPage: React.FC = () => {
 
             {/* Map Section */}
             <div className="bg-white dark:bg-[#131F35] border border-slate-200/50 dark:border-white/5 p-6 sm:p-8 rounded-3xl shadow-sm">
-              <h3 className="text-base font-black text-slate-850 dark:text-white uppercase tracking-wider mb-4 border-l-4 border-[#D4AF37] pl-3">Vị trí đỗ xe</h3>
+              <h3 className="text-base font-black text-slate-850 dark:text-white uppercase tracking-wider mb-4 border-l-4 border-[#D4AF37] pl-3">Parking Location</h3>
               
               {showMap ? (
                 <div className="relative h-80 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800">
@@ -495,7 +495,7 @@ export const VehicleDetailPage: React.FC = () => {
               ) : (
                 <div className="bg-slate-50 dark:bg-slate-900 p-6 rounded-2xl flex flex-col items-center justify-center text-center border border-dashed border-slate-200 dark:border-slate-800">
                   <MapPin className="w-8 h-8 text-amber-500 mb-2" />
-                  <h4 className="font-bold text-foreground text-sm mb-1">Vị trí nhận xe</h4>
+                  <h4 className="font-bold text-foreground text-sm mb-1">Pickup Location</h4>
                   <p className="text-xs text-slate-500 dark:text-slate-400">{vehicle.location?.address + ", " + vehicle.location?.city}</p>
                 </div>
               )}
@@ -504,7 +504,7 @@ export const VehicleDetailPage: React.FC = () => {
             {/* Host Section */}
             {vehicle.owner && (
               <div className="bg-white dark:bg-[#131F35] border border-slate-200/50 dark:border-white/5 p-6 sm:p-8 rounded-3xl shadow-sm">
-                <h3 className="text-base font-black text-slate-850 dark:text-white uppercase tracking-wider mb-6 border-l-4 border-[#D4AF37] pl-3">Thông tin chủ xe</h3>
+                <h3 className="text-base font-black text-slate-850 dark:text-white uppercase tracking-wider mb-6 border-l-4 border-[#D4AF37] pl-3">Owner Information</h3>
                 
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-slate-100 dark:border-slate-800/80">
                   <div className="flex items-center gap-4">
@@ -521,12 +521,12 @@ export const VehicleDetailPage: React.FC = () => {
                         {vehicle.owner.approvalBadge && (
                           <span className="text-[9px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-450 font-extrabold px-1.5 py-0.5 rounded flex items-center gap-0.5">
                             <ShieldCheck className="w-2.5 h-2.5" />
-                            ĐỐI TÁC XÁC MINH
+                            VERIFIED PARTNER
                           </span>
                         )}
                       </h4>
                       <p className="text-xs text-slate-400 mt-1">
-                        Thành viên từ 2024
+                        Member since 2024
                       </p>
                     </div>
                   </div>
@@ -545,7 +545,7 @@ export const VehicleDetailPage: React.FC = () => {
                     </div>
                     <div className="w-px h-8 bg-slate-200 dark:bg-slate-800" />
                     <div>
-                      <p className="text-xs text-slate-400">Số chuyến</p>
+                      <p className="text-xs text-slate-400">Số trips</p>
                       <p className="font-black text-slate-850 dark:text-white text-lg mt-0.5">{vehicle.owner.totalTrips || 0}</p>
                     </div>
                   </div>
@@ -565,10 +565,10 @@ export const VehicleDetailPage: React.FC = () => {
               
               {/* Rental pricing */}
               <div>
-                <p className="text-slate-400 text-[10px] font-black uppercase tracking-wider mb-1">Đơn giá thuê</p>
+                <p className="text-slate-400 text-[10px] font-black uppercase tracking-wider mb-1">Rental Price</p>
                 <div className="flex items-baseline gap-1.5">
                   <span className="text-2xl font-display font-black text-[#0B1221] dark:text-white">{formatCurrency(finalPrice)}</span>
-                  <span className="text-xs text-slate-400 font-bold">/ngày</span>
+                  <span className="text-xs text-slate-400 font-bold">/day</span>
                   {discountPercent > 0 && (
                     <span className="text-xs font-bold line-through text-slate-400 ml-2">
                       {formatCurrency(Number(vehicle.pricePerDay))}
@@ -580,7 +580,7 @@ export const VehicleDetailPage: React.FC = () => {
               {/* Date pickers */}
               <div className="space-y-4 pt-3 border-t border-slate-100 dark:border-slate-800">
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wide mb-1.5">Ngày nhận xe</label>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wide mb-1.5">Pickup Date</label>
                   <input 
                     type="date" 
                     value={startDate}
@@ -591,7 +591,7 @@ export const VehicleDetailPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wide mb-1.5">Ngày trả xe</label>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wide mb-1.5">Return Date</label>
                   <input 
                     type="date" 
                     value={endDate}
@@ -604,13 +604,13 @@ export const VehicleDetailPage: React.FC = () => {
 
               {/* Addons toggle */}
               <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Dịch vụ kèm theo</h4>
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Additional Services</h4>
                 
                 {/* Insurance Protection */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-extrabold text-slate-850 dark:text-white">Bảo hiểm chuyến đi</p>
-                    <p className="text-[10px] text-slate-400 font-bold mt-0.5">Hỗ trợ chi trả tổn thất va chạm (+15%)</p>
+                    <p className="text-xs font-extrabold text-slate-850 dark:text-white">Trip Insurance</p>
+                    <p className="text-[10px] text-slate-400 font-bold mt-0.5">Collision damage waiver (+15%)</p>
                   </div>
                   <input 
                     type="checkbox" 
@@ -624,9 +624,9 @@ export const VehicleDetailPage: React.FC = () => {
                 {vehicle.deliveryAvailable && (
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-xs font-extrabold text-slate-850 dark:text-white">Giao xe tận nơi</p>
+                      <p className="text-xs font-extrabold text-slate-850 dark:text-white">Delivery Available</p>
                       <p className="text-[10px] text-slate-400 font-bold mt-0.5">
-                        Giao nhận xe tận nhà (+{formatCurrency(Number(vehicle.deliveryFee))})
+                        Home delivery (+{formatCurrency(Number(vehicle.deliveryFee))})
                       </p>
                     </div>
                     <input 
@@ -643,7 +643,7 @@ export const VehicleDetailPage: React.FC = () => {
               {days > 0 && (
                 <div className="pt-4 border-t border-slate-100 dark:border-slate-800 text-xs space-y-2.5 font-bold">
                   <div className="flex justify-between text-slate-400">
-                    <span>Đơn giá thuê ({days} ngày)</span>
+                    <span>Rental Price ({days} ngày)</span>
                     <span className="text-slate-800 dark:text-white">{formatCurrency(rawBase)}</span>
                   </div>
                   {discountAmt > 0 && (
@@ -654,7 +654,7 @@ export const VehicleDetailPage: React.FC = () => {
                   )}
                   {includeInsurance && (
                     <div className="flex justify-between text-slate-450">
-                      <span>Bảo hiểm chuyến đi</span>
+                      <span>Trip Insurance</span>
                       <span className="text-slate-800 dark:text-white">+{formatCurrency(insuranceFee)}</span>
                     </div>
                   )}
@@ -665,7 +665,7 @@ export const VehicleDetailPage: React.FC = () => {
                     </div>
                   )}
                   <div className="flex justify-between text-slate-450">
-                    <span>Phí dịch vụ LuxeWay (12%)</span>
+                    <span>LuxeWay Service Fee (12%)</span>
                     <span className="text-slate-800 dark:text-white">+{formatCurrency(serviceFee)}</span>
                   </div>
                   <div className="flex justify-between text-slate-450">
@@ -691,7 +691,7 @@ export const VehicleDetailPage: React.FC = () => {
                     ĐANG KIỂM TRA ĐIỀU KIỆN...
                   </>
                 ) : (
-                  'ĐẶT XE NGAY'
+                  'BOOK NOW'
                 )}
               </button>
 
@@ -703,7 +703,7 @@ export const VehicleDetailPage: React.FC = () => {
         {/* Similar Vehicles Carousel / Slider */}
         {similarVehicles && similarVehicles.length > 0 && (
           <div className="mt-16 pt-10 border-t border-slate-200/60 dark:border-white/5">
-            <h3 className="text-lg font-display font-black text-slate-850 dark:text-white uppercase tracking-wider mb-6">Xe tương tự đề xuất</h3>
+            <h3 className="text-lg font-display font-black text-slate-850 dark:text-white uppercase tracking-wider mb-6">Similar Vehicles</h3>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {similarVehicles.map(v => {
@@ -739,7 +739,7 @@ export const VehicleDetailPage: React.FC = () => {
                           </span>
                         )}
                         <span className="text-[10px] font-black bg-emerald-500 text-white px-2 py-0.5 rounded-lg shadow-sm">
-                          Miễn thế chấp
+                          No Deposit Required
                         </span>
                       </div>
                     </div>
@@ -751,11 +751,11 @@ export const VehicleDetailPage: React.FC = () => {
                         </h4>
                         
                         <div className="flex items-center gap-1.5 text-[11px] text-slate-450 mt-1 font-bold">
-                          <span>Số tự động</span>
+                          <span>Automatic</span>
                           <span>•</span>
-                          <span>{v.type?.toLowerCase() === 'motorbike' || v.vehicleType?.toLowerCase() === 'motorbike' ? '2 chỗ' : '5 chỗ'}</span>
+                          <span>{v.type?.toLowerCase() === 'motorbike' || v.vehicleType?.toLowerCase() === 'motorbike' ? '2 seats' : '5 seats'}</span>
                           <span>•</span>
-                          <span>Xăng</span>
+                          <span>Gasoline</span>
                         </div>
                       </div>
                       
@@ -763,12 +763,12 @@ export const VehicleDetailPage: React.FC = () => {
                         <div className="flex items-center gap-1 text-[11px]">
                           <span className="text-[#D4AF37] font-bold">★</span>
                           <span className="font-extrabold text-slate-800 dark:text-white">{Number(v.rating || 5.0).toFixed(1)}</span>
-                          <span className="text-slate-450">({v.totalTrips || v.totalReviews || 12} chuyến)</span>
+                          <span className="text-slate-450">({v.totalTrips || v.totalReviews || 12} trips)</span>
                         </div>
                         
                         <p className="font-display font-black text-[#0B1221] dark:text-white leading-none">
                           <span className="text-base text-amber-500">{displayPrice}</span>
-                          <span className="text-[9px] text-slate-450 font-bold font-sans">/ngày</span>
+                          <span className="text-[9px] text-slate-450 font-bold font-sans">/day</span>
                         </p>
                       </div>
                     </div>

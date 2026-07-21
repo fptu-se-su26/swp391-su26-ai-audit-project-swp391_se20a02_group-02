@@ -31,14 +31,19 @@ export const VNPayReturnPage: React.FC = () => {
 
         if (isSuccess) {
           setStatus('success');
-          const isTopUpTx = !paymentData.bookingId || paymentData.transactionId?.startsWith('TOPUP');
+          const bId = paymentData.bookingId || paymentData.booking?.id || '';
+          const isTopUpTx = !bId || paymentData.transactionId?.startsWith('TOPUP');
           setIsTopUp(isTopUpTx);
-          setBookingId(paymentData.bookingId || '');
+          setBookingId(bId);
           setTransactionId(paymentData.transactionId || '');
-          setAmount(paymentData.amount || '');
+          setAmount(paymentData.amount ? String(paymentData.amount) : '');
           toast.success(
             isTopUpTx ? t.paymentReturn.toastTopUpSuccess : t.paymentReturn.toastPaymentSuccess
           );
+          // BUG-5 FIX: Auto-redirect 3s after success
+          setTimeout(() => {
+            navigate(isTopUpTx ? '/dashboard/wallet' : (bId ? `/dashboard/bookings/${bId}` : '/dashboard/bookings'));
+          }, 3000);
         } else {
           setStatus('failed');
           toast.error(
@@ -57,6 +62,7 @@ export const VNPayReturnPage: React.FC = () => {
           setIsTopUp(isTopUpTx);
           setTransactionId(txnRef);
           toast.success(t.paymentReturn.toastPaymentSuccess);
+          setTimeout(() => navigate(isTopUpTx ? '/dashboard/wallet' : '/dashboard/bookings'), 3000);
         } else {
           setStatus('failed');
           toast.error(t.paymentReturn.toastVerifyFailed, t.paymentReturn.toastVerifyFailedDesc);
@@ -186,7 +192,7 @@ export const VNPayReturnPage: React.FC = () => {
                   className="flex flex-col gap-3"
                 >
                   <button
-                    onClick={() => navigate(isTopUp ? '/dashboard/wallet' : '/dashboard/bookings')}
+                    onClick={() => navigate(isTopUp ? '/dashboard/wallet' : (bookingId ? `/dashboard/bookings/${bookingId}` : '/dashboard/bookings'))}
                     className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-white font-bold text-sm shadow-lg transition-all hover:opacity-90"
                     style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)' }}
                   >

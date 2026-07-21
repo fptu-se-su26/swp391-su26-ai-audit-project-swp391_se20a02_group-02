@@ -11,43 +11,24 @@ export const BecomeOwnerPage: React.FC = () => {
   const { user, isAuthenticated, initAuth } = useAuthStore();
   const navigate = useNavigate();
   const toast = useToast();
-  const [loading, setLoading] = useState(false);
   const [days, setDays] = useState(15);
   const [pricePerDay, setPricePerDay] = useState(800000);
 
   const estimatedRevenue = Math.round(days * pricePerDay * 0.8);
 
-  const handleUpgrade = async () => {
+  const handleStartApplication = () => {
     if (!isAuthenticated) {
-      toast.error('Authentication Required', 'Please log in or sign up first to register as an owner.');
-      navigate('/auth/login?redirect=/owner/register');
+      toast.info('Please log in first', 'You need to be logged in to start an owner application.');
+      navigate('/auth/login?redirect=/become-owner');
+      return;
+    }
+    
+    if (user?.role === 'OWNER') {
+      navigate('/owner');
       return;
     }
 
-    setLoading(true);
-    try {
-      const response = await apiClient.post<any>('/users/become-owner', {});
-      const updatedProfile = response.data || response;
-
-      // Update local storage session values
-      const stored = JSON.parse(localStorage.getItem('luxeway_user') || '{}');
-      const updatedUser = {
-        ...stored,
-        role: 'owner'
-      };
-      localStorage.setItem('luxeway_user', JSON.stringify(updatedUser));
-
-      // Re-initialize auth store to sync global state
-      initAuth();
-
-      toast.success('Registration Successful!', 'Congratulations, you are now a registered LuxeWay Host.');
-      navigate('/owner', { replace: true });
-    } catch (err: any) {
-      console.error(err);
-      toast.error('Upgrade Failed', err.response?.data?.error || 'Could not upgrade your profile role.');
-    } finally {
-      setLoading(false);
-    }
+    navigate('/owner-application');
   };
 
   return (
@@ -131,19 +112,10 @@ export const BecomeOwnerPage: React.FC = () => {
                 </div>
 
                 <button
-                  onClick={handleUpgrade}
-                  disabled={loading}
-                  className="w-full btn-gold py-4 rounded-2xl font-bold text-sm tracking-widest uppercase flex items-center justify-center gap-2 shadow-lg shadow-gold/25 hover:shadow-gold/35 transition-all disabled:opacity-50"
+                  onClick={handleStartApplication}
+                  className="w-full btn-gold py-4 rounded-2xl font-bold text-sm tracking-widest uppercase flex items-center justify-center gap-2 shadow-lg shadow-gold/25 hover:shadow-gold/35 transition-all"
                 >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" /> Upgrading...
-                    </>
-                  ) : (
-                    <>
-                      Upgrade to Host <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
+                  Start Owner Application <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
             </div>

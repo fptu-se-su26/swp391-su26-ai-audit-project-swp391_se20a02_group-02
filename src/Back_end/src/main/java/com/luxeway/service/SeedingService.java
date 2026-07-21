@@ -65,11 +65,8 @@ public class SeedingService {
 
         log.info("Enterprise database seeding completed successfully.");
     }
-
     /**
      * Seeds the unified `vehicles` table which is used by:
-     * - HomeService (landing page stats, trending, categories, destinations)
-     * - VehicleService (marketplace browse, search, filter)
      * - VehicleRepository (all public queries)
      *
      * Data includes both cars and motorbikes with status=AVAILABLE and approvalStatus=APPROVED
@@ -116,11 +113,8 @@ public class SeedingService {
             log.error("Failed to update existing vehicles status: {}", e.getMessage());
         }
 
-        // Always ensure the 4 popular landing page vehicles exist in the database
-        seedFeaturedVehicles(owner);
-
         long existing = vehicleRepository.count();
-        if (existing >= 100) {
+        if (existing >= 10) {
             log.info("Unified vehicles table already has {} records, skipping vehicle seeding.", existing);
             return;
         }

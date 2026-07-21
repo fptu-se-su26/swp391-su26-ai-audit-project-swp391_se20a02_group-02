@@ -6,7 +6,7 @@ import {
   CheckCircle, XCircle, Eye, Search, BarChart2, Globe, Loader2,
   Settings, HelpCircle, Edit2, Plus, Trash2, Activity, LogOut, Clock, Menu, X,
   ArrowUpRight, ArrowDownRight, Scale, Ban, RefreshCw, Download, FileText, Check, Lock,
-  Cpu, HardDrive, Bell, ShieldAlert, Wifi, Terminal, Mail, Send, Share2, FileSpreadsheet, PanelLeftClose, PanelLeftOpen
+  Cpu, HardDrive, Bell, ShieldAlert, Wifi, Terminal, Mail, Send, Share2, FileSpreadsheet, PanelLeftClose, PanelLeftOpen, Building
 } from 'lucide-react';
 import { formatCurrency, formatDate, cn, convertCurrency } from '@/utils';
 import { staggerContainer, staggerItem, fadeUp } from '@/animations/variants';
@@ -114,10 +114,10 @@ const AdminDashboard: React.FC = () => {
   const location = useLocation();
 
   const queryTab = new URLSearchParams(location.search).get('tab');
-  const validTabs = ['overview', 'marketplace', 'vehicles', 'kyc', 'bookings', 'payments', 'disputes', 'users', 'fraud', 'analytics', 'notifications', 'logs', 'health', 'settings'];
+  const validTabs = ['overview', 'marketplace', 'vehicles', 'kyc', 'owner-applications', 'bookings', 'payments', 'disputes', 'users', 'fraud', 'analytics', 'notifications', 'logs', 'health', 'settings'];
   
   // Dashboard states
-  const [activeTab, setActiveTab] = useState<'overview' | 'marketplace' | 'vehicles' | 'kyc' | 'bookings' | 'payments' | 'disputes' | 'users' | 'fraud' | 'analytics' | 'notifications' | 'logs' | 'health' | 'settings'>(
+  const [activeTab, setActiveTab] = useState<'overview' | 'marketplace' | 'vehicles' | 'kyc' | 'owner-applications' | 'bookings' | 'payments' | 'disputes' | 'users' | 'fraud' | 'analytics' | 'notifications' | 'logs' | 'health' | 'settings'>(
     queryTab && validTabs.includes(queryTab) ? (queryTab as any) : 'overview'
   );
   const [loading, setLoading] = useState(false);
@@ -146,6 +146,12 @@ const AdminDashboard: React.FC = () => {
   const [kycUsers, setKycUsers] = useState<any[]>([]);
   const [kycSearch, setKycSearch] = useState('');
   const [kycStatusFilter, setKycStatusFilter] = useState('PENDING');
+
+  // Owner Applications
+  const [ownerApps, setOwnerApps] = useState<any[]>([]);
+  const [loadingOwnerApps, setLoadingOwnerApps] = useState(false);
+  const [ownerAppsStatusFilter, setOwnerAppsStatusFilter] = useState('SUBMITTED');
+  const [selectedOwnerApp, setSelectedOwnerApp] = useState<any | null>(null);
 
   // Debounced search values
   const [debouncedUserSearch, setDebouncedUserSearch] = useState('');
@@ -249,12 +255,15 @@ const AdminDashboard: React.FC = () => {
     }
   }, [userRoleFilter, userKycStatusFilter, debouncedUserSearch, activeTab]);
 
-  // Trigger fetch KYC users when filters change
+  // Filter logic
   useEffect(() => {
     if (activeTab === 'kyc') {
       fetchKycUsers(kycStatusFilter, debouncedKycSearch);
     }
-  }, [kycStatusFilter, debouncedKycSearch, activeTab]);
+    if (activeTab === 'owner-applications') {
+      loadOwnerApplications();
+    }
+  }, [activeTab, kycStatusFilter, ownerAppsStatusFilter, debouncedKycSearch]);
 
   // Trigger fetch vehicles when filters change
   useEffect(() => {
@@ -398,6 +407,21 @@ const AdminDashboard: React.FC = () => {
     }
   }, [activeTab]);
 
+  const loadOwnerApplications = async () => {
+    try {
+      setLoadingOwnerApps(true);
+      const res = await apiClient.get(`/admin/owner-applications?status=${ownerAppsStatusFilter}`);
+      setOwnerApps(res.data?.data?.content || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingOwnerApps(false);
+    }
+  };
+
+  const loadFraudAlerts = async () => {};
+  const loadSystemHealth = async () => {};
+
   // Fetch Dashboard Stats & Primary Data
   const loadDashboardData = async () => {
     setLoading(true);
@@ -413,7 +437,10 @@ const AdminDashboard: React.FC = () => {
         adminService.listSettings(),
         adminService.getAnalyticsOverview(),
         adminService.getHistoricalAnalytics(30),
-        paymentService.getPaymentSettings().catch(() => null)
+        paymentService.getPaymentSettings().catch(() => null),
+        loadFraudAlerts(),
+        loadSystemHealth(),
+        loadOwnerApplications()
       ]);
 
       if (statsRes) setStats(statsRes);
@@ -756,6 +783,7 @@ const AdminDashboard: React.FC = () => {
     { id: 'overview', label: 'Overview', icon: BarChart2, badge: 0 },
     { id: 'users', label: 'User Management', icon: Users, badge: 0 },
     { id: 'vehicles', label: 'Vehicle Approval', icon: Car, badge: pendingApprovalsCount },
+    { id: 'owner-applications', label: 'Host Onboarding', icon: Building, badge: ownerApps.filter(a => a.status === 'SUBMITTED').length },
     { id: 'kyc', label: 'KYC Review', icon: Shield, badge: pendingKycCount },
     { id: 'bookings', label: 'Bookings', icon: Calendar, badge: 0 },
     { id: 'payments', label: 'Payments', icon: DollarSign, badge: failedPaymentsCount },
@@ -1337,6 +1365,84 @@ const AdminDashboard: React.FC = () => {
                         )}
                       </tbody>
                     </table>
+                  </div>
+                </div>
+              )}
+
+              {/* ============ TABS: OWNER APPLICATIONS ============ */}
+              {activeTab === 'owner-applications' && (
+                <div className="space-y-6">
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                      <h2 className="text-2xl font-bold font-display text-slate-900 dark:text-white flex items-center gap-2">
+                        <Building className="w-6 h-6 text-amber-500" /> Host Onboarding
+                      </h2>
+                      <p className="text-slate-500 text-sm mt-1">Review and approve applications for new vehicle hosts.</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <select 
+                        value={ownerAppsStatusFilter}
+                        onChange={(e) => setOwnerAppsStatusFilter(e.target.value)}
+                        className="p-2 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none"
+                      >
+                        <option value="SUBMITTED">Pending Review</option>
+                        <option value="APPROVED">Approved</option>
+                        <option value="REJECTED">Rejected</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="glass bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-white/5 rounded-2xl overflow-hidden shadow-sm">
+                    {loadingOwnerApps ? (
+                      <div className="p-12 flex flex-col items-center justify-center text-slate-500">
+                        <Loader2 className="w-8 h-8 animate-spin text-amber-500 mb-4" />
+                        <p>Loading applications...</p>
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        {ownerApps.length === 0 ? (
+                          <div className="p-12 text-center text-slate-500">
+                            <CheckCircle className="w-12 h-12 text-emerald-400 mx-auto mb-3 opacity-50" />
+                            <p className="font-semibold text-lg">No pending applications</p>
+                          </div>
+                        ) : (
+                          <table className="w-full text-left text-sm whitespace-nowrap">
+                            <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 font-medium">
+                              <tr>
+                                <th className="p-4">Applicant</th>
+                                <th className="p-4">Service Area</th>
+                                <th className="p-4">Submitted At</th>
+                                <th className="p-4">Status</th>
+                                <th className="p-4 text-right">Action</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                              {ownerApps.map((app: any) => (
+                                <tr key={app.id} className="hover:bg-slate-50/20 dark:hover:bg-slate-900/30 transition-colors">
+                                  <td className="p-4">
+                                    <div className="font-bold text-slate-900 dark:text-white">{app.fullName}</div>
+                                    <div className="text-xs text-slate-500">{app.displayName}</div>
+                                  </td>
+                                  <td className="p-4 text-slate-600 dark:text-slate-400">{app.serviceArea}</td>
+                                  <td className="p-4 text-slate-600 dark:text-slate-400">{formatDate(app.submittedAt)}</td>
+                                  <td className="p-4">
+                                    <StatusBadge status={app.status === 'APPROVED' ? 'active' : app.status === 'SUBMITTED' ? 'pending' : 'inactive'} label={app.status} />
+                                  </td>
+                                  <td className="p-4 text-right">
+                                    <button 
+                                      onClick={() => setSelectedOwnerApp(app)}
+                                      className="btn-glass text-xs py-1.5 px-3 rounded-lg flex items-center gap-1 ml-auto"
+                                    >
+                                      <Eye className="w-3.5 h-3.5" /> Review
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

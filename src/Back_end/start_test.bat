@@ -1,0 +1,1 @@
+java -Dspring.datasource.url="jdbc:sqlserver://localhost:1433;databaseName=car_rental_platform;encrypt=false;trustServerCertificate=true" -Dspring.datasource.username=sa -Dspring.datasource.password=123456 -jar build\libs\Back_end-1.0.0.jar --spring.profiles.active=sqlserver > backend_test4.log 2>&1

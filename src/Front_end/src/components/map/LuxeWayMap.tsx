@@ -120,14 +120,26 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
 
   // ====== COORDINATE RESOLUTION ======
   const resolveCoords = useCallback((v: any, index: number): [number, number] | null => {
+    // Try direct latitude/longitude fields first (VehicleLocationResponse shape)
     let lat = v.latitude !== undefined ? v.latitude : v.location?.lat;
     let lng = v.longitude !== undefined ? v.longitude : v.location?.lng;
 
-    if (typeof lat !== 'number' || typeof lng !== 'number' || lat === 0 || lng === 0 || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-      if (vehiclesRef.current.length === 1) {
-        return getCoordinates(v, index);
-      }
-      return null;
+    // Also try nested location.latitude/longitude
+    if ((typeof lat !== 'number' || lat === 0) && v.location) {
+      lat = v.location.latitude ?? v.location.lat;
+      lng = v.location.longitude ?? v.location.lng;
+    }
+
+    const isValid = typeof lat === 'number' && typeof lng === 'number'
+      && lat !== 0 && lng !== 0
+      && lat >= -90 && lat <= 90
+      && lng >= -180 && lng <= 180;
+
+    if (!isValid) {
+      // BUG-2 FIX: Always use getCoordinates fallback for ALL vehicles (not just single-vehicle).
+      // This scatters vehicles around their city center so they always appear on the map,
+      // even when the database has null/zero GPS coordinates.
+      return getCoordinates(v, index);
     }
     return [lat, lng];
   }, []);

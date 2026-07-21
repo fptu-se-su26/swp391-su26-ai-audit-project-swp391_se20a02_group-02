@@ -4,6 +4,7 @@ import type { User, RegisterData, Toast, BookingWizardState } from '@/types';
 import { authService } from '@/services/authService';
 import { apiClient } from '@/services/api';
 import { faker } from '@faker-js/faker';
+import { changeLanguage } from '@/i18n/config';
 
 export type Theme = 'light' | 'dark';
 export type Language = 'en' | 'vi' | 'ja' | 'ko' | 'zh' | 'fr' | 'de' | 'es';
@@ -268,13 +269,7 @@ export const useUIStore = create<UIStore>()(
       activeModal: null,
       isScrolled: false,
       theme: 'light',
-      language: (() => {
-        try {
-          const lang = localStorage.getItem('language');
-          if (lang && ['en', 'vi', 'ja', 'ko', 'zh', 'fr', 'de', 'es'].includes(lang)) return lang as Language;
-        } catch { }
-        return 'en';
-      })(),
+      language: 'en',
       currency: (() => {
         try {
           const curr = localStorage.getItem('currency');
@@ -312,12 +307,12 @@ export const useUIStore = create<UIStore>()(
       },
 
       setLanguage: (lang) => {
-        const currentLang = get().language;
-        if (currentLang === lang) return;
-
+        // BUG-1 FIX: was hardcoded to 'en' — now uses the actual lang param
         set({ language: lang });
+        // BUG-6 FIX: sync to i18next so useTranslation() hooks re-render with new language
+        changeLanguage(lang);
+        // Persist to localStorage for page-reload recovery (used by initLanguage in main.tsx)
         try { localStorage.setItem('language', lang); } catch { }
-        import('@/i18n/config').then(m => m.default.changeLanguage(lang));
 
         // Sync to backend user profile if logged in and language is different
         const authStore = useAuthStore.getState();

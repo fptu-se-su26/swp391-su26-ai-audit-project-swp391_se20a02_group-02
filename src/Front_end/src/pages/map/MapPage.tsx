@@ -601,6 +601,7 @@ export const MapPage: React.FC = () => {
           selectedVehicleId={selectedVehicle?.id}
           hoveredVehicleId={hoveredId}
           onVehicleClick={handleMarkerClick}
+          onMarkerHover={(id) => setHoveredId(id ?? undefined)}
           height="100%"
         />
 
@@ -695,7 +696,9 @@ export const MapPage: React.FC = () => {
                       className={cn(
                         'flex-shrink-0 w-[290px] sm:w-[310px] bg-white dark:bg-slate-900 rounded-2xl border shadow-lg overflow-hidden snap-start cursor-pointer transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5',
                         isSel
-                          ? 'border-[#D4AF37] ring-2 ring-[#D4AF37]/30'
+                          ? 'border-[#D4AF37] ring-2 ring-[#D4AF37]/30 -translate-y-1 shadow-xl'
+                          : hoveredId === v.id
+                          ? 'border-[#D4AF37] ring-2 ring-[#D4AF37]/20 -translate-y-0.5 shadow-xl'
                           : 'border-slate-200 dark:border-slate-700'
                       )}
                     >

@@ -38,6 +38,7 @@ import MoMoReturnPage from '@/pages/booking/MoMoReturnPage';
 import PayOSReturnPage from '@/pages/booking/PayOSReturnPage';
 // Map view is now a view mode inside MarketplacePage (derived from URL path /map)
 import BecomeOwnerPage from '@/pages/owner/BecomeOwnerPage';
+import OwnerApplicationPage from '@/pages/owner/OwnerApplicationPage';
 import HelpPage from '@/pages/help/HelpPage';
 import { OwnerSuccessHub } from '@/pages/help/OwnerSuccessHub';
 import { PlatformStatus } from '@/pages/help/PlatformStatus';
@@ -532,7 +533,9 @@ const App: React.FC = () => {
             <Route path="vehicles" element={<MarketplacePage />} />
             <Route path="search" element={<MarketplacePage />} />
             <Route path="map" element={<MarketplacePage />} />
-            <Route path="owner/register" element={<BecomeOwnerPage />} />
+            <Route path="become-owner" element={<BecomeOwnerPage />} />
+            <Route path="owner-application" element={<OwnerApplicationPage />} />
+            <Route path="owner/register" element={<Navigate to="/become-owner" replace />} />
             <Route path="vehicles/:id" element={<VehicleDetailPage />} />
             <Route path="cars" element={<Navigate to="/marketplace?type=car" replace />} />
             <Route path="motorbikes" element={<Navigate to="/marketplace?type=motorbike" replace />} />

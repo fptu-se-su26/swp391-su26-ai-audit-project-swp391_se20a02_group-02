@@ -379,7 +379,7 @@ export const vehicleService = {
 
   async getVehicleDetail(id: string): Promise<Vehicle | null> {
     try {
-      const response = await apiClient.get<any>(`/vehicles/${id}/detail`);
+      const response = await apiClient.get<any>(`/vehicles/${id}`);
       // Backend wraps in { vehicle: {...} }
       const v = response.vehicle || response.data?.vehicle || response.data || response;
       return v && v.id ? mapVehicle(v) : null;
