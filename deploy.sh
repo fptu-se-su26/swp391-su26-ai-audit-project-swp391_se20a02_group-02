@@ -58,6 +58,12 @@ grep -q "^VITE_FIREBASE_APP_ID=" .env || echo "VITE_FIREBASE_APP_ID=1:1675575999
 grep -q "^VITE_GOOGLE_CLIENT_ID=" .env || echo "VITE_GOOGLE_CLIENT_ID=847311755277-hkm959nlmjee42aiccr313pah9mtokd2.apps.googleusercontent.com" >> .env
 grep -q "^VITE_GOOGLE_REDIRECT_URI=" .env || echo "VITE_GOOGLE_REDIRECT_URI=$DOMAIN/auth/google/success" >> .env
 sed -i "s|^VITE_GOOGLE_REDIRECT_URI=.*|VITE_GOOGLE_REDIRECT_URI=$DOMAIN/auth/google/success|g" .env
+# Gmail SMTP credentials
+sed -i "s|^MAIL_USERNAME=.*|MAIL_USERNAME=nguyenvangiang232005@gmail.com|g" .env
+grep -q "^MAIL_USERNAME=" .env || echo "MAIL_USERNAME=nguyenvangiang232005@gmail.com" >> .env
+sed -i "s|^MAIL_PASSWORD=.*|MAIL_PASSWORD=suywwicivrkdkafx|g" .env
+grep -q "^MAIL_PASSWORD=" .env || echo "MAIL_PASSWORD=suywwicivrkdkafx" >> .env
+
 # Fix backend Google callback URL to use HTTPS domain
 grep -q "^GOOGLE_CALLBACK_URL=" .env && sed -i "s|^GOOGLE_CALLBACK_URL=.*|GOOGLE_CALLBACK_URL=$DOMAIN/login/oauth2/code/google|g" .env || echo "GOOGLE_CALLBACK_URL=$DOMAIN/login/oauth2/code/google" >> .env
 

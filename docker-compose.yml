@@ -91,8 +91,8 @@ services:
       - JWT_SECRET=${JWT_SECRET:-LuxeWaySecretKey2026VeryLongAndSecureJWTTokenKeyForDevelopment512BitSecretKeyExactlyHere}
       - JWT_EXPIRATION=${JWT_EXPIRATION:-86400000}
       - JWT_REFRESH_EXPIRATION=${JWT_REFRESH_EXPIRATION:-604800000}
-      - MAIL_USERNAME=${MAIL_USERNAME:-your-email@gmail.com}
-      - MAIL_PASSWORD=${MAIL_PASSWORD:-your-app-specific-password}
+      - MAIL_USERNAME=${MAIL_USERNAME:-nguyenvangiang232005@gmail.com}
+      - MAIL_PASSWORD=${MAIL_PASSWORD:-suywwicivrkdkafx}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-847311755277-hkm959nlmjee42aiccr313pah9mtokd2.apps.googleusercontent.com}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-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}
       - GOOGLE_CALLBACK_URL=${GOOGLE_CALLBACK_URL:-https://luxeway.io.vn/login/oauth2/code/google}
