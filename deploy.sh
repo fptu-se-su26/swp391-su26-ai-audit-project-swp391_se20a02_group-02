@@ -2,15 +2,15 @@
 set -e
 
 echo "=== [1/5] System Update and Dependencies ==="
-apt-get update -y
-apt-get install -y git curl
+apt-get update -y || true
+apt-get install -y git curl || true
 
 echo "=== [2/5] Installing Docker ==="
 if ! command -v docker &> /dev/null; then
     curl -fsSL https://get.docker.com -o get-docker.sh
     sh get-docker.sh
 fi
-apt-get install -y docker-compose-plugin
+apt-get install -y docker-compose-plugin || true
 
 echo "=== [3/5] Cloning / Updating Repository ==="
 cd /opt
