@@ -140,6 +140,9 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                 }
             });
 
+            String accessToken = jwtTokenProvider.generateToken(user);
+            String refreshToken = jwtTokenProvider.generateRefreshToken(user);
+
             String targetUrl = UriComponentsBuilder.fromUriString(frontendUrl + "/oauth2/redirect")
                     .queryParam("token", accessToken)
                     .queryParam("refresh_token", refreshToken)
