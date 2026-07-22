@@ -48,6 +48,12 @@ export const getCoordinates = (v: Vehicle, index: number): [number, number] => {
       base = [12.2451, 109.1943];
     } else if (city.includes('đà lạt') || city.includes('da lat')) {
       base = [11.9404, 108.4583];
+    } else if (city.includes('huế') || city.includes('hue')) {
+      base = [16.4637, 107.5909];
+    } else if (city.includes('cần thơ') || city.includes('can tho')) {
+      base = [10.0371, 105.7882];
+    } else if (city.includes('phú quốc') || city.includes('phu quoc')) {
+      base = [10.2289, 103.9572];
     }
     
     // Hash vehicle ID for 100% stable, fixed map marker positions (no jumping on sort/filter)
