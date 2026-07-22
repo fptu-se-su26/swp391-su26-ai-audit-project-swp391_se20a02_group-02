@@ -33,8 +33,11 @@ export const CustomerDashboardLayout: React.FC = () => {
 
   useEffect(() => {
     if (!isAuthenticated) navigate('/auth/login');
-    setSidebarOpen(window.innerWidth >= 1024);
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    setSidebarOpen(window.innerWidth >= 1024);
+  }, []);
 
   if (!user) return null;
 
@@ -273,7 +276,7 @@ export const CustomerOverview: React.FC = () => {
       setNotifications(n.slice(0, 5));
       setLoading(false);
     });
-  }, [user]);
+  }, [user?.id]);
 
   const stats = {
     total: bookings.length,
@@ -522,7 +525,7 @@ export const MyBookingsPage: React.FC = () => {
       setBookings(b);
       setLoading(false);
     });
-  }, [user]);
+  }, [user?.id]);
 
   const normalizedStatus = (status?: string) => String(status || '').toLowerCase();
   const filtered = filter === 'all' ? bookings : bookings.filter(b => normalizedStatus(b.status) === filter);
@@ -1104,7 +1107,7 @@ export const DocumentsPage: React.FC = () => {
     } finally {
       setLoadingDocs(false);
     }
-  }, [user]);
+  }, [user?.id]);
 
   React.useEffect(() => {
     fetchDocuments();
@@ -1663,7 +1666,7 @@ export const PaymentHistoryPage: React.FC = () => {
       setPaymentData(payments);
       setLoading(false);
     });
-  }, [user]);
+  }, [user?.id]);
 
   const handleDownloadInvoice = async (bookingId: string) => {
     try {
@@ -1948,7 +1951,7 @@ export const MyReviewsPage: React.FC = () => {
       setReviews(userReviews);
       setLoading(false);
     });
-  }, [user]);
+  }, [user?.id]);
 
   const breadcrumbItems = [
     { label: t.marketplace.home, href: '/' },

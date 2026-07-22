@@ -72,7 +72,7 @@ export const OwnerOverview: React.FC = () => {
       setBookings(b);
       setLoading(false);
     });
-  }, [user]);
+  }, [user?.id]);
 
   const stats = {
     totalVehicles: vehicles.length,
@@ -476,7 +476,7 @@ export const VehicleManagePage: React.FC = () => {
       setVehicles(v);
       setLoading(false);
     });
-  }, [user]);
+  }, [user?.id]);
 
   const handleDelete = async (vehicleId: string, vehicleName: string) => {
     if (window.confirm(isVi ? `Xác nhận xóa xe ${vehicleName}?` : `Delete ${vehicleName}?`)) {
@@ -1209,7 +1209,7 @@ export const OwnerCalendarPage: React.FC = () => {
       setBookings(b);
       setLoading(false);
     });
-  }, [user]);
+  }, [user?.id]);
 
   const nextMonth = () => {
     if (currentMonth === 11) { setCurrentMonth(0); setCurrentYear(currentYear + 1); }
@@ -1368,7 +1368,7 @@ export const OwnerBookingsPage: React.FC = () => {
       setBookings(b);
       setLoading(false);
     });
-  }, [user]);
+  }, [user?.id]);
 
   const filtered = filter === 'all' ? bookings : bookings.filter(b => b.status === filter);
   const statusTabs = [
@@ -1681,7 +1681,7 @@ export const FleetManagementPage: React.FC = () => {
       setVehicles(v);
       setLoading(false);
     });
-  }, [user]);
+  }, [user?.id]);
 
   const filtered = selectedStatus === 'all' ? vehicles : vehicles.filter(v => v.status === selectedStatus);
 
@@ -2297,7 +2297,7 @@ export const OwnerReviewsPage: React.FC = () => {
         })
         .finally(() => setLoading(false));
     }
-  }, [user]);
+  }, [user?.id]);
 
   const ratingAvg = reviews.length > 0 
     ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)

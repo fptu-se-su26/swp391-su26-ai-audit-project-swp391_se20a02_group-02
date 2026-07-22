@@ -50,8 +50,10 @@ export const getCoordinates = (v: Vehicle, index: number): [number, number] => {
       base = [11.9404, 108.4583];
     }
     
-    const angle = index * 137.5 * (Math.PI / 180); 
-    const radius = 0.008 + (index % 5) * 0.003;
+    // Hash vehicle ID for 100% stable, fixed map marker positions (no jumping on sort/filter)
+    const idSeed = String(v.id || index).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const angle = idSeed * 137.5 * (Math.PI / 180); 
+    const radius = 0.008 + (idSeed % 5) * 0.003;
     lat = base[0] + Math.sin(angle) * radius;
     lng = base[1] + Math.cos(angle) * radius;
   }
