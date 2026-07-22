@@ -3,6 +3,7 @@ package com.luxeway.security;
 import com.luxeway.entity.User;
 import com.luxeway.enums.UserRole;
 import com.luxeway.repository.UserRepository;
+import com.luxeway.service.EmailService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -31,6 +32,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
 
     @Value("${app.frontend-url:http://localhost:5173}")
     private String frontendUrl;
@@ -120,8 +122,23 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                 log.info("Google OAuth success handler: registered new user {}", email);
             }
 
-            String accessToken = jwtTokenProvider.generateToken(user);
-            String refreshToken = jwtTokenProvider.generateRefreshToken(user);
+            // Send login notification to user and admin asynchronously
+            final String userEmail = user.getEmail();
+            final String userFirstName = user.getFirstName();
+            java.util.concurrent.CompletableFuture.runAsync(() -> {
+                try {
+                    emailService.sendLoginAlert(userEmail, userFirstName);
+                } catch (Exception ex) {
+                    log.warn("Failed to send login alert to Google user: {}", ex.getMessage());
+                }
+                try {
+                    String adminMsg = String.format("A successful Google OAuth login was detected.\nUser Email: %s\nTime: %s", 
+                        userEmail, java.time.LocalDateTime.now().toString());
+                    emailService.sendAdminNotification("Google Login Notification", adminMsg);
+                } catch (Exception ex) {
+                    log.warn("Failed to send admin Google login notification: {}", ex.getMessage());
+                }
+            });
 
             String targetUrl = UriComponentsBuilder.fromUriString(frontendUrl + "/oauth2/redirect")
                     .queryParam("token", accessToken)
