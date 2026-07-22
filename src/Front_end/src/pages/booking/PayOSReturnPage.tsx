@@ -41,6 +41,38 @@ export const PayOSReturnPage: React.FC = () => {
             ? (isVi ? 'Nạp tiền thành công!' : 'Wallet top-up successful!')
             : (isVi ? 'Thanh toán thành công!' : 'Payment successful!'));
 
+          // --- Simulate Commission & Owner Revenue (90% to Owner) ---
+          if (bId && !topUpTx) {
+            try {
+              // 1. Fetch booking to get Owner ID and Total Price
+              const bookingRes = await apiClient.get<any>(`/bookings/${bId}`);
+              const booking = bookingRes.data || bookingRes.booking || bookingRes;
+              
+              if (booking && booking.ownerId && booking.pricing?.total) {
+                const ownerId = booking.ownerId;
+                // Owner gets 90%
+                const ownerRevenue = booking.pricing.total * 0.9;
+                
+                // 2. Fetch current owner balance
+                const ownerRes = await apiClient.get<any>(`/users/${ownerId}`);
+                const owner = ownerRes.data || ownerRes.user || ownerRes;
+                
+                const currentBalance = owner?.walletBalance || 0;
+                const newBalance = currentBalance + ownerRevenue;
+                
+                // 3. Update owner balance
+                await apiClient.put(`/users/${ownerId}`, {
+                  ...owner,
+                  walletBalance: newBalance
+                });
+                console.log(`Successfully credited ${ownerRevenue} to owner ${ownerId}.`);
+              }
+            } catch (err) {
+              console.error('Failed to credit owner revenue:', err);
+            }
+          }
+          // --------------------------------------------------------
+
           // AUTO REDIRECT: 3s countdown then navigate
           setTimeout(() => {
             if (topUpTx) {

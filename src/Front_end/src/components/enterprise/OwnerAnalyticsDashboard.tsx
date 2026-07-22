@@ -8,6 +8,8 @@ import {
   TrendingDown, Percent, Car, ShieldAlert, Award
 } from 'lucide-react';
 import { ownerAnalyticsService } from '@/services/enterpriseService';
+import { withdrawalService } from '@/services/withdrawalService';
+import apiClient from '@/services/api';
 import { useAuthStore } from '@/store';
 import { useToast } from '@/components/ui/Toast';
 
@@ -47,12 +49,28 @@ export const OwnerAnalyticsDashboard: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [exportingPdf, setExportingPdf] = useState<boolean>(false);
   const [exportingExcel, setExportingExcel] = useState<boolean>(false);
+  const [walletBalance, setWalletBalance] = useState<number>(0);
+
+  // Withdraw Modal States
+  const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
+  const [withdrawAmount, setWithdrawAmount] = useState('');
+  const [bankName, setBankName] = useState('');
+  const [accountName, setAccountName] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [withdrawing, setWithdrawing] = useState(false);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
         const data = await ownerAnalyticsService.getDashboardStats();
         setStats(data);
+        
+        // Fetch wallet balance
+        if (user) {
+          const userRes = await apiClient.get<any>(`/users/${user.id}`);
+          const userData = userRes.data || userRes.user || userRes;
+          setWalletBalance(userData?.walletBalance || 0);
+        }
       } catch (err) {
         console.error('Failed to load owner stats:', err);
         toast.error('Failed to load fleet analytics metrics.');
@@ -61,7 +79,7 @@ export const OwnerAnalyticsDashboard: React.FC = () => {
       }
     };
     fetchStats();
-  }, []);
+  }, [user]);
 
   const handleExportPdf = async () => {
     setExportingPdf(true);
@@ -118,6 +136,41 @@ export const OwnerAnalyticsDashboard: React.FC = () => {
     }
   };
 
+  const handleWithdraw = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    
+    const amountNum = parseFloat(withdrawAmount);
+    if (isNaN(amountNum) || amountNum <= 0) {
+      toast.error('Vui lòng nhập số tiền hợp lệ');
+      return;
+    }
+    
+    if (amountNum > walletBalance) {
+      toast.error('Số dư không đủ để rút');
+      return;
+    }
+
+    setWithdrawing(true);
+    try {
+      await withdrawalService.requestWithdrawal(
+        user.id,
+        amountNum,
+        bankName,
+        accountName,
+        accountNumber
+      );
+      toast.success('Yêu cầu rút tiền đã được gửi và đang chờ Admin xử lý.');
+      setIsWithdrawModalOpen(false);
+      setWithdrawAmount('');
+      // Optionally fetch balance again here, but it only drops when admin approves.
+    } catch (err: any) {
+      toast.error(err.message || 'Lỗi khi gửi yêu cầu rút tiền');
+    } finally {
+      setWithdrawing(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -145,6 +198,13 @@ export const OwnerAnalyticsDashboard: React.FC = () => {
           <p className="text-xs text-[var(--lw-text-secondary)] font-semibold mt-0.5">Track dynamic utilization rates and financial performance statements</p>
         </div>
         <div className="flex flex-wrap gap-3">
+          <button
+            onClick={() => setIsWithdrawModalOpen(true)}
+            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-widest px-4 py-3 rounded-xl transition-all shadow-lg shadow-emerald-500/20"
+          >
+            <DollarSign className="w-4 h-4" />
+            Withdraw Funds
+          </button>
           <button
             onClick={handleExportPdf}
             disabled={exportingPdf}
@@ -180,9 +240,23 @@ export const OwnerAnalyticsDashboard: React.FC = () => {
           <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-3">
             <DollarSign className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
           </div>
-          <p className="text-2xl font-black text-[var(--lw-text-primary)]">{formatVND(stats.totalRevenue)}</p>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--lw-text-muted)] mt-1">Completed Revenue</p>
+          <p className="text-2xl font-black text-[var(--lw-text-primary)]">{formatVND(walletBalance)}</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--lw-text-muted)] mt-1">Available Balance</p>
           <div className="flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold mt-2">
+            <TrendingUp className="w-3 h-3" />
+            Ready for withdrawal
+          </div>
+        </div>
+
+        {/* Total Earnings Card */}
+        <div className="bg-[var(--lw-bg-card)] border border-[var(--lw-border)] p-5 rounded-2xl relative overflow-hidden shadow-md">
+          <div className="absolute top-0 right-0 w-16 h-16 bg-blue-500/10 rounded-full blur-xl" />
+          <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-3">
+            <Activity className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          </div>
+          <p className="text-2xl font-black text-[var(--lw-text-primary)]">{formatVND(stats.totalRevenue)}</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--lw-text-muted)] mt-1">Gross Earnings</p>
+          <div className="flex items-center gap-1 text-[10px] text-blue-600 dark:text-blue-400 font-bold mt-2">
             <TrendingUp className="w-3 h-3" />
             Projected: {formatVND(stats.projectedRevenue || stats.totalRevenue)}
           </div>
@@ -290,6 +364,87 @@ export const OwnerAnalyticsDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Withdraw Modal */}
+      {isWithdrawModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800 animate-fade-up">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white">Withdraw Funds</h3>
+              <p className="text-sm text-slate-500 mt-1">Available balance: {formatVND(walletBalance)}</p>
+            </div>
+            
+            <form onSubmit={handleWithdraw} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Amount (VND)</label>
+                <input 
+                  type="number" 
+                  required
+                  min={100000}
+                  max={walletBalance}
+                  value={withdrawAmount}
+                  onChange={(e) => setWithdrawAmount(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  placeholder="e.g. 500000"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Bank Name</label>
+                <input 
+                  type="text" 
+                  required
+                  value={bankName}
+                  onChange={(e) => setBankName(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  placeholder="e.g. Vietcombank"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Account Name</label>
+                <input 
+                  type="text" 
+                  required
+                  value={accountName}
+                  onChange={(e) => setAccountName(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  placeholder="e.g. NGUYEN VAN A"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Account Number</label>
+                <input 
+                  type="text" 
+                  required
+                  value={accountNumber}
+                  onChange={(e) => setAccountNumber(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  placeholder="e.g. 10123456789"
+                />
+              </div>
+
+              <div className="pt-4 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsWithdrawModalOpen(false)}
+                  className="flex-1 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={withdrawing}
+                  className="flex-1 px-4 py-3 rounded-xl text-white bg-emerald-600 hover:bg-emerald-700 font-bold transition-colors disabled:opacity-50"
+                >
+                  {withdrawing ? 'Processing...' : 'Submit Request'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

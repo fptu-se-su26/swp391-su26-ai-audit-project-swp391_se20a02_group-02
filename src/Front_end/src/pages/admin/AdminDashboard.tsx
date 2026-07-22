@@ -6,7 +6,7 @@ import {
   CheckCircle, XCircle, Eye, Search, BarChart2, Globe, Loader2,
   Settings, HelpCircle, Edit2, Plus, Trash2, Activity, LogOut, Clock, Menu, X,
   ArrowUpRight, ArrowDownRight, Scale, Ban, RefreshCw, Download, FileText, Check, Lock,
-  Cpu, HardDrive, Bell, ShieldAlert, Wifi, Terminal, Mail, Send, Share2, FileSpreadsheet, PanelLeftClose, PanelLeftOpen, Building
+  Cpu, HardDrive, Bell, ShieldAlert, Wifi, Terminal, Mail, Send, Share2, FileSpreadsheet, PanelLeftClose, PanelLeftOpen, Building, Wallet
 } from 'lucide-react';
 import { formatCurrency, formatDate, cn, convertCurrency } from '@/utils';
 import { staggerContainer, staggerItem, fadeUp } from '@/animations/variants';
@@ -20,6 +20,7 @@ import { useToast } from '@/components/ui/Toast';
 import { useUIStore, useAuthStore } from '@/store';
 import { useT } from '@/i18n/translations';
 import { AuditTrailDashboard } from '@/components/enterprise/AuditTrailDashboard';
+import { AdminPayoutsTab } from '@/components/admin/AdminPayoutsTab';
 import Avatar from '@/components/ui/Avatar';
 import StatusBadge from '@/components/ui/StatusBadge';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
@@ -114,7 +115,7 @@ const AdminDashboard: React.FC = () => {
   const location = useLocation();
 
   const queryTab = new URLSearchParams(location.search).get('tab');
-  const validTabs = ['overview', 'marketplace', 'vehicles', 'kyc', 'owner-applications', 'bookings', 'payments', 'disputes', 'users', 'fraud', 'analytics', 'notifications', 'logs', 'health', 'settings'];
+  const validTabs = ['overview', 'marketplace', 'vehicles', 'kyc', 'owner-applications', 'bookings', 'payments', 'payouts', 'disputes', 'users', 'fraud', 'analytics', 'notifications', 'logs', 'health', 'settings'];
   const normalizeStatus = (value?: string | null) => String(value || '').trim().toUpperCase();
   const isPendingVehicleApproval = (vehicle: any) => {
     const status = normalizeStatus(vehicle?.status);
@@ -123,7 +124,7 @@ const AdminDashboard: React.FC = () => {
   };
   
   // Dashboard states
-  const [activeTab, setActiveTab] = useState<'overview' | 'marketplace' | 'vehicles' | 'kyc' | 'owner-applications' | 'bookings' | 'payments' | 'disputes' | 'users' | 'fraud' | 'analytics' | 'notifications' | 'logs' | 'health' | 'settings'>(
+  const [activeTab, setActiveTab] = useState<'overview' | 'marketplace' | 'vehicles' | 'kyc' | 'owner-applications' | 'bookings' | 'payments' | 'payouts' | 'disputes' | 'users' | 'fraud' | 'analytics' | 'notifications' | 'logs' | 'health' | 'settings'>(
     queryTab && validTabs.includes(queryTab) ? (queryTab as any) : 'overview'
   );
   const [loading, setLoading] = useState(false);
@@ -803,6 +804,7 @@ const AdminDashboard: React.FC = () => {
     { id: 'kyc', label: 'KYC Review', icon: Shield, badge: pendingKycCount },
     { id: 'bookings', label: 'Bookings', icon: Calendar, badge: 0 },
     { id: 'payments', label: 'Payments', icon: DollarSign, badge: failedPaymentsCount },
+    { id: 'payouts', label: 'Withdrawals (Payouts)', icon: Wallet, badge: 0 },
     { id: 'disputes', label: 'Disputes', icon: Scale, badge: openDisputesCount },
     { id: 'fraud', label: 'Fraud Center', icon: ShieldAlert, badge: activeFraudAlertsCount },
     { id: 'analytics', label: 'Analytics', icon: TrendingUp, badge: 0 },
@@ -1820,6 +1822,11 @@ const AdminDashboard: React.FC = () => {
                     </div>
                   </div>
                 </div>
+              )}
+
+              {/* ============ TABS: DISPUTES HUB ============ */}
+              {activeTab === 'payouts' && (
+                <AdminPayoutsTab />
               )}
 
               {/* ============ TABS: DISPUTES HUB ============ */}

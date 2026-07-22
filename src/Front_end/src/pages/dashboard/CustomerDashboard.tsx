@@ -42,8 +42,6 @@ export const CustomerDashboardLayout: React.FC = () => {
     { href: '/', icon: Globe, label: t.marketplace.home, exact: true },
     { href: '/dashboard', icon: LayoutDashboard, label: t.dashboard.overview, exact: true },
     { href: '/dashboard/bookings', icon: Calendar, label: t.dashboard.myBookings },
-    { href: '/dashboard/wishlist', icon: Heart, label: t.dashboard.wishlist },
-    { href: '/dashboard/wallet', icon: Wallet, label: t.wallet.title },
     { href: '/dashboard/payments', icon: CreditCard, label: t.dashboard.payments },
     { href: '/dashboard/documents', icon: FileText, label: t.dashboard.documents },
     { href: '/dashboard/reviews', icon: Star, label: t.dashboard.myReviews },
@@ -52,7 +50,7 @@ export const CustomerDashboardLayout: React.FC = () => {
       icon: Gift,
       label: language === 'vi' ? 'Đổi Thưởng' :
         language === 'ja' ? 'ロイヤルティ特典' :
-          language === 'ko' ? '로열티 リワード' :
+          language === 'ko' ? '로열티 리워드' :
             language === 'zh' ? '会员积分奖励' :
               language === 'fr' ? 'Récompenses' :
                 language === 'de' ? 'Treueprämien' :

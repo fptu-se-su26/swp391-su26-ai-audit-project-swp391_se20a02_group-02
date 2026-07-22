@@ -41,6 +41,34 @@ export const VNPayReturnPage: React.FC = () => {
             isTopUpTx ? t.paymentReturn.toastTopUpSuccess : t.paymentReturn.toastPaymentSuccess
           );
           // BUG-5 FIX: Auto-redirect 3s after success
+          
+          // --- Simulate Commission & Owner Revenue (90% to Owner) ---
+          if (bId && !isTopUpTx) {
+            try {
+              const bookingRes = await apiClient.get<any>(`/bookings/${bId}`);
+              const booking = bookingRes.data || bookingRes.booking || bookingRes;
+              
+              if (booking && booking.ownerId && booking.pricing?.total) {
+                const ownerId = booking.ownerId;
+                const ownerRevenue = booking.pricing.total * 0.9;
+                
+                const ownerRes = await apiClient.get<any>(`/users/${ownerId}`);
+                const owner = ownerRes.data || ownerRes.user || ownerRes;
+                
+                const newBalance = (owner?.walletBalance || 0) + ownerRevenue;
+                
+                await apiClient.put(`/users/${ownerId}`, {
+                  ...owner,
+                  walletBalance: newBalance
+                });
+                console.log(`Successfully credited ${ownerRevenue} to owner ${ownerId}.`);
+              }
+            } catch (err) {
+              console.error('Failed to credit owner revenue:', err);
+            }
+          }
+          // --------------------------------------------------------
+
           setTimeout(() => {
             navigate(isTopUpTx ? '/dashboard/wallet' : (bId ? `/dashboard/bookings/${bId}` : '/dashboard/bookings'));
           }, 3000);

@@ -56,7 +56,6 @@ const SecurityPage = lazy(() => import('@/pages/dashboard/CustomerDashboard').th
 const MyDocuments = lazy(() => import('@/pages/dashboard/MyDocuments').then(m => ({ default: m.MyDocuments })));
 const PaymentHistoryPage = lazy(() => import('@/pages/dashboard/CustomerDashboard').then(m => ({ default: m.PaymentHistoryPage })));
 const SettingsPage = lazy(() => import('@/pages/dashboard/CustomerDashboard').then(m => ({ default: m.SettingsPage })));
-const LuxeWalletPage = lazy(() => import('@/pages/dashboard/CustomerDashboard').then(m => ({ default: m.LuxeWalletPage })));
 const MyReviewsPage = lazy(() => import('@/pages/dashboard/CustomerDashboard').then(m => ({ default: m.MyReviewsPage })));
 const OwnerDashboardLayout = lazy(() => import('@/pages/dashboard/OwnerDashboard').then(m => ({ default: m.OwnerDashboardLayout })));
 const OwnerOverview = lazy(() => import('@/pages/dashboard/OwnerDashboard').then(m => ({ default: m.OwnerOverview })));
@@ -688,7 +687,6 @@ const App: React.FC = () => {
               <Route path="reviews" element={<MyReviewsPage />} />
               <Route path="security" element={<SecurityPage />} />
               <Route path="documents" element={<MyDocuments />} />
-              <Route path="wallet" element={<LuxeWalletPage />} />
               <Route path="payments" element={<PaymentHistoryPage />} />
               <Route path="settings" element={<SettingsPage />} />
               <Route path="rewards" element={<RewardsDashboard />} />
