@@ -115,6 +115,7 @@ public class CarService {
             int order = 0;
             for (String url : request.getImageUrls()) {
                 images.add(CarImage.builder()
+                    .id(java.util.UUID.randomUUID().toString())
                     .car(car)
                     .url(url)
                     .isPrimary(order == 0)

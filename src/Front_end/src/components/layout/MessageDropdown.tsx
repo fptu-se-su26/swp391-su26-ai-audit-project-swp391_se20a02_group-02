@@ -52,7 +52,12 @@ export const MessageDropdown: React.FC<MessageDropdownProps> = ({ isOpen, onClos
   const getOtherUser = (conv: Conversation) => {
     if (!user) return null;
     const otherId = conv.participants.find(p => p !== user.id);
-    return { id: otherId, displayName: `User ${otherId?.substring(0,4)}`, avatar: undefined };
+    const profile = conv.participantProfiles?.find(p => p.id === otherId);
+    return {
+      id: otherId,
+      displayName: profile?.displayName || [profile?.firstName, profile?.lastName].filter(Boolean).join(' ') || profile?.email || `User ${otherId?.substring(0, 4)}`,
+      avatar: profile?.avatar,
+    };
   };
 
   if (!user) return null;

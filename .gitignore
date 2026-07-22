@@ -73,6 +73,10 @@ data/
 .impeccable/
 impeccable/
 .gemini/
+.firebase/
+.tools/
+src/Front_end/tools/
+.release-tunnel.json
 
 # Internal AI task and design files
 AI_TASK.md

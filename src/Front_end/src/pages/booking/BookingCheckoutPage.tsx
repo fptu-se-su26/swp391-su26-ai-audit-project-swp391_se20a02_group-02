@@ -2,11 +2,22 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { Calendar, Shield, CreditCard, Loader2, ArrowRight, CheckCircle, Tag, MapPin, Sparkles, Star } from 'lucide-react';
 import { vehicleService } from '@/services/vehicleService';
-import { bookingService, paymentService } from '@/services/bookingService';
+import { bookingService } from '@/services/bookingService';
 import type { Vehicle } from '@/types';
 import { useAuthStore, useUIStore } from '@/store';
 import { useToast } from '@/components/ui/Toast';
 import { formatCurrency, resolveImageUrl } from '@/utils';
+
+const getDemoDateRange = () => {
+  const start = new Date();
+  start.setDate(start.getDate() + 1);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 2);
+  return {
+    start: start.toISOString().split('T')[0],
+    end: end.toISOString().split('T')[0],
+  };
+};
 
 const BookingCheckoutPage: React.FC = () => {
   const { vehicleId } = useParams<{ vehicleId: string }>();
@@ -21,15 +32,18 @@ const BookingCheckoutPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   
-  // Checkout options initialized from query parameters
-  const [startDate, setStartDate] = useState(searchParams.get('start') || '');
-  const [endDate, setEndDate] = useState(searchParams.get('end') || '');
+  const demoDates = getDemoDateRange();
+  const [startDate, setStartDate] = useState(searchParams.get('start') || demoDates.start);
+  const [endDate, setEndDate] = useState(searchParams.get('end') || demoDates.end);
   const [includeInsurance, setIncludeInsurance] = useState(searchParams.get('insurance') === 'true');
   const [includeDelivery, setIncludeDelivery] = useState(searchParams.get('delivery') === 'true');
   
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'payos' | 'bank_transfer'>(
+    searchParams.get('method') === 'bank_transfer' ? 'bank_transfer' : 'payos'
+  );
 
   // Live Weather & Currency Exchange Rates Integration
   const [weather, setWeather] = useState<any>(null);
@@ -138,7 +152,7 @@ const BookingCheckoutPage: React.FC = () => {
 
   // Duration calculations
   const days = (startDate && endDate) 
-    ? Math.max(1, Math.round((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1)
+    ? Math.max(1, Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)))
     : 0;
 
   if (days === 0) {
@@ -200,28 +214,8 @@ const BookingCheckoutPage: React.FC = () => {
       );
 
       if (booking && booking.id) {
-        toast.success(isVi ? 'Đặt xe thành công' : 'Booking Created', isVi ? 'Đơn đặt xe đã được tạo. Đang chuyển hướng sang cổng thanh toán...' : 'Booking created. Redirecting to payment...');
-        
-        // Call PayOS payment creation
-        const amount = booking.pricing?.total || 0;
-        const returnUrl = `${window.location.origin}/payment/payos/return`;
-        const paymentResult = await paymentService.processPayment(
-          booking.id,
-          'payos',
-          amount,
-          returnUrl
-        );
-        
-        if (paymentResult.success && paymentResult.paymentUrl) {
-          window.location.href = paymentResult.paymentUrl;
-        } else {
-          toast.error(
-            isVi ? 'Không khởi tạo được cổng thanh toán PayOS' : 'Failed to initialize PayOS checkout',
-            paymentResult.errorMessage || (isVi ? 'Vui lòng thử lại sau.' : 'Please try again later.')
-          );
-          // Fallback to manual payment page if PayOS gateway request fails
-          navigate(`/booking/${booking.id}/payment`);
-        }
+        toast.success(isVi ? 'Đặt xe thành công' : 'Booking Created', isVi ? 'Đơn đặt xe đã được tạo. Vui lòng thanh toán.' : 'Booking created. Please make payment.');
+        navigate(`/booking/${booking.id}/contract?method=${paymentMethod}`);
       } else {
         toast.error(isVi ? 'Đặt xe thất bại' : 'Submission failed', isVi ? 'Không khởi tạo được lịch trình.' : 'Failed to initialize booking.');
       }
@@ -429,45 +423,94 @@ const BookingCheckoutPage: React.FC = () => {
               <div className="text-xs space-y-3.5 text-slate-600 dark:text-slate-400">
                 <div className="flex justify-between">
                   <span>{isVi ? 'Giá thuê xe' : 'Vehicle Rent'}</span>
-                  <span className="font-bold text-foreground">{formatCurrency(rawBase)}</span>
+                  <span className="font-bold text-foreground">{formatCurrency(rawBase, language)}</span>
                 </div>
                 {discountAmt > 0 && (
                   <div className="flex justify-between text-red-500">
                     <span>{isVi ? 'Ưu đãi giảm giá' : 'Special promo discount'}</span>
-                    <span className="font-bold">-{formatCurrency(discountAmt)}</span>
+                    <span className="font-bold">-{formatCurrency(discountAmt, language)}</span>
                   </div>
                 )}
                 {includeInsurance && (
                   <div className="flex justify-between">
                     <span className="text-slate-400">{isVi ? 'Phí bảo hiểm' : 'Insurance'}</span>
-                    <span className="font-bold text-foreground">+{formatCurrency(insuranceFee)}</span>
+                    <span className="font-bold text-foreground">+{formatCurrency(insuranceFee, language)}</span>
                   </div>
                 )}
                 {includeDelivery && (
                   <div className="flex justify-between">
                     <span className="text-slate-400">{isVi ? 'Phí giao xe' : 'Delivery fee'}</span>
-                    <span className="font-bold text-foreground">+{formatCurrency(deliveryFee)}</span>
+                    <span className="font-bold text-foreground">+{formatCurrency(deliveryFee, language)}</span>
                   </div>
                 )}
                 <div className="flex justify-between">
                   <span>{isVi ? 'Phí nền tảng' : 'Service fee'} (12%)</span>
-                  <span className="font-bold text-foreground">+{formatCurrency(serviceFee)}</span>
+                  <span className="font-bold text-foreground">+{formatCurrency(serviceFee, language)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>{isVi ? 'Thuế VAT' : 'Taxes & VAT'} (8%)</span>
-                  <span className="font-bold text-foreground">+{formatCurrency(taxes)}</span>
+                  <span className="font-bold text-foreground">+{formatCurrency(taxes, language)}</span>
                 </div>
 
                 {deposit > 0 && (
                   <div className="flex justify-between pt-2 text-amber-600">
                     <span>{isVi ? 'Tiền đặt cọc thế chấp' : 'Security Deposit'}</span>
-                    <span className="font-bold">{formatCurrency(deposit)}</span>
+                    <span className="font-bold">{formatCurrency(deposit, language)}</span>
                   </div>
                 )}
 
                 <div className="flex justify-between text-base font-bold pt-3 border-t border-dashed border-border">
                   <span className="text-foreground">{isVi ? 'TỔNG CỘNG' : 'TOTAL PRICE'}</span>
-                  <span className="text-blue-500 font-display font-black">{formatCurrency(totalCost)}</span>
+                  <span className="text-blue-500 font-display font-black">{formatCurrency(totalCost, language)}</span>
+                </div>
+              </div>
+
+              <div className="space-y-3 pt-1">
+                <h4 className="text-[11px] font-black uppercase tracking-wider text-slate-500">
+                  {isVi ? 'Phương thức thanh toán' : 'Payment method'}
+                </h4>
+                <div className="grid gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('payos')}
+                    className={`w-full text-left rounded-2xl border px-4 py-3 transition-all ${
+                      paymentMethod === 'payos'
+                        ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300'
+                        : 'border-border bg-slate-50 text-slate-600 hover:border-blue-300 dark:bg-white/5 dark:text-slate-300'
+                    }`}
+                  >
+                    <span className="flex items-center justify-between gap-3">
+                      <span className="inline-flex items-center gap-2 text-sm font-black">
+                        <CreditCard className="w-4 h-4" />
+                        PayOS online checkout
+                      </span>
+                      {paymentMethod === 'payos' && <CheckCircle className="w-4 h-4" />}
+                    </span>
+                    <span className="block mt-1 text-[11px] opacity-75">
+                      {isVi ? 'Ký hợp đồng xong sẽ chuyển sang cổng thanh toán PayOS.' : 'After signing the contract, continue to the PayOS gateway.'}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('bank_transfer')}
+                    className={`w-full text-left rounded-2xl border px-4 py-3 transition-all ${
+                      paymentMethod === 'bank_transfer'
+                        ? 'border-amber-500 bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300'
+                        : 'border-border bg-slate-50 text-slate-600 hover:border-amber-300 dark:bg-white/5 dark:text-slate-300'
+                    }`}
+                  >
+                    <span className="flex items-center justify-between gap-3">
+                      <span className="inline-flex items-center gap-2 text-sm font-black">
+                        <CreditCard className="w-4 h-4" />
+                        {isVi ? 'Chuyển khoản ngân hàng' : 'Bank transfer'}
+                      </span>
+                      {paymentMethod === 'bank_transfer' && <CheckCircle className="w-4 h-4" />}
+                    </span>
+                    <span className="block mt-1 text-[11px] opacity-75">
+                      {isVi ? 'Quét VietQR rồi gửi xác nhận cho admin duyệt.' : 'Scan VietQR, then submit manual transfer confirmation.'}
+                    </span>
+                  </button>
                 </div>
               </div>
 

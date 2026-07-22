@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Car, ArrowRight, CheckCircle, Shield, Loader2 } from 'lucide-react';
 import logoImage from '../../image/logo.png';
@@ -29,7 +29,7 @@ const getRoleBasedDashboard = (user: User | null): string => {
   if (role === 'owner') {
     return '/owner';
   }
-  return '/';
+  return '/dashboard';
 };
 
 
@@ -108,6 +108,7 @@ const GoogleLoginButton: React.FC<{ onSuccess?: () => void }> = () => {
 export const LoginPage: React.FC = () => {
   const t = useT();
   const navigate = useNavigate();
+  const location = useLocation();
   const { login, isLoading, isAuthenticated, user, isInitialized } = useAuthStore();
   const toast = useToast();
   const [email, setEmail] = useState('');
@@ -116,9 +117,8 @@ export const LoginPage: React.FC = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   React.useEffect(() => {
-    // Already-authenticated users get sent to Home page, not dashboard
     if (isInitialized && isAuthenticated && user) {
-      navigate('/', { replace: true });
+      navigate(getRoleBasedDashboard(user), { replace: true });
     }
   }, [isInitialized, isAuthenticated, user, navigate]);
 
@@ -142,9 +142,10 @@ export const LoginPage: React.FC = () => {
     const success = await login(email, password);
     if (success) {
       const { user } = useAuthStore.getState();
+      const from = (location.state as any)?.from?.pathname;
+      const search = (location.state as any)?.from?.search || '';
       toast.success(t.auth.welcomeBack, t.auth.signInSuccess);
-      // Navigate to Home page, not dashboard
-      navigate('/', { replace: true });
+      navigate(from ? `${from}${search}` : getRoleBasedDashboard(user), { replace: true });
     } else {
       toast.error(t.auth.invalidCredentials, t.auth.invalidCredentialsDesc);
       setErrors({ password: t.auth.invalidCredentialsDesc });
@@ -290,14 +291,18 @@ export const LoginPage: React.FC = () => {
 export const RegisterPage: React.FC = () => {
   const t = useT();
   const navigate = useNavigate();
-  const { register, isLoading, isAuthenticated, user, isInitialized } = useAuthStore();
+  const { isLoading, isAuthenticated, user, isInitialized } = useAuthStore();
   const toast = useToast();
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({
     firstName: '', lastName: '', email: '', phone: '', password: '', confirmPassword: '', role: 'customer',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [otpCode, setOtpCode] = useState(['', '', '', '', '', '']);
+  const [pendingEmail, setPendingEmail] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const otpInputs = React.useRef<HTMLInputElement[]>([]);
 
   React.useEffect(() => {
     // BUG-18 FIX: Already-authenticated users get sent to their role dashboard, not '/'
@@ -341,24 +346,85 @@ export const RegisterPage: React.FC = () => {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (step === 1) { if (validateStep1()) setStep(2); return; }
-    if (!validateStep2()) return;
+    if (step === 2) {
+      if (!validateStep2()) return;
 
-    const success = await register({
-      firstName: form.firstName,
-      lastName: form.lastName,
-      email: form.email,
-      password: form.password,
-      phone: form.phone,
-      role: form.role as any,
-    });
+      setSubmitting(true);
+      try {
+        const response = await authService.requestRegistration({
+          firstName: form.firstName,
+          lastName: form.lastName,
+          email: form.email,
+          password: form.password,
+          phone: form.phone,
+          role: form.role as any,
+        });
+        setPendingEmail(response.email);
+        sessionStorage.setItem('luxeway_pending_registration_email', response.email);
+        setStep(3);
+        setTimeout(() => otpInputs.current[0]?.focus(), 100);
+        toast.success('Verification code sent', `Please check ${response.email}.`);
+      } catch (err: any) {
+        toast.error('Registration failed', err.message || 'Could not send verification code.');
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
 
-    if (success) {
-      const { user } = useAuthStore.getState();
-      toast.success('Account created!', 'Welcome to LuxeWay.');
-      // BUG-16 FIX: Navigate to role-based dashboard, not '/'
-      navigate(getRoleBasedDashboard(user), { replace: true });
-    } else {
-      toast.error('Email already exists', 'Try signing in instead.');
+    await handleVerifyRegistrationOtp();
+  };
+
+  const handleOtpChange = (value: string, index: number) => {
+    const next = [...otpCode];
+    next[index] = value.replace(/\D/g, '').slice(-1);
+    setOtpCode(next);
+    if (next[index] && index < 5) otpInputs.current[index + 1]?.focus();
+  };
+
+  const handleOtpKeyDown = (event: React.KeyboardEvent<HTMLInputElement>, index: number) => {
+    if (event.key === 'Backspace' && !otpCode[index] && index > 0) {
+      otpInputs.current[index - 1]?.focus();
+    }
+  };
+
+  const handleVerifyRegistrationOtp = async () => {
+    const email = pendingEmail || sessionStorage.getItem('luxeway_pending_registration_email') || form.email;
+    const otp = otpCode.join('');
+    if (!email || otp.length !== 6) {
+      toast.error('Invalid OTP', 'Please enter the 6-digit verification code.');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const verifiedUser = await authService.verifyRegistrationOTP(email, otp);
+      if (!verifiedUser) {
+        toast.error('Verification failed', 'The verification code was rejected.');
+        return;
+      }
+      useAuthStore.setState({ user: verifiedUser, isAuthenticated: true, isLoading: false, error: null });
+      sessionStorage.removeItem('luxeway_pending_registration_email');
+      toast.success('Account created!', 'Your email has been verified.');
+      navigate(getRoleBasedDashboard(verifiedUser), { replace: true });
+    } catch (err: any) {
+      toast.error('Verification failed', err.message || 'Invalid or expired verification code.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleResendRegistrationOtp = async () => {
+    const email = pendingEmail || sessionStorage.getItem('luxeway_pending_registration_email') || form.email;
+    if (!email) return;
+    setSubmitting(true);
+    try {
+      await authService.resendRegistrationOTP(email);
+      toast.success('Code resent', `A new verification code was sent to ${email}.`);
+    } catch (err: any) {
+      toast.error('Could not resend code', err.message || 'Please wait before requesting another code.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -388,21 +454,21 @@ export const RegisterPage: React.FC = () => {
 
           {/* Progress */}
           <div className="flex items-center gap-3 mb-8">
-            {[1, 2].map(s => (
+            {[1, 2, 3].map(s => (
               <React.Fragment key={s}>
                 <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold transition-all duration-300 ${step >= s ? 'bg-blue-600 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-500'}`}>
                   {step > s ? <CheckCircle className="w-4 h-4" /> : s}
                 </div>
-                {s < 2 && <div className={`flex-1 h-0.5 transition-all duration-500 ${step > s ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-800'}`} />}
+                {s < 3 && <div className={`flex-1 h-0.5 transition-all duration-500 ${step > s ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-800'}`} />}
               </React.Fragment>
             ))}
           </div>
 
           <h1 className="font-display text-3xl font-bold text-foreground mb-1">
-            {step === 1 ? t.auth.register : t.auth.confirmPassword}
+            {step === 1 ? t.auth.register : step === 2 ? t.auth.confirmPassword : 'Verify Email'}
           </h1>
           <p className="text-muted-foreground mb-8">
-            {step === 1 ? 'Step 1 of 2' : 'Step 2 of 2'}
+            {step === 1 ? 'Step 1 of 3' : step === 2 ? 'Step 2 of 3' : `Step 3 of 3${pendingEmail ? ` - ${pendingEmail}` : ''}`}
           </p>
 
           <form onSubmit={handleRegister} className="space-y-4">
@@ -457,7 +523,7 @@ export const RegisterPage: React.FC = () => {
                   {t.booking.continue} <ArrowRight className="w-5 h-5" />
                 </motion.button>
               </>
-            ) : (
+            ) : step === 2 ? (
               <>
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-1.5">{t.auth.password}</label>
@@ -497,10 +563,52 @@ export const RegisterPage: React.FC = () => {
                   <button type="button" onClick={() => setStep(1)} className="btn-ghost border border-slate-200 dark:border-slate-700 px-4 py-3.5 rounded-2xl text-foreground">
                     {t.booking.back}
                   </button>
-                  <motion.button type="submit" disabled={isLoading} whileHover={{ scale: isLoading ? 1 : 1.01 }} whileTap={{ scale: 0.99 }} className="btn-primary flex-1 py-3.5 text-base disabled:opacity-70">
-                    {isLoading ? <><Loader2 className="w-5 h-5 animate-spin" /> ...</> : <>{t.auth.register} <ArrowRight className="w-5 h-5" /></>}
+                  <motion.button type="submit" disabled={submitting || isLoading} whileHover={{ scale: submitting || isLoading ? 1 : 1.01 }} whileTap={{ scale: 0.99 }} className="btn-primary flex-1 py-3.5 text-base disabled:opacity-70">
+                    {submitting || isLoading ? <><Loader2 className="w-5 h-5 animate-spin" /> ...</> : <>{t.auth.register} <ArrowRight className="w-5 h-5" /></>}
                   </motion.button>
                 </div>
+              </>
+            ) : (
+              <>
+                <div className="rounded-2xl border border-blue-100 dark:border-blue-900/40 bg-blue-50/70 dark:bg-blue-950/20 p-4 text-sm text-muted-foreground">
+                  We sent a 6-digit verification code to{' '}
+                  <span className="font-semibold text-foreground">{pendingEmail || form.email}</span>.
+                  Enter it below to activate your LuxeWay account.
+                </div>
+
+                <div className="flex justify-between gap-2">
+                  {otpCode.map((digit, index) => (
+                    <input
+                      key={index}
+                      ref={el => { if (el) otpInputs.current[index] = el; }}
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete={index === 0 ? 'one-time-code' : 'off'}
+                      value={digit}
+                      onChange={e => handleOtpChange(e.target.value, index)}
+                      onKeyDown={e => handleOtpKeyDown(e, index)}
+                      className="w-12 h-14 text-center text-xl font-black rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+                    />
+                  ))}
+                </div>
+
+                <div className="flex gap-3">
+                  <button type="button" onClick={() => setStep(2)} className="btn-ghost border border-slate-200 dark:border-slate-700 px-4 py-3.5 rounded-2xl text-foreground">
+                    {t.booking.back}
+                  </button>
+                  <motion.button type="submit" disabled={submitting || otpCode.join('').length !== 6} whileHover={{ scale: submitting ? 1 : 1.01 }} whileTap={{ scale: 0.99 }} className="btn-primary flex-1 py-3.5 text-base disabled:opacity-60">
+                    {submitting ? <><Loader2 className="w-5 h-5 animate-spin" /> ...</> : <>Verify Account <ArrowRight className="w-5 h-5" /></>}
+                  </motion.button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleResendRegistrationOtp}
+                  disabled={submitting}
+                  className="w-full text-sm font-semibold text-accent hover:text-blue-700 disabled:opacity-60"
+                >
+                  Resend verification code
+                </button>
               </>
             )}
           </form>
@@ -588,84 +696,3 @@ export const ForgotPasswordPage: React.FC = () => {
     </div>
   );
 };
-
-// ====== RESET PASSWORD PAGE ======
-export const ResetPasswordPage: React.FC = () => {
-  const t = useT();
-  const navigate = useNavigate();
-  const toast = useToast();
-  const [searchParams] = useSearchParams();
-  const token = searchParams.get('token');
-  
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-
-  useEffect(() => {
-    if (!token) {
-      toast.error('Invalid Link', 'No reset token found in the URL. Please request a new password reset link.');
-      navigate('/auth/forgot-password');
-    }
-  }, [token, navigate, toast]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newPassword !== confirmPassword) {
-      toast.error('Mismatch', 'Passwords do not match.');
-      return;
-    }
-    setLoading(true);
-    try {
-      await authService.resetPassword(token!, newPassword);
-      setSuccess(true);
-      toast.success('Success', 'Your password has been securely updated.');
-    } catch (err: any) {
-      toast.error('Reset Failed', err.message || 'Invalid or expired token. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-background">
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" className="w-full max-w-md">
-        <Link to="/" className="flex items-center gap-2 mb-10 justify-center logo-wrapper">
-          <img src={logoImage} alt="LuxeWay" className="logo-effect h-12 w-auto object-contain" />
-        </Link>
-
-        <div className="luxury-card p-8">
-          {!success ? (
-            <>
-              <h1 className="font-display text-2xl font-bold text-foreground mb-2">Secure Reset</h1>
-              <p className="text-muted-foreground text-sm mb-6">Choose a strong, new password for your LuxeWay account.</p>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1.5">New Password</label>
-                  <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="••••••••" className="lux-input" minLength={6} required />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1.5">Confirm New Password</label>
-                  <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="••••••••" className="lux-input" minLength={6} required />
-                </div>
-                <button type="submit" disabled={loading} className="btn-primary w-full py-3.5 disabled:opacity-70 mt-4">
-                  {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> ...</> : 'Update Password'}
-                </button>
-              </form>
-            </>
-          ) : (
-            <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center">
-              <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-8 h-8 text-success" />
-              </div>
-              <h2 className="font-display text-xl font-bold text-foreground mb-2">Password Updated</h2>
-              <p className="text-muted-foreground text-sm mb-6">Your password has been successfully reset. You can now securely log into your account.</p>
-              <Link to="/auth/login" className="btn-primary w-full py-3 justify-center">Return to Login →</Link>
-            </motion.div>
-          )}
-        </div>
-      </motion.div>
-    </div>
-  );
-};
-

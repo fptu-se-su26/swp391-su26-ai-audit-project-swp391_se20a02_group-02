@@ -16,12 +16,10 @@ public class SystemSetting {
     @Column(length = 36)
     private String id;
 
-    // DB column is 'key_name' not 'setting_key'
-    @Column(name = "key_name", nullable = false, unique = true, length = 100)
+    @Column(name = "setting_key", nullable = false, unique = true, length = 100)
     private String settingKey;
 
-    // DB column is 'value' not 'setting_value'
-    @Column(name = "value", nullable = false, columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "setting_value", nullable = false, columnDefinition = "NVARCHAR(MAX)")
     private String settingValue;
 
     @Column(name = "data_type", length = 50)

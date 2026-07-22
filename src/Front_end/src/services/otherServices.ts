@@ -16,12 +16,17 @@ const mapReview = (r: any): Review => {
   };
 };
 
+const unwrapPageContent = (response: any): any[] => {
+  const data = response?.data?.data ?? response?.data ?? response;
+  return Array.isArray(data) ? data : (data?.content || []);
+};
+
 // ====== REVIEW SERVICE ======
 export const reviewService = {
   async getByVehicle(vehicleId: string): Promise<Review[]> {
     try {
       const response = await apiClient.get<any>(`/reviews/vehicle/${vehicleId}?page=0&size=50`);
-      return (response.data?.content || []).map(mapReview);
+      return unwrapPageContent(response).map(mapReview);
     } catch (error) {
       return [];
     }
@@ -30,7 +35,7 @@ export const reviewService = {
   async getByUser(userId: string): Promise<Review[]> {
     try {
       const response = await apiClient.get<any>(`/reviews/user/${userId}?page=0&size=50`);
-      return (response.data?.content || []).map(mapReview);
+      return unwrapPageContent(response).map(mapReview);
     } catch (error) {
       return [];
     }
@@ -127,7 +132,7 @@ export const reviewService = {
   async getFeaturedReviews(): Promise<Review[]> {
     try {
       const response = await apiClient.get<any>('/reviews/featured?limit=3');
-      return (response.data?.content || response.data?.data?.content || []).map(mapReview);
+      return unwrapPageContent(response).map(mapReview);
     } catch (error) {
       console.error('Failed to fetch featured reviews', error);
       return [];
@@ -140,9 +145,7 @@ export const notificationService = {
   async getByUser(userId: string): Promise<Notification[]> {
     try {
       const response = await apiClient.get<any>('/notifications?page=0&size=50');
-      // ApiResponse wrapper: actual page is at response.data?.data
-      const pageData = response.data?.data || response.data;
-      const items = pageData?.content || [];
+      const items = unwrapPageContent(response);
       // Map backend field `isRead` → frontend field `read`
       return items.map((n: any) => ({
         ...n,
@@ -192,10 +195,11 @@ export const messageService = {
   async getConversations(userId: string): Promise<Conversation[]> {
     try {
       const response = await apiClient.get<any>('/chat/conversations');
-      const convs = response.data?.data || [];
+      const convs = response?.data?.data || response?.data || response || [];
       return convs.map((c: any) => ({
         ...c,
-        participants: (c.participants || []).map((p: any) => typeof p === 'string' ? p : p.id)
+        participants: (c.participants || []).map((p: any) => typeof p === 'string' ? p : p.id),
+        participantProfiles: (c.participants || []).filter((p: any) => typeof p !== 'string')
       }));
     } catch (error) {
       console.error('Failed to fetch conversations', error);
@@ -206,7 +210,7 @@ export const messageService = {
   async getMessages(conversationId: string): Promise<Message[]> {
     try {
       const response = await apiClient.get<any>(`/chat/conversations/${conversationId}/messages`);
-      return response.data?.data || [];
+      return response?.data?.data || response?.data || response || [];
     } catch (error) {
       console.error('Failed to fetch messages', error);
       return [];
@@ -219,7 +223,7 @@ export const messageService = {
       receiverId,
       content
     });
-    return response.data?.data;
+    return response?.data?.data || response?.data || response;
   },
 
   async createConversation(userId: string, ownerId: string, vehicleId?: string): Promise<Conversation> {
@@ -227,10 +231,11 @@ export const messageService = {
       otherId: ownerId,
       vehicleId
     });
-    const c = response.data?.data;
+    const c = response?.data?.data || response?.data || response;
     return {
       ...c,
-      participants: (c.participants || []).map((p: any) => typeof p === 'string' ? p : p.id)
+      participants: (c.participants || []).map((p: any) => typeof p === 'string' ? p : p.id),
+      participantProfiles: (c.participants || []).filter((p: any) => typeof p !== 'string')
     };
   },
 };

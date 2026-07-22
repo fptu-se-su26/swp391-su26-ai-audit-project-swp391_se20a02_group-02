@@ -29,6 +29,30 @@ public class DigitalContract {
     @Column(name = "document_url", nullable = false, length = 500)
     private String documentUrl;
 
+    @Column(name = "docuseal_submission_id")
+    private Long docusealSubmissionId;
+
+    @Column(name = "docuseal_renter_submitter_id")
+    private Long docusealRenterSubmitterId;
+
+    @Column(name = "docuseal_owner_submitter_id")
+    private Long docusealOwnerSubmitterId;
+
+    @Column(name = "docuseal_renter_embed_url", length = 1000)
+    private String docusealRenterEmbedUrl;
+
+    @Column(name = "docuseal_owner_embed_url", length = 1000)
+    private String docusealOwnerEmbedUrl;
+
+    @Column(name = "docuseal_status", length = 50)
+    private String docusealStatus;
+
+    @Column(name = "docuseal_completed_document_url", length = 1000)
+    private String docusealCompletedDocumentUrl;
+
+    @Transient
+    private String currentSignerEmbedUrl;
+
     @Column(name = "owner_signature", length = 500)
     private String ownerSignature;
 
@@ -50,8 +74,11 @@ public class DigitalContract {
     private LocalDateTime createdAt;
     
     public void checkAndSetFullySigned() {
-        if (ownerSignature != null && renterSignature != null) {
-            this.isFullySigned = true;
-        }
+        this.isFullySigned = hasSignature(ownerSignature, ownerSignedAt)
+                && hasSignature(renterSignature, renterSignedAt);
+    }
+
+    private boolean hasSignature(String signature, LocalDateTime signedAt) {
+        return signature != null && !signature.isBlank() && signedAt != null;
     }
 }

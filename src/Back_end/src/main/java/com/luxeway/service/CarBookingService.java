@@ -60,21 +60,10 @@ public class CarBookingService {
                 throw new RuntimeException("Please complete identity verification first.");
             }
 
-            String licenseClass = renter.getLicenseClass() != null ? renter.getLicenseClass().trim().toUpperCase() : "";
-            if (licenseClass.isEmpty() && (Boolean.TRUE.equals(renter.getDrivingLicenseVerified()) || "VERIFIED".equals(renter.getDriverLicenseStatus()))) {
-                licenseClass = "B1";
-            }
-            boolean isCarLicense = licenseClass.contains("B") ||
-                                   licenseClass.contains("C") ||
-                                   licenseClass.contains("D") ||
-                                   licenseClass.contains("E") ||
-                                   licenseClass.contains("F");
-            if (!isCarLicense) {
-                if (licenseClass.contains("A")) {
-                    throw new RuntimeException("Your driving license only supports motorcycle rental.");
-                } else {
-                    throw new RuntimeException("Your driving license does not support car rental.");
-                }
+            boolean licenseVerified = Boolean.TRUE.equals(renter.getDrivingLicenseVerified())
+                    || "VERIFIED".equalsIgnoreCase(renter.getDriverLicenseStatus());
+            if (!licenseVerified) {
+                throw new RuntimeException("Please complete driving license verification first.");
             }
         }
 

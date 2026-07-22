@@ -59,11 +59,23 @@ public class OwnerAnalyticsService {
                 bikeBookings.stream().filter(b -> b.getStatus() != null && "COMPLETED".equalsIgnoreCase(b.getStatus().name())).count();
 
         BigDecimal revenue = BigDecimal.ZERO;
+        BigDecimal grossBookedRevenue = BigDecimal.ZERO;
+        BigDecimal pendingRevenue = BigDecimal.ZERO;
         
         // Accumulate revenue
         for (Booking b : generalBookings) {
+            if (b.getTotal() == null || b.getStatus() == null) {
+                continue;
+            }
+            grossBookedRevenue = grossBookedRevenue.add(b.getTotal());
             if ("COMPLETED".equalsIgnoreCase(b.getStatus().name())) {
                 revenue = revenue.add(b.getTotal());
+            } else if ("WAITING_PAYMENT".equalsIgnoreCase(b.getStatus().name())
+                    || "PAYMENT_PENDING".equalsIgnoreCase(b.getStatus().name())
+                    || "PAYMENT_VERIFIED".equalsIgnoreCase(b.getStatus().name())
+                    || "OWNER_APPROVED".equalsIgnoreCase(b.getStatus().name())
+                    || "CONFIRMED".equalsIgnoreCase(b.getStatus().name())) {
+                pendingRevenue = pendingRevenue.add(b.getTotal());
             }
         }
         for (CarBooking b : carBookings) {
@@ -138,6 +150,9 @@ public class OwnerAnalyticsService {
 
         Map<String, Object> stats = new HashMap<>();
         stats.put("totalRevenue", revenue);
+        stats.put("grossBookedRevenue", grossBookedRevenue);
+        stats.put("pendingRevenue", pendingRevenue);
+        stats.put("projectedRevenue", revenue.add(pendingRevenue));
         stats.put("totalBookings", totalBookings);
         stats.put("activeBookings", activeBookings);
         stats.put("completedBookings", completedBookings);

@@ -1,12 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-
-const GOONG_MAPTILES_KEY = (import.meta as any).env.VITE_GOONG_MAPTILES_KEY || 'mock_goong_key';
-const hasGoongKey = GOONG_MAPTILES_KEY && GOONG_MAPTILES_KEY !== 'mock_goong_key' && !GOONG_MAPTILES_KEY.includes('your-');
-const MAP_STYLE_URL = hasGoongKey
-  ? `https://tiles.goong.io/assets/goong_map_web.json?api_key=${GOONG_MAPTILES_KEY}`
-  : 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
+import { getMapStyleUrl, installMapStyleFallback } from './mapStyle';
 
 interface LocationPickerMapProps {
   lat: number;
@@ -31,13 +26,14 @@ export const LocationPickerMap: React.FC<LocationPickerMapProps> = ({
 
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: MAP_STYLE_URL,
+      style: getMapStyleUrl(false),
       center: [lng || 106.660, lat || 10.762],
       zoom: zoom,
       attributionControl: false
     });
 
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+    installMapStyleFallback(map, false);
     mapRef.current = map;
 
     // Create marker

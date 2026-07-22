@@ -3,16 +3,10 @@ import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { Link } from 'react-router-dom';
 import { Star } from 'lucide-react';
-import { useUIStore } from '@/store';
 import { formatCurrency } from '@/utils';
 import type { Vehicle } from '@/types';
+import { getMapStyleUrl, installMapStyleFallback } from './mapStyle';
 
-// Load Goong Maptiles key from environment variables
-const GOONG_MAPTILES_KEY = (import.meta as any).env.VITE_GOONG_MAPTILES_KEY || 'mock_goong_key';
-const hasGoongKey = GOONG_MAPTILES_KEY && GOONG_MAPTILES_KEY !== 'mock_goong_key' && !GOONG_MAPTILES_KEY.includes('your-');
-const MAP_STYLE_URL = hasGoongKey
-  ? `https://tiles.goong.io/assets/goong_map_web.json?api_key=${GOONG_MAPTILES_KEY}`
-  : 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=800';
 
 // Helper to resolve coordinates
@@ -140,13 +134,14 @@ export const VehicleMapImpl: React.FC<VehicleMapProps> = ({
 
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
-      style: MAP_STYLE_URL,
+      style: getMapStyleUrl(false),
       center: initialCenter,
       zoom: initialZoom,
       attributionControl: false,
     });
 
     map.addControl(new maplibregl.NavigationControl({ showCompass: true }), 'top-right');
+    installMapStyleFallback(map, false);
     mapRef.current = map;
 
     return () => {

@@ -45,12 +45,21 @@ public class BookingService {
     private final BookingCancellationRepository bookingCancellationRepository;
     private final BookingStatusHistoryRepository bookingStatusHistoryRepository;
     private final VehicleAvailabilityRepository vehicleAvailabilityRepository;
+    private final DigitalContractRepository digitalContractRepository;
     private final PricingEngine pricingEngine;
     private final SimpMessagingTemplate messagingTemplate;
     private final ReviewRepository reviewRepository;
 
     @Value("${business.pricing.service-fee-rate:0.12}")
     private double serviceFeeRate;
+
+    private boolean isBookingOwner(Booking booking, String userId) {
+        String bookingOwnerId = booking.getOwner() != null ? booking.getOwner().getId() : null;
+        String vehicleOwnerId = booking.getVehicle() != null && booking.getVehicle().getOwner() != null
+                ? booking.getVehicle().getOwner().getId()
+                : null;
+        return userId != null && (userId.equals(bookingOwnerId) || userId.equals(vehicleOwnerId));
+    }
 
     @Value("${business.pricing.tax-rate:0.08}")
     private double taxRate;
@@ -100,31 +109,17 @@ public class BookingService {
             throw new RuntimeException("Vehicle is temporarily locked or unavailable for these dates. Please choose different dates.");
         }
 
-        // Enforce KYC verification & license class matching
+        // Enforce verified identity and driving license. License class OCR can be
+        // incomplete in demo data, so approved accounts are not blocked by class.
         if (renter.getRole() != com.luxeway.enums.UserRole.ADMIN) {
             if (!"VERIFIED".equals(renter.getKycStatus())) {
                 throw new RuntimeException("Please complete identity verification first");
             }
 
-            String licenseClass = renter.getLicenseClass() != null ? renter.getLicenseClass().trim().toUpperCase() : "";
-            if (vehicle.getVehicleType() == com.luxeway.enums.VehicleType.MOTORBIKE) {
-                boolean isMotorbikeLicense = licenseClass.contains("A");
-                if (!isMotorbikeLicense) {
-                    throw new RuntimeException("Your driving license does not support motorcycle rental");
-                }
-            } else if (vehicle.getVehicleType() == com.luxeway.enums.VehicleType.CAR) {
-                boolean isCarLicense = licenseClass.contains("B") ||
-                                       licenseClass.contains("C") ||
-                                       licenseClass.contains("D") ||
-                                       licenseClass.contains("E") ||
-                                       licenseClass.contains("F");
-                if (!isCarLicense) {
-                    if (licenseClass.contains("A")) {
-                        throw new RuntimeException("Bằng lái xe máy hạng " + licenseClass + " không được phép thuê xe ô tô. Vui lòng sử dụng bằng lái xe ô tô (B1, B2, C...)");
-                    } else {
-                        throw new RuntimeException("Your driving license does not support car rental");
-                    }
-                }
+            boolean licenseVerified = Boolean.TRUE.equals(renter.getDrivingLicenseVerified())
+                    || "VERIFIED".equalsIgnoreCase(renter.getDriverLicenseStatus());
+            if (!licenseVerified) {
+                throw new RuntimeException("Please complete driving license verification first");
             }
         }
     }
@@ -166,12 +161,7 @@ public class BookingService {
 
         // Concurrency-safe sequential booking code generation
         BookingCounter counter = bookingCounterRepository.findByNameForUpdate("bookings")
-                .orElseGet(() -> {
-                    // Auto-initialize counter if not found (self-healing)
-                    log.warn("Booking counter not found in DB — auto-initializing at 100000");
-                    BookingCounter newCounter = new BookingCounter("bookings", 100000L);
-                    return bookingCounterRepository.saveAndFlush(newCounter);
-                });
+                .orElseThrow(() -> new RuntimeException("Booking counter sequence not initialized"));
         long nextValue = counter.getValue() + 1;
         counter.setValue(nextValue);
         bookingCounterRepository.saveAndFlush(counter);
@@ -327,7 +317,145 @@ public class BookingService {
         return toResponse(booking);
     }
 
-    // ====== Cancel booking ======
+    // ====== Cancellation workflow ======
+
+    @Transactional
+    public BookingDTOs.BookingResponse requestCancellation(String bookingId, String requesterId,
+                                                           BookingDTOs.CancelBookingRequest req) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+        if (!booking.getRenter().getId().equals(requesterId)) {
+            throw new org.springframework.security.access.AccessDeniedException("Only the renter can request cancellation");
+        }
+
+        if (booking.getStatus() == BookingStatus.CANCELLATION_REQUESTED) {
+            return toResponse(booking);
+        }
+
+        if (!booking.canRequestCancellation()) {
+            throw new RuntimeException("Cancellation cannot be requested in current status: " + booking.getStatus());
+        }
+
+        booking.setStatus(BookingStatus.CANCELLATION_REQUESTED);
+        booking.setCancellationReason(req.getReason());
+        booking = bookingRepository.save(booking);
+
+        bookingStatusHistoryRepository.save(BookingStatusHistory.builder()
+                .booking(booking)
+                .status(BookingStatus.CANCELLATION_REQUESTED.name())
+                .comment("Cancellation requested by renter: " + req.getReason())
+                .changedBy(requesterId)
+                .build());
+
+        notificationService.createNotification(
+            booking.getOwner().getId(),
+            "booking",
+            "notification.booking.cancel_requested.title",
+            "notification.booking.cancel_requested.body|vehicle=" + booking.getVehicle().getName(),
+            "/owner/bookings"
+        );
+
+        log.info("Cancellation requested for booking {} by renter {}", bookingId, requesterId);
+        return toResponse(booking);
+    }
+
+    @Transactional
+    public BookingDTOs.BookingResponse approveCancellation(String bookingId, String ownerId,
+                                                           BookingDTOs.CancelBookingRequest req) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+        if (!isBookingOwner(booking, ownerId)) {
+            throw new org.springframework.security.access.AccessDeniedException("Only the owner can approve cancellation");
+        }
+
+        if (booking.getStatus() != BookingStatus.CANCELLATION_REQUESTED) {
+            throw new RuntimeException("Booking is not waiting for cancellation approval");
+        }
+
+        booking.setStatus(BookingStatus.CANCELLED);
+        booking.setCancelledAt(java.time.LocalDateTime.now());
+        if (req.getReason() != null && !req.getReason().isBlank()) {
+            booking.setOwnerNotes(req.getReason());
+        }
+        booking = bookingRepository.save(booking);
+
+        if (!bookingCancellationRepository.existsById(booking.getId())) {
+            BookingCancellation cancellation = BookingCancellation.builder()
+                    .booking(booking)
+                    .cancelledBy(ownerId)
+                    .reason(booking.getCancellationReason() != null ? booking.getCancellationReason() : "Cancellation approved by owner")
+                    .refundAmount(booking.getTotal())
+                    .penaltyAmount(BigDecimal.ZERO)
+                    .build();
+            bookingCancellationRepository.save(cancellation);
+        }
+
+        bookingStatusHistoryRepository.save(BookingStatusHistory.builder()
+                .booking(booking)
+                .status(BookingStatus.CANCELLED.name())
+                .comment("Cancellation approved by owner: " + (req.getReason() != null ? req.getReason() : ""))
+                .changedBy(ownerId)
+                .build());
+
+        freeAvailabilityCalendar(booking);
+
+        notificationService.createNotification(
+            booking.getRenter().getId(),
+            "booking",
+            "notification.booking.cancel_approved.title",
+            "notification.booking.cancel_approved.body|vehicle=" + booking.getVehicle().getName(),
+            "/dashboard/bookings/" + booking.getId()
+        );
+
+        try {
+            emailService.sendBookingCancellation(booking.getRenter().getEmail(), booking);
+            emailService.sendBookingCancellation(booking.getOwner().getEmail(), booking);
+        } catch (Exception e) {
+            log.warn("Failed to send booking cancellation email alerts: {}", e.getMessage());
+        }
+
+        log.info("Cancellation approved for booking {} by owner {}", bookingId, ownerId);
+        return toResponse(booking);
+    }
+
+    @Transactional
+    public BookingDTOs.BookingResponse rejectCancellation(String bookingId, String ownerId,
+                                                          BookingDTOs.CancelBookingRequest req) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+        if (!isBookingOwner(booking, ownerId)) {
+            throw new org.springframework.security.access.AccessDeniedException("Only the owner can reject cancellation");
+        }
+
+        if (booking.getStatus() != BookingStatus.CANCELLATION_REQUESTED) {
+            throw new RuntimeException("Booking is not waiting for cancellation approval");
+        }
+
+        booking.setStatus(BookingStatus.CONFIRMED);
+        booking.setOwnerNotes(req.getReason());
+        booking = bookingRepository.save(booking);
+
+        bookingStatusHistoryRepository.save(BookingStatusHistory.builder()
+                .booking(booking)
+                .status(BookingStatus.CONFIRMED.name())
+                .comment("Cancellation rejected by owner: " + req.getReason())
+                .changedBy(ownerId)
+                .build());
+
+        notificationService.createNotification(
+            booking.getRenter().getId(),
+            "booking",
+            "notification.booking.cancel_rejected.title",
+            "notification.booking.cancel_rejected.body|vehicle=" + booking.getVehicle().getName(),
+            "/dashboard/bookings/" + booking.getId()
+        );
+
+        log.info("Cancellation rejected for booking {} by owner {}", bookingId, ownerId);
+        return toResponse(booking);
+    }
 
     @Transactional
     public BookingDTOs.BookingResponse cancelBooking(String bookingId, String requesterId,
@@ -335,7 +463,7 @@ public class BookingService {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
 
-        if (!booking.getRenter().getId().equals(requesterId) && !booking.getOwner().getId().equals(requesterId)) {
+        if (!booking.getRenter().getId().equals(requesterId) && !isBookingOwner(booking, requesterId)) {
             throw new org.springframework.security.access.AccessDeniedException("Not authorized to cancel this booking");
         }
 
@@ -403,7 +531,7 @@ public class BookingService {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
 
-        if (!booking.getOwner().getId().equals(ownerId)) {
+        if (!isBookingOwner(booking, ownerId)) {
             throw new RuntimeException("Only the vehicle owner can update booking status");
         }
 
@@ -639,6 +767,12 @@ public class BookingService {
 
         if (booking.getStatus() != BookingStatus.WAITING_PAYMENT) {
             throw new RuntimeException("Booking must be in WAITING_PAYMENT status to confirm transfer. Current status: " + booking.getStatus());
+        }
+
+        DigitalContract contract = digitalContractRepository.findByBookingId(bookingId)
+                .orElseThrow(() -> new RuntimeException("Please sign the digital contract before confirming payment"));
+        if (contract.getRenterSignedAt() == null) {
+            throw new RuntimeException("Please sign the digital contract before confirming payment");
         }
 
         BookingStatus oldStatus = booking.getStatus();

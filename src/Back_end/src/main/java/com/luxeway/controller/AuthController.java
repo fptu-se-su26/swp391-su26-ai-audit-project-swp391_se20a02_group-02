@@ -32,11 +32,27 @@ public class AuthController {
 
     @PostMapping("/register")
     @Operation(summary = "Register a new account (customer or owner)")
-    public ResponseEntity<ApiResponse<AuthDTOs.AuthResponse>> register(
+    public ResponseEntity<ApiResponse<AuthDTOs.RegistrationResponse>> register(
             @Valid @RequestBody AuthDTOs.RegisterRequest request) {
-        AuthDTOs.AuthResponse response = authService.register(request);
+        AuthDTOs.RegistrationResponse response = authService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Registration successful", response));
+                .body(ApiResponse.success("Registration OTP sent", response));
+    }
+
+    @PostMapping("/register/verify-otp")
+    @Operation(summary = "Verify registration OTP and activate account")
+    public ResponseEntity<ApiResponse<AuthDTOs.AuthResponse>> verifyRegistrationOtp(
+            @Valid @RequestBody AuthDTOs.VerifyOtpRequest request) {
+        AuthDTOs.AuthResponse response = authService.verifyRegistrationOtp(request);
+        return ResponseEntity.ok(ApiResponse.success("Registration verified successfully", response));
+    }
+
+    @PostMapping("/register/resend-otp")
+    @Operation(summary = "Resend registration OTP for an unverified account")
+    public ResponseEntity<ApiResponse<AuthDTOs.RegistrationResponse>> resendRegistrationOtp(
+            @Valid @RequestBody AuthDTOs.ResendRegistrationOtpRequest request) {
+        AuthDTOs.RegistrationResponse response = authService.resendRegistrationOtp(request);
+        return ResponseEntity.ok(ApiResponse.success("Registration OTP resent", response));
     }
 
     @GetMapping("/me")

@@ -8,6 +8,8 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 import org.springframework.stereotype.Component;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @Slf4j
@@ -22,36 +24,59 @@ public class DatabaseMigration implements CommandLineRunner {
     public void run(String... args) {
         log.info("Running custom database migrations...");
 
-        // DISABLED: Auto-reset was wiping entire DB on every restart when Vietnamese chars had '?' encoding
-        // This was the root cause of vehicles/users disappearing from DB on each reboot.
-        // The import-data.sql now uses English-only values so this check is no longer needed.
-        // DO NOT re-enable without ensuring import-data.sql has no '?' chars in vehicle.city or vehicle_features.name
-        log.info("Database diacritics auto-reset is DISABLED. DB will not be wiped on restart.");
+        // Reset corrupt database diacritics (e.g., C?n Tho or Mu B?O Hi?M) to force fresh clean English seeding
+        try {
+            boolean needsReset = false;
+            try {
+                Integer countCity = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM vehicles WHERE city LIKE '%?%'", Integer.class);
+                if (countCity != null && countCity > 0) {
+                    needsReset = true;
+                }
+            } catch (Exception e) {}
+            
+            try {
+                Integer countFeature = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM vehicle_features WHERE name LIKE '%?%'", Integer.class);
+                if (countFeature != null && countFeature > 0) {
+                    needsReset = true;
+                }
+            } catch (Exception e) {}
 
-        // Programmatically run sample data seeding if database is empty OR vehicles were wiped
+            if (needsReset) {
+                log.info("Detected encoding errors or question marks in database values. Performing database tables cleanup for fresh English seeding...");
+                String[] tables = {
+                    "booking_payments", "payments", "bookings", "vehicle_reviews", "reviews", 
+                    "vehicle_features", "vehicle_images", "vehicle_translations", "employee_vehicle_assignments",
+                    "employees", "invoices", "messages", "conversation_participants", "conversations",
+                    "vehicles", "owner_verifications", "owner_ratings", "owners", "users"
+                };
+                for (String table : tables) {
+                    try {
+                        jdbcTemplate.execute("DELETE FROM " + table);
+                    } catch (Exception ex) {
+                        log.debug("Could not delete from table " + table + ": " + ex.getMessage());
+                    }
+                }
+                log.info("Database cleanup completed successfully.");
+            }
+        } catch (Exception e) {
+            log.error("Failed database diacritics reset check: {}", e.getMessage());
+        }
+
+        // Programmatically run sample data seeding if database is empty
         try {
             Integer count = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'users'", Integer.class);
             if (count != null && count > 0) {
                 Integer userCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM users WHERE email = 'admin@luxeway.vn'", Integer.class);
-                Integer vehicleCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM vehicles", Integer.class);
-                boolean needsSeeding = (userCount == null || userCount == 0) || (vehicleCount == null || vehicleCount < 10);
-                if (needsSeeding) {
-                    log.info("No sample data or vehicles missing (vehicleCount={}, userCount={}). Seeding database using import-data.sql...", vehicleCount, userCount);
-                    // Clear existing partial data to avoid conflicts before re-seeding
-                    try {
-                        String[] clearTables = {"booking_payments","payments","bookings","vehicle_features","vehicle_images","vehicle_translations","vehicles","users"};
-                        for (String t : clearTables) {
-                            try { jdbcTemplate.execute("DELETE FROM " + t); } catch (Exception ignored) {}
-                        }
-                    } catch (Exception ignored) {}
+                if (userCount == null || userCount == 0) {
+                    log.info("No sample data detected. Seeding database using import-data.sql...");
                     ResourceDatabasePopulator populator = new ResourceDatabasePopulator(
                         new ClassPathResource("import-data.sql")
                     );
                     populator.execute(Objects.requireNonNull(jdbcTemplate.getDataSource()));
                     log.info("Database successfully seeded with sample data.");
                 } else {
-                    log.info("Sample data exists: {} users, {} vehicles. Skipping re-seed.", userCount, vehicleCount);
+                    log.info("Sample data already exists. Skipping import-data.sql seeding.");
                 }
             } else {
                 log.warn("users table does not exist yet! Skipping import-data.sql seeding.");
@@ -60,75 +85,51 @@ public class DatabaseMigration implements CommandLineRunner {
             log.error("Failed to seed database using import-data.sql: {}", e.getMessage(), e);
         }
 
-        // CRITICAL: Fix password hashes and ensure demo accounts exist for login
-        // BCrypt hash for "password": $2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi
-        final String DEMO_HASH = "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi";
-        try {
-            // Fix any corrupted/duplicated password hashes
-            jdbcTemplate.update(
-                "UPDATE users SET password_hash = ? WHERE password_hash LIKE '%$2a$10$92IXUNpkjO0rOQ5byMi$2a$10$%'",
-                DEMO_HASH
-            );
-            // Ensure all known demo accounts have the correct hash
-            jdbcTemplate.update(
-                "UPDATE users SET password_hash = ? WHERE email IN ('admin@luxeway.vn', 'owner@luxeway.vn', 'customer@luxeway.vn', 'nguyen.van.a@gmail.com', 'pham.minh.d@gmail.com')",
-                DEMO_HASH
-            );
-            log.info("Demo account password hashes verified and fixed.");
-        } catch (Exception e) {
-            log.warn("Could not fix password hashes: {}", e.getMessage());
-        }
+        if ("true".equalsIgnoreCase(System.getenv("LUXEWAY_RESET_TEST_PASSWORDS"))) {
+            try {
+                String demoPasswordHash = "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi";
+                Object[][] demoUsers = new Object[][] {
+                    {"admin-user-id-001", "admin@luxeway.vn", "Admin", "LuxeWay", "Admin LuxeWay", "0901234567", "ADMIN", "Ho Chi Minh City", java.math.BigDecimal.ZERO, "B2", "LXW-ADMIN-DEMO"},
+                    {"customer-user-id-002", "customer@luxeway.vn", "Customer", "LuxeWay", "Customer LuxeWay", "0901111111", "CUSTOMER", "Hanoi", new java.math.BigDecimal("10000000.00"), "B2", "LXW-CUSTOMER-DEMO"},
+                    {"owner-user-id-003", "owner@luxeway.vn", "Owner", "LuxeWay", "Owner LuxeWay", "0904444444", "OWNER", "Ho Chi Minh City", new java.math.BigDecimal("50000000.00"), "B2", "LXW-OWNER-DEMO"}
+                };
 
-        // Ensure nguyen.van.a@gmail.com demo customer exists
-        try {
-            Integer nvaCount = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM users WHERE email = 'nguyen.van.a@gmail.com'", Integer.class);
-            if (nvaCount == null || nvaCount == 0) {
-                jdbcTemplate.update(
-                    "INSERT INTO users (id, account_type, avatar, bio, created_at, display_name, driver_license_status, driving_license_verified, email, first_name, is_active, joined_at, kyc_status, kyc_verified, last_active, last_name, license_class, license_number, location, password_hash, phone, preferred_language, provider, rating, role, total_rentals, total_reviews, updated_at, verified, wallet_balance) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                    "customer-nguyen-van-a", "INDIVIDUAL",
-                    "https://ui-avatars.com/api/?name=Nguyen+Van+A&background=0D8ABC&color=fff&size=200",
-                    "Customer demo account",
-                    java.time.LocalDateTime.now(), "Nguyen Van A",
-                    "VERIFIED", true,
-                    "nguyen.van.a@gmail.com", "Nguyen", true,
-                    java.time.LocalDateTime.now(), "VERIFIED", true,
-                    java.time.LocalDateTime.now(), "Van A", "B2", "123456789", "Hanoi",
-                    DEMO_HASH, "0900000001", "vi", "LOCAL",
-                    java.math.BigDecimal.valueOf(5.0), "CUSTOMER", 0, 0,
-                    java.time.LocalDateTime.now(), true, java.math.BigDecimal.ZERO
-                );
-                log.info("Demo customer nguyen.van.a@gmail.com created successfully.");
+                int changed = 0;
+                for (Object[] user : demoUsers) {
+                    String id = (String) user[0];
+                    String email = (String) user[1];
+                    Integer existing = jdbcTemplate.queryForObject(
+                        "SELECT COUNT(*) FROM users WHERE email = ?",
+                        Integer.class,
+                        email
+                    );
+
+                    if (existing != null && existing > 0) {
+                        changed += jdbcTemplate.update(
+                            "UPDATE users SET password_hash = ?, first_name = ?, last_name = ?, display_name = ?, " +
+                            "phone = ?, role = ?, location = ?, wallet_balance = ?, is_active = 1, verified = 1, " +
+                            "kyc_verified = 1, driving_license_verified = 1, kyc_status = 'VERIFIED', " +
+                            "driver_license_status = 'VERIFIED', license_class = ?, license_number = ?, provider = 'LOCAL' WHERE email = ?",
+                            demoPasswordHash, user[2], user[3], user[4], user[5], user[6], user[7], user[8], user[9], user[10], email
+                        );
+                    } else {
+                        changed += jdbcTemplate.update(
+                            "INSERT INTO users (id, email, password_hash, first_name, last_name, display_name, phone, role, " +
+                            "verified, kyc_verified, driving_license_verified, rating, total_reviews, total_rentals, location, " +
+                            "account_type, is_active, joined_at, last_active, created_at, updated_at, wallet_balance, " +
+                            "kyc_status, driver_license_status, license_class, license_number, provider, preferred_language) " +
+                            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 1, 1, 5.00, 0, 0, ?, 'INDIVIDUAL', 1, " +
+                            "CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, " +
+                            "'VERIFIED', 'VERIFIED', ?, ?, 'LOCAL', 'en')",
+                            id, email, demoPasswordHash, user[2], user[3], user[4], user[5], user[6], user[7], user[8], user[9], user[10]
+                        );
+                    }
+                }
+                log.info("Prepared {} release demo account record(s) with the shared test password.", changed);
+            } catch (Exception e) {
+                log.warn("Failed to reset release demo account passwords: {}", e.getMessage());
             }
-        } catch (Exception e) {
-            log.warn("Could not create demo customer account: {}", e.getMessage());
         }
-
-        // Ensure pham.minh.d@gmail.com demo owner exists
-        try {
-            Integer pmdCount = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM users WHERE email = 'pham.minh.d@gmail.com'", Integer.class);
-            if (pmdCount == null || pmdCount == 0) {
-                jdbcTemplate.update(
-                    "INSERT INTO users (id, account_type, avatar, bio, created_at, display_name, driver_license_status, driving_license_verified, email, first_name, is_active, joined_at, kyc_status, kyc_verified, last_active, last_name, license_class, license_number, location, password_hash, phone, preferred_language, provider, rating, role, total_rentals, total_reviews, updated_at, verified, wallet_balance) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                    "owner-pham-minh-d", "INDIVIDUAL",
-                    "https://ui-avatars.com/api/?name=Pham+Minh+D&background=E53E3E&color=fff&size=200",
-                    "Owner demo account",
-                    java.time.LocalDateTime.now(), "Pham Minh D",
-                    "VERIFIED", true,
-                    "pham.minh.d@gmail.com", "Pham", true,
-                    java.time.LocalDateTime.now(), "VERIFIED", true,
-                    java.time.LocalDateTime.now(), "Minh D", "B2", "987654321", "HCM",
-                    DEMO_HASH, "0900000002", "vi", "LOCAL",
-                    java.math.BigDecimal.valueOf(5.0), "OWNER", 0, 0,
-                    java.time.LocalDateTime.now(), true, java.math.BigDecimal.ZERO
-                );
-                log.info("Demo owner pham.minh.d@gmail.com created successfully.");
-            }
-        } catch (Exception e) {
-            log.warn("Could not create demo owner account: {}", e.getMessage());
-        }
-
 
         // Fix CHK_user_docs_type check constraint to include 'SELFIE'
         try {
@@ -139,6 +140,9 @@ public class DatabaseMigration implements CommandLineRunner {
         } catch (Exception e) {
             log.debug("Failed to alter check constraint (already updated or non-SQL Server environment): {}", e.getMessage());
         }
+
+        updateBookingStatusStorageAndConstraint();
+        ensureUserSettingsColumns();
         
         try {
             Integer tablesCount = jdbcTemplate.queryForObject(
@@ -203,6 +207,8 @@ public class DatabaseMigration implements CommandLineRunner {
                 log.info("provider_id column already exists or alter failed: {}", ex.getMessage());
             }
         }
+
+        ensureUserSettingsColumns();
 
         addNullableColumn("user_documents", "license_class", "NVARCHAR(10)", "VARCHAR(10)");
         addNullableColumn("user_documents", "license_number", "NVARCHAR(50)", "VARCHAR(50)");
@@ -460,6 +466,27 @@ public class DatabaseMigration implements CommandLineRunner {
             }
         } catch (Exception e) {
             log.debug("system_settings table already exists: {}", e.getMessage());
+        }
+
+        try {
+            jdbcTemplate.execute("ALTER TABLE system_settings ADD setting_key NVARCHAR(100)");
+        } catch (Exception e) {
+            log.debug("system_settings.setting_key already exists or cannot be added: {}", e.getMessage());
+        }
+        try {
+            jdbcTemplate.execute("UPDATE system_settings SET setting_key = key_name WHERE setting_key IS NULL AND key_name IS NOT NULL");
+        } catch (Exception e) {
+            log.debug("No legacy key_name column to migrate in system_settings: {}", e.getMessage());
+        }
+        try {
+            jdbcTemplate.execute("ALTER TABLE system_settings ADD setting_value NVARCHAR(MAX)");
+        } catch (Exception e) {
+            log.debug("system_settings.setting_value already exists or cannot be added: {}", e.getMessage());
+        }
+        try {
+            jdbcTemplate.execute("UPDATE system_settings SET setting_value = \"value\" WHERE setting_value IS NULL AND \"value\" IS NOT NULL");
+        } catch (Exception e) {
+            log.debug("No legacy value column to migrate in system_settings: {}", e.getMessage());
         }
 
         // CREATE TABLE: destination_analytics
@@ -881,28 +908,6 @@ public class DatabaseMigration implements CommandLineRunner {
             log.warn("Failed to seed payment_settings: {}", e.getMessage());
         }
 
-        // Drop/recreate CHK_bookings_status constraint
-        try {
-            try {
-                jdbcTemplate.execute("IF EXISTS (SELECT 1 FROM sys.objects WHERE name = 'CHK_bookings_status' AND type = 'C') " +
-                        "ALTER TABLE bookings DROP CONSTRAINT CHK_bookings_status");
-            } catch (Exception ex) {
-                // Standard SQL fallback
-                try {
-                    jdbcTemplate.execute("ALTER TABLE bookings DROP CONSTRAINT CHK_bookings_status");
-                } catch (Exception ignore) {}
-            }
-            jdbcTemplate.execute("ALTER TABLE bookings ADD CONSTRAINT CHK_bookings_status CHECK (status IN (" +
-                    "'PENDING', 'CONFIRMED', 'PICKING_UP', 'IN_PROGRESS', 'ACTIVE', 'DISPUTED', " +
-                    "'DRAFT', 'WAITING_PAYMENT', 'PAYMENT_PENDING', 'PAYMENT_VERIFIED', " +
-                    "'OWNER_APPROVED', 'READY_FOR_PICKUP', 'CHECKED_OUT', 'IN_RENTAL', " +
-                    "'RETURN_PENDING', 'RETURN_COMPLETED', 'COMPLETED', 'PAYMENT_EXPIRED', " +
-                    "'PAYMENT_REJECTED', 'CUSTOMER_CANCELLED', 'OWNER_CANCELLED', 'SYSTEM_CANCELLED'))");
-            log.info("Successfully updated CHK_bookings_status constraint");
-        } catch (Exception e) {
-            log.debug("Failed to update CHK_bookings_status check constraint: {}", e.getMessage());
-        }
-
         // Add columns to bookings
         addNullableColumn("bookings", "booking_code", "NVARCHAR(50)", "VARCHAR(50)");
         addNullableColumn("bookings", "cleaning_fee", "DECIMAL(12,0) NOT NULL DEFAULT 0", "DECIMAL(12,0) NOT NULL DEFAULT 0");
@@ -923,6 +928,132 @@ public class DatabaseMigration implements CommandLineRunner {
         addNullableColumn("payments", "verified_time", "DATETIME2", "TIMESTAMP");
         addNullableColumn("payments", "rejected_reason", "NVARCHAR(500)", "VARCHAR(500)");
         addNullableColumn("payments", "transfer_content", "NVARCHAR(100)", "VARCHAR(100)");
+    }
+
+    private void updateBookingStatusStorageAndConstraint() {
+        try {
+            try {
+                jdbcTemplate.execute("IF EXISTS (SELECT 1 FROM sys.objects WHERE name = 'CHK_bookings_status' AND type = 'C') " +
+                        "ALTER TABLE bookings DROP CONSTRAINT CHK_bookings_status");
+            } catch (Exception ex) {
+                try {
+                    jdbcTemplate.execute("ALTER TABLE bookings DROP CONSTRAINT CHK_bookings_status");
+                } catch (Exception ignore) {}
+            }
+            dropH2BookingStatusCheckConstraints();
+
+            alterStatusColumnLength("bookings");
+            alterStatusColumnLength("car_bookings");
+            alterStatusColumnLength("motorbike_bookings");
+
+            jdbcTemplate.execute("ALTER TABLE bookings ADD CONSTRAINT CHK_bookings_status CHECK (status IN (" +
+                    "'PENDING', 'CONFIRMED', 'PICKING_UP', 'IN_PROGRESS', 'ACTIVE', 'DISPUTED', " +
+                    "'CANCELLED', " +
+                    "'DRAFT', 'WAITING_PAYMENT', 'PAYMENT_PENDING', 'PAYMENT_VERIFIED', " +
+                    "'OWNER_APPROVED', 'READY_FOR_PICKUP', 'CHECKED_OUT', 'IN_RENTAL', " +
+                    "'RETURN_PENDING', 'RETURN_COMPLETED', 'COMPLETED', 'PAYMENT_EXPIRED', " +
+                    "'PAYMENT_REJECTED', 'CANCELLATION_REQUESTED', 'CUSTOMER_CANCELLED', " +
+                    "'OWNER_CANCELLED', 'SYSTEM_CANCELLED'))");
+            log.info("Successfully updated booking status storage and CHK_bookings_status constraint");
+        } catch (Exception e) {
+            log.warn("Failed to update booking status storage/check constraint: {}", e.getMessage());
+        }
+    }
+
+    private void dropH2BookingStatusCheckConstraints() {
+        try {
+            List<Map<String, Object>> constraints = jdbcTemplate.queryForList(
+                    "SELECT tc.CONSTRAINT_NAME " +
+                    "FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS tc " +
+                    "JOIN INFORMATION_SCHEMA.CHECK_CONSTRAINTS cc " +
+                    "ON tc.CONSTRAINT_CATALOG = cc.CONSTRAINT_CATALOG " +
+                    "AND tc.CONSTRAINT_SCHEMA = cc.CONSTRAINT_SCHEMA " +
+                    "AND tc.CONSTRAINT_NAME = cc.CONSTRAINT_NAME " +
+                    "WHERE UPPER(tc.TABLE_NAME) = 'BOOKINGS' " +
+                    "AND UPPER(tc.CONSTRAINT_TYPE) = 'CHECK' " +
+                    "AND UPPER(cc.CHECK_CLAUSE) LIKE '%STATUS%'"
+            );
+
+            for (Map<String, Object> row : constraints) {
+                Object rawName = row.get("CONSTRAINT_NAME");
+                if (rawName == null) continue;
+                String constraintName = rawName.toString();
+                jdbcTemplate.execute("ALTER TABLE bookings DROP CONSTRAINT " + constraintName);
+                log.info("Dropped H2 booking status check constraint: {}", constraintName);
+            }
+        } catch (Exception e) {
+            log.debug("Could not inspect/drop H2 booking status constraints: {}", e.getMessage());
+            try {
+                jdbcTemplate.execute("ALTER TABLE bookings DROP CONSTRAINT CONSTRAINT_A");
+                log.info("Dropped fallback H2 booking status check constraint: CONSTRAINT_A");
+            } catch (Exception ignore) {}
+        }
+    }
+
+    private void alterStatusColumnLength(String tableName) {
+        try {
+            jdbcTemplate.execute("ALTER TABLE " + tableName + " ALTER COLUMN status NVARCHAR(32) NOT NULL");
+            log.info("Widened {}.status to NVARCHAR(32)", tableName);
+        } catch (Exception e) {
+            try {
+                jdbcTemplate.execute("ALTER TABLE " + tableName + " ALTER COLUMN status VARCHAR(32) NOT NULL");
+                log.info("Widened {}.status to VARCHAR(32)", tableName);
+            } catch (Exception ex) {
+                log.debug("Could not widen {}.status: {}", tableName, ex.getMessage());
+            }
+        }
+    }
+
+    private void ensureUserSettingsColumns() {
+        addNullableColumn("users", "preferred_currency", "NVARCHAR(10)", "VARCHAR(10)");
+        addNullableColumn("users", "email_booking_notifications", "BIT", "BOOLEAN");
+        addNullableColumn("users", "email_review_notifications", "BIT", "BOOLEAN");
+        addNullableColumn("users", "email_marketing_notifications", "BIT", "BOOLEAN");
+        addNullableColumn("users", "push_notifications", "BIT", "BOOLEAN");
+        addNullableColumn("users", "owner_bank_name", "NVARCHAR(120)", "VARCHAR(120)");
+        addNullableColumn("users", "owner_bank_account_number", "NVARCHAR(80)", "VARCHAR(80)");
+        addNullableColumn("users", "owner_bank_account_holder", "NVARCHAR(160)", "VARCHAR(160)");
+        addNullableColumn("users", "owner_payout_enabled", "BIT", "BOOLEAN");
+        addNullableColumn("users", "security_two_factor_enabled", "BIT", "BOOLEAN");
+        backfillUserDefaults();
+    }
+
+    private void backfillUserDefaults() {
+        updateNullUserColumn("provider", "'LOCAL'");
+        updateNullUserColumn("account_type", "'INDIVIDUAL'");
+        updateNullUserColumn("preferred_language", "'en'");
+        updateNullUserColumn("preferred_currency", "'VND'");
+        updateNullUserColumn("kyc_status", "'NOT_UPLOADED'");
+        updateNullUserColumn("driver_license_status", "'NOT_UPLOADED'");
+        updateNullUserColumn("verified", "0");
+        updateNullUserColumn("kyc_verified", "0");
+        updateNullUserColumn("driving_license_verified", "0");
+        updateNullUserColumn("rating", "0");
+        updateNullUserColumn("total_reviews", "0");
+        updateNullUserColumn("total_rentals", "0");
+        updateNullUserColumn("wallet_balance", "0");
+        updateNullUserColumn("is_active", "1");
+        updateNullUserColumn("email_booking_notifications", "1");
+        updateNullUserColumn("email_review_notifications", "1");
+        updateNullUserColumn("email_marketing_notifications", "0");
+        updateNullUserColumn("push_notifications", "1");
+        updateNullUserColumn("owner_payout_enabled", "0");
+        updateNullUserColumn("security_two_factor_enabled", "0");
+        updateNullUserColumn("joined_at", "CURRENT_TIMESTAMP");
+        updateNullUserColumn("created_at", "CURRENT_TIMESTAMP");
+        updateNullUserColumn("updated_at", "CURRENT_TIMESTAMP");
+        updateNullUserColumn("last_active", "CURRENT_TIMESTAMP");
+    }
+
+    private void updateNullUserColumn(String columnName, String sqlValue) {
+        try {
+            int updated = jdbcTemplate.update("UPDATE users SET " + columnName + " = " + sqlValue + " WHERE " + columnName + " IS NULL");
+            if (updated > 0) {
+                log.info("Backfilled {} NULL users.{} value(s)", updated, columnName);
+            }
+        } catch (Exception e) {
+            log.debug("Could not backfill users.{}: {}", columnName, e.getMessage());
+        }
     }
 
     private void addNullableColumn(String tableName, String columnName, String sqlServerType, String standardType) {

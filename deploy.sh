@@ -14,12 +14,15 @@ apt-get install -y docker-compose-plugin
 
 echo "=== [3/5] Cloning / Updating Repository ==="
 cd /opt
+REPO_URL="https://github.com/fptu-se-su26/swp391-su26-ai-audit-project-swp391_se20a02_group-02.git"
+
 if [ ! -d "luxeway" ]; then
-    git clone https://github.com/Nguyendang2005/LuxeWay.git luxeway
+    git clone "$REPO_URL" luxeway
     cd luxeway
 else
     cd luxeway
     git reset --hard
+    git remote set-url origin "$REPO_URL"
     git pull origin main
 fi
 

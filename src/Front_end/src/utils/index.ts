@@ -26,7 +26,7 @@ export function convertCurrency(amount: number, from = 'VND', to = 'VND'): numbe
   return amountInVND / (ratesToVND[to] || 1);
 }
 
-export function formatCurrency(amount: number, currency?: string): string {
+export function formatCurrency(amount: number, currencyOrLanguage?: string): string {
   let activeCurrency = 'VND';
   let activeLang = 'en';
   try {
@@ -34,11 +34,6 @@ export function formatCurrency(amount: number, currency?: string): string {
     activeCurrency = uiState.currency || 'VND';
     activeLang = uiState.language || 'en';
   } catch { }
-
-  const targetCurrency = currency || activeCurrency;
-
-  // Assumes database amount is always in VND base currency
-  const convertedAmount = convertCurrency(amount, 'VND', targetCurrency);
 
   const langLocaleMap: Record<string, string> = {
     en: 'en-US',
@@ -49,7 +44,17 @@ export function formatCurrency(amount: number, currency?: string): string {
     fr: 'fr-FR',
     de: 'de-DE',
   };
-  const locale = langLocaleMap[activeLang] || 'en-US';
+
+  const requested = currencyOrLanguage?.trim();
+  const isLanguageCode = requested ? Boolean(langLocaleMap[requested.toLowerCase()]) : false;
+  const targetCurrency = isLanguageCode ? activeCurrency : (requested || activeCurrency);
+  const targetLang = isLanguageCode ? requested!.toLowerCase() : activeLang;
+
+  // Assumes database amount is always in VND base currency
+  const safeAmount = Number.isFinite(Number(amount)) ? Number(amount) : 0;
+  const convertedAmount = convertCurrency(safeAmount, 'VND', targetCurrency);
+
+  const locale = langLocaleMap[targetLang] || 'en-US';
   const isZeroDecimal = ['VND', 'JPY', 'KRW'].includes(targetCurrency.toUpperCase());
   return new Intl.NumberFormat(locale, {
     style: 'currency',
@@ -224,6 +229,7 @@ export function getStatusColor(status: string): string {
   const normalized = status?.toLowerCase() || '';
   const colors: Record<string, string> = {
     pending: 'bg-yellow-50 text-yellow-700 border-yellow-200',
+    cancellation_requested: 'bg-amber-50 text-amber-700 border-amber-200',
     confirmed: 'bg-blue-50 text-blue-700 border-blue-200',
     active: 'bg-green-50 text-green-700 border-green-200',
     completed: 'bg-slate-50 text-slate-700 border-slate-200',
@@ -318,8 +324,9 @@ export function isStrongPassword(password: string): { valid: boolean; strength: 
   };
 }
 
-const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8080/api/v1';
-const SERVER_BASE = API_BASE.replace('/api/v1', '');
+export const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8080/api/v1';
+export const SERVER_BASE = ((import.meta as any).env?.VITE_AUTH_API_URL || API_BASE.replace('/api/v1', '')).replace(/\/$/, '');
+export const WS_URL = `${SERVER_BASE}/ws`;
 
 export function getVehicleFallbackImage(url: string | null | undefined): string {
   if (!url) return '';

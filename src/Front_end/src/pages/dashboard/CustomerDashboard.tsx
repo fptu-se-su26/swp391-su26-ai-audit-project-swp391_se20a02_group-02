@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
+import { Link, useLocation, Outlet, useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Calendar, Heart, Bell, User, Shield, FileText,
@@ -13,7 +13,7 @@ import { bookingService, paymentService } from '@/services/bookingService';
 import { notificationService, reviewService } from '@/services/otherServices';
 import apiClient from '@/services/api';
 import type { Booking, Notification } from '@/types';
-import { formatCurrency, formatDate, getStatusColor, getInitials, cn } from '@/utils';
+import { formatCurrency, formatDate, getStatusColor, getInitials, cn, SERVER_BASE } from '@/utils';
 import { staggerContainer, staggerItem, fadeUp } from '@/animations/variants';
 import { StatCardSkeleton, TableSkeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
@@ -42,6 +42,7 @@ export const CustomerDashboardLayout: React.FC = () => {
     { href: '/', icon: Globe, label: t.marketplace.home, exact: true },
     { href: '/dashboard', icon: LayoutDashboard, label: t.dashboard.overview, exact: true },
     { href: '/dashboard/bookings', icon: Calendar, label: t.dashboard.myBookings },
+    { href: '/dashboard/wishlist', icon: Heart, label: t.dashboard.wishlist },
     { href: '/dashboard/wallet', icon: Wallet, label: t.wallet.title },
     { href: '/dashboard/payments', icon: CreditCard, label: t.dashboard.payments },
     { href: '/dashboard/documents', icon: FileText, label: t.dashboard.documents },
@@ -513,6 +514,7 @@ export const MyBookingsPage: React.FC = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
   const toast = useToast();
   const t = useT();
 
@@ -524,13 +526,22 @@ export const MyBookingsPage: React.FC = () => {
     });
   }, [user]);
 
-  const filtered = filter === 'all' ? bookings : bookings.filter(b => b.status === filter);
+  const normalizedStatus = (status?: string) => String(status || '').toLowerCase();
+  const filtered = filter === 'all' ? bookings : bookings.filter(b => normalizedStatus(b.status) === filter);
 
   const handleCancel = async (bookingId: string) => {
-    const updated = await bookingService.cancel(bookingId, 'Cancelled by user');
-    if (updated) {
-      setBookings(prev => prev.map(b => b.id === bookingId ? updated : b));
-      toast.success(t.dashboard.bookingCancelled, t.dashboard.bookingCancelledDesc);
+    if (!window.confirm('Send cancellation request to the vehicle owner? The owner will review the rental policy before approving or rejecting it.')) return;
+    setCancellingId(bookingId);
+    try {
+      const updated = await bookingService.cancel(bookingId, 'Cancelled by user');
+      if (updated) {
+        setBookings(prev => prev.map(b => b.id === bookingId ? updated : b));
+        toast.success('Cancellation request sent', 'The vehicle owner will review and approve or reject your request.');
+      }
+    } catch (error: any) {
+      toast.error('Request failed', error?.message || 'The cancellation request could not be sent. Please open View Status to check the current state.');
+    } finally {
+      setCancellingId(null);
     }
   };
 
@@ -541,14 +552,32 @@ export const MyBookingsPage: React.FC = () => {
   ];
   const statusConfig: Record<string, { bg: string; color: string; border: string; label: string }> = {
     pending: { bg: 'rgba(245,158,11,0.12)', color: '#F59E0B', border: 'rgba(245,158,11,0.3)', label: 'PENDING' },
+    waiting_payment: { bg: 'rgba(245,158,11,0.12)', color: '#D97706', border: 'rgba(245,158,11,0.35)', label: 'WAITING PAYMENT' },
+    payment_pending: { bg: 'rgba(59,130,246,0.12)', color: '#2563EB', border: 'rgba(59,130,246,0.3)', label: 'PAYMENT REVIEW' },
+    payment_verified: { bg: 'rgba(16,185,129,0.12)', color: '#10B981', border: 'rgba(16,185,129,0.3)', label: 'PAYMENT VERIFIED' },
+    payment_rejected: { bg: 'rgba(239,68,68,0.12)', color: '#EF4444', border: 'rgba(239,68,68,0.3)', label: 'PAYMENT REJECTED' },
+    payment_expired: { bg: 'rgba(100,116,139,0.12)', color: '#64748B', border: 'rgba(100,116,139,0.3)', label: 'PAYMENT EXPIRED' },
+    cancellation_requested: { bg: 'rgba(245,158,11,0.12)', color: '#D97706', border: 'rgba(245,158,11,0.35)', label: 'CANCEL REQUESTED' },
     confirmed: { bg: 'rgba(37,99,235,0.12)', color: '#2563EB', border: 'rgba(37,99,235,0.3)', label: 'CONFIRMED' },
+    owner_approved: { bg: 'rgba(37,99,235,0.12)', color: '#2563EB', border: 'rgba(37,99,235,0.3)', label: 'OWNER APPROVED' },
+    ready_for_pickup: { bg: 'rgba(37,99,235,0.12)', color: '#2563EB', border: 'rgba(37,99,235,0.3)', label: 'READY' },
+    checked_out: { bg: 'rgba(16,185,129,0.12)', color: '#10B981', border: 'rgba(16,185,129,0.3)', label: 'CHECKED OUT' },
+    in_rental: { bg: 'rgba(16,185,129,0.12)', color: '#10B981', border: 'rgba(16,185,129,0.3)', label: 'IN RENTAL' },
+    return_pending: { bg: 'rgba(245,158,11,0.12)', color: '#D97706', border: 'rgba(245,158,11,0.35)', label: 'RETURN PENDING' },
+    return_completed: { bg: 'rgba(16,185,129,0.12)', color: '#10B981', border: 'rgba(16,185,129,0.3)', label: 'RETURNED' },
     active: { bg: 'rgba(16,185,129,0.12)', color: '#10B981', border: 'rgba(16,185,129,0.3)', label: 'ACTIVE' },
     completed: { bg: 'rgba(16,185,129,0.12)', color: '#10B981', border: 'rgba(16,185,129,0.3)', label: 'COMPLETED' },
     cancelled: { bg: 'rgba(239,68,68,0.12)', color: '#EF4444', border: 'rgba(239,68,68,0.3)', label: 'CANCELLED' },
+    customer_cancelled: { bg: 'rgba(239,68,68,0.12)', color: '#EF4444', border: 'rgba(239,68,68,0.3)', label: 'CANCELLED' },
+    owner_cancelled: { bg: 'rgba(239,68,68,0.12)', color: '#EF4444', border: 'rgba(239,68,68,0.3)', label: 'CANCELLED' },
+    system_cancelled: { bg: 'rgba(239,68,68,0.12)', color: '#EF4444', border: 'rgba(239,68,68,0.3)', label: 'CANCELLED' },
   };
 
   const filterDefs = [
     { key: 'all', label: 'All' },
+    { key: 'waiting_payment', label: 'Waiting Payment' },
+    { key: 'payment_pending', label: 'Payment Review' },
+    { key: 'cancellation_requested', label: 'Cancel Review' },
     { key: 'pending', label: 'Pending' },
     { key: 'confirmed', label: 'Confirmed' },
     { key: 'active', label: 'Active' },
@@ -556,7 +585,7 @@ export const MyBookingsPage: React.FC = () => {
     { key: 'cancelled', label: 'Cancelled' },
   ];
 
-  const countFor = (key: string) => key === 'all' ? bookings.length : bookings.filter(b => b.status === key).length;
+  const countFor = (key: string) => key === 'all' ? bookings.length : bookings.filter(b => normalizedStatus(b.status) === key).length;
 
   return (
     <div className="space-y-6">
@@ -632,7 +661,11 @@ export const MyBookingsPage: React.FC = () => {
       ) : (
         <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filtered.map(booking => {
-            const sc = statusConfig[booking.status] || statusConfig['pending'];
+            const status = normalizedStatus(booking.status);
+            const sc = statusConfig[status] || statusConfig['pending'];
+            const canCancel = ['pending', 'waiting_payment', 'payment_pending', 'confirmed', 'payment_rejected', 'owner_approved', 'ready_for_pickup'].includes(status);
+            const canViewContract = ['waiting_payment', 'payment_pending', 'payment_verified', 'confirmed', 'active', 'completed', 'owner_approved', 'ready_for_pickup', 'checked_out', 'in_rental', 'return_pending', 'return_completed'].includes(status);
+            const canTrack = ['active', 'ready_for_pickup', 'checked_out', 'in_rental', 'return_pending'].includes(status);
             return (
               <motion.div
                 key={booking.id}
@@ -671,113 +704,112 @@ export const MyBookingsPage: React.FC = () => {
                 </div>
 
                 {/* Action buttons */}
-                <div className="grid grid-cols-2 gap-3 mt-auto">
+                <div className="space-y-3 mt-auto">
                   <Link
                     to={`/dashboard/bookings/${booking.id}`}
-                    className={cn(
-                      "py-2.5 rounded-xl text-xs font-bold text-center transition-all duration-200 flex items-center justify-center",
-                      ((booking.status !== 'completed' && booking.status !== 'pending' && booking.status !== 'confirmed' && booking.status !== 'active') || (booking.status === 'completed' && booking.reviewId))
-                        ? "col-span-2"
-                        : ""
-                    )}
+                    className="py-3 rounded-xl text-xs font-black text-center transition-all duration-200 flex items-center justify-center gap-2"
                     style={{
-                      background: 'var(--lw-bg-secondary)',
-                      color: 'var(--lw-accent)',
-                      border: '1px solid var(--lw-border)',
+                      background: 'linear-gradient(135deg, var(--lw-accent), var(--lw-accent-alt))',
+                      color: '#fff',
+                      boxShadow: '0 4px 15px var(--lw-accent-glow)',
                     }}
                     onMouseEnter={e => {
-                      e.currentTarget.style.background = 'var(--lw-accent-glow)';
-                      e.currentTarget.style.borderColor = 'var(--lw-border-strong)';
+                      e.currentTarget.style.filter = 'brightness(1.08)';
                     }}
                     onMouseLeave={e => {
-                      e.currentTarget.style.background = 'var(--lw-bg-secondary)';
-                      e.currentTarget.style.borderColor = 'var(--lw-border)';
+                      e.currentTarget.style.filter = 'none';
                     }}
                   >
-                    {isVi ? 'Chi tiết hành trình' : 'View Journey'}
+                    <Eye className="w-3.5 h-3.5" />
+                    View Status & Details
                   </Link>
 
-                  {(booking.status === 'confirmed' || booking.status === 'active' || booking.status === 'completed') && (
-                    <a
-                      href={`https://luxeway.io.vn/contracts/${booking.id}.pdf`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="py-2.5 rounded-xl text-xs font-bold text-center transition-all duration-200 flex items-center justify-center gap-1.5"
+                  <div className="grid grid-cols-2 gap-3">
+                    <Link
+                      to={`/vehicles/${booking.vehicleId}`}
+                      className="py-2.5 rounded-xl text-xs font-bold text-center transition-all duration-200 flex items-center justify-center"
                       style={{
                         background: 'var(--lw-bg-secondary)',
-                        color: 'var(--lw-text-primary)',
+                        color: 'var(--lw-accent)',
                         border: '1px solid var(--lw-border)',
                       }}
-                      onMouseEnter={e => {
-                        e.currentTarget.style.background = 'var(--lw-bg-card)';
-                      }}
-                      onMouseLeave={e => {
-                        e.currentTarget.style.background = 'var(--lw-bg-secondary)';
-                      }}
                     >
-                      {isVi ? 'Xem hợp đồng' : 'View Contract'}
-                    </a>
-                  )}
-
-                  {booking.status === 'active' && (
-                    <Link
-                      to={`/dashboard/bookings/${booking.id}/tracking`}
-                      className="py-2.5 rounded-xl text-xs font-bold text-center transition-all duration-200 flex items-center justify-center gap-1.5"
-                      style={{
-                        background: 'linear-gradient(135deg, #10B981, #059669)',
-                        color: '#fff',
-                        boxShadow: '0 4px 15px rgba(16,185,129,0.3)',
-                      }}
-                      onMouseEnter={e => {
-                        e.currentTarget.style.filter = 'brightness(1.1)';
-                      }}
-                      onMouseLeave={e => {
-                        e.currentTarget.style.filter = 'none';
-                      }}
-                    >
-                      <Navigation className="w-3.5 h-3.5 transform rotate-45" />
-                      Track Delivery
+                      View Vehicle
                     </Link>
-                  )}
 
-                  {booking.status === 'completed' && !booking.reviewId && (
-                    <button
-                      className="py-2.5 rounded-xl text-xs font-bold text-center transition-all duration-200"
-                      style={{
-                        background: 'linear-gradient(135deg, #F59E0B, #FBBF24)',
-                        color: '#0B0E17',
-                        boxShadow: '0 4px 15px rgba(245,158,11,0.3)',
-                      }}
-                      onMouseEnter={e => {
-                        e.currentTarget.style.filter = 'brightness(1.1)';
-                      }}
-                      onMouseLeave={e => {
-                        e.currentTarget.style.filter = 'none';
-                      }}
-                    >
-                      {t.dashboard.leaveReview}
-                    </button>
-                  )}
+                    {canTrack && (
+                      <Link
+                        to={`/dashboard/bookings/${booking.id}/tracking`}
+                        className="py-2.5 rounded-xl text-xs font-bold text-center transition-all duration-200 flex items-center justify-center gap-1.5"
+                        style={{
+                          background: 'linear-gradient(135deg, #10B981, #059669)',
+                          color: '#fff',
+                          boxShadow: '0 4px 15px rgba(16,185,129,0.3)',
+                        }}
+                      >
+                        <Navigation className="w-3.5 h-3.5 transform rotate-45" />
+                        Track
+                      </Link>
+                    )}
 
-                  {(booking.status === 'pending' || booking.status === 'confirmed') && (
-                    <button
-                      onClick={() => handleCancel(booking.id)}
-                      className="py-2.5 rounded-xl text-xs font-bold text-center transition-all duration-200"
-                      style={{
-                        background: 'rgba(239,68,68,0.1)',
-                        color: '#EF4444',
-                        border: '1px solid rgba(239,68,68,0.2)',
-                      }}
-                      onMouseEnter={e => {
-                        e.currentTarget.style.background = 'rgba(239,68,68,0.2)';
-                      }}
-                      onMouseLeave={e => {
-                        e.currentTarget.style.background = 'rgba(239,68,68,0.1)';
-                      }}
-                    >
-                      {t.dashboard.cancelBooking}
-                    </button>
-                  )}
+                    {canViewContract && (
+                      <Link
+                        to={`/booking/${booking.id}/contract`}
+                        className="py-2.5 rounded-xl text-xs font-bold text-center transition-all duration-200 flex items-center justify-center gap-1.5"
+                        style={{
+                          background: 'linear-gradient(135deg, #0F172A, #334155)',
+                          color: '#fff',
+                          boxShadow: '0 4px 15px rgba(15,23,42,0.18)',
+                        }}
+                      >
+                        <FileText className="w-3.5 h-3.5" />
+                        {status === 'waiting_payment' ? 'Sign & Pay' : 'Contract'}
+                      </Link>
+                    )}
+
+                    {['waiting_payment', 'payment_pending', 'payment_rejected'].includes(status) && (
+                      <Link
+                        to={`/booking/${booking.id}/payment`}
+                        className="py-2.5 rounded-xl text-xs font-bold text-center transition-all duration-200 flex items-center justify-center gap-1.5"
+                        style={{
+                          background: 'rgba(59,130,246,0.12)',
+                          color: '#2563EB',
+                          border: '1px solid rgba(59,130,246,0.25)',
+                        }}
+                      >
+                        <CreditCard className="w-3.5 h-3.5" />
+                        Payment
+                      </Link>
+                    )}
+
+                    {status === 'completed' && !booking.reviewId && (
+                      <button
+                        className="py-2.5 rounded-xl text-xs font-bold text-center transition-all duration-200"
+                        style={{
+                          background: 'linear-gradient(135deg, #F59E0B, #FBBF24)',
+                          color: '#0B0E17',
+                          boxShadow: '0 4px 15px rgba(245,158,11,0.3)',
+                        }}
+                      >
+                        {t.dashboard.leaveReview}
+                      </button>
+                    )}
+
+                    {canCancel && (
+                      <button
+                        onClick={() => handleCancel(booking.id)}
+                        disabled={cancellingId === booking.id}
+                        className="py-2.5 rounded-xl text-xs font-bold text-center transition-all duration-200 disabled:opacity-60"
+                        style={{
+                          background: 'rgba(239,68,68,0.1)',
+                          color: '#EF4444',
+                          border: '1px solid rgba(239,68,68,0.2)',
+                        }}
+                      >
+                        {cancellingId === booking.id ? 'Sending...' : 'Request Cancel'}
+                      </button>
+                    )}
+                  </div>
                 </div>
               </motion.div>
             );
@@ -1437,6 +1469,178 @@ export const DocumentsPage: React.FC = () => {
   );
 };
 
+// ====== BOOKING DETAIL PAGE ======
+export const BookingDetailPage: React.FC = () => {
+  const { bookingId } = useParams<{ bookingId: string }>();
+  const navigate = useNavigate();
+  const toast = useToast();
+  const t = useT();
+  const [booking, setBooking] = useState<Booking | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [cancelling, setCancelling] = useState(false);
+
+  useEffect(() => {
+    if (!bookingId) return;
+    setLoading(true);
+    bookingService.getById(bookingId)
+      .then(setBooking)
+      .finally(() => setLoading(false));
+  }, [bookingId]);
+
+  const status = String(booking?.status || '').toLowerCase();
+  const canCancel = ['pending', 'waiting_payment', 'payment_pending', 'confirmed', 'payment_rejected', 'owner_approved', 'ready_for_pickup'].includes(status);
+  const canPay = ['waiting_payment', 'payment_rejected'].includes(status);
+  const canOpenPayment = ['waiting_payment', 'payment_pending', 'payment_rejected', 'payment_verified', 'confirmed'].includes(status);
+  const canOpenContract = !['cancelled', 'customer_cancelled', 'owner_cancelled', 'system_cancelled'].includes(status);
+  const canTrack = ['active', 'ready_for_pickup', 'checked_out', 'in_rental', 'return_pending'].includes(status);
+
+  const statusLabel = status
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, c => c.toUpperCase()) || 'Unknown';
+
+  const handleCancel = async () => {
+    if (!booking || !canCancel) return;
+    setCancelling(true);
+    try {
+      const updated = await bookingService.cancel(booking.id, 'Cancelled by user from booking detail');
+      if (updated) {
+        setBooking(updated);
+        toast.success('Cancellation request sent', 'The vehicle owner will review and approve or reject your request.');
+      }
+    } catch (error: any) {
+      toast.error('Request failed', error?.message || 'The cancellation request could not be sent in the current state.');
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <Breadcrumbs title="Booking Details" items={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'My Bookings', href: '/dashboard/bookings' }]} backHref="/dashboard/bookings" backText="My Bookings" />
+        <TableSkeleton rows={4} />
+      </div>
+    );
+  }
+
+  if (!booking) {
+    return (
+      <div className="space-y-6">
+        <Breadcrumbs title="Booking Not Found" items={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'My Bookings', href: '/dashboard/bookings' }]} backHref="/dashboard/bookings" backText="My Bookings" />
+        <div className="rounded-3xl p-10 text-center bg-[var(--lw-bg-card)] border border-[var(--lw-border)]">
+          <AlertCircle className="w-10 h-10 mx-auto mb-4 text-red-500" />
+          <h3 className="font-bold text-[var(--lw-text-primary)] mb-2">This booking could not be loaded.</h3>
+          <button onClick={() => navigate('/dashboard/bookings')} className="btn-primary px-5 py-2.5 rounded-xl text-sm font-bold">Back to My Bookings</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <Breadcrumbs
+        title={`Booking #${(booking.bookingCode || booking.id).slice(-6).toUpperCase()}`}
+        items={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'My Bookings', href: '/dashboard/bookings' }, { label: 'Booking Details' }]}
+        backHref="/dashboard/bookings"
+        backText="My Bookings"
+      />
+
+      <div className="grid grid-cols-1 xl:grid-cols-[1.2fr_0.8fr] gap-6">
+        <div className="rounded-[2rem] p-6 bg-[var(--lw-bg-card)] border border-[var(--lw-border)] shadow-md">
+          <div className="flex items-start justify-between gap-4 mb-6">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-[var(--lw-text-muted)] mb-1">Booking Code</p>
+              <h2 className="text-2xl font-black text-[var(--lw-text-primary)]">{booking.bookingCode || booking.id}</h2>
+            </div>
+            <span className="px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-[var(--lw-accent-glow)] text-[var(--lw-accent)] border border-[var(--lw-border-strong)]">
+              {statusLabel}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <InfoTile icon={<Car className="w-4 h-4" />} label="Vehicle" value={`${booking.vehicle?.brand || ''} ${booking.vehicle?.name || booking.vehicleId}`.trim()} />
+            <InfoTile icon={<Calendar className="w-4 h-4" />} label="Rental Dates" value={`${formatDate(booking.startDate)} - ${formatDate(booking.endDate)}`} />
+            <InfoTile icon={<Clock className="w-4 h-4" />} label="Duration" value={`${booking.totalDays || 1} day(s)`} />
+            <InfoTile icon={<User className="w-4 h-4" />} label="Renter" value={booking.renter?.displayName || booking.renter?.email || 'Current account'} />
+          </div>
+
+          <div className="mt-6 p-5 rounded-2xl bg-[var(--lw-bg-secondary)] border border-[var(--lw-border)]">
+            <h3 className="font-black text-sm text-[var(--lw-text-primary)] mb-4">Trip Notes</h3>
+            <p className="text-sm text-[var(--lw-text-secondary)]">{booking.notes || booking.deliveryAddress || 'No special notes were added for this booking.'}</p>
+          </div>
+        </div>
+
+        <div className="rounded-[2rem] p-6 bg-[var(--lw-bg-card)] border border-[var(--lw-border)] shadow-md">
+          <h3 className="font-black text-lg text-[var(--lw-text-primary)] mb-5">Payment Summary</h3>
+          <div className="space-y-3 text-sm">
+            <PriceRow label="Base price" value={booking.pricing?.basePrice || 0} />
+            <PriceRow label="Insurance" value={booking.pricing?.insuranceFee || 0} />
+            <PriceRow label="Service fee" value={booking.pricing?.serviceFee || 0} />
+            <PriceRow label="Taxes" value={booking.pricing?.taxes || 0} />
+            <PriceRow label="Discount" value={-(booking.pricing?.discount || 0)} />
+            <div className="border-t border-[var(--lw-border)] pt-4 mt-4">
+              <PriceRow label="Total amount" value={booking.pricing?.total || 0} strong />
+              <PriceRow label="Refundable deposit" value={booking.pricing?.deposit || 0} />
+            </div>
+          </div>
+
+          {status === 'payment_expired' && (
+            <div className="mt-5 rounded-2xl p-4 bg-slate-500/10 border border-slate-400/20">
+              <p className="text-xs font-bold text-slate-500">Payment window expired. You can still review this booking record, but payment is no longer available for this request.</p>
+            </div>
+          )}
+
+          {status === 'cancellation_requested' && (
+            <div className="mt-5 rounded-2xl p-4 bg-amber-500/10 border border-amber-400/25">
+              <p className="text-xs font-bold text-amber-600">Cancellation request sent. The owner must review the timing and policy before this booking can be cancelled.</p>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6">
+            <Link to={`/vehicles/${booking.vehicleId}`} className="py-3 rounded-xl text-xs font-black text-center bg-[var(--lw-bg-secondary)] border border-[var(--lw-border)] text-[var(--lw-accent)]">
+              View Vehicle
+            </Link>
+            {canOpenContract && (
+              <Link to={`/booking/${booking.id}/contract`} className="py-3 rounded-xl text-xs font-black text-center bg-slate-900 text-white">
+                {canPay ? 'Sign Contract' : 'View Contract'}
+              </Link>
+            )}
+            {canOpenPayment && (
+              <Link to={`/booking/${booking.id}/payment`} className="py-3 rounded-xl text-xs font-black text-center bg-amber-500 text-slate-950">
+                {canPay ? 'Continue Payment' : 'Payment Status'}
+              </Link>
+            )}
+            {canTrack && (
+              <Link to={`/dashboard/bookings/${booking.id}/tracking`} className="py-3 rounded-xl text-xs font-black text-center bg-emerald-600 text-white">
+                Track Delivery
+              </Link>
+            )}
+            {canCancel && (
+              <button onClick={handleCancel} disabled={cancelling} className="py-3 rounded-xl text-xs font-black text-center bg-red-500/10 text-red-500 border border-red-500/20 disabled:opacity-60">
+                {cancelling ? 'Sending...' : 'Request Cancel'}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const InfoTile: React.FC<{ icon: React.ReactNode; label: string; value: string }> = ({ icon, label, value }) => (
+  <div className="p-4 rounded-2xl bg-[var(--lw-bg-secondary)] border border-[var(--lw-border)]">
+    <div className="flex items-center gap-2 text-[var(--lw-accent)] mb-2">{icon}<span className="text-[10px] font-black uppercase tracking-widest">{label}</span></div>
+    <p className="font-bold text-sm text-[var(--lw-text-primary)] break-words">{value}</p>
+  </div>
+);
+
+const PriceRow: React.FC<{ label: string; value: number; strong?: boolean }> = ({ label, value, strong }) => (
+  <div className="flex items-center justify-between gap-4">
+    <span className={strong ? 'font-black text-[var(--lw-text-primary)]' : 'font-semibold text-[var(--lw-text-secondary)]'}>{label}</span>
+    <span className={strong ? 'font-black text-lg text-[var(--lw-accent)]' : 'font-bold text-[var(--lw-text-primary)]'}>{formatCurrency(value)}</span>
+  </div>
+);
+
 // ====== PAYMENT HISTORY PAGE ======
 export const PaymentHistoryPage: React.FC = () => {
   const { user } = useAuthStore();
@@ -1470,8 +1674,9 @@ export const PaymentHistoryPage: React.FC = () => {
       const invoiceId = invoice?.id;
       if (invoiceId) {
         const token = localStorage.getItem('luxeway_access_token');
-        const fileRes = await fetch(`http://localhost:8080/invoices/download/${invoiceId}`, {
+        const fileRes = await fetch(`${SERVER_BASE}/invoices/download/${invoiceId}`, {
           headers: {
+            ...(SERVER_BASE.includes('ngrok') ? { 'ngrok-skip-browser-warning': 'true' } : {}),
             'Authorization': `Bearer ${token}`
           }
         });
@@ -1578,20 +1783,82 @@ export const PaymentHistoryPage: React.FC = () => {
 
 // ====== SETTINGS PAGE ======
 export const SettingsPage: React.FC = () => {
+  const { user } = useAuthStore();
   const toast = useToast();
   const t = useT();
   const isVi = t.common.loading.includes('Đang');
   const isJa = t.common.loading.includes('読み込み');
   const { theme, language, setLanguage, currency, setCurrency } = useUIStore();
-  const [prefs, setPrefs] = React.useState({
-    emailBooking: true, emailMarketing: false, emailReview: true, pushNotif: true,
-    language: language, currency: currency,
+  type CustomerPrefs = {
+    emailBooking: boolean;
+    emailMarketing: boolean;
+    emailReview: boolean;
+    pushNotif: boolean;
+    language: string;
+    currency: string;
+  };
+  const storageKey = `luxeway_customer_settings_${user?.id || 'guest'}`;
+  const [prefs, setPrefs] = React.useState<CustomerPrefs>(() => {
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      try {
+        return { ...JSON.parse(saved), language, currency } as CustomerPrefs;
+      } catch (_) {}
+    }
+    return {
+      emailBooking: true, emailMarketing: false, emailReview: true, pushNotif: true,
+      language: language, currency: currency,
+    };
   });
+  const [saving, setSaving] = React.useState(false);
 
-  const handleSave = () => {
-    setLanguage(prefs.language as any);
-    setCurrency(prefs.currency);
-    toast.success(t.dashboard.settingsSaved, t.dashboard.settingsSavedDesc);
+  React.useEffect(() => {
+    if (!user) return;
+    setPrefs(p => ({
+      ...p,
+      emailBooking: user.emailBookingNotifications ?? p.emailBooking,
+      emailReview: user.emailReviewNotifications ?? p.emailReview,
+      emailMarketing: user.emailMarketingNotifications ?? p.emailMarketing,
+      pushNotif: user.pushNotifications ?? p.pushNotif,
+      language: user.preferredLanguage || p.language,
+      currency: user.preferredCurrency || p.currency,
+    }));
+  }, [user?.id]);
+
+  const handleSave = async () => {
+    if (!user) return;
+    setSaving(true);
+    try {
+      const payload = {
+        firstName: user.firstName,
+        lastName: user.lastName,
+        phone: user.phone || '',
+        bio: user.bio || '',
+        location: user.location || '',
+        avatar: user.avatar || '',
+        companyName: user.companyName || '',
+        preferredLanguage: prefs.language,
+        preferredCurrency: prefs.currency,
+        emailBookingNotifications: prefs.emailBooking,
+        emailReviewNotifications: prefs.emailReview,
+        emailMarketingNotifications: prefs.emailMarketing,
+        pushNotifications: prefs.pushNotif,
+        licenseClass: user.licenseClass || '',
+        licenseNumber: user.licenseNumber || '',
+      };
+      const res = await apiClient.put<any>(`/users/${user.id}`, payload);
+      const updated = res.data?.data || res.data || res;
+      setLanguage(prefs.language as any);
+      setCurrency(prefs.currency);
+      localStorage.setItem(storageKey, JSON.stringify(prefs));
+      localStorage.setItem('luxeway_user', JSON.stringify({ ...user, ...updated, ...payload }));
+      toast.success(t.dashboard.settingsSaved, t.dashboard.settingsSavedDesc);
+    } catch (err: any) {
+      console.error(err);
+      toast.error('Save failed', err.response?.data?.error || 'Could not save customer settings to backend.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const Toggle: React.FC<{ value: boolean; onChange: () => void; label: string; desc?: string }> = ({ value, onChange, label, desc }) => (
@@ -1639,7 +1906,7 @@ export const SettingsPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">{isVi ? 'Ngôn Ngữ' : isJa ? '言語' : 'Language'}</label>
-              <select value={prefs.language} onChange={e => setPrefs(p => ({ ...p, language: e.target.value as any }))} className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100">
+              <select value={prefs.language} onChange={e => setPrefs((p: CustomerPrefs) => ({ ...p, language: e.target.value as any }))} className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100">
                 <option value="en">English</option>
                 <option value="vi">Tiếng Việt</option>
                 <option value="ja">日本語</option>
@@ -1652,7 +1919,7 @@ export const SettingsPage: React.FC = () => {
             </div>
             <div>
               <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">{isVi ? 'Tiền Tệ' : isJa ? '通貨' : 'Currency'}</label>
-              <select value={prefs.currency} onChange={e => setPrefs(p => ({ ...p, currency: e.target.value }))} className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100">
+              <select value={prefs.currency} onChange={e => setPrefs((p: CustomerPrefs) => ({ ...p, currency: e.target.value }))} className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100">
                 <option value="USD">USD ($)</option>
                 <option value="VND">VND (₫)</option>
                 <option value="EUR">EUR (€)</option>
@@ -1662,8 +1929,8 @@ export const SettingsPage: React.FC = () => {
           </div>
         </div>
 
-        <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} onClick={handleSave} className="btn-primary py-3 px-8 font-bold">
-          {t.dashboard.saveSettingsBtn}
+        <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} onClick={handleSave} disabled={saving} className="btn-primary py-3 px-8 font-bold disabled:opacity-60">
+          {saving ? t.common.loading : t.dashboard.saveSettingsBtn}
         </motion.button>
       </div>
     </div>

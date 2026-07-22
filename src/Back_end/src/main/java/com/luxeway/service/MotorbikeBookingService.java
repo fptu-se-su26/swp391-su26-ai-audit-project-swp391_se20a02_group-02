@@ -60,13 +60,10 @@ public class MotorbikeBookingService {
                 throw new RuntimeException("Please complete KYC verification first.");
             }
 
-            String licenseClass = renter.getLicenseClass() != null ? renter.getLicenseClass().trim().toUpperCase() : "";
-            if (licenseClass.isEmpty() && (Boolean.TRUE.equals(renter.getDrivingLicenseVerified()) || "VERIFIED".equals(renter.getDriverLicenseStatus()))) {
-                licenseClass = "A1";
-            }
-            boolean isMotorbikeLicense = licenseClass.contains("A");
-            if (!isMotorbikeLicense) {
-                throw new RuntimeException("Your driving license does not support motorcycle rental.");
+            boolean licenseVerified = Boolean.TRUE.equals(renter.getDrivingLicenseVerified())
+                    || "VERIFIED".equalsIgnoreCase(renter.getDriverLicenseStatus());
+            if (!licenseVerified) {
+                throw new RuntimeException("Please complete driving license verification first.");
             }
         }
 

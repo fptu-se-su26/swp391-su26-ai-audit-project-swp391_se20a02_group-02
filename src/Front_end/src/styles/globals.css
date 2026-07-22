@@ -336,13 +336,12 @@
 }
 
 /* Fixed sidebar inside app-shell */
-/* Fixed sidebar inside app-shell with dynamic width properties */
 .app-sidebar {
   position: fixed;
   top: 64px;
   left: 0;
   bottom: 0;
-  width: var(--lw-sidebar-width, 260px);
+  width: 260px;
   background: var(--lw-sidebar-bg, #ffffff);
   border-right: 1px solid var(--lw-border, #e5e7eb);
   display: flex;
@@ -352,18 +351,16 @@
   z-index: 40;
   scrollbar-width: thin;
   scrollbar-color: #CBD5E1 transparent;
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Main content area offsets dynamic sidebar width */
+/* Main content area */
 .app-main {
-  margin-left: var(--lw-sidebar-width, 260px);
+  margin-left: 260px;
   padding-top: 64px;
   min-height: 100vh;
-  width: calc(100% - var(--lw-sidebar-width, 260px));
+  width: calc(100% - 260px);
   background: var(--lw-bg-primary, #F8F7F4);
   box-sizing: border-box;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .app-main-inner {
@@ -371,57 +368,14 @@
   min-height: calc(100vh - 64px);
 }
 
-/* Mobile sidebar float toggle button - visible only on touch/tablet viewports */
-.app-sidebar-toggle-btn {
-  display: none;
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 1001;
-  background: #D4AF37;
-  color: #0B1221;
-  border: none;
-  border-radius: 9999px;
-  padding: 14px;
-  box-shadow: 0 10px 25px -5px rgba(212, 175, 55, 0.4), 0 8px 10px -6px rgba(212, 175, 55, 0.4);
-  cursor: pointer;
-  transition: transform 0.2s ease, background-color 0.2s ease;
-}
-
-.app-sidebar-toggle-btn:hover {
-  background: #E5C158;
-  transform: scale(1.05);
-}
-
-.app-sidebar-toggle-btn:active {
-  transform: scale(0.95);
-}
-
-/* Backdrop dark overlay covers page when drawer is open on mobile */
-.app-sidebar-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(11, 18, 33, 0.4);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  z-index: 45;
-  animation: fadeInBackdrop 0.25s ease-out forwards;
-}
-
-@keyframes fadeInBackdrop {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
 /* ─── Responsive: collapse sidebar below 1024px ─── */
 @media (max-width: 1023px) {
   .app-sidebar {
     transform: translateX(-100%);
+    transition: transform 0.25s ease;
   }
   .app-sidebar.open {
     transform: translateX(0);
-    z-index: 50;
-    box-shadow: 20px 0 25px -5px rgba(0, 0, 0, 0.1), 10px 0 10px -6px rgba(0, 0, 0, 0.05);
   }
   .app-main {
     margin-left: 0;
@@ -429,9 +383,6 @@
   }
   .app-main-inner {
     padding: 16px;
-  }
-  .app-sidebar-toggle-btn {
-    display: block; /* Show floating hamburger on tablet/mobile screens */
   }
 }
 

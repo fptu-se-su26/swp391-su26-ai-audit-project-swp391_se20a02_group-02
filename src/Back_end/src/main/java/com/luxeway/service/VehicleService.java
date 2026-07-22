@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.text.Normalizer;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -94,11 +95,11 @@ public class VehicleService {
         }
 
         boolean isNearestSort = "nearest".equalsIgnoreCase(filter.getSortBy()) && filter.getUserLat() != null && filter.getUserLng() != null;
-        boolean needsManualProcessing = isNearestSort;
+        boolean needsManualProcessing = isNearestSort || (filter.getKeyword() != null && !filter.getKeyword().isBlank());
         Pageable queryPageable = needsManualProcessing ? PageRequest.of(0, 10000) : pageable;
 
         Page<Vehicle> page = vehicleRepository.filterVehiclesMulti(
-            filter.getKeyword() != null && !filter.getKeyword().isBlank() ? filter.getKeyword().trim() : null,
+            filter.getKeyword(),
             resolvedLocation,
             categoryList,
             brandList,
@@ -129,7 +130,15 @@ public class VehicleService {
 
         List<Vehicle> list = page.getContent();
 
-        // 1. (Keyword filtering moved to database)
+        // 1. Filter by keyword in Java
+        if (filter.getKeyword() != null && !filter.getKeyword().isBlank()) {
+            String kw = filter.getKeyword().toLowerCase().trim();
+            list = list.stream()
+                .filter(v -> (v.getName() != null && v.getName().toLowerCase().contains(kw)) ||
+                             (v.getBrand() != null && v.getBrand().toLowerCase().contains(kw)) ||
+                             (v.getModel() != null && v.getModel().toLowerCase().contains(kw)))
+                .collect(Collectors.toList());
+        }
 
         // 2. Map and calculate distance
         List<VehicleDTOs.VehicleResponse> responses = list.stream().map(v -> {
@@ -170,54 +179,99 @@ public class VehicleService {
      * Handles both diacritic form ("Hà Nội") and plain ASCII form ("Ha Noi", "ha noi").
      * If no mapping is found, returns the original string (allows partial matching via LIKE).
      */
-    private String resolveLocation(String rawLocation) {
-        if (rawLocation == null || rawLocation.isEmpty()) {
-            return null;
-        }
-        
-        String lowerLoc = rawLocation.toLowerCase().trim();
-        
-        // Ho Chi Minh
-        if (lowerLoc.contains("ho chi minh") || lowerLoc.contains("hồ chí minh") || lowerLoc.contains("hcm") || 
-            lowerLoc.contains("chí minh") || lowerLoc.contains("ch minh") || lowerLoc.contains("cha- minh") || 
-            lowerLoc.contains("sai gon") || lowerLoc.contains("saigon") || 
-            (lowerLoc.contains("h") && lowerLoc.contains("ch") && lowerLoc.contains("m"))) {
-            return "Ho Chi Minh";
-        }
-        // Hanoi
-        if (lowerLoc.contains("ha noi") || lowerLoc.contains("hà nội") || lowerLoc.contains("hanoi") || lowerLoc.contains("hà n") || lowerLoc.contains("ha n")) {
-            return "Hanoi";
-        }
-        // Da Nang
-        if (lowerLoc.contains("da nang") || lowerLoc.contains("đà nẵng") || lowerLoc.contains("danang") || lowerLoc.contains("nẵng") || lowerLoc.contains("à n") || lowerLoc.contains("a n")) {
-            return "Da Nang";
-        }
-        // Nha Trang
-        if (lowerLoc.contains("nha trang") || lowerLoc.contains("nhatrang") || lowerLoc.contains("nha")) {
-            return "Nha Trang";
-        }
-        // Da Lat
-        if (lowerLoc.contains("da lat") || lowerLoc.contains("đà lạt") || lowerLoc.contains("dalat") || lowerLoc.contains("lạt") || lowerLoc.contains("à l") || lowerLoc.contains("a l")) {
-            return "Da Lat";
-        }
-        // Hue
-        if (lowerLoc.contains("hue") || lowerLoc.contains("huế") || lowerLoc.contains("hu?") || lowerLoc.contains("hu")) {
-            return "Hue";
-        }
-        // Can Tho
-        if (lowerLoc.contains("can tho") || lowerLoc.contains("cần thơ") || lowerLoc.contains("cantho")) {
-            return "Can Tho";
-        }
-        // Vung Tau
-        if (lowerLoc.contains("vung tau") || lowerLoc.contains("vũng tàu") || lowerLoc.contains("vungtau")) {
-            return "Vung Tau";
-        }
-        // Hai Phong
-        if (lowerLoc.contains("hai phong") || lowerLoc.contains("hải phòng") || lowerLoc.contains("haiphong")) {
-            return "Hai Phong";
-        }
+    private String resolveLocation(String location) {
+        if (location == null || location.isBlank()) return null;
+        String resolved = resolveKnownLocation(location);
+        if (resolved != null) return resolved;
 
-        return rawLocation;
+        // Mapping table: lowercase form (both with and without diacritics) → English form in DB
+        java.util.Map<String, String> cityMap = new java.util.HashMap<>();
+        // Ho Chi Minh
+        cityMap.put("ho chi minh",   "Ho Chi Minh");
+        cityMap.put("hồ chí minh",   "Ho Chi Minh");
+        cityMap.put("hổ chí minh",   "Ho Chi Minh");
+        cityMap.put("hcm",           "Ho Chi Minh");
+        cityMap.put("tp hcm",        "Ho Chi Minh");
+        cityMap.put("tp. hồ chí minh","Ho Chi Minh");
+        cityMap.put("sai gon",       "Ho Chi Minh");
+        cityMap.put("saigon",        "Ho Chi Minh");
+        // Ha Noi
+        cityMap.put("ha noi",        "Ha Noi");
+        cityMap.put("hà nội",        "Ha Noi");
+        cityMap.put("hanoi",         "Ha Noi");
+        // Da Nang
+        cityMap.put("da nang",       "Da Nang");
+        cityMap.put("đà nẵng",       "Da Nang");
+        cityMap.put("danang",        "Da Nang");
+        // Nha Trang
+        cityMap.put("nha trang",     "Nha Trang");
+        cityMap.put("nhatrang",      "Nha Trang");
+        // Da Lat
+        cityMap.put("da lat",        "Da Lat");
+        cityMap.put("đà lạt",        "Da Lat");
+        cityMap.put("dalat",         "Da Lat");
+        // Hai Phong
+        cityMap.put("hai phong",     "Hai Phong");
+        cityMap.put("hải phòng",     "Hai Phong");
+        cityMap.put("haiphong",      "Hai Phong");
+        // Hue
+        cityMap.put("hue",           "Hue");
+        cityMap.put("huế",           "Hue");
+        // Can Tho
+        cityMap.put("can tho",       "Can Tho");
+        cityMap.put("cần thơ",       "Can Tho");
+        cityMap.put("cantho",        "Can Tho");
+        // Vung Tau
+        cityMap.put("vung tau",      "Vung Tau");
+        cityMap.put("vũng tàu",      "Vung Tau");
+        cityMap.put("vungtau",       "Vung Tau");
+        // Phu Quoc
+        cityMap.put("phu quoc",      "Phu Quoc");
+        cityMap.put("phú quốc",      "Phu Quoc");
+        cityMap.put("phuquoc",       "Phu Quoc");
+
+        String key = location.toLowerCase().trim();
+        return cityMap.getOrDefault(key, location); // fallback: use as-is
+    }
+
+    private String resolveKnownLocation(String location) {
+        Map<String, String> cityMap = new HashMap<>();
+        cityMap.put("ho chi minh", "Ho Chi Minh");
+        cityMap.put("hcm", "Ho Chi Minh");
+        cityMap.put("tp hcm", "Ho Chi Minh");
+        cityMap.put("tp ho chi minh", "Ho Chi Minh");
+        cityMap.put("sai gon", "Ho Chi Minh");
+        cityMap.put("saigon", "Ho Chi Minh");
+        cityMap.put("ha noi", "Ha Noi");
+        cityMap.put("hanoi", "Ha Noi");
+        cityMap.put("da nang", "Da Nang");
+        cityMap.put("danang", "Da Nang");
+        cityMap.put("nha trang", "Nha Trang");
+        cityMap.put("nhatrang", "Nha Trang");
+        cityMap.put("da lat", "Da Lat");
+        cityMap.put("dalat", "Da Lat");
+        cityMap.put("hai phong", "Hai Phong");
+        cityMap.put("haiphong", "Hai Phong");
+        cityMap.put("hue", "Hue");
+        cityMap.put("can tho", "Can Tho");
+        cityMap.put("cantho", "Can Tho");
+        cityMap.put("vung tau", "Vung Tau");
+        cityMap.put("vungtau", "Vung Tau");
+        cityMap.put("phu quoc", "Phu Quoc");
+        cityMap.put("phuquoc", "Phu Quoc");
+        return cityMap.get(normalizeLocationKey(location));
+    }
+
+    private String normalizeLocationKey(String location) {
+        String normalized = Normalizer.normalize(location.trim(), Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .replace('đ', 'd')
+                .replace('Đ', 'D')
+                .toLowerCase();
+        return normalized
+                .replaceAll("[^a-z0-9]+", " ")
+                .trim()
+                .replaceAll("\\s+", " ");
     }
 
     // ====== Search ======
@@ -1093,12 +1147,60 @@ public class VehicleService {
         r.setAddress(translationService.translateVehicle(v.getId(), lang, v.getName(), v.getDescription(), v.getCity(), v.getAddress(), "address"));
         r.setCity(translationService.translateVehicle(v.getId(), lang, v.getName(), v.getDescription(), v.getCity(), v.getAddress(), "city"));
         
-        r.setLatitude(v.getLatitude() != null ? v.getLatitude().doubleValue() : null);
-        r.setLongitude(v.getLongitude() != null ? v.getLongitude().doubleValue() : null);
+        double[] coords = resolveMapCoordinates(v);
+        r.setLatitude(coords[0]);
+        r.setLongitude(coords[1]);
         r.setAvailable(v.getStatus() == com.luxeway.enums.VehicleStatus.AVAILABLE);
         r.setOwnerName(v.getOwner() != null ? v.getOwner().getDisplayName() : null);
         
         return r;
+    }
+
+    private double[] resolveMapCoordinates(Vehicle v) {
+        if (v.getLatitude() != null && v.getLongitude() != null) {
+            double lat = v.getLatitude().doubleValue();
+            double lng = v.getLongitude().doubleValue();
+            if (lat != 0 && lng != 0 && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+                return new double[] { lat, lng };
+            }
+        }
+
+        String text = String.join(" ",
+                Optional.ofNullable(v.getCity()).orElse(""),
+                Optional.ofNullable(v.getAddress()).orElse(""));
+        String key = normalizeLocationKey(text);
+
+        double[] base = new double[] { 10.7756, 106.7004 }; // District 1, Ho Chi Minh City
+        if (key.contains("ha noi") || key.contains("hanoi")) {
+            base = new double[] { 21.0285, 105.8542 };
+        } else if (key.contains("da nang") || key.contains("danang")) {
+            base = new double[] { 16.0544, 108.2022 };
+        } else if (key.contains("nha trang")) {
+            base = new double[] { 12.2451, 109.1943 };
+        } else if (key.contains("da lat") || key.contains("dalat")) {
+            base = new double[] { 11.9404, 108.4583 };
+        } else if (key.contains("can tho")) {
+            base = new double[] { 10.0371, 105.7882 };
+        } else if (key.contains("hai phong")) {
+            base = new double[] { 20.8449, 106.6881 };
+        } else if (key.contains("hue")) {
+            base = new double[] { 16.4637, 107.5909 };
+        } else if (key.contains("thu duc")) {
+            base = new double[] { 10.8501, 106.7712 };
+        } else if (key.contains("quan 7") || key.contains("district 7")) {
+            base = new double[] { 10.7323, 106.7176 };
+        } else if (key.contains("phu quoc")) {
+            base = new double[] { 10.2186, 103.9607 };
+        } else if (key.contains("vung tau")) {
+            base = new double[] { 10.3458, 107.0843 };
+        }
+
+        int hash = Math.abs(Optional.ofNullable(v.getId()).orElse(v.getName()).hashCode());
+        double angle = Math.toRadians(hash % 360);
+        double radius = 0.006 + (hash % 9) * 0.0018;
+        double lat = base[0] + Math.sin(angle) * radius;
+        double lng = base[1] + Math.cos(angle) * radius;
+        return new double[] { lat, lng };
     }
 
     @Transactional(readOnly = true)
@@ -1176,15 +1278,6 @@ public class VehicleService {
         );
 
         List<Vehicle> list = page.getContent();
-
-        // Safety Coordinate Filter: Only include valid coords inside range
-        list = list.stream().filter(v -> {
-            if (v.getLatitude() == null || v.getLongitude() == null) return false;
-            double lat = v.getLatitude().doubleValue();
-            double lng = v.getLongitude().doubleValue();
-            if (lat == 0 || lng == 0) return false;
-            return lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
-        }).collect(Collectors.toList());
 
         // Keyword filter in Java
         if (filter.getKeyword() != null && !filter.getKeyword().isBlank()) {

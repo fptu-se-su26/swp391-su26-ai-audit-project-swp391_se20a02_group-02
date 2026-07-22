@@ -9,15 +9,16 @@ import {
   LayoutDashboard, Car, Calendar, TrendingUp, Users, Settings,
   Plus, Edit, Trash2, Eye, CheckCircle, Clock, DollarSign,
   BarChart2, Shield, AlertTriangle, LogOut, Globe, Menu,
-  MapPin, Star, Activity, ArrowUpRight, Play
+  MapPin, Star, Activity, ArrowUpRight, Play, FileText
 } from 'lucide-react';
 
 import { useAuthStore, useUIStore } from '@/store';
 import { vehicleService } from '@/services/vehicleService';
 import { bookingService } from '@/services/bookingService';
+import { reviewService } from '@/services/otherServices';
 import apiClient from '@/services/api';
 import type { Vehicle, Booking } from '@/types';
-import { formatCurrency, formatDate, getStatusColor, convertCurrency, cn } from '@/utils';
+import { formatCurrency, formatDate, getStatusColor, convertCurrency, cn, SERVER_BASE } from '@/utils';
 import { staggerContainer, staggerItem, fadeUp } from '@/animations/variants';
 import { useToast } from '@/components/ui/Toast';
 import { useT } from '@/i18n/translations';
@@ -1075,9 +1076,12 @@ export const VehicleFormPage: React.FC = () => {
                     formData.append('file', file);
                     try {
                       const token = localStorage.getItem('luxeway_access_token');
-                      const res = await fetch('http://localhost:8080/upload/vehicle-image', {
+                      const res = await fetch(`${SERVER_BASE}/upload/vehicle-image`, {
                         method: 'POST',
-                        headers: token ? { Authorization: `Bearer ${token}` } : {},
+                        headers: {
+                          ...(SERVER_BASE.includes('ngrok') ? { 'ngrok-skip-browser-warning': 'true' } : {}),
+                          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                        },
                         body: formData,
                       });
                       const data = await res.json();
@@ -1232,6 +1236,26 @@ export const OwnerCalendarPage: React.FC = () => {
     });
   };
 
+  const calendarStatusStyles: Record<string, string> = {
+    waiting_payment: 'bg-amber-500/15 text-amber-700 border-amber-300',
+    payment_pending: 'bg-orange-500/15 text-orange-700 border-orange-300',
+    pending: 'bg-sky-500/15 text-sky-700 border-sky-300',
+    confirmed: 'bg-blue-500/15 text-blue-700 border-blue-300',
+    owner_approved: 'bg-blue-500/15 text-blue-700 border-blue-300',
+    active: 'bg-emerald-500/15 text-emerald-700 border-emerald-300',
+    in_rental: 'bg-emerald-500/15 text-emerald-700 border-emerald-300',
+    completed: 'bg-slate-500/15 text-slate-700 border-slate-300',
+    cancellation_requested: 'bg-rose-500/15 text-rose-700 border-rose-300',
+  };
+
+  const calendarLegend = [
+    { status: 'waiting_payment', label: 'Waiting payment' },
+    { status: 'confirmed', label: 'Confirmed' },
+    { status: 'active', label: 'Active rental' },
+    { status: 'cancellation_requested', label: 'Cancel review' },
+    { status: 'completed', label: 'Completed' },
+  ];
+
   const breadcrumbItems = [
     { label: t.marketplace.home, href: '/' },
     { label: 'Host Portal', href: '/owner' },
@@ -1270,6 +1294,14 @@ export const OwnerCalendarPage: React.FC = () => {
           </div>
         </div>
 
+        <div className="px-5 py-3 border-b border-slate-200/25 dark:border-white/5 flex flex-wrap gap-2 bg-white/60 dark:bg-slate-950/20">
+          {calendarLegend.map(item => (
+            <span key={item.status} className={`text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full border ${calendarStatusStyles[item.status]}`}>
+              {item.label}
+            </span>
+          ))}
+        </div>
+
         {/* Days of Week */}
         <div className="grid grid-cols-7 border-b border-slate-200/25 dark:border-white/5 bg-slate-500/3">
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
@@ -1301,9 +1333,14 @@ export const OwnerCalendarPage: React.FC = () => {
                   
                   <div className="mt-1 flex-1 overflow-y-auto space-y-1.5 scrollbar-thin">
                     {dayBookings.map((b, i) => (
-                      <div key={b.id} className="text-[9px] leading-tight px-2 py-1 rounded-lg bg-gold/15 text-gold border border-gold/25 font-bold truncate shadow-sm hover:scale-102 transition-transform duration-300 cursor-pointer" title={`Booking #${b.id.slice(-4)}`}>
-                        {vehicles.find(v => v.id === b.vehicleId)?.name || 'Booked'}
-                      </div>
+                      <Link
+                        key={b.id}
+                        to={`/owner/bookings?booking=${b.id}`}
+                        className={`block text-[9px] leading-tight px-2 py-1 rounded-lg border font-bold truncate shadow-sm hover:scale-102 transition-transform duration-300 ${calendarStatusStyles[b.status] || 'bg-gold/15 text-gold border-gold/25'}`}
+                        title={`Booking #${b.id.slice(-6)} - ${b.status.replace('_', ' ')}`}
+                      >
+                        {(vehicles.find(v => v.id === b.vehicleId)?.name || 'Booked')} - {b.status.replace('_', ' ')}
+                      </Link>
                     ))}
                   </div>
                 </div>
@@ -1334,6 +1371,60 @@ export const OwnerBookingsPage: React.FC = () => {
   }, [user]);
 
   const filtered = filter === 'all' ? bookings : bookings.filter(b => b.status === filter);
+  const statusTabs = [
+    { value: 'all', label: 'All' },
+    { value: 'pending', label: 'Pending' },
+    { value: 'cancellation_requested', label: 'Cancel Review' },
+    { value: 'payment_pending', label: 'Payment Review' },
+    { value: 'confirmed', label: 'Confirmed' },
+    { value: 'active', label: 'Active' },
+    { value: 'completed', label: 'Completed' },
+    { value: 'cancelled', label: 'Cancelled' },
+  ];
+  const countByStatus = (status: string) => status === 'all'
+    ? bookings.length
+    : bookings.filter(b => b.status === status).length;
+  const bookingTitle = (booking: Booking) => booking.bookingCode || `#${booking.id.slice(-6).toUpperCase()}`;
+  const vehicleTitle = (booking: Booking) => {
+    const vehicle = booking.vehicle as any;
+    const brand = vehicle?.brand || vehicle?.brandName || '';
+    const name = vehicle?.name || vehicle?.modelName || booking.vehicleId || 'Vehicle';
+    return `${brand} ${name}`.trim();
+  };
+  const renterTitle = (booking: Booking) => booking.renter?.displayName || booking.renter?.email || booking.renterId || 'Renter';
+  const paymentState = (status: string) => {
+    if (status === 'payment_pending') return 'Customer paid - waiting review';
+    if (['payment_verified', 'confirmed', 'active', 'completed', 'in_rental', 'return_completed'].includes(status)) return 'Payment confirmed';
+    if (status === 'payment_expired') return 'Payment window expired';
+    if (status === 'waiting_payment') return 'Pay later - waiting payment';
+    if (status === 'payment_rejected') return 'Payment rejected';
+    return 'No payment required yet';
+  };
+  const contractState = (status: string) => {
+    if (['waiting_payment', 'payment_rejected'].includes(status)) return 'Renter signing/payment stage';
+    if (['payment_pending', 'payment_verified', 'confirmed', 'active', 'completed', 'in_rental', 'return_completed'].includes(status)) return 'Owner review/sign available';
+    if (['cancelled', 'customer_cancelled', 'owner_cancelled', 'system_cancelled'].includes(status)) return 'Contract closed';
+    return 'Prepared after approval';
+  };
+  const nextStep = (status: string) => {
+    switch (status) {
+      case 'pending': return 'Review renter request, then approve or reject.';
+      case 'waiting_payment': return 'Renter may sign and pay now, or continue payment later.';
+      case 'payment_pending': return 'Customer payment was submitted. Review payment, then sign the owner side if needed.';
+      case 'cancellation_requested': return 'Review cancellation policy and approve or reject.';
+      case 'confirmed':
+      case 'ready_for_pickup': return 'Prepare pickup and track handover.';
+      case 'active':
+      case 'in_rental': return 'Monitor active rental and return condition.';
+      case 'completed':
+      case 'return_completed': return 'Trip finished. Review revenue and feedback.';
+      case 'cancelled':
+      case 'customer_cancelled':
+      case 'owner_cancelled':
+      case 'system_cancelled': return 'Booking is closed.';
+      default: return 'Open status details for the latest operation state.';
+    }
+  };
 
   const handleApprove = async (bookingId: string) => {
     await bookingService.updateStatus(bookingId, 'confirmed');
@@ -1345,6 +1436,26 @@ export const OwnerBookingsPage: React.FC = () => {
     await bookingService.updateStatus(bookingId, 'cancelled');
     setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: 'cancelled' } : b));
     toast.success('Booking rejected', 'The renter has been notified.');
+  };
+
+  const handleApproveCancellation = async (bookingId: string) => {
+    const updated = await bookingService.approveCancellation(bookingId, 'Cancellation approved by owner');
+    if (updated) {
+      setBookings(prev => prev.map(b => b.id === bookingId ? updated : b));
+      toast.success('Cancellation approved', 'The booking has been cancelled and the renter has been notified.');
+    } else {
+      toast.error('Approval failed', 'Could not approve this cancellation request.');
+    }
+  };
+
+  const handleRejectCancellation = async (bookingId: string) => {
+    const updated = await bookingService.rejectCancellation(bookingId, 'Cancellation rejected after policy review');
+    if (updated) {
+      setBookings(prev => prev.map(b => b.id === bookingId ? updated : b));
+      toast.success('Cancellation rejected', 'The renter has been notified.');
+    } else {
+      toast.error('Reject failed', 'Could not reject this cancellation request.');
+    }
   };
 
   const breadcrumbItems = [
@@ -1359,25 +1470,29 @@ export const OwnerBookingsPage: React.FC = () => {
 
       {/* Filter Tabs - Premium Capsule Pills */}
       <div className="flex gap-2 overflow-x-auto pb-2 max-w-full scrollbar-none">
-        {['all', 'pending', 'confirmed', 'active', 'completed', 'cancelled'].map(status => (
+        {statusTabs.map(tab => {
+          const count = countByStatus(tab.value);
+          return (
           <button
-            key={status}
-            onClick={() => setFilter(status)}
+            key={tab.value}
+            onClick={() => setFilter(tab.value)}
             className={`px-4.5 py-2.5 rounded-xl text-xs font-extrabold whitespace-nowrap border transition-all duration-300 hover-lift ${
-              filter === status 
+              filter === tab.value 
                 ? 'border-gold bg-yellow-500/10 text-gold shadow-sm shadow-gold/20' 
                 : 'border-slate-200/50 dark:border-white/5 text-slate-500 dark:text-slate-400 bg-slate-500/5 hover:border-slate-300 dark:hover:border-white/10'
             }`}
           >
-            {status.charAt(0).toUpperCase() + status.slice(1)}
-            {status === 'all' && ` (${bookings.length})`}
-            {status === 'pending' && bookings.filter(b => b.status === 'pending').length > 0 && (
-              <span className="ml-2 w-5 h-5 bg-red-500 text-white text-[9px] rounded-full inline-flex items-center justify-center font-extrabold shadow-sm animate-pulse">
-                {bookings.filter(b => b.status === 'pending').length}
-              </span>
-            )}
+            {tab.label}
+            <span className={`ml-2 min-w-5 h-5 px-1.5 rounded-full inline-flex items-center justify-center text-[9px] font-extrabold ${
+              count > 0 && ['pending', 'cancellation_requested', 'payment_pending'].includes(tab.value)
+                ? 'bg-amber-500 text-white animate-pulse'
+                : 'bg-slate-200/70 dark:bg-white/10 text-slate-500 dark:text-slate-300'
+            }`}>
+              {count}
+            </span>
           </button>
-        ))}
+          );
+        })}
       </div>
 
       {loading ? (
@@ -1392,6 +1507,9 @@ export const OwnerBookingsPage: React.FC = () => {
         <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-4">
           {filtered.map(booking => {
             const isPending = booking.status === 'pending';
+            const isCancellationRequested = booking.status === 'cancellation_requested';
+            const canOpenContract = !['pending', 'cancelled', 'customer_cancelled', 'owner_cancelled', 'system_cancelled'].includes(booking.status);
+            const statusLabel = booking.status.replace(/_/g, ' ').toUpperCase();
             return (
               <motion.div key={booking.id} variants={staggerItem} className="glass border border-slate-200/50 dark:border-white/5 p-5.5 rounded-[2rem] hover-lift hover-glow shadow-sm transition-all duration-300 relative group">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
@@ -1405,37 +1523,124 @@ export const OwnerBookingsPage: React.FC = () => {
                         <span className={`badge text-[9px] font-extrabold uppercase tracking-widest border-2 px-2.5 py-0.5 rounded-lg ${getStatusColor(booking.status)}`}>{booking.status}</span>
                       </div>
                       <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold flex items-center gap-1.5">📅 {formatDate(booking.startDate)} → {formatDate(booking.endDate)} · <span className="text-gold font-extrabold">{booking.totalDays} days</span></p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold mt-1 flex items-center gap-1">Renter: <span className="font-bold text-slate-700 dark:text-slate-200">{booking.renterId.slice(0, 12) + '...'}</span></p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold mt-1 flex items-center gap-1">Renter: <span className="font-bold text-slate-700 dark:text-slate-200">{renterTitle(booking)}</span></p>
                       <p className="text-base font-extrabold text-emerald-500 dark:text-emerald-400 mt-2.5">{formatCurrency(booking.pricing.total)}</p>
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mt-4 max-w-5xl">
+                        <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 p-3">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Vehicle</p>
+                          <p className="text-sm font-bold text-slate-800 dark:text-white truncate">{vehicleTitle(booking)}</p>
+                        </div>
+                        <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 p-3">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Renter</p>
+                          <p className="text-sm font-bold text-slate-800 dark:text-white truncate">{renterTitle(booking)}</p>
+                        </div>
+                        <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 p-3">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Rental Window</p>
+                          <p className="text-sm font-bold text-slate-800 dark:text-white">{formatDate(booking.startDate)} - {formatDate(booking.endDate)}</p>
+                        </div>
+                        <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 p-3">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Deposit</p>
+                          <p className="text-sm font-black text-slate-800 dark:text-white">{formatCurrency(booking.pricing.deposit)}</p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3 max-w-5xl">
+                        <div className="rounded-xl border border-blue-100 bg-blue-50/80 dark:bg-blue-500/10 dark:border-blue-500/20 p-3">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-blue-500 mb-1">Current status</p>
+                          <p className="text-sm font-extrabold text-slate-800 dark:text-white">{statusLabel}</p>
+                          <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-1">{nextStep(booking.status)}</p>
+                        </div>
+                        <div className="rounded-xl border border-emerald-100 bg-emerald-50/80 dark:bg-emerald-500/10 dark:border-emerald-500/20 p-3">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 mb-1">Payment</p>
+                          <p className="text-sm font-extrabold text-slate-800 dark:text-white">{paymentState(booking.status)}</p>
+                          <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-1">Total {formatCurrency(booking.pricing.total)}</p>
+                        </div>
+                        <div className="rounded-xl border border-amber-100 bg-amber-50/80 dark:bg-amber-500/10 dark:border-amber-500/20 p-3">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 mb-1">Contract</p>
+                          <p className="text-sm font-extrabold text-slate-800 dark:text-white">{contractState(booking.status)}</p>
+                          <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-1">Renter signs first; owner signs separately from the contract page.</p>
+                        </div>
+                      </div>
+                      {isCancellationRequested && (
+                        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 max-w-5xl">
+                          <p className="text-xs font-bold text-amber-800">
+                            Customer requested cancellation. Review the dates and policy, then approve to cancel and release availability or reject to keep the booking active.
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                   {isPending ? (
-                    <div className="flex gap-2.5 flex-shrink-0 justify-end mt-2 sm:mt-0">
+                    <div className="flex flex-col gap-2.5 flex-shrink-0 justify-end mt-2 sm:mt-0 min-w-[220px]">
+                      <Link
+                        to={`/owner/bookings/${booking.id}/tracking`}
+                        className="flex items-center justify-center gap-1.5 px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-extrabold shadow-md shadow-blue-500/15 transition-all hover-lift"
+                      >
+                        <Eye className="w-3.5 h-3.5" /> View Status & Details
+                      </Link>
                       <motion.button
                         whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                         onClick={() => handleApprove(booking.id)}
-                        className="flex items-center gap-1.5 px-5 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-extrabold shadow-md shadow-emerald-500/10 transition-all hover-lift"
+                        className="flex items-center justify-center gap-1.5 px-5 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-extrabold shadow-md shadow-emerald-500/10 transition-all hover-lift"
                       >
                         <CheckCircle className="w-4 h-4" /> Approve Request
                       </motion.button>
                       <motion.button
                         whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                         onClick={() => handleReject(booking.id)}
-                        className="flex items-center gap-1.5 px-5 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/25 rounded-xl text-xs font-extrabold transition-all hover-lift"
+                        className="flex items-center justify-center gap-1.5 px-5 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/25 rounded-xl text-xs font-extrabold transition-all hover-lift"
                       >
                         Reject
                       </motion.button>
                     </div>
-                  ) : (booking.status === 'confirmed' || booking.status === 'active') ? (
-                    <div className="flex gap-2.5 flex-shrink-0 justify-end mt-2 sm:mt-0">
+                  ) : isCancellationRequested ? (
+                    <div className="flex flex-col gap-2.5 flex-shrink-0 justify-end mt-2 sm:mt-0 min-w-[220px]">
                       <Link
                         to={`/owner/bookings/${booking.id}/tracking`}
-                        className="flex items-center gap-1.5 px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-extrabold shadow-md shadow-blue-500/15 transition-all hover-lift"
+                        className="flex items-center justify-center gap-1.5 px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-extrabold shadow-md shadow-blue-500/15 transition-all hover-lift"
                       >
-                        <Play className="w-3.5 h-3.5 fill-white" /> Simulate & Track
+                        <Eye className="w-3.5 h-3.5" /> View Status & Details
                       </Link>
+                      <motion.button
+                        whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                        onClick={() => handleApproveCancellation(booking.id)}
+                        className="flex items-center justify-center gap-1.5 px-5 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-extrabold shadow-md shadow-emerald-500/10 transition-all hover-lift"
+                      >
+                        <CheckCircle className="w-4 h-4" /> Approve Cancel
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                        onClick={() => handleRejectCancellation(booking.id)}
+                        className="flex items-center justify-center gap-1.5 px-5 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/25 rounded-xl text-xs font-extrabold transition-all hover-lift"
+                      >
+                        Reject Cancel
+                      </motion.button>
                     </div>
-                  ) : null}
+                  ) : (
+                    <div className="flex flex-col gap-2.5 flex-shrink-0 justify-end mt-2 sm:mt-0 min-w-[220px]">
+                      <Link
+                        to={`/owner/bookings/${booking.id}/tracking`}
+                        className="flex items-center justify-center gap-1.5 px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-extrabold shadow-md shadow-blue-500/15 transition-all hover-lift"
+                      >
+                        <Eye className="w-3.5 h-3.5" /> View Status & Details
+                      </Link>
+                      {canOpenContract && (
+                      <Link
+                        to={`/booking/${booking.id}/contract`}
+                        className="flex items-center justify-center gap-1.5 px-5 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-extrabold shadow-md shadow-slate-900/15 transition-all hover-lift"
+                      >
+                        <FileText className="w-3.5 h-3.5" /> Review & Sign Contract
+                      </Link>
+                      )}
+                      {(booking.status === 'confirmed' || booking.status === 'active' || booking.status === 'in_rental') && (
+                      <Link
+                        to={`/owner/bookings/${booking.id}/tracking`}
+                        className="flex items-center justify-center gap-1.5 px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 rounded-xl text-xs font-extrabold transition-all hover-lift"
+                      >
+                        <Play className="w-3.5 h-3.5 fill-slate-800" /> Simulate & Track
+                      </Link>
+                      )}
+                    </div>
+                  )}
                 </div>
               </motion.div>
             );
@@ -2084,17 +2289,13 @@ export const OwnerReviewsPage: React.FC = () => {
 
   useEffect(() => {
     if (user?.id) {
-      apiClient.get<any>(`/reviews/owner/${user.id}?page=0&size=100`)
-        .then(res => {
-          const data = res.data?.data || res.data;
-          setReviews(data?.content || res.content || []);
-          setLoading(false);
-        })
+      reviewService.getByOwner(user.id)
+        .then(res => setReviews(res.content || []))
         .catch(err => {
           console.error(err);
-          setLoading(false);
           toast.error('Error', 'Failed to load reviews');
-        });
+        })
+        .finally(() => setLoading(false));
     }
   }, [user]);
 
@@ -2178,6 +2379,16 @@ export const OwnerSettingsPage: React.FC = () => {
     bio: user?.bio || '',
     location: user?.location || '',
     preferredLanguage: user?.preferredLanguage || 'en',
+    preferredCurrency: user?.preferredCurrency || 'VND',
+    emailBookingNotifications: user?.emailBookingNotifications ?? true,
+    emailReviewNotifications: user?.emailReviewNotifications ?? true,
+    emailMarketingNotifications: user?.emailMarketingNotifications ?? false,
+    pushNotifications: user?.pushNotifications ?? true,
+    ownerBankName: user?.ownerBankName || '',
+    ownerBankAccountNumber: user?.ownerBankAccountNumber || '',
+    ownerBankAccountHolder: user?.ownerBankAccountHolder || '',
+    ownerPayoutEnabled: user?.ownerPayoutEnabled ?? false,
+    securityTwoFactorEnabled: user?.securityTwoFactorEnabled ?? false,
     licenseClass: user?.licenseClass || '',
     licenseNumber: user?.licenseNumber || '',
   });
@@ -2197,6 +2408,16 @@ export const OwnerSettingsPage: React.FC = () => {
         bio: form.bio,
         location: form.location,
         preferredLanguage: form.preferredLanguage,
+        preferredCurrency: form.preferredCurrency,
+        emailBookingNotifications: form.emailBookingNotifications,
+        emailReviewNotifications: form.emailReviewNotifications,
+        emailMarketingNotifications: form.emailMarketingNotifications,
+        pushNotifications: form.pushNotifications,
+        ownerBankName: form.ownerBankName,
+        ownerBankAccountNumber: form.ownerBankAccountNumber,
+        ownerBankAccountHolder: form.ownerBankAccountHolder,
+        ownerPayoutEnabled: form.ownerPayoutEnabled,
+        securityTwoFactorEnabled: form.securityTwoFactorEnabled,
         licenseClass: form.licenseClass,
         licenseNumber: form.licenseNumber
       });
@@ -2217,6 +2438,18 @@ export const OwnerSettingsPage: React.FC = () => {
       setLoading(false);
     }
   };
+
+  const Toggle: React.FC<{ value: boolean; onChange: () => void; label: string; desc?: string }> = ({ value, onChange, label, desc }) => (
+    <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-200/40 dark:border-white/5 bg-white/60 dark:bg-slate-950/30 px-4 py-3">
+      <div>
+        <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{label}</p>
+        {desc && <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{desc}</p>}
+      </div>
+      <button type="button" onClick={onChange} className={`relative h-6 w-12 rounded-full transition-colors ${value ? 'bg-amber-500' : 'bg-slate-300 dark:bg-slate-700'}`}>
+        <span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-all ${value ? 'left-7' : 'left-1'}`} />
+      </button>
+    </div>
+  );
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -2306,6 +2539,85 @@ export const OwnerSettingsPage: React.FC = () => {
                 placeholder="License ID number"
               />
             </div>
+          </div>
+        </div>
+
+        <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm space-y-4">
+          <h3 className="font-display text-sm font-bold text-amber-500 uppercase tracking-widest border-b border-slate-200/10 dark:border-white/5 pb-2.5">Payout & Banking</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Bank Name</label>
+              <input
+                type="text"
+                value={form.ownerBankName}
+                onChange={e => setForm(f => ({ ...f, ownerBankName: e.target.value }))}
+                className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100"
+                placeholder="e.g. Vietcombank"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Account Number</label>
+              <input
+                type="text"
+                value={form.ownerBankAccountNumber}
+                onChange={e => setForm(f => ({ ...f, ownerBankAccountNumber: e.target.value }))}
+                className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100"
+                placeholder="Bank account number"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Account Holder</label>
+            <input
+              type="text"
+              value={form.ownerBankAccountHolder}
+              onChange={e => setForm(f => ({ ...f, ownerBankAccountHolder: e.target.value }))}
+              className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100"
+              placeholder="Legal account holder name"
+            />
+          </div>
+          <Toggle
+            value={form.ownerPayoutEnabled}
+            onChange={() => setForm(f => ({ ...f, ownerPayoutEnabled: !f.ownerPayoutEnabled }))}
+            label="Enable payout profile"
+            desc="Marks this host as ready for payout reconciliation after completed rentals."
+          />
+        </div>
+
+        <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm space-y-4">
+          <h3 className="font-display text-sm font-bold text-amber-500 uppercase tracking-widest border-b border-slate-200/10 dark:border-white/5 pb-2.5">Notifications & Security</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Language</label>
+              <select
+                value={form.preferredLanguage}
+                onChange={e => setForm(f => ({ ...f, preferredLanguage: e.target.value }))}
+                className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100"
+              >
+                <option value="en">English</option>
+                <option value="vi">Tieng Viet</option>
+                <option value="ja">Japanese</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Currency</label>
+              <select
+                value={form.preferredCurrency}
+                onChange={e => setForm(f => ({ ...f, preferredCurrency: e.target.value }))}
+                className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100"
+              >
+                <option value="VND">VND</option>
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <Toggle value={form.emailBookingNotifications} onChange={() => setForm(f => ({ ...f, emailBookingNotifications: !f.emailBookingNotifications }))} label="Booking email alerts" desc="Notify when requests, payments, or cancellations change." />
+            <Toggle value={form.emailReviewNotifications} onChange={() => setForm(f => ({ ...f, emailReviewNotifications: !f.emailReviewNotifications }))} label="Review email alerts" desc="Notify when renters submit feedback." />
+            <Toggle value={form.emailMarketingNotifications} onChange={() => setForm(f => ({ ...f, emailMarketingNotifications: !f.emailMarketingNotifications }))} label="Host tips and promotions" desc="Receive product updates and hosting campaigns." />
+            <Toggle value={form.pushNotifications} onChange={() => setForm(f => ({ ...f, pushNotifications: !f.pushNotifications }))} label="In-app notifications" desc="Show alerts in LuxeWay notifications." />
+            <Toggle value={form.securityTwoFactorEnabled} onChange={() => setForm(f => ({ ...f, securityTwoFactorEnabled: !f.securityTwoFactorEnabled }))} label="Two-factor flag" desc="Persist the security preference for account hardening." />
           </div>
         </div>
 

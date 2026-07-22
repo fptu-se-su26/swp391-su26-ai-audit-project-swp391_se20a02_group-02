@@ -115,6 +115,12 @@ public class ReviewService {
                 .map(this::toResponse);
     }
 
+    public Page<ReviewDTOs.ReviewResponse> getUserReviews(String userId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return reviewRepository.findByReviewerIdOrderByCreatedAtDesc(userId, pageable)
+                .map(this::toResponse);
+    }
+
     // ====== Get review statistics (global or filtered) ======
 
     public ReviewDTOs.ReviewStatsResponse getReviewStats(String vehicleId, String ownerId) {

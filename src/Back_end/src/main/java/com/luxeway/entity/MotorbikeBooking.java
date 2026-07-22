@@ -41,7 +41,7 @@ public class MotorbikeBooking {
     private User owner;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false, length = 32)
     private BookingStatus status;
 
     @Column(name = "start_date", nullable = false)

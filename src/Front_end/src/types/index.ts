@@ -16,7 +16,7 @@ export type MotorbikeCategory = 'scooter' | 'automatic_scooter' | 'manual_motorc
 // Combined (all categories in the system)
 export type VehicleCategory = CarCategory | MotorbikeCategory;
 
-export type BookingStatus = 'pending' | 'confirmed' | 'active' | 'completed' | 'cancelled' | 'disputed' | 'picking_up' | 'in_progress' | 'waiting_payment' | 'payment_pending' | 'payment_verified' | 'payment_rejected' | 'payment_expired' | 'owner_approved' | 'ready_for_pickup' | 'checked_out' | 'in_rental' | 'return_pending' | 'return_completed' | 'customer_cancelled' | 'owner_cancelled' | 'system_cancelled';
+export type BookingStatus = 'pending' | 'confirmed' | 'active' | 'completed' | 'cancelled' | 'disputed' | 'picking_up' | 'in_progress' | 'waiting_payment' | 'payment_pending' | 'payment_verified' | 'payment_rejected' | 'payment_expired' | 'owner_approved' | 'ready_for_pickup' | 'checked_out' | 'in_rental' | 'return_pending' | 'return_completed' | 'cancellation_requested' | 'customer_cancelled' | 'owner_cancelled' | 'system_cancelled';
 export type PaymentStatus = 'pending' | 'processing' | 'succeeded' | 'failed' | 'refunded';
 export type VehicleStatus = 'available' | 'rented' | 'maintenance' | 'pending_approval' | 'draft' | 'approved' | 'rejected' | 'blocked';
 export type TransmissionType = 'automatic' | 'manual';
@@ -65,6 +65,16 @@ export interface User {
     notifications: boolean;
   };
   preferredLanguage?: string;
+  preferredCurrency?: string;
+  emailBookingNotifications?: boolean;
+  emailReviewNotifications?: boolean;
+  emailMarketingNotifications?: boolean;
+  pushNotifications?: boolean;
+  ownerBankName?: string;
+  ownerBankAccountNumber?: string;
+  ownerBankAccountHolder?: string;
+  ownerPayoutEnabled?: boolean;
+  securityTwoFactorEnabled?: boolean;
   paymentMethods: PaymentMethod[];
   documents: UserDocument[];
   stripeCustomerId: string;
@@ -184,11 +194,13 @@ export interface VehicleAddon {
 export interface Booking {
   id: string;
   bookingCode?: string;
+  bookingKind?: 'general' | 'car' | 'motorbike';
   vehicleId: string;
   vehicle?: any;
   renterId: string;
   renter?: any;
   ownerId: string;
+  owner?: User;
   status: BookingStatus;
   startDate: string;
   endDate: string;
@@ -291,6 +303,7 @@ export interface Message {
 export interface Conversation {
   id: string;
   participants: string[];
+  participantProfiles?: Pick<User, 'id' | 'displayName' | 'firstName' | 'lastName' | 'email' | 'avatar' | 'role'>[];
   vehicleId?: string;
   bookingId?: string;
   lastMessage?: Message;

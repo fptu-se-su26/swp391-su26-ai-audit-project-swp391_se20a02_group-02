@@ -31,6 +31,24 @@ public class UserDTOs {
         private String companyName;
 
         private String preferredLanguage;
+        private String preferredCurrency;
+
+        private Boolean emailBookingNotifications;
+        private Boolean emailReviewNotifications;
+        private Boolean emailMarketingNotifications;
+        private Boolean pushNotifications;
+
+        @Size(max = 100)
+        private String ownerBankName;
+
+        @Size(max = 50)
+        private String ownerBankAccountNumber;
+
+        @Size(max = 150)
+        private String ownerBankAccountHolder;
+
+        private Boolean ownerPayoutEnabled;
+        private Boolean securityTwoFactorEnabled;
 
         private String licenseClass;
         private String licenseNumber;
@@ -64,6 +82,16 @@ public class UserDTOs {
         private String joinedAt;
         private String lastActive;
         private String preferredLanguage;
+        private String preferredCurrency;
+        private Boolean emailBookingNotifications;
+        private Boolean emailReviewNotifications;
+        private Boolean emailMarketingNotifications;
+        private Boolean pushNotifications;
+        private String ownerBankName;
+        private String ownerBankAccountNumber;
+        private String ownerBankAccountHolder;
+        private Boolean ownerPayoutEnabled;
+        private Boolean securityTwoFactorEnabled;
     }
 
     @Data

@@ -19,7 +19,7 @@ export const TestBackendPage: React.FC = () => {
       try {
         // Checking Health API (Assuming /api/v1/health exists, or fallback to something)
         try {
-          const healthRes = await api.get('/vehicles?page=0&size=1');
+          const healthRes = await api.get<{ status: number; data?: { totalElements?: number } }>('/vehicles?page=0&size=1');
           if (healthRes.status === 200) {
             setHealthStatus('OK - Backend is running');
             setDbStatus('OK - Database is connected');

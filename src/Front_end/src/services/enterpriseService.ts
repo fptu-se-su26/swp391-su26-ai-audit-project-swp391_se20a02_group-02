@@ -209,12 +209,12 @@ export const auditService = {
     if (action) url += `action=${action}&`;
     if (targetType) url += `targetType=${targetType}&`;
     const response = await apiClient.get<any>(url);
-    return response.data?.data || [];
+    return response.data || response || [];
   },
 
   async exportCsvUrl(userId?: string, action?: string, targetType?: string): Promise<string> {
     let url = `${apiClient.baseURL}/admin/audit/export?`;
-    const token = localStorage.getItem('token'); // get token for security
+    const token = localStorage.getItem('luxeway_access_token');
     if (token) url += `access_token=${token}&`;
     if (userId) url += `userId=${userId}&`;
     if (action) url += `action=${action}&`;
@@ -243,7 +243,7 @@ export const insuranceService = {
 export const ownerAnalyticsService = {
   async getDashboardStats(): Promise<any> {
     const response = await apiClient.get<any>('/owner/analytics/dashboard');
-    return response.data?.data;
+    return response?.data ?? response;
   },
 
   async getPdfReportUrl(): Promise<string> {

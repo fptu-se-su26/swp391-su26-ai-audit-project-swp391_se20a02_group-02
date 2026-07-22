@@ -6,13 +6,11 @@ import SockJS from 'sockjs-client';
 import Stomp from 'stompjs';
 import { mapService, BookingTrackingInfo } from '@/services/mapService';
 import { vehicleService } from '@/services/vehicleService';
-import { formatCurrency } from '@/utils';
+import { WS_URL } from '@/utils';
 import { useUIStore } from '@/store';
 import { ArrowLeft, Navigation, MapPin, Compass, ShieldCheck } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
-
-const GOONG_MAPTILES_KEY = (import.meta as any).env.VITE_GOONG_MAPTILES_KEY || 'mock_goong_key';
-const MAP_STYLE_URL = `https://tiles.goong.io/assets/goong_map_web.json?api_key=${GOONG_MAPTILES_KEY}`;
+import { getMapStyleUrl, installMapStyleFallback } from '@/components/map/mapStyle';
 
 // Polyline Decoder
 function decodePolyline(encoded: string): [number, number][] {
@@ -131,13 +129,14 @@ export const CustomerBookingPage: React.FC = () => {
 
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
-      style: MAP_STYLE_URL,
+      style: getMapStyleUrl(isDark),
       center: [bookingInfo.pickupLng || 106.660, bookingInfo.pickupLat || 10.762],
       zoom: 13,
       attributionControl: false
     });
 
     map.addControl(new maplibregl.NavigationControl({ showCompass: true }), 'top-right');
+    installMapStyleFallback(map, isDark);
     mapRef.current = map;
 
     map.on('load', () => {
@@ -244,7 +243,7 @@ export const CustomerBookingPage: React.FC = () => {
     });
 
     // 3. Connect to WebSockets
-    const socket = new SockJS('http://localhost:8080/ws');
+    const socket = new SockJS(WS_URL);
     const stompClient = Stomp.over(socket);
     // Suppress spammy debug console logs
     stompClient.debug = () => {};

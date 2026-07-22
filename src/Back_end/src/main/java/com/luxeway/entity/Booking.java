@@ -18,6 +18,7 @@ import java.time.temporal.ChronoUnit;
 @Entity
 @Table(name = "bookings")
 @Data
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -25,6 +26,7 @@ import java.time.temporal.ChronoUnit;
 public class Booking {
     
     @Id
+    @EqualsAndHashCode.Include
     @Column(length = 36)
     private String id;
 
@@ -55,7 +57,7 @@ public class Booking {
     private User owner;
     
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 32)
     private BookingStatus status;
     
     // Dates
@@ -199,7 +201,18 @@ public class Booking {
     
     // Helper methods
     public boolean canBeCancelled() {
-        return status == BookingStatus.WAITING_PAYMENT || status == BookingStatus.PAYMENT_PENDING || status == BookingStatus.CONFIRMED || status == BookingStatus.DRAFT;
+        return status == BookingStatus.DRAFT
+                || status == BookingStatus.PENDING
+                || status == BookingStatus.WAITING_PAYMENT
+                || status == BookingStatus.PAYMENT_PENDING
+                || status == BookingStatus.PAYMENT_REJECTED
+                || status == BookingStatus.CONFIRMED
+                || status == BookingStatus.OWNER_APPROVED
+                || status == BookingStatus.READY_FOR_PICKUP;
+    }
+
+    public boolean canRequestCancellation() {
+        return canBeCancelled();
     }
     
     public boolean isActive() {

@@ -531,6 +531,7 @@ const MarketplacePage: React.FC = () => {
   const [showCarousel, setShowCarousel] = useState<boolean>(false);
   const [showSearchArea, setShowSearchArea] = useState<boolean>(false);
   const [mapBounds, setMapBounds] = useState<{ minLat: number; maxLat: number; minLng: number; maxLng: number } | null>(null);
+  const [appliedMapBounds, setAppliedMapBounds] = useState<{ minLat: number; maxLat: number; minLng: number; maxLng: number } | null>(null);
   const [shouldFitBounds, setShouldFitBounds] = useState<boolean>(true);
   const [hoveredMapVehicleId, setHoveredMapVehicleId] = useState<string | null>(null);
 
@@ -542,7 +543,7 @@ const MarketplacePage: React.FC = () => {
 
   const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=800';
 
-  const [showFloatingButton, setShowFloatingButton] = useState(false);
+  const [showFloatingButton, setShowFloatingButton] = useState(true);
   const lastScrollYRef = useRef(0);
 
   useEffect(() => {
@@ -555,14 +556,14 @@ const MarketplacePage: React.FC = () => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       if (currentScrollY < 50) {
-        setShowFloatingButton(false);
+        setShowFloatingButton(true);
         lastScrollYRef.current = currentScrollY;
         return;
       }
       if (currentScrollY > lastScrollYRef.current) {
-        setShowFloatingButton(true);
-      } else {
         setShowFloatingButton(false);
+      } else {
+        setShowFloatingButton(true);
       }
       lastScrollYRef.current = currentScrollY;
     };
@@ -610,6 +611,17 @@ const MarketplacePage: React.FC = () => {
     };
   });
 
+  const hasUrlDrivenFilters = useMemo(() => {
+    const filterKeys = [
+      'type', 'location', 'sort', 'startDate', 'endDate', 'q',
+      'category', 'brands', 'minEngineCc', 'maxEngineCc',
+      'instantBook', 'deliveryAvailable', 'hasHelmet', 'hasPhoneHolder',
+      'hasRaincoat', 'hasTouringPackage', 'hasChauffeur',
+      'airportDelivery', 'weddingRental', 'businessRental',
+    ];
+    return filterKeys.some(key => searchParams.has(key));
+  }, [searchParams]);
+
   // Persist Map State (Load on mount)
   useEffect(() => {
     if (isMapView) {
@@ -617,7 +629,7 @@ const MarketplacePage: React.FC = () => {
         const saved = sessionStorage.getItem('luxeway_map_state');
         if (saved) {
           const parsed = JSON.parse(saved);
-          if (parsed.filters) {
+          if (parsed.filters && !hasUrlDrivenFilters) {
             setFilters(prev => ({ ...prev, ...parsed.filters }));
           }
           if (parsed.selectedVehicleId) {
@@ -631,7 +643,7 @@ const MarketplacePage: React.FC = () => {
         console.warn('Failed to restore map state', e);
       }
     }
-  }, [isMapView]);
+  }, [isMapView, hasUrlDrivenFilters]);
 
   // Persist Map State (Save on changes)
   useEffect(() => {
@@ -795,6 +807,8 @@ const MarketplacePage: React.FC = () => {
     setMapSelectedVehicles([]);
     // Fit bounds on filter changes, not user pan
     setShouldFitBounds(true);
+    setShowSearchArea(false);
+    setAppliedMapBounds(null);
   }, [filters, mapOpen]);
 
   const handleTypeSwitch = (type: VehicleType | 'all') => {
@@ -840,6 +854,23 @@ const MarketplacePage: React.FC = () => {
     }).length;
   }, [filters]);
 
+  const visibleMapVehicles = useMemo(() => {
+    if (!appliedMapBounds) return mapVehicles;
+    return mapVehicles.filter(vehicle => {
+      const lat = Number(vehicle.latitude);
+      const lng = Number(vehicle.longitude);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
+      return (
+        lat >= appliedMapBounds.minLat &&
+        lat <= appliedMapBounds.maxLat &&
+        lng >= appliedMapBounds.minLng &&
+        lng <= appliedMapBounds.maxLng
+      );
+    });
+  }, [mapVehicles, appliedMapBounds]);
+
+  const mapDisplayTotal = appliedMapBounds ? visibleMapVehicles.length : mapVehicles.length;
+
   // Type colors
   const typeColor = activeType === 'motorbike' ? 'orange' : activeType === 'car' ? 'blue' : 'accent';
   const accentClass = activeType === 'motorbike' ? 'text-orange-500 border-orange-500 bg-orange-500/10'
@@ -882,7 +913,7 @@ const MarketplacePage: React.FC = () => {
                         : tab.type === 'car' ? "bg-blue-500/20 text-blue-600"
                           : "bg-accent/20 text-accent"
                     )}>
-                      {loading ? '...' : total}
+                      {loading || mapLoading ? '...' : (isMapView ? mapDisplayTotal : total)}
                     </span>
                   )}
                 </button>
@@ -892,7 +923,7 @@ const MarketplacePage: React.FC = () => {
 
               {/* Quick City Filters */}
               <div className="hidden lg:flex items-center gap-1 border-l border-slate-200 dark:border-slate-800 pl-3">
-                {['Hồ Chí Minh', 'Hà Nội', 'Đà Nẵng', 'Nha Trang', 'Đà Lạt', 'Huế'].map(city => (
+                {['Hồ Chí Minh', 'Hà Nội', 'Đà Nẵng', 'Nha Trang', 'Đà Lạt'].map(city => (
                   <button
                     key={city}
                     onClick={() => handleFilterChange({ ...filters, location: filters.location === city ? undefined : city })}
@@ -1196,19 +1227,12 @@ const MarketplacePage: React.FC = () => {
               >
                 <div className="relative w-full h-full">
                   <LuxeWayMap
-                    vehicles={mapVehicles}
+                    vehicles={visibleMapVehicles}
                     selectedVehicleId={selectedVehicleId}
                     hoveredVehicleId={hoveredMapVehicleId || hoveredVehicleId || undefined}
                     onSelectionChange={setMapSelectedVehicles}
-                    onMarkerHover={id => {
-                      setHoveredMapVehicleId(id);
-                      if (id) {
-                        const card = document.getElementById(`map-carousel-card-${id}`);
-                        if (card) {
-                          card.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-                        }
-                      }
-                    }}
+                    onMarkerHover={setHoveredMapVehicleId}
+                    onBoundsChange={setMapBounds}
                     onMapMoved={() => {
                       setShowSearchArea(true);
                       setShouldFitBounds(false); // Disable auto-fit once user interacts
@@ -1248,6 +1272,7 @@ const MarketplacePage: React.FC = () => {
                         return match ? [match[1].lng, match[1].lat] : [106.660, 10.762];
                       })()
                     }
+                    initialZoom={filters.location ? 12.7 : undefined}
                     shouldFitBounds={shouldFitBounds}
                     height="100%"
                   />
@@ -1264,11 +1289,14 @@ const MarketplacePage: React.FC = () => {
                         <button
                           onClick={async () => {
                             setShowSearchArea(false);
+                            if (mapBounds) {
+                              setAppliedMapBounds(mapBounds);
+                            }
+                            setShouldFitBounds(false);
                             setMapLoading(true); // Triggers loading skeletons for markers/cards
                             try {
                               // Enrichment/load callback
                               await loadMapVehicles(filters);
-                              await loadVehicles(filters, 1);
                             } finally {
                               setMapLoading(false);
                             }
@@ -1325,7 +1353,7 @@ const MarketplacePage: React.FC = () => {
 
                   {/* Bottom Carousel (Airbnb/Mioto style) */}
                   <AnimatePresence>
-                    {(isMapView ? vehicles.length > 0 : mapSelectedVehicles.length > 0) && (
+                    {(isMapView ? (showCarousel && visibleMapVehicles.length > 0) : mapSelectedVehicles.length > 0) && (
                       <motion.div
                         initial={{ y: 150, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
@@ -1339,10 +1367,10 @@ const MarketplacePage: React.FC = () => {
                             : "bottom-20 left-4 right-4"
                         )}
                       >
-                        {(isMapView ? vehicles : mapSelectedVehicles).map(v => {
-                          const thumbnailSrc = v.image || v.thumbnail || (v as any).images?.[0] || FALLBACK_IMAGE;
-                          const finalPrice = v.pricePerDay;
-                          const originalPrice = v.pricePerDay * 1.12;
+                        {(isMapView ? visibleMapVehicles : mapSelectedVehicles).map(v => {
+                          const thumbnailSrc = (v as any).image || (v as any).thumbnail || (v as any).thumbnailUrl || (v as any).images?.[0] || FALLBACK_IMAGE;
+                          const finalPrice = Number((v as any).finalPrice || v.pricePerDay || 0);
+                          const originalPrice = Number(v.pricePerDay || finalPrice) * 1.12;
                           const finalPriceText = finalPrice >= 1000 ? `${(finalPrice / 1000).toLocaleString('en-US', { maximumFractionDigits: 0 })}K` : `${finalPrice}`;
                           const originalPriceText = originalPrice >= 1000 ? `${(originalPrice / 1000).toLocaleString('en-US', { maximumFractionDigits: 0 })}K` : `${originalPrice}`;
                           const locationText = sanitizeLocation(filters.location || v.address || 'TP. Hồ Chí Minh');
@@ -1357,7 +1385,7 @@ const MarketplacePage: React.FC = () => {
                                 setSelectedVehicleId(v.id);
                                 if (isMapView) {
                                   // Highlight marker + center map
-                                  const mapLoc = mapVehicles.find(mv => mv.id === v.id);
+                                  const mapLoc = visibleMapVehicles.find(mv => mv.id === v.id);
                                   if (mapLoc && (window as any).luxewayMapInstance) {
                                     (window as any).luxewayMapInstance.flyTo({
                                       center: [mapLoc.longitude, mapLoc.latitude],
@@ -1372,7 +1400,8 @@ const MarketplacePage: React.FC = () => {
                                 const startDate = searchParams.get('startDate') || '';
                                 const endDate = searchParams.get('endDate') || '';
                                 const dateParams = (startDate && endDate) ? `?startDate=${startDate}&endDate=${endDate}` : '';
-                                const detailPath = v.vehicleType === 'motorbike' ? `/motorbikes/${v.id}` : `/cars/${v.id}`;
+                                const vehicleType = ((v as any).vehicleType || (v as any).type || '').toString().toLowerCase();
+                                const detailPath = vehicleType === 'motorbike' ? `/motorbikes/${v.id}` : `/cars/${v.id}`;
                                 navigate(`${detailPath}${dateParams}`);
                               }}
                               onMouseEnter={() => setHoveredMapVehicleId(v.id)}
@@ -1463,7 +1492,7 @@ const MarketplacePage: React.FC = () => {
                   )}
 
                   {/* Empty State Overlay with Illustration */}
-                  {!mapLoading && mapVehicles.length === 0 && (
+                  {!mapLoading && visibleMapVehicles.length === 0 && (
                     <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-md flex items-center justify-center z-30 transition-all duration-350">
                       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 rounded-3xl text-center max-w-md shadow-2xl mx-4">
                         <div className="text-6xl mb-4 animate-bounce-slow">🚗</div>

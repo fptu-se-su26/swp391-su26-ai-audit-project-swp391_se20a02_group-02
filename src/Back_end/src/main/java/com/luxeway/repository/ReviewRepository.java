@@ -17,6 +17,8 @@ public interface ReviewRepository extends JpaRepository<Review, String> {
 
     Page<Review> findByOwnerIdOrderByCreatedAtDesc(String ownerId, Pageable pageable);
 
+    Page<Review> findByReviewerIdOrderByCreatedAtDesc(String reviewerId, Pageable pageable);
+
     Optional<Review> findByBookingId(String bookingId);
 
     boolean existsByBookingId(String bookingId);

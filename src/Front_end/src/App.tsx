@@ -2,10 +2,11 @@ import React, { useEffect, Suspense, lazy, Component } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Heart } from 'lucide-react';
-import { useAuthStore, useUIStore } from '@/store';
+import { useAuthStore, useUIStore, useVehicleStore } from '@/store';
 import { VehicleCard } from '@/components/vehicle/VehicleCard';
 import { vehicleService } from '@/services/vehicleService';
 import { authService } from '@/services/authService';
+import apiClient from '@/services/api';
 import { notificationService, reviewService } from '@/services/otherServices';
 import { useToast } from '@/components/ui/Toast';
 import type { Vehicle, Notification, Review } from '@/types';
@@ -21,7 +22,7 @@ import { CorporateDashboard } from '@/components/enterprise/CorporateDashboard';
 
 // Pages (Eager loaded - critical path)
 import LandingPage from '@/pages/landing/LandingPage';
-import { LoginPage, RegisterPage, ForgotPasswordPage, ResetPasswordPage } from '@/pages/auth/AuthPages';
+import { LoginPage, RegisterPage, ForgotPasswordPage } from '@/pages/auth/AuthPages';
 import OAuth2RedirectHandler from '@/pages/auth/OAuth2RedirectHandler';
 import MarketplacePage from '@/pages/marketplace/MarketplacePage';
 import VehicleDetailPage from '@/pages/marketplace/VehicleDetailPage';
@@ -42,14 +43,13 @@ import HelpPage from '@/pages/help/HelpPage';
 import { OwnerSuccessHub } from '@/pages/help/OwnerSuccessHub';
 import { PlatformStatus } from '@/pages/help/PlatformStatus';
 import { SupportAnalyticsDash } from '@/pages/admin/SupportAnalyticsDash';
-import { TestBackendPage } from '@/pages/help/TestBackendPage';
 
 // Lazy loaded pages
 
 const CustomerDashboardLayout = lazy(() => import('@/pages/dashboard/CustomerDashboard').then(m => ({ default: m.CustomerDashboardLayout })));
 const CustomerOverview = lazy(() => import('@/pages/dashboard/CustomerDashboard').then(m => ({ default: m.CustomerOverview })));
 const MyBookingsPage = lazy(() => import('@/pages/dashboard/CustomerDashboard').then(m => ({ default: m.MyBookingsPage })));
-const BookingDetailPage = lazy(() => import('@/pages/dashboard/BookingDetailPage'));
+const BookingDetailPage = lazy(() => import('@/pages/dashboard/CustomerDashboard').then(m => ({ default: m.BookingDetailPage })));
 const ProfilePage = lazy(() => import('@/pages/dashboard/CustomerDashboard').then(m => ({ default: m.ProfilePage })));
 const SecurityPage = lazy(() => import('@/pages/dashboard/CustomerDashboard').then(m => ({ default: m.SecurityPage })));
 const MyDocuments = lazy(() => import('@/pages/dashboard/MyDocuments').then(m => ({ default: m.MyDocuments })));
@@ -108,23 +108,24 @@ const PageLoader: React.FC = () => {
 // ====== PROTECTED ROUTE ======
 const ProtectedRoute: React.FC<{ children: React.ReactNode; requiredRole?: 'customer' | 'owner' | 'admin' }> = ({ children, requiredRole }) => {
   const { isAuthenticated, user, isInitialized } = useAuthStore();
+  const location = useLocation();
 
   if (!isInitialized) {
     return <PageLoader />;
   }
 
-  if (!isAuthenticated) return <Navigate to="/auth/login" replace />;
+  if (!isAuthenticated) return <Navigate to="/auth/login" replace state={{ from: location }} />;
 
   if (requiredRole) {
-    const roleUpper = user?.role?.toUpperCase();
+    const roleUpper = String(user?.role || 'CUSTOMER').toUpperCase();
 
     let authorized = false;
     if (requiredRole === 'admin') {
       authorized = roleUpper === 'ADMIN' || roleUpper === 'SUPER_ADMIN';
     } else if (requiredRole === 'owner') {
-      authorized = roleUpper === 'OWNER';
+      authorized = roleUpper === 'OWNER' || roleUpper === 'ADMIN' || roleUpper === 'SUPER_ADMIN';
     } else if (requiredRole === 'customer') {
-      authorized = roleUpper === 'CUSTOMER';
+      authorized = ['CUSTOMER', 'USER', 'RENTER', 'OWNER', 'ADMIN', 'SUPER_ADMIN'].includes(roleUpper);
     }
 
     if (!authorized) {
@@ -195,13 +196,22 @@ const WishlistPage: React.FC = () => {
   const isDark = theme === 'dark';
   const [vehicles, setVehicles] = React.useState<Vehicle[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const { addToWishlist, removeFromWishlist } = useVehicleStore();
 
   React.useEffect(() => {
-    vehicleService.getWishlist(user?.id || '').then(v => {
-      setVehicles(v);
+    if (!user?.id) {
+      setVehicles([]);
       setLoading(false);
-    });
-  }, []);
+      return;
+    }
+    setLoading(true);
+    vehicleService.getWishlist(user.id)
+      .then(v => {
+        setVehicles(v);
+        v.forEach(vehicle => addToWishlist(vehicle.id));
+      })
+      .finally(() => setLoading(false));
+  }, [user?.id, addToWishlist]);
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
@@ -238,9 +248,16 @@ const WishlistPage: React.FC = () => {
             <div key={v.id} className="relative group">
               <VehicleCard vehicle={v} />
               <button
-                onClick={() => {
-                  if (user?.id) vehicleService.toggleWishlist(v.id, user.id);
+                onClick={async () => {
+                  if (!user?.id) return;
+                  removeFromWishlist(v.id);
                   setVehicles(prev => prev.filter(veh => veh.id !== v.id));
+                  try {
+                    await vehicleService.toggleWishlist(v.id, user.id);
+                  } catch {
+                    addToWishlist(v.id);
+                    setVehicles(prev => [...prev, v]);
+                  }
                 }}
                 className="absolute top-4 right-4 w-8 h-8 bg-white/80 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all z-10 shadow-sm backdrop-blur-sm"
               >
@@ -275,7 +292,13 @@ const NotificationsPage: React.FC = () => {
     <div className="max-w-2xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
         <h1 className={`font-display text-2xl font-bold ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>{t.dashboard.notifications}</h1>
-        <button onClick={() => notificationService.markAllRead(user?.id || '')} className="text-sm text-accent font-medium">
+        <button
+          onClick={async () => {
+            await notificationService.markAllRead(user?.id || '');
+            setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+          }}
+          className="text-sm text-accent font-medium"
+        >
           Mark all read
         </button>
       </div>
@@ -495,6 +518,65 @@ const NotificationsPageWrapper: React.FC = () => {
   );
 };
 
+const TestBackendPage: React.FC = () => {
+  const [results, setResults] = React.useState<Array<{ name: string; status: 'pending' | 'pass' | 'fail'; detail: string }>>([]);
+
+  React.useEffect(() => {
+    let mounted = true;
+    const checks = [
+      { name: 'Health', run: () => apiClient.get<any>('/home/health') },
+      { name: 'Marketplace Vehicles', run: () => apiClient.get<any>('/vehicles?page=0&size=1') },
+      { name: 'Map Vehicles', run: () => apiClient.get<any>('/vehicles/map') },
+      { name: 'Payment Settings', run: () => apiClient.get<any>('/payment-settings') },
+    ];
+
+    setResults(checks.map(c => ({ name: c.name, status: 'pending', detail: 'Checking...' })));
+    checks.forEach(async (check, index) => {
+      try {
+        const data = await check.run();
+        if (!mounted) return;
+        const count = data?.data?.totalItems ?? data?.totalItems ?? data?.data?.Count ?? data?.Count;
+        setResults(prev => prev.map((item, i) => i === index
+          ? { ...item, status: 'pass', detail: count !== undefined ? `OK - ${count} records` : 'OK' }
+          : item));
+      } catch (error: any) {
+        if (!mounted) return;
+        setResults(prev => prev.map((item, i) => i === index
+          ? { ...item, status: 'fail', detail: error?.message || 'Request failed' }
+          : item));
+      }
+    });
+
+    return () => { mounted = false; };
+  }, []);
+
+  return (
+    <div className="min-h-screen pt-28 pb-12 bg-slate-50 dark:bg-slate-950">
+      <div className="max-w-4xl mx-auto px-4">
+        <h1 className="font-display text-3xl font-black text-slate-900 dark:text-white mb-2">Backend Test Console</h1>
+        <p className="text-sm text-slate-500 mb-8">Production frontend is checking the configured backend API.</p>
+        <div className="grid gap-4">
+          {results.map(result => (
+            <div key={result.name} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 flex items-center justify-between">
+              <div>
+                <h2 className="font-bold text-slate-900 dark:text-white">{result.name}</h2>
+                <p className="text-sm text-slate-500 mt-1">{result.detail}</p>
+              </div>
+              <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
+                result.status === 'pass' ? 'bg-emerald-100 text-emerald-700' :
+                result.status === 'fail' ? 'bg-red-100 text-red-700' :
+                'bg-amber-100 text-amber-700'
+              }`}>
+                {result.status}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ====== MAIN APP ======
 const App: React.FC = () => {
   const { initAuth } = useAuthStore();
@@ -539,16 +621,16 @@ const App: React.FC = () => {
             <Route path="cars/:id" element={<VehicleDetailPage />} />
             <Route path="motorbikes/:id" element={<VehicleDetailPage />} />
             <Route path="booking/:vehicleId" element={
-              <ProtectedRoute><BookingWizardPage /></ProtectedRoute>
-            } />
-            <Route path="booking/:bookingId/contract" element={
-              <ProtectedRoute><DigitalContractPage /></ProtectedRoute>
+              <ProtectedRoute><BookingCheckoutPage /></ProtectedRoute>
             } />
             <Route path="booking/:bookingId/payment" element={
               <ProtectedRoute><BookingPaymentPage /></ProtectedRoute>
             } />
+            <Route path="booking/:bookingId/contract" element={
+              <ProtectedRoute><DigitalContractPage /></ProtectedRoute>
+            } />
             <Route path="payment/:bookingId" element={
-              <ProtectedRoute><BookingCheckoutPage /></ProtectedRoute>
+              <ProtectedRoute><BookingWizardPage /></ProtectedRoute>
             } />
             <Route path="payment/vnpay/return" element={
               <ProtectedRoute><VNPayReturnPage /></ProtectedRoute>
@@ -561,7 +643,7 @@ const App: React.FC = () => {
             } />
             <Route path="success" element={<BookingSuccessPage />} />
             <Route path="bookings/:bookingId" element={
-              <ProtectedRoute><Navigate to={(location) => `/dashboard/bookings/${location.pathname.split('/').pop()}`} replace /></ProtectedRoute>
+              <ProtectedRoute><Navigate to="/dashboard/bookings" replace /></ProtectedRoute>
             } />
             <Route path="owner/bookings/:bookingId" element={
               <ProtectedRoute><Navigate to="/owner/bookings" replace /></ProtectedRoute>
@@ -579,12 +661,12 @@ const App: React.FC = () => {
             <Route path="help/owner-success" element={
               <ProtectedRoute><OwnerSuccessHub /></ProtectedRoute>
             } />
-            <Route path="test-backend" element={<TestBackendPage />} />
             <Route path="admin/support-analytics" element={
               <ProtectedRoute requiredRole="admin"><SupportAnalyticsDash /></ProtectedRoute>
             } />
             <Route path="compare" element={<ComparePage />} />
             <Route path="business" element={<BusinessPage />} />
+            <Route path="test-backend" element={<TestBackendPage />} />
 
             <Route path="reviews" element={<ReviewsPage />} />
             <Route path="about" element={<AboutPage />} />
@@ -595,8 +677,8 @@ const App: React.FC = () => {
             <Route path="dashboard" element={<ProtectedRoute requiredRole="customer"><CustomerDashboardLayout /></ProtectedRoute>}>
               <Route index element={<CustomerOverview />} />
               <Route path="bookings" element={<MyBookingsPage />} />
-              <Route path="bookings/:bookingId" element={<BookingDetailPage />} />
               <Route path="bookings/:bookingId/tracking" element={<CustomerBookingPage />} />
+              <Route path="bookings/:bookingId" element={<BookingDetailPage />} />
               <Route path="profile" element={<ProfilePage />} />
               <Route path="wishlist" element={<WishlistPage />} />
               <Route path="notifications" element={<NotificationsPage />} />
@@ -633,7 +715,6 @@ const App: React.FC = () => {
             <Route path="login" element={<LoginPage />} />
             <Route path="register" element={<RegisterPage />} />
             <Route path="forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="reset-password" element={<ResetPasswordPage />} />
             <Route path="otp" element={<OTPPage />} />
           </Route>
 

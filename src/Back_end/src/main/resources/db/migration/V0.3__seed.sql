@@ -36,7 +36,7 @@ END;
 IF EXISTS (SELECT 1 FROM vehicles WHERE license_plate = 'SCR-00001')
 BEGIN
     UPDATE vehicles SET 
-        price_per_day = 500000,
+        price_per_day = 5000,
         seats = 5,
         transmission = 'AUTOMATIC',
         fuel_type = 'GASOLINE',

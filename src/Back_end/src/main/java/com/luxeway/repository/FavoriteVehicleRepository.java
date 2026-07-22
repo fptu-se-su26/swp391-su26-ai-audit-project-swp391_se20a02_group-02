@@ -11,4 +11,5 @@ import java.util.List;
 public interface FavoriteVehicleRepository extends JpaRepository<FavoriteVehicle, FavoriteVehicleId> {
     List<FavoriteVehicle> findByUserId(String userId);
     boolean existsByUserIdAndVehicleId(String userId, String vehicleId);
+    void deleteByUserIdAndVehicleId(String userId, String vehicleId);
 }

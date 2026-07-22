@@ -22,6 +22,7 @@ import java.util.Set;
 @Entity
 @Table(name = "vehicles")
 @Data
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -29,6 +30,7 @@ import java.util.Set;
 public class Vehicle {
     
     @Id
+    @EqualsAndHashCode.Include
     @Column(length = 36)
     private String id;
     

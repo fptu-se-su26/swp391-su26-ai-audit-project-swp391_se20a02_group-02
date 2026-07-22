@@ -1,16 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLocation } from 'react-router-dom';
 import { Send, Search, MoreVertical, Phone, Video, Image, Smile, Circle } from 'lucide-react';
 import { useAuthStore, useUIStore } from '@/store';
 import { messageService } from '@/services/otherServices';
 import { useT } from '@/i18n/translations';
 import type { Conversation, Message } from '@/types';
 import { formatDate, getInitials } from '@/utils';
-import { cn } from '@/utils';
+import { cn, WS_URL } from '@/utils';
 import SockJS from 'sockjs-client';
 
 const MessengerPage: React.FC = () => {
   const { user } = useAuthStore();
+  const location = useLocation();
   const { theme } = useUIStore();
   const t = useT();
   const isDark = theme === 'dark';
@@ -26,12 +28,29 @@ const MessengerPage: React.FC = () => {
 
   useEffect(() => {
     if (!user) return;
-    messageService.getConversations(user.id).then(convs => {
+    const params = new URLSearchParams(location.search);
+    const ownerId = params.get('ownerId');
+    const vehicleId = params.get('vehicleId') || undefined;
+
+    const load = async () => {
+      setLoading(true);
+      let convs = await messageService.getConversations(user.id);
+      if (ownerId && ownerId !== user.id) {
+        const created = await messageService.createConversation(user.id, ownerId, vehicleId);
+        convs = [created, ...convs.filter(c => c.id !== created.id)];
+        setActiveConv(created);
+      } else if (convs.length > 0) {
+        setActiveConv(convs[0]);
+      }
       setConversations(convs);
-      if (convs.length > 0) setActiveConv(convs[0]);
+      setLoading(false);
+    };
+
+    load().catch(err => {
+      console.error('Failed to initialize messenger', err);
       setLoading(false);
     });
-  }, [user]);
+  }, [user, location.search]);
 
   useEffect(() => {
     if (!activeConv) return;
@@ -45,7 +64,7 @@ const MessengerPage: React.FC = () => {
     let ws: WebSocket | null = null;
     let subscribed = false;
     try {
-      ws = new SockJS('http://localhost:8080/ws') as unknown as WebSocket;
+      ws = new SockJS(WS_URL) as unknown as WebSocket;
       wsRef.current = ws;
 
       ws.onopen = () => {
@@ -115,7 +134,14 @@ const MessengerPage: React.FC = () => {
   const getOtherUser = (conv: Conversation) => {
     if (!user) return null;
     const otherId = conv.participants.find(p => p !== user.id);
-    return { id: otherId, displayName: `User ${otherId?.substring(0,4)}`, avatar: undefined };
+    const profile = conv.participantProfiles?.find(p => p.id === otherId);
+    return {
+      id: otherId,
+      displayName: profile?.displayName || [profile?.firstName, profile?.lastName].filter(Boolean).join(' ') || profile?.email || `User ${otherId?.substring(0, 4)}`,
+      avatar: profile?.avatar,
+      email: profile?.email,
+      role: profile?.role,
+    };
   };
 
   const filteredConvs = conversations.filter(conv => {

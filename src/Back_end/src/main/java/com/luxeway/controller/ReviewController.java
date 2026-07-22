@@ -114,6 +114,26 @@ public class ReviewController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/user/{userId}")
+    @Operation(summary = "Get all reviews written by a user")
+    public ResponseEntity<ApiResponse<Page<ReviewDTOs.ReviewResponse>>> getUserReviews(
+            @PathVariable String userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<ReviewDTOs.ReviewResponse> reviews = reviewService.getUserReviews(userId, page, size);
+        ApiResponse<Page<ReviewDTOs.ReviewResponse>> response = ApiResponse.<Page<ReviewDTOs.ReviewResponse>>builder()
+                .success(true)
+                .data(reviews)
+                .meta(ApiResponse.PageMeta.builder()
+                        .page(reviews.getNumber())
+                        .pageSize(reviews.getSize())
+                        .totalElements(reviews.getTotalElements())
+                        .totalPages(reviews.getTotalPages())
+                        .build())
+                .build();
+        return ResponseEntity.ok(response);
+    }
+
     @PutMapping("/{id}/respond")
     @Operation(summary = "Owner responds to a review")
     public ResponseEntity<ApiResponse<ReviewDTOs.ReviewResponse>> respond(

@@ -4,11 +4,17 @@ import type { Booking, BookingStatus, BookingWizardState } from '@/types';
 // Helper to map backend booking structure to frontend Booking model
 const mapBooking = (b: any): Booking => {
   if (!b) return b;
+  const bookingKind = b.bookingKind || (b.car ? 'car' : b.motorbike ? 'motorbike' : 'general');
+  const vehicle = b.vehicle || b.car || b.motorbike || null;
   return {
     ...b,
-    vehicleId: b.vehicleId || b.vehicle?.id || '',
+    bookingKind,
+    vehicle,
+    status: String(b.status || '').toLowerCase(),
+    vehicleId: b.vehicleId || vehicle?.id || '',
     renterId: b.renterId || b.renter?.id || '',
-    ownerId: b.ownerId || b.owner?.id || '',
+    ownerId: b.ownerId || b.owner?.id || vehicle?.owner?.id || '',
+    owner: b.owner || vehicle?.owner,
     pricing: b.pricing ? {
       basePrice: b.pricing.basePrice || 0,
       pricePerDay: b.pricing.pricePerDay || 0,
@@ -22,19 +28,26 @@ const mapBooking = (b: any): Booking => {
       deposit: b.pricing.deposit || 0,
       depositRefunded: b.pricing.depositRefunded || false
     } : {
-      basePrice: 0,
-      pricePerDay: 0,
-      addonsTotal: 0,
-      insuranceFee: 0,
-      deliveryFee: 0,
-      serviceFee: 0,
-      taxes: 0,
-      discount: 0,
-      total: 0,
-      deposit: 0,
+      basePrice: b.basePrice || 0,
+      pricePerDay: b.pricePerDay || 0,
+      addonsTotal: b.addonsTotal || 0,
+      insuranceFee: b.insuranceFee || 0,
+      deliveryFee: b.deliveryFee || 0,
+      serviceFee: b.serviceFee || 0,
+      taxes: b.taxes || 0,
+      discount: b.discount || 0,
+      total: b.total || b.totalAmount || 0,
+      deposit: b.deposit || b.refundableDeposit || 0,
       depositRefunded: false
     }
   };
+};
+
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const isUnifiedVehicleId = (id?: string): boolean => {
+  if (!id) return false;
+  return id.startsWith('VM-') || id.startsWith('VC-') || id.startsWith('featured-') || uuidPattern.test(id);
 };
 
 export const bookingService = {
@@ -93,6 +106,12 @@ export const bookingService = {
   async getById(id: string): Promise<Booking | null> {
     try {
       try {
+        const response = await apiClient.get<any>(`/bookings/${id}`);
+        const booking = response.data || response || null;
+        if (booking && booking.id) return mapBooking(booking);
+      } catch (_) {}
+
+      try {
         const carRes = await apiClient.get<any>(`/cars/bookings/${id}`);
         const booking = carRes.booking || carRes.data || carRes || null;
         if (booking && booking.id) return mapBooking(booking);
@@ -104,58 +123,14 @@ export const bookingService = {
         if (booking && booking.id) return mapBooking(booking);
       } catch (_) {}
       
-      const response = await apiClient.get<any>(`/bookings/${id}`);
-      const booking = response.data || response || null;
-      return booking ? mapBooking(booking) : null;
+      return null;
     } catch (error) {
       return null;
     }
   },
 
   async create(wizardState: BookingWizardState, renterId: string, vehicleType?: 'car' | 'motorbike', extras?: any): Promise<Booking> {
-    const isGeneralVehicle = 
-      wizardState.vehicleId?.startsWith('VM-') || 
-      wizardState.vehicleId?.startsWith('VC-') ||
-      wizardState.vehicleId?.startsWith('car-') ||
-      wizardState.vehicleId?.startsWith('motorbike-') ||
-      wizardState.vehicleId?.startsWith('featured-');
-    if (vehicleType === 'car' && !isGeneralVehicle) {
-      const payload = {
-        carId: wizardState.vehicleId,
-        startDate: wizardState.startDate,
-        endDate: wizardState.endDate,
-        includeInsurance: wizardState.includeInsurance,
-        insuranceTier: extras?.insuranceTier || 'premium',
-        hasChauffeur: !!extras?.hasChauffeur,
-        airportDelivery: wizardState.includeDelivery,
-        weddingPackage: !!extras?.weddingPackage,
-        businessPackage: !!extras?.businessPackage,
-        deliveryAddress: wizardState.deliveryAddress,
-        notes: wizardState.notes,
-        couponCode: wizardState.couponCode,
-      };
-      const response = await apiClient.post<any>('/cars/bookings', payload);
-      const booking = response.booking || response.data || response;
-      if (!booking || !booking.id) throw new Error(response.message || 'Failed to create car booking');
-      return mapBooking(booking);
-    } else if (vehicleType === 'motorbike' && !isGeneralVehicle) {
-      const payload = {
-        motorbikeId: wizardState.vehicleId,
-        startDate: wizardState.startDate,
-        endDate: wizardState.endDate,
-        includeInsurance: wizardState.includeInsurance,
-        hasHelmet: !!extras?.hasHelmet,
-        hasRaincoat: !!extras?.hasRaincoat,
-        hasPhoneHolder: !!extras?.hasPhoneHolder,
-        hasTouringPackage: !!extras?.hasTouringPackage,
-        notes: wizardState.notes,
-        couponCode: wizardState.couponCode,
-      };
-      const response = await apiClient.post<any>('/motorbikes/bookings', payload);
-      const booking = response.booking || response.data || response;
-      if (!booking || !booking.id) throw new Error(response.message || 'Failed to create motorbike booking');
-      return mapBooking(booking);
-    } else {
+    const createGeneralBooking = async (): Promise<Booking> => {
       const payload = {
         vehicleId: wizardState.vehicleId,
         startDate: wizardState.startDate,
@@ -171,17 +146,123 @@ export const bookingService = {
       const booking = response.data || response;
       if (!booking || !booking.id) throw new Error(response.message || 'Failed to create booking');
       return mapBooking(booking);
+    };
+
+    const isGeneralVehicle = isUnifiedVehicleId(wizardState.vehicleId);
+    if (vehicleType === 'car' && !isGeneralVehicle) {
+      const payload = {
+        carId: wizardState.vehicleId,
+        startDate: wizardState.startDate,
+        endDate: wizardState.endDate,
+        includeInsurance: wizardState.includeInsurance,
+        insuranceTier: extras?.insuranceTier || 'premium',
+        hasChauffeur: !!extras?.hasChauffeur,
+        airportDelivery: wizardState.includeDelivery,
+        weddingPackage: !!extras?.weddingPackage,
+        businessPackage: !!extras?.businessPackage,
+        deliveryAddress: wizardState.deliveryAddress,
+        notes: wizardState.notes,
+        couponCode: wizardState.couponCode,
+      };
+      try {
+        const response = await apiClient.post<any>('/cars/bookings', payload);
+        const booking = response.booking || response.data || response;
+        if (!booking || !booking.id) throw new Error(response.message || 'Failed to create car booking');
+        return mapBooking(booking);
+      } catch (error: any) {
+        if (String(error?.message || '').toLowerCase().includes('car not found')) {
+          return createGeneralBooking();
+        }
+        throw error;
+      }
+    } else if (vehicleType === 'motorbike' && !isGeneralVehicle) {
+      const payload = {
+        motorbikeId: wizardState.vehicleId,
+        startDate: wizardState.startDate,
+        endDate: wizardState.endDate,
+        includeInsurance: wizardState.includeInsurance,
+        hasHelmet: !!extras?.hasHelmet,
+        hasRaincoat: !!extras?.hasRaincoat,
+        hasPhoneHolder: !!extras?.hasPhoneHolder,
+        hasTouringPackage: !!extras?.hasTouringPackage,
+        notes: wizardState.notes,
+        couponCode: wizardState.couponCode,
+      };
+      try {
+        const response = await apiClient.post<any>('/motorbikes/bookings', payload);
+        const booking = response.booking || response.data || response;
+        if (!booking || !booking.id) throw new Error(response.message || 'Failed to create motorbike booking');
+        return mapBooking(booking);
+      } catch (error: any) {
+        if (String(error?.message || '').toLowerCase().includes('motorbike not found')) {
+          return createGeneralBooking();
+        }
+        throw error;
+      }
+    } else {
+      return createGeneralBooking();
     }
   },
 
   async cancel(bookingId: string, reason: string): Promise<Booking | null> {
-    try {
-      const response = await apiClient.put<any>(`/bookings/${bookingId}/cancel`, { reason });
-      const booking = response.data || response || null;
-      return booking ? mapBooking(booking) : null;
-    } catch (error) {
-      return null;
+    const attempts = [
+      () => apiClient.post<any>(`/bookings/${bookingId}/cancel-request`, { reason }),
+      () => apiClient.put<any>(`/cars/bookings/${bookingId}/status?status=CANCELLATION_REQUESTED`, {}),
+      () => apiClient.put<any>(`/motorbikes/bookings/${bookingId}/status?status=CANCELLATION_REQUESTED`, {}),
+    ];
+
+    let lastError: any;
+    for (const attempt of attempts) {
+      try {
+        const response = await attempt();
+        const booking = response.booking || response.data || response || null;
+        if (booking && booking.id) return mapBooking(booking);
+      } catch (error: any) {
+        lastError = error;
+      }
     }
+
+    console.error('Failed to request booking cancellation', lastError);
+    const message = lastError?.response?.data?.message || lastError?.message || 'The cancellation request could not be sent.';
+    throw new Error(message);
+  },
+
+  async approveCancellation(bookingId: string, reason = 'Approved by owner'): Promise<Booking | null> {
+    const attempts = [
+      () => apiClient.post<any>(`/bookings/${bookingId}/cancel-request/approve`, { reason }),
+      () => apiClient.put<any>(`/cars/bookings/${bookingId}/status?status=CANCELLED`, {}),
+      () => apiClient.put<any>(`/motorbikes/bookings/${bookingId}/status?status=CANCELLED`, {}),
+    ];
+
+    for (const attempt of attempts) {
+      try {
+        const response = await attempt();
+        const booking = response.booking || response.data || response || null;
+        if (booking && booking.id) return mapBooking(booking);
+      } catch (error) {
+        console.error('Cancellation approval endpoint failed', error);
+      }
+    }
+    return null;
+  },
+
+  async rejectCancellation(bookingId: string, reason = 'Rejected by owner after policy review'): Promise<Booking | null> {
+    const attempts = [
+      () => apiClient.post<any>(`/bookings/${bookingId}/cancel-request/reject`, { reason }),
+      () => apiClient.put<any>(`/cars/bookings/${bookingId}/status?status=CONFIRMED`, {}),
+      () => apiClient.put<any>(`/motorbikes/bookings/${bookingId}/status?status=CONFIRMED`, {}),
+    ];
+
+    for (const attempt of attempts) {
+      try {
+        const response = await attempt();
+        const booking = response.booking || response.data || response || null;
+        if (booking && booking.id) return mapBooking(booking);
+      } catch (error) {
+        console.error('Cancellation rejection endpoint failed', error);
+      }
+    }
+    return null;
   },
 
   async updateStatus(bookingId: string, status: BookingStatus): Promise<Booking | null> {

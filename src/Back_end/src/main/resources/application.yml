@@ -35,6 +35,7 @@ spring:
           google:
             client-id: ${GOOGLE_CLIENT_ID}
             client-secret: ${GOOGLE_CLIENT_SECRET}
+            redirect-uri: ${GOOGLE_CALLBACK_URL:{baseUrl}/login/oauth2/code/{registrationId}}
             scope:
               - email
               - profile
@@ -145,6 +146,15 @@ gemini:
 
 goong:
   api-key: ${GOONG_API_KEY:mock_goong_key}
+
+docuseal:
+  base-url: ${DOCUSEAL_BASE_URL:https://api.docuseal.com}
+  api-token: ${DOCUSEAL_API_TOKEN:}
+  template-id: ${DOCUSEAL_TEMPLATE_ID:5113850}
+  embedding-url: ${DOCUSEAL_EMBEDDING_URL:}
+  renter-role: ${DOCUSEAL_RENTER_ROLE:Renter}
+  owner-role: ${DOCUSEAL_OWNER_ROLE:Owner}
+  send-email: ${DOCUSEAL_SEND_EMAIL:false}
 
 fptai:
   api-key: ${FPTAI_API_KEY:BKfUiImFD4DI3RI2OEjoCahBTQOgVtPf}

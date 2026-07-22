@@ -563,7 +563,7 @@ public class AdminService {
     }
 
     public byte[] exportRevenueReportExcel() throws Exception {
-        java.util.List<com.luxeway.entity.Analytics> analyticsList = analyticsRepository.findAll();
+        java.util.List<com.luxeway.entity.Analytics> analyticsList = new java.util.ArrayList<>(analyticsRepository.findAll());
         analyticsList.sort((a1, a2) -> a1.getRecordDate().compareTo(a2.getRecordDate()));
 
         StringBuilder csv = new StringBuilder();

@@ -26,17 +26,19 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthenticationManager authenticationManager;
     private final EmailService emailService;
+    private final AuditService auditService;
 
     // Security Attempt Stores
     private final java.util.Map<String, Integer> loginFailures = new java.util.concurrent.ConcurrentHashMap<>();
     private final java.util.Map<String, java.time.LocalDateTime> blockTimes = new java.util.concurrent.ConcurrentHashMap<>();
     private final java.util.Map<String, java.time.LocalDateTime> lastOtpRequestTime = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.Map<String, java.time.LocalDateTime> lastRegistrationOtpRequestTime = new java.util.concurrent.ConcurrentHashMap<>();
 
     // ====== Login ======
 
     @Transactional
     public AuthDTOs.AuthResponse login(AuthDTOs.LoginRequest request) {
-        String email = request.getEmail().trim().toLowerCase();
+        String email = normalizeReleaseTestEmail(request.getEmail().trim().toLowerCase());
 
         // Brute force check: temporary lockout for 15 minutes if 5 successive failures
         java.time.LocalDateTime blockUntil = blockTimes.get(email);
@@ -60,51 +62,28 @@ public class AuthService {
             // Clear login failure counts on success
             loginFailures.remove(email);
 
+            // Update last active
             user.setLastActive(java.time.LocalDateTime.now());
-            
-            // Auto-verify KYC for all demo/test accounts and admins
-            boolean isDemoAccount = "customer@luxeway.vn".equalsIgnoreCase(email) 
-                || "nguyen.van.a@gmail.com".equalsIgnoreCase(email)
-                || "pham.minh.d@gmail.com".equalsIgnoreCase(email)
-                || "owner@luxeway.vn".equalsIgnoreCase(email)
-                || "admin@luxeway.vn".equalsIgnoreCase(email)
-                || user.getRole() == com.luxeway.enums.UserRole.ADMIN
-                || user.getRole() == com.luxeway.enums.UserRole.OWNER;
-            if (isDemoAccount) {
-                user.setKycVerified(true);
-                user.setKycStatus("VERIFIED");
-                user.setDrivingLicenseVerified(true);
-                user.setDriverLicenseStatus("VERIFIED");
-                if (user.getLicenseClass() == null || user.getLicenseClass().isBlank()) {
-                    user.setLicenseClass("B2");
-                }
-                if (user.getLicenseNumber() == null || user.getLicenseNumber().isBlank()) {
-                    user.setLicenseNumber("123456789");
-                }
-            }
             userRepository.save(user);
 
             String accessToken  = jwtTokenProvider.generateToken(user);
             String refreshToken = jwtTokenProvider.generateRefreshToken(user);
 
             log.info("User logged in: {}", user.getEmail());
-            
-            // Send login alert to the user
             try {
-                emailService.sendLoginAlert(user.getEmail(), user.getFirstName());
-            } catch (Exception ex) {
-                log.warn("Failed to send login alert to user: {}", ex.getMessage());
+                auditService.log(
+                    user.getId(),
+                    "AUTH_LOGIN",
+                    "AUTH",
+                    user.getId(),
+                    null,
+                    "{\"email\":\"" + user.getEmail() + "\",\"role\":\"" + user.getRole() + "\"}",
+                    null,
+                    "email-password"
+                );
+            } catch (Exception auditException) {
+                log.warn("Failed to write login audit event for {}: {}", user.getEmail(), auditException.getMessage());
             }
-            
-            // Send login notification to the admin
-            try {
-                String adminMsg = String.format("A successful login was detected.\nUser Email: %s\nTime: %s", 
-                    user.getEmail(), java.time.LocalDateTime.now().toString());
-                emailService.sendAdminNotification("User Login Notification", adminMsg);
-            } catch (Exception ex) {
-                log.warn("Failed to send admin login notification: {}", ex.getMessage());
-            }
-
             return buildAuthResponse(user, accessToken, refreshToken);
 
         } catch (BadCredentialsException e) {
@@ -119,12 +98,37 @@ public class AuthService {
         }
     }
 
+    private String normalizeReleaseTestEmail(String email) {
+        if (!"true".equalsIgnoreCase(System.getenv("LUXEWAY_RESET_TEST_PASSWORDS"))) {
+            return email;
+        }
+        if ("owner@luxeway.com".equals(email)) {
+            return "owner@luxeway.vn";
+        }
+        if ("nguyen.van.a@gmail.com".equals(email)) {
+            return "customer@luxeway.vn";
+        }
+        if ("pham.minh.d@gmail.com".equals(email)) {
+            return "owner@luxeway.vn";
+        }
+        return email;
+    }
+
     // ====== Register ======
 
     @Transactional
-    public AuthDTOs.AuthResponse register(AuthDTOs.RegisterRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email is already registered");
+    public AuthDTOs.RegistrationResponse register(AuthDTOs.RegisterRequest request) {
+        String email = request.getEmail().trim().toLowerCase();
+        java.util.Optional<User> existingUser = userRepository.findByEmail(email);
+        if (existingUser.isPresent()) {
+            User existing = existingUser.get();
+            if (Boolean.TRUE.equals(existing.getVerified())) {
+                throw new RuntimeException("Email is already registered");
+            }
+
+            updatePendingRegistration(existing, request);
+            sendRegistrationOtp(existing);
+            return new AuthDTOs.RegistrationResponse(existing.getEmail(), true, 5);
         }
 
         UserRole role;
@@ -134,14 +138,9 @@ public class AuthService {
         } catch (IllegalArgumentException e) {
             role = UserRole.CUSTOMER;
         }
-
-        // DEV MODE: Auto-verify user on registration (no email verification step).
-        // PRODUCTION: Set verified=false and send a confirmation email via JavaMailSender.
-        // Check environment via Spring profiles to determine behavior
-        boolean isDevelopment = true; // Inject @Value("${spring.profiles.active}") to check profile
         
         User user = User.builder()
-                .email(request.getEmail())
+                .email(email)
                 .password(passwordEncoder.encode(request.getPassword()))
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
@@ -149,38 +148,36 @@ public class AuthService {
                 .role(role)
                 .accountType(request.getAccountType() != null ? request.getAccountType() : "INDIVIDUAL")
                 .companyName(request.getCompanyName())
-                .verified(isDevelopment)   // Auto-verify only in development
+                .verified(false)
                 .kycVerified(false)
-                .kycStatus("PENDING")
                 .drivingLicenseVerified(false)
-                .driverLicenseStatus("PENDING")
                 .isActive(true)
                 .preferredLanguage(request.getPreferredLanguage() != null ? request.getPreferredLanguage() : "en")
                 .build();
-                
-        // Auto-verify KYC ONLY for test accounts or admins
-        if ("customer@luxeway.vn".equalsIgnoreCase(user.getEmail()) || 
-            user.getRole() == com.luxeway.enums.UserRole.ADMIN) {
-            user.setKycVerified(true);
-            user.setKycStatus("VERIFIED");
-            user.setDrivingLicenseVerified(true);
-            user.setDriverLicenseStatus("VERIFIED");
-            user.setLicenseClass("B1");
-            user.setLicenseNumber("222222222222");
-        }
 
         user = userRepository.save(user);
 
-        String accessToken  = jwtTokenProvider.generateToken(user);
-        String refreshToken = jwtTokenProvider.generateRefreshToken(user);
+        sendRegistrationOtp(user);
+        log.info("New user registered pending email verification: {} (role={})", user.getEmail(), user.getRole());
+        return new AuthDTOs.RegistrationResponse(user.getEmail(), true, 5);
+    }
 
-        log.info("New user registered: {} (role={})", user.getEmail(), user.getRole());
+    private void updatePendingRegistration(User user, AuthDTOs.RegisterRequest request) {
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setFirstName(request.getFirstName());
+        user.setLastName(request.getLastName());
+        user.setDisplayName(request.getFirstName() + " " + request.getLastName());
+        user.setPhone(request.getPhone());
+        user.setCompanyName(request.getCompanyName());
+        user.setAccountType(request.getAccountType() != null ? request.getAccountType() : "INDIVIDUAL");
+        user.setPreferredLanguage(request.getPreferredLanguage() != null ? request.getPreferredLanguage() : "en");
         try {
-            emailService.sendEmailVerification(user.getEmail(), user.getFirstName());
+            UserRole role = UserRole.valueOf(request.getRole().toUpperCase());
+            user.setRole(role == UserRole.ADMIN ? UserRole.CUSTOMER : role);
         } catch (Exception e) {
-            log.warn("Failed to send welcome verification email: {}", e.getMessage());
+            user.setRole(UserRole.CUSTOMER);
         }
-        return buildAuthResponse(user, accessToken, refreshToken);
+        userRepository.save(user);
     }
 
     // ====== Change Password ======
@@ -229,8 +226,94 @@ public class AuthService {
     }
 
     private final java.util.Map<String, OtpData> otpStore = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.Map<String, OtpData> registrationOtpStore = new java.util.concurrent.ConcurrentHashMap<>();
     private final java.util.Map<String, ResetTokenData> resetTokenStore = new java.util.concurrent.ConcurrentHashMap<>();
     private final java.security.SecureRandom secureRandom = new java.security.SecureRandom();
+
+    private String generateOtpCode() {
+        int otpNum = 100000 + secureRandom.nextInt(900000);
+        return String.valueOf(otpNum);
+    }
+
+    private void sendRegistrationOtp(User user) {
+        String email = user.getEmail().trim().toLowerCase();
+        java.time.LocalDateTime lastRequest = lastRegistrationOtpRequestTime.get(email);
+        if (lastRequest != null && java.time.LocalDateTime.now().isBefore(lastRequest.plusMinutes(1))) {
+            long secondsLeft = 60 - java.time.temporal.ChronoUnit.SECONDS.between(lastRequest, java.time.LocalDateTime.now());
+            throw new RuntimeException("Please wait " + secondsLeft + " seconds before requesting another registration OTP.");
+        }
+
+        String otpCode = generateOtpCode();
+        java.time.LocalDateTime expiry = java.time.LocalDateTime.now().plusMinutes(5);
+        registrationOtpStore.put(email, new OtpData(otpCode, expiry));
+        lastRegistrationOtpRequestTime.put(email, java.time.LocalDateTime.now());
+
+        log.info("Registration OTP sent to email: {}", email);
+        try {
+            emailService.sendRegistrationOtp(email, user.getFirstName(), otpCode);
+        } catch (Exception e) {
+            log.warn("Failed to send registration OTP email: {}", e.getMessage());
+        }
+    }
+
+    @Transactional
+    public AuthDTOs.AuthResponse verifyRegistrationOtp(AuthDTOs.VerifyOtpRequest req) {
+        String email = req.getEmail().trim().toLowerCase();
+        String enteredOtp = req.getOtp().trim();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Registration email was not found"));
+
+        if (Boolean.TRUE.equals(user.getVerified())) {
+            String accessToken = jwtTokenProvider.generateToken(user);
+            String refreshToken = jwtTokenProvider.generateRefreshToken(user);
+            return buildAuthResponse(user, accessToken, refreshToken);
+        }
+
+        OtpData otpData = registrationOtpStore.get(email);
+        if (otpData == null) {
+            throw new RuntimeException("Invalid registration OTP session or email context");
+        }
+
+        if (java.time.LocalDateTime.now().isAfter(otpData.expiry)) {
+            registrationOtpStore.remove(email);
+            throw new RuntimeException("Registration OTP has expired. Please request a new one");
+        }
+
+        if (!otpData.otp.equals(enteredOtp)) {
+            throw new RuntimeException("Incorrect registration OTP. Please verify and try again");
+        }
+
+        registrationOtpStore.remove(email);
+        user.setVerified(true);
+        user.setIsActive(true);
+        user.setLastActive(java.time.LocalDateTime.now());
+        user = userRepository.save(user);
+
+        try {
+            emailService.sendEmailVerification(user.getEmail(), user.getFirstName());
+        } catch (Exception e) {
+            log.warn("Failed to send welcome verification email: {}", e.getMessage());
+        }
+
+        String accessToken = jwtTokenProvider.generateToken(user);
+        String refreshToken = jwtTokenProvider.generateRefreshToken(user);
+        log.info("Registration OTP verified and account activated: {}", email);
+        return buildAuthResponse(user, accessToken, refreshToken);
+    }
+
+    @Transactional
+    public AuthDTOs.RegistrationResponse resendRegistrationOtp(AuthDTOs.ResendRegistrationOtpRequest req) {
+        String email = req.getEmail().trim().toLowerCase();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Registration email was not found"));
+        if (Boolean.TRUE.equals(user.getVerified())) {
+            throw new RuntimeException("Email is already verified. Please sign in.");
+        }
+
+        sendRegistrationOtp(user);
+        return new AuthDTOs.RegistrationResponse(user.getEmail(), true, 5);
+    }
 
     @Transactional
     public void processForgotPassword(AuthDTOs.ForgotPasswordRequest req) {
@@ -247,8 +330,7 @@ public class AuthService {
         lastOtpRequestTime.put(email, java.time.LocalDateTime.now());
 
         // Generate dynamic secure 6-digit OTP code
-        int otpNum = 100000 + secureRandom.nextInt(900000);
-        String otpCode = String.valueOf(otpNum);
+        String otpCode = generateOtpCode();
 
         // Standard 5 minutes expiry
         java.time.LocalDateTime expiry = java.time.LocalDateTime.now().plusMinutes(5);
@@ -360,7 +442,6 @@ public class AuthService {
         userInfo.setPreferredLanguage(user.getPreferredLanguage());
         userInfo.setKycStatus(user.getKycStatus());
         userInfo.setDriverLicenseStatus(user.getDriverLicenseStatus());
-        userInfo.setLicenseClass(user.getLicenseClass());
 
         AuthDTOs.AuthResponse response = new AuthDTOs.AuthResponse();
         response.setAccessToken(accessToken);
@@ -450,24 +531,11 @@ public class AuthService {
                         .role(UserRole.CUSTOMER)
                         .verified(true)
                         .kycVerified(false)
-                        .kycStatus("PENDING")
                         .drivingLicenseVerified(false)
-                        .driverLicenseStatus("PENDING")
                         .isActive(true)
                         .provider("GOOGLE")
                         .providerId(providerId)
                         .build();
-                        
-                // Auto-verify KYC ONLY for test accounts or admins
-                if ("customer@luxeway.vn".equalsIgnoreCase(user.getEmail()) || 
-                    user.getRole() == com.luxeway.enums.UserRole.ADMIN) {
-                    user.setKycVerified(true);
-                    user.setKycStatus("VERIFIED");
-                    user.setDrivingLicenseVerified(true);
-                    user.setDriverLicenseStatus("VERIFIED");
-                    user.setLicenseClass("B1");
-                    user.setLicenseNumber("222222222222");
-                }
                 user = userRepository.save(user);
                 log.info("Google OAuth registration: created new user {}", email);
             }
@@ -475,22 +543,6 @@ public class AuthService {
             String accessToken = jwtTokenProvider.generateToken(user);
             String refreshToken = jwtTokenProvider.generateRefreshToken(user);
             
-            // Send login alert to the user
-            try {
-                emailService.sendLoginAlert(user.getEmail(), user.getFirstName());
-            } catch (Exception ex) {
-                log.warn("Failed to send login alert to user: {}", ex.getMessage());
-            }
-            
-            // Send login notification to the admin
-            try {
-                String adminMsg = String.format("A successful Google OAuth login was detected.\nUser Email: %s\nTime: %s", 
-                    user.getEmail(), java.time.LocalDateTime.now().toString());
-                emailService.sendAdminNotification("User Login Notification (Google)", adminMsg);
-            } catch (Exception ex) {
-                log.warn("Failed to send admin login notification: {}", ex.getMessage());
-            }
-
             return buildAuthResponse(user, accessToken, refreshToken);
             
         } catch (Exception e) {

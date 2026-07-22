@@ -259,18 +259,20 @@ export const GlobalNavbar: React.FC = () => {
   }, [isAuthenticated, setUnreadCount]);
 
   const isActive = (path: string) => {
-    if (path === '/marketplace') {
+    const cleanPath = path.split('?')[0];
+    if (cleanPath === '/marketplace') {
       return location.pathname === '/marketplace' || location.pathname === '/vehicles' || location.pathname === '/search';
     }
-    return location.pathname === path || location.pathname.startsWith(path + '/');
+    return location.pathname === cleanPath || location.pathname.startsWith(cleanPath + '/');
   };
 
+  const tripsHref = isAdmin ? '/admin?tab=bookings' : isOwner ? '/owner/bookings' : '/dashboard/bookings';
   const navLinks = [
     { href: '/', label: 'Home' },
     { href: '/marketplace', label: 'Marketplace' },
     { href: '/map', label: 'Map' },
-    { href: '/dashboard/bookings', label: 'Trips' },
-    { href: '/owner/register', label: 'Become Owner' },
+    { href: tripsHref, label: 'Trips' },
+    ...(!isOwner && !isAdmin ? [{ href: '/owner/register', label: 'Become Owner' }] : []),
   ];
 
   const currentLang = LANGS.find(lang => lang.code === language) || LANGS[0];
@@ -632,14 +634,15 @@ export const GlobalNavbar: React.FC = () => {
                           {isAdmin ? (
                             <>
                               <Link to="/admin" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-550 dark:text-slate-400">{l.adminDashboard}</Link>
-                              <Link to="/admin?tab=users" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-550 dark:text-slate-400">{l.userManagement}</Link>
-                              <Link to="/admin?tab=vehicles" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-550 dark:text-slate-400">{l.vehicleApproval}</Link>
+                              <Link to="/admin?tab=users" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-550 dark:text-slate-400">{l.userManagement || 'User Management'}</Link>
+                              <Link to="/admin?tab=vehicles" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-550 dark:text-slate-400">{l.vehicleApproval || 'Vehicle Approval'}</Link>
+                              <Link to="/admin?tab=bookings" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-550 dark:text-slate-400">{l.bookings || 'Bookings'}</Link>
                             </>
                           ) : isOwner ? (
                             <>
                               <Link to="/owner" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-550 dark:text-slate-400">{l.ownerDashboard}</Link>
-                              <Link to="/owner/vehicles" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-550 dark:text-slate-400">{l.manageVehicles}</Link>
-                              <Link to="/owner/bookings" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-550 dark:text-slate-400">{l.bookings}</Link>
+                              <Link to="/owner/vehicles" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-550 dark:text-slate-400">{l.manageVehicles || 'Manage Vehicles'}</Link>
+                              <Link to="/owner/bookings" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-550 dark:text-slate-400">{l.bookings || 'Bookings'}</Link>
                             </>
                           ) : (
                             <>

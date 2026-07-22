@@ -6,12 +6,13 @@ import {
   ChevronLeft, Car, MapPin, Clock, Tag, Loader2, ArrowRight,
   Zap, Lock, Star, Package, Truck, X, Wallet, Building2,
   AlertTriangle, Info, Sparkles, UserCircle, Heart, Briefcase,
-  Check, CloudRain, Smartphone, HelpCircle, Users, Activity
+  Check, CloudRain, Smartphone
 } from 'lucide-react';
 import { vehicleService } from '@/services/vehicleService';
 import { bookingService, paymentService, paymentMethodService } from '@/services/bookingService';
 import type { Vehicle } from '@/types';
-import { useAuthStore, useUIStore } from '@/store';
+import { useAuthStore, useBookingWizardStore } from '@/store';
+import { useToast } from '@/components/ui/Toast';
 import { formatCurrency, formatDate, calculateDays } from '@/utils';
 import { fadeUp, staggerContainer, staggerItem, scaleIn } from '@/animations/variants';
 import { useT } from '@/i18n/translations';
@@ -333,10 +334,7 @@ const BookingWizardPage: React.FC = () => {
   const isVi = t.common.loading.includes('Đang');
 
   // Page level state
-  const [walletBalance, setWalletBalance] = useState<number>(0);
-  const [walletLoading, setWalletLoading] = useState<boolean>(true);
-  
-  const [pendingBookingId, setPendingBookingId] = useState<string | null>(null);
+  const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [bookingId, setBookingId] = useState<string | null>(null);
@@ -368,17 +366,18 @@ const BookingWizardPage: React.FC = () => {
   const [hasPhoneHolder, setHasPhoneHolder] = useState(false);
   const [hasTouringPackage, setHasTouringPackage] = useState(false);
 
-  // KYC & license checks — disabled for demo: all verified users can book freely
-  const isKycVerified = true; // Always pass: KYC is verified in DB for demo accounts
-  const isDlVerified = true;  // Always pass: skip driver license gate for demo
-  const licenseClass = (user?.licenseClass || 'B2').toUpperCase();
+  // Enforce verified identity and driving license. Class OCR is informational.
+  const isKycVerified = user?.role === 'admin' || user?.kycStatus === 'VERIFIED';
+  const isDlVerified = user?.role === 'admin' || user?.driverLicenseStatus === 'VERIFIED';
+  const licenseClass = (user?.licenseClass || '').toUpperCase();
 
   const checkLicenseCompatibility = () => {
-    return true; // Skip license class gate for demo
+    if (user?.role === 'admin') return true;
+    return isKycVerified && isDlVerified;
   };
 
-  const isLicenseCompatible = true;
-  const isBlocked = false; // KYC/license block disabled for demo — all accounts can book
+  const isLicenseCompatible = checkLicenseCompatibility();
+  const isBlocked = user ? (!isKycVerified || !isDlVerified || !isLicenseCompatible) : false;
 
   const getBlockingReason = () => {
     if (user?.role === 'admin') return null;
@@ -550,42 +549,83 @@ const BookingWizardPage: React.FC = () => {
     if (wizard.step === 4) {
       setProcessing(true);
       try {
-        // 1. Create booking if not already created
-        let currentBookingId = pendingBookingId;
-        if (!currentBookingId) {
-          const wizardState = wizard.toWizardState();
-          const booking = await bookingService.create(
-            wizardState,
-            user!.id,
-            vehicle?.vehicleType,
-            {
-              hasChauffeur,
-              weddingPackage,
-              businessPackage,
-              hasHelmet,
-              hasRaincoat,
-              hasPhoneHolder,
-              hasTouringPackage,
-              insuranceTier: 'premium'
-            }
-          );
-          currentBookingId = booking.id;
-          setPendingBookingId(booking.id);
-        }
+        // 1. Create booking
+        const wizardState = wizard.toWizardState();
+        const booking = await bookingService.create(
+          wizardState,
+          user!.id,
+          vehicle?.vehicleType,
+          {
+            hasChauffeur,
+            weddingPackage,
+            businessPackage,
+            hasHelmet,
+            hasRaincoat,
+            hasPhoneHolder,
+            hasTouringPackage,
+            insuranceTier: 'premium'
+          }
+        );
 
-        // 2. Navigate to Contract Page
-        if (currentBookingId) {
-          navigate(`/booking/${currentBookingId}/contract`);
-          return;
+        setBookingId(booking.id);
+        toast.success(
+          isVi ? 'Da tao don dat xe' : 'Booking created',
+          isVi ? 'Vui long ky hop dong dien tu truoc khi thanh toan.' : 'Please sign the digital contract before payment.'
+        );
+        navigate(`/booking/${booking.id}/contract`);
+        return;
+
+        // 2. Process payment
+        const returnUrl = `${window.location.origin}/payment/${paymentMethod === 'payos' ? 'payos' : 'momo'}/return`;
+        const paymentResult = await paymentService.processPayment(
+          booking.id,
+          paymentMethod,
+          booking.pricing?.total || totalCost,
+          returnUrl
+        );
+
+        if (paymentResult.success) {
+          if (paymentResult.paymentUrl) {
+            // Redirect to MoMo payment gateway
+            window.location.href = paymentResult.paymentUrl!;
+          } else {
+            // Save card details if enabled
+            if (saveCard && cardNumber && cardName && (paymentMethod === 'card' || paymentMethod === 'stripe')) {
+              const last4 = cardNumber.replace(/\s+/g, '').slice(-4);
+              paymentMethodService.addCard({
+                type: 'card',
+                provider: 'Stripe',
+                brand: cardName.toUpperCase() || 'Visa',
+                last4: last4,
+                expiryMonth: 12,
+                expiryYear: 30,
+                isDefault: savedCards.length === 0,
+                stripePaymentMethodId: 'pm_mock_' + Math.random().toString(36).substring(2, 10)
+              }).catch(err => console.error('Failed to save credit card:', err));
+            }
+            // Direct payment success (wallet/card)
+            setBookingId(booking.id);
+            wizard.setStep(5);
+          }
+        } else {
+          toast.error(
+            isVi ? 'Thanh toán thất bại' : 'Payment failed',
+            paymentResult.errorMessage || (isVi ? 'Vui lòng thử phương thức thanh toán khác.' : 'Please try a different payment method.')
+          );
         }
       } catch (err: any) {
+        const msg =
+          err.response?.data?.message ||
+          err.message ||
+          (isVi ? 'Đã xảy ra lỗi. Vui lòng thử lại.' : 'Something went wrong. Please try again.');
+        toast.error(isVi ? 'Đặt xe thất bại' : 'Booking failed', msg);
+      } finally {
         setProcessing(false);
-        toast.error(err.message || 'Failed to create booking');
-        return;
       }
-    } else {
-      wizard.nextStep();
+      return;
     }
+
+    wizard.setStep(wizard.step + 1);
   };
 
   const handleApplyCoupon = async () => {
@@ -1659,7 +1699,6 @@ const BookingWizardPage: React.FC = () => {
           </motion.div>
         </div>
       )}
-
     </div>
   );
 };

@@ -12,12 +12,14 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "booking_cancellations")
 @Data
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class BookingCancellation {
 
     @Id
+    @EqualsAndHashCode.Include
     @Column(name = "booking_id", length = 36)
     private String bookingId;
 

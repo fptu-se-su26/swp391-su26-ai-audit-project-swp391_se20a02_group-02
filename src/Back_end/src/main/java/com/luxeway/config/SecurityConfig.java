@@ -64,7 +64,7 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session ->
-                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
             .exceptionHandling(exceptions -> exceptions
                 .authenticationEntryPoint((request, response, authException) -> {
                     response.setContentType("application/json;charset=UTF-8");
@@ -132,9 +132,8 @@ public class SecurityConfig {
                     // Help Center Knowledge Base (public — no auth needed)
                     "/help/**",
                     "/api/v1/help/**",
-                    // Insurance & Deposits (public — no auth needed)
-                    "/insurance/**",
-                    "/api/v1/insurance/**",
+                    "/recommendations/**",
+                    "/api/v1/recommendations/**",
                     "/ai/**",
                     "/api/v1/ai/**",
                     "/chat",
@@ -202,10 +201,16 @@ public class SecurityConfig {
                 // All other requests must be authenticated
                 .anyRequest().authenticated()
             )
-            .oauth2Login(oauth2 -> oauth2
-                .successHandler(oAuth2SuccessHandler)
-                .failureHandler(oAuth2FailureHandler)
-            )
+            .oauth2Login(oauth2 -> {
+                oauth2
+                    .successHandler(oAuth2SuccessHandler)
+                    .failureHandler(oAuth2FailureHandler);
+
+                String googleCallbackUrl = System.getenv("GOOGLE_CALLBACK_URL");
+                if (googleCallbackUrl != null && googleCallbackUrl.endsWith("/auth/google/callback")) {
+                    oauth2.redirectionEndpoint(redirection -> redirection.baseUri("/auth/google/callback"));
+                }
+            })
             .authenticationProvider(authenticationProvider())
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(vnPayIPWhitelistFilter, JwtAuthenticationFilter.class);

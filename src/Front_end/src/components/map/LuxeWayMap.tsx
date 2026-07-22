@@ -5,8 +5,8 @@ import { useUIStore } from '@/store';
 import { formatCurrency } from '@/utils';
 import type { Vehicle, VehicleLocationResponse } from '@/types';
 import { getCoordinates } from './VehicleMap';
+import { getMapStyleUrl, installMapStyleFallback } from './mapStyle';
 
-const GOONG_MAPTILES_KEY = (import.meta as any).env.VITE_GOONG_MAPTILES_KEY || 'mock_goong_key';
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=800';
 
 // ====== SPIDERFY CONFIG ======
@@ -58,6 +58,7 @@ export interface LuxeWayMapProps {
   onSelectionChange?: (vehicles: any[]) => void;
   onMarkerHover?: (id: string | null) => void;
   onMapMoved?: () => void;
+  onBoundsChange?: (bounds: { minLat: number; maxLat: number; minLng: number; maxLng: number }) => void;
   height?: string;
   routePolyline?: string;
   pickupCoords?: [number, number];
@@ -79,6 +80,7 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
   onSelectionChange,
   onMarkerHover,
   onMapMoved,
+  onBoundsChange,
   height = '100%',
   routePolyline,
   pickupCoords,
@@ -98,17 +100,10 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
   const isUserDraggingRef = useRef(false);
   const moveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastFitBoundsVehiclesRef = useRef<string>('');
+  const [mapReady, setMapReady] = useState(false);
   const { theme } = useUIStore();
   const isDark = theme === 'dark';
-  const hasGoongKey = GOONG_MAPTILES_KEY && GOONG_MAPTILES_KEY !== 'mock_goong_key' && !GOONG_MAPTILES_KEY.includes('your-');
-
-  const mapStyleUrl = hasGoongKey
-    ? (isDark
-        ? `https://tiles.goong.io/assets/goong_map_dark.json?api_key=${GOONG_MAPTILES_KEY}`
-        : `https://tiles.goong.io/assets/goong_map_web.json?api_key=${GOONG_MAPTILES_KEY}`)
-    : (isDark
-        ? 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'
-        : 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json');
+  const mapStyleUrl = getMapStyleUrl(isDark);
 
   const selectedVehicleIdRef = useRef(selectedVehicleId);
   const hoveredVehicleIdRef = useRef(hoveredVehicleId);
@@ -117,6 +112,20 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
   useEffect(() => { selectedVehicleIdRef.current = selectedVehicleId; }, [selectedVehicleId]);
   useEffect(() => { hoveredVehicleIdRef.current = hoveredVehicleId; }, [hoveredVehicleId]);
   useEffect(() => { vehiclesRef.current = vehicles; }, [vehicles]);
+
+  const emitBounds = useCallback(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const bounds = map.getBounds();
+    const ne = bounds.getNorthEast();
+    const sw = bounds.getSouthWest();
+    onBoundsChange?.({
+      minLat: sw.lat,
+      maxLat: ne.lat,
+      minLng: sw.lng,
+      maxLng: ne.lng,
+    });
+  }, [onBoundsChange]);
 
   // ====== COORDINATE RESOLUTION ======
   const resolveCoords = useCallback((v: any, index: number): [number, number] | null => {
@@ -149,52 +158,52 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
     spiderLegsRef.current = [];
   };
 
+  // ====== MARKER STYLING ======
   const applyMarkerStyle = (el: HTMLElement, vehicle: any, isSelected: boolean, isHovered: boolean) => {
     const thumbnailSrc = vehicle.thumbnailUrl || vehicle.thumbnail || vehicle.image || FALLBACK_IMAGE;
     const displayPrice = formatPrice(vehicle.pricePerDay || vehicle.finalPrice || 0);
+    const active = isSelected || isHovered;
 
-    el.style.zIndex = isSelected ? '999' : isHovered ? '45' : '30';
+    el.style.cssText = `
+      display:flex; align-items:center; gap:7px;
+      padding:4px 12px 4px 4px; background:#ffffff;
+      border:${isSelected ? '2.5px' : '2px'} solid ${isSelected ? '#D4AF37' : isHovered ? '#D4AF37' : '#0F172A'};
+      border-radius:999px;
+      box-shadow:${isSelected
+        ? '0 0 0 4px rgba(212,175,55,0.28), 0 12px 28px rgba(15,23,42,0.24)'
+        : isHovered
+          ? '0 0 0 3px rgba(212,175,55,0.22), 0 10px 22px rgba(15,23,42,0.2)'
+          : '0 8px 18px rgba(15,23,42,0.18)'};
+      font-size:13px; font-weight:900; color:#0f172a;
+      cursor:pointer; user-select:none;
+      transform:scale(${isSelected ? '1.08' : '1'});
+      transition:all 250ms cubic-bezier(0.4,0,0.2,1);
+      z-index:${isSelected ? '999' : isHovered ? '45' : '30'};
+      white-space:nowrap;
+      position:relative;
+    `;
+
     el.innerHTML = `
-      <div style="
-        display:flex; align-items:center; gap:5px;
-        padding:3px 10px 3px 3px; background:#fff;
-        border:${isSelected ? '2px' : '1.5px'} solid ${isSelected ? '#D4AF37' : isHovered ? '#D4AF37' : '#E5E7EB'};
-        border-radius:20px;
-        box-shadow:${isSelected
-          ? '0 0 0 3px rgba(212,175,55,0.25), 0 4px 12px rgba(0,0,0,0.18)'
-          : isHovered
-            ? '0 0 0 2px rgba(212,175,55,0.2), 0 2px 8px rgba(0,0,0,0.14)'
-            : '0 1px 4px rgba(0,0,0,0.1)'};
-        font-size:12px; font-weight:800; color:#111827;
-        cursor:pointer; user-select:none;
-        transform:scale(${isSelected ? '1.08' : isHovered ? '1.04' : '1'});
-        transition:all 250ms cubic-bezier(0.4,0,0.2,1);
-        white-space:nowrap;
-      ">
-        <img src="${thumbnailSrc}" alt="" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1px solid #f3f4f6;" onerror="this.style.display='none'" />
-        <span>${displayPrice}</span>
-      </div>
+      <img src="${thumbnailSrc}" alt="" style="width:34px;height:34px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid #f8fafc;background:#e2e8f0;" onerror="this.style.display='none'" />
+      <span>${displayPrice}</span>
+      <span style="position:absolute;left:50%;bottom:-8px;width:12px;height:12px;background:#D4AF37;border-right:2px solid #0F172A;border-bottom:2px solid #0F172A;transform:translateX(-50%) rotate(45deg);border-radius:0 0 3px 0;"></span>
     `;
   };
 
   const applyClusterStyle = (el: HTMLElement, count: number, isHovered: boolean = false) => {
     const label = count >= 100 ? '99+' : `${count} xe`;
-    el.style.zIndex = isHovered ? '50' : '40';
-    el.innerHTML = `
-      <div style="
-        display:flex; align-items:center; justify-content:center;
-        min-width:44px; height:30px; padding:0 12px;
-        background:#ffffff; border:1.5px solid #d1d5db;
-        border-radius:15px;
-        box-shadow:${isHovered ? '0 2px 8px rgba(0,0,0,0.18)' : '0 1px 4px rgba(0,0,0,0.12)'};
-        font-size:12px; font-weight:700; color:#374151;
-        cursor:pointer; user-select:none;
-        transform:scale(${isHovered ? '1.05' : '1'});
-        transition:all 200ms ease-out;
-      ">
-        ${label}
-      </div>
+    el.style.cssText = `
+      display:flex; align-items:center; justify-content:center;
+      min-width:58px; height:40px; padding:0 16px;
+      background:#0f172a; border:2px solid #D4AF37;
+      border-radius:999px;
+      box-shadow:${isHovered ? '0 14px 30px rgba(15,23,42,0.28)' : '0 10px 22px rgba(15,23,42,0.22)'};
+      font-size:13px; font-weight:900; color:#ffffff;
+      cursor:pointer; user-select:none;
+      transform:scale(${isHovered ? '1.05' : '1'});
+      transition:all 200ms ease-out;
     `;
+    el.textContent = label;
   };
 
   // ====== MARKER CLICK ANIMATION ======
@@ -239,13 +248,13 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
 
     const clusters: MapCluster[] = [];
 
-    currentVehicles.forEach((v, index) => {
+    const addVehicleToCluster = (v: any, index: number, enforceViewport: boolean) => {
       const coords = resolveCoords(v, index);
       if (!coords) return;
       const [lat, lng] = coords;
 
       // ====== VIEWPORT FILTERING (Marker Virtualization) ======
-      if (lng < sw.lng || lng > ne.lng || lat < sw.lat || lat > ne.lat) return;
+      if (enforceViewport && (lng < sw.lng || lng > ne.lng || lat < sw.lat || lat > ne.lat)) return;
 
       let found = false;
       for (const c of clusters) {
@@ -263,7 +272,17 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
       if (!found) {
         clusters.push({ id: `cluster-${v.id}`, lat, lng, count: 1, vehicles: [v] });
       }
+    };
+
+    currentVehicles.forEach((v, index) => {
+      addVehicleToCluster(v, index, true);
     });
+
+    if (clusters.length === 0 && currentVehicles.length > 0) {
+      currentVehicles.forEach((v, index) => {
+        addVehicleToCluster(v, index, false);
+      });
+    }
 
     // ====== SPIDERFY: At max zoom, spread overlapping clusters ======
     clearSpiderLegs();
@@ -408,7 +427,7 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
     const t1 = setTimeout(() => updateMarkers(), 50);
     const t2 = setTimeout(() => updateMarkers(), 400);
     return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, [vehicles, selectedVehicleId, updateMarkers]);
+  }, [vehicles, selectedVehicleId, mapReady, updateMarkers]);
 
   // ====== INITIALIZE MAP ======
   useEffect(() => {
@@ -428,6 +447,7 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
 
     // Navigation controls (zoom +/-)
     map.addControl(new maplibregl.NavigationControl({ showCompass: true }), 'top-right');
+    installMapStyleFallback(map, isDark);
 
     mapRef.current = map;
     (window as any).luxewayMapInstance = map;
@@ -462,6 +482,7 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
         if (moveDebounceRef.current) clearTimeout(moveDebounceRef.current);
         moveDebounceRef.current = setTimeout(() => {
           updateMarkers();
+          emitBounds();
           if (isUserDraggingRef.current && onMapMoved) {
             onMapMoved();
             isUserDraggingRef.current = false;
@@ -472,6 +493,7 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
       map.on('moveend', handleMoveEnd);
       map.on('zoomend', () => {
         updateMarkers();
+        emitBounds();
       });
 
       // Click on empty map → deselect
@@ -494,22 +516,27 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
           }
         }
 
-        map.addLayer({
-          id: '3d-buildings', source: 'composite', 'source-layer': 'building',
-          filter: ['==', 'extrude', 'true'], type: 'fill-extrusion', minzoom: 15,
-          paint: {
-            'fill-extrusion-color': isDark ? '#1f2937' : '#e5e7eb',
-            'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 15, 0, 15.05, ['get', 'height']],
-            'fill-extrusion-base': ['interpolate', ['linear'], ['zoom'], 15, 0, 15.05, ['get', 'min_height']],
-            'fill-extrusion-opacity': 0.6,
-          },
-        }, labelLayerId);
+        const sources = map.getStyle().sources || {};
+        if (sources.composite && !map.getLayer('3d-buildings')) {
+          map.addLayer({
+            id: '3d-buildings', source: 'composite', 'source-layer': 'building',
+            filter: ['==', 'extrude', 'true'], type: 'fill-extrusion', minzoom: 15,
+            paint: {
+              'fill-extrusion-color': isDark ? '#1f2937' : '#e5e7eb',
+              'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 15, 0, 15.05, ['get', 'height']],
+              'fill-extrusion-base': ['interpolate', ['linear'], ['zoom'], 15, 0, 15.05, ['get', 'min_height']],
+              'fill-extrusion-opacity': 0.6,
+            },
+          }, labelLayerId);
+        }
       } catch (err) {
         // 3D buildings not available on all tile sets
       }
 
       isMapLoadedRef.current = true;
+      setMapReady(true);
       updateMarkers();
+      emitBounds();
       setTimeout(() => updateMarkers(), 800);
     });
 
@@ -522,6 +549,7 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
       map.remove();
       mapRef.current = null;
       isMapLoadedRef.current = false;
+      setMapReady(false);
       if (moveDebounceRef.current) clearTimeout(moveDebounceRef.current);
     };
   }, [interactive]);
@@ -546,7 +574,7 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
   // ====== FIT BOUNDS / FLY TO SELECTED ======
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !isMapLoadedRef.current || vehicles.length === 0) return;
+    if (!map || !mapReady || !isMapLoadedRef.current || vehicles.length === 0) return;
     if (disableAutoPan) return;
 
     // If a vehicle is selected, fly to it (premium animation)
@@ -569,9 +597,11 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
 
     // ====== SMART FIT BOUNDS ======
     // Only fit on first load or when vehicles change (not on user pan)
+    if (!shouldFitBounds) return;
     const vehicleIds = vehicles.map(v => v.id).sort().join(',');
-    if (vehicleIds === lastFitBoundsVehiclesRef.current) return;
-    lastFitBoundsVehiclesRef.current = vehicleIds;
+    const fitKey = `${vehicleIds}|${initialCenter?.join(',') || ''}|${initialZoom || ''}`;
+    if (fitKey === lastFitBoundsVehiclesRef.current) return;
+    lastFitBoundsVehiclesRef.current = fitKey;
 
     if (vehicles.length === 1) {
       const coords = resolveCoords(vehicles[0], 0);
@@ -597,16 +627,30 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
         });
         if (validCount > 0) {
           map.fitBounds(bounds, {
-            padding: { top: 80, bottom: 200, left: 60, right: 60 },
-            maxZoom: 16,
+            padding: { top: 90, bottom: 180, left: 70, right: 70 },
+            maxZoom: initialCenter ? 13.5 : 11.5,
             duration: FLY_DURATION,
           });
+          if (!initialZoom) {
+            window.setTimeout(() => {
+              if (!mapRef.current) return;
+              const minOverviewZoom = window.innerWidth < 768 ? 4.8 : 5.35;
+              if (mapRef.current.getZoom() < minOverviewZoom) {
+                mapRef.current.easeTo({
+                  center: [106.9, 16.1],
+                  zoom: minOverviewZoom,
+                  duration: 650,
+                  essential: true,
+                });
+              }
+            }, FLY_DURATION + 80);
+          }
         }
       } catch (e) {
         console.error('fitBounds error:', e);
       }
     }
-  }, [vehicles, selectedVehicleId, shouldFitBounds, resolveCoords, disableAutoPan]);
+  }, [vehicles, selectedVehicleId, shouldFitBounds, resolveCoords, disableAutoPan, mapReady, initialCenter, initialZoom]);
 
   // ====== FLY TO INITIAL CENTER when it changes (city switch) ======
   useEffect(() => {

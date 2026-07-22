@@ -67,7 +67,7 @@ export const OwnerAnalyticsDashboard: React.FC = () => {
     setExportingPdf(true);
     try {
       const url = await ownerAnalyticsService.getPdfReportUrl();
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('luxeway_access_token');
       // Fetch with auth header
       const res = await fetch(url, {
         headers: {
@@ -95,7 +95,7 @@ export const OwnerAnalyticsDashboard: React.FC = () => {
     setExportingExcel(true);
     try {
       const url = await ownerAnalyticsService.getExcelReportUrl();
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('luxeway_access_token');
       const res = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -181,10 +181,10 @@ export const OwnerAnalyticsDashboard: React.FC = () => {
             <DollarSign className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
           </div>
           <p className="text-2xl font-black text-[var(--lw-text-primary)]">{formatVND(stats.totalRevenue)}</p>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--lw-text-muted)] mt-1">Gross Earnings</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--lw-text-muted)] mt-1">Completed Revenue</p>
           <div className="flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold mt-2">
             <TrendingUp className="w-3 h-3" />
-            +18.4% vs last month
+            Projected: {formatVND(stats.projectedRevenue || stats.totalRevenue)}
           </div>
         </div>
 
@@ -209,9 +209,9 @@ export const OwnerAnalyticsDashboard: React.FC = () => {
             <Calendar className="w-5 h-5 text-amber-600 dark:text-amber-400" />
           </div>
           <p className="text-2xl font-black text-[var(--lw-text-primary)]">{stats.totalBookings}</p>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--lw-text-muted)] mt-1">Total Bookings Completed</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--lw-text-muted)] mt-1">Total Booking Requests</p>
           <div className="flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 font-bold mt-2">
-            <span>{stats.activeBookings} ongoing active rentals</span>
+            <span>{stats.completedBookings} completed, {stats.activeBookings} active</span>
           </div>
         </div>
 
@@ -228,6 +228,21 @@ export const OwnerAnalyticsDashboard: React.FC = () => {
             <span>·</span>
             <span>{stats.motorbikeCount} Motorbikes</span>
           </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-[var(--lw-bg-card)] border border-[var(--lw-border)] rounded-2xl p-4">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--lw-text-muted)]">Gross booked value</p>
+          <p className="text-lg font-black text-[var(--lw-text-primary)] mt-1">{formatVND(stats.grossBookedRevenue || stats.totalRevenue || 0)}</p>
+        </div>
+        <div className="bg-[var(--lw-bg-card)] border border-[var(--lw-border)] rounded-2xl p-4">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--lw-text-muted)]">Pending payment / approval</p>
+          <p className="text-lg font-black text-orange-600 mt-1">{formatVND(stats.pendingRevenue || 0)}</p>
+        </div>
+        <div className="bg-[var(--lw-bg-card)] border border-[var(--lw-border)] rounded-2xl p-4">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--lw-text-muted)]">Revenue rule</p>
+          <p className="text-xs font-semibold text-[var(--lw-text-secondary)] mt-1">Completed revenue counts only completed rentals; pending bookings are tracked separately.</p>
         </div>
       </div>
 

@@ -47,4 +47,16 @@ public class AdminSeedingController {
             return ResponseEntity.status(500).body(ApiResponse.error("Failed to seed vehicles: " + e.getMessage()));
         }
     }
+
+    @PostMapping("/demo-acceptance")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @Operation(summary = "Seed repeatable acceptance-demo data for wishlist, reviews, chat, KYC and vehicle approval screens")
+    public ResponseEntity<ApiResponse<java.util.Map<String, Object>>> triggerDemoAcceptanceSeeding() {
+        try {
+            java.util.Map<String, Object> data = seedingService.seedDemoAcceptanceData();
+            return ResponseEntity.ok(ApiResponse.success("Demo acceptance data seeded successfully", data));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(ApiResponse.error("Failed to seed demo acceptance data: " + e.getMessage()));
+        }
+    }
 }

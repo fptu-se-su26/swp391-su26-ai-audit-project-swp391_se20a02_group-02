@@ -6,9 +6,10 @@ import {
   Heart, Share2, Clock, Check, Bike, ArrowRight, X, Loader2, Calendar,
   ShieldCheck, AlertCircle, Award, Info, FileText, CheckCircle2,
   Navigation, UserCircle, Briefcase, HeartIcon, Plane, Sparkles, Play, Video,
-  Smartphone, CloudRain, Package
+  Smartphone, CloudRain, Package, MessageSquare
 } from 'lucide-react';
 import { motorbikeService } from '@/services/motorbikeService';
+import { vehicleService } from '@/services/vehicleService';
 import apiClient from '@/services/api';
 import { reviewService } from '@/services/otherServices';
 import type { Vehicle, Review } from '@/types';
@@ -871,14 +872,28 @@ export const MotorbikeDetails: React.FC = () => {
     }, 1000);
   };
 
-  const handleWishlistToggle = () => {
+  const handleWishlistToggle = async () => {
     if (!vehicle) return;
+    if (!isAuthenticated || !user?.id) {
+      toast.info('Sign in required', 'Please sign in to save vehicles to your wishlist.');
+      return;
+    }
+    const previous = wishlisted;
     if (wishlisted) {
       removeFromWishlist(vehicle.id);
       toast.info('Removed', 'Removed vehicle from wishlist.');
     } else {
       addToWishlist(vehicle.id);
       toast.success('Saved', 'Added vehicle to wishlist.');
+    }
+    try {
+      const favorite = await vehicleService.toggleWishlist(vehicle.id, user.id);
+      if (favorite) addToWishlist(vehicle.id);
+      else removeFromWishlist(vehicle.id);
+    } catch {
+      if (previous) addToWishlist(vehicle.id);
+      else removeFromWishlist(vehicle.id);
+      toast.error('Wishlist failed', 'Could not save your wishlist change.');
     }
   };
 
@@ -1271,6 +1286,14 @@ export const MotorbikeDetails: React.FC = () => {
                   <p className="text-xs text-slate-500 mt-2 font-semibold">Verified listing, vehicle fully inspected before every trip. Station pickup available.</p>
                 </div>
               </div>
+              {vehicle.ownerId && (
+                <button
+                  onClick={() => navigate(`/messages?ownerId=${encodeURIComponent(vehicle.ownerId)}&vehicleId=${encodeURIComponent(vehicle.id)}`)}
+                  className="mt-4 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-xs font-extrabold text-white transition-colors hover:bg-slate-800"
+                >
+                  <MessageSquare className="w-4 h-4" /> Message Owner
+                </button>
+              )}
             </div>
 
             {/* Reviews */}

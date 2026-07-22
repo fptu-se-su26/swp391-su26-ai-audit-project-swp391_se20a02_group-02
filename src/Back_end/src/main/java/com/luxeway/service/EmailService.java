@@ -6,6 +6,7 @@ import com.luxeway.entity.Dispute;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -23,8 +24,8 @@ public class EmailService {
     private final com.luxeway.repository.UserRepository userRepository;
     private final TranslationService translationService;
 
-    @org.springframework.beans.factory.annotation.Value("${app.frontend-url:http://localhost:5173}")
-    private String frontendUrl;
+    @Value("${spring.mail.username:no-reply@luxeway.local}")
+    private String mailFrom;
 
     private String getLanguageForEmail(String email) {
         return userRepository.findByEmail(email)
@@ -40,18 +41,19 @@ public class EmailService {
         sendEmail(email, subject, htmlContent, null, null);
     }
 
+    public void sendRegistrationOtp(String email, String firstName, String otp) {
+        log.info("[REGISTRATION OTP FOR DEV/STAGING]: Send to email [{}] - Code [{}]", email, otp);
+        String lang = getLanguageForEmail(email);
+        String subject = translationService.getMessage("email.registration.otp.subject", lang);
+        String htmlContent = translationService.getMessage("email.registration.otp.body", lang, firstName, otp);
+        sendEmail(email, subject, htmlContent, null, null);
+    }
+
     public void sendPasswordResetLink(String email, String resetLink) {
         log.info("[PASSWORD RESET LINK LOGGER]: Sending link to {}: {}", email, resetLink);
         String lang = getLanguageForEmail(email);
         String subject = translationService.getMessage("email.reset.subject", lang);
-        String rawContent = translationService.getMessage("email.reset.body", lang, resetLink);
-        
-        String htmlContent = EmailTemplateBuilder.buildHtmlEmail(
-            subject,
-            rawContent + "<br/><br/>Click the button below to reset your password. The link will expire in 15 minutes.",
-            "Reset Password",
-            resetLink
-        );
+        String htmlContent = translationService.getMessage("email.reset.body", lang, resetLink);
         sendEmail(email, subject, htmlContent, null, null);
     }
 
@@ -68,15 +70,8 @@ public class EmailService {
         String totalDays = String.valueOf(booking.getTotalDays());
         String totalPaid = String.format("%,.0f VND", booking.getTotal());
         
-        String rawContent = translationService.getMessage("email.booking.confirm.body", lang, 
+        String htmlContent = translationService.getMessage("email.booking.confirm.body", lang, 
                 vehicleBrand, vehicleModel, startDate, endDate, totalDays, totalPaid);
-                
-        String htmlContent = EmailTemplateBuilder.buildHtmlEmail(
-            "Booking Confirmed",
-            rawContent,
-            "View Booking Details",
-            frontendUrl + "/dashboard/renter/bookings"
-        );
         sendEmail(email, subject, htmlContent, null, null);
     }
 
@@ -114,14 +109,7 @@ public class EmailService {
         log.info("[EMAIL VERIFICATION LOGGER]: Sending welcome/verification to {}", email);
         String lang = getLanguageForEmail(email);
         String subject = translationService.getMessage("email.welcome.subject", lang);
-        String rawContent = translationService.getMessage("email.welcome.body", lang, firstName);
-        
-        String htmlContent = EmailTemplateBuilder.buildHtmlEmail(
-            "Welcome to LuxeWay!",
-            rawContent + "<br/><br/>Your account has been successfully created. Get ready to drive the unattainable.",
-            "Explore Vehicles",
-            frontendUrl + "/marketplace"
-        );
+        String htmlContent = translationService.getMessage("email.welcome.body", lang, firstName);
         sendEmail(email, subject, htmlContent, null, null);
     }
 
@@ -138,15 +126,8 @@ public class EmailService {
         String totalDays = String.valueOf(booking.getTotalDays());
         String totalPaid = String.format("%,.0f VND", booking.getTotal());
         
-        String rawContent = translationService.getMessage("email.booking.cancel.body", lang, 
-                vehicleBrand, vehicleModel, startDate, endDate, String.valueOf(booking.getId()));
-                
-        String htmlContent = EmailTemplateBuilder.buildHtmlEmail(
-            "Booking Cancelled",
-            rawContent,
-            "View Details",
-            frontendUrl + "/dashboard"
-        );
+        String htmlContent = translationService.getMessage("email.booking.cancel.body", lang, 
+                shortId, vehicleBrand, vehicleModel, startDate, endDate, totalDays, totalPaid);
         sendEmail(email, subject, htmlContent, null, null);
     }
 
@@ -183,30 +164,6 @@ public class EmailService {
         sendEmail(adminEmail, subject, htmlContent, null, null);
     }
 
-    public void sendLoginAlert(String email, String firstName) {
-        log.info("[LOGIN ALERT LOGGER]: Sending login alert to {}", email);
-        String subject = "Welcome back to LuxeWay";
-        
-        String name = (firstName != null && !firstName.trim().isEmpty()) ? firstName : "Valued Customer";
-        
-        String mainContent = "<p style='font-size: 18px; margin-bottom: 20px;'>Welcome back, <b>" + name + "</b>!</p>"
-                + "<p>We're thrilled to have you back. This email is just a quick confirmation that a successful login to your LuxeWay account was detected.</p>"
-                + "<div style='background-color: rgba(255,255,255,0.05); border-left: 3px solid #D4AF37; padding: 15px; margin: 25px 0;'>"
-                + "<p style='margin: 0; color: #94a3b8;'><b>Login Time:</b> " + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("MMM dd, yyyy - HH:mm:ss")) + "</p>"
-                + "</div>"
-                + "<p>Ready for your next extraordinary journey? Explore our latest collection of premium vehicles.</p>"
-                + "<p style='margin-top: 30px; font-size: 14px; color: #64748b; border-top: 1px solid #1e293b; padding-top: 15px;'><i>If this wasn't you, please secure your account by resetting your password immediately.</i></p>";
-                
-        String htmlContent = EmailTemplateBuilder.buildHtmlEmail(
-            "Successful Login",
-            mainContent,
-            "Explore Vehicles",
-            "http://localhost:5173/marketplace"
-        );
-        
-        sendEmail(email, subject, htmlContent, null, null);
-    }
-
     public void sendCustomHtmlEmail(String to, String subject, String htmlContent) {
         sendEmail(to, subject, htmlContent, null, null);
     }
@@ -219,7 +176,7 @@ public class EmailService {
             helper.setTo(to);
             helper.setSubject(subject);
             helper.setText(htmlContent, true);
-            helper.setFrom("luxeway.vn@gmail.com");
+            helper.setFrom(mailFrom, "LuxeWay");
 
             if (attachmentName != null && attachmentBytes != null) {
                 helper.addAttachment(attachmentName, new ByteArrayResource(attachmentBytes));

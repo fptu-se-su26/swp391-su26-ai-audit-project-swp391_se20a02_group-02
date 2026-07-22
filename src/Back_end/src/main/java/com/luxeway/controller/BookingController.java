@@ -103,6 +103,44 @@ public class BookingController {
         return ResponseEntity.ok(ApiResponse.success("Booking cancelled", booking));
     }
 
+    @PostMapping("/{id}/cancel-request")
+    @Operation(summary = "Renter requests cancellation for owner approval")
+    public ResponseEntity<ApiResponse<BookingDTOs.BookingResponse>> requestCancellation(
+            @PathVariable String id,
+            @AuthenticationPrincipal User user,
+            @Valid @RequestBody BookingDTOs.CancelBookingRequest request) {
+        BookingDTOs.BookingResponse booking = bookingService.requestCancellation(id, user.getId(), request);
+        return ResponseEntity.ok(ApiResponse.success("Cancellation request sent to owner", booking));
+    }
+
+    @PostMapping("/{id}/cancel-request/approve")
+    @Operation(summary = "Owner approves renter cancellation request")
+    public ResponseEntity<ApiResponse<BookingDTOs.BookingResponse>> approveCancellation(
+            @PathVariable String id,
+            @AuthenticationPrincipal User user,
+            @RequestBody(required = false) BookingDTOs.CancelBookingRequest request) {
+        BookingDTOs.CancelBookingRequest safeRequest = request != null ? request : new BookingDTOs.CancelBookingRequest();
+        if (safeRequest.getReason() == null || safeRequest.getReason().isBlank()) {
+            safeRequest.setReason("Approved by owner");
+        }
+        BookingDTOs.BookingResponse booking = bookingService.approveCancellation(id, user.getId(), safeRequest);
+        return ResponseEntity.ok(ApiResponse.success("Cancellation approved", booking));
+    }
+
+    @PostMapping("/{id}/cancel-request/reject")
+    @Operation(summary = "Owner rejects renter cancellation request")
+    public ResponseEntity<ApiResponse<BookingDTOs.BookingResponse>> rejectCancellation(
+            @PathVariable String id,
+            @AuthenticationPrincipal User user,
+            @RequestBody(required = false) BookingDTOs.CancelBookingRequest request) {
+        BookingDTOs.CancelBookingRequest safeRequest = request != null ? request : new BookingDTOs.CancelBookingRequest();
+        if (safeRequest.getReason() == null || safeRequest.getReason().isBlank()) {
+            safeRequest.setReason("Rejected by owner after policy review");
+        }
+        BookingDTOs.BookingResponse booking = bookingService.rejectCancellation(id, user.getId(), safeRequest);
+        return ResponseEntity.ok(ApiResponse.success("Cancellation rejected", booking));
+    }
+
     @PutMapping("/{id}/status")
     @Operation(summary = "Update booking status (owner confirms, starts, or completes booking)")
     public ResponseEntity<ApiResponse<BookingDTOs.BookingResponse>> updateStatus(

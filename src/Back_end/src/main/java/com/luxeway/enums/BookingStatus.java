@@ -24,6 +24,7 @@ public enum BookingStatus {
     COMPLETED("Completed"),
     PAYMENT_EXPIRED("Payment Expired"),
     PAYMENT_REJECTED("Payment Rejected"),
+    CANCELLATION_REQUESTED("Cancellation Requested"),
     CUSTOMER_CANCELLED("Customer Cancelled"),
     OWNER_CANCELLED("Owner Cancelled"),
     SYSTEM_CANCELLED("System Cancelled");

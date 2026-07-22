@@ -1,5 +1,8 @@
 // API Configuration for LuxeWay Backend
 const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8080/api/v1';
+const NGROK_HEADERS: Record<string, string> = API_BASE_URL.includes('ngrok') ? { 'ngrok-skip-browser-warning': 'true' } : {};
+const REQUEST_TIMEOUT_MS = API_BASE_URL.includes('ngrok') ? 20000 : 12000;
+const RETRYABLE_METHODS = new Set(['GET']);
 
 // Token storage keys (must match authService.ts)
 const TOKEN_KEY = 'luxeway_access_token';
@@ -35,7 +38,7 @@ class ApiClient {
       const timeoutId = setTimeout(() => controller.abort(), 3000);
       const response = await fetch(`${this.baseURL}/auth/refresh`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...NGROK_HEADERS },
         body: JSON.stringify({ refreshToken }),
         signal: controller.signal,
       });
@@ -67,8 +70,20 @@ class ApiClient {
     
     const token = localStorage.getItem(TOKEN_KEY);
     const lang = localStorage.getItem('language') || 'en';
+    const publicAuthEndpoints = new Set([
+      '/auth/login',
+      '/auth/register',
+      '/auth/register/verify-otp',
+      '/auth/register/resend-otp',
+      '/auth/forgot-password',
+      '/auth/verify-otp',
+      '/auth/reset-password',
+      '/auth/google',
+    ]);
+    const shouldAttachToken = Boolean(token) && !publicAuthEndpoints.has(endpoint);
     const headers: Record<string, string> = {
       'Accept-Language': lang,
+      ...NGROK_HEADERS,
       ...(options.headers as Record<string, string>),
     };
 
@@ -81,7 +96,7 @@ class ApiClient {
       delete headers['Content-Type'];
     }
 
-    if (token) {
+    if (shouldAttachToken) {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
@@ -90,12 +105,26 @@ class ApiClient {
       headers,
     };
 
-    try {
+    const executeFetch = async (requestHeaders: Record<string, string>) => {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000);
-      const response = await fetch(url, { ...config, signal: controller.signal });
+      const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+      const response = await fetch(url, { ...config, headers: requestHeaders, signal: controller.signal });
       clearTimeout(timeoutId);
-      
+      return response;
+    };
+
+    try {
+      let response: Response;
+      try {
+        response = await executeFetch(headers);
+      } catch (error: any) {
+        const method = String(config.method || 'GET').toUpperCase();
+        const canRetry = RETRYABLE_METHODS.has(method) && !options.signal?.aborted;
+        if (!canRetry) throw error;
+        console.warn(`Retrying API request after transient failure: ${url}`, error);
+        response = await executeFetch(headers);
+      }
+
       if (!response.ok) {
         if (response.status === 401) {
           // BUG-12 FIX: Try to refresh the token before giving up
@@ -108,7 +137,7 @@ class ApiClient {
               // Token refreshed — retry the original request with the new token
               this.notifyRefreshSubscribers(newToken);
               const retryHeaders = { ...headers, 'Authorization': `Bearer ${newToken}` };
-              const retryResponse = await fetch(url, { ...config, headers: retryHeaders });
+              const retryResponse = await executeFetch(retryHeaders);
               if (retryResponse.ok) {
                 const retryContentType = retryResponse.headers.get('content-type');
                 if (retryContentType && retryContentType.includes('application/json')) {

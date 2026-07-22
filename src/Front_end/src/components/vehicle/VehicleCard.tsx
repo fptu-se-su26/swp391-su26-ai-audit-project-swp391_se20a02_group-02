@@ -11,6 +11,7 @@ import { useToast } from '@/components/ui/Toast';
 import { cn, formatCurrency, resolveImageUrl, sanitizeLocation } from '@/utils';
 import { cardHoverVariants } from '@/animations/variants';
 import { useT } from '@/i18n/translations';
+import { vehicleService } from '@/services/vehicleService';
 
 interface VehicleCardProps {
   vehicle: Vehicle;
@@ -27,7 +28,7 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
 }) => {
   const t = useT();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
   const { isWishlisted, addToWishlist, removeFromWishlist, addToCompare } = useVehicleStore();
   const toast = useToast();
   
@@ -41,19 +42,29 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
     ? vehicle.images 
     : [vehicle.thumbnailUrl || FALLBACK_IMAGE]).map(img => resolveImageUrl(img || FALLBACK_IMAGE));
 
-  const handleWishlist = (e: React.MouseEvent) => {
+  const handleWishlist = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !user?.id) {
       toast.info('Sign in required', 'Please sign in to save vehicles to your wishlist');
       return;
     }
+    const previous = wishlisted;
     if (wishlisted) {
       removeFromWishlist(vehicle.id);
       toast.info('Removed from wishlist', vehicle.name);
     } else {
       addToWishlist(vehicle.id);
       toast.success('Added to wishlist!', vehicle.name);
+    }
+    try {
+      const favorite = await vehicleService.toggleWishlist(vehicle.id, user.id);
+      if (favorite && !isWishlisted(vehicle.id)) addToWishlist(vehicle.id);
+      if (!favorite && isWishlisted(vehicle.id)) removeFromWishlist(vehicle.id);
+    } catch (error) {
+      if (previous) addToWishlist(vehicle.id);
+      else removeFromWishlist(vehicle.id);
+      toast.error('Wishlist failed', 'Could not save your wishlist change.');
     }
   };
 

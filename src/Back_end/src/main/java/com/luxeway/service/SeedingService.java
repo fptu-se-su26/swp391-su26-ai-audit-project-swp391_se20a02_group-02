@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -32,6 +33,12 @@ public class SeedingService {
 
     // Unified vehicles table — used by all public APIs
     private final VehicleRepository vehicleRepository;
+    private final BookingRepository bookingRepository;
+    private final ReviewRepository reviewRepository;
+    private final ConversationRepository conversationRepository;
+    private final MessageRepository messageRepository;
+    private final UserDocumentRepository userDocumentRepository;
+    private final FavoriteVehicleRepository favoriteVehicleRepository;
 
     private static final String[] CITIES = {"Ho Chi Minh", "Ha Noi", "Da Nang", "Nha Trang", "Da Lat", "Hue"};
     private static final String[] CITIES_VI = {"Ho Chi Minh City", "Hanoi", "Da Nang", "Nha Trang", "Da Lat", "Hue"};
@@ -64,6 +71,31 @@ public class SeedingService {
         updateMockImagesOfExistingVehicles();
 
         log.info("Enterprise database seeding completed successfully.");
+    }
+
+    @Transactional
+    public Map<String, Object> seedDemoAcceptanceData() {
+        Map<String, Object> result = new LinkedHashMap<>();
+        User owner = userRepository.findByEmail("owner@luxeway.vn").orElseGet(this::getOrCreateDefaultOwner);
+        User customer = getOrCreateDemoCustomer();
+        User pendingKycUser = getOrCreatePendingKycCustomer();
+        Vehicle approvedVehicle = ensureDemoApprovedVehicle(owner);
+        Vehicle pendingVehicle = ensureDemoPendingVehicle(owner);
+        Booking completedBooking = ensureDemoCompletedBooking(customer, owner, approvedVehicle);
+        Review review = ensureDemoReview(completedBooking);
+        Conversation conversation = ensureDemoConversation(customer, owner, approvedVehicle);
+        UserDocument pendingDocument = ensurePendingKycDocument(pendingKycUser);
+
+        result.put("customer", customer.getEmail());
+        result.put("owner", owner.getEmail());
+        result.put("pendingKycUser", pendingKycUser.getEmail());
+        result.put("approvedVehicle", approvedVehicle.getLicensePlate());
+        result.put("pendingVehicle", pendingVehicle.getLicensePlate());
+        result.put("completedBooking", completedBooking.getBookingCode());
+        result.put("review", review.getId());
+        result.put("conversation", conversation.getId());
+        result.put("pendingDocument", pendingDocument.getId());
+        return result;
     }
 
     /**
@@ -894,6 +926,223 @@ public class SeedingService {
                     .build();
             return userRepository.save(newOwner);
         });
+    }
+
+    private User getOrCreateDemoCustomer() {
+        return userRepository.findByEmail("customer@luxeway.vn").orElseGet(() -> userRepository.save(User.builder()
+                .id("customer-user-id-002")
+                .email("customer@luxeway.vn")
+                .password(passwordEncoder.encode("password"))
+                .firstName("Customer")
+                .lastName("LuxeWay")
+                .displayName("Customer LuxeWay")
+                .role(UserRole.CUSTOMER)
+                .verified(true)
+                .kycVerified(true)
+                .drivingLicenseVerified(true)
+                .kycStatus("VERIFIED")
+                .driverLicenseStatus("VERIFIED")
+                .licenseClass("B2")
+                .licenseNumber("LXW-CUSTOMER-DEMO")
+                .isActive(true)
+                .preferredLanguage("en")
+                .preferredCurrency("VND")
+                .walletBalance(new BigDecimal("10000000.00"))
+                .build()));
+    }
+
+    private User getOrCreatePendingKycCustomer() {
+        return userRepository.findByEmail("demo.pending.kyc@luxeway.vn").orElseGet(() -> userRepository.save(User.builder()
+                .email("demo.pending.kyc@luxeway.vn")
+                .password(passwordEncoder.encode("password"))
+                .firstName("Pending")
+                .lastName("KYC")
+                .displayName("Pending KYC")
+                .role(UserRole.CUSTOMER)
+                .verified(true)
+                .kycVerified(false)
+                .drivingLicenseVerified(false)
+                .kycStatus("PENDING_APPROVAL")
+                .driverLicenseStatus("PENDING_APPROVAL")
+                .isActive(true)
+                .preferredLanguage("en")
+                .preferredCurrency("VND")
+                .walletBalance(new BigDecimal("2000000.00"))
+                .build()));
+    }
+
+    private Vehicle ensureDemoApprovedVehicle(User owner) {
+        Vehicle vehicle = findVehicleByPlate("DEMO-REVIEW-01").orElseGet(() -> vehicleRepository.save(Vehicle.builder()
+                .owner(owner)
+                .name("Toyota Camry Demo Review")
+                .brand("Toyota")
+                .model("Camry 2.5Q")
+                .year(2025)
+                .category(VehicleCategory.SEDAN)
+                .vehicleType(VehicleType.CAR)
+                .description("Demo vehicle used for review, booking, calendar and revenue acceptance checks.")
+                .thumbnailUrl("https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?q=80&w=1200&auto=format&fit=crop")
+                .pricePerDay(new BigDecimal("1800000"))
+                .deposit(new BigDecimal("5400000"))
+                .city("Ho Chi Minh")
+                .country("Vietnam")
+                .address("District 1, Ho Chi Minh City")
+                .latitude(new BigDecimal("10.776889"))
+                .longitude(new BigDecimal("106.700806"))
+                .currentLat(new BigDecimal("10.776889"))
+                .currentLng(new BigDecimal("106.700806"))
+                .seats(5)
+                .doors(4)
+                .transmission(TransmissionType.AUTOMATIC)
+                .fuelType(FuelType.GASOLINE)
+                .color("Black")
+                .licensePlate("DEMO-REVIEW-01")
+                .status(VehicleStatus.AVAILABLE)
+                .approvalStatus(VehicleStatus.APPROVED)
+                .isVerified(true)
+                .isFeatured(true)
+                .instantBook(true)
+                .deliveryAvailable(true)
+                .rating(new BigDecimal("5.00"))
+                .totalReviews(1)
+                .build()));
+        vehicle.setStatus(VehicleStatus.AVAILABLE);
+        vehicle.setApprovalStatus(VehicleStatus.APPROVED);
+        vehicle.setIsVerified(true);
+        return vehicleRepository.save(vehicle);
+    }
+
+    private Vehicle ensureDemoPendingVehicle(User owner) {
+        return findVehicleByPlate("DEMO-PENDING-01").orElseGet(() -> vehicleRepository.save(Vehicle.builder()
+                .owner(owner)
+                .name("Mercedes C-Class Pending Approval")
+                .brand("Mercedes-Benz")
+                .model("C 300 AMG")
+                .year(2026)
+                .category(VehicleCategory.LUXURY)
+                .vehicleType(VehicleType.CAR)
+                .description("Pending approval demo vehicle for the admin Vehicle Approval screen.")
+                .thumbnailUrl("https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?q=80&w=1200&auto=format&fit=crop")
+                .pricePerDay(new BigDecimal("2500000"))
+                .deposit(new BigDecimal("7500000"))
+                .city("Ha Noi")
+                .country("Vietnam")
+                .address("Hoan Kiem, Ha Noi")
+                .latitude(new BigDecimal("21.028511"))
+                .longitude(new BigDecimal("105.804817"))
+                .currentLat(new BigDecimal("21.028511"))
+                .currentLng(new BigDecimal("105.804817"))
+                .seats(5)
+                .doors(4)
+                .transmission(TransmissionType.AUTOMATIC)
+                .fuelType(FuelType.GASOLINE)
+                .color("White")
+                .licensePlate("DEMO-PENDING-01")
+                .status(VehicleStatus.PENDING_APPROVAL)
+                .approvalStatus(VehicleStatus.PENDING_APPROVAL)
+                .isVerified(false)
+                .instantBook(false)
+                .build()));
+    }
+
+    private Optional<Vehicle> findVehicleByPlate(String plate) {
+        return vehicleRepository.findAll().stream()
+                .filter(v -> plate.equalsIgnoreCase(v.getLicensePlate()))
+                .findFirst();
+    }
+
+    private Booking ensureDemoCompletedBooking(User customer, User owner, Vehicle vehicle) {
+        return bookingRepository.findByBookingCode("LXW-DEMO-COMPLETED").orElseGet(() -> bookingRepository.save(Booking.builder()
+                .bookingCode("LXW-DEMO-COMPLETED")
+                .vehicle(vehicle)
+                .renter(customer)
+                .owner(owner)
+                .status(BookingStatus.COMPLETED)
+                .startDate(LocalDate.now().minusDays(12))
+                .endDate(LocalDate.now().minusDays(10))
+                .totalDays(3)
+                .basePrice(new BigDecimal("5400000"))
+                .pricePerDay(vehicle.getPricePerDay())
+                .addonsTotal(BigDecimal.ZERO)
+                .insuranceFee(new BigDecimal("150000"))
+                .deliveryFee(BigDecimal.ZERO)
+                .serviceFee(new BigDecimal("648000"))
+                .taxes(new BigDecimal("432000"))
+                .discount(BigDecimal.ZERO)
+                .total(new BigDecimal("6630000"))
+                .deposit(vehicle.getDeposit())
+                .includeInsurance(true)
+                .pickupLocation(vehicle.getAddress())
+                .notes("Demo completed booking for review and revenue validation.")
+                .build()));
+    }
+
+    private Review ensureDemoReview(Booking booking) {
+        return reviewRepository.findByBookingId(booking.getId()).orElseGet(() -> reviewRepository.save(Review.builder()
+                .vehicle(booking.getVehicle())
+                .booking(booking)
+                .reviewer(booking.getRenter())
+                .owner(booking.getOwner())
+                .rating(5)
+                .cleanliness(5)
+                .accuracy(5)
+                .communication(5)
+                .valueRating(5)
+                .comment("Excellent vehicle condition and a smooth handover experience.")
+                .ownerResponse("Thank you for choosing LuxeWay. We look forward to hosting you again.")
+                .helpful(0)
+                .build()));
+    }
+
+    private Conversation ensureDemoConversation(User customer, User owner, Vehicle vehicle) {
+        List<Conversation> existing = conversationRepository.findConversationsByUserId(customer.getId());
+        for (Conversation c : existing) {
+            if (vehicle.getId().equals(c.getVehicleId())) {
+                return c;
+            }
+        }
+        Conversation conversation = Conversation.builder()
+                .vehicleId(vehicle.getId())
+                .participants(new HashSet<>(Arrays.asList(customer, owner)))
+                .createdAt(LocalDateTime.now().minusHours(2))
+                .lastActivity(LocalDateTime.now().minusMinutes(20))
+                .build();
+        conversation = conversationRepository.save(conversation);
+        messageRepository.save(Message.builder()
+                .conversationId(conversation.getId())
+                .senderId(customer.getId())
+                .receiverId(owner.getId())
+                .content("Hello, I would like to confirm pickup instructions for the Camry demo booking.")
+                .isRead(false)
+                .createdAt(LocalDateTime.now().minusMinutes(20))
+                .build());
+        if (!favoriteVehicleRepository.existsByUserIdAndVehicleId(customer.getId(), vehicle.getId())) {
+            favoriteVehicleRepository.save(FavoriteVehicle.builder()
+                    .userId(customer.getId())
+                    .vehicleId(vehicle.getId())
+                    .build());
+        }
+        return conversation;
+    }
+
+    private UserDocument ensurePendingKycDocument(User user) {
+        List<UserDocument> docs = userDocumentRepository.findByUserIdOrderByUploadedAtDesc(user.getId());
+        for (UserDocument doc : docs) {
+            if ("PENDING".equalsIgnoreCase(doc.getStatus()) || "UNDER_REVIEW".equalsIgnoreCase(doc.getVerificationStatus())) {
+                return doc;
+            }
+        }
+        return userDocumentRepository.save(UserDocument.builder()
+                .user(user)
+                .documentType("NATIONAL_ID")
+                .url("https://luxeway.local/demo/pending-kyc-national-id.png")
+                .fileUrl("https://luxeway.local/demo/pending-kyc-national-id.png")
+                .status("PENDING")
+                .verificationStatus("UNDER_REVIEW")
+                .ekycFullName("Pending KYC")
+                .ekycIdNumber("079000000001")
+                .ekycDob("2000-01-01")
+                .build());
     }
 
     private void seedCars(User owner) {

@@ -4,6 +4,7 @@ import { MapPin, Navigation, Compass, ShieldAlert, Sparkles, RefreshCw, User, Ph
 import { deliverySimService } from '@/services/helpService';
 import { useT } from '@/i18n/translations';
 import SockJS from 'sockjs-client';
+import { WS_URL } from '@/utils';
 
 interface DeliveryTrackerMapProps {
   bookingId: string;
@@ -59,7 +60,7 @@ export const DeliveryTrackerMap: React.FC<DeliveryTrackerMapProps> = ({ bookingI
     let ws: WebSocket | null = null;
     let subscribed = false;
     try {
-      ws = new SockJS('http://localhost:8080/ws') as unknown as WebSocket;
+      ws = new SockJS(WS_URL) as unknown as WebSocket;
 
       ws.onopen = () => {
         // Send STOMP CONNECT frame

@@ -5,14 +5,12 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import SockJS from 'sockjs-client';
 import Stomp from 'stompjs';
 import { mapService, BookingTrackingInfo } from '@/services/mapService';
-import { formatCurrency } from '@/utils';
+import { WS_URL } from '@/utils';
 import { useUIStore } from '@/store';
 import { ArrowLeft, Play, Square, Compass, RefreshCw, Layers } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
 import { bookingService } from '@/services/bookingService';
-
-const GOONG_MAPTILES_KEY = (import.meta as any).env.VITE_GOONG_MAPTILES_KEY || 'mock_goong_key';
-const MAP_STYLE_URL = `https://tiles.goong.io/assets/goong_map_web.json?api_key=${GOONG_MAPTILES_KEY}`;
+import { getMapStyleUrl, installMapStyleFallback } from '@/components/map/mapStyle';
 
 // Polyline Decoder
 function decodePolyline(encoded: string): [number, number][] {
@@ -75,6 +73,47 @@ export const OwnerBookingTrackingPage: React.FC = () => {
   const [vehicleLocation, setVehicleLocation] = useState<{ lat: number; lng: number; speed: number; heading: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+
+  const normalizedBookingStatus = String(bookingInfo?.status || '').toLowerCase();
+  const isWaitingForCustomerPayment = ['waiting_payment', 'payment_rejected', 'payment_expired'].includes(normalizedBookingStatus);
+  const isWaitingForPaymentReview = normalizedBookingStatus === 'payment_pending';
+  const isCancelled = normalizedBookingStatus.includes('cancel');
+  const isCompleted = ['completed', 'return_completed'].includes(normalizedBookingStatus);
+  const canStartPickup = ['confirmed', 'payment_verified', 'owner_approved', 'ready_for_pickup'].includes(normalizedBookingStatus);
+  const canStartTrip = ['picking_up', 'ready_for_pickup', 'checked_out'].includes(normalizedBookingStatus);
+  const canCompleteTrip = ['active', 'in_progress', 'in_rental', 'return_pending'].includes(normalizedBookingStatus);
+
+  const lifecycleMessage = (() => {
+    if (isWaitingForCustomerPayment) {
+      return {
+        title: 'Waiting for customer payment',
+        body: 'The renter has signed or prepared the booking but has not completed payment yet. Owner lifecycle actions are locked until payment is submitted and confirmed.',
+        tone: 'amber',
+      };
+    }
+    if (isWaitingForPaymentReview) {
+      return {
+        title: 'Payment submitted - waiting review',
+        body: 'The renter has submitted payment. Keep the vehicle reserved, then wait for admin/payment confirmation before pickup or trip actions.',
+        tone: 'blue',
+      };
+    }
+    if (isCancelled) {
+      return {
+        title: 'Booking is cancelled',
+        body: 'This booking has been cancelled. Tracking and trip lifecycle actions are closed.',
+        tone: 'red',
+      };
+    }
+    if (isCompleted) {
+      return {
+        title: 'Trip completed',
+        body: 'The rental lifecycle is complete. No further owner transition is required.',
+        tone: 'emerald',
+      };
+    }
+    return null;
+  })();
 
   const handleUpdateBookingStatus = async (newStatus: 'picking_up' | 'active' | 'completed') => {
     if (!bookingId) return;
@@ -141,13 +180,14 @@ export const OwnerBookingTrackingPage: React.FC = () => {
 
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
-      style: MAP_STYLE_URL,
+      style: getMapStyleUrl(isDark),
       center: [bookingInfo.pickupLng || 106.660, bookingInfo.pickupLat || 10.762],
       zoom: 13,
       attributionControl: false
     });
 
     map.addControl(new maplibregl.NavigationControl({ showCompass: true }), 'top-right');
+    installMapStyleFallback(map, isDark);
     mapRef.current = map;
 
     map.on('load', () => {
@@ -241,7 +281,7 @@ export const OwnerBookingTrackingPage: React.FC = () => {
     });
 
     // 4. Connect WebSockets Stomp client
-    const socket = new SockJS('http://localhost:8080/ws');
+    const socket = new SockJS(WS_URL);
     const stompClient = Stomp.over(socket);
     stompClient.debug = () => {};
 
@@ -502,29 +542,47 @@ export const OwnerBookingTrackingPage: React.FC = () => {
             <div className="space-y-2.5">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Current State: <span className="text-emerald-450 font-extrabold">{bookingInfo.status}</span></p>
               
-              <div className="grid grid-cols-1 gap-2">
-                <button
-                  disabled={updatingStatus || bookingInfo.status === 'PICKING_UP'}
-                  onClick={() => handleUpdateBookingStatus('picking_up')}
-                  className="w-full py-2.5 px-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <i className="fa-solid fa-truck-ramp-box"></i> Start Pickup/Delivery (PICKING_UP)
-                </button>
-                <button
-                  disabled={updatingStatus || bookingInfo.status === 'ACTIVE' || bookingInfo.status === 'IN_PROGRESS'}
-                  onClick={() => handleUpdateBookingStatus('active')}
-                  className="w-full py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <i className="fa-solid fa-key"></i> Start Trip (ACTIVE)
-                </button>
-                <button
-                  disabled={updatingStatus || bookingInfo.status === 'COMPLETED'}
-                  onClick={() => handleUpdateBookingStatus('completed')}
-                  className="w-full py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <i className="fa-solid fa-circle-check"></i> Complete Trip (COMPLETED)
-                </button>
-              </div>
+              {lifecycleMessage ? (
+                <div className={`rounded-2xl border p-4 text-xs leading-relaxed ${
+                  lifecycleMessage.tone === 'amber'
+                    ? 'border-amber-400/30 bg-amber-400/10 text-amber-100'
+                    : lifecycleMessage.tone === 'blue'
+                      ? 'border-blue-400/30 bg-blue-400/10 text-blue-100'
+                      : lifecycleMessage.tone === 'red'
+                        ? 'border-red-400/30 bg-red-400/10 text-red-100'
+                        : 'border-emerald-400/30 bg-emerald-400/10 text-emerald-100'
+                }`}>
+                  <p className="font-black uppercase tracking-wider mb-1">{lifecycleMessage.title}</p>
+                  <p className="opacity-85">{lifecycleMessage.body}</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-2">
+                  <button
+                    disabled={updatingStatus || !canStartPickup}
+                    onClick={() => handleUpdateBookingStatus('picking_up')}
+                    className="w-full py-2.5 px-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-all disabled:opacity-45 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <i className="fa-solid fa-truck-ramp-box"></i> Start Pickup/Delivery (PICKING_UP)
+                  </button>
+                  <button
+                    disabled={updatingStatus || !canStartTrip}
+                    onClick={() => handleUpdateBookingStatus('active')}
+                    className="w-full py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all disabled:opacity-45 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <i className="fa-solid fa-key"></i> Start Trip (ACTIVE)
+                  </button>
+                  <button
+                    disabled={updatingStatus || !canCompleteTrip}
+                    onClick={() => handleUpdateBookingStatus('completed')}
+                    className="w-full py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all disabled:opacity-45 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <i className="fa-solid fa-circle-check"></i> Complete Trip (COMPLETED)
+                  </button>
+                  <p className="text-[10px] text-slate-400 leading-relaxed">
+                    Actions unlock in order: confirmed booking, pickup/delivery, active trip, then completed trip.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 

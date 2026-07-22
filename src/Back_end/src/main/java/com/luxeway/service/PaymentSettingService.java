@@ -20,19 +20,19 @@ public class PaymentSettingService {
     @Transactional
     public PaymentSetting getActiveSetting() {
         return paymentSettingRepository.findFirstByEnabledTrue()
-                .orElseGet(() -> {
-                    log.warn("No active payment settings found in DB — auto-initializing default setting.");
-                    PaymentSetting defaultSetting = PaymentSetting.builder()
-                            .id("P1")
-                            .bankName("MB")
-                            .accountNumber("0377096245")
-                            .ownerName("NGUYEN VAN DANG")
-                            .enabled(true)
-                            .updatedBy("system")
-                            .updatedTime(LocalDateTime.now())
-                            .build();
-                    return paymentSettingRepository.saveAndFlush(defaultSetting);
-                });
+                .orElseGet(this::createDemoDefaultSetting);
+    }
+
+    private PaymentSetting createDemoDefaultSetting() {
+        PaymentSetting setting = PaymentSetting.builder()
+                .id("P1")
+                .bankName("LuxeWay Demo Bank")
+                .accountNumber("0000000000")
+                .ownerName("LuxeWay Demo")
+                .enabled(true)
+                .updatedBy("system")
+                .build();
+        return paymentSettingRepository.save(setting);
     }
 
     @Transactional

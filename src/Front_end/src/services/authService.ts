@@ -7,6 +7,47 @@ const TOKEN_KEY = 'luxeway_access_token';
 const REFRESH_TOKEN_KEY = 'luxeway_refresh_token';
 const USER_KEY = 'luxeway_user';
 
+type RegistrationOtpResponse = {
+  email: string;
+  requiresVerification: boolean;
+  expiresInMinutes: number;
+};
+
+function storeAuthResponse(response: any): User | null {
+  if (!response?.accessToken) return null;
+
+  localStorage.setItem(TOKEN_KEY, response.accessToken);
+  if (response.refreshToken) {
+    localStorage.setItem(REFRESH_TOKEN_KEY, response.refreshToken);
+  }
+
+  const userInfo = response.user || {};
+  const user = {
+    id: userInfo.id?.toString() || userInfo.userId?.toString(),
+    email: userInfo.email,
+    firstName: userInfo.firstName,
+    lastName: userInfo.lastName,
+    displayName: userInfo.displayName || `${userInfo.firstName || ''} ${userInfo.lastName || ''}`.trim(),
+    role: userInfo.role?.toLowerCase() || 'customer',
+    phone: userInfo.phone || '',
+    avatar: resolveImageUrl(userInfo.avatar),
+    verified: userInfo.verified || false,
+    rating: userInfo.rating || 0,
+    totalReviews: userInfo.totalReviews || 0,
+    joinedAt: userInfo.joinedAt || new Date().toISOString(),
+    location: userInfo.location || '',
+    bio: userInfo.bio || '',
+    badges: userInfo.badges || [],
+    accountType: userInfo.accountType || 'INDIVIDUAL',
+    preferredLanguage: userInfo.preferredLanguage || 'en',
+    kycStatus: userInfo.kycStatus || 'NOT_UPLOADED',
+    driverLicenseStatus: userInfo.driverLicenseStatus || 'NOT_UPLOADED',
+  } as unknown as User;
+
+  localStorage.setItem(USER_KEY, JSON.stringify(user));
+  return user;
+}
+
 // ====== REAL BACKEND AUTH SERVICE ======
 export const authService = {
   /**
@@ -14,48 +55,17 @@ export const authService = {
    */
   async login(email: string, password: string): Promise<User | null> {
     try {
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(REFRESH_TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
       const res = await apiClient.post<any>('/auth/login', { 
-        email, 
+        email: email.trim(), 
         password 
       });
       const response = res.data || res;
       
       // Backend returns: { accessToken, refreshToken, user }
-      if (response.accessToken) {
-        localStorage.setItem(TOKEN_KEY, response.accessToken);
-        if (response.refreshToken) {
-          localStorage.setItem(REFRESH_TOKEN_KEY, response.refreshToken);
-        }
-        
-        const userInfo = response.user;
-        const user = {
-          id: userInfo.id?.toString() || userInfo.userId?.toString(),
-          email: userInfo.email,
-          firstName: userInfo.firstName,
-          lastName: userInfo.lastName,
-          displayName: userInfo.displayName || `${userInfo.firstName} ${userInfo.lastName}`,
-          role: userInfo.role?.toLowerCase() || 'customer',
-          phone: userInfo.phone || '',
-          avatar: resolveImageUrl(userInfo.avatar),
-          verified: userInfo.verified || false,
-          kycVerified: userInfo.kycVerified || false,
-          rating: userInfo.rating || 5.0,
-          totalReviews: userInfo.totalReviews || 0,
-          joinedAt: userInfo.joinedAt || new Date().toISOString(),
-          location: userInfo.location || '',
-          bio: userInfo.bio || '',
-          badges: userInfo.badges || [],
-          accountType: userInfo.accountType || 'INDIVIDUAL',
-          preferredLanguage: userInfo.preferredLanguage || 'en',
-          kycStatus: userInfo.kycStatus || 'NOT_UPLOADED',
-          driverLicenseStatus: userInfo.driverLicenseStatus || 'NOT_UPLOADED',
-          licenseClass: userInfo.licenseClass || '',
-        } as unknown as User;
-        
-        localStorage.setItem(USER_KEY, JSON.stringify(user));
-        return user;
-      }
-      return null;
+      return storeAuthResponse(response);
     } catch (error: any) {
       console.error('Login failed:', error);
       throw new Error(error.response?.data?.message || 'Invalid email or password');
@@ -80,44 +90,61 @@ export const authService = {
       const res = await apiClient.post<any>('/auth/register', payload);
       const response = res.data || res;
       
-      if (response.accessToken) {
-        localStorage.setItem(TOKEN_KEY, response.accessToken);
-        if (response.refreshToken) {
-          localStorage.setItem(REFRESH_TOKEN_KEY, response.refreshToken);
-        }
-        
-        const userInfo = response.user;
-        const user = {
-          id: userInfo.id?.toString() || userInfo.userId?.toString(),
-          email: userInfo.email,
-          firstName: userInfo.firstName,
-          lastName: userInfo.lastName,
-          displayName: userInfo.displayName || `${userInfo.firstName} ${userInfo.lastName}`,
-          role: userInfo.role?.toLowerCase() || 'customer',
-          phone: userInfo.phone || '',
-          avatar: resolveImageUrl(userInfo.avatar),
-          verified: userInfo.verified || false,
-          kycVerified: userInfo.kycVerified || false,
-          rating: userInfo.rating || 0,
-          totalReviews: userInfo.totalReviews || 0,
-          joinedAt: userInfo.joinedAt || new Date().toISOString(),
-          location: userInfo.location || '',
-          bio: userInfo.bio || '',
-          badges: userInfo.badges || [],
-          accountType: payload.accountType as any,
-          preferredLanguage: userInfo.preferredLanguage || 'en',
-          kycStatus: userInfo.kycStatus || 'NOT_UPLOADED',
-          driverLicenseStatus: userInfo.driverLicenseStatus || 'NOT_UPLOADED',
-          licenseClass: userInfo.licenseClass || '',
-        } as unknown as User;
-        
-        localStorage.setItem(USER_KEY, JSON.stringify(user));
-        return user;
-      }
-      return null;
+      return storeAuthResponse(response);
     } catch (error: any) {
       console.error('Registration failed:', error);
       throw new Error(error.response?.data?.message || 'Registration failed. Email may already exist.');
+    }
+  },
+
+  async requestRegistration(data: RegisterData): Promise<RegistrationOtpResponse> {
+    try {
+      const payload = {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        password: data.password,
+        phone: data.phone || '',
+        role: (data.role || 'customer').toUpperCase(),
+        accountType: (data.accountType || 'individual').toUpperCase(),
+      };
+
+      const res = await apiClient.post<any>('/auth/register', payload);
+      const response = res.data || res;
+      return {
+        email: response.email || data.email,
+        requiresVerification: response.requiresVerification ?? true,
+        expiresInMinutes: response.expiresInMinutes || 5,
+      };
+    } catch (error: any) {
+      console.error('Registration OTP request failed:', error);
+      throw new Error(error.response?.data?.message || error.message || 'Registration failed. Email may already exist.');
+    }
+  },
+
+  async verifyRegistrationOTP(email: string, otp: string): Promise<User | null> {
+    try {
+      const res = await apiClient.post<any>('/auth/register/verify-otp', { email, otp });
+      const response = res.data || res;
+      return storeAuthResponse(response);
+    } catch (error: any) {
+      console.error('Registration OTP verification failed:', error);
+      throw new Error(error.response?.data?.message || error.message || 'Invalid or expired registration OTP');
+    }
+  },
+
+  async resendRegistrationOTP(email: string): Promise<RegistrationOtpResponse> {
+    try {
+      const res = await apiClient.post<any>('/auth/register/resend-otp', { email });
+      const response = res.data || res;
+      return {
+        email: response.email || email,
+        requiresVerification: response.requiresVerification ?? true,
+        expiresInMinutes: response.expiresInMinutes || 5,
+      };
+    } catch (error: any) {
+      console.error('Registration OTP resend failed:', error);
+      throw new Error(error.response?.data?.message || error.message || 'Failed to resend registration OTP');
     }
   },
 
@@ -181,7 +208,6 @@ export const authService = {
         phone: userInfo.phone || '',
         avatar: resolveImageUrl(userInfo.avatar || userInfo.profilePicture),
         verified: userInfo.verified || userInfo.isVerified || false,
-        kycVerified: userInfo.kycVerified || false,
         rating: userInfo.rating || 0,
         totalReviews: userInfo.totalReviews || 0,
         joinedAt: userInfo.joinedAt || userInfo.createdAt || '2024-01-15T09:00:00Z',
@@ -192,7 +218,6 @@ export const authService = {
         preferredLanguage: userInfo.preferredLanguage || 'en',
         kycStatus: userInfo.kycStatus || 'NOT_UPLOADED',
         driverLicenseStatus: userInfo.driverLicenseStatus || 'NOT_UPLOADED',
-        licenseClass: userInfo.licenseClass || '',
       } as unknown as User;
       
       localStorage.setItem(USER_KEY, JSON.stringify(user));

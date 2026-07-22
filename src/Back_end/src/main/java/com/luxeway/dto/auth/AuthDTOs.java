@@ -75,6 +75,19 @@ public class AuthDTOs {
     }
 
     @Data
+    public static class RegistrationResponse {
+        private String email;
+        private boolean requiresVerification;
+        private int expiresInMinutes;
+
+        public RegistrationResponse(String email, boolean requiresVerification, int expiresInMinutes) {
+            this.email = email;
+            this.requiresVerification = requiresVerification;
+            this.expiresInMinutes = expiresInMinutes;
+        }
+    }
+
+    @Data
     public static class ChangePasswordRequest {
         @NotBlank(message = "{validation.password.required}")
         private String currentPassword;
@@ -98,6 +111,13 @@ public class AuthDTOs {
         @NotBlank(message = "{validation.otp.required}")
         @Size(min = 6, max = 6, message = "{validation.otp.size}")
         private String otp;
+    }
+
+    @Data
+    public static class ResendRegistrationOtpRequest {
+        @NotBlank(message = "{validation.email.required}")
+        @Email(message = "{validation.email.invalid}")
+        private String email;
     }
 
     @Data

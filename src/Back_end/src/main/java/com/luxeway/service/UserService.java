@@ -53,6 +53,16 @@ public class UserService {
         if (req.getAvatar() != null) user.setAvatar(req.getAvatar());
         if (req.getCompanyName() != null) user.setCompanyName(req.getCompanyName());
         if (req.getPreferredLanguage() != null) user.setPreferredLanguage(req.getPreferredLanguage());
+        if (req.getPreferredCurrency() != null) user.setPreferredCurrency(req.getPreferredCurrency());
+        if (req.getEmailBookingNotifications() != null) user.setEmailBookingNotifications(req.getEmailBookingNotifications());
+        if (req.getEmailReviewNotifications() != null) user.setEmailReviewNotifications(req.getEmailReviewNotifications());
+        if (req.getEmailMarketingNotifications() != null) user.setEmailMarketingNotifications(req.getEmailMarketingNotifications());
+        if (req.getPushNotifications() != null) user.setPushNotifications(req.getPushNotifications());
+        if (req.getOwnerBankName() != null) user.setOwnerBankName(req.getOwnerBankName());
+        if (req.getOwnerBankAccountNumber() != null) user.setOwnerBankAccountNumber(req.getOwnerBankAccountNumber());
+        if (req.getOwnerBankAccountHolder() != null) user.setOwnerBankAccountHolder(req.getOwnerBankAccountHolder());
+        if (req.getOwnerPayoutEnabled() != null) user.setOwnerPayoutEnabled(req.getOwnerPayoutEnabled());
+        if (req.getSecurityTwoFactorEnabled() != null) user.setSecurityTwoFactorEnabled(req.getSecurityTwoFactorEnabled());
         if (req.getLicenseClass() != null && !req.getLicenseClass().trim().isEmpty()) {
             user.setLicenseClass(req.getLicenseClass().trim().toUpperCase());
             user.setDriverLicenseStatus("VERIFIED");
@@ -180,6 +190,16 @@ public class UserService {
         resp.setJoinedAt(u.getJoinedAt() != null ? u.getJoinedAt().toString() : null);
         resp.setLastActive(u.getLastActive() != null ? u.getLastActive().toString() : null);
         resp.setPreferredLanguage(u.getPreferredLanguage());
+        resp.setPreferredCurrency(u.getPreferredCurrency());
+        resp.setEmailBookingNotifications(u.getEmailBookingNotifications());
+        resp.setEmailReviewNotifications(u.getEmailReviewNotifications());
+        resp.setEmailMarketingNotifications(u.getEmailMarketingNotifications());
+        resp.setPushNotifications(u.getPushNotifications());
+        resp.setOwnerBankName(u.getOwnerBankName());
+        resp.setOwnerBankAccountNumber(u.getOwnerBankAccountNumber());
+        resp.setOwnerBankAccountHolder(u.getOwnerBankAccountHolder());
+        resp.setOwnerPayoutEnabled(u.getOwnerPayoutEnabled());
+        resp.setSecurityTwoFactorEnabled(u.getSecurityTwoFactorEnabled());
         return resp;
     }
 

@@ -1,221 +1,437 @@
-import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { FileText, CheckCircle, Shield, Pencil, Key, ArrowRight } from 'lucide-react';
-import { contractService, DigitalContract } from '@/services/contractService';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { ArrowLeft, BadgeCheck, CalendarDays, Car, CheckCircle2, CreditCard, ExternalLink, FileSignature, RefreshCw, ShieldCheck, UserRound } from 'lucide-react';
 import { bookingService } from '@/services/bookingService';
+import { contractService, DigitalContract } from '@/services/contractService';
 import { useAuthStore, useUIStore } from '@/store';
 import { useToast } from '@/components/ui/Toast';
+import { formatCurrency } from '@/utils';
+import type { Booking } from '@/types';
 
 const DigitalContractPage: React.FC = () => {
   const { bookingId } = useParams<{ bookingId: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { user } = useAuthStore();
-  const { language } = useUIStore();
-  const isVi = language === 'vi';
   const toast = useToast();
+  const { user } = useAuthStore();
+  const { language, theme } = useUIStore();
+  const isDark = theme === 'dark';
 
+  const [booking, setBooking] = useState<Booking | null>(null);
   const [contract, setContract] = useState<DigitalContract | null>(null);
-  const [booking, setBooking] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [signature, setSignature] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [signature, setSignature] = useState(user?.displayName || '');
+  const [loading, setLoading] = useState(true);
+  const [signing, setSigning] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  React.useEffect(() => {
-    if (!bookingId || !user) return;
+  const role = user?.role?.toLowerCase();
+  const isOwner = role === 'owner';
+  const activeSignerLabel = isOwner ? 'Owner signature' : 'Renter signature';
+  const hasSigned = isOwner ? !!contract?.ownerSignedAt : !!contract?.renterSignedAt;
+  const bookingStatus = String(booking?.status || '').toLowerCase();
+  const renterCanPay = !isOwner && !!contract?.renterSignedAt && ['waiting_payment', 'payment_rejected'].includes(bookingStatus);
+  const paymentMethod = searchParams.get('method') === 'bank_transfer' ? 'bank_transfer' : 'payos';
+  const docusealEmbedUrl = contract?.currentSignerEmbedUrl || (isOwner ? contract?.docusealOwnerEmbedUrl : contract?.docusealRenterEmbedUrl);
+  const docusealEnabled = !!docusealEmbedUrl;
 
-    const loadData = async () => {
+  const statusText = useMemo(() => {
+    if (!contract) return 'Preparing';
+    if (contract.isFullySigned) return 'Fully signed';
+    if (contract.renterSignedAt && !contract.ownerSignedAt) return 'Waiting for owner';
+    if (contract.ownerSignedAt && !contract.renterSignedAt) return 'Waiting for renter';
+    return 'Awaiting signatures';
+  }, [contract]);
+
+  const nextActionText = useMemo(() => {
+    if (!contract) return '';
+    if (isOwner) {
+      if (!contract.renterSignedAt) return 'The renter has not signed yet. You can review this booking again after the renter signs.';
+      if (!contract.ownerSignedAt) return 'The renter signature is recorded. Please sign as owner to complete the official rental contract.';
+      return 'Owner signature is recorded. No further owner action is required for the contract.';
+    }
+    if (!contract.renterSignedAt) return 'Sign as renter first. After your renter signature is recorded, you can pay immediately.';
+    if (renterCanPay) return 'Your signature is recorded. You can proceed to payment now; owner signature can be completed later from the owner portal.';
+    if (!contract.ownerSignedAt) return 'Your signature is recorded. Waiting for the owner to sign the contract.';
+    return 'Both signatures are recorded.';
+  }, [contract, isOwner, renterCanPay]);
+
+  useEffect(() => {
+    if (!bookingId) return;
+
+    let mounted = true;
+    const load = async () => {
       try {
-        setIsLoading(true);
-        // Load booking details first
+        setLoading(true);
         const bookingData = await bookingService.getById(bookingId);
-        setBooking(bookingData);
+        if (!mounted) return;
 
-        // Then load contract
-        let contractData = await contractService.getContractByBooking(bookingId);
-        
-        // Auto-create for demo purposes if not found
-        if (!contractData) {
-          contractData = await contractService.createContract(bookingId, `https://luxeway.io.vn/contracts/${bookingId}.pdf`);
+        if (!bookingData) {
+          toast.error('Booking not found', 'Please open the contract from a valid booking.');
+          return;
         }
-        setContract(contractData);
-      } catch (error) {
-        console.error(error);
-        // Fallback for demo
-        try {
-           const newData = await contractService.createContract(bookingId!, `https://luxeway.io.vn/contracts/${bookingId}.pdf`);
-           setContract(newData);
-        } catch (innerError) {
-           toast.error(isVi ? 'Không thể tải hợp đồng số' : 'Failed to load digital contract');
+
+        setBooking(bookingData);
+        const contractData = await contractService.ensureForBooking(bookingId);
+        if (mounted) setContract(contractData);
+        if (mounted && searchParams.get('signed') === 'docuseal') {
+          toast.success('Signature submitted', 'DocuSeal returned to LuxeWay. Refreshing contract status.');
         }
+      } catch (error: any) {
+        toast.error('Contract unavailable', error?.message || 'Unable to prepare the digital contract.');
       } finally {
-        setIsLoading(false);
+        if (mounted) setLoading(false);
       }
     };
 
-    loadData();
-  }, [bookingId, user, isVi, toast]);
+    load();
+    return () => { mounted = false; };
+  }, [bookingId]);
 
-  const handleSign = async () => {
-    if (!signature.trim()) {
-      toast.error(isVi ? 'Vui lòng nhập chữ ký' : 'Please enter your signature');
-      return;
-    }
-    if (!contract || !bookingId) return;
-    
-    setIsSubmitting(true);
+  const refreshContract = async () => {
+    if (!bookingId) return;
+    setRefreshing(true);
     try {
-      await contractService.signContract(contract.id, signature);
-      toast.success(isVi ? 'Đã ký hợp đồng thành công!' : 'Contract signed successfully!');
-      
-      // Navigate to Payment immediately
-      navigate(`/booking/${bookingId}/payment`);
-    } catch (error) {
-      toast.error(isVi ? 'Lỗi khi ký hợp đồng' : 'Failed to sign contract');
-      setIsSubmitting(false); // Only set false on error, if success we are navigating away
+      const updated = await contractService.getByBooking(bookingId);
+      if (updated) {
+        setContract(updated);
+        const signedNow = isOwner ? !!updated.ownerSignedAt : !!updated.renterSignedAt;
+        if (signedNow) {
+          toast.success('Contract status updated', 'DocuSeal signature has been recorded in LuxeWay.');
+        } else {
+          toast.info('Still waiting', 'Complete the DocuSeal signing flow, then refresh again.');
+        }
+      }
+    } catch (error: any) {
+      toast.error('Refresh failed', error?.message || 'Unable to refresh DocuSeal status.');
+    } finally {
+      setRefreshing(false);
     }
   };
 
-  const isOwner = user?.role === 'owner';
-  const hasSigned = isOwner ? !!contract?.ownerSignature : !!contract?.renterSignature;
+  const handleSign = async () => {
+    if (!contract || !signature.trim()) {
+      toast.error('Signature required', 'Enter your full name before signing.');
+      return;
+    }
 
-  // Use either booking vehicle info or fallback
-  const vehicleName = booking?.vehicle?.brand && booking?.vehicle?.model 
-    ? `${booking.vehicle.brand} ${booking.vehicle.model}` 
-    : 'Selected Vehicle';
-    
-  const customerName = user?.displayName || user?.firstName + ' ' + user?.lastName || 'Customer';
+    setSigning(true);
+    try {
+      const signed = await contractService.sign(contract.id, signature.trim());
+      setContract(signed);
+      toast.success('Contract signed', `${activeSignerLabel} has been recorded.`);
+    } catch (error: any) {
+      toast.error('Signing failed', error?.message || 'The contract could not be signed.');
+    } finally {
+      setSigning(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className={`min-h-screen pt-28 flex items-center justify-center ${isDark ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-900'}`}>
+        <div className="text-center">
+          <div className="w-10 h-10 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-sm font-bold uppercase tracking-wider text-slate-500">Preparing digital contract...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!booking || !contract) {
+    return (
+      <div className={`min-h-screen pt-28 flex items-center justify-center px-4 ${isDark ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-900'}`}>
+        <div className="max-w-md w-full rounded-2xl border border-red-200/40 bg-white dark:bg-slate-900 p-8 text-center shadow-xl">
+          <FileSignature className="w-10 h-10 text-red-500 mx-auto mb-4" />
+          <h1 className="font-display text-2xl font-black mb-2">Contract not available</h1>
+          <p className="text-sm text-slate-500 mb-6">The booking could not be loaded for electronic signing.</p>
+          <button onClick={() => navigate('/dashboard/bookings')} className="btn-primary w-full py-3 justify-center">
+            Back to bookings
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#0B0E17] py-12 px-4 sm:px-6 lg:px-8 pt-24">
-      <div className="max-w-3xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-xl overflow-hidden border border-slate-200 dark:border-slate-800"
-        >
-          {/* Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-8 text-white">
-            <div className="flex items-center gap-2 mb-3">
-              <Shield className="w-5 h-5 text-blue-200" />
-              <span className="text-blue-100 font-medium text-sm tracking-wider uppercase">LuxeWay Secure Gateway</span>
-            </div>
-            <h2 className="text-3xl font-bold flex items-center gap-3">
-              <FileText className="w-8 h-8" />
-              {isVi ? 'Hợp Đồng Thuê Xe Điện Tử' : 'Digital Rental Agreement'}
-            </h2>
-            <p className="text-blue-100 mt-2 opacity-90 text-lg">
-              Booking ID: <span className="font-mono bg-black/20 px-2 py-1 rounded">#{bookingId?.slice(-6).toUpperCase()}</span>
-            </p>
-          </div>
+    <div className={`min-h-screen pt-24 pb-12 ${isDark ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-900'}`}>
+      <div className="max-w-6xl mx-auto px-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-slate-500 hover:text-slate-900 dark:hover:text-white">
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </button>
+          <Link to="/dashboard/bookings" className="text-xs font-black uppercase tracking-wider text-amber-600">
+            My bookings
+          </Link>
+        </div>
 
-          <div className="p-8">
-            {isLoading ? (
-              <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
+          <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden">
+            <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 text-amber-600 mb-2">
+                  <FileSignature className="w-5 h-5" />
+                  <span className="text-[11px] font-black uppercase tracking-widest">LuxeWay electronic rental agreement</span>
+                </div>
+                <h1 className="font-display text-2xl sm:text-3xl font-black tracking-tight">Digital Contract</h1>
+                <p className="text-sm text-slate-500 mt-2">Booking {booking.bookingCode || booking.id}</p>
               </div>
-            ) : (
-              <>
-                {/* Contract Content */}
-                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-3xl p-8 mb-8 border border-slate-100 dark:border-slate-800">
-                  <h3 className="font-bold text-xl text-slate-800 dark:text-slate-200 mb-6 text-center">
-                    {isVi ? 'HỢP ĐỒNG THUÊ XE' : 'VEHICLE RENTAL AGREEMENT'}
-                  </h3>
-                  
-                  <div className="space-y-6 text-slate-600 dark:text-slate-400 leading-relaxed">
-                    <p>
-                      {isVi 
-                        ? <>Hợp đồng thuê xe này ("Hợp đồng") được lập giữa Chủ xe và Người thuê (<strong>{customerName}</strong>) về việc thuê phương tiện: <strong>{vehicleName}</strong>.</>
-                        : <>This Vehicle Rental Agreement (the "Agreement") is entered into by and between the Vehicle Owner and the Renter (<strong>{customerName}</strong>) for the rental of the vehicle: <strong>{vehicleName}</strong>.</>}
-                    </p>
-                    
-                    <div className="space-y-4">
-                      <p>
-                        <strong>1. {isVi ? 'Điều khoản thuê' : 'Rental Terms'}:</strong> {isVi ? 'Người thuê đồng ý thuê xe trong thời gian đã chỉ định và hoàn trả xe trong cùng tình trạng như khi nhận. Mọi hư hỏng phát sinh trong thời gian thuê sẽ do Người thuê chịu trách nhiệm.' : 'The Renter agrees to rent the vehicle for the specified duration and return it in the same condition as received. Any damages incurred during the rental period will be the Renter\'s liability.'}
-                      </p>
-                      
-                      <p>
-                        <strong>2. {isVi ? 'Thanh toán' : 'Payments'}:</strong> {isVi ? 'Người thuê đồng ý thanh toán tất cả các khoản phí liên quan đến việc thuê xe như hiển thị lúc thanh toán.' : 'The Renter agrees to pay all fees associated with the rental as displayed at checkout.'}
-                      </p>
-                      
-                      <p>
-                        <strong>3. {isVi ? 'Bảo hiểm & Trách nhiệm' : 'Insurance & Liability'}:</strong> {isVi ? 'Xe được bảo hiểm theo chính sách tiêu chuẩn của LuxeWay. Người thuê chịu trách nhiệm về bất kỳ khoản khấu trừ hoặc thiệt hại nào không được bảo hiểm chi trả.' : 'The vehicle is covered by LuxeWay\'s standard insurance policy. The Renter is responsible for any deductible or damages not covered by insurance.'}
-                      </p>
-                    </div>
+              <span className={`px-3 py-1.5 rounded-full text-[11px] font-black uppercase tracking-wider border ${
+                contract.isFullySigned
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/20'
+                  : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:border-amber-500/20'
+              }`}>
+                {statusText}
+              </span>
+            </div>
 
-                    <div className="border-t border-slate-200 dark:border-slate-700 pt-6 mt-8">
-                      <p className="italic text-sm">
-                        {isVi 
-                          ? 'Bằng việc cung cấp chữ ký điện tử dưới đây, bạn ràng buộc về mặt pháp lý với các điều khoản của hợp đồng này theo Luật Giao dịch Điện tử.' 
-                          : 'By providing your digital signature below, you legally bind yourself to the terms of this agreement pursuant to the Electronic Transactions Act.'}
-                      </p>
-                    </div>
+            <div className="p-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4">
+                  <Car className="w-5 h-5 text-amber-600 mb-3" />
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Vehicle</p>
+                  <p className="font-bold mt-1">{booking.vehicle?.brand} {booking.vehicle?.name}</p>
+                </div>
+                <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4">
+                  <CalendarDays className="w-5 h-5 text-blue-600 mb-3" />
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Rental period</p>
+                  <p className="font-bold mt-1">{booking.startDate} to {booking.endDate}</p>
+                </div>
+                <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4">
+                  <ShieldCheck className="w-5 h-5 text-emerald-600 mb-3" />
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total payment</p>
+                  <p className="font-bold mt-1">{formatCurrency(booking.pricing?.total || 0, language)}</p>
+                </div>
+              </div>
+
+              <div className="rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-5">
+                <h2 className="font-display text-lg font-black mb-4">Agreement terms</h2>
+                <div className="grid gap-3 text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                  <p>1. The renter accepts responsibility for vehicle pickup, return timing, traffic penalties, and any damages not covered by the selected insurance package.</p>
+                  <p>2. The owner confirms the vehicle is available, roadworthy, insured, and matches the listing details shown at the time of booking.</p>
+                  <p>3. LuxeWay records both signatures with timestamp evidence. The contract becomes effective only after both renter and owner signatures are recorded.</p>
+                  <p>4. Payment and deposit handling follow the booking record and platform payment verification status.</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <SignatureStatus
+                  title="Renter"
+                  name={booking.renter?.displayName || booking.renter?.email || 'Renter account'}
+                  signedAt={contract.renterSignedAt}
+                  signature={contract.renterSignature}
+                />
+                <SignatureStatus
+                  title="Owner"
+                  name={(booking as any).owner?.displayName || (booking as any).owner?.email || 'Owner account'}
+                  signedAt={contract.ownerSignedAt}
+                  signature={contract.ownerSignature}
+                />
+              </div>
+            </div>
+          </section>
+
+          <aside className="space-y-4">
+            {docusealEnabled && (
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden lg:hidden">
+                <DocuSealFrame embedUrl={docusealEmbedUrl!} />
+              </div>
+            )}
+
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl p-5">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
+                  <UserRound className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="font-black text-sm">Sign as {isOwner ? 'owner' : 'renter'}</h2>
+                  <p className="text-xs text-slate-500">{user?.email}</p>
+                </div>
+              </div>
+
+              {hasSigned ? (
+                <div className="space-y-4">
+                  <div className="rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300 p-4 flex items-start gap-3">
+                    <CheckCircle2 className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-black text-sm">Your signature is recorded</p>
+                    <p className="text-xs opacity-80 mt-1">
+                      {nextActionText}
+                    </p>
                   </div>
                 </div>
-
-                {/* Signature Section */}
-                {hasSigned ? (
-                  <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/50 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-6">
-                    <div className="flex items-center gap-4">
-                      <div className="w-14 h-14 rounded-full bg-emerald-100 dark:bg-emerald-800/50 flex items-center justify-center flex-shrink-0">
-                        <CheckCircle className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
-                      </div>
+                  {renterCanPay && (
+                    <div className="rounded-2xl border border-amber-200 bg-amber-50/80 dark:border-amber-500/20 dark:bg-amber-500/10 p-4 space-y-3">
                       <div>
-                        <h4 className="font-bold text-lg text-emerald-800 dark:text-emerald-300">
-                          {isVi ? 'Hợp đồng đã được ký' : 'Contract Signed Successfully'}
-                        </h4>
-                        <p className="text-emerald-600 dark:text-emerald-400/80 mt-1">
-                          {isVi ? 'Người ký:' : 'Signed by:'} <span className="font-mono bg-white dark:bg-slate-900 px-3 py-1 rounded-lg font-bold shadow-sm text-emerald-700 dark:text-emerald-200 ml-2">{isOwner ? contract?.ownerSignature : contract?.renterSignature}</span>
+                        <p className="text-sm font-black text-amber-800 dark:text-amber-200">Choose your payment timing</p>
+                        <p className="text-xs text-amber-700/80 dark:text-amber-200/75 mt-1">
+                          Your renter signature is recorded. Pay now to submit this booking for review, or pay later from My Bookings.
                         </p>
                       </div>
-                    </div>
-                    
-                    {!isOwner && (
                       <button
-                        onClick={() => navigate(`/booking/${bookingId}/payment`)}
-                        className="w-full sm:w-auto px-8 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/30 transition-all flex items-center justify-center gap-2"
+                        onClick={() => navigate(`/booking/${booking.id}/payment?method=${paymentMethod}`)}
+                        className="btn-primary w-full py-3 justify-center inline-flex items-center gap-2"
                       >
-                        {isVi ? 'Tiếp tục thanh toán' : 'Proceed to Payment'}
-                        <ArrowRight className="w-5 h-5" />
+                        <CreditCard className="w-4 h-4" />
+                        Pay now
                       </button>
-                    )}
-                  </div>
-                ) : (
-                  <div className="bg-slate-100 dark:bg-slate-800/50 rounded-2xl p-8 border border-slate-200 dark:border-slate-700">
-                    <div className="mb-6">
-                      <label className="block text-base font-bold text-slate-800 dark:text-slate-200 mb-3 flex items-center gap-2">
-                        <Pencil className="w-5 h-5 text-blue-600" />
-                        {isVi ? 'Chữ ký điện tử' : 'Digital Signature'}
-                      </label>
-                      <input
-                        type="text"
-                        placeholder={isVi ? 'Nhập họ và tên hợp pháp của bạn để ký' : 'Type your full legal name to sign'}
-                        value={signature}
-                        onChange={(e) => setSignature(e.target.value)}
-                        className="w-full px-6 py-4 bg-white dark:bg-slate-900 border-2 border-slate-300 dark:border-slate-600 rounded-xl focus:border-blue-600 focus:ring-4 focus:ring-blue-600/20 transition-all text-xl font-medium text-slate-800 dark:text-slate-100"
-                      />
+                      <button
+                        onClick={() => {
+                          toast.info('Payment saved for later', 'This booking remains in Waiting Payment. You can pay from My Bookings anytime before it expires.');
+                          navigate('/dashboard/bookings');
+                        }}
+                        className="btn-outline w-full py-3 justify-center inline-flex items-center gap-2"
+                      >
+                        Pay later - return to My Bookings
+                      </button>
                     </div>
-                    
-                    <button
-                      onClick={handleSign}
-                      disabled={isSubmitting || !signature.trim()}
-                      className="w-full py-5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-xl shadow-xl shadow-blue-600/30 transition-all flex items-center justify-center gap-3 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isSubmitting ? (
-                        <div className="w-6 h-6 border-4 border-white/30 border-t-white rounded-full animate-spin" />
-                      ) : (
-                        <>
-                          <Key className="w-6 h-6" />
-                          {isVi ? 'Tôi Đồng Ý và Ký Hợp Đồng' : 'I Agree and Sign Contract'}
-                        </>
-                      )}
-                    </button>
-                  </div>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {docusealEnabled ? (
+                    <>
+                      <div className="rounded-xl border border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-300 p-4">
+                        <p className="font-black text-sm">DocuSeal signing is ready</p>
+                        <p className="text-xs mt-1 opacity-80">{nextActionText} After finishing in DocuSeal, refresh status here.</p>
+                      </div>
+                      <a
+                        href={docusealEmbedUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn-outline w-full py-3 justify-center inline-flex items-center gap-2"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        Open DocuSeal in new tab
+                      </a>
+                      <button
+                        onClick={refreshContract}
+                        disabled={refreshing}
+                        className="btn-primary w-full py-3 justify-center inline-flex items-center gap-2 disabled:opacity-50"
+                      >
+                        <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+                        {refreshing ? 'Refreshing...' : 'I signed, refresh status'}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <div className="rounded-xl border border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300 p-4">
+                        <p className="font-black text-sm">
+                          {contract.docusealStatus === 'configuration_error' ? 'DocuSeal template needs signing fields' : 'DocuSeal is not configured'}
+                        </p>
+                        <p className="text-xs mt-1 opacity-80">
+                          {contract.docusealStatus === 'configuration_error'
+                            ? 'The DocuSeal template/API is reachable, but no signer fields are available. Use LuxeWay local signing for this demo, then add fields in DocuSeal to enable embedded signing.'
+                            : 'Using LuxeWay local signature until the DocuSeal token/template is available to the backend.'}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 mb-2">
+                          Type full name
+                        </label>
+                        <input
+                          value={signature}
+                          onChange={(event) => setSignature(event.target.value)}
+                          className="lux-input w-full"
+                          placeholder="Full legal name"
+                        />
+                      </div>
+                      <button
+                        onClick={handleSign}
+                        disabled={signing || !signature.trim()}
+                        className="btn-primary w-full py-3 justify-center disabled:opacity-50"
+                      >
+                        {signing ? 'Signing...' : 'Sign contract'}
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5">
+              <h3 className="font-black text-sm mb-3">Audit evidence</h3>
+              <div className="space-y-3 text-xs text-slate-500">
+                <p>Contract ID: <span className="font-mono text-slate-800 dark:text-slate-200">#{contract.id}</span></p>
+                {contract.docusealSubmissionId && (
+                  <p>DocuSeal Submission: <span className="font-mono text-slate-800 dark:text-slate-200">#{contract.docusealSubmissionId}</span></p>
                 )}
-              </>
-            )}
-          </div>
-        </motion.div>
+                <p>Created: <span className="font-mono text-slate-800 dark:text-slate-200">{contract.createdAt || 'N/A'}</span></p>
+                <p>Status: <span className="font-black text-slate-800 dark:text-slate-200">{statusText}</span></p>
+              </div>
+            </div>
+          </aside>
+        </div>
+
+        {docusealEnabled && (
+          <section className="hidden lg:block mt-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden">
+            <DocuSealFrame embedUrl={docusealEmbedUrl!} />
+          </section>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const DocuSealFrame: React.FC<{ embedUrl: string }> = ({ embedUrl }) => {
+  useEffect(() => {
+    const scriptId = 'docuseal-form-script';
+    if (document.getElementById(scriptId)) return;
+
+    const script = document.createElement('script');
+    script.id = scriptId;
+    script.src = 'https://cdn.docuseal.com/js/form.js';
+    script.async = true;
+    document.body.appendChild(script);
+  }, []);
+
+  return (
+    <div>
+      <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-widest text-amber-600">DocuSeal embedded signing</p>
+          <h2 className="font-display text-lg font-black mt-1">Sign the official rental contract</h2>
+        </div>
+        <a href={embedUrl} target="_blank" rel="noreferrer" className="btn-outline px-3 py-2 text-xs inline-flex items-center gap-2">
+          <ExternalLink className="w-4 h-4" />
+          Open
+        </a>
+      </div>
+      <div className="min-h-[760px] bg-white">
+        {React.createElement('docuseal-form', {
+          'data-src': embedUrl,
+          style: { display: 'block', width: '100%', minHeight: '760px' },
+        })}
+      </div>
+    </div>
+  );
+};
+
+const SignatureStatus: React.FC<{
+  title: string;
+  name: string;
+  signedAt?: string | null;
+  signature?: string | null;
+}> = ({ title, name, signedAt, signature }) => {
+  const signed = !!signedAt;
+  return (
+    <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-white dark:bg-slate-900">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{title}</p>
+          <p className="font-bold mt-1">{name}</p>
+        </div>
+        {signed ? <BadgeCheck className="w-5 h-5 text-emerald-600 flex-shrink-0" /> : <FileSignature className="w-5 h-5 text-slate-400 flex-shrink-0" />}
+      </div>
+      <div className={`mt-4 rounded-lg px-3 py-2 text-xs ${signed ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300' : 'bg-slate-50 text-slate-500 dark:bg-slate-950'}`}>
+        {signed ? (
+          <>
+            <p className="font-black">{signature}</p>
+            <p className="mt-1 opacity-80">{signedAt}</p>
+          </>
+        ) : (
+          <p className="font-bold">Signature pending</p>
+        )}
       </div>
     </div>
   );

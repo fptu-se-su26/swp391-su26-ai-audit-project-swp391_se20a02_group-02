@@ -115,6 +115,12 @@ const AdminDashboard: React.FC = () => {
 
   const queryTab = new URLSearchParams(location.search).get('tab');
   const validTabs = ['overview', 'marketplace', 'vehicles', 'kyc', 'bookings', 'payments', 'disputes', 'users', 'fraud', 'analytics', 'notifications', 'logs', 'health', 'settings'];
+  const normalizeStatus = (value?: string | null) => String(value || '').trim().toUpperCase();
+  const isPendingVehicleApproval = (vehicle: any) => {
+    const status = normalizeStatus(vehicle?.status);
+    const approvalStatus = normalizeStatus(vehicle?.approvalStatus);
+    return status === 'PENDING_APPROVAL' || approvalStatus === 'PENDING_APPROVAL';
+  };
   
   // Dashboard states
   const [activeTab, setActiveTab] = useState<'overview' | 'marketplace' | 'vehicles' | 'kyc' | 'bookings' | 'payments' | 'disputes' | 'users' | 'fraud' | 'analytics' | 'notifications' | 'logs' | 'health' | 'settings'>(
@@ -228,14 +234,34 @@ const AdminDashboard: React.FC = () => {
 
   const fetchVehicles = async (status?: string, keyword?: string) => {
     try {
-      const res = await adminService.listAllVehicles(
-        status === 'ALL' ? undefined : status,
-        keyword || undefined,
-        0,
-        100
+      const requestedStatus = normalizeStatus(status);
+      const res = requestedStatus === 'PENDING_APPROVAL' && !keyword
+        ? await adminService.listPendingVehicles(0, 100)
+        : await adminService.listAllVehicles(
+            requestedStatus === 'ALL' ? undefined : requestedStatus,
+            keyword || undefined,
+            0,
+            100
+          );
+      const content = Array.isArray(res) ? res : (res?.content || []);
+      setVehicles(
+        requestedStatus === 'PENDING_APPROVAL'
+          ? content.filter(isPendingVehicleApproval)
+          : content
       );
-      if (res && res.content) {
-        setVehicles(res.content);
+      if (requestedStatus === 'PENDING_APPROVAL' && keyword) {
+        const pendingRes = await adminService.listPendingVehicles(0, 100);
+        const kw = keyword.toLowerCase();
+        const pendingContent = (Array.isArray(pendingRes) ? pendingRes : (pendingRes?.content || []))
+          .filter(isPendingVehicleApproval)
+          .filter((v: any) =>
+            String(v.name || '').toLowerCase().includes(kw) ||
+            String(v.brand || '').toLowerCase().includes(kw) ||
+            String(v.model || '').toLowerCase().includes(kw) ||
+            String(v.licensePlate || v.specs?.licensePlate || '').toLowerCase().includes(kw) ||
+            String(v.owner?.displayName || v.ownerName || '').toLowerCase().includes(kw)
+          );
+        setVehicles(pendingContent);
       }
     } catch (err) {
       console.error('Failed to fetch vehicles:', err);
@@ -321,30 +347,16 @@ const AdminDashboard: React.FC = () => {
   ]);
 
   // Fraud alerts state
-  const [fraudAlerts, setFraudAlerts] = useState([
-    { id: 'FR-101', name: 'John Doe', score: 87, level: 'CRITICAL', indicators: 'VPN detected, IP reputation blacklisted, device fingerprint mismatch', time: '2026-06-02T19:12:00Z', status: 'pending' },
-    { id: 'FR-102', name: 'Jane Smith', score: 68, level: 'HIGH', indicators: 'Multiple duplicate account logs with identical canvas fingerprint', time: '2026-06-02T18:44:00Z', status: 'pending' },
-    { id: 'FR-103', name: 'David Lee', score: 45, level: 'MEDIUM', indicators: 'Mismatching billing and identity passport name card data', time: '2026-06-02T15:30:00Z', status: 'investigating' },
-    { id: 'FR-104', name: 'Alex Wong', score: 22, level: 'LOW', indicators: 'Rapid session jumps across different regional networks', time: '2026-06-02T11:15:00Z', status: 'ignored' }
-  ]);
+  const [fraudAlerts, setFraudAlerts] = useState<any[]>([]);
 
   // Suspicious bookings
-  const [suspiciousBookings, setSuspiciousBookings] = useState([
-    { id: 'SB-30291', customer: 'John Doe', vehicle: 'Ferrari F8 Tributo', amount: 35000000, score: 92, reason: 'Instant booking high-value supercar using freshly verified account from VPN network', status: 'flagged' },
-    { id: 'SB-30292', customer: 'Jane Smith', vehicle: 'Porsche 911 GT3', amount: 28000000, score: 74, reason: 'Overlapping bookings: booking multiple luxury vehicles on identical dates', status: 'flagged' }
-  ]);
+  const [suspiciousBookings, setSuspiciousBookings] = useState<any[]>([]);
 
   // Chargebacks monitoring
-  const [chargebacks, setChargebacks] = useState([
-    { id: 'CB-9302', transactionId: 'TX-VN-920492', provider: 'VNPay', amount: 15500000, customer: 'Michael Johnson', status: 'disputed_evidence_submitted', date: '2026-05-30T10:00:00Z' },
-    { id: 'CB-9303', transactionId: 'TX-ST-183921', provider: 'Stripe', amount: 24000000, customer: 'Emily Watson', status: 'chargeback_reversed', date: '2026-05-25T14:20:00Z' }
-  ]);
+  const [chargebacks, setChargebacks] = useState<any[]>([]);
 
   // Device fingerprint sharing
-  const [fingerprints, setFingerprints] = useState([
-    { hardwareHash: 'CNV-88A92B10', linkedAccounts: ['John Doe', 'Johny Boy', 'J.D. Rentals'], riskScore: 89, lastActive: '2026-06-02T20:30:00Z' },
-    { hardwareHash: 'CNV-2193BF8C', linkedAccounts: ['Jane Smith', 'Smith Rentals'], riskScore: 65, lastActive: '2026-06-02T19:50:00Z' }
-  ]);
+  const [fingerprints, setFingerprints] = useState<any[]>([]);
 
   // Update active tab based on query param when URL changes
   useEffect(() => {
@@ -745,9 +757,13 @@ const AdminDashboard: React.FC = () => {
   const totalGBV = bookings.reduce((sum, b) => sum + (b.pricing?.total || 0), 0);
   const platformRevenue = bookings.filter(b => b.status === 'completed' || b.status === 'confirmed').reduce((sum, b) => sum + (b.pricing?.platformFee || (b.pricing?.total * 0.12) || 0), 0);
   const ownerPayouts = totalGBV - platformRevenue;
-  const activeListingsCount = vehicles.filter(v => v.status === 'available').length;
-  const pendingApprovalsCount = vehicles.filter(v => v.status === 'pending_approval').length;
-  const pendingKycCount = users.filter(u => !u.kycVerified && u.role === 'customer').length;
+  const activeListingsCount = vehicles.filter(v => normalizeStatus(v.status) === 'AVAILABLE').length;
+  const pendingApprovalsCount = vehicles.filter(isPendingVehicleApproval).length;
+  const pendingKycCount = kycUsers.filter(u => {
+    const kycStatus = String(u.kycStatus || '').toUpperCase();
+    const driverLicenseStatus = String(u.driverLicenseStatus || '').toUpperCase();
+    return ['PENDING', 'PENDING_APPROVAL'].includes(kycStatus) || ['PENDING', 'PENDING_APPROVAL'].includes(driverLicenseStatus);
+  }).length;
   const openDisputesCount = disputes.filter(d => d.status === 'PENDING').length;
   const failedPaymentsCount = payments.filter(p => p.status === 'failed').length;
   const activeFraudAlertsCount = fraudAlerts.filter(f => f.status === 'pending').length;

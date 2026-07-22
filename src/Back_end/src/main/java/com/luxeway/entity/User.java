@@ -123,6 +123,43 @@ public class User implements UserDetails {
     @Builder.Default
     private String preferredLanguage = "en";
 
+    @Column(name = "preferred_currency", length = 10)
+    @Builder.Default
+    private String preferredCurrency = "VND";
+
+    @Column(name = "email_booking_notifications", nullable = false)
+    @Builder.Default
+    private Boolean emailBookingNotifications = true;
+
+    @Column(name = "email_review_notifications", nullable = false)
+    @Builder.Default
+    private Boolean emailReviewNotifications = true;
+
+    @Column(name = "email_marketing_notifications", nullable = false)
+    @Builder.Default
+    private Boolean emailMarketingNotifications = false;
+
+    @Column(name = "push_notifications", nullable = false)
+    @Builder.Default
+    private Boolean pushNotifications = true;
+
+    @Column(name = "owner_bank_name", length = 100)
+    private String ownerBankName;
+
+    @Column(name = "owner_bank_account_number", length = 50)
+    private String ownerBankAccountNumber;
+
+    @Column(name = "owner_bank_account_holder", length = 150)
+    private String ownerBankAccountHolder;
+
+    @Column(name = "owner_payout_enabled", nullable = false)
+    @Builder.Default
+    private Boolean ownerPayoutEnabled = false;
+
+    @Column(name = "security_two_factor_enabled", nullable = false)
+    @Builder.Default
+    private Boolean securityTwoFactorEnabled = false;
+
     
     @Column(name = "company_name", length = 200)
     private String companyName;
@@ -243,20 +280,94 @@ public class User implements UserDetails {
     
     @PrePersist
     private void prePersist() {
+        LocalDateTime now = LocalDateTime.now();
         if (id == null) {
             id = java.util.UUID.randomUUID().toString();
         }
         if (displayName == null) {
             displayName = getFullName();
         }
-        if (joinedAt == null) {
-            joinedAt = LocalDateTime.now();
+        if (provider == null || provider.isBlank()) {
+            provider = "LOCAL";
         }
-        lastActive = LocalDateTime.now();
+        if (role == null) {
+            role = UserRole.CUSTOMER;
+        }
+        if (verified == null) {
+            verified = false;
+        }
+        if (kycVerified == null) {
+            kycVerified = false;
+        }
+        if (drivingLicenseVerified == null) {
+            drivingLicenseVerified = false;
+        }
+        if (kycStatus == null || kycStatus.isBlank()) {
+            kycStatus = "NOT_UPLOADED";
+        }
+        if (driverLicenseStatus == null || driverLicenseStatus.isBlank()) {
+            driverLicenseStatus = "NOT_UPLOADED";
+        }
+        if (rating == null) {
+            rating = BigDecimal.ZERO;
+        }
+        if (totalReviews == null) {
+            totalReviews = 0;
+        }
+        if (totalRentals == null) {
+            totalRentals = 0;
+        }
+        if (accountType == null || accountType.isBlank()) {
+            accountType = "INDIVIDUAL";
+        }
+        if (preferredLanguage == null || preferredLanguage.isBlank()) {
+            preferredLanguage = "en";
+        }
+        if (preferredCurrency == null || preferredCurrency.isBlank()) {
+            preferredCurrency = "VND";
+        }
+        if (emailBookingNotifications == null) {
+            emailBookingNotifications = true;
+        }
+        if (emailReviewNotifications == null) {
+            emailReviewNotifications = true;
+        }
+        if (emailMarketingNotifications == null) {
+            emailMarketingNotifications = false;
+        }
+        if (pushNotifications == null) {
+            pushNotifications = true;
+        }
+        if (ownerPayoutEnabled == null) {
+            ownerPayoutEnabled = false;
+        }
+        if (securityTwoFactorEnabled == null) {
+            securityTwoFactorEnabled = false;
+        }
+        if (walletBalance == null) {
+            walletBalance = BigDecimal.ZERO;
+        }
+        if (isActive == null) {
+            isActive = true;
+        }
+        if (joinedAt == null) {
+            joinedAt = now;
+        }
+        if (createdAt == null) {
+            createdAt = now;
+        }
+        if (updatedAt == null) {
+            updatedAt = now;
+        }
+        if (lastActive == null) {
+            lastActive = now;
+        }
     }
     
     @PreUpdate
     private void preUpdate() {
-        lastActive = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now();
+        lastActive = now;
+        updatedAt = now;
     }
 }

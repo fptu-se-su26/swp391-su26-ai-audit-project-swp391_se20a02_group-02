@@ -6,6 +6,8 @@ import { resolveImageUrl } from '@/utils';
 
 // Storage key for wishlist fallback since backend may not have a dedicated endpoint yet
 const WISHLIST_KEY = 'luxeway_wishlist';
+const vehicleListCache = new Map<string, ApiResponse<Vehicle[]>>();
+const mapVehicleCache = new Map<string, VehicleLocationResponse[]>();
 
 // Helper function to map flat backend vehicle DTO to nested frontend Vehicle type
 const mapVehicle = (v: any): Vehicle => {
@@ -216,12 +218,12 @@ const transformToBackendPayload = (data: Partial<Vehicle>): any => {
 
 export const vehicleService = {
   async getAll(filters?: VehicleFilters, page = 1, pageSize = 12): Promise<ApiResponse<Vehicle[]>> {
+    const queryParams = new URLSearchParams({
+      page: (page - 1).toString(), // Spring Data JPA is 0-indexed
+      size: pageSize.toString()
+    });
+
     try {
-      const queryParams = new URLSearchParams({
-        page: (page - 1).toString(), // Spring Data JPA is 0-indexed
-        size: pageSize.toString()
-      });
-      
       if (filters) {
         if (filters.status) queryParams.append('status', filters.status);
         if (filters.location) queryParams.append('location', filters.location);
@@ -269,8 +271,8 @@ export const vehicleService = {
       }
       
       const response = await apiClient.get<any>(`/vehicles?${queryParams.toString()}`);
-      
-      return {
+
+      const result = {
         data: (response.vehicles || []).map(mapVehicle),
         meta: {
           total: response.totalItems || 0,
@@ -279,16 +281,20 @@ export const vehicleService = {
           totalPages: response.totalPages || 0,
         },
       };
+      vehicleListCache.set(queryParams.toString(), result);
+      return result;
     } catch (error) {
       console.error('Failed to get vehicles', error);
+      const cached = vehicleListCache.get(queryParams.toString());
+      if (cached) return cached;
       return { data: [], meta: { total: 0, page: 1, pageSize, totalPages: 0 } };
     }
   },
 
   async getMapVehicles(filters?: VehicleFilters, signal?: AbortSignal): Promise<VehicleLocationResponse[]> {
+    const queryParams = new URLSearchParams();
+
     try {
-      const queryParams = new URLSearchParams();
-      
       if (filters) {
         if (filters.status) queryParams.append('status', filters.status);
         if (filters.location) queryParams.append('location', filters.location);
@@ -332,12 +338,15 @@ export const vehicleService = {
       
       const response = await apiClient.get<any>(`/vehicles/map?${queryParams.toString()}`, { signal });
       const list = Array.isArray(response) ? response : response?.data || [];
+      mapVehicleCache.set(queryParams.toString(), list);
       return list;
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
         throw error;
       }
       console.error('Failed to get map vehicles', error);
+      const cached = mapVehicleCache.get(queryParams.toString());
+      if (cached) return cached;
       return [];
     }
   },
@@ -481,24 +490,45 @@ export const vehicleService = {
 
   async toggleWishlist(vehicleId: string, userId: string): Promise<boolean> {
     const key = `${WISHLIST_KEY}_${userId}`;
-    let wishlist: string[] = JSON.parse(localStorage.getItem(key) || '[]');
-    const isWishlisted = wishlist.includes(vehicleId);
-    
-    if (isWishlisted) {
-      wishlist = wishlist.filter(id => id !== vehicleId);
-    } else {
-      wishlist.push(vehicleId);
+    try {
+      const check = await apiClient.get<any>(`/favorites/check/${vehicleId}`);
+      const isWishlisted = Boolean(check?.data?.favorite ?? check?.favorite);
+      const response = isWishlisted
+        ? await apiClient.delete<any>(`/favorites/${vehicleId}`)
+        : await apiClient.post<any>(`/favorites/${vehicleId}`, {});
+      const favorite = Boolean(response?.data?.favorite ?? response?.favorite ?? !isWishlisted);
+      const localWishlist: string[] = JSON.parse(localStorage.getItem(key) || '[]');
+      const synced = favorite
+        ? [...new Set([...localWishlist, vehicleId])]
+        : localWishlist.filter(id => id !== vehicleId);
+      localStorage.setItem(key, JSON.stringify(synced));
+      return favorite;
+    } catch (error) {
+      console.warn('Backend wishlist API unavailable, using local fallback', error);
+      let wishlist: string[] = JSON.parse(localStorage.getItem(key) || '[]');
+      const isWishlisted = wishlist.includes(vehicleId);
+      wishlist = isWishlisted ? wishlist.filter(id => id !== vehicleId) : [...wishlist, vehicleId];
+      localStorage.setItem(key, JSON.stringify(wishlist));
+      return !isWishlisted;
     }
-    
-    localStorage.setItem(key, JSON.stringify(wishlist));
-    return !isWishlisted;
   },
 
   async getWishlist(userId: string): Promise<Vehicle[]> {
     const key = `${WISHLIST_KEY}_${userId}`;
+    try {
+      const response = await apiClient.get<any>('/favorites');
+      const vehicles = (response?.data || response || []) as Vehicle[];
+      if (Array.isArray(vehicles)) {
+        localStorage.setItem(key, JSON.stringify(vehicles.map(v => v.id).filter(Boolean)));
+        return vehicles;
+      }
+    } catch (error) {
+      console.warn('Backend wishlist API unavailable, using local fallback', error);
+    }
+
     const wishlist: string[] = JSON.parse(localStorage.getItem(key) || '[]');
     if (wishlist.length === 0) return [];
-    
+
     const vehicles: Vehicle[] = [];
     for (const id of wishlist) {
       const v = await this.getById(id);
