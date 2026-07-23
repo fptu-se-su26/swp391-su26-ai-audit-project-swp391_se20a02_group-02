@@ -29,12 +29,6 @@ spring:
             enable: true
             required: true
 
-server:
-  forward-headers-strategy: framework
-
-app:
-  frontend-url: ${FRONTEND_URL:http://localhost:5173}
-
   security:
     oauth2:
       client:
