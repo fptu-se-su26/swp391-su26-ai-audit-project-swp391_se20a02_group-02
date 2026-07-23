@@ -447,10 +447,6 @@ public class AdminService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (!"PENDING_APPROVAL".equalsIgnoreCase(user.getKycStatus())) {
-            throw new IllegalStateException("User KYC is not in PENDING_APPROVAL status");
-        }
-
         user.setKycStatus("VERIFIED");
         user.setKycVerified(true);
         
@@ -458,7 +454,7 @@ public class AdminService {
         boolean hasDl = false;
         for (com.luxeway.entity.UserDocument doc : docs) {
             String docType = doc.getDocumentType().toUpperCase();
-            if (docType.contains("DRIVER_LICENSE") || docType.equals("DRIVING_LICENSE")) {
+            if (docType.contains("DRIVER_LICENSE") || docType.contains("MOTORBIKE_LICENSE") || docType.equals("DRIVING_LICENSE")) {
                 hasDl = true;
                 if (doc.getLicenseNumber() != null) {
                     user.setLicenseNumber(doc.getLicenseNumber());
@@ -468,7 +464,7 @@ public class AdminService {
                 }
             }
             
-            if ("PENDING".equals(doc.getStatus()) || "UNDER_REVIEW".equals(doc.getVerificationStatus())) {
+            if ("PENDING".equalsIgnoreCase(doc.getStatus()) || "UNDER_REVIEW".equalsIgnoreCase(doc.getVerificationStatus())) {
                 doc.setStatus("VERIFIED");
                 doc.setVerificationStatus("VERIFIED");
                 doc.setVerifiedByAdmin(adminId);

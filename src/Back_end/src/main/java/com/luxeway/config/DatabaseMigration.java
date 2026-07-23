@@ -131,14 +131,14 @@ public class DatabaseMigration implements CommandLineRunner {
             }
         }
 
-        // Fix CHK_user_docs_type check constraint to include 'SELFIE'
+        // Fix CHK_user_docs_type check constraint to include 'MOTORBIKE_LICENSE_FRONT' and 'MOTORBIKE_LICENSE_BACK'
         try {
             jdbcTemplate.execute("IF EXISTS (SELECT 1 FROM sys.objects WHERE name = 'CHK_user_docs_type' AND type = 'C') " +
                     "ALTER TABLE user_documents DROP CONSTRAINT CHK_user_docs_type");
-            jdbcTemplate.execute("ALTER TABLE user_documents ADD CONSTRAINT CHK_user_docs_type CHECK (document_type IN ('PASSPORT','NATIONAL_ID','DRIVING_LICENSE','INSURANCE','CCCD_FRONT','CCCD_BACK','DRIVER_LICENSE_FRONT','DRIVER_LICENSE_BACK','SELFIE','SELFIE_WITH_ID','INSURANCE_CERTIFICATE'))");
-            log.info("Successfully updated CHK_user_docs_type check constraint to include 'SELFIE'");
+            jdbcTemplate.execute("ALTER TABLE user_documents ADD CONSTRAINT CHK_user_docs_type CHECK (document_type IN ('PASSPORT','NATIONAL_ID','DRIVING_LICENSE','INSURANCE','CCCD_FRONT','CCCD_BACK','DRIVER_LICENSE_FRONT','DRIVER_LICENSE_BACK','MOTORBIKE_LICENSE_FRONT','MOTORBIKE_LICENSE_BACK','SELFIE','SELFIE_WITH_ID','INSURANCE_CERTIFICATE'))");
+            log.info("Successfully updated CHK_user_docs_type check constraint to include 'MOTORBIKE_LICENSE_FRONT' and 'MOTORBIKE_LICENSE_BACK'");
         } catch (Exception e) {
-            log.debug("Failed to alter check constraint (already updated or non-SQL Server environment): {}", e.getMessage());
+            log.warn("Failed to alter check constraint: {}", e.getMessage());
         }
 
         updateBookingStatusStorageAndConstraint();

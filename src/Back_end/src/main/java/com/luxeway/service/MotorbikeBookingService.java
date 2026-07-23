@@ -28,6 +28,7 @@ public class MotorbikeBookingService {
     private final UserRepository userRepository;
     private final NotificationService notificationService;
     private final MotorbikeAvailabilityRepository motorbikeAvailabilityRepository;
+    private final UserDocumentRepository userDocumentRepository;
 
     @Transactional
     public MotorbikeBookingDTOs.MotorbikeBookingResponse createBooking(String renterId, MotorbikeBookingDTOs.CreateMotorbikeBookingRequest req) {
@@ -64,6 +65,13 @@ public class MotorbikeBookingService {
                     || "VERIFIED".equalsIgnoreCase(renter.getDriverLicenseStatus());
             if (!licenseVerified) {
                 throw new RuntimeException("Please complete driving license verification first.");
+            }
+
+            boolean hasMotorbikeDoc = !userDocumentRepository.findByUserIdAndDocumentType(renter.getId(), "MOTORBIKE_LICENSE_FRONT").isEmpty();
+            String uClass = renter.getLicenseClass();
+            boolean isMotorbikeClass = uClass != null && uClass.startsWith("A");
+            if (!hasMotorbikeDoc && !isMotorbikeClass) {
+                throw new RuntimeException("Bạn cần tải lên Bằng Lái Xe Máy (Hạng A1/A2/A3) trên trang Hồ sơ để đăng ký đặt thuê Xe Máy!");
             }
         }
 

@@ -1540,7 +1540,10 @@ const AdminDashboard: React.FC = () => {
                               </td>
                               <td className="px-6 py-4 text-xs font-semibold text-slate-400">{u.email}</td>
                               <td className="px-6 py-4">
-                                <StatusBadge status={u.kycVerified ? 'active' : 'pending'} label={u.kycVerified ? 'VERIFIED' : 'PENDING'} />
+                                <StatusBadge 
+                                  status={(u.kycStatus === 'PENDING_APPROVAL' || u.kycStatus === 'PENDING' || !u.kycVerified) ? 'pending' : 'active'} 
+                                  label={(u.kycStatus === 'PENDING_APPROVAL' || u.kycStatus === 'PENDING' || !u.kycVerified) ? 'PENDING' : 'VERIFIED'} 
+                                />
                               </td>
                               <td className="px-6 py-4">
                                 <span className="text-xs font-black text-indigo-505">{u.kycVerified ? '96%' : '84%'} Confidence</span>
@@ -2784,11 +2787,13 @@ const AdminDashboard: React.FC = () => {
                 {(() => {
                   const cccdFront = kycUserDocs.find(d => d.documentType === 'CCCD_FRONT');
                   const cccdBack = kycUserDocs.find(d => d.documentType === 'CCCD_BACK');
-                  const dlFront = kycUserDocs.find(d => d.documentType === 'DRIVER_LICENSE_FRONT');
-                  const dlBack = kycUserDocs.find(d => d.documentType === 'DRIVER_LICENSE_BACK');
+                  const carDlFront = kycUserDocs.find(d => d.documentType === 'DRIVER_LICENSE_FRONT');
+                  const carDlBack = kycUserDocs.find(d => d.documentType === 'DRIVER_LICENSE_BACK');
+                  const motorbikeDlFront = kycUserDocs.find(d => d.documentType === 'MOTORBIKE_LICENSE_FRONT');
+                  const motorbikeDlBack = kycUserDocs.find(d => d.documentType === 'MOTORBIKE_LICENSE_BACK');
                   const selfie = kycUserDocs.find(d => d.documentType === 'SELFIE');
 
-                  if (!cccdFront && !cccdBack && !dlFront && !dlBack && !selfie) {
+                  if (!cccdFront && !cccdBack && !carDlFront && !carDlBack && !motorbikeDlFront && !motorbikeDlBack && !selfie) {
                     return (
                       <div className="p-4 bg-yellow-500/5 border border-yellow-500/10 text-yellow-600 text-xs rounded-xl text-center font-semibold">
                         No KYC verification photos uploaded yet.
@@ -2854,25 +2859,51 @@ const AdminDashboard: React.FC = () => {
                             )}
                           </div>
 
-                          {/* DL Front */}
-                          <div className="border dark:border-slate-850 rounded-xl overflow-hidden bg-slate-500/5 relative">
-                            <span className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white text-[8px] font-black uppercase px-2 py-0.5 rounded">DL Front</span>
-                            {dlFront ? (
-                              <img src={resolveDocUrl(dlFront.url)} className="w-full h-32 object-cover" alt="Driver License Front" />
-                            ) : (
-                              <div className="h-32 flex items-center justify-center text-slate-400 text-xs">No DL Front Image</div>
-                            )}
-                          </div>
+                          {/* Car DL Front & Back */}
+                          {(carDlFront || carDlBack) && (
+                            <>
+                              <div className="border dark:border-slate-850 rounded-xl overflow-hidden bg-slate-500/5 relative">
+                                <span className="absolute top-2 left-2 bg-indigo-600 backdrop-blur-sm text-white text-[8px] font-black uppercase px-2 py-0.5 rounded">🚗 Car DL Front (Ô Tô)</span>
+                                {carDlFront ? (
+                                  <img src={resolveDocUrl(carDlFront.url)} className="w-full h-32 object-cover" alt="Car License Front" />
+                                ) : (
+                                  <div className="h-32 flex items-center justify-center text-slate-400 text-xs">No Car DL Front</div>
+                                )}
+                              </div>
 
-                          {/* DL Back */}
-                          <div className="border dark:border-slate-850 rounded-xl overflow-hidden bg-slate-500/5 relative">
-                            <span className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white text-[8px] font-black uppercase px-2 py-0.5 rounded">DL Back</span>
-                            {dlBack ? (
-                              <img src={resolveDocUrl(dlBack.url)} className="w-full h-32 object-cover" alt="Driver License Back" />
-                            ) : (
-                              <div className="h-32 flex items-center justify-center text-slate-400 text-xs">No DL Back Image</div>
-                            )}
-                          </div>
+                              <div className="border dark:border-slate-850 rounded-xl overflow-hidden bg-slate-500/5 relative">
+                                <span className="absolute top-2 left-2 bg-indigo-600 backdrop-blur-sm text-white text-[8px] font-black uppercase px-2 py-0.5 rounded">🚗 Car DL Back (Ô Tô)</span>
+                                {carDlBack ? (
+                                  <img src={resolveDocUrl(carDlBack.url)} className="w-full h-32 object-cover" alt="Car License Back" />
+                                ) : (
+                                  <div className="h-32 flex items-center justify-center text-slate-400 text-xs">No Car DL Back</div>
+                                )}
+                              </div>
+                            </>
+                          )}
+
+                          {/* Motorbike DL Front & Back */}
+                          {(motorbikeDlFront || motorbikeDlBack) && (
+                            <>
+                              <div className="border dark:border-slate-850 rounded-xl overflow-hidden bg-slate-500/5 relative">
+                                <span className="absolute top-2 left-2 bg-amber-600 backdrop-blur-sm text-white text-[8px] font-black uppercase px-2 py-0.5 rounded">🏍️ Motorbike DL Front (Xe Máy)</span>
+                                {motorbikeDlFront ? (
+                                  <img src={resolveDocUrl(motorbikeDlFront.url)} className="w-full h-32 object-cover" alt="Motorbike License Front" />
+                                ) : (
+                                  <div className="h-32 flex items-center justify-center text-slate-400 text-xs">No Motorbike DL Front</div>
+                                )}
+                              </div>
+
+                              <div className="border dark:border-slate-850 rounded-xl overflow-hidden bg-slate-500/5 relative">
+                                <span className="absolute top-2 left-2 bg-amber-600 backdrop-blur-sm text-white text-[8px] font-black uppercase px-2 py-0.5 rounded">🏍️ Motorbike DL Back (Xe Máy)</span>
+                                {motorbikeDlBack ? (
+                                  <img src={resolveDocUrl(motorbikeDlBack.url)} className="w-full h-32 object-cover" alt="Motorbike License Back" />
+                                ) : (
+                                  <div className="h-32 flex items-center justify-center text-slate-400 text-xs">No Motorbike DL Back</div>
+                                )}
+                              </div>
+                            </>
+                          )}
                         </div>
 
                         {/* Selfie Image - Full Width */}
@@ -2911,24 +2942,47 @@ const AdminDashboard: React.FC = () => {
                           </div>
                         </div>
 
-                        {/* Driver License OCR */}
-                        <div className="space-y-2">
-                          <span className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block font-display">DRIVING LICENSE OCR DATA</span>
-                          <div className="p-3.5 bg-slate-500/5 rounded-xl border dark:border-slate-850 text-xs space-y-1.5 font-semibold text-slate-400">
-                            <div className="flex justify-between">
-                              <span>License Name:</span>
-                              <span className="font-black text-slate-800 dark:text-slate-200">{dlFront?.licenseFullName || 'N/A'}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span>License Number:</span>
-                              <span className="font-black text-slate-800 dark:text-slate-200">{dlFront?.licenseNumber || 'N/A'}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span>License Class:</span>
-                              <span className="font-black text-indigo-650 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/20 px-2 py-0.5 rounded font-extrabold">{dlFront?.licenseClass || 'N/A'}</span>
+                        {/* Car Driver License OCR */}
+                        {carDlFront && (
+                          <div className="space-y-2">
+                            <span className="text-[8px] font-black text-indigo-500 uppercase tracking-widest block font-display">🚗 CAR DRIVING LICENSE (GPLX Ô TÔ) OCR DATA</span>
+                            <div className="p-3.5 bg-indigo-500/5 rounded-xl border border-indigo-100 dark:border-indigo-900/30 text-xs space-y-1.5 font-semibold text-slate-400">
+                              <div className="flex justify-between">
+                                <span>License Name:</span>
+                                <span className="font-black text-slate-800 dark:text-slate-200">{carDlFront?.licenseFullName || selectedKycUser.displayName || 'N/A'}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>License Number:</span>
+                                <span className="font-black text-slate-800 dark:text-slate-200">{carDlFront?.licenseNumber || 'N/A'}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>License Class:</span>
+                                <span className="font-black text-indigo-650 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/20 px-2 py-0.5 rounded font-extrabold">{carDlFront?.licenseClass || 'B2'}</span>
+                              </div>
                             </div>
                           </div>
-                        </div>
+                        )}
+
+                        {/* Motorbike Driver License OCR */}
+                        {motorbikeDlFront && (
+                          <div className="space-y-2">
+                            <span className="text-[8px] font-black text-amber-600 uppercase tracking-widest block font-display">🏍️ MOTORBIKE DRIVING LICENSE (GPLX XE MÁY) OCR DATA</span>
+                            <div className="p-3.5 bg-amber-500/5 rounded-xl border border-amber-100 dark:border-amber-900/30 text-xs space-y-1.5 font-semibold text-slate-400">
+                              <div className="flex justify-between">
+                                <span>License Name:</span>
+                                <span className="font-black text-slate-800 dark:text-slate-200">{motorbikeDlFront?.licenseFullName || selectedKycUser.displayName || 'N/A'}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>License Number:</span>
+                                <span className="font-black text-slate-800 dark:text-slate-200">{motorbikeDlFront?.licenseNumber || 'N/A'}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>License Class:</span>
+                                <span className="font-black text-amber-650 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 px-2 py-0.5 rounded font-extrabold">{motorbikeDlFront?.licenseClass || 'A1'}</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
 
                         {/* Face Matching & Liveness */}
                         <div className="space-y-2">
@@ -2952,7 +3006,7 @@ const AdminDashboard: React.FC = () => {
                 })()}
 
                 {/* Rejection input and Actions */}
-                {(selectedKycUser.kycStatus === 'PENDING' || !selectedKycUser.kycVerified) && (
+                {(selectedKycUser.kycStatus === 'PENDING' || selectedKycUser.kycStatus === 'PENDING_APPROVAL' || !selectedKycUser.kycVerified || kycUserDocs.some(d => d.status === 'PENDING' || d.verificationStatus === 'UNDER_REVIEW')) && (
                   <div className="space-y-3 pt-4 border-t dark:border-slate-850">
                     <textarea
                       placeholder="Add administrative rejection feedback reason if declining..."
