@@ -64,7 +64,12 @@ public class VehicleController {
             @RequestParam(required = false) Boolean hasChauffeur,
             @RequestParam(required = false) Boolean airportDelivery,
             @RequestParam(required = false) Boolean weddingRental,
-            @RequestParam(required = false) Boolean businessRental) {
+            @RequestParam(required = false) Boolean businessRental,
+            // Geographic map bounds
+            @RequestParam(required = false) Double minLatitude,
+            @RequestParam(required = false) Double maxLatitude,
+            @RequestParam(required = false) Double minLongitude,
+            @RequestParam(required = false) Double maxLongitude) {
         
         try {
             // Keep compatibility with specific non-AVAILABLE status queries (like Admin or list status queries)
@@ -119,6 +124,12 @@ public class VehicleController {
             filter.setUserLat(userLat);
             filter.setUserLng(userLng);
             filter.setKeyword(keyword != null && !keyword.isEmpty() ? keyword : q);
+            
+            // Map geographic map bounds
+            filter.setMinLatitude(minLatitude);
+            filter.setMaxLatitude(maxLatitude);
+            filter.setMinLongitude(minLongitude);
+            filter.setMaxLongitude(maxLongitude);
             
             // Map ecosystem params
             filter.setVehicleType(vehicleType);

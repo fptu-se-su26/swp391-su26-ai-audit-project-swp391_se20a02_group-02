@@ -428,6 +428,11 @@ export interface VehicleFilters {
   userLat?: number;
   userLng?: number;
   keyword?: string;
+  // Geographic map bounds
+  minLat?: number;
+  maxLat?: number;
+  minLng?: number;
+  maxLng?: number;
   // Motorbike-specific
   minEngineCc?: number;
   maxEngineCc?: number;

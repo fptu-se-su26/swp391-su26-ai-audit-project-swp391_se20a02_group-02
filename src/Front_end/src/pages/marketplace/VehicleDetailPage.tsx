@@ -68,14 +68,14 @@ export const VehicleDetailPage: React.FC = () => {
                   setSimilarVehicles(sim);
                 } else {
                   // Fallback
-                  vehicleService.getMapVehicles({ vehicleType: 'motorbike' })
-                    .then(list => setSimilarVehicles(list.filter(v => v.id !== data.id).slice(0, 4)))
+                  vehicleService.getAll({ vehicleType: 'motorbike' })
+                    .then(res => setSimilarVehicles(res.data.filter((v: any) => v.id !== data.id).slice(0, 4)))
                     .catch(() => {});
                 }
               })
               .catch(() => {
-                vehicleService.getMapVehicles({ vehicleType: 'motorbike' })
-                  .then(list => setSimilarVehicles(list.filter(v => v.id !== data.id).slice(0, 4)))
+                vehicleService.getAll({ vehicleType: 'motorbike' })
+                  .then(res => setSimilarVehicles(res.data.filter((v: any) => v.id !== data.id).slice(0, 4)))
                   .catch(() => {});
               });
           } else {
@@ -85,14 +85,14 @@ export const VehicleDetailPage: React.FC = () => {
                   setSimilarVehicles(sim);
                 } else {
                   // Fallback
-                  vehicleService.getMapVehicles({ vehicleType: 'car' })
-                    .then(list => setSimilarVehicles(list.filter(v => v.id !== data.id).slice(0, 4)))
+                  vehicleService.getAll({ vehicleType: 'car' })
+                    .then(res => setSimilarVehicles(res.data.filter((v: any) => v.id !== data.id).slice(0, 4)))
                     .catch(() => {});
                 }
               })
               .catch(() => {
-                vehicleService.getMapVehicles({ vehicleType: 'car' })
-                  .then(list => setSimilarVehicles(list.filter(v => v.id !== data.id).slice(0, 4)))
+                vehicleService.getAll({ vehicleType: 'car' })
+                  .then(res => setSimilarVehicles(res.data.filter((v: any) => v.id !== data.id).slice(0, 4)))
                   .catch(() => {});
               });
           }

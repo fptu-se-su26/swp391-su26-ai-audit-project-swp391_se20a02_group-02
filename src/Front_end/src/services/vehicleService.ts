@@ -268,6 +268,11 @@ export const vehicleService = {
         if (filters.airportDelivery) queryParams.append('airportDelivery', 'true');
         if (filters.weddingRental) queryParams.append('weddingRental', 'true');
         if (filters.businessRental) queryParams.append('businessRental', 'true');
+        // Geographic map bounds
+        if (filters.minLat !== undefined) queryParams.append('minLatitude', filters.minLat.toString());
+        if (filters.maxLat !== undefined) queryParams.append('maxLatitude', filters.maxLat.toString());
+        if (filters.minLng !== undefined) queryParams.append('minLongitude', filters.minLng.toString());
+        if (filters.maxLng !== undefined) queryParams.append('maxLongitude', filters.maxLng.toString());
       }
       
       const response = await apiClient.get<any>(`/vehicles?${queryParams.toString()}`);
@@ -288,66 +293,6 @@ export const vehicleService = {
       const cached = vehicleListCache.get(queryParams.toString());
       if (cached) return cached;
       return { data: [], meta: { total: 0, page: 1, pageSize, totalPages: 0 } };
-    }
-  },
-
-  async getMapVehicles(filters?: VehicleFilters, signal?: AbortSignal): Promise<VehicleLocationResponse[]> {
-    const queryParams = new URLSearchParams();
-
-    try {
-      if (filters) {
-        if (filters.status) queryParams.append('status', filters.status);
-        if (filters.location) queryParams.append('location', filters.location);
-        if (filters.keyword) queryParams.append('keyword', filters.keyword);
-        if (filters.userLat !== undefined) queryParams.append('userLat', filters.userLat.toString());
-        if (filters.userLng !== undefined) queryParams.append('userLng', filters.userLng.toString());
-        if (filters.vehicleType) queryParams.append('vehicleType', filters.vehicleType.toUpperCase());
-        if (filters.category && filters.category.length > 0) {
-          filters.category.forEach(cat => queryParams.append('category', cat.toUpperCase()));
-        }
-        if (filters.brands && filters.brands.length > 0) {
-          filters.brands.forEach(b => queryParams.append('brand', b.toLowerCase()));
-        }
-        if (filters.minPrice !== undefined && filters.minPrice > 0) queryParams.append('minPrice', filters.minPrice.toString());
-        if (filters.maxPrice !== undefined) queryParams.append('maxPrice', filters.maxPrice.toString());
-        if (filters.minSeats !== undefined) queryParams.append('minSeats', filters.minSeats.toString());
-        if (filters.transmission && filters.transmission.length > 0) {
-          queryParams.append('transmission', filters.transmission[0]);
-        }
-        if (filters.fuelType && filters.fuelType.length > 0) {
-          queryParams.append('fuelType', filters.fuelType[0]);
-        }
-        if (filters.minRating !== undefined) queryParams.append('minRating', filters.minRating.toString());
-        if (filters.instantBook) queryParams.append('instantBook', 'true');
-        if (filters.deliveryAvailable) queryParams.append('deliveryAvailable', 'true');
-        if (filters.isFeatured) queryParams.append('isFeatured', 'true');
-        if (filters.sortBy) queryParams.append('sortBy', filters.sortBy);
-        if (filters.startDate) queryParams.append('startDate', filters.startDate);
-        if (filters.endDate) queryParams.append('endDate', filters.endDate);
-        if (filters.minEngineCc !== undefined) queryParams.append('minEngineCc', filters.minEngineCc.toString());
-        if (filters.maxEngineCc !== undefined) queryParams.append('maxEngineCc', filters.maxEngineCc.toString());
-        if (filters.hasHelmet) queryParams.append('hasHelmet', 'true');
-        if (filters.hasPhoneHolder) queryParams.append('hasPhoneHolder', 'true');
-        if (filters.hasRaincoat) queryParams.append('hasRaincoat', 'true');
-        if (filters.hasTouringPackage) queryParams.append('hasTouringPackage', 'true');
-        if (filters.hasChauffeur) queryParams.append('hasChauffeur', 'true');
-        if (filters.airportDelivery) queryParams.append('airportDelivery', 'true');
-        if (filters.weddingRental) queryParams.append('weddingRental', 'true');
-        if (filters.businessRental) queryParams.append('businessRental', 'true');
-      }
-      
-      const response = await apiClient.get<any>(`/vehicles/map?${queryParams.toString()}`, { signal });
-      const list = Array.isArray(response) ? response : response?.data || [];
-      mapVehicleCache.set(queryParams.toString(), list);
-      return list;
-    } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') {
-        throw error;
-      }
-      console.error('Failed to get map vehicles', error);
-      const cached = mapVehicleCache.get(queryParams.toString());
-      if (cached) return cached;
-      return [];
     }
   },
 

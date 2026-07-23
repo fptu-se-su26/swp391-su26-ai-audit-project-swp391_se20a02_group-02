@@ -418,10 +418,11 @@ export const MapPage: React.FC = () => {
   const fetchVehicles = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
     try {
-      const data = await vehicleService.getMapVehicles(filters, signal);
-      setVehicles(data || []);
+      const res = await vehicleService.getAll(filters, 1, 500);
+      const data = res.data;
+      setVehicles(data as any);
       if (data && data.length > 0 && !selectedVehicle) {
-        setSelectedVehicle(data[0]);
+        setSelectedVehicle(data[0] as any);
       }
     } catch (e: any) {
       if (e?.name !== 'AbortError') console.error('Map fetch error:', e);

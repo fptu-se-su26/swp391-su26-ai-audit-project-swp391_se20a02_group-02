@@ -137,6 +137,11 @@ public interface VehicleRepository extends JpaRepository<Vehicle, String> {
            "(:airportDelivery = false OR v.airportDelivery = true) AND " +
            "(:weddingRental = false OR v.weddingRental = true) AND " +
            "(:businessRental = false OR v.businessRental = true) AND " +
+           "(:minLatitude IS NULL OR v.latitude >= :minLatitude) AND " +
+           "(:maxLatitude IS NULL OR v.latitude <= :maxLatitude) AND " +
+           "(:minLongitude IS NULL OR v.longitude >= :minLongitude) AND " +
+           "(:maxLongitude IS NULL OR v.longitude <= :maxLongitude) AND " +
+           "(:minLatitude IS NULL OR (v.latitude IS NOT NULL AND v.longitude IS NOT NULL)) AND " +
            "(:startDate IS NULL OR :endDate IS NULL OR NOT EXISTS (" +
            "  SELECT b FROM Booking b WHERE b.vehicle.id = v.id AND " +
            "  b.status IN (com.luxeway.enums.BookingStatus.WAITING_PAYMENT, com.luxeway.enums.BookingStatus.PAYMENT_PENDING, com.luxeway.enums.BookingStatus.PAYMENT_VERIFIED, com.luxeway.enums.BookingStatus.OWNER_APPROVED, com.luxeway.enums.BookingStatus.READY_FOR_PICKUP, com.luxeway.enums.BookingStatus.CHECKED_OUT, com.luxeway.enums.BookingStatus.IN_RENTAL, com.luxeway.enums.BookingStatus.RETURN_PENDING, com.luxeway.enums.BookingStatus.RETURN_COMPLETED, com.luxeway.enums.BookingStatus.COMPLETED) AND " +
@@ -167,6 +172,10 @@ public interface VehicleRepository extends JpaRepository<Vehicle, String> {
                                       @Param("airportDelivery") boolean airportDelivery,
                                       @Param("weddingRental") boolean weddingRental,
                                       @Param("businessRental") boolean businessRental,
+                                      @Param("minLatitude") Double minLatitude,
+                                      @Param("maxLatitude") Double maxLatitude,
+                                      @Param("minLongitude") Double minLongitude,
+                                      @Param("maxLongitude") Double maxLongitude,
                                       @Param("startDate") java.time.LocalDate startDate,
                                       @Param("endDate") java.time.LocalDate endDate,
                                       Pageable pageable);

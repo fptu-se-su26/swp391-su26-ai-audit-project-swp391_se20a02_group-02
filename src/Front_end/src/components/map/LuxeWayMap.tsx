@@ -4,7 +4,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import { useUIStore } from '@/store';
 import { formatCurrency } from '@/utils';
 import type { Vehicle, VehicleLocationResponse } from '@/types';
-import { getCoordinates } from './VehicleMap';
+
 import { getMapStyleUrl, installMapStyleFallback } from './mapStyle';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=800';
@@ -145,10 +145,7 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
       && lng >= -180 && lng <= 180;
 
     if (!isValid) {
-      // BUG-2 FIX: Always use getCoordinates fallback for ALL vehicles (not just single-vehicle).
-      // This scatters vehicles around their city center so they always appear on the map,
-      // even when the database has null/zero GPS coordinates.
-      return getCoordinates(v, index);
+      return null;
     }
     return [lat, lng];
   }, []);

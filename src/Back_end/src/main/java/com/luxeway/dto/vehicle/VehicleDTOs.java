@@ -198,6 +198,12 @@ public class VehicleDTOs {
         private java.time.LocalDate startDate;
         private java.time.LocalDate endDate;
 
+        // Geographic map bounds
+        private Double minLatitude;
+        private Double maxLatitude;
+        private Double minLongitude;
+        private Double maxLongitude;
+
         // Filters added for Car/Motorbike ecosystem
         private String vehicleType;
         private Integer minEngineCc;

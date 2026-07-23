@@ -515,9 +515,7 @@ const MarketplacePage: React.FC = () => {
   const isMapView = location.pathname === '/map' || searchParams.get('view') === 'map';
 
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [mapVehicles, setMapVehicles] = useState<VehicleLocationResponse[]>([]);
   const [loading, setLoading] = useState(true);
-  const [mapLoading, setMapLoading] = useState(false);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -530,8 +528,7 @@ const MarketplacePage: React.FC = () => {
   // Rebuild states
   const [showCarousel, setShowCarousel] = useState<boolean>(false);
   const [showSearchArea, setShowSearchArea] = useState<boolean>(false);
-  const [mapBounds, setMapBounds] = useState<{ minLat: number; maxLat: number; minLng: number; maxLng: number } | null>(null);
-  const [appliedMapBounds, setAppliedMapBounds] = useState<{ minLat: number; maxLat: number; minLng: number; maxLng: number } | null>(null);
+  const [pendingMapBounds, setPendingMapBounds] = useState<{ minLat: number; maxLat: number; minLng: number; maxLng: number } | null>(null);
   const [shouldFitBounds, setShouldFitBounds] = useState<boolean>(true);
   const [hoveredMapVehicleId, setHoveredMapVehicleId] = useState<string | null>(null);
 
@@ -710,10 +707,11 @@ const MarketplacePage: React.FC = () => {
     }
   }, [searchParams, isMapView]);
 
-  const loadVehicles = useCallback(async (f: VehicleFilters, p: number) => {
+  const loadVehicles = useCallback(async (f: VehicleFilters, p: number, isMap: boolean) => {
     setLoading(true);
     try {
-      const result = await vehicleService.getAll(f, p, 12);
+      const pageSize = isMap ? 500 : 12;
+      const result = await vehicleService.getAll(f, p, pageSize);
       setVehicles(result.data);
       setTotal(result.meta?.total || 0);
       setTotalPages(result.meta?.totalPages || 1);
@@ -721,31 +719,6 @@ const MarketplacePage: React.FC = () => {
       console.error(err);
     } finally {
       setLoading(false);
-    }
-  }, []);
-
-  const mapAbortControllerRef = useRef<AbortController | null>(null);
-
-  const loadMapVehicles = useCallback(async (f: VehicleFilters) => {
-    if (mapAbortControllerRef.current) {
-      mapAbortControllerRef.current.abort();
-    }
-    const controller = new AbortController();
-    mapAbortControllerRef.current = controller;
-
-    setMapLoading(true);
-    try {
-      const results = await vehicleService.getMapVehicles(f, controller.signal);
-      setMapVehicles(results);
-    } catch (err) {
-      if (err instanceof Error && err.name === 'AbortError') {
-        return;
-      }
-      console.error(err);
-    } finally {
-      if (mapAbortControllerRef.current === controller) {
-        setMapLoading(false);
-      }
     }
   }, []);
 
@@ -781,15 +754,9 @@ const MarketplacePage: React.FC = () => {
 
   // Load active lists
   useEffect(() => {
-    loadVehicles(filters, page);
-  }, [filters, page, loadVehicles]);
-
-  // Load map markers only when map is toggled open or active in mobile view
-  useEffect(() => {
-    if (mapOpen || mobileViewMode === 'map') {
-      loadMapVehicles(filters);
-    }
-  }, [filters, mapOpen, mobileViewMode, loadMapVehicles]);
+    const isMap = mapOpen || mobileViewMode === 'map';
+    loadVehicles(filters, page, isMap);
+  }, [filters, page, loadVehicles, mapOpen, mobileViewMode]);
 
   // Sync map open state from URL (path or query param)
   useEffect(() => {
@@ -808,7 +775,7 @@ const MarketplacePage: React.FC = () => {
     // Fit bounds on filter changes, not user pan
     setShouldFitBounds(true);
     setShowSearchArea(false);
-    setAppliedMapBounds(null);
+    setPendingMapBounds(null);
   }, [filters, mapOpen]);
 
   const handleTypeSwitch = (type: VehicleType | 'all') => {
@@ -854,22 +821,8 @@ const MarketplacePage: React.FC = () => {
     }).length;
   }, [filters]);
 
-  const visibleMapVehicles = useMemo(() => {
-    if (!appliedMapBounds) return mapVehicles;
-    return mapVehicles.filter(vehicle => {
-      const lat = Number(vehicle.latitude);
-      const lng = Number(vehicle.longitude);
-      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
-      return (
-        lat >= appliedMapBounds.minLat &&
-        lat <= appliedMapBounds.maxLat &&
-        lng >= appliedMapBounds.minLng &&
-        lng <= appliedMapBounds.maxLng
-      );
-    });
-  }, [mapVehicles, appliedMapBounds]);
-
-  const mapDisplayTotal = appliedMapBounds ? visibleMapVehicles.length : mapVehicles.length;
+  const visibleMapVehicles = vehicles;
+  const mapDisplayTotal = vehicles.length;
 
   // Type colors
   const typeColor = activeType === 'motorbike' ? 'orange' : activeType === 'car' ? 'blue' : 'accent';
@@ -913,7 +866,7 @@ const MarketplacePage: React.FC = () => {
                         : tab.type === 'car' ? "bg-blue-500/20 text-blue-600"
                           : "bg-accent/20 text-accent"
                     )}>
-                      {loading || mapLoading ? '...' : (isMapView ? mapDisplayTotal : total)}
+                      {loading ? '...' : (isMapView ? mapDisplayTotal : total)}
                     </span>
                   )}
                 </button>
@@ -1146,10 +1099,12 @@ const MarketplacePage: React.FC = () => {
                       onMouseLeave={() => setHoveredVehicleId(null)}
                       onClick={() => {
                         setSelectedVehicleId(vehicle.id);
-                        const mapLoc = mapVehicles.find(mv => mv.id === vehicle.id);
+                        const mapLoc = vehicles.find(mv => mv.id === vehicle.id);
                         if (mapLoc && (window as any).luxewayMapInstance) {
+                          const lng = mapLoc.location?.lng || (mapLoc as any).longitude || 106.660;
+                          const lat = mapLoc.location?.lat || (mapLoc as any).latitude || 10.762;
                           (window as any).luxewayMapInstance.flyTo({
-                            center: [mapLoc.longitude, mapLoc.latitude],
+                            center: [lng, lat],
                             zoom: 14.5,
                             duration: 1000
                           });
@@ -1227,12 +1182,12 @@ const MarketplacePage: React.FC = () => {
               >
                 <div className="relative w-full h-full">
                   <LuxeWayMap
-                    vehicles={visibleMapVehicles}
+                    vehicles={vehicles}
                     selectedVehicleId={selectedVehicleId}
                     hoveredVehicleId={hoveredMapVehicleId || hoveredVehicleId || undefined}
                     onSelectionChange={setMapSelectedVehicles}
                     onMarkerHover={setHoveredMapVehicleId}
-                    onBoundsChange={setMapBounds}
+                    onBoundsChange={setPendingMapBounds}
                     onMapMoved={() => {
                       setShowSearchArea(true);
                       setShouldFitBounds(false); // Disable auto-fit once user interacts
@@ -1287,18 +1242,18 @@ const MarketplacePage: React.FC = () => {
                         className="absolute top-4 left-1/2 -translate-x-1/2 z-20"
                       >
                         <button
-                          onClick={async () => {
+                          onClick={() => {
                             setShowSearchArea(false);
-                            if (mapBounds) {
-                              setAppliedMapBounds(mapBounds);
-                            }
                             setShouldFitBounds(false);
-                            setMapLoading(true); // Triggers loading skeletons for markers/cards
-                            try {
-                              // Enrichment/load callback
-                              await loadMapVehicles(filters);
-                            } finally {
-                              setMapLoading(false);
+                            if (pendingMapBounds) {
+                              setFilters(prev => ({
+                                ...prev,
+                                location: undefined, // Override location filter with exact map bounds
+                                minLat: pendingMapBounds.minLat,
+                                maxLat: pendingMapBounds.maxLat,
+                                minLng: pendingMapBounds.minLng,
+                                maxLng: pendingMapBounds.maxLng,
+                              }));
                             }
                           }}
                           className="flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full shadow-lg text-xs font-black text-slate-800 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition-all active:scale-95 duration-200"
@@ -1353,7 +1308,7 @@ const MarketplacePage: React.FC = () => {
 
                   {/* Bottom Carousel (Airbnb/Mioto style) */}
                   <AnimatePresence>
-                    {(isMapView ? (showCarousel && visibleMapVehicles.length > 0) : mapSelectedVehicles.length > 0) && (
+                    {(isMapView ? (showCarousel && vehicles.length > 0) : mapSelectedVehicles.length > 0) && (
                       <motion.div
                         initial={{ y: 150, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
@@ -1367,7 +1322,7 @@ const MarketplacePage: React.FC = () => {
                             : "bottom-20 left-4 right-4"
                         )}
                       >
-                        {(isMapView ? visibleMapVehicles : mapSelectedVehicles).map(v => {
+                        {(isMapView ? vehicles : mapSelectedVehicles).map(v => {
                           const thumbnailSrc = (v as any).image || (v as any).thumbnail || (v as any).thumbnailUrl || (v as any).images?.[0] || FALLBACK_IMAGE;
                           const finalPrice = Number((v as any).finalPrice || v.pricePerDay || 0);
                           const originalPrice = Number(v.pricePerDay || finalPrice) * 1.12;
@@ -1385,10 +1340,12 @@ const MarketplacePage: React.FC = () => {
                                 setSelectedVehicleId(v.id);
                                 if (isMapView) {
                                   // Highlight marker + center map
-                                  const mapLoc = visibleMapVehicles.find(mv => mv.id === v.id);
+                                  const mapLoc = vehicles.find(mv => mv.id === v.id);
                                   if (mapLoc && (window as any).luxewayMapInstance) {
+                                    const lng = mapLoc.location?.lng || (mapLoc as any).longitude || 106.660;
+                                    const lat = mapLoc.location?.lat || (mapLoc as any).latitude || 10.762;
                                     (window as any).luxewayMapInstance.flyTo({
-                                      center: [mapLoc.longitude, mapLoc.latitude],
+                                      center: [lng, lat],
                                       zoom: 15,
                                       duration: 1200
                                     });
@@ -1471,7 +1428,7 @@ const MarketplacePage: React.FC = () => {
                   </AnimatePresence>
 
                   {/* Loading Skeletons Overlay (Markers & Cards) */}
-                  {mapLoading && (
+                  {loading && isMapView && (
                     <div className="absolute inset-0 bg-slate-900/15 pointer-events-none flex flex-col justify-end z-30 transition-all duration-300">
                       {/* Pulse cards skeleton */}
                       <div className="flex gap-4 px-4 pb-6 overflow-hidden max-w-full">
@@ -1492,7 +1449,7 @@ const MarketplacePage: React.FC = () => {
                   )}
 
                   {/* Empty State Overlay with Illustration */}
-                  {!mapLoading && visibleMapVehicles.length === 0 && (
+                  {!loading && vehicles.length === 0 && (
                     <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-md flex items-center justify-center z-30 transition-all duration-350">
                       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 rounded-3xl text-center max-w-md shadow-2xl mx-4">
                         <div className="text-6xl mb-4 animate-bounce-slow">🚗</div>
