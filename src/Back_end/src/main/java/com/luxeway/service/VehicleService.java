@@ -1276,6 +1276,10 @@ public class VehicleService {
             filter.getAirportDelivery() != null ? filter.getAirportDelivery() : false,
             filter.getWeddingRental() != null ? filter.getWeddingRental() : false,
             filter.getBusinessRental() != null ? filter.getBusinessRental() : false,
+            filter.getMinLatitude(),
+            filter.getMaxLatitude(),
+            filter.getMinLongitude(),
+            filter.getMaxLongitude(),
             filter.getStartDate(),
             filter.getEndDate(),
             pageable
