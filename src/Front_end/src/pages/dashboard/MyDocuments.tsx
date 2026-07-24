@@ -7,6 +7,7 @@ import {
 import { useAuthStore } from '@/store';
 import apiClient from '@/services/api';
 import { useToast } from '@/components/ui/Toast';
+import { resolveImageUrl } from '@/utils';
 
 export const MyDocuments: React.FC = () => {
   const { user, initAuth } = useAuthStore();
@@ -139,14 +140,9 @@ export const MyDocuments: React.FC = () => {
     }
   };
 
-  const apiBaseUrl = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8080/api/v1';
-
   const resolveUrl = (url?: string) => {
     if (!url) return '';
-    if (url.startsWith('blob:') || url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
-      return url;
-    }
-    return `${apiBaseUrl}${url}`;
+    return resolveImageUrl(url);
   };
 
   const fetchDocuments = async () => {
@@ -796,14 +792,14 @@ export const MyDocuments: React.FC = () => {
                     
                     <div className="flex flex-col sm:flex-row gap-2 mt-5 w-full justify-center">
                       <button 
-                        disabled={isKycPending || uploadingDoc === 'SELFIE' || !cccdFront}
+                        disabled={uploadingDoc === 'SELFIE'}
                         onClick={startCamera}
                         className="py-2 px-4 bg-indigo-600 hover:bg-indigo-750 text-white rounded-xl text-xs font-bold disabled:opacity-50 flex items-center justify-center gap-1.5"
                       >
                         <Camera className="w-3.5 h-3.5" /> {isVi ? 'Mở Camera quét mặt' : 'Open Camera Scan'}
                       </button>
                       <button 
-                        disabled={isKycPending || uploadingDoc === 'SELFIE' || !cccdFront}
+                        disabled={uploadingDoc === 'SELFIE'}
                         onClick={() => triggerUpload('SELFIE')}
                         className="py-2 px-4 border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl text-xs font-bold disabled:opacity-50 flex items-center justify-center gap-1.5"
                       >
