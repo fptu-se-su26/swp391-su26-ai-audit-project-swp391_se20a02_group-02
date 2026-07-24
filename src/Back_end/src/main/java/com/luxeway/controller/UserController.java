@@ -266,9 +266,9 @@ public class UserController {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         String currentStatus = user.getKycStatus();
-        if (currentStatus != null && ("PENDING".equalsIgnoreCase(currentStatus) || "PENDING_APPROVAL".equalsIgnoreCase(currentStatus))) {
+        if ("APPROVED".equalsIgnoreCase(currentStatus)) {
             Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Cannot upload documents while KYC review is pending admin approval.");
+            errorResponse.put("error", "Your KYC has already been verified and approved.");
             return ResponseEntity.badRequest().body(errorResponse);
         }
 
