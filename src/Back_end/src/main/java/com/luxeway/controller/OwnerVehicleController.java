@@ -69,12 +69,12 @@ public class OwnerVehicleController {
     public ResponseEntity<Map<String, Object>> updateVehicle(
             @AuthenticationPrincipal User user,
             @PathVariable String id,
-            @RequestBody VehicleDTOs.UpdateVehicleRequest request) {
+            @RequestBody VehicleDTOs.CreateVehicleRequest request) {
         try {
             if (user == null) {
                 return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
             }
-            VehicleDTOs.VehicleResponse vehicle = vehicleService.update(id, request, user.getId(), false);
+            VehicleDTOs.VehicleResponse vehicle = vehicleService.update(id, user.getId(), request, false);
             return ResponseEntity.ok(Map.of("vehicle", vehicle));
         } catch (Exception e) {
             return ResponseEntity.status(500).body(Map.of("error", "Failed to update vehicle", "message", e.getMessage()));
