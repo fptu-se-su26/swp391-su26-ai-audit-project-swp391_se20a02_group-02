@@ -20,7 +20,18 @@ jobs:
           command_timeout: 30m
           script: |
             cd /opt/luxeway
+            
+            # Ensure the remote is correctly set
+            git remote set-url origin https://github.com/fptu-se-su26/swp391-su26-ai-audit-project-swp391_se20a02_group-02.git
+            
+            # Fetch the latest code from GitHub origin/main
+            git fetch origin main || { echo "Git fetch failed"; exit 1; }
+            
+            # Hard reset VPS to exactly match GitHub origin/main (VPS must be a clean mirror)
+            git reset --hard origin/main || { echo "Git reset failed"; exit 1; }
+            
+            # Remove untracked files (but preserve .env and other ignored files)
             git clean -fd
-            git reset --hard
-            git pull origin main
+            
+            # Deploy the application
             bash deploy.sh
