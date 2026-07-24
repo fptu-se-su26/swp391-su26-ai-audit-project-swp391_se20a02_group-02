@@ -9,7 +9,8 @@ import {
   LayoutDashboard, Car, Calendar, TrendingUp, Users, Settings,
   Plus, Edit, Trash2, Eye, CheckCircle, Clock, DollarSign,
   BarChart2, Shield, AlertTriangle, LogOut, Globe, Menu,
-  MapPin, Star, Activity, ArrowUpRight, Play, FileText
+  MapPin, Star, Activity, ArrowUpRight, Play, FileText,
+  Search, Filter, SlidersHorizontal, RefreshCw
 } from 'lucide-react';
 
 import { useAuthStore, useUIStore } from '@/store';
@@ -1383,20 +1384,57 @@ export const OwnerCalendarPage: React.FC = () => {
 export const OwnerBookingsPage: React.FC = () => {
   const { user } = useAuthStore();
   const [bookings, setBookings] = React.useState<Booking[]>([]);
+  const [vehicles, setVehicles] = React.useState<Vehicle[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [filter, setFilter] = React.useState('all');
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const [selectedVehicleFilter, setSelectedVehicleFilter] = React.useState('all');
   const toast = useToast();
   const t = useT();
 
   React.useEffect(() => {
     if (!user) return;
-    bookingService.getByOwner(user.id).then(b => {
+    Promise.all([
+      bookingService.getByOwner(user.id),
+      vehicleService.getByOwner(user.id)
+    ]).then(([b, v]) => {
       setBookings(b);
+      setVehicles(v);
       setLoading(false);
     });
   }, [user?.id]);
 
-  const filtered = filter === 'all' ? bookings : bookings.filter(b => b.status === filter);
+  const vehicleTitle = (booking: Booking) => {
+    const vehicle = booking.vehicle as any;
+    const brand = vehicle?.brand || vehicle?.brandName || '';
+    const name = vehicle?.name || vehicle?.modelName || booking.vehicleId || 'Vehicle';
+    return `${brand} ${name}`.trim();
+  };
+
+  const filtered = bookings.filter(b => {
+    // 1. Status Filter
+    if (filter !== 'all' && b.status !== filter) return false;
+
+    // 2. Search Query (Customer Name, Email, Phone, Booking Code / ID, Vehicle Name)
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const bCode = (b.bookingCode || b.id || '').toLowerCase();
+      const renterName = (b.renter?.displayName || b.renter?.firstName || b.renter?.email || '').toLowerCase();
+      const renterPhone = (b.renter?.phone || '').toLowerCase();
+      const vName = (vehicleTitle(b) || '').toLowerCase();
+      if (!bCode.includes(q) && !renterName.includes(q) && !renterPhone.includes(q) && !vName.includes(q)) {
+        return false;
+      }
+    }
+
+    // 3. Vehicle Filter
+    if (selectedVehicleFilter !== 'all' && b.vehicleId !== selectedVehicleFilter) {
+      return false;
+    }
+
+    return true;
+  });
+
   const statusTabs = [
     { value: 'all', label: 'All' },
     { value: 'pending', label: 'Pending' },
@@ -1411,12 +1449,6 @@ export const OwnerBookingsPage: React.FC = () => {
     ? bookings.length
     : bookings.filter(b => b.status === status).length;
   const bookingTitle = (booking: Booking) => booking.bookingCode || `#${booking.id.slice(-6).toUpperCase()}`;
-  const vehicleTitle = (booking: Booking) => {
-    const vehicle = booking.vehicle as any;
-    const brand = vehicle?.brand || vehicle?.brandName || '';
-    const name = vehicle?.name || vehicle?.modelName || booking.vehicleId || 'Vehicle';
-    return `${brand} ${name}`.trim();
-  };
   const renterTitle = (booking: Booking) => booking.renter?.displayName || booking.renter?.email || booking.renterId || 'Renter';
   const paymentState = (status: string) => {
     if (status === 'payment_pending') return 'Customer paid - waiting review';
@@ -1493,6 +1525,36 @@ export const OwnerBookingsPage: React.FC = () => {
   return (
     <div className="space-y-6 animate-fade-in">
       <Breadcrumbs title="Booking Requests" items={breadcrumbItems} backHref="/owner" backText="Back to Overview" />
+
+      {/* Search & Vehicle Filter Bar */}
+      <div className="glass border border-slate-200/50 dark:border-white/5 p-4 rounded-2xl shadow-sm flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+        <div className="relative flex-1 min-w-[240px]">
+          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="Search booking #, customer name, email, vehicle..."
+            className="lux-input w-full pl-10 pr-4 py-2.5 text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-white/5 text-slate-800 dark:text-white rounded-xl focus:border-gold/50"
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-slate-600">✕</button>
+          )}
+        </div>
+
+        <div className="flex gap-2 items-center">
+          <select
+            value={selectedVehicleFilter}
+            onChange={e => setSelectedVehicleFilter(e.target.value)}
+            className="lux-input py-2.5 px-3 text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-white/5 text-slate-800 dark:text-white rounded-xl focus:border-gold/50 min-w-[180px]"
+          >
+            <option value="all">All Vehicles in Fleet</option>
+            {vehicles.map(v => (
+              <option key={v.id} value={v.id}>{v.name}</option>
+            ))}
+          </select>
+        </div>
+      </div>
 
       {/* Filter Tabs - Premium Capsule Pills */}
       <div className="flex gap-2 overflow-x-auto pb-2 max-w-full scrollbar-none">
@@ -1699,6 +1761,10 @@ export const FleetManagementPage: React.FC = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedStatus, setSelectedStatus] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [approvalFilter, setApprovalFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('newest');
   const t = useT();
 
   useEffect(() => {
@@ -1709,7 +1775,40 @@ export const FleetManagementPage: React.FC = () => {
     });
   }, [user?.id]);
 
-  const filtered = selectedStatus === 'all' ? vehicles : vehicles.filter(v => v.status === selectedStatus);
+  const filtered = vehicles.filter(v => {
+    // Status Filter
+    if (selectedStatus !== 'all' && v.status !== selectedStatus) return false;
+
+    // Search Query (Name, Brand, Model, License Plate, City)
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const name = (v.name || '').toLowerCase();
+      const brand = (v.brand || '').toLowerCase();
+      const model = (v.model || '').toLowerCase();
+      const plate = ((v as any).licensePlate || '').toLowerCase();
+      const city = (v.location?.city || (v as any).city || '').toLowerCase();
+      if (!name.includes(q) && !brand.includes(q) && !model.includes(q) && !plate.includes(q) && !city.includes(q)) {
+        return false;
+      }
+    }
+
+    // Category Filter
+    if (categoryFilter !== 'all' && (v.category || '').toUpperCase() !== categoryFilter.toUpperCase()) {
+      return false;
+    }
+
+    // Approval Status Filter
+    if (approvalFilter !== 'all' && ((v as any).approvalStatus || 'APPROVED').toUpperCase() !== approvalFilter.toUpperCase()) {
+      return false;
+    }
+
+    return true;
+  }).sort((a, b) => {
+    if (sortBy === 'price_desc') return b.pricePerDay - a.pricePerDay;
+    if (sortBy === 'price_asc') return a.pricePerDay - b.pricePerDay;
+    if (sortBy === 'rating') return (b.rating || 0) - (a.rating || 0);
+    return 0;
+  });
 
   const stats = {
     total: vehicles.length,
@@ -1771,7 +1870,62 @@ export const FleetManagementPage: React.FC = () => {
         <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-3">{stats.rented} of {stats.total} vehicles currently generating revenue</p>
       </div>
 
-      {/* Filter Tabs */}
+      {/* Search & Filter Controls Bar */}
+      <div className="glass border border-slate-200/50 dark:border-white/5 p-4 rounded-2xl shadow-sm flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+        <div className="relative flex-1 min-w-[240px]">
+          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="Search fleet by name, brand, license plate, city..."
+            className="lux-input w-full pl-10 pr-4 py-2.5 text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-white/5 text-slate-800 dark:text-white rounded-xl focus:border-gold/50"
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-slate-600">✕</button>
+          )}
+        </div>
+
+        <div className="flex flex-wrap gap-2 items-center">
+          <select
+            value={categoryFilter}
+            onChange={e => setCategoryFilter(e.target.value)}
+            className="lux-input py-2.5 px-3 text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-white/5 text-slate-800 dark:text-white rounded-xl focus:border-gold/50"
+          >
+            <option value="all">All Categories</option>
+            <option value="SUV">SUV</option>
+            <option value="SEDAN">Sedan</option>
+            <option value="MPV">MPV</option>
+            <option value="LUXURY">Luxury</option>
+            <option value="CUV">CUV</option>
+            <option value="HATCHBACK">Hatchback</option>
+          </select>
+
+          <select
+            value={approvalFilter}
+            onChange={e => setApprovalFilter(e.target.value)}
+            className="lux-input py-2.5 px-3 text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-white/5 text-slate-800 dark:text-white rounded-xl focus:border-gold/50"
+          >
+            <option value="all">All Approvals</option>
+            <option value="APPROVED">Approved</option>
+            <option value="SUBMITTED">Pending Admin Review</option>
+            <option value="REJECTED">Rejected</option>
+          </select>
+
+          <select
+            value={sortBy}
+            onChange={e => setSortBy(e.target.value)}
+            className="lux-input py-2.5 px-3 text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-white/5 text-slate-800 dark:text-white rounded-xl focus:border-gold/50"
+          >
+            <option value="newest">Sort: Newest</option>
+            <option value="price_desc">Price: High → Low</option>
+            <option value="price_asc">Price: Low → High</option>
+            <option value="rating">Rating: High → Low</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Filter Status Tabs */}
       <div className="flex gap-2 overflow-x-auto pb-2 max-w-full scrollbar-none">
         {['all', 'available', 'rented', 'maintenance', 'unavailable'].map(s => (
           <button
@@ -2311,6 +2465,9 @@ export const OwnerReviewsPage: React.FC = () => {
   const { user } = useAuthStore();
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [ratingFilter, setRatingFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('newest');
   const toast = useToast();
 
   useEffect(() => {
@@ -2325,6 +2482,27 @@ export const OwnerReviewsPage: React.FC = () => {
     }
   }, [user?.id]);
 
+  const filteredReviews = reviews.filter(r => {
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const uName = (r.user?.displayName || r.user?.email || '').toLowerCase();
+      const comment = (r.comment || '').toLowerCase();
+      const vName = (r.vehicleName || '').toLowerCase();
+      if (!uName.includes(q) && !comment.includes(q) && !vName.includes(q)) {
+        return false;
+      }
+    }
+    if (ratingFilter !== 'all') {
+      const targetRating = Number(ratingFilter);
+      if (Math.floor(r.rating || 5) !== targetRating) return false;
+    }
+    return true;
+  }).sort((a, b) => {
+    if (sortBy === 'rating_desc') return (b.rating || 0) - (a.rating || 0);
+    if (sortBy === 'rating_asc') return (a.rating || 0) - (b.rating || 0);
+    return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+  });
+
   const ratingAvg = reviews.length > 0 
     ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
     : 'N/A';
@@ -2336,16 +2514,58 @@ export const OwnerReviewsPage: React.FC = () => {
         <p className="text-xs text-[var(--lw-text-muted)] mt-1">Monitor passenger feedback and fleet service ratings</p>
       </div>
 
+      {/* Search & Rating Filter Bar */}
+      <div className="glass border border-slate-200/50 dark:border-white/5 p-4 rounded-2xl shadow-sm flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+        <div className="relative flex-1 min-w-[240px]">
+          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="Search review by customer name, comment, vehicle..."
+            className="lux-input w-full pl-10 pr-4 py-2.5 text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-white/5 text-slate-800 dark:text-white rounded-xl focus:border-gold/50"
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-slate-600">✕</button>
+          )}
+        </div>
+
+        <div className="flex flex-wrap gap-2 items-center">
+          <select
+            value={ratingFilter}
+            onChange={e => setRatingFilter(e.target.value)}
+            className="lux-input py-2.5 px-3 text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-white/5 text-slate-800 dark:text-white rounded-xl focus:border-gold/50"
+          >
+            <option value="all">All Ratings</option>
+            <option value="5">5 ⭐ (Excellent)</option>
+            <option value="4">4 ⭐ (Good)</option>
+            <option value="3">3 ⭐ (Average)</option>
+            <option value="2">2 ⭐ (Below Average)</option>
+            <option value="1">1 ⭐ (Poor)</option>
+          </select>
+
+          <select
+            value={sortBy}
+            onChange={e => setSortBy(e.target.value)}
+            className="lux-input py-2.5 px-3 text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-white/5 text-slate-800 dark:text-white rounded-xl focus:border-gold/50"
+          >
+            <option value="newest">Newest First</option>
+            <option value="rating_desc">Highest Rating</option>
+            <option value="rating_asc">Lowest Rating</option>
+          </select>
+        </div>
+      </div>
+
       {loading ? (
         <div className="space-y-4">
           {[...Array(3)].map((_, i) => (
             <div key={i} className="skeleton h-24 rounded-2xl animate-pulse" />
           ))}
         </div>
-      ) : reviews.length === 0 ? (
+      ) : filteredReviews.length === 0 ? (
         <div className="glass border border-slate-200/50 dark:border-white/5 text-center py-16 rounded-[2rem] shadow-sm">
           <Star className="w-14 h-14 text-slate-300 dark:text-slate-700 mx-auto mb-3 animate-pulse" />
-          <p className="text-slate-400 text-sm font-semibold">No reviews received yet</p>
+          <p className="text-slate-400 text-sm font-semibold">No reviews matching your search criteria</p>
         </div>
       ) : (
         <div className="space-y-6">
@@ -2366,7 +2586,7 @@ export const OwnerReviewsPage: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 gap-4">
-            {reviews.map(review => (
+            {filteredReviews.map(review => (
               <div key={review.id} className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm hover-lift transition-all">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-center gap-3">

@@ -62,13 +62,17 @@ public class BookingController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/owner")
+    @GetMapping({"/owner", "/owner/{ownerId}"})
     @Operation(summary = "Get all bookings for vehicles owned by the authenticated owner")
     public ResponseEntity<ApiResponse<Page<BookingDTOs.BookingResponse>>> getOwnerBookings(
+            @PathVariable(required = false) String ownerId,
             @AuthenticationPrincipal User user,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        Page<BookingDTOs.BookingResponse> bookings = bookingService.getOwnerBookings(user.getId(), page, size);
+            @RequestParam(defaultValue = "50") int size) {
+        String targetOwnerId = (ownerId == null || ownerId.trim().isEmpty() || "me".equalsIgnoreCase(ownerId) || "my".equalsIgnoreCase(ownerId))
+                ? user.getId()
+                : ownerId;
+        Page<BookingDTOs.BookingResponse> bookings = bookingService.getOwnerBookings(targetOwnerId, page, size);
         ApiResponse<Page<BookingDTOs.BookingResponse>> response = ApiResponse.<Page<BookingDTOs.BookingResponse>>builder()
                 .success(true)
                 .data(bookings)

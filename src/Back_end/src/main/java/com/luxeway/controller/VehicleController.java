@@ -392,12 +392,12 @@ public class VehicleController {
         }
     }
 
-    @GetMapping("/owner/{ownerId}")
+    @GetMapping({"/owner/{ownerId}", "/owner"})
     public ResponseEntity<Map<String, Object>> getVehiclesByOwner(
-            @PathVariable String ownerId,
+            @PathVariable(required = false) String ownerId,
             @AuthenticationPrincipal com.luxeway.entity.User user,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "12") int size) {
+            @RequestParam(defaultValue = "50") int size) {
 
         try {
             if (user == null) {
@@ -406,10 +406,14 @@ public class VehicleController {
                 return ResponseEntity.status(401).body(errorResponse);
             }
 
-            boolean isAdmin = user.getAuthorities().stream()
-                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+            String targetOwnerId = (ownerId == null || ownerId.trim().isEmpty() || "me".equalsIgnoreCase(ownerId) || "my".equalsIgnoreCase(ownerId))
+                    ? user.getId()
+                    : ownerId;
 
-            if (!isAdmin && !user.getId().equals(ownerId)) {
+            boolean isAdmin = user.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ADMIN"));
+
+            if (!isAdmin && !user.getId().equals(targetOwnerId)) {
                 Map<String, Object> errorResponse = new HashMap<>();
                 errorResponse.put("error", "Forbidden");
                 errorResponse.put("message", "Not authorized to view this owner's fleet");
@@ -417,7 +421,7 @@ public class VehicleController {
             }
 
             // Use vehicleService to get properly mapped DTOs (consistent with other endpoints)
-            List<VehicleDTOs.VehicleResponse> vehicles = vehicleService.getByOwner(ownerId);
+            List<VehicleDTOs.VehicleResponse> vehicles = vehicleService.getByOwner(targetOwnerId);
 
             // Manual pagination since getByOwner returns List
             int start = page * size;
@@ -431,7 +435,7 @@ public class VehicleController {
             response.put("currentPage", page);
             response.put("totalItems", vehicles.size());
             response.put("totalPages", (int) Math.ceil((double) vehicles.size() / size));
-            response.put("ownerId", ownerId);
+            response.put("ownerId", targetOwnerId);
 
             return ResponseEntity.ok(response);
 
