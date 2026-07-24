@@ -38,6 +38,11 @@ const CURRENCIES = [
 // Localized items for Global Navbar to guarantee no mixed languages
 const NAV_LOCALIZATION: Record<string, Record<string, string>> = {
   en: {
+    home: 'HOME',
+    marketplace: 'MARKETPLACE',
+    map: 'MAP',
+    trips: 'TRIPS',
+    becomeOwner: 'BECOME OWNER',
     browseCars: 'Browse Cars',
     reviews: 'Reviews',
     help: 'Help',
@@ -56,6 +61,11 @@ const NAV_LOCALIZATION: Record<string, Record<string, string>> = {
     adminDashboard: 'Admin Dashboard',
   },
   vi: {
+    home: 'TRANG CHỦ',
+    marketplace: 'XE CHO THUÊ',
+    map: 'BẢN ĐỒ',
+    trips: 'CHUYẾN ĐI',
+    becomeOwner: 'ĐĂNG KÝ CHỦ XE',
     browseCars: 'Xem xe',
     reviews: 'Đánh giá',
     help: 'Hỗ trợ',
@@ -74,6 +84,11 @@ const NAV_LOCALIZATION: Record<string, Record<string, string>> = {
     adminDashboard: 'Bảng quản trị',
   },
   ja: {
+    home: 'ホーム',
+    marketplace: '車両を探す',
+    map: 'マップ',
+    trips: '予約一覧',
+    becomeOwner: 'オーナー登録',
     browseCars: '車両を探す',
     reviews: 'レビュー',
     help: 'ヘルプ',
@@ -92,6 +107,11 @@ const NAV_LOCALIZATION: Record<string, Record<string, string>> = {
     adminDashboard: '管理パネル',
   },
   ko: {
+    home: '홈',
+    marketplace: '차량 찾기',
+    map: '지도',
+    trips: '내 예약',
+    becomeOwner: '호스트 등록',
     browseCars: '차량 찾기',
     reviews: '리뷰',
     help: '도움말',
@@ -110,6 +130,11 @@ const NAV_LOCALIZATION: Record<string, Record<string, string>> = {
     adminDashboard: '관리 패널',
   },
   zh: {
+    home: '首页',
+    marketplace: '浏览车辆',
+    map: '地图',
+    trips: '行程',
+    becomeOwner: '成为车主',
     browseCars: '浏览车辆',
     reviews: '用户评价',
     help: '帮助中心',
@@ -128,6 +153,11 @@ const NAV_LOCALIZATION: Record<string, Record<string, string>> = {
     adminDashboard: '系统后台',
   },
   fr: {
+    home: 'ACCUEIL',
+    marketplace: 'CATALOGUE',
+    map: 'CARTE',
+    trips: 'TRAJETS',
+    becomeOwner: 'DEVENIR HÔTE',
     browseCars: 'Parcourir',
     reviews: 'Avis',
     help: 'Aide',
@@ -146,6 +176,11 @@ const NAV_LOCALIZATION: Record<string, Record<string, string>> = {
     adminDashboard: 'Espace Admin',
   },
   de: {
+    home: 'STARTSEITE',
+    marketplace: 'FAHRZEUGE',
+    map: 'KARTE',
+    trips: 'FAHRTEN',
+    becomeOwner: 'VERMIETER WERDEN',
     browseCars: 'Fahrzeuge',
     reviews: 'Bewertungen',
     help: 'Hilfe',
@@ -164,6 +199,11 @@ const NAV_LOCALIZATION: Record<string, Record<string, string>> = {
     adminDashboard: 'Admin-Bereich',
   },
   es: {
+    home: 'INICIO',
+    marketplace: 'VER AUTOS',
+    map: 'MAPA',
+    trips: 'VIAJES',
+    becomeOwner: 'SER ANFITRIÓN',
     browseCars: 'Ver Autos',
     reviews: 'Reseñas',
     help: 'Ayuda',
@@ -268,11 +308,11 @@ export const GlobalNavbar: React.FC = () => {
 
   const tripsHref = isAdmin ? '/admin?tab=bookings' : isOwner ? '/owner/bookings' : '/dashboard/bookings';
   const navLinks = [
-    { href: '/', label: 'Home' },
-    { href: '/marketplace', label: 'Marketplace' },
-    { href: '/map', label: 'Map' },
-    { href: tripsHref, label: 'Trips' },
-    ...(!isOwner && !isAdmin ? [{ href: '/owner/register', label: 'Become Owner' }] : []),
+    { href: '/', label: l.home || 'HOME' },
+    { href: '/marketplace', label: l.marketplace || 'MARKETPLACE' },
+    { href: '/map', label: l.map || 'MAP' },
+    { href: tripsHref, label: l.trips || 'TRIPS' },
+    ...(!isOwner && !isAdmin ? [{ href: '/owner/register', label: l.becomeOwner || 'BECOME OWNER' }] : []),
   ];
 
   const currentLang = LANGS.find(lang => lang.code === language) || LANGS[0];
@@ -490,7 +530,7 @@ export const GlobalNavbar: React.FC = () => {
                 >
                   <Bell className="w-4.5 h-4.5" />
                   {unreadCount > 0 && (
-                    <span className="absolute top-1.5 right-1.5 w-3.5 h-3.5 bg-red-550 text-white text-[8px] font-bold rounded-full flex items-center justify-center">
+                    <span className="absolute -top-1 -right-1 min-w-[18px] h-4 px-1 bg-red-500 text-white text-[10px] font-extrabold rounded-full flex items-center justify-center shadow-md leading-none z-10">
                       {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
                   )}
@@ -550,7 +590,7 @@ export const GlobalNavbar: React.FC = () => {
                 to="/auth/login"
                 className="text-xs uppercase tracking-widest font-bold px-6 py-2.5 bg-[#D4AF37] hover:bg-[#E5C158] text-[#0B1221] rounded-md transition-all duration-200"
               >
-                Login
+                {l.signIn || 'Login'}
               </Link>
             </div>
           )}

@@ -717,7 +717,6 @@ export const translations = {
         brand: 'Brand',
         seats: 'Seats',
         transmission: 'Transmission',
-        engine: 'Engine Type',
         fuelType: 'Fuel Type',
         rating: 'Rating',
         reviews: 'Reviews',
@@ -731,13 +730,50 @@ export const translations = {
         searchPlaceholder: 'Search by name or brand...',
         noVehiclesFound: 'No vehicles found',
         featured: '⭐ Featured',
-        vehiclesSelected: 'vehicles selected',
-        clearComparison: 'Clear comparison',
-        compareNow: 'Compare now',
       },
       adminDashboard: {
         title: "Command Operations Center",
         subtitle: "Platform Management Portal",
+        paymentsTitle: "Payment Verifications",
+        paymentsDesc: "Manual bank transfer verification queues, invoice audit logs, and fraud prevention",
+        totalRevenue: "Total Revenue",
+        pendingVerification: "Pending Verification",
+        approvedTransactions: "Approved Transactions",
+        rejectedPayments: "Rejected Payments",
+        statuses: {
+          pending: 'Pending',
+          approved: 'Approved',
+          rejected: 'Rejected',
+          expired: 'Expired'
+        },
+        searchPlaceholder: 'Search Code, Renter...',
+        paymentApproved: 'Payment Approved',
+        paymentApprovedDesc: 'Booking status is now CONFIRMED.',
+        verificationFailed: 'Verification Failed',
+        rejectionReasonRequired: 'Rejection Reason Required',
+        paymentRejected: 'Payment Rejected',
+        paymentRejectedDesc: 'Booking status is now PAYMENT_REJECTED.',
+        rejectionFailed: 'Rejection Failed',
+        settingsSaved: 'Payment Settings Saved',
+        settingsSavedDesc: 'Bank settings updated successfully.',
+        saveFailed: 'Save Failed',
+        csvExported: 'CSV Exported',
+        noTransactionsInQueue: 'No transactions in queue.',
+        approveBtnLabel: 'Approve',
+        rejectBtnLabel: 'Reject',
+        detailsLabel: 'Details',
+        bankSettingsTitle: 'Owner Bank Account Settings (VietQR)',
+        bankNameLabel: 'Bank Name',
+        accountNumberLabel: 'Account Number',
+        accountHolderLabel: 'Account Holder Name',
+        enabledSettingsLabel: 'Enabled Settings',
+        savePaymentConfig: 'Save Payment Config',
+        paymentVerificationSheetTitle: 'Payment Verification Sheet',
+        transactionVerificationSpecs: 'Transaction Verification Specs',
+        rejectionReasonLabel: 'Rejection Reason (Required only on Reject)',
+        rejectionPlaceholder: 'e.g. Mismatched amount, incorrect message...',
+        verifyAndApproveBtn: 'Verify & Approve',
+        declineAndRejectBtn: 'Decline & Reject',
         systemSecure: "System Secure",
         syncData: "Sync System Data",
         goHome: "Go to Home",
@@ -745,9 +781,14 @@ export const translations = {
         overview: "Overview",
         marketplace: "Marketplace Command",
         vehicles: "Vehicle Approvals",
+        vehiclesDesc: "Verify dynamic vehicle spec requirements and accept registrations",
         kyc: "KYC Reviews",
         bookings: "Bookings Ledger",
+        bookingsDesc: "Audit guest bookings, schedules, and active rental status states",
         payments: "Financial Ops",
+        payouts: "Withdrawals (Payouts)",
+        ownerApplications: "Host Onboarding",
+        ownerApplicationsDesc: "Review and approve applications for new vehicle hosts.",
         disputes: "Disputes Hub",
         users: "Users & Roles",
         fraud: "Fraud Center",
@@ -1487,7 +1528,6 @@ export const translations = {
         brand: 'Thương Hiệu',
         seats: 'Số Chỗ Ngồi',
         transmission: 'Hộp Số',
-        engine: 'Loại Động Cơ',
         fuelType: 'Nhiên Liệu',
         rating: 'Đánh Giá',
         reviews: 'Lượt Thuê',
@@ -1501,13 +1541,50 @@ export const translations = {
         searchPlaceholder: 'Tìm kiếm theo tên hoặc thương hiệu...',
         noVehiclesFound: 'Không tìm thấy xe',
         featured: '⭐ Nổi Bật',
-        vehiclesSelected: 'xe đã chọn',
-        clearComparison: 'Xóa danh sách so sánh',
-        compareNow: 'So sánh ngay',
       },
       adminDashboard: {
         title: "Trung Tâm Điều Hành Hệ Thống",
         subtitle: "Cổng Quản Lý Nền Tảng",
+        paymentsTitle: "Duyệt giao dịch chuyển khoản",
+        paymentsDesc: "Hệ thống đối soát chuyển khoản ngân hàng thủ công và xác thực hóa đơn",
+        totalRevenue: "Tổng Doanh Thu",
+        pendingVerification: "Chờ Xác Minh",
+        approvedTransactions: "Đã Phê Duyệt",
+        rejectedPayments: "Bị Từ Chối",
+        statuses: {
+          pending: 'Chờ duyệt',
+          approved: 'Đã duyệt',
+          rejected: 'Từ chối',
+          expired: 'Hết hạn'
+        },
+        searchPlaceholder: 'Tìm mã, khách thuê...',
+        paymentApproved: 'Đã duyệt thanh toán',
+        paymentApprovedDesc: 'Lịch trình đã được chuyển sang trạng thái CONFIRMED.',
+        verificationFailed: 'Duyệt thất bại',
+        rejectionReasonRequired: 'Thiếu lý do từ chối',
+        paymentRejected: 'Đã từ chối thanh toán',
+        paymentRejectedDesc: 'Lịch trình đã chuyển sang PAYMENT_REJECTED.',
+        rejectionFailed: 'Từ chối thất bại',
+        settingsSaved: 'Lưu cấu hình thành công',
+        settingsSavedDesc: 'Thông tin chuyển khoản của LuxeWay đã được cập nhật.',
+        saveFailed: 'Lưu thất bại',
+        csvExported: 'Đã xuất file CSV',
+        noTransactionsInQueue: 'Không có giao dịch nào trong hàng đợi.',
+        approveBtnLabel: 'Duyệt',
+        rejectBtnLabel: 'Từ chối',
+        detailsLabel: 'Chi tiết',
+        bankSettingsTitle: 'Cài đặt tài khoản ngân hàng nhận tiền (VietQR)',
+        bankNameLabel: 'Tên ngân hàng',
+        accountNumberLabel: 'Số tài khoản',
+        accountHolderLabel: 'Tên chủ tài khoản',
+        enabledSettingsLabel: 'Trạng thái hoạt động',
+        savePaymentConfig: 'Lưu cấu hình thanh toán',
+        paymentVerificationSheetTitle: 'Kiểm tra chứng từ chuyển khoản',
+        transactionVerificationSpecs: 'Chi tiết giao dịch',
+        rejectionReasonLabel: 'Lý do từ chối (Chỉ điền khi từ chối giao dịch)',
+        rejectionPlaceholder: 'Ví dụ: Sai nội dung chuyển khoản, Số tiền không khớp...',
+        verifyAndApproveBtn: 'Duyệt thanh toán',
+        declineAndRejectBtn: 'Từ chối giao dịch',
         systemSecure: "Hệ Thống An Toàn",
         syncData: "Đồng Bộ Dữ Liệu",
         goHome: "Trang Chủ",
@@ -1515,9 +1592,14 @@ export const translations = {
         overview: "Tổng Quan",
         marketplace: "Quản Lý Chợ Xe",
         vehicles: "Phê Duyệt Đăng Xe",
+        vehiclesDesc: 'Xác minh yêu cầu thông số động của xe và chấp nhận đăng ký',
         kyc: "Duyệt Tài Khoản KYC",
         bookings: "Sổ Cái Đặt Xe",
+        bookingsDesc: 'Kiểm toán các đơn đặt xe, lịch và trạng thái thuê đang hoạt động',
         payments: "Vận Hành Tài Chính",
+        payouts: "Rút Tiền (Payouts)",
+        ownerApplications: "Onboarding Chủ Xe",
+        ownerApplicationsDesc: 'Xem xét và phê duyệt đơn đăng ký chủ xe mới.',
         disputes: "Giải Quyết Tranh Chấp",
         users: "Người Dùng & Vai Trò",
         fraud: "Trung Tâm Gian Lận",
@@ -2089,7 +2171,8 @@ export const jaTranslations = {
       insurance: '保険情報',
       about: 'LuxeWayについて',
     },
-    help: {
+  },
+  help: {
       helpCenter: 'ヘルプセンター',
       title: '何かお困りですか？',
       subtitle: 'レンタル、お支払い、安全に関するよくある質問の回答をご覧いただけます。',
@@ -2250,7 +2333,77 @@ export const jaTranslations = {
       noVehiclesFound: '車両が見つかりません',
       featured: '⭐ おすすめ',
     }
-  },
+    ,
+    adminDashboard: {
+      title: "管理センター",
+      subtitle: "プラットフォーム管理ポータル",
+      paymentsTitle: "支払いの確認",
+      paymentsDesc: "銀行振込の手動確認、請求書監査ログ、詐欺防止",
+      totalRevenue: "総収益",
+      pendingVerification: "確認待ち",
+      approvedTransactions: "承認済み取引",
+      rejectedPayments: "拒否された支払い",
+      statuses: {
+        pending: '保留中',
+        approved: '承認済み',
+        rejected: '拒否',
+        expired: '期限切れ'
+      },
+      searchPlaceholder: 'コードや借り手を検索...',
+      paymentApproved: '支払いが承認されました',
+      paymentApprovedDesc: '予約のステータスがCONFIRMEDになりました。',
+      verificationFailed: '確認に失敗しました',
+      rejectionReasonRequired: '拒否理由が必要です',
+      paymentRejected: '支払いが拒否されました',
+      paymentRejectedDesc: '予約ステータスがPAYMENT_REJECTEDに変更されました。',
+      rejectionFailed: '拒否に失敗しました',
+      settingsSaved: '設定を保存しました',
+      settingsSavedDesc: '銀行設定が更新されました。',
+      saveFailed: '保存に失敗しました',
+      csvExported: 'CSVがエクスポートされました',
+      noTransactionsInQueue: '処理待ちの取引はありません。',
+      approveBtnLabel: '承認',
+      rejectBtnLabel: '拒否',
+      detailsLabel: '詳細',
+      bankSettingsTitle: '受取銀行口座設定（VietQR）',
+      bankNameLabel: '銀行名',
+      accountNumberLabel: '口座番号',
+      accountHolderLabel: '口座名義',
+      enabledSettingsLabel: '有効設定',
+      savePaymentConfig: '支払い設定を保存',
+      paymentVerificationSheetTitle: '支払い確認シート',
+      transactionVerificationSpecs: '取引確認の詳細',
+      rejectionReasonLabel: '拒否理由（拒否時のみ記入）',
+      rejectionPlaceholder: '例: 振込内容が間違っている、金額が一致しない...',
+      verifyAndApproveBtn: '確認して承認',
+      declineAndRejectBtn: '拒否して却下',
+      systemSecure: "システムセキュア",
+      syncData: "データ同期",
+      goHome: "ホームへ戻る",
+      signOut: "サインアウト",
+      overview: "概要",
+      marketplace: "マーケットプレイス管理",
+      vehicles: "車両承認",
+      vehiclesDesc: '動的な車両仕様要件を検証し、登録を承認する',
+      kyc: "KYCレビュー",
+      bookings: "予約台帳",
+      bookingsDesc: 'ゲストの予約、スケジュール、稼働中のレンタルステータスを監査する',
+      payments: "財務オペレーション",
+      payouts: "出金（Payouts）",
+      ownerApplications: "ホストオンボーディング",
+      ownerApplicationsDesc: '新しいホストの申請を確認して承認します。',
+      disputes: "紛争ハブ",
+      users: "ユーザーと役割",
+      fraud: "不正検知センター",
+      analytics: "BI分析",
+      notifications: "通知センター",
+      logs: "監査ログ",
+      health: "システムヘルス",
+      settings: "システム設定",
+      superAdmin: "スーパ管理者",
+      live: "ライブ",
+      addVehicle: "車両を追加",
+    }
 } as const;
 
 // ====== KOREAN TRANSLATIONS ======
@@ -2258,6 +2411,22 @@ export const koTranslations = {
   ...translations.en,
   dashboard: {
     ...translations.en.dashboard,
+    overview: '개요',
+    myBookings: '내 예약',
+    payments: '결제 내역',
+    documents: '내 서류',
+    myReviews: '내 리뷰',
+    notifications: '알림',
+    profile: '프로필',
+    settings: '설정',
+    recentBookings: '최근 예약 내역',
+    viewAll: '전체 보기',
+    noBookings: '예약 내역이 없습니다',
+    exploreVehicles: '차량 둘러보기',
+    totalBookings: '총 예약 건수',
+    activeRentals: '이용 중인 차량',
+    completedTrips: '완료된 대여',
+    totalSpent: '총 지출 금액',
     languageLabel: "언어",
     currencyLabel: "통화",
     saved: "저장됨",
@@ -2341,6 +2510,76 @@ export const koTranslations = {
     category: '카테고리',
     price: '일일 대여 요금'
   },
+  adminDashboard: {
+    title: "관리 센터",
+    subtitle: "플랫폼 관리 포털",
+    paymentsTitle: "결제 검증",
+    paymentsDesc: "은행 이체의 수동 검증 대기열, 송장 감사 로그 및 사기 방지",
+    totalRevenue: "총 수익",
+    pendingVerification: "검증 대기",
+    approvedTransactions: "승인된 거래",
+    rejectedPayments: "거부된 결제",
+    statuses: {
+      pending: '보류',
+      approved: '승인됨',
+      rejected: '거부',
+      expired: '만료'
+    },
+    searchPlaceholder: '코드 또는 대여자 검색...',
+    paymentApproved: '결제 승인됨',
+    paymentApprovedDesc: '예약 상태가 CONFIRMED로 변경되었습니다.',
+    verificationFailed: '검증 실패',
+    rejectionReasonRequired: '거부 사유 필요',
+    paymentRejected: '결제 거부됨',
+    paymentRejectedDesc: '예약 상태가 PAYMENT_REJECTED로 변경되었습니다.',
+    rejectionFailed: '거부 실패',
+    settingsSaved: '결제 설정이 저장되었습니다',
+    settingsSavedDesc: '은행 설정이 업데이트되었습니다.',
+    saveFailed: '저장 실패',
+    csvExported: 'CSV가 내보내졌습니다',
+    noTransactionsInQueue: '대기 중인 거래가 없습니다.',
+    approveBtnLabel: '승인',
+    rejectBtnLabel: '거부',
+    detailsLabel: '세부 정보',
+    bankSettingsTitle: '수취인 은행 계좌 설정 (VietQR)',
+    bankNameLabel: '은행명',
+    accountNumberLabel: '계좌번호',
+    accountHolderLabel: '예금주',
+    enabledSettingsLabel: '활성 설정',
+    savePaymentConfig: '결제 설정 저장',
+    paymentVerificationSheetTitle: '결제 검증 시트',
+    transactionVerificationSpecs: '거래 검증 상세',
+    rejectionReasonLabel: '거부 사유 (거부 시에만 작성)',
+    rejectionPlaceholder: '예: 이체 메시지 불일치, 금액 불일치...',
+    verifyAndApproveBtn: '검증 및 승인',
+    declineAndRejectBtn: '거부 및 거절',
+    systemSecure: "시스템 보안",
+    syncData: "데이터 동기화",
+    goHome: "홈으로 이동",
+    signOut: "로그아웃",
+    overview: "개요",
+    marketplace: "마켓플레이스 관리",
+    vehicles: "차량 승인",
+    vehiclesDesc: '동적 차량 사양 요구사항을 확인하고 등록을 수락합니다',
+    kyc: "KYC 검토",
+    bookings: "예약 장부",
+    bookingsDesc: '게스트 예약, 일정 및 활성 대여 상태를 감사합니다',
+    payments: "금융 운영",
+    payouts: "출금 (Payouts)",
+    ownerApplications: "호스트 온보딩",
+    ownerApplicationsDesc: '새 호스트 신청서를 검토하고 승인합니다.',
+    disputes: "분쟁 허브",
+    users: "사용자 및 역할",
+    fraud: "사기 센터",
+    analytics: "BI 분석",
+    notifications: "알림 센터",
+    logs: "감사 로그",
+    health: "시스템 상태",
+    settings: "시스템 설정",
+    superAdmin: "최고 관리자",
+    live: "라이브",
+    addVehicle: "차량 추가",
+  },
   common: {
     ...translations.en.common,
     loading: '불러오는 중...',
@@ -2360,6 +2599,22 @@ export const zhTranslations = {
   ...translations.en,
   dashboard: {
     ...translations.en.dashboard,
+    overview: '概览',
+    myBookings: '我的预订',
+    payments: '支付历史',
+    documents: '我的证件',
+    myReviews: '我的评价',
+    notifications: '消息通知',
+    profile: '个人资料',
+    settings: '设置',
+    recentBookings: '最近预订',
+    viewAll: '查看全部',
+    noBookings: '暂无预订记录',
+    exploreVehicles: '去挑选车辆',
+    totalBookings: '总预订数',
+    activeRentals: '进行中订单',
+    completedTrips: '已完成行程',
+    totalSpent: '总消费',
     languageLabel: "语言",
     currencyLabel: "货币",
     saved: "已保存",
@@ -2442,6 +2697,76 @@ export const zhTranslations = {
     clearFilters: '清除筛选',
     category: '车型类别',
     price: '每日租金'
+  },
+  adminDashboard: {
+    title: "管理中心",
+    subtitle: "平台管理门户",
+    paymentsTitle: "支付核验",
+    paymentsDesc: "人工银行转账核验队列、发票审计日志与反欺诈",
+    totalRevenue: "总收入",
+    pendingVerification: "待核验",
+    approvedTransactions: "已批准交易",
+    rejectedPayments: "被拒付款",
+    statuses: {
+      pending: '待处理',
+      approved: '已通过',
+      rejected: '已拒绝',
+      expired: '已过期'
+    },
+    searchPlaceholder: '搜索代码或租客...',
+    paymentApproved: '支付已通过',
+    paymentApprovedDesc: '预订状态已变为 CONFIRMED。',
+    verificationFailed: '核验失败',
+    rejectionReasonRequired: '需要拒绝原因',
+    paymentRejected: '支付被拒',
+    paymentRejectedDesc: '预订状态已变更为 PAYMENT_REJECTED。',
+    rejectionFailed: '拒绝失败',
+    settingsSaved: '支付设置已保存',
+    settingsSavedDesc: '银行设置已成功更新。',
+    saveFailed: '保存失败',
+    csvExported: 'CSV 已导出',
+    noTransactionsInQueue: '队列中无事务。',
+    approveBtnLabel: '批准',
+    rejectBtnLabel: '拒绝',
+    detailsLabel: '详情',
+    bankSettingsTitle: '收款银行账户设置（VietQR）',
+    bankNameLabel: '银行名称',
+    accountNumberLabel: '账号',
+    accountHolderLabel: '开户名',
+    enabledSettingsLabel: '启用设置',
+    savePaymentConfig: '保存支付配置',
+    paymentVerificationSheetTitle: '支付核验单',
+    transactionVerificationSpecs: '交易核验详情',
+    rejectionReasonLabel: '拒绝原因（仅在拒绝时填写）',
+    rejectionPlaceholder: '例如：转账备注错误，金额不符...',
+    verifyAndApproveBtn: '核验并批准',
+    declineAndRejectBtn: '拒绝并驳回',
+    systemSecure: "系统安全",
+    syncData: "同步数据",
+    goHome: "返回首页",
+    signOut: "登出",
+    overview: "概览",
+    marketplace: "市场管理",
+    vehicles: "车辆审核",
+    vehiclesDesc: '验证动态车辆规格要求并接受注册',
+    kyc: "KYC 审核",
+    bookings: "预订账本",
+    bookingsDesc: '审计客户预订、日程和活跃租赁状态',
+    payments: "财务运营",
+    payouts: "提现（Payouts）",
+    ownerApplications: "车主入驻",
+    ownerApplicationsDesc: '审查并批准新的车主申请。',
+    disputes: "争议中心",
+    users: "用户与角色",
+    fraud: "反欺诈中心",
+    analytics: "BI 分析",
+    notifications: "通知中心",
+    logs: "审计日志",
+    health: "系统健康",
+    settings: "系统设置",
+    superAdmin: "超级管理员",
+    live: "在线",
+    addVehicle: "添加车辆",
   },
   common: {
     ...translations.en.common,
@@ -2583,7 +2908,7 @@ export function useT() {
   const language = useUIStore((s: any) => s.language) as Language;
   const activeLang = translations[language as 'en' | 'vi'] ?? translations.en;
   
-  let activeDict = activeLang;
+  let activeDict: any = activeLang;
   
   if (language === 'ja') {
     activeDict = jaTranslations as any;
@@ -2599,15 +2924,39 @@ export function useT() {
     activeDict = esTranslations as any;
   }
 
-  const extra = {
-    ...landingPageExtraTranslations.en,
-    ...(landingPageExtraTranslations[language] || {})
+  const deepMerge = (base: any, override: any) => {
+    if (!override) return base;
+    const res = { ...base };
+    Object.keys(override).forEach(k => {
+      if (typeof base[k] === 'object' && base[k] !== null && typeof override[k] === 'object' && override[k] !== null && !Array.isArray(override[k])) {
+        res[k] = deepMerge(base[k], override[k]);
+      } else if (override[k] !== undefined && override[k] !== '') {
+        res[k] = override[k];
+      }
+    });
+    return res;
   };
+
+  const mergedDict = deepMerge(translations.en, activeDict);
+
+  // Deep merge landingPageExtraTranslations so missing sub-keys fallback to English gracefully
+  const baseExtra = landingPageExtraTranslations.en || {};
+  const currentExtra = landingPageExtraTranslations[language] || {};
   
+  const mergedExtra: Record<string, any> = {};
+  const allKeys = new Set([...Object.keys(baseExtra), ...Object.keys(currentExtra)]);
+  
+  allKeys.forEach(k => {
+    if (typeof baseExtra[k] === 'object' && baseExtra[k] !== null && !Array.isArray(baseExtra[k])) {
+      mergedExtra[k] = { ...baseExtra[k], ...(currentExtra[k] || {}) };
+    } else {
+      mergedExtra[k] = currentExtra[k] !== undefined ? currentExtra[k] : baseExtra[k];
+    }
+  });
+
   return {
-    ...translations.en,
-    ...activeDict,
-    landingPage: extra
+    ...mergedDict,
+    landingPage: mergedExtra
   } as unknown as TranslationKeys;
 }
 
@@ -2725,6 +3074,12 @@ const landingPageExtraTranslations: Record<string, Record<string, any>> = {
       desc: 'Most booked on LuxeWay this week',
       bookings: 'bookings',
     },
+    latest: {
+      label: 'New Additions',
+      title: 'Latest Approved Vehicles',
+      desc: 'Explore the newly verified premium vehicles added to our fleet',
+      empty: 'No new vehicles found.',
+    },
     categories: {
       fleet: 'Our Fleet',
       title: 'Browse by Category',
@@ -2826,14 +3181,27 @@ const landingPageExtraTranslations: Record<string, Record<string, any>> = {
     },
     footer: {
       desc: "Vietnam's premier peer-to-peer vehicle rental marketplace. Cars, motorbikes, and more — verified, insured, and delivered.",
-      updated: 'Stay Updated',
-      go: 'Go',
-      explore: 'Explore',
-      owners: 'Owners',
-      support: 'Support',
-      legal: 'Legal',
+      updated: 'STAY UPDATED',
+      placeholder: 'Enter your email',
+      go: 'Subscribe',
+      explore: 'EXPLORE',
+      owners: 'OWNERS',
+      support: 'SUPPORT',
+      legal: 'LEGAL',
+      marketplace: 'Marketplace',
+      topDestinations: 'Top Destinations',
+      compare: 'Compare Vehicles',
+      listVehicle: 'List Your Vehicle',
+      ownerDashboard: 'Owner Dashboard',
+      helpCenter: 'Help Center',
+      trust: 'Trust & Safety',
+      contactUs: 'Contact Us',
+      insurance: 'Insurance Info',
+      about: 'About LuxeWay',
+      terms: 'Terms of Service',
+      privacy: 'Privacy Policy',
       hours: 'Mon–Sun 6am–11pm',
-      response: 'Average response: <1hr',
+      response: 'Average response: Under 1 hr',
       headquarters: 'Headquarters',
       rights: '© 2026 LuxeWay International. All rights reserved.',
       vietnam: 'Vietnam',
@@ -2901,6 +3269,12 @@ const landingPageExtraTranslations: Record<string, Record<string, any>> = {
       title: 'Xe Xu Hướng',
       desc: 'Được đặt nhiều nhất trên LuxeWay tuần này',
       bookings: 'lượt đặt',
+    },
+    latest: {
+      label: 'Mới Nhất',
+      title: 'Xe Vừa Được Kiểm Duyệt',
+      desc: 'Khám phá các dòng xe vừa được đưa lên hệ thống và kiểm duyệt chất lượng',
+      empty: 'Không có xe mới nào.',
     },
     categories: {
       fleet: 'Đội Xe Của Chúng Tôi',
@@ -3002,17 +3376,30 @@ const landingPageExtraTranslations: Record<string, Record<string, any>> = {
       title: 'Câu Hỏi Thường Gặp',
     },
     footer: {
-      desc: 'Chợ ứng dụng cho thuê xe tự lái hàng đầu Việt Nam. Ô tô, xe máy và nhiều hơn nữa — đã xác minh, bảo hiểm và giao tận nơi.',
-      updated: 'Cập Nhật Tin Tức',
-      go: 'Đăng Ký',
-      explore: 'Khám Phá',
-      owners: 'Chủ Xe',
-      support: 'Hỗ Trợ',
-      legal: 'Pháp Lý',
-      hours: 'Thứ 2–Chủ Nhật 6h sáng–11h tối',
-      response: 'Phản hồi trung bình: <1 giờ',
+      desc: 'Nền tảng cho thuê xe tự lái cao cấp hàng đầu Việt Nam. Ô tô, xe máy chính chủ, bảo hiểm đầy đủ, giao xe tận nơi.',
+      updated: 'ĐĂNG KÝ NHẬN TIN',
+      placeholder: 'Nhập email của bạn',
+      go: 'Đăng ký',
+      explore: 'KHÁM PHÁ',
+      owners: 'CHỦ XE',
+      support: 'HỖ TRỢ',
+      legal: 'PHÁP LÝ',
+      marketplace: 'Thị trường thuê xe',
+      topDestinations: 'Điểm đến phổ biến',
+      compare: 'So sánh xe',
+      listVehicle: 'Đăng ký cho thuê xe',
+      ownerDashboard: 'Bảng điều khiển chủ xe',
+      helpCenter: 'Trung tâm trợ giúp',
+      trust: 'Tin cậy & An toàn',
+      contactUs: 'Liên hệ chúng tôi',
+      insurance: 'Thông tin bảo hiểm',
+      about: 'Về LuxeWay',
+      terms: 'Điều khoản dịch vụ',
+      privacy: 'Chính sách bảo mật',
+      hours: 'Thứ 2 - CN: 6:00 - 23:00',
+      response: 'Phản hồi trung bình: Dưới 1 giờ',
       headquarters: 'Trụ sở chính',
-      rights: '© 2026 LuxeWay International. Bảo lưu mọi quyền.',
+      rights: '© 2026 LuxeWay International. Tất cả quyền được bảo lưu.',
       vietnam: 'Việt Nam',
     },
     showcase: {
@@ -3078,6 +3465,12 @@ const landingPageExtraTranslations: Record<string, Record<string, any>> = {
       title: 'トレンド車両',
       desc: '今週LuxeWayで最も予約された車両',
       bookings: '予約数',
+    },
+    latest: {
+      label: '新着車両',
+      title: '最新の承認済み車両',
+      desc: '厳格な品質審査をクリアした最新のプレミアム車両をご覧ください',
+      empty: '新しい車両は見つかりませんでした。',
     },
     categories: {
       fleet: 'フリート一覧',
@@ -3176,21 +3569,78 @@ const landingPageExtraTranslations: Record<string, Record<string, any>> = {
     },
     faq: {
       label: 'よくあるご質問',
-      title: 'FAQ',
+      title: 'よくあるご質問',
     },
     footer: {
-      desc: 'ベトナムのプレミアム車レンタルマーケットプレイス。車、バイクなど、すべて認証・保険済でお届けします。',
+      desc: 'ベトナムのプレミアム車両レンタルマーケットプレイス。車、バイクなど認証・保険済みでご指定の場所までお届けします。',
       updated: '最新情報を受け取る',
-      go: '登録',
+      placeholder: 'メールアドレスを入力',
+      go: '登録する',
       explore: '探索',
-      owners: 'オーナー',
+      owners: 'オーナー様',
       support: 'サポート',
-      legal: 'リーガル',
+      legal: '規約・ポリシー',
+      marketplace: 'マーケットプレイス',
+      topDestinations: '人気の目的地',
+      compare: '車両を比較',
+      listVehicle: '車両を掲載する',
+      ownerDashboard: 'オーナーダッシュボード',
+      helpCenter: 'ヘルプセンター',
+      trust: '信頼と安全',
+      contactUs: 'お問い合わせ',
+      insurance: '保険のご案内',
+      about: 'LuxeWayについて',
+      terms: '利用規約',
+      privacy: 'プライバシーポリシー',
       hours: '月〜日 午前6時〜午後11時',
       response: '平均応答時間：1時間以内',
       headquarters: '本社所在地',
       rights: '© 2026 LuxeWay International. All rights reserved.',
       vietnam: 'ベトナム',
+    },
+    liveActivity: {
+      label: 'リアルタイムアクティビティ',
+      title: 'アクティブプラットフォーム',
+      updateNotice: '3.5秒ごとに更新',
+      timeAgo: '{time}前',
+      events: [
+        'Toyota Camryがホーチミン市で予約されました',
+        'Honda SH350iがハノイで5★評価を獲得しました',
+        'Mazda CX5がダナンで新規登録されました',
+        'VinFast VF8がオンラインで即時予約されました',
+        'Yamaha Exciter 155がニャチャンでレンタルを開始しました',
+        'ホーチミンのホストが3,600,000₫の収益を受け取りました',
+        'Honda CR-Vがダラットで5日間のトリップを完了しました',
+        'Hyundai Santa Feが今週ハノイで1位を獲得しました'
+      ]
+    },
+    showcase: {
+      label: '注目の車両',
+      title: '最も人気のある車両',
+      desc: '何千もの高品質な車とバイクがあなたを待っています。',
+      cars: '車',
+      motorbikes: 'バイク',
+      viewAllCars: 'すべての車を見る',
+      viewAllMotorbikes: 'すべてのバイクを見る',
+    },
+    calculator: {
+      label: '収益シミュレーター',
+      title: 'どのくらい稼げますか？',
+      desc: 'LuxeWayでの車両レンタル収益を試算',
+      vehicleType: '車両タイプ',
+      cars: '車',
+      motorbikes: 'バイク',
+      selectModel: '車種を選択',
+      priceDay: '料金 / 日',
+      daysMonth: 'レンタル日数 / 月',
+      daysUnit: '日',
+      netRevenueMonth: '月間純収益',
+      afterFee: '8%のプラットフォーム手数料適用後',
+      grossRevenue: '総収益',
+      annualRevenue: '年間収益',
+      feeLabel: '手数料 (8%)',
+      netRevenueLabel: '純収益',
+      cta: '今すぐホスト登録',
     }
   },
   ko: {
@@ -3211,6 +3661,12 @@ const landingPageExtraTranslations: Record<string, Record<string, any>> = {
       title: '트렌딩 차량',
       desc: '이번 주 LuxeWay에서 가장 많이 예약된 차량',
       bookings: '건 예약됨',
+    },
+    latest: {
+      label: '최신 등록',
+      title: '최근 승인된 차량',
+      desc: '품질 검증을 마친 최신 프리미엄 차량을 둘러보세요',
+      empty: '새로 등록된 차량이 없습니다.',
     },
     categories: {
       fleet: '럭셔리 플릿',
@@ -3308,22 +3764,79 @@ const landingPageExtraTranslations: Record<string, Record<string, any>> = {
       btn: '지금 시작하기',
     },
     faq: {
-      label: '질문이 있으신가요?',
+      label: '자주 묻는 질문',
       title: '자주 묻는 질문',
     },
     footer: {
-      desc: '베트남의 프리미엄 차량 공유 서비스. 자동차, 오토바이 등 검증된 차량을 배송해 드립니다.',
+      desc: '베트남 프리미엄 차량 공유 및 대여 플랫폼. 자동차, 오토바이 검증 및 보험 보장, 원하는 장소 배송.',
       updated: '뉴스레터 구독',
-      go: '구독',
+      placeholder: '이메일을 입력하세요',
+      go: '구독하기',
       explore: '둘러보기',
-      owners: '파트너',
+      owners: '파트너(차주)',
       support: '고객지원',
-      legal: '정책 및 약관',
-      hours: '월–일 오전 6시–오후 11시',
+      legal: '약관 및 정책',
+      marketplace: '차량 마켓플레이스',
+      topDestinations: '인기 여행지',
+      compare: '차량 비교',
+      listVehicle: '내 차 등록하기',
+      ownerDashboard: '파트너 대시보드',
+      helpCenter: '고객센터',
+      trust: '신뢰 및 안전',
+      contactUs: '문의하기',
+      insurance: '보험 안내',
+      about: 'LuxeWay 소개',
+      terms: '서비스 이용약관',
+      privacy: '개인정보 처리방침',
+      hours: '월–일 06:00–23:00',
       response: '평균 응답 시간: 1시간 이내',
       headquarters: '본사 위치',
       rights: '© 2026 LuxeWay International. All rights reserved.',
       vietnam: '베트남',
+    },
+    liveActivity: {
+      label: '실시간 활동',
+      title: '활성 플랫폼',
+      updateNotice: '3.5초마다 업데이트됨',
+      timeAgo: '{time} 전',
+      events: [
+        'Toyota Camry가 호치민시에서 방금 예약되었습니다',
+        'Honda SH350i가 하노이에서 5★ 평점을 받았습니다',
+        'Mazda CX5가 다낭에서 신규 등록되었습니다',
+        'VinFast VF8이 온라인으로 즉시 예약되었습니다',
+        'Yamaha Exciter 155가 냐짱에서 대여를 시작했습니다',
+        '호치민시의 파트너가 3,600,000₫ 수익을 정산받았습니다',
+        'Honda CR-V가 달랏에서 5일간의 대여를 완료했습니다',
+        'Hyundai Santa Fe가 이번 주 하노이 랭킹 1위를 차지했습니다'
+      ]
+    },
+    showcase: {
+      label: '추천 차량',
+      title: '가장 인기 있는 차량',
+      desc: '수천 대의 고품질 자동차와 오토바이가 여러분을 기다리고 있습니다.',
+      cars: '자동차',
+      motorbikes: '오토바이',
+      viewAllCars: '모든 자동차 보기',
+      viewAllMotorbikes: '모든 오토바이 보기',
+    },
+    calculator: {
+      label: '수익 계산기',
+      title: '얼마나 벌 수 있을까요?',
+      desc: 'LuxeWay에서 차량 렌탈 예상 수익을 확인하세요',
+      vehicleType: '차량 유형',
+      cars: '자동차',
+      motorbikes: '오토바이',
+      selectModel: '차량 모델 선택',
+      priceDay: '일일 대여 요금',
+      daysMonth: '월 대여 일수',
+      daysUnit: '일',
+      netRevenueMonth: '월 순수익',
+      afterFee: '8% 플랫폼 수수료 공제 후',
+      grossRevenue: '총 수익',
+      annualRevenue: '연간 수익',
+      feeLabel: '플랫폼 수수료 (8%)',
+      netRevenueLabel: '순수익',
+      cta: '지금 파트너 등록',
     }
   },
   zh: {
@@ -3344,6 +3857,12 @@ const landingPageExtraTranslations: Record<string, Record<string, any>> = {
       title: '热门车型',
       desc: '本周LuxeWay预订量最高的车型',
       bookings: '次预订',
+    },
+    latest: {
+      label: '最新上架',
+      title: '最新审核通过车辆',
+      desc: '探索最新通过质量审核入驻平台的高端车辆',
+      empty: '暂无最新上架车辆。',
     },
     categories: {
       fleet: '全部车型',
@@ -3442,21 +3961,78 @@ const landingPageExtraTranslations: Record<string, Record<string, any>> = {
     },
     faq: {
       label: '常见问题',
-      title: 'Frequently Asked Questions',
+      title: '常见问题解答',
     },
     footer: {
-      desc: '越南领先的高端车辆自主共享租赁平台。汽车、摩托车等，均通过验证和投保，并送货上门。',
-      updated: '订阅最新消息',
-      go: '订阅',
+      desc: '越南领先的高端车辆自主共享租赁平台。汽车、摩托车均通过验证投保，并提供送车上门服务。',
+      updated: '订阅最新资讯',
+      placeholder: '请输入您的邮箱',
+      go: '立即订阅',
       explore: '探索发现',
       owners: '车主伙伴',
       support: '客户支持',
-      legal: '政策条款',
-      hours: '周一至周日 上午6点至晚上11点',
+      legal: '法律条款',
+      marketplace: '车辆租赁市场',
+      topDestinations: '热门目的地',
+      compare: '对比车型',
+      listVehicle: '发布您的车辆',
+      ownerDashboard: '车主管理后台',
+      helpCenter: '帮助中心',
+      trust: '信任与安全',
+      contactUs: '联系我们',
+      insurance: '保险说明',
+      about: '关于 LuxeWay',
+      terms: '服务条款',
+      privacy: '隐私政策',
+      hours: '周一至周日 06:00–23:00',
       response: '平均响应时间：1小时内',
       headquarters: '总部地址',
       rights: '© 2026 LuxeWay International. 版权所有。',
       vietnam: '越南',
+    },
+    liveActivity: {
+      label: '实时动态',
+      title: '活跃平台',
+      updateNotice: '每 3.5 秒更新一次',
+      timeAgo: '{time}前',
+      events: [
+        'Toyota Camry 刚在胡志明市被成功预订',
+        'Honda SH350i 在河内获得 5★ 好评',
+        'Mazda CX5 刚在岘港全新上架',
+        'VinFast VF8 在线即时预订成功',
+        'Yamaha Exciter 155 在芽庄开启了行程',
+        '胡志明市的一位车主刚收到 3,600,000₫ 租金收益',
+        'Honda CR-V 在大叻完成了为期 5 天的租车行程',
+        'Hyundai Santa Fe 本周在河内排名第一'
+      ]
+    },
+    showcase: {
+      label: '精选车辆',
+      title: '最受欢迎车辆',
+      desc: '数千辆高品质汽车和摩托车等待您的探索。',
+      cars: '汽车',
+      motorbikes: '摩托车',
+      viewAllCars: '查看所有汽车',
+      viewAllMotorbikes: '查看所有摩托车',
+    },
+    calculator: {
+      label: '收益计算器',
+      title: '你能赚多少钱？',
+      desc: '估算您在LuxeWay出租车辆的预估收益',
+      vehicleType: '车辆类型',
+      cars: '汽车',
+      motorbikes: '摩托车',
+      selectModel: '选择车型',
+      priceDay: '每日租金',
+      daysMonth: '每月出租天数',
+      daysUnit: '天',
+      netRevenueMonth: '每月净收益',
+      afterFee: '已扣除8%平台服务费',
+      grossRevenue: '总收益',
+      annualRevenue: '年度收益',
+      feeLabel: '平台服务费 (8%)',
+      netRevenueLabel: '净收益',
+      cta: '立即注册成为车主',
     }
   },
   fr: {
@@ -3731,13 +4307,13 @@ const landingPageExtraTranslations: Record<string, Record<string, any>> = {
 
 export function translateNotification(text: string): string {
   if (!text) return '';
-  
+
   let language = 'en';
   try {
     language = useUIStore.getState().language || 'en';
   } catch {}
 
-  // Handle key-based notifications
+  // Handle standard notification. keys
   if (text.startsWith('notification.')) {
     const parts = text.split('|');
     const key = parts[0];
@@ -3770,33 +4346,109 @@ export function translateNotification(text: string): string {
     return result;
   }
 
-  // Handle common plain text notifications for English / non-English UI
-  const mapViToEn: Record<string, Record<string, string>> = {
+  // Handle raw text fallback notifications (e.g. backend sent raw Vietnamese or English strings)
+  const knownPhrases: Record<string, Record<string, string>> = {
     'Đơn đặt xe hết hạn thanh toán': {
-      en: 'Booking payment expired',
       vi: 'Đơn đặt xe hết hạn thanh toán',
-      zh: '预订支付已过期',
-      ja: '予約の支払いが期限切れになりました',
-      ko: '예약 결제가 만료되었습니다'
+      en: 'Booking Payment Expired',
+      ko: '결제 기한 초과로 예약 만료',
+      ja: 'お支払い期限切れによる予約失効',
+      zh: '预订超时未支付已失效',
+      fr: 'Paiement de réservation expiré',
+      de: 'Buchungszahlung abgelaufen',
+      es: 'Pago de reserva expirado',
+    },
+    'Booking Payment Expired': {
+      vi: 'Đơn đặt xe hết hạn thanh toán',
+      en: 'Booking Payment Expired',
+      ko: '결제 기한 초과로 예약 만료',
+      ja: 'お支払い期限切れによる予約失効',
+      zh: '预订超时未支付已失效',
+      fr: 'Paiement de réservation expiré',
+      de: 'Buchungszahlung abgelaufen',
+      es: 'Pago de reserva expirado',
+    },
+    'Booking created successfully': {
+      vi: 'Tạo đơn đặt xe thành công',
+      en: 'Booking created successfully',
+      ko: '예약이 성공적으로 완료되었습니다',
+      ja: '予約が正常に完了しました',
+      zh: '预订成功',
+      fr: 'Réservation créée avec succès',
+      de: 'Buchung erfolgreich erstellt',
+      es: 'Reserva creada con éxito',
+    },
+    'Tạo đơn đặt xe thành công': {
+      vi: 'Tạo đơn đặt xe thành công',
+      en: 'Booking created successfully',
+      ko: '예약이 성공적으로 완료되었습니다',
+      ja: '予約が正常に完了しました',
+      zh: '预订成功',
+      fr: 'Réservation créée avec succès',
+      de: 'Buchung erfolgreich erstellt',
+      es: 'Reserva creada con éxito',
     },
     'KYC Approved': {
+      vi: 'Xác minh KYC thành công',
       en: 'KYC Approved',
-      vi: 'Xác thực KYC đã được duyệt',
-      zh: 'KYC认证已通过',
-      ja: 'KYC認証が承認されました',
-      ko: 'KYC 인증이 승인되었습니다'
+      ko: 'KYC 인증 승인됨',
+      ja: 'KYC本人確認承認済み',
+      zh: 'KYC 实名认证通过',
+      fr: 'KYC Approuvé',
+      de: 'KYC Genehmigt',
+      es: 'KYC Aprobado',
     },
-    'Application Approved': {
-      en: 'Owner Application Approved',
-      vi: 'Đơn đăng ký Chủ xe đã được duyệt',
-      zh: '车主申请已通过',
-      ja: 'オーナー申請が承認されました',
-      ko: '차주 신청이 승인되었습니다'
-    }
+    'Xác minh KYC thành công': {
+      vi: 'Xác minh KYC thành công',
+      en: 'KYC Approved',
+      ko: 'KYC 인증 승인됨',
+      ja: 'KYC本人確認承認済み',
+      zh: 'KYC 实名认证通过',
+      fr: 'KYC Approuvé',
+      de: 'KYC Genehmigt',
+      es: 'KYC Aprobado',
+    },
+    'KYC approved. You can rent vehicles now.': {
+      vi: 'Xác minh KYC thành công. Bạn đã có thể thuê xe ngay.',
+      en: 'KYC approved. You can rent vehicles now.',
+      ko: 'KYC 인증이 승인되었습니다. 이제 차량을 대여하실 수 있습니다.',
+      ja: 'KYC本人確認が承認されました。今すぐ車両をレンタルできます。',
+      zh: 'KYC 身份认证已通过，您现在可以开始租车。',
+      fr: 'KYC approuvé. Vous pouvez maintenant louer des véhicules.',
+      de: 'KYC genehmigt. Sie können jetzt Fahrzeuge mieten.',
+      es: 'KYC aprobado. Ya puedes alquilar vehículos.',
+    },
   };
 
-  if (mapViToEn[text] && mapViToEn[text][language]) {
-    return mapViToEn[text][language];
+  if (knownPhrases[text] && knownPhrases[text][language]) {
+    return knownPhrases[text][language];
+  }
+
+  // Dynamic regex matches
+  const expiredMatch = text.match(/Đơn đặt xe\s+([A-Z0-9-]+)\s+đã hết hạn thanh toán/i) || text.match(/Booking\s+([A-Z0-9-]+)\s+payment.*expired/i);
+  if (expiredMatch) {
+    const code = expiredMatch[1];
+    if (language === 'vi') return `Đơn đặt xe ${code} đã hết hạn thanh toán 15 phút. Xe đã được giải phóng.`;
+    if (language === 'ko') return `예약 ${code}의 결제 대기 시간(15분)이 초과되어 차량 배정이 해제되었습니다.`;
+    if (language === 'ja') return `予約 ${code} のお支払い期限（15分）が切れたため、車両が解放されました。`;
+    if (language === 'zh') return `订单 ${code} 已超过15分钟支付时限，车辆已自动释放。`;
+    if (language === 'fr') return `La réservation ${code} a expiré après 15 min. Véhicule libéré.`;
+    if (language === 'de') return `Buchung ${code} nach 15 Min. abgelaufen. Fahrzeug freigegeben.`;
+    if (language === 'es') return `La reserva ${code} ha expirado tras 15 min. Vehículo liberado.`;
+    return `Booking ${code} payment time (15 mins) expired. Vehicle released.`;
+  }
+
+  const requestMatch = text.match(/Your booking request for\s+(.+)\s+has been submitted successfully/i) || text.match(/Yêu cầu đặt xe\s+(.+)\s+đã được gửi thành công/i);
+  if (requestMatch) {
+    const carName = requestMatch[1];
+    if (language === 'vi') return `Yêu cầu đặt xe ${carName} đã được gửi thành công.`;
+    if (language === 'ko') return `${carName} 차량 예약 요청이 성공적으로 접수되었습니다.`;
+    if (language === 'ja') return `${carName} の予約リクエストが正常に送信されました。`;
+    if (language === 'zh') return `${carName} 的预订申请已成功提交。`;
+    if (language === 'fr') return `Votre demande pour ${carName} a été soumise avec succès.`;
+    if (language === 'de') return `Ihre Buchungsanfrage für ${carName} wurde erfolgreich übermittelt.`;
+    if (language === 'es') return `Tu solicitud para ${carName} se ha enviado con éxito.`;
+    return `Your booking request for ${carName} has been submitted successfully.`;
   }
 
   return text;
