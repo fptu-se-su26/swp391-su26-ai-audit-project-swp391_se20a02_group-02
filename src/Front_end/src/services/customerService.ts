@@ -1,5 +1,6 @@
 import apiClient from './api';
 import type { Booking, Vehicle, Payment, Review, User } from '@/types';
+import { extractArray } from '@/utils';
 
 export interface CustomerDashboardOverview {
   totalBookings: number;
@@ -32,7 +33,7 @@ export const customerService = {
       const params = new URLSearchParams({ page: page.toString(), size: size.toString() });
       if (status) params.append('status', status);
       const response = await apiClient.get<any>(`/customer/bookings?${params.toString()}`);
-      const list = response.data?.content || response.content || response.data || [];
+      const list = extractArray(response);
       const total = response.data?.totalElements || response.totalElements || list.length;
       return { data: list, total };
     } catch (error) {
@@ -44,7 +45,7 @@ export const customerService = {
   async getUpcomingBookings(): Promise<any[]> {
     try {
       const response = await apiClient.get<any>('/customer/bookings/upcoming');
-      return response.data || response || [];
+      return extractArray(response);
     } catch (error) {
       console.error('Failed to load upcoming bookings', error);
       return [];
@@ -54,7 +55,7 @@ export const customerService = {
   async getPastBookings(): Promise<any[]> {
     try {
       const response = await apiClient.get<any>('/customer/bookings/history');
-      return response.data || response || [];
+      return extractArray(response);
     } catch (error) {
       console.error('Failed to load booking history', error);
       return [];
@@ -64,7 +65,7 @@ export const customerService = {
   async getSavedVehicles(): Promise<Vehicle[]> {
     try {
       const response = await apiClient.get<any>('/customer/saved-vehicles');
-      return response.data || response || [];
+      return extractArray(response);
     } catch (error) {
       console.error('Failed to load saved vehicles', error);
       return [];
@@ -75,7 +76,7 @@ export const customerService = {
     try {
       const params = new URLSearchParams({ page: page.toString(), size: size.toString() });
       const response = await apiClient.get<any>(`/customer/payments?${params.toString()}`);
-      const list = response.data?.content || response.content || response.data || [];
+      const list = extractArray(response);
       const total = response.data?.totalElements || response.totalElements || list.length;
       return { data: list, total };
     } catch (error) {
@@ -87,7 +88,7 @@ export const customerService = {
   async getReviews(): Promise<any[]> {
     try {
       const response = await apiClient.get<any>('/customer/reviews');
-      return response.data || response || [];
+      return extractArray(response);
     } catch (error) {
       console.error('Failed to load customer reviews', error);
       return [];
