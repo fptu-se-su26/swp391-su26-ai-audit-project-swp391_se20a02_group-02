@@ -158,7 +158,7 @@ docuseal:
   send-email: ${DOCUSEAL_SEND_EMAIL:false}
 
 fptai:
-  api-key: ${FPTAI_API_KEY:0y4H02ys3WsOB4tTH0b05pIRxYil73Vo}
+  api-key: ${FPTAI_API_KEY:9COktUZ1vdIup75c7KnxGoVTYSiXBOS4}
 
 # VNPT eKYC Configuration
 # SECURITY: Set these via environment variables - NEVER hardcode credentials

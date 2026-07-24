@@ -23,7 +23,7 @@ public class FptAiEkycService {
 
 
 
-    @Value("${fptai.api-key:0y4H02ys3WsOB4tTH0b05pIRxYil73Vo}")
+    @Value("${fptai.api-key:9COktUZ1vdIup75c7KnxGoVTYSiXBOS4}")
     private String apiKey;
 
     @Value("${ekyc.provider:FPTAI}")
