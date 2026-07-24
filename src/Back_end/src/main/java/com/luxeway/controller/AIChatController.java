@@ -60,6 +60,25 @@ public class AIChatController {
         return ResponseEntity.ok(ApiResponse.success("AI dialogue complete", chatResult));
     }
 
+    @PostMapping("/execute-action")
+    @Operation(summary = "Execute a confirmed chatbot action with role authorization and audit logging")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> executeAction(
+            @AuthenticationPrincipal User user,
+            @RequestBody Map<String, String> body) {
+        if (user == null) {
+            return ResponseEntity.status(401).body(ApiResponse.error("Authentication required"));
+        }
+        String actionType = body.get("actionType");
+        String targetId = body.get("targetId");
+
+        if (actionType == null || actionType.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("Action type is required"));
+        }
+
+        ApiResponse<Map<String, Object>> response = aiChatService.executeConfirmedAction(user, actionType, targetId);
+        return ResponseEntity.ok(response);
+    }
+
     @PostMapping("/feedback")
     @Operation(summary = "Submit rating feedback for an assistant response")
     public ResponseEntity<ApiResponse<AIFeedback>> submitFeedback(
@@ -118,7 +137,7 @@ public class AIChatController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Retrieve dashboard performance charts statistics (Admin only)")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getAnalytics() {
-        Map<String, Object> stats = conversationService.getAdminAIAnalytics();
-        return ResponseEntity.ok(ApiResponse.success("Admin AI stats loaded", stats));
+        Map<String, Object> stats = conversationService.getAnalytics();
+        return ResponseEntity.ok(ApiResponse.success("AI Analytics retrieved", stats));
     }
 }

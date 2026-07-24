@@ -135,6 +135,10 @@ export const aiConciergeService = {
     });
     return res?.data;
   },
+  async executeAction(actionType: string, targetId?: string): Promise<any> {
+    const res = await apiClient.post<any>('/ai/execute-action', { actionType, targetId });
+    return res?.data;
+  },
   async getHistory(sessionId: string): Promise<any[]> {
     const res = await apiClient.get<any>(`/ai/history?sessionId=${sessionId}`);
     return res?.data ?? [];

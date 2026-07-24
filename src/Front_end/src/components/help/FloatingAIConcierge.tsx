@@ -85,15 +85,31 @@ export const FloatingAIConcierge: React.FC = () => {
     return { label: 'Ready for trip support', tone: 'text-slate-400', dot: 'bg-slate-500' };
   }, [activeBookingId, activeVehicleId, orbState]);
 
-  const quickActions = useMemo(
-    () => [
-      { label: 'Roadside help', text: 'I have a flat tire and roadside breakdown emergency.', icon: AlertTriangle },
-      { label: 'Refund request', text: 'How do I cancel my trip and request a refund?', icon: ShieldCheck },
-      { label: 'Host earnings', text: 'Tell me about LuxeWay Host commission and payouts.', icon: Calendar },
-      { label: 'System status', text: 'Are all payment and booking systems operational?', icon: HelpCircle },
-    ],
-    []
-  );
+  const quickActions = useMemo(() => {
+    const role = (user?.role || 'CUSTOMER').toUpperCase();
+    if (role === 'ADMIN') {
+      return [
+        { label: 'Pending KYC', text: 'Show pending KYC applications', icon: ShieldCheck },
+        { label: 'Pending Approvals', text: 'How many vehicles need approval?', icon: Car },
+        { label: 'Platform Metrics', text: 'Show today\'s platform metrics', icon: Calendar },
+        { label: 'Unresolved Disputes', text: 'Show unresolved disputes', icon: AlertTriangle },
+      ];
+    }
+    if (role === 'OWNER') {
+      return [
+        { label: 'Pending Bookings', text: 'Show my pending bookings', icon: Calendar },
+        { label: 'Monthly Earnings', text: 'How much did I earn this month?', icon: HelpCircle },
+        { label: 'Fleet Approvals', text: 'Which vehicles need approval?', icon: Car },
+        { label: 'Recent Reviews', text: 'What was my latest customer review?', icon: ShieldCheck },
+      ];
+    }
+    return [
+      { label: 'Latest Booking', text: 'What is my latest booking?', icon: Calendar },
+      { label: 'Payment History', text: 'Show my payment history', icon: ShieldCheck },
+      { label: 'Find Vehicles', text: 'Find available cars', icon: Car },
+      { label: 'KYC Status', text: 'What is my KYC status?', icon: HelpCircle },
+    ];
+  }, [user?.role]);
 
   useEffect(() => {
     let sid = localStorage.getItem('luxeway_ai_session_id');

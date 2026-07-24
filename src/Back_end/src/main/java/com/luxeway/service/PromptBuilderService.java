@@ -1,118 +1,105 @@
 package com.luxeway.service;
 
-import com.luxeway.entity.Booking;
+import com.luxeway.dto.ai.AIChatContextDTOs.*;
 import com.luxeway.entity.User;
-import com.luxeway.entity.Vehicle;
+import com.luxeway.enums.UserRole;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class PromptBuilderService {
 
-    public String buildSystemPrompt(User user, List<Booking> recentBookings, Booking contextBooking, Vehicle contextVehicle, String currentPage) {
-        return buildSystemPrompt(user, recentBookings, contextBooking, contextVehicle, currentPage, null);
-    }
-
-    public String buildSystemPrompt(User user, List<Booking> recentBookings, Booking contextBooking, Vehicle contextVehicle, String currentPage, List<Vehicle> realDbVehicles) {
+    public String buildRoleSystemPrompt(User user, CustomerContextDTO customerCtx, OwnerContextDTO ownerCtx, AdminContextDTO adminCtx, String currentPage, String lang) {
         StringBuilder sb = new StringBuilder();
-        
-        // 1. Luxury Persona & Tone Guidance
-        sb.append("You are the LuxeWay Luxury Concierge, an elite AI advisor representing LuxeWay, the premier high-end vehicle rental platform.\n");
-        sb.append("Tone constraints: Extremely professional, polite, elegant, warm, and highly helpful. Use elite terminology. Address the user by name if known.\n\n");
+        String selectedLang = (lang != null && !lang.trim().isEmpty()) ? lang : "en";
+        UserRole role = user != null ? user.getRole() : UserRole.CUSTOMER;
 
-        // 2. Strict Boundary Rules: Cars vs Motorbikes
-        sb.append("CRITICAL ARCHITECTURE RULES (SEPARATION OF ECOSYSTEMS):\n");
-        sb.append("- LuxeWay operates TWO completely independent marketplaces: CARS and MOTORBIKES.\n");
-        sb.append("- DO NOT suggest motorbikes when the user is searching for or viewing a car. Keep recommendations specific to the category.\n");
-        sb.append("- Pathing rules:\n");
-        sb.append("  * Car details & marketplace: /cars and /cars/:id\n");
-        sb.append("  * Car booking: /car-booking/:id\n");
-        sb.append("  * Motorbike details & marketplace: /motorbikes and /motorbikes/:id\n");
-        sb.append("  * Motorbike booking: /motorbike-booking/:id\n\n");
+        if (role == UserRole.ADMIN) {
+            sb.append("You are LuxeWay Admin Operations Assistant.\n");
+            sb.append("You assist an authenticated ADMIN user.\n");
+            sb.append("You may summarize platform-level data provided by the backend.\n");
+            sb.append("Never invent statistics.\n");
+            sb.append("Never execute destructive or approval actions directly without explicit confirmation and backend authorization.\n");
+            sb.append("All actions must be logged in the AuditLog system.\n");
+            sb.append("Respond strictly in the user's selected language: ").append(selectedLang).append(".\n\n");
 
-        // 3. User Identity Context
-        if (user != null) {
-            String name = (user.getDisplayName() != null) ? user.getDisplayName() : (user.getFirstName() + " " + user.getLastName());
-            sb.append("Renter Information:\n");
-            sb.append("- Name: ").append(name).append("\n");
-            sb.append("- Email: ").append(user.getEmail()).append("\n");
-            sb.append("- Tier: ").append(user.getRole().toString()).append("\n\n");
+            if (adminCtx != null) {
+                sb.append("REAL DATABASE PLATFORM CONTEXT:\n");
+                sb.append("- Total Platform Users: ").append(adminCtx.getTotalUsers()).append("\n");
+                sb.append("- Total Fleet Vehicles: ").append(adminCtx.getTotalVehicles()).append("\n");
+                sb.append("- Total Bookings: ").append(adminCtx.getTotalBookings()).append("\n");
+                sb.append("- Pending KYC Applications: ").append(adminCtx.getPendingKycCount()).append("\n");
+                sb.append("- Pending Owner Applications: ").append(adminCtx.getPendingOwnerAppsCount()).append("\n");
+                sb.append("- Pending Vehicle Approvals: ").append(adminCtx.getPendingVehicleApprovalsCount()).append("\n");
+                sb.append("- Unresolved Disputes: ").append(adminCtx.getUnresolvedDisputesCount()).append("\n");
+                if (adminCtx.getPendingVehicleApprovals() != null && !adminCtx.getPendingVehicleApprovals().isEmpty()) {
+                    sb.append("- Vehicles Awaiting Approval: ").append(adminCtx.getPendingVehicleApprovals()).append("\n");
+                }
+                sb.append("\n");
+            }
+        } else if (role == UserRole.OWNER) {
+            sb.append("You are LuxeWay Owner Assistant.\n");
+            sb.append("You assist the authenticated vehicle owner.\n");
+            sb.append("You may access only the owner's vehicles, bookings, earnings, reviews, withdrawals, and approval information provided by the backend.\n");
+            sb.append("Never reveal another owner's private data.\n");
+            sb.append("Never invent revenue, booking, or vehicle information.\n");
+            sb.append("You cannot bypass Admin approval.\n");
+            sb.append("A vehicle must remain unavailable while waiting for Admin re-approval.\n");
+            sb.append("Respond strictly in the user's selected language: ").append(selectedLang).append(".\n\n");
+
+            if (ownerCtx != null) {
+                sb.append("REAL DATABASE OWNER FLEET & BUSINESS CONTEXT:\n");
+                sb.append("- Owner Name: ").append(ownerCtx.getDisplayName()).append("\n");
+                sb.append("- Total Vehicles: ").append(ownerCtx.getTotalVehicles()).append("\n");
+                sb.append("- Available Vehicles: ").append(ownerCtx.getAvailableVehicles()).append("\n");
+                sb.append("- Vehicles Pending Admin Approval: ").append(ownerCtx.getPendingApprovalVehicles()).append("\n");
+                sb.append("- Total Bookings Received: ").append(ownerCtx.getTotalBookings()).append("\n");
+                sb.append("- Pending Customer Booking Requests: ").append(ownerCtx.getPendingRequestsCount()).append("\n");
+                sb.append("- Total Earnings/Revenue: ").append(ownerCtx.getTotalRevenue()).append(" VND\n");
+                sb.append("- Average Rating: ").append(ownerCtx.getRating()).append("/5 (").append(ownerCtx.getTotalReviews()).append(" reviews)\n");
+                if (ownerCtx.getVehicles() != null && !ownerCtx.getVehicles().isEmpty()) {
+                    sb.append("- Owned Vehicles Summary: ").append(ownerCtx.getVehicles()).append("\n");
+                }
+                if (ownerCtx.getPendingRequests() != null && !ownerCtx.getPendingRequests().isEmpty()) {
+                    sb.append("- Pending Booking Requests: ").append(ownerCtx.getPendingRequests()).append("\n");
+                }
+                sb.append("\n");
+            }
         } else {
-            sb.append("Renter Information: Unauthenticated Guest\n\n");
+            sb.append("You are LuxeWay Customer Assistant.\n");
+            sb.append("You assist the authenticated customer only.\n");
+            sb.append("You may answer questions using the provided customer context.\n");
+            sb.append("Never reveal data belonging to other users.\n");
+            sb.append("Never invent booking, payment, vehicle, or account information.\n");
+            sb.append("If data is missing, clearly state: 'I couldn't find any matching data in the LuxeWay system.'\n");
+            sb.append("You cannot approve, reject, modify, delete, or refund anything without an authorized backend operation.\n");
+            sb.append("Respond strictly in the user's selected language: ").append(selectedLang).append(".\n\n");
+
+            if (customerCtx != null) {
+                sb.append("REAL DATABASE CUSTOMER ACCOUNT CONTEXT:\n");
+                sb.append("- Customer Name: ").append(customerCtx.getDisplayName()).append("\n");
+                sb.append("- Email: ").append(customerCtx.getEmail()).append("\n");
+                sb.append("- KYC Status: ").append(customerCtx.getKycStatus()).append(" (Verified: ").append(customerCtx.isKycVerified()).append(")\n");
+                sb.append("- Driving License: ").append(customerCtx.getLicenseStatus()).append("\n");
+                sb.append("- Total Bookings Made: ").append(customerCtx.getTotalBookings()).append("\n");
+                sb.append("- Active Rentals: ").append(customerCtx.getActiveBookingsCount()).append("\n");
+                sb.append("- Total Spent: ").append(customerCtx.getTotalSpent()).append(" VND\n");
+                if (customerCtx.getRecentBookings() != null && !customerCtx.getRecentBookings().isEmpty()) {
+                    sb.append("- Recent Bookings: ").append(customerCtx.getRecentBookings()).append("\n");
+                }
+                if (customerCtx.getRecentPayments() != null && !customerCtx.getRecentPayments().isEmpty()) {
+                    sb.append("- Recent Payments: ").append(customerCtx.getRecentPayments()).append("\n");
+                }
+                sb.append("\n");
+            }
         }
 
-        // 4. Page Coordinate Context
         if (currentPage != null && !currentPage.trim().isEmpty()) {
-            sb.append("Renter Current Location on LuxeWay App: ").append(currentPage).append("\n\n");
+            sb.append("User Current App Location Page: ").append(currentPage).append("\n\n");
         }
-
-        // 5. Active Context Vehicle Specs
-        if (contextVehicle != null) {
-            sb.append("Active Vehicle Being Viewed:\n");
-            sb.append("- ID: ").append(contextVehicle.getId()).append("\n");
-            sb.append("- Name: ").append(contextVehicle.getName()).append("\n");
-            sb.append("- Brand/Model: ").append(contextVehicle.getBrand()).append(" ").append(contextVehicle.getModel()).append("\n");
-            sb.append("- Category: ").append(contextVehicle.getCategory().toString()).append("\n");
-            sb.append("- Type: ").append(contextVehicle.getVehicleType().toString()).append("\n");
-            sb.append("- Cost: ").append(contextVehicle.getPricePerDay()).append(" VND per day\n");
-            if (contextVehicle.getDescription() != null) {
-                sb.append("- Overview: ").append(contextVehicle.getDescription()).append("\n");
-            }
-            sb.append("\n");
-        }
-
-        // Real DB Inventory Injection
-        if (realDbVehicles != null && !realDbVehicles.isEmpty()) {
-            sb.append("LuxeWay Real Available Database Inventory Snapshot:\n");
-            for (Vehicle v : realDbVehicles) {
-                sb.append("- [ID: ").append(v.getId()).append("] ")
-                        .append(v.getBrand() != null ? v.getBrand() : "").append(" ").append(v.getName())
-                        .append(" | Category: ").append(v.getCategory())
-                        .append(" | City: ").append(v.getCity() != null ? v.getCity() : "Việt Nam")
-                        .append(" | Price: ").append(v.getPricePerDay()).append(" VND/day")
-                        .append(" | Rating: ").append(v.getRating() != null ? v.getRating() : 5.0)
-                        .append("\n");
-            }
-            sb.append("\n");
-        }
-
-        // 6. Active Context Booking Details
-        if (contextBooking != null) {
-            sb.append("Active Rental Booking Details:\n");
-            sb.append("- Booking Reference ID: ").append(contextBooking.getId()).append("\n");
-            if (contextBooking.getVehicle() != null) {
-                sb.append("- Vehicle: ").append(contextBooking.getVehicle().getName()).append(" (").append(contextBooking.getVehicle().getVehicleType().toString()).append(")\n");
-            }
-            sb.append("- Status: ").append(contextBooking.getStatus().toString()).append("\n");
-            sb.append("- Rental Period: ").append(contextBooking.getStartDate()).append(" to ").append(contextBooking.getEndDate()).append("\n");
-            sb.append("- Renter Total Cost: ").append(contextBooking.getTotal()).append(" VND\n\n");
-        }
-
-        // 7. Historical Bookings
-        if (recentBookings != null && !recentBookings.isEmpty()) {
-            sb.append("Renter Booking History:\n");
-            for (Booking b : recentBookings) {
-                sb.append("- ID: ").append(b.getId())
-                        .append(" | ").append(b.getVehicle() != null ? b.getVehicle().getName() : "Vehicle")
-                        .append(" | Status: ").append(b.getStatus())
-                        .append(" | Period: ").append(b.getStartDate()).append(" to ").append(b.getEndDate())
-                        .append("\n");
-            }
-            sb.append("\n");
-        }
-
-        // 8. Multi-Language & Scope Rules
-        sb.append("CRITICAL LANGUAGE & SCOPE RULES:\n");
-        sb.append("1. MULTI-LANGUAGE: You MUST detect the language of the user's latest prompt (English 🇬🇧, Vietnamese 🇻🇳, Chinese 🇨🇳, Korean 🇰🇷, Japanese 🇯🇵, etc.) and ALWAYS reply in the EXACT SAME LANGUAGE as the user's prompt.\n");
-        sb.append("2. DOMAIN BOUNDARY & OFF-TOPIC RULE: You are exclusively the LuxeWay AI Concierge. You ONLY answer questions related to vehicle rentals, recommendations, bookings, roadside emergency help, host/owner vehicle approvals & earnings, and admin system metrics on the LuxeWay platform. If the user asks off-topic, silly, or unrelated questions (such as general trivia, weather, politics, math, poems, non-platform matters), politely decline in their language and state that you are the LuxeWay AI assistant and can only help with LuxeWay vehicle rental platform services.\n");
-        sb.append("3. REAL DATABASE RECORDS: All vehicle details, booking codes, status updates, and statistics come directly from LuxeWay's real database. Never fabricate fake vehicles, fake prices, or fake locations.\n\n");
-
-        sb.append("Please respond politely in Markdown. Keep your dialogue concise, structured, and luxurious. Maximum 200 words.");
 
         return sb.toString();
     }
