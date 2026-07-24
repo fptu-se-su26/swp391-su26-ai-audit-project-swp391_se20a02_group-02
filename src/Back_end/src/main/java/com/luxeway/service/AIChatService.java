@@ -225,6 +225,32 @@ public class AIChatService {
             }
         }
 
+        // 5. Vehicle Search Action
+        if (msgLower.contains("find") || msgLower.contains("search") || msgLower.contains("suv") || msgLower.contains("car") || msgLower.contains("toyota") || msgLower.contains("mazda") || msgLower.contains("kia") || msgLower.contains("honda") || msgLower.contains("xe")) {
+            List<Vehicle> available = vehicleRepository.findByStatus(com.luxeway.enums.VehicleStatus.AVAILABLE);
+            if (!available.isEmpty()) {
+                List<Map<String, Object>> cards = new ArrayList<>();
+                for (Vehicle v : available.stream().limit(3).toList()) {
+                    Map<String, Object> card = new HashMap<>();
+                    card.put("id", v.getId());
+                    card.put("name", v.getName());
+                    card.put("brand", v.getBrand() != null ? v.getBrand() : "LuxeWay");
+                    card.put("model", v.getModel() != null ? v.getModel() : "");
+                    card.put("city", v.getCity() != null ? v.getCity() : "Đà Nẵng");
+                    card.put("pricePerDay", v.getPricePerDay());
+                    card.put("rating", v.getRating() != null ? v.getRating() : 4.9);
+                    card.put("thumbnailUrl", v.getThumbnailUrl() != null ? v.getThumbnailUrl() : "");
+                    cards.add(card);
+                }
+                Map<String, Object> searchCard = new HashMap<>();
+                searchCard.put("action", "VEHICLE_SEARCH");
+                searchCard.put("success", true);
+                searchCard.put("vehicles", cards);
+                searchCard.put("message", "Here are available luxury vehicles matching your request:");
+                return searchCard;
+            }
+        }
+
         return null;
     }
 
