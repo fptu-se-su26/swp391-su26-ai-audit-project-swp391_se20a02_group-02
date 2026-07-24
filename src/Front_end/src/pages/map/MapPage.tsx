@@ -412,7 +412,26 @@ export const MapPage: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [showSort, setShowSort] = useState(false);
   const [sortLabel, setSortLabel] = useState('Phổ biến nhất');
+  const [mapBounds, setMapBounds] = useState<{ minLat: number; maxLat: number; minLng: number; maxLng: number } | null>(null);
+  const [showSearchAreaButton, setShowSearchAreaButton] = useState(false);
   const carouselRef = useRef<HTMLDivElement>(null);
+
+  const handleBoundsChange = useCallback((b: { minLat: number; maxLat: number; minLng: number; maxLng: number }) => {
+    setMapBounds(b);
+    setShowSearchAreaButton(true);
+  }, []);
+
+  const handleSearchThisArea = () => {
+    if (!mapBounds) return;
+    setFilters(f => ({
+      ...f,
+      minLat: mapBounds.minLat,
+      maxLat: mapBounds.maxLat,
+      minLng: mapBounds.minLng,
+      maxLng: mapBounds.maxLng,
+    }));
+    setShowSearchAreaButton(false);
+  };
 
   // Fetch vehicles
   const fetchVehicles = useCallback(async (signal?: AbortSignal) => {
@@ -596,6 +615,19 @@ export const MapPage: React.FC = () => {
       {/* ── Map Area ──────────────────────────────────────────────────────── */}
       <div className="flex-1 relative overflow-hidden min-h-0">
 
+        {/* Floating Search this area button */}
+        {showSearchAreaButton && (
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30">
+            <button
+              onClick={handleSearchThisArea}
+              className="flex items-center gap-2 px-5 py-2.5 bg-[#D4AF37] hover:bg-[#c4a030] text-slate-950 font-black text-xs rounded-full shadow-xl transition-all active:scale-95 animate-bounce-short"
+            >
+              <MapPin className="w-3.5 h-3.5" />
+              Search this area / Tìm ở khu vực này
+            </button>
+          </div>
+        )}
+
         {/* Map Canvas */}
         <LuxeWayMap
           vehicles={vehicles}
@@ -603,6 +635,7 @@ export const MapPage: React.FC = () => {
           hoveredVehicleId={hoveredId}
           onVehicleClick={handleMarkerClick}
           onMarkerHover={(id) => setHoveredId(id ?? undefined)}
+          onBoundsChange={handleBoundsChange}
           height="100%"
         />
 
