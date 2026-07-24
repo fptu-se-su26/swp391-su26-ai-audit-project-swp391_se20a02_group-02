@@ -90,6 +90,10 @@ public class BookingService {
             throw new RuntimeException("Thời gian thuê tối đa cho xe này là " + vehicle.getMaxRentalDays() + " ngày.");
         }
 
+        if (vehicle.getApprovalStatus() != com.luxeway.enums.ApprovalStatus.APPROVED) {
+            throw new RuntimeException("This vehicle has not been approved by platform administrator.");
+        }
+
         if (vehicle.getStatus() != VehicleStatus.AVAILABLE) {
             throw new RuntimeException("This vehicle is currently unavailable");
         }

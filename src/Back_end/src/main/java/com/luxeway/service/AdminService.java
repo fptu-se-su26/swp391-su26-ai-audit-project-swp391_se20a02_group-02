@@ -45,6 +45,7 @@ public class AdminService {
     private final NotificationService notificationService;
     private final OwnerApplicationRepository ownerApplicationRepository;
     private final OwnerProfileRepository ownerProfileRepository;
+    private final AuditService auditService;
 
     // ====== Dashboard Statistics ======
 
@@ -107,12 +108,20 @@ public class AdminService {
         if (app.getStatus() != com.luxeway.enums.OwnerApplicationStatus.SUBMITTED && app.getStatus() != com.luxeway.enums.OwnerApplicationStatus.UNDER_REVIEW) {
             throw new IllegalStateException("Application is not in a valid state for approval");
         }
+
+        User user = app.getUser();
+        // Mandatory KYC VERIFIED check
+        boolean isKycVerified = "VERIFIED".equalsIgnoreCase(user.getKycStatus()) 
+                             || Boolean.TRUE.equals(user.getKycVerified()) 
+                             || Boolean.TRUE.equals(user.getVerified());
+        if (!isKycVerified) {
+            throw new IllegalStateException("Cannot approve owner application: Applicant KYC status is not VERIFIED. Please review and approve KYC first.");
+        }
         
         app.setStatus(com.luxeway.enums.OwnerApplicationStatus.APPROVED);
         app.setReviewedAt(java.time.LocalDateTime.now());
         app.setReviewedBy(admin);
         
-        User user = app.getUser();
         if (user.getRole() == UserRole.CUSTOMER) {
             user.setRole(UserRole.OWNER);
             userRepository.save(user);
@@ -129,13 +138,17 @@ public class AdminService {
             userRepository.save(user);
         }
         
+        // Audit log
+        String adminId = admin != null ? admin.getId() : "SYSTEM";
+        auditService.log(adminId, "ADMIN_APPROVED_OWNER", "OWNER_APPLICATION", id, "SUBMITTED", "APPROVED", null, null);
+
         // Notify
         notificationService.createNotification(
                 user.getId(),
                 "SYSTEM",
                 "Application Approved",
-                "Congratulations! Your LuxeWay Owner Application has been approved.",
-                "/owner-application"
+                "Congratulations! Your LuxeWay Owner Application has been approved. You are now an official Vehicle Owner.",
+                "/owner"
         );
         
         return mapApplicationToResponse(ownerApplicationRepository.save(app));
@@ -143,6 +156,10 @@ public class AdminService {
     
     @Transactional
     public com.luxeway.dto.ownerapplication.OwnerApplicationDTOs.OwnerApplicationResponse rejectApplication(String id, String reason, User admin) {
+        if (reason == null || reason.trim().isEmpty()) {
+            throw new IllegalArgumentException("Rejection reason is mandatory and cannot be empty.");
+        }
+
         com.luxeway.entity.OwnerApplication app = ownerApplicationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Application not found"));
                 
@@ -150,13 +167,16 @@ public class AdminService {
         app.setRejectionReason(reason);
         app.setReviewedAt(java.time.LocalDateTime.now());
         app.setReviewedBy(admin);
+
+        String adminId = admin != null ? admin.getId() : "SYSTEM";
+        auditService.log(adminId, "ADMIN_REJECTED_OWNER", "OWNER_APPLICATION", id, "SUBMITTED", "REJECTED", null, reason);
         
-        // Notify
+        User user = app.getUser();
         notificationService.createNotification(
-                app.getUser().getId(),
+                user.getId(),
                 "SYSTEM",
-                "Application Requires Changes",
-                "Your Owner Application was reviewed and needs changes: " + reason,
+                "Owner Application Rejected",
+                "Your owner application was reviewed and rejected. Reason: " + reason,
                 "/owner-application"
         );
         

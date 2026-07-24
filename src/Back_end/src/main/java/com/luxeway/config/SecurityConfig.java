@@ -178,27 +178,29 @@ public class SecurityConfig {
                     "/api/v1/reviews",
                     "/api/v1/reviews/**"
                 ).permitAll()
-                // ======== Admin only (ADMIN and SUPER_ADMIN both get access) ========
-                .requestMatchers("/admin/**").hasAnyAuthority("ADMIN", "SUPER_ADMIN", "ROLE_ADMIN", "ROLE_SUPER_ADMIN")
-                .requestMatchers("/api/v1/admin/**").hasAnyAuthority("ADMIN", "SUPER_ADMIN", "ROLE_ADMIN", "ROLE_SUPER_ADMIN")
-                .requestMatchers("/test/**").hasAnyAuthority("ADMIN", "SUPER_ADMIN", "ROLE_ADMIN", "ROLE_SUPER_ADMIN")
-                .requestMatchers(HttpMethod.GET, "/users", "/api/v1/users").hasAnyAuthority("ADMIN", "SUPER_ADMIN", "ROLE_ADMIN", "ROLE_SUPER_ADMIN")
+                // ======== Admin only ========
+                .requestMatchers("/admin/**", "/api/v1/admin/**", "/test/**").hasAuthority("ROLE_ADMIN")
+                .requestMatchers(HttpMethod.GET, "/users", "/api/v1/users").hasAuthority("ROLE_ADMIN")
+                // ======== Owner only endpoints ========
+                .requestMatchers("/owner/**", "/api/v1/owner/**").hasAuthority("ROLE_OWNER")
+                // ======== Customer only endpoints ========
+                .requestMatchers("/customer/**", "/api/v1/customer/**").hasAuthority("ROLE_CUSTOMER")
                 // ======== Owner or Admin ========
                 .requestMatchers(HttpMethod.POST,
                     "/vehicles", "/api/v1/vehicles",
                     "/cars", "/api/v1/cars",
                     "/motorbikes", "/api/v1/motorbikes"
-                ).hasAnyRole("OWNER", "ADMIN")
+                ).hasAnyAuthority("ROLE_OWNER", "ROLE_ADMIN")
                 .requestMatchers(HttpMethod.PUT,
                     "/vehicles/**", "/api/v1/vehicles/**",
                     "/cars/**", "/api/v1/cars/**",
                     "/motorbikes/**", "/api/v1/motorbikes/**"
-                ).hasAnyRole("OWNER", "ADMIN")
+                ).hasAnyAuthority("ROLE_OWNER", "ROLE_ADMIN")
                 .requestMatchers(HttpMethod.DELETE,
                     "/vehicles/**", "/api/v1/vehicles/**",
                     "/cars/**", "/api/v1/cars/**",
                     "/motorbikes/**", "/api/v1/motorbikes/**"
-                ).hasAnyRole("OWNER", "ADMIN")
+                ).hasAnyAuthority("ROLE_OWNER", "ROLE_ADMIN")
                 // Upload and eKYC endpoints require authentication
                 .requestMatchers(HttpMethod.POST, "/upload", "/upload/**", "/users/documents", "/api/v1/users/documents",
                         "/ekyc/**", "/api/v1/ekyc/**").authenticated()

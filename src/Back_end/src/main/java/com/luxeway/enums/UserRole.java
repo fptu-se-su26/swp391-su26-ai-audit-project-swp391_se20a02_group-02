@@ -3,8 +3,7 @@ package com.luxeway.enums;
 public enum UserRole {
     CUSTOMER("Customer"),
     OWNER("Vehicle Owner"),
-    ADMIN("Administrator"),
-    SUPER_ADMIN("Super Administrator");
+    ADMIN("Administrator");
     
     private final String displayName;
     
@@ -20,6 +19,6 @@ public enum UserRole {
      * Returns true for any role that grants admin-level access.
      */
     public boolean hasAdminAccess() {
-        return this == ADMIN || this == SUPER_ADMIN;
+        return this == ADMIN;
     }
-}
+}

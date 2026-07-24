@@ -26,13 +26,13 @@ import java.util.stream.Collectors;
 /**
  * REST controller exposing all AI Predictive Analytics endpoints.
  *
- * All routes are protected — only ADMIN or SUPER_ADMIN may call them.
+ * All routes are protected — only ADMIN may call them.
  * POST endpoints are subject to per-admin rate limiting: ≤ 10 requests per 60 seconds.
  */
 @Slf4j
 @RestController
 @RequestMapping("/admin/ai")
-@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+@PreAuthorize("hasRole('ADMIN')")
 @RequiredArgsConstructor
 public class AIPredictiveController {
 

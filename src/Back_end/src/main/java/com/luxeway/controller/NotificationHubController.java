@@ -26,14 +26,14 @@ public class NotificationHubController {
     private final NotificationLogRepository logRepository;
 
     @GetMapping("/templates")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get list of registered message templates")
     public ResponseEntity<ApiResponse<List<NotificationTemplate>>> getTemplates() {
         return ResponseEntity.ok(ApiResponse.success("Templates loaded", templateRepository.findAll()));
     }
 
     @GetMapping("/logs")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get log entries for dispatched messages")
     public ResponseEntity<ApiResponse<List<NotificationLog>>> getLogs() {
         return ResponseEntity.ok(ApiResponse.success("Dispatched logs loaded", logRepository.findAll()));

@@ -575,13 +575,8 @@ public class UserController {
 
         try {
             java.util.List<User> admins = userRepository.findByRole(com.luxeway.enums.UserRole.ADMIN);
-            java.util.List<User> superAdmins = userRepository.findByRole(com.luxeway.enums.UserRole.SUPER_ADMIN);
-            
             for (User admin : admins) {
                 notificationService.createNotification(admin.getId(), "KYC", title, content, link);
-            }
-            for (User superAdmin : superAdmins) {
-                notificationService.createNotification(superAdmin.getId(), "KYC", title, content, link);
             }
         } catch (Exception ex) {
             log.warn("Failed to dispatch admin KYC notifications: {}", ex.getMessage());

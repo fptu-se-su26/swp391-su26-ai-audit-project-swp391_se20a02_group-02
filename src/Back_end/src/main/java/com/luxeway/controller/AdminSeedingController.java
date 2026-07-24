@@ -22,7 +22,7 @@ public class AdminSeedingController {
     private final UserRepository userRepository;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Trigger manual execution of enterprise database seeding (all tables)")
     public ResponseEntity<ApiResponse<String>> triggerSeeding() {
         try {
@@ -34,7 +34,7 @@ public class AdminSeedingController {
     }
 
     @PostMapping("/vehicles")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Seed only the unified vehicles table (used by Landing Page & Marketplace)")
     public ResponseEntity<ApiResponse<String>> triggerVehicleSeeding() {
         try {
@@ -49,7 +49,7 @@ public class AdminSeedingController {
     }
 
     @PostMapping("/demo-acceptance")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Seed repeatable acceptance-demo data for wishlist, reviews, chat, KYC and vehicle approval screens")
     public ResponseEntity<ApiResponse<java.util.Map<String, Object>>> triggerDemoAcceptanceSeeding() {
         try {

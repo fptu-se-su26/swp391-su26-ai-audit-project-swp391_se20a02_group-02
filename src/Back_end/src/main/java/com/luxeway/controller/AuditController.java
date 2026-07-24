@@ -24,7 +24,7 @@ public class AuditController {
     private final AuditService auditService;
 
     @GetMapping("/logs")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get filtered administrative activity trail logs")
     public ResponseEntity<ApiResponse<List<AuditLog>>> getLogs(
             @RequestParam(required = false) String userId,
@@ -35,7 +35,7 @@ public class AuditController {
     }
 
     @GetMapping("/export")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Export filtered audit logs ledger in CSV format")
     public ResponseEntity<byte[]> exportLogsCsv(
             @RequestParam(required = false) String userId,

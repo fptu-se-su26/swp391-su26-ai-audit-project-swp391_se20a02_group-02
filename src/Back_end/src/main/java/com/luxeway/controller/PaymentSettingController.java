@@ -28,7 +28,7 @@ public class PaymentSettingController {
     }
 
     @PutMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update the active bank transfer settings (Admin only)")
     public ResponseEntity<ApiResponse<PaymentSetting>> updateSetting(
             @AuthenticationPrincipal User admin,

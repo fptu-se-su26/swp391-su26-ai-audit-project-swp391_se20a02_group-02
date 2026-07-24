@@ -571,24 +571,14 @@ public class VehicleService {
                 }
 
                 if (coreDetailsChanged) {
-                    vehicle.setStatus(VehicleStatus.INACTIVE);
+                    vehicle.setStatus(VehicleStatus.UNAVAILABLE);
                     vehicle.setApprovalStatus(ApprovalStatus.SUBMITTED);
                     
                     try {
                         List<User> admins = userRepository.findByRole(com.luxeway.enums.UserRole.ADMIN);
-                        List<User> superAdmins = userRepository.findByRole(com.luxeway.enums.UserRole.SUPER_ADMIN);
                         for (User admin : admins) {
                             notificationService.createNotification(
                                 admin.getId(),
-                                "VEHICLE_APPROVAL",
-                                "Vehicle update requires approval",
-                                "Vehicle: " + req.getBrand() + " " + req.getModel() + " has been updated by Owner and needs re-approval.",
-                                "/admin?tab=vehicles&id=" + vehicle.getId()
-                            );
-                        }
-                        for (User superAdmin : superAdmins) {
-                            notificationService.createNotification(
-                                superAdmin.getId(),
                                 "VEHICLE_APPROVAL",
                                 "Vehicle update requires approval",
                                 "Vehicle: " + req.getBrand() + " " + req.getModel() + " has been updated by Owner and needs re-approval.",
@@ -599,7 +589,7 @@ public class VehicleService {
                             vehicle.getOwner().getId(),
                             "VEHICLE_APPROVAL",
                             "Vehicle update pending approval",
-                            "Your vehicle " + req.getBrand() + " " + req.getModel() + " has been set to pending approval due to core changes.",
+                            "Your vehicle " + req.getBrand() + " " + req.getModel() + " has been set to pending approval due to changes.",
                             "/owner/vehicles"
                         );
                     } catch (Exception e) {
@@ -610,24 +600,14 @@ public class VehicleService {
                     vehicle.setApprovalStatus(currentApprovalStatus);
                 }
             } else if (currentApprovalStatus == ApprovalStatus.DRAFT) {
-                vehicle.setStatus(VehicleStatus.INACTIVE);
+                vehicle.setStatus(VehicleStatus.UNAVAILABLE);
                 vehicle.setApprovalStatus(ApprovalStatus.SUBMITTED);
                 
                 try {
                     List<User> admins = userRepository.findByRole(com.luxeway.enums.UserRole.ADMIN);
-                    List<User> superAdmins = userRepository.findByRole(com.luxeway.enums.UserRole.SUPER_ADMIN);
                     for (User admin : admins) {
                         notificationService.createNotification(
                             admin.getId(),
-                            "VEHICLE_APPROVAL",
-                            "New vehicle waiting for approval",
-                            "Vehicle: " + req.getBrand() + " " + req.getModel() + " has been resubmitted from Draft.",
-                            "/admin?tab=vehicles&id=" + vehicle.getId()
-                        );
-                    }
-                    for (User superAdmin : superAdmins) {
-                        notificationService.createNotification(
-                            superAdmin.getId(),
                             "VEHICLE_APPROVAL",
                             "New vehicle waiting for approval",
                             "Vehicle: " + req.getBrand() + " " + req.getModel() + " has been resubmitted from Draft.",
@@ -638,24 +618,14 @@ public class VehicleService {
                     log.warn("Failed to notify admins of vehicle update: {}", e.getMessage());
                 }
             } else if (currentApprovalStatus == ApprovalStatus.REJECTED) {
-                vehicle.setStatus(VehicleStatus.INACTIVE);
+                vehicle.setStatus(VehicleStatus.UNAVAILABLE);
                 vehicle.setApprovalStatus(ApprovalStatus.SUBMITTED);
                 
                 try {
                     List<User> admins = userRepository.findByRole(com.luxeway.enums.UserRole.ADMIN);
-                    List<User> superAdmins = userRepository.findByRole(com.luxeway.enums.UserRole.SUPER_ADMIN);
                     for (User admin : admins) {
                         notificationService.createNotification(
                             admin.getId(),
-                            "VEHICLE_APPROVAL",
-                            "New vehicle waiting for approval",
-                            "Vehicle: " + req.getBrand() + " " + req.getModel() + " has been edited by Owner and resubmitted.",
-                            "/admin?tab=vehicles&id=" + vehicle.getId()
-                        );
-                    }
-                    for (User superAdmin : superAdmins) {
-                        notificationService.createNotification(
-                            superAdmin.getId(),
                             "VEHICLE_APPROVAL",
                             "New vehicle waiting for approval",
                             "Vehicle: " + req.getBrand() + " " + req.getModel() + " has been edited by Owner and resubmitted.",

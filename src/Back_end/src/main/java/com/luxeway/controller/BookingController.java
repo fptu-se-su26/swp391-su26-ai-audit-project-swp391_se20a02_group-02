@@ -168,7 +168,7 @@ public class BookingController {
     }
 
     @PostMapping("/{id}/verify-payment")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Admin verifies payment and confirms booking")
     public ResponseEntity<ApiResponse<BookingDTOs.BookingResponse>> verifyPayment(
             @PathVariable String id,
@@ -181,7 +181,7 @@ public class BookingController {
     }
 
     @PostMapping("/{id}/reject-payment")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Admin rejects payment")
     public ResponseEntity<ApiResponse<BookingDTOs.BookingResponse>> rejectPayment(
             @PathVariable String id,

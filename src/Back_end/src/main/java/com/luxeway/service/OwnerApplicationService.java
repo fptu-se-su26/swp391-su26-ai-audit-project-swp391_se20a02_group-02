@@ -38,7 +38,7 @@ public class OwnerApplicationService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (user.getRole() == UserRole.OWNER || user.getRole() == UserRole.ADMIN || user.getRole() == UserRole.SUPER_ADMIN) {
+        if (user.getRole() == UserRole.OWNER || user.getRole() == UserRole.ADMIN) {
             throw new IllegalStateException("User already has elevated privileges");
         }
 

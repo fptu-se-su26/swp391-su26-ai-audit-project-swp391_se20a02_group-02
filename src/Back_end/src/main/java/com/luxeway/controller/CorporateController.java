@@ -29,7 +29,7 @@ public class CorporateController {
     private final CorporateService corporateService;
 
     @PostMapping("/company")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Register a new corporate enterprise account")
     public ResponseEntity<ApiResponse<Company>> registerCompany(@RequestBody Company company) {
         return ResponseEntity.status(201).body(ApiResponse.success("Company registered", 
@@ -37,7 +37,7 @@ public class CorporateController {
     }
 
     @PostMapping("/company/{companyId}/department")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Create a new corporate department with budget limits")
     public ResponseEntity<ApiResponse<Department>> createDepartment(
             @PathVariable String companyId, @RequestBody Department department) {
@@ -46,7 +46,7 @@ public class CorporateController {
     }
 
     @PostMapping("/employee")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Register an employee under a corporate department")
     public ResponseEntity<ApiResponse<CorporateEmployee>> addEmployee(
             @RequestBody AddEmployeeRequest request) {

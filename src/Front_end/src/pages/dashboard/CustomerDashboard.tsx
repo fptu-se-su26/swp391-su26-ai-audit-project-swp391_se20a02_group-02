@@ -10,6 +10,7 @@ import {
 
 import { useAuthStore, useUIStore } from '@/store';
 import { bookingService, paymentService } from '@/services/bookingService';
+import { customerService, type CustomerDashboardOverview } from '@/services/customerService';
 import { notificationService, reviewService } from '@/services/otherServices';
 import apiClient from '@/services/api';
 import type { Booking, Notification } from '@/types';
@@ -261,7 +262,8 @@ export const CustomerDashboardLayout: React.FC = () => {
 // ====== CUSTOMER OVERVIEW ======
 export const CustomerOverview: React.FC = () => {
   const { user } = useAuthStore();
-  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [overview, setOverview] = useState<CustomerDashboardOverview | null>(null);
+  const [bookings, setBookings] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const t = useT();
@@ -269,11 +271,14 @@ export const CustomerOverview: React.FC = () => {
   const loadCustomerData = () => {
     if (!user) return;
     Promise.all([
-      bookingService.getByUser(user.id),
+      customerService.getOverview(),
       notificationService.getByUser(user.id),
-    ]).then(([b, n]) => {
-      setBookings(b);
-      setNotifications(n.slice(0, 5));
+    ]).then(([ov, n]) => {
+      if (ov) {
+        setOverview(ov);
+        setBookings(ov.recentBookings || []);
+      }
+      setNotifications((n || []).slice(0, 5));
       setLoading(false);
     });
   };
@@ -285,10 +290,10 @@ export const CustomerOverview: React.FC = () => {
   }, [user?.id]);
 
   const stats = {
-    total: bookings.length,
-    active: bookings.filter(b => b.status === 'active' || b.status === 'confirmed').length,
-    completed: bookings.filter(b => b.status === 'completed').length,
-    spent: bookings.filter(b => b.status === 'completed').reduce((sum, b) => sum + b.pricing.total, 0),
+    total: overview ? overview.totalBookings : 0,
+    active: overview ? overview.upcomingBookingsCount : 0,
+    completed: overview ? overview.pastBookingsCount : 0,
+    spent: overview ? overview.totalSpent : 0,
   };
 
   const statCards = [

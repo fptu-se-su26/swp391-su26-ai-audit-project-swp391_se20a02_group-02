@@ -20,7 +20,7 @@ public class AdminVehicleController {
     private AdminService adminService;
 
     @PostMapping("/{id}/approve")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> approveVehicle(
             @PathVariable String id,
             @AuthenticationPrincipal User user) {
@@ -33,7 +33,7 @@ public class AdminVehicleController {
     }
 
     @PostMapping("/{id}/reject")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> rejectVehicle(
             @PathVariable String id,
             @AuthenticationPrincipal User user,
