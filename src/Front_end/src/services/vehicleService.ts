@@ -341,13 +341,17 @@ export const vehicleService = {
       
       const response = await apiClient.get<any>(`/vehicles?${queryParams.toString()}`);
 
+      const list = extractArray(response);
+      const total = response.data?.totalElements || response.meta?.totalElements || response.totalItems || list.length;
+      const totalPages = response.data?.totalPages || response.totalPages || Math.ceil(total / pageSize) || 1;
+
       const result = {
-        data: (response.vehicles || []).map(mapVehicle),
+        data: list.map(mapVehicle),
         meta: {
-          total: response.totalItems || 0,
-          page: (response.currentPage || 0) + 1,
+          total,
+          page: response.data?.number !== undefined ? response.data.number + 1 : ((response.currentPage || 0) + 1),
           pageSize,
-          totalPages: response.totalPages || 0,
+          totalPages,
         },
       };
       vehicleListCache.set(queryParams.toString(), result);
@@ -410,7 +414,7 @@ export const vehicleService = {
   async getFeatured(): Promise<Vehicle[]> {
     try {
       const response = await apiClient.get<any>(`/vehicles?page=0&size=9&isFeatured=true`);
-      const vehicles: any[] = response.vehicles || [];
+      const vehicles: any[] = extractArray(response);
       return vehicles.map(mapVehicle);
     } catch (error) {
       return [];
@@ -420,7 +424,7 @@ export const vehicleService = {
   async getFeaturedCars(): Promise<Vehicle[]> {
     try {
       const response = await apiClient.get<any>(`/vehicles?page=0&size=6&vehicleType=CAR&isFeatured=true`);
-      return (response.vehicles || []).map(mapVehicle);
+      return extractArray(response).map(mapVehicle);
     } catch (error) {
       return [];
     }
@@ -429,7 +433,7 @@ export const vehicleService = {
   async getFeaturedMotorbikes(): Promise<Vehicle[]> {
     try {
       const response = await apiClient.get<any>(`/vehicles?page=0&size=6&vehicleType=MOTORBIKE&isFeatured=true`);
-      return (response.vehicles || []).map(mapVehicle);
+      return extractArray(response).map(mapVehicle);
     } catch (error) {
       return [];
     }
@@ -460,7 +464,7 @@ export const vehicleService = {
   async search(query: string): Promise<Vehicle[]> {
     try {
       const response = await apiClient.get<any>(`/vehicles/search?keyword=${encodeURIComponent(query)}`);
-      return (response.vehicles || []).map(mapVehicle);
+      return extractArray(response).map(mapVehicle);
     } catch (error) {
       return [];
     }
