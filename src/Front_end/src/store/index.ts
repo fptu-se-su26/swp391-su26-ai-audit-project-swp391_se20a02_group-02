@@ -43,7 +43,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       // BUG-2/3 FIX: Immediately mark as authenticated with cached data.
       // This ensures the UI shows the correct state even before the backend call completes.
       set({ user, isAuthenticated: true });
-      if (user.preferredLanguage) {
+      const storedLang = localStorage.getItem('language');
+      if (!storedLang && user.preferredLanguage) {
         useUIStore.getState().setLanguage(user.preferredLanguage as Language);
       }
 
@@ -52,7 +53,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         const freshUser = await authService.fetchCurrentUser();
         if (freshUser) {
           set({ user: freshUser });
-          if (freshUser.preferredLanguage) {
+          const currentStoredLang = localStorage.getItem('language');
+          if (!currentStoredLang && freshUser.preferredLanguage) {
             useUIStore.getState().setLanguage(freshUser.preferredLanguage as Language);
           }
         }

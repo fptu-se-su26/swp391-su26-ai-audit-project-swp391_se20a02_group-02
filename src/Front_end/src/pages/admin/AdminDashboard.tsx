@@ -108,12 +108,115 @@ const AdminSlideDrawer: React.FC<AdminSlideDrawerProps> = ({ isOpen, onClose, ti
 const AdminDashboard: React.FC = () => {
   const toast = useToast();
   const navigate = useNavigate();
-  const { theme, currency, desktopSidebarCollapsed, setDesktopSidebarCollapsed } = useUIStore();
+  const { theme, currency, desktopSidebarCollapsed, setDesktopSidebarCollapsed, language } = useUIStore();
   const { user, logout } = useAuthStore();
   const isDark = theme === 'dark';
   const t = useT();
-  const isVi = t.common?.loading?.includes('Đang') || false;
+  const lang = language || 'en';
+  const isVi = lang === 'vi';
   const location = useLocation();
+
+  const adminBreadcrumbLabel = {
+    vi: 'Quản Trị',
+    ja: '管理',
+    ko: '관리자',
+    zh: '管理',
+    fr: 'Admin',
+    de: 'Admin',
+    es: 'Admin',
+    en: 'Admin'
+  }[lang] || 'Admin';
+
+  const formatStatusLabel = (status?: string | null): string => {
+    if (!status) return '';
+    const s = status.toLowerCase().trim();
+
+    const dict: Record<string, Record<string, string>> = {
+      payment_expired: { vi: 'Hết hạn thanh toán', ja: '支払い期限切れ', ko: '결제 기한 만료', zh: '支付已过期', fr: 'Paiement expiré', de: 'Zahlung abgelaufen', es: 'Pago expirado', en: 'Payment Expired' },
+      unpaid: { vi: 'Chưa thanh toán', ja: '未払い', ko: '미결제', zh: '未支付', fr: 'Non payé', de: 'Unbezahlt', es: 'No pagado', en: 'Unpaid' },
+      paid: { vi: 'Đã thanh toán', ja: '支払い済み', ko: '결제 완료', zh: '已支付', fr: 'Payé', de: 'Bezahlt', es: 'Pagado', en: 'Paid' },
+      pending: { vi: 'Chờ xử lý', ja: '保留中', ko: '대기 중', zh: '待处理', fr: 'En attente', de: 'Ausstehend', es: 'Pendiente', en: 'Pending' },
+      waiting_payment: { vi: 'Chờ thanh toán', ja: '支払い待ち', ko: '결제 대기', zh: '等待支付', fr: 'En attente de paiement', de: 'Warten auf Zahlung', es: 'Esperando pago', en: 'Waiting Payment' },
+      payment_pending: { vi: 'Đang xác minh', ja: '支払い確認中', ko: '결제 확인 중', zh: '支付核验中', fr: 'Paiement en cours', de: 'Zahlung ausstehend', es: 'Pago pendiente', en: 'Payment Pending' },
+      payment_verified: { vi: 'Đã xác minh', ja: '支払い確認済み', ko: '결제 검증됨', zh: '支付已核验', fr: 'Paiement vérifié', de: 'Zahlung verifiziert', es: 'Pago verificado', en: 'Payment Verified' },
+      payment_rejected: { vi: 'Từ chối thanh toán', ja: '支払い拒否', ko: '결제 거절됨', zh: '支付已拒绝', fr: 'Paiement rejeté', de: 'Zahlung abgelehnt', es: 'Pago rechazado', en: 'Payment Rejected' },
+      confirmed: { vi: 'Đã xác nhận', ja: '確認済み', ko: '확정됨', zh: '已确认', fr: 'Confirmé', de: 'Bestätigt', es: 'Confirmado', en: 'Confirmed' },
+      completed: { vi: 'Hoàn thành', ja: '完了', ko: '완료됨', zh: '已完成', fr: 'Terminé', de: 'Abgeschlossen', es: 'Completado', en: 'Completed' },
+      cancelled: { vi: 'Đã hủy', ja: 'キャンセル済み', ko: '취소됨', zh: '已取消', fr: 'Annulé', de: 'Storniert', es: 'Cancelado', en: 'Cancelled' },
+      disputed: { vi: 'Tranh chấp', ja: '紛争中', ko: '분쟁 중', zh: '争议中', fr: 'Contesté', de: 'Strittig', es: 'En disputa', en: 'Disputed' },
+      active: { vi: 'Hoạt động', ja: '有効', ko: '활성', zh: '活跃', fr: 'Actif', de: 'Aktiv', es: 'Activo', en: 'Active' },
+      inactive: { vi: 'Vô hiệu', ja: '無効', ko: '비활성', zh: '未激活', fr: 'Inactif', de: 'Inaktiv', es: 'Inactivo', en: 'Inactive' },
+      blocked: { vi: 'Đã khóa', ja: 'ブロック済み', ko: '차단됨', zh: '已封禁', fr: 'Bloqué', de: 'Blockiert', es: 'Bloqueado', en: 'Blocked' },
+      verified: { vi: 'Đã xác thực', ja: '認証済み', ko: '인증됨', zh: '已验证', fr: 'Vérifié', de: 'Verifiziert', es: 'Verificado', en: 'Verified' },
+      pending_approval: { vi: 'Chờ duyệt', ja: '承認待ち', ko: '승인 대기 중', zh: '待审核', fr: 'En attente', de: 'Ausstehend', es: 'Pendiente', en: 'Pending Approval' },
+      approved: { vi: 'Đã duyệt', ja: '承認済み', ko: '승인됨', zh: '已批准', fr: 'Approuvé', de: 'Genehmigt', es: 'Aprobado', en: 'Approved' },
+      rejected: { vi: 'Từ chối', ja: '却下済み', ko: '거절됨', zh: '已拒绝', fr: 'Rejeté', de: 'Abgelehnt', es: 'Rechazado', en: 'Rejected' },
+      submitted: { vi: 'Đã nộp', ja: '提出済み', ko: '제출됨', zh: '已提交', fr: 'Soumis', de: 'Eingereicht', es: 'Enviado', en: 'Submitted' },
+      resolved: { vi: 'Đã giải quyết', ja: '解決済み', ko: '해결됨', zh: '已解决', fr: 'Résolu', de: 'Gelöst', es: 'Resuelto', en: 'Resolved' },
+      expired: { vi: 'Hết hạn', ja: '期限切れ', ko: '만료됨', zh: '已过期', fr: 'Expiré', de: 'Abgelaufen', es: 'Expirado', en: 'Expired' },
+    };
+
+    const entry = dict[s];
+    if (entry) {
+      return entry[lang] || entry['en'] || status.replace(/_/g, ' ').toUpperCase();
+    }
+    return status.replace(/_/g, ' ').toUpperCase();
+  };
+
+  const getTableHeaderText = (header: string): string => {
+    const tableHeadersMap: Record<string, Record<string, string>> = {
+      'Booking ID': { vi: 'MÃ ĐẶT XE', ja: '予約ID', ko: '예약 ID', zh: '预订 ID', fr: 'ID réservation', de: 'Buchungs-ID', es: 'ID reserva', en: 'Booking ID' },
+      'Renter Guest': { vi: 'KHÁCH THUÊ', ja: '借り手ゲスト', ko: '대여자 게스트', zh: '租客', fr: 'Client locataire', de: 'Mieter', es: 'Cliente inquilino', en: 'Renter Guest' },
+      'Owner Partner': { vi: 'CHỦ XE ĐỐI TÁC', ja: 'オーナーパートナー', ko: '호스트 파트너', zh: '车主伙伴', fr: 'Partenaire', de: 'Partner-Eigentümer', es: 'Socio propietario', en: 'Owner Partner' },
+      'Vehicle Reserved': { vi: 'XE THUÊ', ja: '予約車両', ko: '예약된 차량', zh: '预订车辆', fr: 'Véhicule réservé', de: 'Reserviertes Fahrzeug', es: 'Vehículo reservado', en: 'Vehicle Reserved' },
+      'Rental Dates': { vi: 'THỜI GIAN THUÊ', ja: 'レンタル期間', ko: '대여 기간', zh: '租赁日期', fr: 'Dates de location', de: 'Mietdaten', es: 'Fechas de alquiler', en: 'Rental Dates' },
+      'Charge Total': { vi: 'TỔNG CHI PHÍ', ja: '合計料金', ko: '총 금액', zh: '总费用', fr: 'Total facturé', de: 'Gesamtbetrag', es: 'Total cobrado', en: 'Charge Total' },
+      'Status': { vi: 'TRẠNG THÁI', ja: 'ステータス', ko: '상태', zh: '状态', fr: 'Statut', de: 'Status', es: 'Estado', en: 'Status' },
+      'Payments': { vi: 'THANH TOÁN', ja: '支払い', ko: '결제', zh: '支付', fr: 'Paiements', de: 'Zahlungen', es: 'Pagos', en: 'Payments' },
+      'Actions': { vi: 'THAO TÁC', ja: '操作', ko: '작업', zh: '操作', fr: 'Actions', de: 'Aktionen', es: 'Acciones', en: 'Actions' },
+      'Mã đặt xe (Memo)': { vi: 'Mã đặt xe (Nội dung)', ja: '予約コード (メモ)', ko: '예약 코드 (메모)', zh: '预订代码（水单）', fr: 'Code de réservation', de: 'Buchungscode', es: 'Código de reserva', en: 'Booking Code (Memo)' },
+      'Khách thuê': { vi: 'Khách thuê', ja: '顧客', ko: '고객', zh: '客户', fr: 'Client', de: 'Kunde', es: 'Cliente', en: 'Customer' },
+      'Số tiền cần chuyển': { vi: 'Số tiền cần chuyển', ja: '必要金額', ko: '필요 금액', zh: '应付金额', fr: 'Montant requis', de: 'Erforderlicher Betrag', es: 'Monto requerido', en: 'Amount Required' },
+      'Trạng thái': { vi: 'Trạng thái', ja: 'ステータス', ko: '상태', zh: '状态', fr: 'Statut', de: 'Status', es: 'Estado', en: 'Status' },
+      'Thời gian khởi tạo': { vi: 'Thời gian khởi tạo', ja: '作成日時', ko: '생성 일시', zh: '创建时间', fr: 'Créé le', de: 'Erstellt am', es: 'Creado el', en: 'Created At' },
+      'Thao tác': { vi: 'Thao tác', ja: '操作', ko: '작업', zh: '操作', fr: 'Actions', de: 'Aktionen', es: 'Acciones', en: 'Actions' },
+      'Vehicle Model': { vi: 'Mẫu Xe', ja: '車両モデル', ko: '차량 모델', zh: '车辆型号', fr: 'Modèle', de: 'Fahrzeugmodell', es: 'Modelo', en: 'Vehicle Model' },
+      'Brand Info': { vi: 'Thương Hiệu', ja: 'ブランド情報', ko: 'ブランド 정보', zh: '品牌信息', fr: 'Marque', de: 'Markeninfo', es: 'Marca', en: 'Brand Info' },
+      'Daily Cost Rate': { vi: 'Giá Thuê/Ngày', ja: '日額料金', ko: '일일 대여료', zh: '每日租金', fr: 'Tarif/jour', de: 'Tagespreis', es: 'Tarifa/día', en: 'Daily Cost Rate' },
+      'Year Model': { vi: 'Năm Sản Xuất', ja: '年式', ko: '연식', zh: '生产年份', fr: 'Année', de: 'Baujahr', es: 'Año', en: 'Year Model' },
+      'Registration Status': { vi: 'Trạng Thái Duyệt', ja: '登録ステータス', ko: '등록 상태', zh: '注册状态', fr: 'Statut d\'inscription', de: 'Registrierungsstatus', es: 'Estado de registro', en: 'Registration Status' },
+      'Rating Grade': { vi: 'Đánh Giá', ja: '評価グレード', ko: '평점 등급', zh: '评分等级', fr: 'Note', de: 'Bewertung', es: 'Calificación', en: 'Rating Grade' },
+      'User Account': { vi: 'Tài Khoản Người Dùng', ja: 'ユーザーアカウント', ko: '사용자 계정', zh: '用户账户', fr: 'Compte utilisateur', de: 'Benutzerkonto', es: 'Cuenta de usuario', en: 'User Account' },
+      'Email Address': { vi: 'Địa Chỉ Email', ja: 'メールアドレス', ko: '이메일 주소', zh: '电子邮箱', fr: 'E-mail', de: 'E-Mail-Adresse', es: 'Correo electrónico', en: 'Email Address' },
+      'Platform Role': { vi: 'Vai Trò', ja: '役割', ko: '플랫폼 역할', zh: '平台角色', fr: 'Rôle', de: 'Rolle', es: 'Rol', en: 'Platform Role' },
+      'KYC Status': { vi: 'Trạng Thái KYC', ja: 'KYCステータス', ko: 'KYC 상태', zh: 'KYC 状态', fr: 'Statut KYC', de: 'KYC-Status', es: 'Estado KYC', en: 'KYC Status' },
+      'Account Status': { vi: 'Trạng Thái Tài Khoản', ja: 'アカウント状態', ko: '계정 상태', zh: '账户状态', fr: 'Statut du compte', de: 'Konto-Status', es: 'Estado de cuenta', en: 'Account Status' },
+      'Identity Score': { vi: 'Điểm Định Danh', ja: '本人確認スコア', ko: '본인 확인 점수', zh: '身份评分', fr: 'Score d\'identité', de: 'Identitätswert', es: 'Puntuación de identidad', en: 'Identity Score' },
+      'Verification Status': { vi: 'Trạng Thái Xác Minh', ja: '確認ステータス', ko: '검증 상태', zh: '核验状态', fr: 'Statut de vérification', de: 'Verifizierungsstatus', es: 'Estado de verificación', en: 'Verification Status' },
+      'Dispute ID': { vi: 'Mã Tranh Chấp', ja: '紛争ID', ko: '분쟁 ID', zh: '争议 ID', fr: 'ID de litige', de: 'Streitfall-ID', es: 'ID de disputa', en: 'Dispute ID' },
+      'Booking Reference': { vi: 'Tham Chiếu Đặt Xe', ja: '予約参照', ko: '예약 참조', zh: '预订参考', fr: 'Réf. réservation', de: 'Buchungsreferenz', es: 'Ref. reserva', en: 'Booking Reference' },
+      'Conflict Reason': { vi: 'Lý Do Tranh Chấp', ja: '紛争理由', ko: '분쟁 사유', zh: '争议原因', fr: 'Raison du litige', de: 'Streitgrund', es: 'Razón de disputa', en: 'Conflict Reason' },
+      'Current State': { vi: 'Trạng Thái Hiện Tại', ja: '現在の状態', ko: '현재 상태', zh: '当前状态', fr: 'État actuel', de: 'Aktueller Status', es: 'Estado actual', en: 'Current State' },
+      'Creation Date': { vi: 'Ngày Tạo', ja: '作成日', ko: '생성일', zh: '创建日期', fr: 'Date de création', de: 'Erstellungsdatum', es: 'Fecha de création', en: 'Creation Date' },
+      'Risk Score': { vi: 'Điểm Rủi Ro', ja: 'リスクスコア', ko: '위험 점수', zh: '风险评分', fr: 'Score de risque', de: 'Risikowert', es: 'Puntuación de riesgo', en: 'Risk Score' },
+      'Flagged Indicators': { vi: 'Cảnh Báo Dấu Hiệu', ja: '検出されたフラグ', ko: '감지된 지표', zh: '标记指标', fr: 'Indicateurs signalés', de: 'Flaggensignale', es: 'Indicadores marcados', en: 'Flagged Indicators' },
+      'Risk Level': { vi: 'Mức Độ Rủi Ro', ja: 'リスクレベル', ko: '위험 수준', zh: '风险等级', fr: 'Niveau de risque', de: 'Risikostufe', es: 'Nivel de riesgo', en: 'Risk Level' },
+      'Operations Actions': { vi: 'Thao Tác Vận Hành', ja: '運用アクション', ko: '운영 작업', zh: '运维操作', fr: 'Actions d\'exploitation', de: 'Betriebsaktionen', es: 'Acciones de operación', en: 'Operations Actions' },
+    };
+
+    const item = tableHeadersMap[header];
+    if (item) {
+      return item[lang] || item['en'] || header;
+    }
+    return header;
+  };
+
+  const formatRoleLabel = (role?: string): string => {
+    const r = String(role || '').toLowerCase();
+    if (r === 'admin') return { vi: 'QUẢN TRỊ VIÊN', ja: '管理者', ko: '관리자', zh: '管理员', fr: 'ADMIN', de: 'ADMIN', es: 'ADMIN', en: 'ADMIN' }[lang] || 'ADMIN';
+    if (r === 'owner') return { vi: 'CHỦ XE', ja: 'オーナー', ko: '호스트', zh: '车主', fr: 'PROPRIÉTAIRE', de: 'EIGENTÜMER', es: 'PROPIETARIO', en: 'OWNER' }[lang] || 'OWNER';
+    return { vi: 'KHÁCH THUÊ', ja: '顧客', ko: '고객', zh: '客户', fr: 'CLIENT', de: 'KUNDE', es: 'CLIENTE', en: 'CUSTOMER' }[lang] || 'CUSTOMER';
+  };
 
   const queryTab = new URLSearchParams(location.search).get('tab');
   const validTabs = ['overview', 'marketplace', 'vehicles', 'kyc', 'owner-applications', 'bookings', 'payments', 'payouts', 'disputes', 'users', 'fraud', 'analytics', 'notifications', 'logs', 'health', 'settings'];
@@ -643,12 +746,12 @@ const AdminDashboard: React.FC = () => {
     try {
       setLoading(true);
       await bookingService.verifyPayment(bookingId);
-      toast.success(isVi ? 'Đã duyệt thanh toán' : 'Payment Approved', isVi ? 'Lịch trình đã được chuyển sang trạng thái CONFIRMED.' : 'Booking status is now CONFIRMED.');
+      toast.success(t.adminDashboard.paymentApproved, t.adminDashboard.paymentApprovedDesc);
       const updatedBookings = await adminService.listAllBookings(undefined, 0, 100);
       if (updatedBookings) setBookings(updatedBookings.content || []);
       setVerifyingBooking(null);
     } catch (err: any) {
-      toast.error(isVi ? 'Duyệt thất bại' : 'Verification Failed', err.message || 'Error executing request.');
+      toast.error(t.adminDashboard.verificationFailed, err.message || 'Error executing request.');
     } finally {
       setLoading(false);
     }
@@ -656,19 +759,19 @@ const AdminDashboard: React.FC = () => {
 
   const handleRejectPayment = async (bookingId: string, reason: string) => {
     if (!reason.trim()) {
-      toast.error(isVi ? 'Thiếu lý do từ chối' : 'Rejection Reason Required', isVi ? 'Vui lòng nhập lý do từ chối.' : 'Please input a reason.');
+      toast.error(t.adminDashboard.rejectionReasonRequired, t.adminDashboard.rejectionReasonRequired);
       return;
     }
     try {
       setLoading(true);
       await bookingService.rejectPayment(bookingId, reason);
-      toast.success(isVi ? 'Đã từ chối thanh toán' : 'Payment Rejected', isVi ? 'Lịch trình đã chuyển sang PAYMENT_REJECTED.' : 'Booking status is now PAYMENT_REJECTED.');
+      toast.success(t.adminDashboard.paymentRejected, t.adminDashboard.paymentRejectedDesc);
       const updatedBookings = await adminService.listAllBookings(undefined, 0, 100);
       if (updatedBookings) setBookings(updatedBookings.content || []);
       setVerifyingBooking(null);
       setPaymentRejectionReason('');
     } catch (err: any) {
-      toast.error(isVi ? 'Từ chối thất bại' : 'Rejection Failed', err.message || 'Error executing request.');
+      toast.error(t.adminDashboard.rejectionFailed, err.message || 'Error executing request.');
     } finally {
       setLoading(false);
     }
@@ -679,9 +782,9 @@ const AdminDashboard: React.FC = () => {
     try {
       setLoading(true);
       await paymentService.updatePaymentSettings(adminPaymentSettings);
-      toast.success(isVi ? 'Lưu cấu hình thành công' : 'Payment Settings Saved', isVi ? 'Thông tin chuyển khoản của LuxeWay đã được cập nhật.' : 'Bank settings updated successfully.');
+      toast.success(t.adminDashboard.settingsSaved, t.adminDashboard.settingsSavedDesc);
     } catch (err: any) {
-      toast.error(isVi ? 'Lưu thất bại' : 'Save Failed', err.message || 'Error executing request.');
+      toast.error(t.adminDashboard.saveFailed, err.message || 'Error executing request.');
     } finally {
       setLoading(false);
     }
@@ -717,7 +820,7 @@ const AdminDashboard: React.FC = () => {
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
-    toast.success(isVi ? 'Đã xuất file CSV' : 'CSV Exported');
+    toast.success(t.adminDashboard.csvExported);
   };
 
   // Action: Handle custom broadcasts
@@ -798,19 +901,19 @@ const AdminDashboard: React.FC = () => {
   const activeFraudAlertsCount = fraudAlerts.filter(f => f.status === 'pending').length;
 
   const menuItems = [
-    { id: 'overview', label: 'Overview', icon: BarChart2, badge: 0 },
-    { id: 'users', label: 'User Management', icon: Users, badge: 0 },
-    { id: 'vehicles', label: 'Vehicle Approval', icon: Car, badge: pendingApprovalsCount },
-    { id: 'owner-applications', label: 'Host Onboarding', icon: Building, badge: ownerApps.filter(a => a.status === 'SUBMITTED').length },
-    { id: 'kyc', label: 'KYC Review', icon: Shield, badge: pendingKycCount },
-    { id: 'bookings', label: 'Bookings', icon: Calendar, badge: 0 },
-    { id: 'payments', label: 'Payments', icon: DollarSign, badge: failedPaymentsCount },
-    { id: 'payouts', label: 'Withdrawals (Payouts)', icon: Wallet, badge: 0 },
-    { id: 'disputes', label: 'Disputes', icon: Scale, badge: openDisputesCount },
-    { id: 'fraud', label: 'Fraud Center', icon: ShieldAlert, badge: activeFraudAlertsCount },
-    { id: 'analytics', label: 'Analytics', icon: TrendingUp, badge: 0 },
-    { id: 'logs', label: 'Audit Logs', icon: FileText, badge: 0 },
-    { id: 'health', label: 'System Health', icon: Activity, badge: 0 },
+    { id: 'overview', label: t.adminDashboard.overview, icon: BarChart2, badge: 0 },
+    { id: 'users', label: t.adminDashboard.users, icon: Users, badge: 0 },
+    { id: 'vehicles', label: t.adminDashboard.vehicles, icon: Car, badge: pendingApprovalsCount },
+    { id: 'owner-applications', label: t.adminDashboard.ownerApplications, icon: Building, badge: ownerApps.filter(a => a.status === 'SUBMITTED').length },
+    { id: 'kyc', label: t.adminDashboard.kyc, icon: Shield, badge: pendingKycCount },
+    { id: 'bookings', label: t.adminDashboard.bookings, icon: Calendar, badge: 0 },
+    { id: 'payments', label: t.adminDashboard.payments, icon: DollarSign, badge: failedPaymentsCount },
+    { id: 'payouts', label: t.adminDashboard.payouts, icon: Wallet, badge: 0 },
+    { id: 'disputes', label: t.adminDashboard.disputes, icon: Scale, badge: openDisputesCount },
+    { id: 'fraud', label: t.adminDashboard.fraud, icon: ShieldAlert, badge: activeFraudAlertsCount },
+    { id: 'analytics', label: t.adminDashboard.analytics, icon: TrendingUp, badge: 0 },
+    { id: 'logs', label: t.adminDashboard.logs, icon: FileText, badge: 0 },
+    { id: 'health', label: t.adminDashboard.health, icon: Activity, badge: 0 },
   ] as const;
 
   // Search filter calculations
@@ -847,8 +950,8 @@ const AdminDashboard: React.FC = () => {
   ];
 
   const ecosystemDistributionData = [
-    { name: 'Ô Tô (Cars)', value: vehicles.filter(v => v.vehicleType === 'car' || v.vehicleType === 'CAR' || (!v.vehicleType && v.category?.toLowerCase() !== 'motorbike')).length || 20 },
-    { name: 'Xe Máy (Motorbikes)', value: vehicles.filter(v => v.vehicleType === 'motorbike' || v.vehicleType === 'MOTORBIKE').length || 15 }
+    { name: lang === 'vi' ? 'Ô Tô (Cars)' : lang === 'ja' ? '乗用車 (Cars)' : lang === 'ko' ? '승용차 (Cars)' : lang === 'zh' ? '轿车 (Cars)' : 'Cars', value: vehicles.filter(v => v.vehicleType === 'car' || v.vehicleType === 'CAR' || (!v.vehicleType && v.category?.toLowerCase() !== 'motorbike')).length || 20 },
+    { name: lang === 'vi' ? 'Xe Máy (Motorbikes)' : lang === 'ja' ? 'バイク (Motorbikes)' : lang === 'ko' ? '오토バイ (Motorbikes)' : lang === 'zh' ? '摩托车 (Motorbikes)' : 'Motorbikes', value: vehicles.filter(v => v.vehicleType === 'motorbike' || v.vehicleType === 'MOTORBIKE').length || 15 }
   ];  return (
     <div className="theme-admin min-h-screen transition-colors duration-300 bg-[var(--lw-bg-primary)] text-[var(--lw-text-primary)]">
       <div className={cn("lw-flex-layout", desktopSidebarCollapsed && "sidebar-collapsed")} style={{ display: 'flex' }}>
@@ -1089,19 +1192,19 @@ const AdminDashboard: React.FC = () => {
                   <div className="space-y-6">
                     <Breadcrumbs 
                       title={t.adminDashboard.overview} 
-                      items={[{ label: "LuxeWay", href: "/" }, { label: "Admin" }, { label: t.adminDashboard.overview }]} 
+                      items={[{ label: "LuxeWay", href: "/" }, { label: adminBreadcrumbLabel }, { label: t.adminDashboard.overview }]} 
                     />
                     {/* Executive KPI Grid - Standardized to 8 Cards in a 4x2 desktop grid */}
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                       {[
-                        { label: 'Gross Booking Value', value: formatCurrency(totalGBV), icon: DollarSign, change: '+14% last month', style: 'bg-indigo-500/10 border-indigo-500/20 text-indigo-500' },
-                        { label: 'Platform Revenue', value: formatCurrency(platformRevenue), icon: Activity, change: '12% Fee base', style: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' },
-                        { label: 'Owner Payouts', value: formatCurrency(ownerPayouts), icon: Users, change: '88% of total GBV', style: 'bg-blue-500/10 border-blue-500/20 text-blue-500' },
-                        { label: 'Active Listings', value: activeListingsCount, icon: Car, change: 'Approved vehicles', style: 'bg-purple-500/10 border-purple-500/20 text-purple-500' },
-                        { label: 'Pending Listings', value: pendingApprovalsCount, icon: AlertTriangle, change: 'Requires review', style: 'bg-amber-500/10 border-amber-500/20 text-amber-500' },
-                        { label: 'Pending KYC Reviews', value: pendingKycCount, icon: Shield, change: 'Identity verification', style: 'bg-yellow-500/10 border-yellow-500/20 text-yellow-600' },
-                        { label: 'Open Disputes', value: openDisputesCount, icon: Scale, change: 'Arbitration cases', style: 'bg-red-500/10 border-red-500/20 text-red-500' },
-                        { label: 'Fraud Alerts', value: activeFraudAlertsCount, icon: ShieldAlert, change: 'Critical attention', style: 'bg-rose-500/10 border-rose-500/20 text-rose-500' },
+                        { label: { vi: 'Tổng Giá Trị Đặt Xe', ja: '総予約額 (GBV)', ko: '총 예약 금액', zh: '总预订额', fr: 'Valeur brute des réservations', de: 'Bruttobuchungswert', es: 'Valor bruto de reserva', en: 'Gross Booking Value' }[lang] || 'Gross Booking Value', value: formatCurrency(totalGBV), icon: DollarSign, change: { vi: '+14% tháng trước', ja: '前月比 +14%', ko: '지난달 대비 +14%', zh: '上月 +14%', fr: '+14% le mois dernier', de: '+14% im letzten Monat', es: '+14% el mes pasado', en: '+14% last month' }[lang] || '+14% last month', style: 'bg-indigo-500/10 border-indigo-500/20 text-indigo-500' },
+                        { label: { vi: 'Doanh Thu Nền Tảng', ja: 'プラットフォーム収益', ko: '플랫폼 수익', zh: '平台收益', fr: 'Revenu de la plateforme', de: 'Plattformeinnahmen', es: 'Ingresos de la plataforma', en: 'Platform Revenue' }[lang] || 'Platform Revenue', value: formatCurrency(platformRevenue), icon: Activity, change: { vi: 'Phí nền tảng 12%', ja: '手数料率 12%', ko: '수수료 기준 12%', zh: '12% 基础费率', fr: 'Frais de base 12%', de: '12% Gebührenbasis', es: '12% Base de tarifa', en: '12% Fee base' }[lang] || '12% Fee base', style: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' },
+                        { label: { vi: 'Thanh Toán Cho Chủ Xe', ja: 'オーナーへの支払い', ko: '호스트 정산금', zh: '车主出金', fr: 'Paiements aux propriétaires', de: 'Eigentümer-Auszahlungen', es: 'Pagos a propietarios', en: 'Owner Payouts' }[lang] || 'Owner Payouts', value: formatCurrency(ownerPayouts), icon: Users, change: { vi: '88% tổng GBV', ja: '総GBVの 88%', ko: '총 GBV의 88%', zh: '占总 GBV 88%', fr: '88% du GBV total', de: '88% des gesamten GBV', es: '88% del GBV total', en: '88% of total GBV' }[lang] || '88% of total GBV', style: 'bg-blue-500/10 border-blue-500/20 text-blue-500' },
+                        { label: { vi: 'Xe Đang Hoạt Động', ja: '有効な掲載車両', ko: '활성 등록 차량', zh: '上架车辆', fr: 'Annonces actives', de: 'Aktive Angebote', es: 'Anuncios activos', en: 'Active Listings' }[lang] || 'Active Listings', value: activeListingsCount, icon: Car, change: { vi: 'Xe đã duyệt', ja: '承認済み車両', ko: '승인된 차량', zh: '已批准车辆', fr: 'Véhicules approuvés', de: 'Genehmigte Fahrzeuge', es: 'Vehículos aprobados', en: 'Approved vehicles' }[lang] || 'Approved vehicles', style: 'bg-purple-500/10 border-purple-500/20 text-purple-500' },
+                        { label: { vi: 'Xe Chờ Duyệt', ja: '承認待ちの車両', ko: '승인 대기 차량', zh: '待审核车辆', fr: 'Annonces en attente', de: 'Ausstehende Angebote', es: 'Anuncios pendientes', en: 'Pending Listings' }[lang] || 'Pending Listings', value: pendingApprovalsCount, icon: AlertTriangle, change: { vi: 'Cần kiểm duyệt', ja: 'レビューが必要', ko: '검토 필요', zh: '需要审核', fr: 'Exige un examen', de: 'Überprüfung erforderlich', es: 'Requiere revisión', en: 'Requires review' }[lang] || 'Requires review', style: 'bg-amber-500/10 border-amber-500/20 text-amber-500' },
+                        { label: { vi: 'Hồ Sơ KYC Chờ Duyệt', ja: 'KYC確認待ち', ko: 'KYC 검토 대기', zh: 'KYC 待审核', fr: 'Examens KYC en attente', de: 'Ausstehende KYC-Prüfungen', es: 'Revisiones KYC pendientes', en: 'Pending KYC Reviews' }[lang] || 'Pending KYC Reviews', value: pendingKycCount, icon: Shield, change: { vi: 'Xác thực danh tính', ja: '本人確認', ko: '신원 인증', zh: '身份验证', fr: 'Vérification d\'identité', de: 'Identitätsprüfung', es: 'Verificación de identidad', en: 'Identity verification' }[lang] || 'Identity verification', style: 'bg-yellow-500/10 border-yellow-500/20 text-yellow-600' },
+                        { label: { vi: 'Tranh Chấp Đang Mở', ja: '未解決の紛争', ko: '진행 중인 분쟁', zh: '待处理争议', fr: 'Litiges ouverts', de: 'Offene Streitfälle', es: 'Disputas abiertas', en: 'Open Disputes' }[lang] || 'Open Disputes', value: openDisputesCount, icon: Scale, change: { vi: 'Vụ việc trọng tài', ja: '仲裁案件', ko: '중재 건', zh: '仲裁案件', fr: 'Affaires d\'arbitrage', de: 'Schlichtungsfälle', es: 'Casos de arbitraje', en: 'Arbitration cases' }[lang] || 'Arbitration cases', style: 'bg-red-500/10 border-red-500/20 text-red-500' },
+                        { label: { vi: 'Cảnh Báo Gian Lận', ja: '不正アラート', ko: '사기 경고', zh: '欺诈警报', fr: 'Alertes de fraude', de: 'Betrugswarnungen', es: 'Alertas de fraude', en: 'Fraud Alerts' }[lang] || 'Fraud Alerts', value: activeFraudAlertsCount, icon: ShieldAlert, change: { vi: 'Chú ý khẩn cấp', ja: '要緊急対応', ko: '긴급 확인', zh: '高危关注', fr: 'Attention critique', de: 'Kritische Aufmerksamkeit', es: 'Atención crítica', en: 'Critical attention' }[lang] || 'Critical attention', style: 'bg-rose-500/10 border-rose-500/20 text-rose-500' },
                       ].map(kpi => (
                         <div key={kpi.label} className="rounded-3xl border border-[var(--lw-border)] bg-[var(--lw-bg-card)] p-5 shadow-sm lw-card-interactive relative overflow-hidden">
                           <div className="flex justify-between items-center mb-4">
@@ -1126,8 +1229,12 @@ const AdminDashboard: React.FC = () => {
                     {/* Full-width Marketplace Volume Trends Chart */}
                     <div className="bg-[var(--lw-bg-card)] border border-[var(--lw-border)] rounded-[2rem] p-6 shadow-xl">
                       <div className="flex justify-between items-center mb-5 border-b border-[var(--lw-border)] pb-4">
-                        <h3 className="font-bold text-xs uppercase tracking-widest text-[var(--lw-text-secondary)]">Marketplace Volume trends</h3>
-                        <span className="text-[8px] font-black text-[var(--lw-accent)] bg-indigo-500/10 px-2.5 py-1 rounded-lg border border-indigo-500/20">Daily Revenue Stream</span>
+                        <h3 className="font-bold text-xs uppercase tracking-widest text-[var(--lw-text-secondary)]">
+                          {{ vi: 'Xu hướng doanh số nền tảng', ja: 'プラットフォーム取引量の動向', ko: '마켓플레이스 거래량 추이', zh: '平台交易量趋势', fr: 'Tendances du volume du marché', de: 'Marktplatz-Volumentrends', es: 'Tendencias de volumen del mercado', en: 'Marketplace Volume Trends' }[lang] || 'Marketplace Volume Trends'}
+                        </h3>
+                        <span className="text-[8px] font-black text-[var(--lw-accent)] bg-indigo-500/10 px-2.5 py-1 rounded-lg border border-indigo-500/20">
+                          {{ vi: 'Dòng doanh thu hàng ngày', ja: '日次収益ストリーム', ko: '일일 수익 스트림', zh: '每日收益流', fr: 'Flux de revenus quotidien', de: 'Täglicher Einnahmenstrom', es: 'Flujo de ingresos diario', en: 'Daily Revenue Stream' }[lang] || 'Daily Revenue Stream'}
+                        </span>
                       </div>
                       <div className="w-full" style={{ height: '280px' }}>
                         <ResponsiveContainer width="100%" height="100%">
@@ -1152,7 +1259,9 @@ const AdminDashboard: React.FC = () => {
                       <div className="lg:col-span-3 border rounded-[2rem] p-6 shadow-2xl bg-[var(--lw-bg-card)] border-[var(--lw-border)] flex flex-col justify-between">
                         <div>
                           <div className="flex justify-between items-center mb-5 border-b border-[var(--lw-border)] pb-4">
-                            <h3 className="font-black text-xs uppercase tracking-widest text-slate-450">Fleet Split</h3>
+                            <h3 className="font-black text-xs uppercase tracking-widest text-slate-450">
+                              {{ vi: 'Phân bổ đội xe', ja: 'フリート構成割合', ko: '보유 차량 구성', zh: '车队分布', fr: 'Répartition de la flotte', de: 'Flottenaufteilung', es: 'Distribución de la flota', en: 'Fleet Split' }[lang] || 'Fleet Split'}
+                            </h3>
                             <div className="flex gap-1 bg-slate-100 p-0.5 rounded-xl border border-slate-200">
                               <button 
                                 onClick={() => setFleetSplitType('ecosystem')}
@@ -1163,7 +1272,7 @@ const AdminDashboard: React.FC = () => {
                                     : "text-slate-400 hover:text-slate-600"
                                 )}
                               >
-                                Phân Loại
+                                {{ vi: 'Phân Loại', ja: 'タイプ別', ko: '유형별', zh: '按类型', fr: 'Par type', de: 'Nach Typ', es: 'Por tipo', en: 'By Type' }[lang] || 'Phân Loại'}
                               </button>
                               <button 
                                 onClick={() => setFleetSplitType('category')}
@@ -1174,7 +1283,7 @@ const AdminDashboard: React.FC = () => {
                                     : "text-slate-400 hover:text-slate-600"
                                 )}
                               >
-                                Phân Khúc
+                                {{ vi: 'Phân Khúc', ja: 'カテゴリー別', ko: '범주별', zh: '按级别', fr: 'Par catégorie', de: 'Nach Kategorie', es: 'Por categoría', en: 'By Category' }[lang] || 'Phân Khúc'}
                               </button>
                             </div>
                           </div>
@@ -1198,7 +1307,9 @@ const AdminDashboard: React.FC = () => {
                               </PieChart>
                             </ResponsiveContainer>
                             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                              <span className="text-[8px] font-black tracking-widest text-slate-400 uppercase">Vehicles</span>
+                              <span className="text-[8px] font-black tracking-widest text-slate-400 uppercase">
+                                {{ vi: 'Phương tiện', ja: '車両', ko: '차량', zh: '车辆', fr: 'Véhicules', de: 'Fahrzeuge', es: 'Vehículos', en: 'Vehicles' }[lang] || 'Vehicles'}
+                              </span>
                               <span className="text-2xl font-black mt-0.5 text-[var(--lw-text-primary)]">{vehicles.length}</span>
                             </div>
                           </div>
@@ -1304,12 +1415,12 @@ const AdminDashboard: React.FC = () => {
               {activeTab === 'vehicles' && (
                 <div className="space-y-6">
                   <Breadcrumbs 
-                    title="Vehicle Approval Roster" 
-                    items={[{ label: "LuxeWay", href: "/" }, { label: "Admin" }, { label: "Vehicles" }]} 
+                    title={t.adminDashboard.vehicles} 
+                    items={[{ label: "LuxeWay", href: "/" }, { label: "Admin" }, { label: t.adminDashboard.vehicles }]} 
                   />
                   <div className="flex items-center justify-between gap-4 flex-wrap">
                     <div>
-                      <p className="text-[11px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-widest">Verify dynamic vehicle spec requirements and accept registrations</p>
+                      <p className="text-[11px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-widest">{t.adminDashboard.vehiclesDesc}</p>
                     </div>
                     <div className="flex items-center gap-3">
                       <select
@@ -1349,7 +1460,7 @@ const AdminDashboard: React.FC = () => {
                       <thead>
                         <tr className={cn("border-b", isDark ? "bg-slate-950/40 border-slate-850" : "bg-slate-50 border-slate-150")}>
                           {['Vehicle Model', 'Brand Info', 'Daily Cost Rate', 'Year Model', 'Registration Status', 'Rating Grade'].map(h => (
-                            <th key={h} className="text-left px-6 py-4.5 text-[9px] font-black uppercase tracking-widest text-slate-400">{h}</th>
+                            <th key={h} className="text-left px-6 py-4.5 text-[9px] font-black uppercase tracking-widest text-slate-400">{getTableHeaderText(h)}</th>
                           ))}
                         </tr>
                       </thead>
@@ -1376,7 +1487,7 @@ const AdminDashboard: React.FC = () => {
                               <td className="px-6 py-4 text-xs font-black text-emerald-500">{formatCurrency(v.pricePerDay)}</td>
                               <td className="px-6 py-4 text-xs font-semibold text-slate-400">{v.year || 2024}</td>
                               <td className="px-6 py-4">
-                                <StatusBadge status={v.approvalStatus || v.status} label={(v.approvalStatus || v.status)?.replace(/_/g, ' ').toUpperCase()} />
+                                <StatusBadge status={v.approvalStatus || v.status} label={formatStatusLabel(v.approvalStatus || v.status)} />
                               </td>
                               <td className="px-6 py-4 text-xs font-black text-amber-500">⭐ {v.rating?.toFixed(1) || '5.0'}</td>
                             </tr>
@@ -1394,9 +1505,9 @@ const AdminDashboard: React.FC = () => {
                   <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
                       <h2 className="text-2xl font-bold font-display text-slate-900 dark:text-white flex items-center gap-2">
-                        <Building className="w-6 h-6 text-amber-500" /> Host Onboarding
+                        <Building className="w-6 h-6 text-amber-500" /> {t.adminDashboard.ownerApplications}
                       </h2>
-                      <p className="text-slate-500 text-sm mt-1">Review and approve applications for new vehicle hosts.</p>
+                      <p className="text-slate-500 text-sm mt-1">{t.adminDashboard.ownerApplicationsDesc}</p>
                     </div>
                     <div className="flex gap-2">
                       <select 
@@ -1445,7 +1556,7 @@ const AdminDashboard: React.FC = () => {
                                   <td className="p-4 text-slate-600 dark:text-slate-400">{app.serviceArea}</td>
                                   <td className="p-4 text-slate-600 dark:text-slate-400">{formatDate(app.submittedAt)}</td>
                                   <td className="p-4">
-                                    <StatusBadge status={app.status === 'APPROVED' ? 'active' : app.status === 'SUBMITTED' ? 'pending' : 'inactive'} label={app.status} />
+                                    <StatusBadge status={app.status === 'APPROVED' ? 'active' : app.status === 'SUBMITTED' ? 'pending' : 'inactive'} label={formatStatusLabel(app.status)} />
                                   </td>
                                   <td className="p-4 text-right">
                                     <button 
@@ -1471,7 +1582,7 @@ const AdminDashboard: React.FC = () => {
                 <div className="space-y-6">
                   <Breadcrumbs 
                     title="KYC Verification Hub" 
-                    items={[{ label: "LuxeWay", href: "/" }, { label: "Admin" }, { label: "KYC" }]} 
+                    items={[{ label: "LuxeWay", href: "/" }, { label: adminBreadcrumbLabel }, { label: "KYC" }]} 
                   />
                   <div className="flex items-center justify-between gap-4 flex-wrap">
                     <div>
@@ -1515,7 +1626,7 @@ const AdminDashboard: React.FC = () => {
                       <thead>
                         <tr className={cn("border-b", isDark ? "bg-slate-950/40 border-slate-850" : "bg-slate-50 border-slate-150")}>
                           {['Renter Guest', 'Email Address', 'Verification Status', 'Identity Score'].map(h => (
-                            <th key={h} className="text-left px-6 py-4.5 text-[9px] font-black uppercase tracking-widest text-slate-400">{h}</th>
+                            <th key={h} className="text-left px-6 py-4.5 text-[9px] font-black uppercase tracking-widest text-slate-400">{getTableHeaderText(h)}</th>
                           ))}
                         </tr>
                       </thead>
@@ -1542,7 +1653,7 @@ const AdminDashboard: React.FC = () => {
                               <td className="px-6 py-4">
                                 <StatusBadge 
                                   status={(u.kycStatus === 'PENDING_APPROVAL' || u.kycStatus === 'PENDING' || !u.kycVerified) ? 'pending' : 'active'} 
-                                  label={(u.kycStatus === 'PENDING_APPROVAL' || u.kycStatus === 'PENDING' || !u.kycVerified) ? 'PENDING' : 'VERIFIED'} 
+                                  label={formatStatusLabel((u.kycStatus === 'PENDING_APPROVAL' || u.kycStatus === 'PENDING' || !u.kycVerified) ? 'pending' : 'verified')} 
                                 />
                               </td>
                               <td className="px-6 py-4">
@@ -1561,17 +1672,17 @@ const AdminDashboard: React.FC = () => {
               {activeTab === 'bookings' && (
                 <div className="space-y-6">
                   <Breadcrumbs 
-                    title="Marketplace Booking Ledger" 
-                    items={[{ label: "LuxeWay", href: "/" }, { label: "Admin" }, { label: "Bookings" }]} 
+                    title={t.adminDashboard.bookings} 
+                    items={[{ label: "LuxeWay", href: "/" }, { label: adminBreadcrumbLabel }, { label: t.adminDashboard.bookings }]} 
                   />
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-[11px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-widest">Audit guest bookings, schedules, and active rental status states</p>
+                      <p className="text-[11px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-widest">{t.adminDashboard.bookingsDesc}</p>
                     </div>
                     <div className="relative">
-                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-400" />
-                      <input
-                        placeholder="Search Renter, Owner, or ID..."
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-400" />
+                        <input
+                          placeholder={t.adminDashboard.searchPlaceholder}
                         value={bookingSearch}
                         onChange={e => setBookingSearch(e.target.value)}
                         className={cn(
@@ -1591,7 +1702,7 @@ const AdminDashboard: React.FC = () => {
                         <thead>
                           <tr className={cn("border-b", isDark ? "bg-slate-950/40 border-slate-850" : "bg-slate-50 border-slate-150")}>
                             {['Booking ID', 'Renter Guest', 'Owner Partner', 'Vehicle Reserved', 'Rental Dates', 'Charge Total', 'Status', 'Payments', 'Actions'].map(h => (
-                              <th key={h} className="text-left px-6 py-4.5 text-[9px] font-black uppercase tracking-widest text-slate-400">{h}</th>
+                              <th key={h} className="text-left px-6 py-4.5 text-[9px] font-black uppercase tracking-widest text-slate-400">{getTableHeaderText(h)}</th>
                             ))}
                           </tr>
                         </thead>
@@ -1612,10 +1723,10 @@ const AdminDashboard: React.FC = () => {
                                 <td className="py-4 px-6 text-xs font-bold text-slate-450 dark:text-slate-500">{formatDate(b.startDate)} - {formatDate(b.endDate)}</td>
                                 <td className="py-4 px-6 text-xs font-black text-emerald-500">{formatCurrency(b.pricing?.total)}</td>
                                 <td className="py-4 px-6">
-                                  <StatusBadge status={b.status} label={b.status?.toUpperCase()} />
+                                  <StatusBadge status={b.status} label={formatStatusLabel(b.status)} />
                                 </td>
                                 <td className="py-4 px-6">
-                                  <StatusBadge status={b.paymentStatus === 'paid' ? 'active' : 'inactive'} label={(b.paymentStatus || 'unpaid').toUpperCase()} />
+                                  <StatusBadge status={b.paymentStatus === 'paid' ? 'active' : 'inactive'} label={formatStatusLabel(b.paymentStatus || 'unpaid')} />
                                 </td>
                                 <td className="py-4 px-6" onClick={(e) => e.stopPropagation()}>
                                   {b.status !== 'cancelled' && b.paymentStatus === 'paid' && (
@@ -1640,23 +1751,23 @@ const AdminDashboard: React.FC = () => {
               {/* ============ TABS: PAYMENTS ============ */}
               {activeTab === 'payments' && (
                 <div className="space-y-6">
-                  <Breadcrumbs 
-                    title={isVi ? "Duyệt giao dịch chuyển khoản" : "Payment Verifications"} 
-                    items={[{ label: "LuxeWay", href: "/" }, { label: "Admin" }, { label: isVi ? "Duyệt thanh toán" : "Payment Verifications" }]} 
+                  <Breadcrumbs
+                    title={t.adminDashboard.paymentsTitle}
+                    items={[{ label: 'LuxeWay', href: '/' }, { label: t.nav.admin }, { label: t.adminDashboard.paymentsTitle }]}
                   />
                   <div>
                     <p className="text-[11px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                      {isVi ? "Hệ thống đối soát chuyển khoản ngân hàng thủ công và xác thực hóa đơn" : "Manual bank transfer verification queues, invoice audit logs, and fraud prevention"}
+                      {t.adminDashboard.paymentsDesc}
                     </p>
                   </div>
 
                   {/* Operational Metrics Cards */}
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
                     {[
-                      { label: isVi ? 'Tổng Doanh Thu' : 'Total Revenue', value: formatCurrency(totalGBV), icon: DollarSign, color: 'text-indigo-500 bg-indigo-500/5 border-indigo-500/20' },
-                      { label: isVi ? 'Chờ Xác Minh' : 'Pending Verification', value: bookings.filter(b => b.status?.toLowerCase() === 'payment_pending').length, icon: Clock, color: 'text-amber-500 bg-amber-500/5 border-amber-500/20' },
-                      { label: isVi ? 'Đã Phê Duyệt' : 'Approved Transactions', value: bookings.filter(b => ['confirmed', 'payment_verified', 'owner_approved'].includes(b.status?.toLowerCase())).length, icon: CheckCircle, color: 'text-emerald-500 bg-emerald-500/5 border-emerald-500/20' },
-                      { label: isVi ? 'Bị Từ Chối' : 'Rejected Payments', value: bookings.filter(b => b.status?.toLowerCase() === 'payment_rejected').length, icon: XCircle, color: 'text-rose-500 bg-rose-500/5 border-rose-500/20' },
+                      { label: t.adminDashboard.totalRevenue, value: formatCurrency(totalGBV), icon: DollarSign, color: 'text-indigo-500 bg-indigo-500/5 border-indigo-500/20' },
+                      { label: t.adminDashboard.pendingVerification, value: bookings.filter(b => b.status?.toLowerCase() === 'payment_pending').length, icon: Clock, color: 'text-amber-500 bg-amber-500/5 border-amber-500/20' },
+                      { label: t.adminDashboard.approvedTransactions, value: bookings.filter(b => ['confirmed', 'payment_verified', 'owner_approved'].includes(b.status?.toLowerCase())).length, icon: CheckCircle, color: 'text-emerald-500 bg-emerald-500/5 border-emerald-500/20' },
+                      { label: t.adminDashboard.rejectedPayments, value: bookings.filter(b => b.status?.toLowerCase() === 'payment_rejected').length, icon: XCircle, color: 'text-rose-500 bg-rose-500/5 border-rose-500/20' },
                     ].map(card => (
                       <div key={card.label} className={cn(
                         "rounded-3xl border p-5 shadow-sm relative overflow-hidden",
@@ -1679,10 +1790,10 @@ const AdminDashboard: React.FC = () => {
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-3">
                     <div className="flex gap-2 bg-slate-100 dark:bg-white/5 p-1 rounded-2xl border border-slate-200/60 dark:border-slate-800/60">
                       {[
-                        { id: 'PENDING', label: isVi ? 'Chờ duyệt' : 'Pending', color: 'text-amber-500 bg-amber-500/10 border-amber-500/20' },
-                        { id: 'APPROVED', label: isVi ? 'Đã duyệt' : 'Approved', color: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' },
-                        { id: 'REJECTED', label: isVi ? 'Từ chối' : 'Rejected', color: 'text-rose-500 bg-rose-500/10 border-rose-500/20' },
-                        { id: 'EXPIRED', label: isVi ? 'Hết hạn' : 'Expired', color: 'text-slate-500 bg-slate-500/10 border-slate-500/20' }
+                        { id: 'PENDING', label: t.adminDashboard.statuses.pending, color: 'text-amber-500 bg-amber-500/10 border-amber-500/20' },
+                        { id: 'APPROVED', label: t.adminDashboard.statuses.approved, color: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' },
+                        { id: 'REJECTED', label: t.adminDashboard.statuses.rejected, color: 'text-rose-500 bg-rose-500/10 border-rose-500/20' },
+                        { id: 'EXPIRED', label: t.adminDashboard.statuses.expired, color: 'text-slate-500 bg-slate-500/10 border-slate-500/20' }
                       ].map(q => (
                         <button
                           key={q.id}
@@ -1703,7 +1814,7 @@ const AdminDashboard: React.FC = () => {
                       <div className="relative">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <input
-                          placeholder={isVi ? "Tìm mã, khách thuê..." : "Search Code, Renter..."}
+                          placeholder={t.adminDashboard.searchPlaceholder}
                           value={paymentSearch}
                           onChange={e => setPaymentSearch(e.target.value)}
                           className={cn(
@@ -1732,7 +1843,7 @@ const AdminDashboard: React.FC = () => {
                         <thead>
                           <tr className={cn("border-b", isDark ? "bg-slate-950/40 border-slate-850" : "bg-slate-50 border-slate-150")}>
                             {['Mã đặt xe (Memo)', 'Khách thuê', 'Số tiền cần chuyển', 'Trạng thái', 'Thời gian khởi tạo', 'Thao tác'].map(h => (
-                              <th key={h} className="text-left px-6 py-4.5 text-[9px] font-black uppercase tracking-widest text-slate-400">{h}</th>
+                              <th key={h} className="text-left px-6 py-4.5 text-[9px] font-black uppercase tracking-widest text-slate-400">{getTableHeaderText(h)}</th>
                             ))}
                           </tr>
                         </thead>
@@ -1755,7 +1866,7 @@ const AdminDashboard: React.FC = () => {
                           }).length === 0 ? (
                             <tr>
                               <td colSpan={6} className="text-slate-400 text-xs font-black uppercase tracking-widest text-center py-20">
-                                {isVi ? 'Không có giao dịch nào trong hàng đợi.' : 'No transactions in queue.'}
+                                {t.adminDashboard.noTransactionsInQueue}
                               </td>
                             </tr>
                           ) : (
@@ -1789,7 +1900,7 @@ const AdminDashboard: React.FC = () => {
                                 </td>
                                 <td className="py-4 px-6 text-xs font-black text-blue-500">{formatCurrency(b.pricing?.total || 0)}</td>
                                 <td className="py-4 px-6">
-                                  <StatusBadge status={b.status} label={b.status?.toUpperCase()} />
+                                  <StatusBadge status={b.status} label={formatStatusLabel(b.status)} />
                                 </td>
                                 <td className="py-4 px-6 text-xs font-medium text-slate-400">{formatDate(b.createdAt)}</td>
                                 <td className="py-4 px-6" onClick={e => e.stopPropagation()}>
@@ -1800,13 +1911,13 @@ const AdminDashboard: React.FC = () => {
                                           onClick={() => handleVerifyPayment(b.id)}
                                           className="text-[8px] bg-emerald-500 hover:bg-emerald-600 text-white px-2.5 py-1.5 rounded-xl font-black uppercase tracking-widest transition-all"
                                         >
-                                          {isVi ? 'Duyệt' : 'Approve'}
+                                          {t.adminDashboard.approveBtnLabel}
                                         </button>
                                         <button 
                                           onClick={() => setVerifyingBooking(b)}
                                           className="text-[8px] bg-red-500 hover:bg-red-650 text-white px-2.5 py-1.5 rounded-xl font-black uppercase tracking-widest transition-all"
                                         >
-                                          {isVi ? 'Từ chối' : 'Reject'}
+                                          {t.adminDashboard.rejectBtnLabel}
                                         </button>
                                       </>
                                     )}
@@ -1814,7 +1925,7 @@ const AdminDashboard: React.FC = () => {
                                       onClick={() => setVerifyingBooking(b)}
                                       className="text-[8px] bg-slate-500/10 hover:bg-slate-500/20 border border-slate-200/20 dark:border-slate-800/20 text-foreground px-2.5 py-1.5 rounded-xl font-black uppercase tracking-widest transition-all"
                                     >
-                                      {isVi ? 'Chi tiết' : 'Details'}
+                                      {t.adminDashboard.detailsLabel}
                                     </button>
                                   </div>
                                 </td>
@@ -1837,11 +1948,13 @@ const AdminDashboard: React.FC = () => {
               {activeTab === 'disputes' && (
                 <div className="space-y-6">
                   <Breadcrumbs 
-                    title="Dispute Resolution Room" 
-                    items={[{ label: "LuxeWay", href: "/" }, { label: "Admin" }, { label: "Disputes" }]} 
+                    title={{ vi: 'Phòng Giải Quyết Tranh Chấp', ja: '紛争解決ルーム', ko: '분쟁 해결 실', zh: '争议解决室', fr: 'Chambre de résolution des litiges', de: 'Streitbeilegungsraum', es: 'Sala de resolución de disputas', en: 'Dispute Resolution Room' }[lang] || 'Dispute Resolution Room'} 
+                    items={[{ label: "LuxeWay", href: "/" }, { label: adminBreadcrumbLabel }, { label: { vi: 'Tranh Chấp', ja: '紛争', ko: '분쟁', zh: '争议', fr: 'Litiges', de: 'Streitfälle', es: 'Disputas', en: 'Disputes' }[lang] || 'Disputes' }]} 
                   />
                   <div>
-                    <p className="text-[11px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-widest">Review customer evidence documents and resolve transaction conflicts</p>
+                    <p className="text-[11px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                      {{ vi: 'Xem xét bằng chứng từ khách hàng và giải quyết mâu thuẫn giao dịch', ja: '顧客の証拠書類を確認し、取引の競合を解決します', ko: '고객 증거 문서를 검토하고 거래 분쟁을 해결합니다', zh: '审查客户证据文件并解决交易冲突', en: 'Review customer evidence documents and resolve transaction conflicts' }[lang] || 'Review customer evidence documents and resolve transaction conflicts'}
+                    </p>
                   </div>
 
                   <div className={cn(
@@ -1852,7 +1965,7 @@ const AdminDashboard: React.FC = () => {
                       <thead>
                         <tr className={cn("border-b", isDark ? "bg-slate-950/40 border-slate-850" : "bg-slate-50 border-slate-150")}>
                           {['Dispute ID', 'Booking Reference', 'Conflict Reason', 'Current State', 'Creation Date'].map(h => (
-                            <th key={h} className="text-left px-6 py-4.5 text-[9px] font-black uppercase tracking-widest text-slate-400">{h}</th>
+                            <th key={h} className="text-left px-6 py-4.5 text-[9px] font-black uppercase tracking-widest text-slate-400">{getTableHeaderText(h)}</th>
                           ))}
                         </tr>
                       </thead>
@@ -1873,7 +1986,7 @@ const AdminDashboard: React.FC = () => {
                               <td className="px-6 py-4 font-mono text-xs font-bold text-slate-450">#{d.bookingId?.substring(0,8).toUpperCase() || 'LW-9324'}</td>
                               <td className="px-6 py-4 text-xs font-bold text-slate-450 truncate max-w-[120px]">{d.reason}</td>
                               <td className="px-6 py-4">
-                                <StatusBadge status={d.status === 'RESOLVED' ? 'active' : d.status === 'PENDING' ? 'pending' : 'inactive'} label={d.status} />
+                                <StatusBadge status={d.status === 'RESOLVED' ? 'active' : d.status === 'PENDING' ? 'pending' : 'inactive'} label={formatStatusLabel(d.status)} />
                               </td>
                               <td className="px-6 py-4 text-xs text-slate-450">{formatDate(d.createdAt || new Date().toISOString())}</td>
                             </tr>
@@ -1889,12 +2002,14 @@ const AdminDashboard: React.FC = () => {
               {activeTab === 'users' && (
                 <div className="space-y-6">
                   <Breadcrumbs 
-                    title="Platform Accounts Directory" 
-                    items={[{ label: "LuxeWay", href: "/" }, { label: "Admin" }, { label: "Users" }]} 
+                    title={{ vi: 'Danh Mục Tài Khoản Nền Tảng', ja: 'プラットフォームアカウントディレクトリ', ko: '플랫폼 계정 디렉토리', zh: '平台账户目录', fr: 'Répertoire des comptes', de: 'Kontoverzeichnis', es: 'Directorio de cuentas', en: 'Platform Accounts Directory' }[lang] || 'Platform Accounts Directory'} 
+                    items={[{ label: "LuxeWay", href: "/" }, { label: adminBreadcrumbLabel }, { label: { vi: 'Người Dùng', ja: 'ユーザー', ko: '사용자', zh: '用户', fr: 'Utilisateurs', de: 'Benutzer', es: 'Usuarios', en: 'Users' }[lang] || 'Users' }]} 
                   />
                   <div className="flex items-center justify-between gap-4 flex-wrap">
                     <div>
-                      <p className="text-[11px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-widest">Audit user access, verify customer/owner profiles, and manage status logs</p>
+                      <p className="text-[11px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                        {{ vi: 'Kiểm toán quyền truy cập người dùng, xác minh hồ sơ khách/chủ xe và quản lý nhật ký trạng thái', ja: 'ユーザーアクセスを監査し、顧客/オーナーのプロファイルを検証し、ステータスログを管理します', ko: '사용자 액세스를 감사하고, 고객/호스트 프로필을 검증하며, 상태 로그를 관리합니다', zh: '审计用户访问，验证客户/车主资料，并管理状态日志', en: 'Audit user access, verify customer/owner profiles, and manage status logs' }[lang] || 'Audit user access, verify customer/owner profiles, and manage status logs'}
+                      </p>
                     </div>
                     <div className="flex items-center gap-3">
                       <select
@@ -1905,10 +2020,10 @@ const AdminDashboard: React.FC = () => {
                           isDark ? "bg-slate-900 border-slate-800 text-slate-200 focus:border-indigo-500" : "bg-white border-slate-200 text-slate-800 focus:border-indigo-500"
                         )}
                       >
-                        <option value="ALL">All Roles</option>
-                        <option value="CUSTOMER">Customer</option>
-                        <option value="OWNER">Owner</option>
-                        <option value="ADMIN">Admin</option>
+                        <option value="ALL">{{ vi: 'Tất cả vai trò', ja: 'すべての役割', ko: '모든 역할', zh: '所有角色', en: 'All Roles' }[lang] || 'All Roles'}</option>
+                        <option value="CUSTOMER">{{ vi: 'Khách thuê', ja: '顧客', ko: '고객', zh: '客户', en: 'Customer' }[lang] || 'Customer'}</option>
+                        <option value="OWNER">{{ vi: 'Chủ xe', ja: 'オーナー', ko: '호스트', zh: '车主', en: 'Owner' }[lang] || 'Owner'}</option>
+                        <option value="ADMIN">{{ vi: 'Quản trị viên', ja: '管理者', ko: '관리자', zh: '管理员', en: 'Admin' }[lang] || 'Admin'}</option>
                       </select>
 
                       <select
@@ -1919,16 +2034,16 @@ const AdminDashboard: React.FC = () => {
                           isDark ? "bg-slate-900 border-slate-800 text-slate-200 focus:border-indigo-500" : "bg-white border-slate-200 text-slate-800 focus:border-indigo-500"
                         )}
                       >
-                        <option value="ALL">All KYC Statuses</option>
-                        <option value="PENDING">Pending</option>
-                        <option value="VERIFIED">Verified</option>
-                        <option value="REJECTED">Rejected</option>
+                        <option value="ALL">{{ vi: 'Tất cả trạng thái KYC', ja: 'すべてのKYCステータス', ko: '모든 KYC 상태', zh: '所有 KYC 状态', en: 'All KYC Statuses' }[lang] || 'All KYC Statuses'}</option>
+                        <option value="PENDING">{{ vi: 'Chờ duyệt', ja: '承認待ち', ko: '대기 중', zh: '待审核', en: 'Pending' }[lang] || 'Pending'}</option>
+                        <option value="VERIFIED">{{ vi: 'Đã xác minh', ja: '確認済み', ko: '인증됨', zh: '已验证', en: 'Verified' }[lang] || 'Verified'}</option>
+                        <option value="REJECTED">{{ vi: 'Từ chối', ja: '拒否済み', ko: '거절됨', zh: '已拒绝', en: 'Rejected' }[lang] || 'Rejected'}</option>
                       </select>
 
                       <div className="relative">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-400" />
                         <input
-                          placeholder="Search by name or email..."
+                          placeholder={{ vi: 'Tìm theo tên hoặc email...', ja: '名前またはメールで検索...', ko: '이름 또는 이메일로 검색...', zh: '按姓名或邮箱搜索...', en: 'Search by name or email...' }[lang] || 'Search by name or email...'}
                           value={userSearch}
                           onChange={e => setUserSearch(e.target.value)}
                           className={cn(
@@ -1948,7 +2063,7 @@ const AdminDashboard: React.FC = () => {
                       <thead>
                         <tr className={cn("border-b", isDark ? "bg-slate-950/40 border-slate-850" : "bg-slate-50 border-slate-150")}>
                           {['User Account', 'Email Address', 'Platform Role', 'KYC Status', 'Account Status', 'Actions'].map(h => (
-                            <th key={h} className="text-left px-6 py-4.5 text-[9px] font-black uppercase tracking-widest text-slate-400">{h}</th>
+                            <th key={h} className="text-left px-6 py-4.5 text-[9px] font-black uppercase tracking-widest text-slate-400">{getTableHeaderText(h)}</th>
                           ))}
                         </tr>
                       </thead>
@@ -1972,13 +2087,13 @@ const AdminDashboard: React.FC = () => {
                                     u.role === 'admin' ? "border-yellow-500/20 text-yellow-555 bg-yellow-500/5" :
                                     u.role === 'owner' ? "border-indigo-500/20 text-indigo-550 bg-indigo-500/5" :
                                     "border-slate-500/20 text-slate-555 bg-slate-555/5"
-                                  )}>{u.role}</span>
+                                  )}>{formatRoleLabel(u.role)}</span>
                                 </td>
                                 <td className="px-6 py-4">
-                                  <StatusBadge status={u.kycVerified ? 'active' : 'pending'} label={u.kycVerified ? 'VERIFIED' : 'PENDING'} />
+                                  <StatusBadge status={u.kycVerified ? 'active' : 'pending'} label={formatStatusLabel(u.kycVerified ? 'verified' : 'pending')} />
                                 </td>
                                 <td className="px-6 py-4">
-                                  <StatusBadge status={isUserActive ? 'active' : 'inactive'} label={isUserActive ? 'ACTIVE' : 'BLOCKED'} />
+                                  <StatusBadge status={isUserActive ? 'active' : 'inactive'} label={formatStatusLabel(isUserActive ? 'active' : 'blocked')} />
                                 </td>
                                 <td className="px-6 py-4">
                                   <button 
@@ -2007,11 +2122,13 @@ const AdminDashboard: React.FC = () => {
               {activeTab === 'fraud' && (
                 <div className="space-y-6">
                   <Breadcrumbs 
-                    title="Fraud & Risk Control Center" 
-                    items={[{ label: "LuxeWay", href: "/" }, { label: "Admin" }, { label: "Fraud Center" }]} 
+                    title={{ vi: 'Trung Tâm Kiểm Soát Rủi Ro & Gian Lận', ja: '不正・リスク管理センター', ko: '사기 및 리스크 관리 센터', zh: '欺诈与风险控制中心', fr: 'Centre de contrôle de la fraude et des risques', de: 'Betrugs- & Risikokontrollzentrum', es: 'Centro de control de fraude y riesgos', en: 'Fraud & Risk Control Center' }[lang] || 'Fraud & Risk Control Center'} 
+                    items={[{ label: "LuxeWay", href: "/" }, { label: adminBreadcrumbLabel }, { label: { vi: 'Trung Tâm Gian Lận', ja: '不正対策センター', ko: '사기 방지 센터', zh: '反欺诈中心', fr: 'Centre de fraude', de: 'Betrugszentrum', es: 'Centro de fraude', en: 'Fraud Center' }[lang] || 'Fraud Center' }]} 
                   />
                   <div>
-                    <p className="text-[11px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-widest">Real-time risk scoring, device fingerprint verification, and VPN block lists</p>
+                    <p className="text-[11px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                      {{ vi: 'Chấm điểm rủi ro thời gian thực, xác minh dấu vết thiết bị và danh sách chặn VPN', ja: 'リアルタイムのリスクスコアリング、デバイス指紋の検証、VPNブロックリスト', ko: '실시간 리스크 스코어링, 기기 지문 검증 및 VPN 차단 목록', zh: '实时风险评分、设备指纹验证和 VPN 阻止列表', en: 'Real-time risk scoring, device fingerprint verification, and VPN block lists' }[lang] || 'Real-time risk scoring, device fingerprint verification, and VPN block lists'}
+                    </p>
                   </div>
 
                   {/* Top KPIs Grid */}
@@ -2048,7 +2165,7 @@ const AdminDashboard: React.FC = () => {
                           <thead>
                             <tr className="border-b dark:border-slate-850">
                               {['User Account', 'Risk Score', 'Flagged Indicators', 'Risk Level', 'Operations Actions'].map(h => (
-                                <th key={h} className="text-left py-3 px-2 text-[9px] font-black uppercase tracking-widest text-slate-450">{h}</th>
+                                <th key={h} className="text-left py-3 px-2 text-[9px] font-black uppercase tracking-widest text-slate-450">{getTableHeaderText(h)}</th>
                               ))}
                             </tr>
                           </thead>
@@ -2627,11 +2744,11 @@ const AdminDashboard: React.FC = () => {
                     </div>
                     <div className={cn("border rounded-[2rem] p-6 shadow-2xl flex flex-col gap-4 col-span-1 md:col-span-2", isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200")}>
                       <h3 className="font-black text-xs uppercase tracking-widest text-indigo-400 border-b dark:border-slate-805 pb-3">
-                        {isVi ? 'Cài đặt tài khoản ngân hàng nhận tiền (VietQR)' : 'Owner Bank Account Settings (VietQR)'}
+                        {t.adminDashboard.bankSettingsTitle}
                       </h3>
                       <form onSubmit={handleSavePaymentSettings} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1.5">
-                          <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">{isVi ? 'Tên ngân hàng' : 'Bank Name'}</label>
+                          <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">{t.adminDashboard.bankNameLabel}</label>
                           <input
                             type="text"
                             value={adminPaymentSettings.bankName || ''}
@@ -2644,7 +2761,7 @@ const AdminDashboard: React.FC = () => {
                           />
                         </div>
                         <div className="space-y-1.5">
-                          <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">{isVi ? 'Số tài khoản' : 'Account Number'}</label>
+                          <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">{t.adminDashboard.accountNumberLabel}</label>
                           <input
                             type="text"
                             value={adminPaymentSettings.accountNumber || ''}
@@ -2657,7 +2774,7 @@ const AdminDashboard: React.FC = () => {
                           />
                         </div>
                         <div className="space-y-1.5">
-                          <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">{isVi ? 'Tên chủ tài khoản' : 'Account Holder Name'}</label>
+                          <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">{t.adminDashboard.accountHolderLabel}</label>
                           <input
                             type="text"
                             value={adminPaymentSettings.ownerName || ''}
@@ -2670,7 +2787,7 @@ const AdminDashboard: React.FC = () => {
                           />
                         </div>
                         <div className="space-y-1.5 flex items-center justify-between sm:pt-6">
-                          <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{isVi ? 'Trạng thái hoạt động' : 'Enabled Settings'}</span>
+                          <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{t.adminDashboard.enabledSettingsLabel}</span>
                           <input
                             type="checkbox"
                             checked={adminPaymentSettings.enabled === true}
@@ -2680,7 +2797,7 @@ const AdminDashboard: React.FC = () => {
                         </div>
                         <div className="col-span-1 sm:col-span-2 pt-2">
                           <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-3 rounded-xl uppercase text-[9px] tracking-widest shadow-lg shadow-indigo-500/25 transition-all">
-                            {isVi ? 'Lưu cấu hình thanh toán' : 'Save Payment Config'}
+                            {t.adminDashboard.savePaymentConfig}
                           </button>
                         </div>
                       </form>
@@ -3207,13 +3324,13 @@ const AdminDashboard: React.FC = () => {
       <AdminSlideDrawer
         isOpen={verifyingBooking !== null}
         onClose={() => setVerifyingBooking(null)}
-        title={isVi ? "Kiểm tra chứng từ chuyển khoản" : "Payment Verification Sheet"}
+        title={t.adminDashboard.paymentVerificationSheetTitle}
       >
         {verifyingBooking && (
           <div className="space-y-5 text-sm">
             <div className="p-4 bg-slate-500/5 rounded-2xl border dark:border-slate-850 space-y-3">
               <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest border-b dark:border-slate-800 pb-2">
-                {isVi ? 'Chi tiết giao dịch' : 'Transaction Verification Specs'}
+                {t.adminDashboard.transactionVerificationSpecs}
               </h4>
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div>
@@ -3234,7 +3351,7 @@ const AdminDashboard: React.FC = () => {
                 </div>
                 <div className="col-span-2">
                   <span className="text-[9px] text-slate-500 uppercase font-black block">Trạng thái hiện tại</span>
-                  <span className="font-semibold"><StatusBadge status={verifyingBooking.status} label={verifyingBooking.status?.toUpperCase()} /></span>
+                  <span className="font-semibold"><StatusBadge status={verifyingBooking.status} label={formatStatusLabel(verifyingBooking.status)} /></span>
                 </div>
               </div>
             </div>
@@ -3242,10 +3359,10 @@ const AdminDashboard: React.FC = () => {
             {verifyingBooking.status?.toLowerCase() === 'payment_pending' && (
               <div className="space-y-3 pt-2 border-t dark:border-slate-850">
                 <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 block mb-1">
-                  {isVi ? 'Lý do từ chối (Chỉ điền khi từ chối giao dịch)' : 'Rejection Reason (Required only on Reject)'}
+                  {t.adminDashboard.rejectionReasonLabel}
                 </label>
                 <textarea
-                  placeholder={isVi ? "Ví dụ: Sai nội dung chuyển khoản, Số tiền không khớp..." : "e.g. Mismatched amount, incorrect message..."}
+                  placeholder={t.adminDashboard.rejectionPlaceholder}
                   value={paymentRejectionReason}
                   onChange={e => setPaymentRejectionReason(e.target.value)}
                   className={cn(
@@ -3258,13 +3375,13 @@ const AdminDashboard: React.FC = () => {
                     onClick={() => handleVerifyPayment(verifyingBooking.id)} 
                     className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 rounded-xl uppercase text-[9px] tracking-widest shadow-md shadow-emerald-500/10"
                   >
-                    {isVi ? 'Duyệt thanh toán' : 'Verify & Approve'}
+                    {t.adminDashboard.verifyAndApproveBtn}
                   </button>
                   <button 
                     onClick={() => handleRejectPayment(verifyingBooking.id, paymentRejectionReason)} 
                     className="flex-1 bg-red-500 hover:bg-red-650 text-white font-black py-3 rounded-xl uppercase text-[9px] tracking-widest shadow-md shadow-red-500/10"
                   >
-                    {isVi ? 'Từ chối giao dịch' : 'Decline & Reject'}
+                    {t.adminDashboard.declineAndRejectBtn}
                   </button>
                 </div>
               </div>

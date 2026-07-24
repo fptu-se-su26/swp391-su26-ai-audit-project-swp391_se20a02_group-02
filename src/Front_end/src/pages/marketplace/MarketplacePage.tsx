@@ -509,7 +509,43 @@ const MarketplacePage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { language } = useUIStore();
-  const isVi = language === 'vi';
+  const lang = language || 'en';
+  const isVi = lang === 'vi';
+
+  const mpt = {
+    allVehicles: lang === 'vi' ? 'Tất Cả Xe' : lang === 'ja' ? 'すべての車両' : lang === 'ko' ? '모든 차량' : lang === 'zh' ? '全部车辆' : lang === 'fr' ? 'Tous les véhicules' : lang === 'de' ? 'Alle Fahrzeuge' : lang === 'es' ? 'Todos los vehículos' : 'All Vehicles',
+    cars: lang === 'vi' ? 'Ô Tô' : lang === 'ja' ? '自動車' : lang === 'ko' ? '승용차' : lang === 'zh' ? '汽车' : lang === 'fr' ? 'Voitures' : lang === 'de' ? 'Autos' : lang === 'es' ? 'Coches' : 'Cars',
+    motorbikes: lang === 'vi' ? 'Xe Máy' : lang === 'ja' ? 'バイク' : lang === 'ko' ? '오토바이' : lang === 'zh' ? '摩托车' : lang === 'fr' ? 'Motos' : lang === 'de' ? 'Motorräder' : lang === 'es' ? 'Motos' : 'Motorbikes',
+
+    findVehicles: lang === 'vi' ? '🔍 Tìm xe... Honda, Toyota, VinFast...' : lang === 'ja' ? '🔍 車両を検索... Honda, Toyota...' : lang === 'ko' ? '🔍 차량 검색... Honda, Toyota...' : lang === 'zh' ? '🔍 搜索车辆... 本田, 丰田, 越快...' : '🔍 Find vehicles... Honda, Toyota, VinFast...',
+    findCars: lang === 'vi' ? '🚗 Tìm ô tô... Vios, Camry, CX5...' : lang === 'ja' ? '🚗 乗用車を検索... Vios, Camry...' : lang === 'ko' ? '🚗 승용차 검색... Vios, Camry...' : lang === 'zh' ? '🚗 搜索汽车... Vios, Camry...' : '🚗 Find cars... Vios, Camry, CX5...',
+    findMotorbikes: lang === 'vi' ? '🏍️ Tìm xe máy... Vision, Exciter, SH...' : lang === 'ja' ? '🏍️ バイクを検索... Vision, Exciter...' : lang === 'ko' ? '🏍️ 오토바이 검색... Vision, Exciter...' : lang === 'zh' ? '🏍️ 搜索摩托车... Vision, Exciter...' : '🏍️ Find motorbikes... Vision, Exciter, SH...',
+
+    filters: lang === 'vi' ? 'Bộ lọc' : lang === 'ja' ? 'フィルター' : lang === 'ko' ? '필터' : lang === 'zh' ? '筛选' : lang === 'fr' ? 'Filtres' : lang === 'de' ? 'Filter' : lang === 'es' ? 'Filtros' : 'Filters',
+    found: lang === 'vi' ? 'Tìm thấy' : lang === 'ja' ? '見つかりました' : lang === 'ko' ? '검색됨' : lang === 'zh' ? '找到' : lang === 'fr' ? 'Trouvé' : lang === 'de' ? 'Gefunden' : lang === 'es' ? 'Encontrado' : 'Found',
+    vehiclesWord: lang === 'vi' ? 'xe' : lang === 'ja' ? '台の車両' : lang === 'ko' ? '대 차량' : lang === 'zh' ? '辆车' : lang === 'fr' ? 'véhicules' : lang === 'de' ? 'Fahrzeuge' : lang === 'es' ? 'vehículos' : 'vehicles',
+    carsWord: lang === 'vi' ? 'ô tô' : lang === 'ja' ? '台の乗用車' : lang === 'ko' ? '대 승용차' : lang === 'zh' ? '辆汽车' : lang === 'fr' ? 'voitures' : lang === 'de' ? 'Autos' : lang === 'es' ? 'coches' : 'cars',
+    motorbikesWord: lang === 'vi' ? 'xe máy' : lang === 'ja' ? '台のバイク' : lang === 'ko' ? '대 오토바이' : lang === 'zh' ? '辆摩托车' : lang === 'fr' ? 'motos' : lang === 'de' ? 'Motorräder' : lang === 'es' ? 'motos' : 'motorbikes',
+
+    mostPopular: lang === 'vi' ? 'Phổ biến nhất' : lang === 'ja' ? '最も人気' : lang === 'ko' ? '가장 인기' : lang === 'zh' ? '最受欢迎' : lang === 'fr' ? 'Plus populaires' : lang === 'de' ? 'Beliebteste' : lang === 'es' ? 'Más populares' : 'Most Popular',
+    nearest: lang === 'vi' ? 'Gần tôi nhất' : lang === 'ja' ? '現在地から近い順' : lang === 'ko' ? '가장 가까운 순' : lang === 'zh' ? '离我最近' : lang === 'fr' ? 'Le cộng proche' : lang === 'de' ? 'Nächste zuerst' : lang === 'es' ? 'Más cercano' : 'Nearest to me',
+    highestRated: lang === 'vi' ? 'Đánh giá cao nhất' : lang === 'ja' ? '高評価順' : lang === 'ko' ? '최고 평점' : lang === 'zh' ? '评分最高' : lang === 'fr' ? 'Mieux notés' : lang === 'de' ? 'Höchste Bewertung' : lang === 'es' ? 'Mejor valorados' : 'Highest Rated',
+    priceAsc: lang === 'vi' ? 'Giá: Thấp đến Cao' : lang === 'ja' ? '料金: 安い順' : lang === 'ko' ? '가격: 낮은순' : lang === 'zh' ? '价格：从低到高' : 'Price: Low to High',
+    priceDesc: lang === 'vi' ? 'Giá: Cao đến Thấp' : lang === 'ja' ? '料金: 高い順' : lang === 'ko' ? '가격: 높은순' : lang === 'zh' ? '价格：从高到低' : 'Price: High to Low',
+    newest: lang === 'vi' ? 'Mới nhất' : lang === 'ja' ? '新着順' : lang === 'ko' ? '최신순' : lang === 'zh' ? '最新优先' : 'Newest First',
+
+    mapBtn: lang === 'vi' ? 'Bản đồ' : lang === 'ja' ? 'マップ' : lang === 'ko' ? '지도' : lang === 'zh' ? '地图' : lang === 'fr' ? 'Carte' : lang === 'de' ? 'Karte' : lang === 'es' ? 'Mapa' : 'Map',
+    listBtn: lang === 'vi' ? 'Danh sách' : lang === 'ja' ? 'リスト' : lang === 'ko' ? '목록' : lang === 'zh' ? '列表' : lang === 'fr' ? 'Liste' : lang === 'de' ? 'Liste' : lang === 'es' ? 'Lista' : 'List',
+  };
+
+  const sortOptions = [
+    { value: 'popular', label: mpt.mostPopular },
+    { value: 'nearest', label: mpt.nearest },
+    { value: 'rating', label: mpt.highestRated },
+    { value: 'price_asc', label: mpt.priceAsc },
+    { value: 'price_desc', label: mpt.priceDesc },
+    { value: 'newest', label: mpt.newest },
+  ];
 
   // Derive map view mode from URL path or query param
   const isMapView = location.pathname === '/map' || searchParams.get('view') === 'map';
@@ -839,9 +875,9 @@ const MarketplacePage: React.FC = () => {
           <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center gap-1 py-3 overflow-x-auto scrollbar-hide">
               {[
-                { type: 'all' as const, label: isVi ? 'Tất Cả Xe' : 'All Vehicles', icon: <Sparkles className="w-4 h-4" />, count: null },
-                { type: 'car' as const, label: isVi ? 'Ô Tô' : 'Cars', icon: <Car className="w-4 h-4" />, count: null },
-                { type: 'motorbike' as const, label: isVi ? 'Xe Máy' : 'Motorbikes', icon: <Bike className="w-4 h-4" />, count: null },
+                { type: 'all' as const, label: mpt.allVehicles, icon: <Sparkles className="w-4 h-4" />, count: null },
+                { type: 'car' as const, label: mpt.cars, icon: <Car className="w-4 h-4" />, count: null },
+                { type: 'motorbike' as const, label: mpt.motorbikes, icon: <Bike className="w-4 h-4" />, count: null },
               ].map(tab => (
                 <button
                   key={tab.type}
@@ -908,7 +944,7 @@ const MarketplacePage: React.FC = () => {
                 type="text"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                placeholder={activeType === 'motorbike' ? '🏍️ Find motorbikes... Vision, Exciter, SH...' : activeType === 'car' ? '🚗 Find cars... Vios, Camry, CX5...' : '🔍 Find vehicles... Honda, Toyota, VinFast...'}
+                placeholder={activeType === 'motorbike' ? mpt.findMotorbikes : activeType === 'car' ? mpt.findCars : mpt.findVehicles}
                 className="w-full pl-10 pr-10 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm outline-none text-foreground focus:border-accent focus:bg-white dark:focus:bg-slate-950 transition-all font-semibold"
               />
               {searchQuery && (
@@ -928,7 +964,7 @@ const MarketplacePage: React.FC = () => {
               )}
             >
               <SlidersHorizontal className="w-4 h-4" />
-              <span className="hidden sm:inline">Filters</span>
+              <span className="hidden sm:inline">{mpt.filters}</span>
               {activeFilterCount > 0 && (
                 <span className={cn("w-5 h-5 text-white text-[10px] font-extrabold rounded-full flex items-center justify-center",
                   activeType === 'motorbike' ? "bg-orange-500" : "bg-blue-500")}>
@@ -945,7 +981,7 @@ const MarketplacePage: React.FC = () => {
                 onChange={e => handleSortChange(e.target.value)}
                 className="appearance-none pl-4 pr-10 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-bold outline-none text-slate-600 dark:text-slate-300 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-850 transition-colors"
               >
-                {SORT_OPTIONS.map(opt => (
+                {sortOptions.map(opt => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
               </select>
@@ -955,7 +991,7 @@ const MarketplacePage: React.FC = () => {
             <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 rounded-2xl p-1 border border-slate-200/40 dark:border-slate-800/40">
               {(['grid', 'list'] as const).map(mode => (
                 <button key={mode} onClick={() => setViewMode(mode)}
-                  className={cn("p-2 rounded-xl transition-all", viewMode === mode ? "bg-white dark:bg-slate-800 shadow-sm text-foreground font-bold" : "text-slate-450 hover:text-foreground")}>
+                  className={cn("p-2 rounded-xl transition-all", viewMode === mode ? "bg-white dark:bg-slate-800 shadow-sm text-foreground font-bold" : "text-slate-455 hover:text-foreground")}>
                   {mode === 'grid' ? <Grid3X3 className="w-4 h-4" /> : <List className="w-4 h-4" />}
                 </button>
               ))}
@@ -981,12 +1017,12 @@ const MarketplacePage: React.FC = () => {
               {isMapView ? (
                 <>
                   <List className="w-4 h-4" />
-                  <span>{isVi ? 'Danh sách' : 'List'}</span>
+                  <span>{mpt.listBtn}</span>
                 </>
               ) : (
                 <>
                   <Map className="w-4 h-4" />
-                  <span>{isVi ? 'Bản đồ' : 'Map'}</span>
+                  <span>{mpt.mapBtn}</span>
                 </>
               )}
             </button>
@@ -1026,15 +1062,15 @@ const MarketplacePage: React.FC = () => {
             {/* Result count + active filters */}
             <div className="flex items-center justify-between mb-5 flex-shrink-0">
               <div className="flex items-center gap-3">
-                <p className="text-sm font-medium text-slate-450">
+                <p className="text-sm font-medium text-slate-455">
                   {mapOpen ? (
                     <span className="font-extrabold text-slate-800 dark:text-white text-base">
-                      Vehicles near you ({total})
+                      {lang === 'vi' ? 'Xe gần bạn' : 'Vehicles near you'} ({total})
                     </span>
                   ) : (
-                    loading ? 'Loading...' : (
-                      <>Found <span className="font-extrabold text-foreground">{total}</span>
-                        {' '}{activeType === 'motorbike' ? 'motorbikes' : activeType === 'car' ? 'cars' : 'vehicles'}
+                    loading ? '...' : (
+                      <>{mpt.found} <span className="font-extrabold text-foreground">{total}</span>
+                        {' '}{activeType === 'motorbike' ? mpt.motorbikesWord : activeType === 'car' ? mpt.carsWord : mpt.vehiclesWord}
                       </>
                     )
                   )}
@@ -1499,12 +1535,12 @@ const MarketplacePage: React.FC = () => {
             >
               {isMapView ? (
                 <>
-                  <span>{isVi ? 'Danh sách' : 'List View'}</span>
+                  <span>{mpt.listBtn}</span>
                   <List className="w-4.5 h-4.5 ml-1" />
                 </>
               ) : (
                 <>
-                  <span>{isVi ? 'Bản đồ' : 'Map View'}</span>
+                  <span>{mpt.mapBtn}</span>
                   <Map className="w-4.5 h-4.5 ml-1" />
                 </>
               )}

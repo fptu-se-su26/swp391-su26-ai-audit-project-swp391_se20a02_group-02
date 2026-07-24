@@ -22,6 +22,242 @@ import Avatar from '@/components/ui/Avatar';
 import StatusBadge from '@/components/ui/StatusBadge';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
 
+export function getBookingStatusInfo(statusRaw: string, language: string = 'en'): { label: string; bg: string; color: string; border: string } {
+  const status = String(statusRaw || '').toLowerCase();
+
+  const labels: Record<string, Record<string, string>> = {
+    pending: {
+      vi: 'Chờ duyệt',
+      en: 'Pending',
+      ko: '대기 중',
+      ja: '承認待ち',
+      zh: '待审核',
+      fr: 'En attente',
+      de: 'Ausstehend',
+      es: 'Pendiente',
+    },
+    waiting_payment: {
+      vi: 'Chờ thanh toán',
+      en: 'Waiting Payment',
+      ko: '결제 대기',
+      ja: 'お支払い待ち',
+      zh: '待支付',
+      fr: 'En attente de paiement',
+      de: 'Warten auf Zahlung',
+      es: 'Esperando Pago',
+    },
+    payment_pending: {
+      vi: 'Đang kiểm tra thanh toán',
+      en: 'Payment Review',
+      ko: '결제 확인 중',
+      ja: '決済確認中',
+      zh: '支付审核中',
+      fr: 'Vérification du paiement',
+      de: 'Zahlungsprüfung',
+      es: 'Revisión de Pago',
+    },
+    payment_verified: {
+      vi: 'Đã xác minh thanh toán',
+      en: 'Payment Verified',
+      ko: '결제 완료됨',
+      ja: '決済確認済み',
+      zh: '支付已确认',
+      fr: 'Paiement vérifié',
+      de: 'Zahlung bestätigt',
+      es: 'Pago Verificado',
+    },
+    payment_rejected: {
+      vi: 'Thanh toán bị từ chối',
+      en: 'Payment Rejected',
+      ko: '결제 거절됨',
+      ja: '決済拒否',
+      zh: '支付被拒绝',
+      fr: 'Paiement refusé',
+      de: 'Zahlung abgelehnt',
+      es: 'Pago Rechazado',
+    },
+    payment_expired: {
+      vi: 'Hết hạn thanh toán',
+      en: 'Payment Expired',
+      ko: '결제 기한 만료',
+      ja: 'お支払い期限切れ',
+      zh: '支付已超时',
+      fr: 'Paiement expiré',
+      de: 'Zahlung abgelaufen',
+      es: 'Pago Expirado',
+    },
+    cancellation_requested: {
+      vi: 'Yêu cầu hủy chuyến',
+      en: 'Cancel Requested',
+      ko: '취소 요청됨',
+      ja: 'キャンセルリクエスト中',
+      zh: '已申请取消',
+      fr: 'Annulation demandée',
+      de: 'Stornierung angefragt',
+      es: 'Cancelación Solicitada',
+    },
+    confirmed: {
+      vi: 'Đã xác nhận',
+      en: 'Confirmed',
+      ko: '확정됨',
+      ja: '予約確定',
+      zh: '已确认',
+      fr: 'Confirmé',
+      de: 'Bestätigt',
+      es: 'Confirmado',
+    },
+    owner_approved: {
+      vi: 'Chủ xe đã duyệt',
+      en: 'Owner Approved',
+      ko: '파트너 승인됨',
+      ja: 'オーナー承認済み',
+      zh: '车主已批准',
+      fr: 'Approuvé par le propriétaire',
+      de: 'Vermieter genehmigt',
+      es: 'Aprobado por Propietario',
+    },
+    ready_for_pickup: {
+      vi: 'Sẵn sàng nhận xe',
+      en: 'Ready for Pickup',
+      ko: '차량 수령 가능',
+      ja: '受取準備完了',
+      zh: '待取车',
+      fr: 'Prêt pour prise en charge',
+      de: 'Bereit zur Abholung',
+      es: 'Listo para Recoger',
+    },
+    checked_out: {
+      vi: 'Đã nhận xe',
+      en: 'Checked Out',
+      ko: '차량 인출됨',
+      ja: '貸出済み',
+      zh: '已取车',
+      fr: 'Véhicule récupéré',
+      de: 'Abgeholt',
+      es: 'Vehículo Entregado',
+    },
+    in_rental: {
+      vi: 'Đang trong chuyến',
+      en: 'In Rental',
+      ko: '이용 중',
+      ja: 'レンタル中',
+      zh: '行程中',
+      fr: 'En cours de location',
+      de: 'In Miete',
+      es: 'En Alquiler',
+    },
+    return_pending: {
+      vi: 'Chờ xác nhận trả xe',
+      en: 'Return Pending',
+      ko: '반납 확인 중',
+      ja: '返却確認中',
+      zh: '待还车确认',
+      fr: 'Retour en kiểm tra',
+      de: 'Rückgabe ausstehend',
+      es: 'Devolución Pendiente',
+    },
+    return_completed: {
+      vi: 'Đã hoàn tất trả xe',
+      en: 'Return Completed',
+      ko: '반납 완료됨',
+      ja: '返却完了',
+      zh: '已还车',
+      fr: 'Retour effectué',
+      de: 'Rückgabe abgeschlossen',
+      es: 'Devolución Completada',
+    },
+    active: {
+      vi: 'Đang hoạt động',
+      en: 'Active',
+      ko: '진행 중',
+      ja: '利用中',
+      zh: '进行中',
+      fr: 'Actif',
+      de: 'Aktiv',
+      es: 'Activo',
+    },
+    completed: {
+      vi: 'Hoàn thành',
+      en: 'Completed',
+      ko: '완료됨',
+      ja: '完了',
+      zh: '已完成',
+      fr: 'Terminé',
+      de: 'Abgeschlossen',
+      es: 'Completado',
+    },
+    cancelled: {
+      vi: 'Đã hủy',
+      en: 'Cancelled',
+      ko: '취소됨',
+      ja: 'キャンセル済み',
+      zh: '已取消',
+      fr: 'Annulé',
+      de: 'Storniert',
+      es: 'Cancelado',
+    },
+    customer_cancelled: {
+      vi: 'Khách hàng hủy',
+      en: 'Cancelled by Customer',
+      ko: '고객 취소',
+      ja: '顧客によるキャンセル',
+      zh: '客户已取消',
+      fr: 'Annulé par le client',
+      de: 'Vom Kunden storniert',
+      es: 'Cancelado por Cliente',
+    },
+    owner_cancelled: {
+      vi: 'Chủ xe hủy',
+      en: 'Cancelled by Owner',
+      ko: '파트너 취소',
+      ja: 'オーナーによるキャンセル',
+      zh: '车主已取消',
+      fr: 'Annulé par le propriétaire',
+      de: 'Vom Vermieter storniert',
+      es: 'Cancelado por Propietario',
+    },
+    system_cancelled: {
+      vi: 'Hệ thống tự hủy',
+      en: 'System Cancelled',
+      ko: '시스템 자동 취소',
+      ja: 'システム自動キャンセル',
+      zh: '系统自动取消',
+      fr: 'Annulé par le système',
+      de: 'Systemseitig storniert',
+      es: 'Cancelado por Sistema',
+    },
+  };
+
+  const styleMap: Record<string, { bg: string; color: string; border: string }> = {
+    pending: { bg: 'rgba(245,158,11,0.15)', color: '#F59E0B', border: 'rgba(245,158,11,0.3)' },
+    waiting_payment: { bg: 'rgba(245,158,11,0.15)', color: '#D97706', border: 'rgba(245,158,11,0.35)' },
+    payment_pending: { bg: 'rgba(59,130,246,0.15)', color: '#2563EB', border: 'rgba(59,130,246,0.3)' },
+    payment_verified: { bg: 'rgba(16,185,129,0.15)', color: '#10B981', border: 'rgba(16,185,129,0.3)' },
+    payment_rejected: { bg: 'rgba(239,68,68,0.15)', color: '#EF4444', border: 'rgba(239,68,68,0.3)' },
+    payment_expired: { bg: 'rgba(245,158,11,0.15)', color: '#F59E0B', border: 'rgba(245,158,11,0.3)' },
+    cancellation_requested: { bg: 'rgba(245,158,11,0.15)', color: '#D97706', border: 'rgba(245,158,11,0.35)' },
+    confirmed: { bg: 'rgba(37,99,235,0.15)', color: '#2563EB', border: 'rgba(37,99,235,0.3)' },
+    owner_approved: { bg: 'rgba(37,99,235,0.15)', color: '#2563EB', border: 'rgba(37,99,235,0.3)' },
+    ready_for_pickup: { bg: 'rgba(37,99,235,0.15)', color: '#2563EB', border: 'rgba(37,99,235,0.3)' },
+    checked_out: { bg: 'rgba(16,185,129,0.15)', color: '#10B981', border: 'rgba(16,185,129,0.3)' },
+    in_rental: { bg: 'rgba(16,185,129,0.15)', color: '#10B981', border: 'rgba(16,185,129,0.3)' },
+    return_pending: { bg: 'rgba(245,158,11,0.15)', color: '#D97706', border: 'rgba(245,158,11,0.35)' },
+    return_completed: { bg: 'rgba(16,185,129,0.15)', color: '#10B981', border: 'rgba(16,185,129,0.3)' },
+    active: { bg: 'rgba(16,185,129,0.15)', color: '#10B981', border: 'rgba(16,185,129,0.3)' },
+    completed: { bg: 'rgba(16,185,129,0.15)', color: '#10B981', border: 'rgba(16,185,129,0.3)' },
+    cancelled: { bg: 'rgba(239,68,68,0.15)', color: '#EF4444', border: 'rgba(239,68,68,0.3)' },
+    customer_cancelled: { bg: 'rgba(239,68,68,0.15)', color: '#EF4444', border: 'rgba(239,68,68,0.3)' },
+    owner_cancelled: { bg: 'rgba(239,68,68,0.15)', color: '#EF4444', border: 'rgba(239,68,68,0.3)' },
+    system_cancelled: { bg: 'rgba(239,68,68,0.15)', color: '#EF4444', border: 'rgba(239,68,68,0.3)' },
+  };
+
+  const statusLabelDict = labels[status] || labels.pending;
+  const label = statusLabelDict[language] || statusLabelDict.en || status;
+  const style = styleMap[status] || { bg: 'rgba(100,116,139,0.15)', color: '#64748B', border: 'rgba(100,116,139,0.3)' };
+
+  return { label, ...style };
+}
+
 // ====== CUSTOMER DASHBOARD LAYOUT ======
 export const CustomerDashboardLayout: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuthStore();
@@ -41,13 +277,40 @@ export const CustomerDashboardLayout: React.FC = () => {
 
   if (!user) return null;
 
+  const roleLabel = language === 'vi' ? 'KHÁCH HÀNG' :
+    language === 'ja' ? '顧客' :
+    language === 'ko' ? '고객' :
+    language === 'zh' ? '客户' :
+    language === 'fr' ? 'CLIENT' :
+    language === 'de' ? 'KUNDE' :
+    language === 'es' ? 'CLIENTE' :
+    'CUSTOMER';
+
+  const portalLabel = language === 'vi' ? 'CỔNG THÔNG TIN KHÁCH HÀNG' :
+    language === 'ja' ? 'カスタマーポータル' :
+    language === 'ko' ? '고객 포털' :
+    language === 'zh' ? '客户门户' :
+    language === 'fr' ? 'PORTAIL CLIENT' :
+    language === 'de' ? 'KUNDENPORTAL' :
+    language === 'es' ? 'PORTAL DE CLIENTE' :
+    'CUSTOMER PORTAL';
+
+  const dateLocale = language === 'vi' ? 'vi-VN' :
+    language === 'ja' ? 'ja-JP' :
+    language === 'ko' ? 'ko-KR' :
+    language === 'zh' ? 'zh-CN' :
+    language === 'fr' ? 'fr-FR' :
+    language === 'de' ? 'de-DE' :
+    language === 'es' ? 'es-ES' :
+    'en-US';
+
   const links = [
-    { href: '/', icon: Globe, label: t.marketplace.home, exact: true },
-    { href: '/dashboard', icon: LayoutDashboard, label: t.dashboard.overview, exact: true },
-    { href: '/dashboard/bookings', icon: Calendar, label: t.dashboard.myBookings },
-    { href: '/dashboard/payments', icon: CreditCard, label: t.dashboard.payments },
-    { href: '/dashboard/documents', icon: FileText, label: t.dashboard.documents },
-    { href: '/dashboard/reviews', icon: Star, label: t.dashboard.myReviews },
+    { href: '/', icon: Globe, label: t.marketplace?.home || 'Home', exact: true },
+    { href: '/dashboard', icon: LayoutDashboard, label: t.dashboard?.overview || 'Overview', exact: true },
+    { href: '/dashboard/bookings', icon: Calendar, label: t.dashboard?.myBookings || 'My Bookings' },
+    { href: '/dashboard/payments', icon: CreditCard, label: t.dashboard?.payments || 'Payment History' },
+    { href: '/dashboard/documents', icon: FileText, label: t.dashboard?.documents || 'Documents' },
+    { href: '/dashboard/reviews', icon: Star, label: t.dashboard?.myReviews || 'My Reviews' },
     {
       href: '/dashboard/rewards',
       icon: Gift,
@@ -72,10 +335,10 @@ export const CustomerDashboardLayout: React.FC = () => {
                   language === 'es' ? 'Portal Corporativo' :
                     'Corporate Portal'
     },
-    { href: '/messages', icon: Bell, label: t.nav.messages },
-    { href: '/dashboard/notifications', icon: Heart, label: t.dashboard.notifications },
-    { href: '/dashboard/profile', icon: User, label: t.dashboard.profile },
-    { href: '/dashboard/settings', icon: Settings, label: t.dashboard.settings },
+    { href: '/messages', icon: Bell, label: t.nav?.messages || 'Messages' },
+    { href: '/dashboard/notifications', icon: Heart, label: t.dashboard?.notifications || 'Notifications' },
+    { href: '/dashboard/profile', icon: User, label: t.dashboard?.profile || 'Profile' },
+    { href: '/dashboard/settings', icon: Settings, label: t.dashboard?.settings || 'Settings' },
   ];
 
   const isActive = (href: string, exact?: boolean) =>
@@ -113,7 +376,7 @@ export const CustomerDashboardLayout: React.FC = () => {
 
                 <div className="lw-sidebar-role-badge bg-[var(--lw-accent-glow)] text-[var(--lw-accent)] border border-[var(--lw-border-strong)] m-0 mx-5 my-3">
                   <span className="w-1.5 h-1.5 rounded-full bg-[var(--lw-accent)] animate-pulse" />
-                  ✨ CUSTOMER
+                  ✨ {roleLabel}
                 </div>
 
                 {/* Links */}
@@ -144,12 +407,12 @@ export const CustomerDashboardLayout: React.FC = () => {
                   <Avatar src={user.avatar} name={user.displayName} size="md" className="flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-semibold truncate text-[var(--lw-text-primary)]">{user.displayName}</p>
-                    <p className="text-[9px] font-bold uppercase tracking-wider text-[var(--lw-accent)] mt-0.5">CUSTOMER</p>
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-[var(--lw-accent)] mt-0.5">{roleLabel}</p>
                   </div>
                   <button 
                     onClick={() => { logout(); setSidebarOpen(false); navigate('/auth/login'); }}
                     className="p-2 text-[var(--lw-text-muted)] hover:text-red-500 transition-colors"
-                    title={t.nav.logout}
+                    title={t.nav?.logout || 'Logout'}
                   >
                     <LogOut className="w-4 h-4" />
                   </button>
@@ -170,7 +433,7 @@ export const CustomerDashboardLayout: React.FC = () => {
             <div className="px-5 py-4 border-b border-[var(--lw-border)]">
               <div className="lw-sidebar-role-badge bg-[var(--lw-accent-glow)] text-[var(--lw-accent)] border border-[var(--lw-border-strong)] m-0 w-full flex items-center justify-center py-2.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-[var(--lw-accent)] animate-pulse mr-1.5" />
-                ✨ CUSTOMER
+                ✨ {roleLabel}
               </div>
             </div>
 
@@ -201,12 +464,12 @@ export const CustomerDashboardLayout: React.FC = () => {
               <Avatar src={user.avatar} name={user.displayName} size="md" className="flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-semibold truncate text-[var(--lw-text-primary)]">{user.displayName}</p>
-                <p className="text-[9px] font-bold uppercase tracking-wider text-[var(--lw-accent)] mt-0.5">CUSTOMER</p>
+                <p className="text-[9px] font-bold uppercase tracking-wider text-[var(--lw-accent)] mt-0.5">{roleLabel}</p>
               </div>
               <button 
                 onClick={() => { logout(); navigate('/auth/login'); }}
                 className="p-2 text-[var(--lw-text-muted)] hover:text-red-500 transition-colors"
-                title={t.nav.logout}
+                title={t.nav?.logout || 'Logout'}
               >
                 <LogOut className="w-4 h-4" />
               </button>
@@ -231,10 +494,10 @@ export const CustomerDashboardLayout: React.FC = () => {
               </div>
               <div>
                 <h1 className="font-bold text-base tracking-tight text-[var(--lw-text-primary)]">
-                  {t.dashboard.overview}
+                  {t.dashboard?.overview || 'Overview'}
                 </h1>
                 <p className="text-[10px] text-[var(--lw-accent)] font-semibold uppercase tracking-widest">
-                  Customer Portal
+                  {portalLabel}
                 </p>
               </div>
             </div>
@@ -243,7 +506,7 @@ export const CustomerDashboardLayout: React.FC = () => {
               <div className="hidden md:flex items-center gap-2 px-3.5 py-2 border border-[var(--lw-border)] rounded-xl bg-[var(--lw-bg-secondary)]">
                 <Clock className="w-3.5 h-3.5 text-[var(--lw-accent)]" />
                 <span className="text-[10px] font-semibold text-[var(--lw-text-secondary)]">
-                  {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                  {new Date().toLocaleDateString(dateLocale, { weekday: 'short', month: 'short', day: 'numeric' })}
                 </span>
               </div>
             </div>
@@ -264,7 +527,71 @@ export const CustomerOverview: React.FC = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const language = useUIStore((s: any) => s.language) || 'en';
   const t = useT();
+
+  const recommendedLabel = language === 'vi' ? '✨ DÀNH CHO BẠN' :
+    language === 'ja' ? '✨ おすすめの車両' :
+    language === 'ko' ? '✨ 추천 차량' :
+    language === 'zh' ? '✨ 为您推荐' :
+    language === 'fr' ? '✨ RECOMMANDÉ POUR VOUS' :
+    language === 'de' ? '✨ FÜR SIE EMPFOHLEN' :
+    language === 'es' ? '✨ RECOMENDADO PARA TI' :
+    '✨ RECOMMENDED FOR YOU';
+
+  const availableLabel = language === 'vi' ? 'Sẵn sàng' :
+    language === 'ja' ? '利用可能' :
+    language === 'ko' ? '대여 가능' :
+    language === 'zh' ? '可租赁' :
+    language === 'fr' ? 'Disponible' :
+    language === 'de' ? 'Verfügbar' :
+    language === 'es' ? 'Disponible' :
+    'Available';
+
+  const perDayLabel = language === 'vi' ? 'ngày' :
+    language === 'ja' ? '日' :
+    language === 'ko' ? '일' :
+    language === 'zh' ? '天' :
+    language === 'fr' ? 'jour' :
+    language === 'de' ? 'Tag' :
+    language === 'es' ? 'día' :
+    'day';
+
+  const bookNowLabel = language === 'vi' ? 'Đặt Ngay' :
+    language === 'ja' ? '今すぐ予約' :
+    language === 'ko' ? '지금 예약' :
+    language === 'zh' ? '立即预订' :
+    language === 'fr' ? 'Réserver' :
+    language === 'de' ? 'Jetzt Buchen' :
+    language === 'es' ? 'Reservar Ahora' :
+    'Book Now';
+
+  const quickActionsTitle = language === 'vi' ? 'THAO TÁC NHANH' :
+    language === 'ja' ? 'クイックアクション' :
+    language === 'ko' ? '빠른 작업' :
+    language === 'zh' ? '快捷操作' :
+    language === 'fr' ? 'ACTIONS RAPIDES' :
+    language === 'de' ? 'SCHNELLAKTIONEN' :
+    language === 'es' ? 'ACCIONES RÁPIDAS' :
+    'QUICK ACTIONS';
+
+  const exploreCarsLabel = language === 'vi' ? 'Thuê Ô Tô' :
+    language === 'ja' ? '車を探す' :
+    language === 'ko' ? '자동차 둘러보기' :
+    language === 'zh' ? '浏览汽车' :
+    language === 'fr' ? 'Parcourir Voitures' :
+    language === 'de' ? 'Autos Entdecken' :
+    language === 'es' ? 'Ver Coches' :
+    'Explore Cars';
+
+  const exploreBikesLabel = language === 'vi' ? 'Thuê Xe Máy' :
+    language === 'ja' ? 'バイクを探す' :
+    language === 'ko' ? '오토바이 둘러보기' :
+    language === 'zh' ? '浏览摩托车' :
+    language === 'fr' ? 'Parcourir Motos' :
+    language === 'de' ? 'Motorräder Entdecken' :
+    language === 'es' ? 'Ver Motos' :
+    'Explore Motorbikes';
 
   useEffect(() => {
     if (!user) return;
@@ -317,13 +644,13 @@ export const CustomerOverview: React.FC = () => {
           <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(7,11,20,0.85) 0%, rgba(7,11,20,0.45) 55%, rgba(7,11,20,0.10) 100%)' }} />
 
           <div className="absolute top-4 left-4">
-            <span className="text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg bg-[var(--lw-accent)] text-white">✨ Recommended For You</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg bg-[var(--lw-accent)] text-white">{recommendedLabel}</span>
           </div>
 
           <div className="absolute top-4 right-4 flex gap-2">
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 border border-white/20 backdrop-blur-md">
               <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-              <span className="text-[10px] font-bold text-white">Available</span>
+              <span className="text-[10px] font-bold text-white">{availableLabel}</span>
             </div>
           </div>
 
@@ -336,14 +663,14 @@ export const CustomerOverview: React.FC = () => {
                 <h2 className="text-2xl font-extrabold text-white leading-tight tracking-tight">Ferrari F8 Tributo</h2>
                 <p className="text-xl font-extrabold mt-1 text-yellow-400">
                   {formatCurrency(8500000)}
-                  <span className="text-sm font-semibold ml-1 text-white/55">/day</span>
+                  <span className="text-sm font-semibold ml-1 text-white/55">/{perDayLabel}</span>
                 </p>
               </div>
               <div className="flex flex-col gap-2 flex-shrink-0">
                 <Link to="/marketplace"
                   className="px-4 py-2.5 rounded-xl text-xs font-bold text-white transition-all bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md shadow-blue-500/20"
                 >
-                  Book Now
+                  {bookNowLabel}
                 </Link>
                 <div className="flex items-center gap-1 justify-center">
                   <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
@@ -388,13 +715,13 @@ export const CustomerOverview: React.FC = () => {
             variants={staggerItem}
             className="col-span-2 rounded-2xl p-4 bg-[var(--lw-bg-card)] border border-[var(--lw-border)]"
           >
-            <p className="text-[10px] font-bold uppercase tracking-widest mb-3 text-[var(--lw-text-muted)]">Quick Actions</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest mb-3 text-[var(--lw-text-muted)]">{quickActionsTitle}</p>
             <div className="flex gap-2 flex-wrap">
               {[
-                { label: 'Explore Cars', href: '/marketplace', color: '#2563EB' },
-                { label: 'Explore Motorbikes', href: '/motorbikes', color: '#8B5CF6' },
-                { label: 'My Bookings', href: '/dashboard/bookings', color: '#F59E0B' },
-                { label: 'My Profile', href: '/dashboard/profile', color: '#10B981' },
+                { label: exploreCarsLabel, href: '/marketplace', color: '#2563EB' },
+                { label: exploreBikesLabel, href: '/motorbikes', color: '#8B5CF6' },
+                { label: t.dashboard?.myBookings || 'My Bookings', href: '/dashboard/bookings', color: '#F59E0B' },
+                { label: t.dashboard?.profile || 'My Profile', href: '/dashboard/profile', color: '#10B981' },
               ].map(q => (
                 <Link key={q.label} to={q.href}
                   className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all hover:scale-105"
@@ -438,7 +765,7 @@ export const CustomerOverview: React.FC = () => {
           ) : (
             <div className="space-y-3">
               {bookings.slice(0, 5).map(booking => {
-                const st = statusStyle[booking.status] || statusStyle['pending'];
+                const st = getBookingStatusInfo(booking.status, language);
                 return (
                   <motion.div
                     key={booking.id}
@@ -455,8 +782,8 @@ export const CustomerOverview: React.FC = () => {
                       </p>
                     </div>
                     <div className="text-right flex-shrink-0">
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg block mb-1"
-                        style={{ background: st.bg, color: st.text }}>{booking.status}</span>
+                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-lg block mb-1 uppercase tracking-wider"
+                        style={{ background: st.bg, color: st.color, border: `1px solid ${st.border}` }}>{st.label}</span>
                       <p className="text-xs font-bold text-[var(--lw-text-primary)]">{formatCurrency(booking.pricing.total)}</p>
                     </div>
                   </motion.div>
@@ -546,44 +873,23 @@ export const MyBookingsPage: React.FC = () => {
     }
   };
 
+  const language = useUIStore((s: any) => s.language) || 'en';
   const breadcrumbItems = [
-    { label: t.marketplace.home, href: '/' },
-    { label: 'Dashboard', href: '/dashboard' },
-    { label: t.dashboard.myBookings }
+    { label: t.marketplace?.home || 'Home', href: '/' },
+    { label: t.dashboard?.overview || 'Dashboard', href: '/dashboard' },
+    { label: t.dashboard?.myBookings || 'My Bookings' }
   ];
-  const statusConfig: Record<string, { bg: string; color: string; border: string; label: string }> = {
-    pending: { bg: 'rgba(245,158,11,0.12)', color: '#F59E0B', border: 'rgba(245,158,11,0.3)', label: 'PENDING' },
-    waiting_payment: { bg: 'rgba(245,158,11,0.12)', color: '#D97706', border: 'rgba(245,158,11,0.35)', label: 'WAITING PAYMENT' },
-    payment_pending: { bg: 'rgba(59,130,246,0.12)', color: '#2563EB', border: 'rgba(59,130,246,0.3)', label: 'PAYMENT REVIEW' },
-    payment_verified: { bg: 'rgba(16,185,129,0.12)', color: '#10B981', border: 'rgba(16,185,129,0.3)', label: 'PAYMENT VERIFIED' },
-    payment_rejected: { bg: 'rgba(239,68,68,0.12)', color: '#EF4444', border: 'rgba(239,68,68,0.3)', label: 'PAYMENT REJECTED' },
-    payment_expired: { bg: 'rgba(100,116,139,0.12)', color: '#64748B', border: 'rgba(100,116,139,0.3)', label: 'PAYMENT EXPIRED' },
-    cancellation_requested: { bg: 'rgba(245,158,11,0.12)', color: '#D97706', border: 'rgba(245,158,11,0.35)', label: 'CANCEL REQUESTED' },
-    confirmed: { bg: 'rgba(37,99,235,0.12)', color: '#2563EB', border: 'rgba(37,99,235,0.3)', label: 'CONFIRMED' },
-    owner_approved: { bg: 'rgba(37,99,235,0.12)', color: '#2563EB', border: 'rgba(37,99,235,0.3)', label: 'OWNER APPROVED' },
-    ready_for_pickup: { bg: 'rgba(37,99,235,0.12)', color: '#2563EB', border: 'rgba(37,99,235,0.3)', label: 'READY' },
-    checked_out: { bg: 'rgba(16,185,129,0.12)', color: '#10B981', border: 'rgba(16,185,129,0.3)', label: 'CHECKED OUT' },
-    in_rental: { bg: 'rgba(16,185,129,0.12)', color: '#10B981', border: 'rgba(16,185,129,0.3)', label: 'IN RENTAL' },
-    return_pending: { bg: 'rgba(245,158,11,0.12)', color: '#D97706', border: 'rgba(245,158,11,0.35)', label: 'RETURN PENDING' },
-    return_completed: { bg: 'rgba(16,185,129,0.12)', color: '#10B981', border: 'rgba(16,185,129,0.3)', label: 'RETURNED' },
-    active: { bg: 'rgba(16,185,129,0.12)', color: '#10B981', border: 'rgba(16,185,129,0.3)', label: 'ACTIVE' },
-    completed: { bg: 'rgba(16,185,129,0.12)', color: '#10B981', border: 'rgba(16,185,129,0.3)', label: 'COMPLETED' },
-    cancelled: { bg: 'rgba(239,68,68,0.12)', color: '#EF4444', border: 'rgba(239,68,68,0.3)', label: 'CANCELLED' },
-    customer_cancelled: { bg: 'rgba(239,68,68,0.12)', color: '#EF4444', border: 'rgba(239,68,68,0.3)', label: 'CANCELLED' },
-    owner_cancelled: { bg: 'rgba(239,68,68,0.12)', color: '#EF4444', border: 'rgba(239,68,68,0.3)', label: 'CANCELLED' },
-    system_cancelled: { bg: 'rgba(239,68,68,0.12)', color: '#EF4444', border: 'rgba(239,68,68,0.3)', label: 'CANCELLED' },
-  };
 
   const filterDefs = [
-    { key: 'all', label: 'All' },
-    { key: 'waiting_payment', label: 'Waiting Payment' },
-    { key: 'payment_pending', label: 'Payment Review' },
-    { key: 'cancellation_requested', label: 'Cancel Review' },
-    { key: 'pending', label: 'Pending' },
-    { key: 'confirmed', label: 'Confirmed' },
-    { key: 'active', label: 'Active' },
-    { key: 'completed', label: 'Completed' },
-    { key: 'cancelled', label: 'Cancelled' },
+    { key: 'all', label: language === 'vi' ? 'Tất cả' : language === 'ja' ? 'すべて' : language === 'ko' ? '전체' : language === 'zh' ? '全部' : 'All' },
+    { key: 'waiting_payment', label: getBookingStatusInfo('waiting_payment', language).label },
+    { key: 'payment_pending', label: getBookingStatusInfo('payment_pending', language).label },
+    { key: 'cancellation_requested', label: getBookingStatusInfo('cancellation_requested', language).label },
+    { key: 'pending', label: getBookingStatusInfo('pending', language).label },
+    { key: 'confirmed', label: getBookingStatusInfo('confirmed', language).label },
+    { key: 'active', label: getBookingStatusInfo('active', language).label },
+    { key: 'completed', label: getBookingStatusInfo('completed', language).label },
+    { key: 'cancelled', label: getBookingStatusInfo('cancelled', language).label },
   ];
 
   const countFor = (key: string) => key === 'all' ? bookings.length : bookings.filter(b => normalizedStatus(b.status) === key).length;
@@ -663,7 +969,7 @@ export const MyBookingsPage: React.FC = () => {
         <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filtered.map(booking => {
             const status = normalizedStatus(booking.status);
-            const sc = statusConfig[status] || statusConfig['pending'];
+            const sc = getBookingStatusInfo(status, language);
             const canCancel = ['pending', 'waiting_payment', 'payment_pending', 'confirmed', 'payment_rejected', 'owner_approved', 'ready_for_pickup'].includes(status);
             const canViewContract = ['waiting_payment', 'payment_pending', 'payment_verified', 'confirmed', 'active', 'completed', 'owner_approved', 'ready_for_pickup', 'checked_out', 'in_rental', 'return_pending', 'return_completed'].includes(status);
             const canTrack = ['active', 'ready_for_pickup', 'checked_out', 'in_rental', 'return_pending'].includes(status);

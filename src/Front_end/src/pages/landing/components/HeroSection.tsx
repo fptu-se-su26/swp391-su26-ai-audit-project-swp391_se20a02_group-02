@@ -6,6 +6,7 @@ import {
   Shield, Sparkles, FileText, Lock, BadgeCheck, Headphones
 } from 'lucide-react';
 import type { HomeStats } from '@/services/homeService';
+import { useT } from '@/i18n/translations';
 
 const staggerContainer = {
   hidden: {},
@@ -24,11 +25,11 @@ const TrustBadges: React.FC = () => (
     {[
       { icon: BadgeCheck, label: 'KYC Verified Owners' },
       { icon: FileText, label: 'Digital Contracts' },
-      { icon: Lock, label: 'Secure VNPay Payments' },
-      { icon: Headphones, label: '24/7 Customer Support' },
+      { icon: Lock, label: 'VNPay Secured' },
+      { icon: Headphones, label: '24/7 Support' },
     ].map(({ icon: Icon, label }) => (
-      <div key={label} className="flex items-center gap-1.5 text-white/75 text-xs font-medium">
-        <Icon className="w-3.5 h-3.5 text-emerald-400" />
+      <div key={label} className="flex items-center gap-1.5 text-white/60 text-xs font-medium">
+        <Icon className="w-3.5 h-3.5 text-amber-400" />
         <span>{label}</span>
       </div>
     ))}
@@ -60,6 +61,7 @@ interface HeroSectionProps {
 
 export const HeroSection: React.FC<HeroSectionProps> = ({ stats }) => {
   const navigate = useNavigate();
+  const t = useT();
   const { scrollY } = useScroll();
   const y = useTransform(scrollY, [0, 600], [0, 180]);
   const opacity = useTransform(scrollY, [0, 450], [1, 0]);
@@ -77,16 +79,16 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ stats }) => {
   ];
 
   useEffect(() => {
-    const t = setInterval(() => setHeroImage(p => (p + 1) % HERO_IMAGES.length), 6000);
-    return () => clearInterval(t);
+    const timer = setInterval(() => setHeroImage(p => (p + 1) % HERO_IMAGES.length), 6000);
+    return () => clearInterval(timer);
   }, []);
 
   const handleSearch = () => {
     const p = new URLSearchParams();
-    if (location) p.set('location', location);
-    if (vehicleType) p.set('category', vehicleType);
-    if (startDate) p.set('startDate', startDate);
-    if (endDate) p.set('endDate', endDate);
+    if (location) p.append('city', location);
+    if (vehicleType) p.append('type', vehicleType);
+    if (startDate) p.append('startDate', startDate);
+    if (endDate) p.append('endDate', endDate);
     navigate(`/marketplace?${p.toString()}`);
   };
 
@@ -138,7 +140,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ stats }) => {
             className="inline-flex items-center gap-2 px-4 py-2 border border-white/20 rounded-full bg-white/10 backdrop-blur-sm text-white/90 text-xs font-semibold tracking-widest uppercase mb-6"
           >
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            Vietnam's Premier Vehicle Rental Platform
+            {t.hero?.badge || "VIETNAM'S PREMIER VEHICLE RENTAL PLATFORM"}
           </motion.div>
 
           {/* H1 */}
@@ -147,12 +149,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ stats }) => {
             className="font-extrabold text-white leading-none tracking-tight mb-5"
             style={{ fontSize: 'clamp(2.5rem, 7vw, 5.5rem)' }}
           >
-            Explore Vietnam{' '}
+            {t.hero?.title1 || 'Explore Vietnam'}{' '}
             <span
               className="block"
               style={{ background: 'linear-gradient(90deg,#D4AF37,#F5D547)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
             >
-              Your Way.
+              {t.hero?.title2 || 'Your Way.'}
             </span>
           </motion.h1>
 
@@ -161,8 +163,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ stats }) => {
             variants={staggerItem}
             className="text-white/70 text-lg max-w-2xl mx-auto mb-8 leading-relaxed"
           >
-            Rent the perfect car or motorbike for any journey — delivered to your door.
-            KYC-verified owners, digital contracts, and VNPay secured.
+            {t.hero?.subtitle || 'Rent the perfect car or motorbike for any journey — delivered to your door.'}
           </motion.p>
 
           {/* Search card */}

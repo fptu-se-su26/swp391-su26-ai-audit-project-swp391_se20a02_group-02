@@ -16,6 +16,7 @@ const LOCALIZATION: Record<string, Record<string, string>> = {
     roleCustomer: 'Customer',
     roleOwner: 'Vehicle Owner',
     roleAdmin: 'Admin',
+    dashboard: 'Dashboard',
     myBookings: 'My Bookings',
     favorites: 'Favorites',
     profile: 'Profile',
@@ -33,6 +34,7 @@ const LOCALIZATION: Record<string, Record<string, string>> = {
     roleCustomer: 'Khách hàng',
     roleOwner: 'Chủ xe',
     roleAdmin: 'Quản trị viên',
+    dashboard: 'Bảng điều khiển',
     myBookings: 'Chuyến đi của tôi',
     favorites: 'Yêu thích',
     profile: 'Hồ sơ',
@@ -50,6 +52,7 @@ const LOCALIZATION: Record<string, Record<string, string>> = {
     roleCustomer: '顧客',
     roleOwner: '車両オーナー',
     roleAdmin: '管理者',
+    dashboard: 'ダッシュボード',
     myBookings: 'マイブッキング',
     favorites: 'お気に入り',
     profile: 'プロフィール',
@@ -67,6 +70,7 @@ const LOCALIZATION: Record<string, Record<string, string>> = {
     roleCustomer: '고객',
     roleOwner: '차량 소유자',
     roleAdmin: '관리자',
+    dashboard: '대시보드',
     myBookings: '내 예약',
     favorites: '즐겨찾기',
     profile: '프로필',
@@ -84,6 +88,7 @@ const LOCALIZATION: Record<string, Record<string, string>> = {
     roleCustomer: '客户',
     roleOwner: '车主',
     roleAdmin: '管理员',
+    dashboard: '控制台',
     myBookings: '我的预订',
     favorites: '我的收藏',
     profile: '个人资料',
@@ -101,6 +106,7 @@ const LOCALIZATION: Record<string, Record<string, string>> = {
     roleCustomer: 'Client',
     roleOwner: 'Propriétaire',
     roleAdmin: 'Admin',
+    dashboard: 'Tableau de bord',
     myBookings: 'Mes Réservations',
     favorites: 'Favoris',
     profile: 'Profil',
@@ -118,6 +124,7 @@ const LOCALIZATION: Record<string, Record<string, string>> = {
     roleCustomer: 'Kunde',
     roleOwner: 'Fahrzeugbesitzer',
     roleAdmin: 'Administrator',
+    dashboard: 'Dashboard',
     myBookings: 'Meine Buchungen',
     favorites: 'Favoriten',
     profile: 'Profil',
@@ -135,6 +142,7 @@ const LOCALIZATION: Record<string, Record<string, string>> = {
     roleCustomer: 'Cliente',
     roleOwner: 'Propietario',
     roleAdmin: 'Admin',
+    dashboard: 'Panel de Control',
     myBookings: 'Mis Reservas',
     favorites: 'Favoritos',
     profile: 'Perfil',
@@ -204,8 +212,8 @@ export const NavbarDropdown: React.FC<NavbarDropdownProps> = ({ isOpen, onClose 
   } else {
     // Customer
     menuItems = [
-      { icon: Calendar, label: 'Dashboard', href: '/dashboard' },
-      { icon: User, label: 'Profile', href: '/dashboard/profile' },
+      { icon: Calendar, label: l.dashboard || 'Dashboard', href: '/dashboard' },
+      { icon: User, label: l.profile || 'Profile', href: '/dashboard/profile' },
     ];
   }
 
@@ -280,7 +288,7 @@ export const NavbarDropdown: React.FC<NavbarDropdownProps> = ({ isOpen, onClose 
               className="flex items-center gap-3.5 w-full px-4 py-3 rounded-2xl text-sm font-black text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all duration-200"
             >
               <LogOut className="w-5 h-5" />
-              <span>Logout</span>
+              <span>{l.logout || 'Logout'}</span>
             </button>
           </div>
         </motion.div>

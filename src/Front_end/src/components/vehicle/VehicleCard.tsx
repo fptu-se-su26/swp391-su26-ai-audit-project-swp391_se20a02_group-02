@@ -6,7 +6,7 @@ import {
   ChevronLeft, ChevronRight, BadgePercent, CheckCircle2, Award 
 } from 'lucide-react';
 import type { Vehicle } from '@/types';
-import { useVehicleStore, useAuthStore } from '@/store';
+import { useVehicleStore, useAuthStore, useUIStore } from '@/store';
 import { useToast } from '@/components/ui/Toast';
 import { cn, formatCurrency, resolveImageUrl, sanitizeLocation } from '@/utils';
 import { cardHoverVariants } from '@/animations/variants';
@@ -29,6 +29,20 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
   const t = useT();
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuthStore();
+  const { language } = useUIStore();
+  const lang = language || 'en';
+
+  const vct = {
+    bookNow: lang === 'vi' ? 'Đặt ngay' : lang === 'ja' ? '今すぐ予約' : lang === 'ko' ? '지금 예약하기' : lang === 'zh' ? '立即预订' : lang === 'fr' ? 'Réserver' : lang === 'de' ? 'Jetzt buchen' : lang === 'es' ? 'Reservar' : 'Book Now',
+    compare: lang === 'vi' ? 'So sánh' : lang === 'ja' ? '比較' : lang === 'ko' ? '비교' : lang === 'zh' ? '对比' : lang === 'fr' ? 'Comparer' : lang === 'de' ? 'Vergleichen' : lang === 'es' ? 'Comparar' : 'Compare',
+    reviews: lang === 'vi' ? 'đánh giá' : lang === 'ja' ? '件のレビュー' : lang === 'ko' ? '리뷰' : lang === 'zh' ? '条评价' : lang === 'fr' ? 'avis' : lang === 'de' ? 'Bewertungen' : lang === 'es' ? 'reseñas' : 'reviews',
+    trips: lang === 'vi' ? 'chuyến' : lang === 'ja' ? '回利用' : lang === 'ko' ? '회 대여' : lang === 'zh' ? '次出行' : lang === 'fr' ? 'trajets' : lang === 'de' ? 'Fahrten' : lang === 'es' ? 'viajes' : 'trips',
+    seats: lang === 'vi' ? 'chỗ' : lang === 'ja' ? '人乗り' : lang === 'ko' ? '인승' : lang === 'zh' ? '座' : lang === 'fr' ? 'places' : lang === 'de' ? 'Sitze' : lang === 'es' ? 'plazas' : 'seats',
+    noDeposit: lang === 'vi' ? 'Không cần thế chấp' : lang === 'ja' ? '保証金不要' : lang === 'ko' ? '보증금 없음' : lang === 'zh' ? '免押金' : 'No Deposit',
+    freeCancel: lang === 'vi' ? 'Hủy miễn phí' : lang === 'ja' ? 'キャンセル無料' : lang === 'ko' ? '무료 취소' : lang === 'zh' ? '免费取消' : 'Free Cancel',
+    instant: lang === 'vi' ? 'Đặt nhanh' : lang === 'ja' ? '即時予約' : lang === 'ko' ? '즉시 예약' : lang === 'zh' ? '闪订' : 'Instant',
+  };
+
   const { isWishlisted, addToWishlist, removeFromWishlist, addToCompare } = useVehicleStore();
   const toast = useToast();
   
@@ -265,9 +279,9 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
                 <div className="flex items-center gap-1">
                   <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
                   <span className="font-bold text-foreground">{vehicle.rating || '5.0'}</span>
-                  <span>({vehicle.totalReviews || 0} reviews)</span>
+                  <span>({vehicle.totalReviews || 0} {vct.reviews})</span>
                   <span className="text-slate-350 dark:text-slate-600">•</span>
-                  <span className="font-medium text-slate-600 dark:text-slate-300">{vehicle.totalBookings || Math.floor(Math.random() * 20) + 5} trips</span>
+                  <span className="font-medium text-slate-600 dark:text-slate-300">{vehicle.totalBookings || Math.floor(Math.random() * 20) + 5} {vct.trips}</span>
                 </div>
               </div>
 
@@ -277,7 +291,7 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
                     <span className="flex items-center gap-0.5"><Zap className="w-3 h-3" /> {vehicle.specs.horsepower} hp</span>
                   )}
                   {vehicle.specs?.seats && (
-                    <span className="flex items-center gap-0.5"><Users className="w-3 h-3" /> {vehicle.specs.seats} seats</span>
+                    <span className="flex items-center gap-0.5"><Users className="w-3 h-3" /> {vehicle.specs.seats} {vct.seats}</span>
                   )}
                   {vehicle.specs?.transmission && (
                     <span className="capitalize">{vehicle.specs.transmission}</span>
@@ -289,7 +303,7 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
                     onClick={handleCompare}
                     className="p-2 border border-slate-200 dark:border-slate-700 hover:border-accent hover:text-accent rounded-xl text-xs transition-colors"
                   >
-                    Compare
+                    {vct.compare}
                   </button>
                 )}
               </div>
@@ -424,9 +438,9 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
               <Star className="w-3 h-3 fill-yellow-400 text-yellow-400 mr-0.5" />
               <span className="text-[11px] font-bold text-yellow-700 dark:text-yellow-400">{vehicle.rating || '5.0'}</span>
             </div>
-            <span className="text-[11px] text-slate-400">({vehicle.totalReviews || 0} reviews)</span>
+            <span className="text-[11px] text-slate-400">({vehicle.totalReviews || 0} {vct.reviews})</span>
             <span className="text-slate-300 dark:text-slate-700">•</span>
-            <span className="text-[11px] font-medium text-slate-500">{vehicle.totalBookings || Math.floor(Math.random() * 15) + 3} trips</span>
+            <span className="text-[11px] font-medium text-slate-500">{vehicle.totalBookings || Math.floor(Math.random() * 15) + 3} {vct.trips}</span>
           </div>
 
           {/* Spec details strip */}
@@ -440,7 +454,7 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
             {vehicle.specs?.seats ? (
               <div className="flex items-center gap-0.5">
                 <Users className="w-3 h-3 text-slate-400" />
-                <span>{vehicle.specs.seats} seats</span>
+                <span>{vehicle.specs.seats} {vct.seats}</span>
               </div>
             ) : null}
             {vehicle.specs?.transmission && (
@@ -454,17 +468,17 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
           <div className="flex flex-wrap gap-1 mb-4 h-5 overflow-hidden">
             {vehicle.instantBook && (
               <span className="text-[9px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded flex items-center gap-0.25">
-                ⚡ Instant
+                ⚡ {vct.instant}
               </span>
             )}
             {freeCancellation && (
               <span className="text-[9px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded">
-                Free Cancel
+                {vct.freeCancel}
               </span>
             )}
             {noDeposit && (
               <span className="text-[9px] font-bold bg-purple-500/10 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 rounded">
-                No Deposit
+                {vct.noDeposit}
               </span>
             )}
           </div>
@@ -472,14 +486,14 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
           {/* Actions */}
           <div className="flex gap-2">
             <span className="btn-primary flex-1 py-2 text-xs font-semibold text-center rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm">
-              {t.marketplace.bookNow}
+              {vct.bookNow}
             </span>
             {showCompare && (
               <button
                 onClick={handleCompare}
                 className="px-2.5 py-2 border border-slate-200 dark:border-slate-800 hover:border-accent hover:text-accent rounded-xl text-[11px] text-foreground font-medium transition-colors"
               >
-                Compare
+                {vct.compare}
               </button>
             )}
           </div>

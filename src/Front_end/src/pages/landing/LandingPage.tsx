@@ -121,10 +121,16 @@ const TrustBadges: React.FC = () => {
 // =====================================================
 const HeroFloatingCards: React.FC<{ stats: HomeStats | null }> = ({ stats }) => {
   const t = useT();
+  const language = useUIStore((s: any) => s.language);
+  
+  const ratingText = language === 'vi' ? 'ĐÁNH GIÁ TRUNG BÌNH' : language === 'ko' ? '평균 평점' : language === 'ja' ? '平均評価' : language === 'zh' ? '平均评分' : 'AVERAGE RATING';
+  const vehiclesText = language === 'vi' ? 'XE CHẤT LƯỢNG' : language === 'ko' ? '검증된 차량' : language === 'ja' ? '高品質な車両' : language === 'zh' ? '优质车辆' : 'QUALITY VEHICLES';
+  const clientsText = language === 'vi' ? 'KHÁCH HÀNG HÀI LÒNG' : language === 'ko' ? '만족한 고객' : language === 'ja' ? '満足されたお客様' : language === 'zh' ? '满意客户' : 'HAPPY CLIENTS';
+
   const cards = [
-    { icon: Star, value: stats ? stats.averageRating.toFixed(1) : '...', label: t.landing.stats.rating, color: 'text-[#D4AF37]' },
-    { icon: Car, value: stats ? `${(stats.totalVehicles || 0)}+` : '...', label: t.landing.stats.vehicles, color: 'text-[#D4AF37]' },
-    { icon: Shield, value: stats ? `${(stats.totalCustomers || 0).toLocaleString()}+` : '...', label: t.landing.stats.clients, color: 'text-[#D4AF37]' },
+    { icon: Star, value: stats ? stats.averageRating.toFixed(1) : '...', label: t.hero?.ratingLabel || ratingText, color: 'text-[#D4AF37]' },
+    { icon: Car, value: stats ? `${(stats.totalVehicles || 0)}+` : '...', label: t.hero?.vehiclesLabel || vehiclesText, color: 'text-[#D4AF37]' },
+    { icon: Shield, value: stats ? `${(stats.totalCustomers || 0).toLocaleString()}+` : '...', label: t.hero?.clientsLabel || clientsText, color: 'text-[#D4AF37]' },
   ];
 
   return (
@@ -227,7 +233,7 @@ const HeroSection: React.FC<{ stats: HomeStats | null }> = ({ stats }) => {
             <span className="text-sm">🇻🇳</span>
             <span className="text-white/20">•</span>
             <Sparkles className="w-4 h-4 text-[#D4AF37]" />
-            {t.landing.hero.badge}
+            {t.hero?.badge || t.landingPage?.trustBadges?.kyc}
           </motion.div>
 
           {/* H1 */}
@@ -236,9 +242,9 @@ const HeroSection: React.FC<{ stats: HomeStats | null }> = ({ stats }) => {
             className="font-medium text-white leading-tight tracking-tight mb-5 display-font"
             style={{ fontSize: 'clamp(2.5rem, 6.5vw, 5rem)' }}
           >
-            {t.landing.hero.title1}{' '}
+            {t.hero?.title1 || 'Explore Vietnam'}{' '}
             <span className="block text-[#D4AF37] font-semibold mt-2">
-              {t.landing.hero.title2}
+              {t.hero?.title2 || 'Your Way.'}
             </span>
           </motion.h1>
 
@@ -247,45 +253,55 @@ const HeroSection: React.FC<{ stats: HomeStats | null }> = ({ stats }) => {
             variants={staggerItem}
             className="text-white/70 text-lg max-w-2xl mx-auto mb-8 leading-relaxed font-sans"
           >
-            {t.landing.hero.subtitle}
+            {t.hero?.subtitle}
           </motion.p>
 
           {/* Search card */}
           <motion.div
             variants={staggerItem}
-            className="w-full max-w-5xl mx-auto bg-white rounded-md shadow-lg p-2 border border-slate-100"
+            className="w-full max-w-5xl mx-auto bg-white dark:bg-slate-900 rounded-md shadow-lg p-2 border border-slate-100 dark:border-slate-800"
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2 p-1.5">
               {/* Location */}
-              <div className="lg:col-span-2 flex items-center gap-2.5 px-4 py-3.5 hover:bg-slate-50 rounded-md transition-colors">
+              <div className="lg:col-span-2 flex items-center gap-2.5 px-4 py-3.5 hover:bg-slate-50 dark:hover:bg-slate-800/60 rounded-md transition-colors">
                 <MapPin className="w-5 h-5 text-[#D4AF37] flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">{t.landing.hero.location}</p>
+                <div className="flex-1 min-w-0 text-left">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">
+                    {language === 'vi' ? 'ĐỊA ĐIỂM' : language === 'ko' ? '위치' : language === 'ja' ? '場所' : language === 'zh' ? '地点' : 'LOCATION'}
+                  </p>
                   <input
                     type="text"
                     value={location}
                     onChange={e => setLocation(e.target.value)}
-                    placeholder={t.landing.hero.locationPlaceholder}
-                    className="w-full text-sm font-semibold text-slate-800 placeholder:text-slate-350 outline-none bg-transparent"
+                    placeholder={language === 'vi' ? 'TP.HCM, Hà Nội...' : language === 'ko' ? '호치민, 하노이...' : language === 'ja' ? 'ホーチミン、ハノイ...' : language === 'zh' ? '胡志明市，河内...' : 'Ho Chi Minh, Ha Noi...'}
+                    className="w-full text-sm font-semibold text-slate-800 dark:text-white placeholder:text-slate-350 outline-none bg-transparent"
                     onKeyDown={e => e.key === 'Enter' && handleSearch()}
                   />
                 </div>
               </div>
 
               {/* Vehicle Type */}
-              <div className="flex items-center gap-2.5 px-4 py-3.5 border-l border-slate-100 hover:bg-slate-50 rounded-md transition-colors">
+              <div className="flex items-center gap-2.5 px-4 py-3.5 border-l border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 rounded-md transition-colors">
                 <Car className="w-5 h-5 text-[#D4AF37] flex-shrink-0" />
                 <div className="flex-1 text-left min-w-0">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">{t.landing.hero.category}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">
+                    {language === 'vi' ? 'DANH MỤC' : language === 'ko' ? '카테고리' : language === 'ja' ? 'カテゴリー' : language === 'zh' ? '类别' : 'CATEGORY'}
+                  </p>
                   <div className="relative flex items-center">
                     <select
                       value={vehicleType}
                       onChange={e => setVehicleType(e.target.value)}
-                      className="w-full text-sm font-semibold text-slate-800 outline-none bg-transparent cursor-pointer appearance-none pr-5 truncate"
+                      className="w-full text-sm font-semibold text-slate-800 dark:text-white outline-none bg-transparent cursor-pointer appearance-none pr-5 truncate"
                     >
-                      <option value="">{t.landing.hero.allTypes}</option>
-                      <option value="car">🚗 {language === 'vi' ? 'Ô tô' : 'Cars'}</option>
-                      <option value="motorbike">🏍️ {language === 'vi' ? 'Xe máy' : 'Motorbikes'}</option>
+                      <option value="" className="bg-white dark:bg-slate-900 text-slate-800 dark:text-white">
+                        {language === 'vi' ? 'Tất cả loại xe' : language === 'ko' ? '모든 유형' : language === 'ja' ? 'すべてのタイプ' : language === 'zh' ? '所有类型' : 'All Types'}
+                      </option>
+                      <option value="car" className="bg-white dark:bg-slate-900 text-slate-800 dark:text-white">
+                        🚗 {language === 'vi' ? 'Ô tô' : language === 'ko' ? '자동차' : language === 'ja' ? '車' : language === 'zh' ? '汽车' : 'Cars'}
+                      </option>
+                      <option value="motorbike" className="bg-white dark:bg-slate-900 text-slate-800 dark:text-white">
+                        🏍️ {language === 'vi' ? 'Xe máy' : language === 'ko' ? '오토바이' : language === 'ja' ? 'バイク' : language === 'zh' ? '摩托车' : 'Motorbikes'}
+                      </option>
                     </select>
                     <ChevronDown className="w-4 h-4 text-slate-400 absolute right-0 pointer-events-none" />
                   </div>
@@ -293,34 +309,38 @@ const HeroSection: React.FC<{ stats: HomeStats | null }> = ({ stats }) => {
               </div>
 
               {/* Pickup */}
-              <div className="flex items-center gap-2.5 px-4 py-3.5 border-l border-slate-100 hover:bg-slate-50 rounded-md transition-colors">
+              <div className="flex items-center gap-2.5 px-4 py-3.5 border-l border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 rounded-md transition-colors">
                 <Calendar className="w-5 h-5 text-[#D4AF37] flex-shrink-0" />
-                <div className="flex-1">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">{t.landing.hero.pickUp}</p>
-                  <input type="date" value={startDate} min={today}
+                <div className="flex-1 text-left">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">
+                    {t.hero?.pickUp || (language === 'vi' ? 'NGÀY NHẬN' : language === 'ko' ? '대여일' : language === 'ja' ? '受取日' : language === 'zh' ? '取车日期' : 'PICK-UP DATE')}
+                  </p>
+                  <input type="date" value={startDate} min={today} lang={language}
                     onChange={e => setStartDate(e.target.value)}
-                    className="w-full text-sm font-semibold text-slate-800 outline-none bg-transparent cursor-pointer" />
+                    className="w-full text-sm font-semibold text-slate-800 dark:text-white dark:scheme-dark outline-none bg-transparent cursor-pointer" />
                 </div>
               </div>
 
               {/* Return */}
-              <div className="flex items-center gap-2.5 px-4 py-3.5 border-l border-slate-100 hover:bg-slate-50 rounded-md transition-colors">
+              <div className="flex items-center gap-2.5 px-4 py-3.5 border-l border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 rounded-md transition-colors">
                 <Calendar className="w-5 h-5 text-[#D4AF37] flex-shrink-0" />
-                <div className="flex-1">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">{t.landing.hero.return}</p>
-                  <input type="date" value={endDate} min={startDate || today}
+                <div className="flex-1 text-left">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">
+                    {t.hero?.returnDate || (language === 'vi' ? 'NGÀY TRẢ' : language === 'ko' ? '반납일' : language === 'ja' ? '返却日' : language === 'zh' ? '还车日期' : 'RETURN DATE')}
+                  </p>
+                  <input type="date" value={endDate} min={startDate || today} lang={language}
                     onChange={e => setEndDate(e.target.value)}
-                    className="w-full text-sm font-semibold text-slate-800 outline-none bg-transparent cursor-pointer" />
+                    className="w-full text-sm font-semibold text-slate-800 dark:text-white dark:scheme-dark outline-none bg-transparent cursor-pointer" />
                 </div>
               </div>
 
               {/* Search button */}
               <button
                 onClick={handleSearch}
-                className="flex items-center justify-center gap-2 px-6 py-3.5 rounded-md font-bold text-sm text-white bg-[#0B1221] hover:bg-slate-800 transition-all duration-200 hover:scale-[1.01] active:scale-[0.99]"
+                className="flex items-center justify-center gap-2 px-6 py-3.5 rounded-md font-bold text-sm text-white bg-[#0B1221] dark:bg-[#D4AF37] dark:text-[#0B1221] dark:hover:bg-[#e5c258] hover:bg-slate-800 transition-all duration-200 hover:scale-[1.01] active:scale-[0.99]"
               >
                 <Search className="w-4 h-4" />
-                <span>{t.landing.hero.search}</span>
+                <span>{t.nav?.search || (language === 'vi' ? 'Tìm kiếm' : language === 'ko' ? '검색' : language === 'ja' ? '検索' : language === 'zh' ? '搜索' : 'Search')}</span>
               </button>
             </div>
           </motion.div>
@@ -345,7 +365,7 @@ const HeroSection: React.FC<{ stats: HomeStats | null }> = ({ stats }) => {
         className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 z-20"
       >
         <span className="text-white/50 text-xs tracking-wider uppercase">
-          {language === 'vi' ? 'Cuộn' : 'Scroll'}
+          {language === 'vi' ? 'Cuộn' : language === 'ko' ? '스크롤' : language === 'ja' ? 'スクロール' : language === 'zh' ? '向下滚动' : 'SCROLL'}
         </span>
         <ChevronDown className="w-5 h-5 text-white/50" />
       </motion.div>
@@ -413,14 +433,14 @@ const PromotionSection: React.FC<{ promotions: Promotion[]; loading: boolean }> 
   if (!loading && promotions.length === 0) return null;
 
   return (
-    <section className="py-16 bg-slate-50 overflow-hidden">
+    <section className="py-16 bg-slate-50 dark:bg-slate-900/60 overflow-hidden">
       <div className="max-w-7xl mx-auto px-6">
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="flex justify-between items-end mb-8">
           <div>
             <span className="text-xs font-bold tracking-widest uppercase text-[#D4AF37] mb-2 block">{t.landingPage.promo.offers}</span>
-            <h2 className="font-medium text-3xl md:text-4xl text-[#0B1221] display-font">{t.landingPage.promo.title}</h2>
+            <h2 className="font-medium text-3xl md:text-4xl text-[#0B1221] dark:text-white display-font">{t.landingPage.promo.title}</h2>
           </div>
-          <Link to="/marketplace" className="text-sm font-bold text-slate-500 hover:text-[#0B1221] flex items-center gap-1 transition-colors uppercase tracking-wider">
+          <Link to="/marketplace" className="text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-[#0B1221] dark:hover:text-white flex items-center gap-1 transition-colors uppercase tracking-wider">
             {t.landingPage.promo.viewAll} <ArrowRight className="w-4 h-4" />
           </Link>
         </motion.div>
@@ -458,7 +478,7 @@ const PromotionSection: React.FC<{ promotions: Promotion[]; loading: boolean }> 
               <div className="flex justify-center gap-1.5 mt-3">
                 {promotions.map((_, i) => (
                   <button key={i} onClick={() => setActive(i)}
-                    className={`transition-all rounded-full ${i === active ? 'w-5 h-1.5 bg-[#D4AF37]' : 'w-1.5 h-1.5 bg-slate-300'}`} />
+                    className={`transition-all rounded-full ${i === active ? 'w-5 h-1.5 bg-[#D4AF37]' : 'w-1.5 h-1.5 bg-slate-300 dark:bg-slate-700'}`} />
                 ))}
               </div>
             </div>
@@ -478,7 +498,7 @@ const PromotionSection: React.FC<{ promotions: Promotion[]; loading: boolean }> 
                   variants={staggerItem}
                   whileHover={{ y: -4 }}
                   transition={{ duration: 0.2 }}
-                  className="relative rounded-md overflow-hidden h-60 cursor-pointer group shadow-sm border border-slate-100 bg-white"
+                  className="relative rounded-md overflow-hidden h-60 cursor-pointer group shadow-sm border border-slate-100 dark:border-slate-800 bg-white dark:bg-[#131F35]"
                   onClick={() => navigate(promo.ctaUrl ?? '/marketplace')}
                 >
                   <img src={promo.imageUrl} alt={promo.title} className="w-full h-full object-cover transition-transform duration-750" loading="lazy" />
@@ -522,20 +542,20 @@ const TrendingSection: React.FC<{ vehicles: TrendingVehicle[]; loading: boolean 
   const scroll = (dir: number) => ref.current?.scrollBy({ left: dir * 340, behavior: 'smooth' });
 
   return (
-    <section className="py-16 bg-white overflow-hidden">
+    <section className="py-16 bg-white dark:bg-slate-950 overflow-hidden">
       <div className="max-w-7xl mx-auto px-6">
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="flex justify-between items-end mb-8">
           <div>
             <span className="text-xs font-bold tracking-widest uppercase text-[#D4AF37] mb-2 block">{t.landingPage.trending.popular}</span>
-            <h2 className="font-medium text-3xl md:text-4xl text-[#0B1221] display-font">{t.landingPage.trending.title}</h2>
-            <p className="text-slate-500 mt-1 text-sm font-sans">{t.landingPage.trending.desc}</p>
+            <h2 className="font-medium text-3xl md:text-4xl text-[#0B1221] dark:text-white display-font">{t.landingPage.trending.title}</h2>
+            <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm font-sans">{t.landingPage.trending.desc}</p>
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={() => scroll(-1)} className="w-9 h-9 rounded-md border border-slate-200 flex items-center justify-center hover:border-[#0B1221] transition-colors">
-              <ChevronLeft className="w-4 h-4 text-slate-600" />
+            <button onClick={() => scroll(-1)} className="w-9 h-9 rounded-md border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center hover:border-[#0B1221] dark:hover:border-white transition-colors">
+              <ChevronLeft className="w-4 h-4" />
             </button>
-            <button onClick={() => scroll(1)} className="w-9 h-9 rounded-md border border-slate-200 flex items-center justify-center hover:border-[#0B1221] transition-colors">
-              <ChevronRight className="w-4 h-4 text-slate-600" />
+            <button onClick={() => scroll(1)} className="w-9 h-9 rounded-md border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center hover:border-[#0B1221] dark:hover:border-white transition-colors">
+              <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         </motion.div>
@@ -548,19 +568,19 @@ const TrendingSection: React.FC<{ vehicles: TrendingVehicle[]; loading: boolean 
                 key={v.id}
                 whileHover={{ y: -4 }}
                 transition={{ duration: 0.2 }}
-                className="flex-shrink-0 w-80 bg-white border border-slate-100 rounded-md overflow-hidden cursor-pointer group shadow-sm hover:border-[#D4AF37]/35 transition-all duration-300"
+                className="flex-shrink-0 w-80 bg-white dark:bg-[#131F35] border border-slate-100 dark:border-slate-800 rounded-md overflow-hidden cursor-pointer group shadow-sm hover:border-[#D4AF37]/35 transition-all duration-300"
                 onClick={() => navigate(`/vehicles/${v.id}`)}
               >
-                <div className="relative h-52 overflow-hidden bg-slate-100">
+                <div className="relative h-52 overflow-hidden bg-slate-100 dark:bg-slate-900">
                   {v.thumbnailUrl ? (
                     <img src={v.thumbnailUrl} alt={v.name} loading="lazy"
                       className="w-full h-full object-cover transition-transform duration-750" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
                       {v.vehicleType === 'motorbike' ? (
-                        <Bike className="w-12 h-12 text-slate-300" />
+                        <Bike className="w-12 h-12 text-slate-300 dark:text-slate-700" />
                       ) : (
-                        <Car className="w-12 h-12 text-slate-300" />
+                        <Car className="w-12 h-12 text-slate-300 dark:text-slate-700" />
                       )}
                     </div>
                   )}
@@ -587,21 +607,21 @@ const TrendingSection: React.FC<{ vehicles: TrendingVehicle[]; loading: boolean 
                 <div className="p-5 font-sans">
                   <div className="flex items-center justify-between mb-1.5">
                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{v.brand}</p>
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-sm bg-slate-50 border border-slate-100 text-[10px] font-bold text-slate-500">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-sm bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-[10px] font-bold text-slate-500 dark:text-slate-400">
                       {v.vehicleType === 'motorbike' ? (language === 'vi' ? '🏍️ Xe máy' : '🏍️ Motorbike') : (language === 'vi' ? '🚗 Ô tô' : '🚗 Car')}
                     </span>
                   </div>
-                  <h3 className="font-bold text-[#0B1221] text-base leading-tight mb-2 truncate group-hover:text-[#D4AF37] transition-colors">{v.name}</h3>
-                  <p className="text-xs text-slate-550 mb-4 flex items-center gap-1.5 font-medium">
+                  <h3 className="font-bold text-[#0B1221] dark:text-white text-base leading-tight mb-2 truncate group-hover:text-[#D4AF37] transition-colors">{v.name}</h3>
+                  <p className="text-xs text-slate-550 dark:text-slate-400 mb-4 flex items-center gap-1.5 font-medium">
                     <MapPin className="w-3.5 h-3.5 text-slate-400" /> {v.city}
                   </p>
-                  <div className="flex items-center justify-between pt-3.5 border-t border-slate-100">
+                  <div className="flex items-center justify-between pt-3.5 border-t border-slate-100 dark:border-slate-800">
                     <div className="flex items-center gap-1">
                       <Star className="w-4 h-4 fill-[#D4AF37] text-[#D4AF37]" />
-                      <span className="text-sm font-bold text-slate-700">{Number(v.rating).toFixed(1)}</span>
+                      <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{Number(v.rating).toFixed(1)}</span>
                       <span className="text-xs text-slate-400">({v.totalReviews})</span>
                     </div>
-                    <div className="flex items-center gap-1.5 text-slate-500 text-xs font-semibold">
+                    <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-xs font-semibold">
                       <TrendingUp className="w-3.5 h-3.5 text-[#D4AF37]" />
                       <span>{v.totalBookings} {t.landingPage.trending.bookings}</span>
                     </div>
@@ -626,20 +646,26 @@ const LatestSection: React.FC<{ vehicles: TrendingVehicle[]; loading: boolean }>
   const scroll = (dir: number) => ref.current?.scrollBy({ left: dir * 340, behavior: 'smooth' });
 
   return (
-    <section className="py-16 bg-slate-50 overflow-hidden">
+    <section className="py-16 bg-slate-50 dark:bg-slate-900/60 overflow-hidden">
       <div className="max-w-7xl mx-auto px-6">
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="flex justify-between items-end mb-8">
           <div>
-            <span className="text-xs font-bold tracking-widest uppercase text-[#D4AF37] mb-2 block">{language === 'vi' ? 'Mới Nhất' : 'New Additions'}</span>
-            <h2 className="font-medium text-3xl md:text-4xl text-[#0B1221] display-font">{language === 'vi' ? 'Xe Vừa Được Kiểm Duyệt' : 'Latest Approved Vehicles'}</h2>
-            <p className="text-slate-500 mt-1 text-sm font-sans">{language === 'vi' ? 'Khám phá các dòng xe vừa được đưa lên hệ thống và kiểm duyệt chất lượng' : 'Explore the newly verified premium vehicles added to our fleet'}</p>
+            <span className="text-xs font-bold tracking-widest uppercase text-[#D4AF37] mb-2 block">
+              {t.landingPage.latest?.label || (language === 'vi' ? 'Mới Nhất' : 'New Additions')}
+            </span>
+            <h2 className="font-medium text-3xl md:text-4xl text-[#0B1221] dark:text-white display-font">
+              {t.landingPage.latest?.title || (language === 'vi' ? 'Xe Vừa Được Kiểm Duyệt' : 'Latest Approved Vehicles')}
+            </h2>
+            <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm font-sans">
+              {t.landingPage.latest?.desc || (language === 'vi' ? 'Khám phá các dòng xe vừa được đưa lên hệ thống và kiểm duyệt chất lượng' : 'Explore the newly verified premium vehicles added to our fleet')}
+            </p>
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={() => scroll(-1)} className="w-9 h-9 rounded-md border border-slate-200 flex items-center justify-center hover:border-[#0B1221] transition-colors">
-              <ChevronLeft className="w-4 h-4 text-slate-600" />
+            <button onClick={() => scroll(-1)} className="w-9 h-9 rounded-md border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center hover:border-[#0B1221] dark:hover:border-white transition-colors">
+              <ChevronLeft className="w-4 h-4" />
             </button>
-            <button onClick={() => scroll(1)} className="w-9 h-9 rounded-md border border-slate-200 flex items-center justify-center hover:border-[#0B1221] transition-colors">
-              <ChevronRight className="w-4 h-4 text-slate-600" />
+            <button onClick={() => scroll(1)} className="w-9 h-9 rounded-md border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center hover:border-[#0B1221] dark:hover:border-white transition-colors">
+              <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         </motion.div>
@@ -653,19 +679,19 @@ const LatestSection: React.FC<{ vehicles: TrendingVehicle[]; loading: boolean }>
                   key={v.id}
                   whileHover={{ y: -4 }}
                   transition={{ duration: 0.2 }}
-                  className="flex-shrink-0 w-80 bg-white border border-slate-100 rounded-md overflow-hidden cursor-pointer group shadow-sm hover:border-[#D4AF37]/35 transition-all duration-300"
+                  className="flex-shrink-0 w-80 bg-white dark:bg-[#131F35] border border-slate-100 dark:border-slate-800 rounded-md overflow-hidden cursor-pointer group shadow-sm hover:border-[#D4AF37]/35 transition-all duration-300"
                   onClick={() => navigate(`/vehicles/${v.id}`)}
                 >
-                  <div className="relative h-52 overflow-hidden bg-slate-100">
+                  <div className="relative h-52 overflow-hidden bg-slate-100 dark:bg-slate-900">
                     {v.thumbnailUrl ? (
                       <img src={v.thumbnailUrl} alt={v.name} loading="lazy"
                         className="w-full h-full object-cover transition-transform duration-750" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         {v.vehicleType === 'motorbike' ? (
-                          <Bike className="w-12 h-12 text-slate-300" />
+                          <Bike className="w-12 h-12 text-slate-300 dark:text-slate-700" />
                         ) : (
-                          <Car className="w-12 h-12 text-slate-300" />
+                          <Car className="w-12 h-12 text-slate-300 dark:text-slate-700" />
                         )}
                       </div>
                     )}
@@ -678,7 +704,7 @@ const LatestSection: React.FC<{ vehicles: TrendingVehicle[]; loading: boolean }>
                       )}
                       {v.instantBook && (
                         <span className="flex items-center gap-1 px-2.5 py-1 rounded-sm bg-[#D4AF37] text-[#0B1221] text-[10px] font-bold uppercase tracking-wider shadow-sm">
-                          <Zap className="w-3.5 h-3.5" /> {language === 'vi' ? 'Đặt Nhanh' : 'Instant'}
+                          <Zap className="w-3.5 h-3.5" /> {language === 'vi' ? 'Đặt Nhanh' : language === 'ko' ? '즉시 예약' : language === 'ja' ? '即時予約' : language === 'zh' ? '立即预订' : 'Instant'}
                         </span>
                       )}
                     </div>
@@ -692,21 +718,21 @@ const LatestSection: React.FC<{ vehicles: TrendingVehicle[]; loading: boolean }>
                   <div className="p-5 font-sans">
                     <div className="flex items-center justify-between mb-1.5">
                       <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{v.brand}</p>
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-sm bg-slate-50 border border-slate-100 text-[10px] font-bold text-slate-500">
-                        {v.vehicleType === 'motorbike' ? (language === 'vi' ? '🏍️ Xe máy' : '🏍️ Motorbike') : (language === 'vi' ? '🚗 Ô tô' : '🚗 Car')}
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-sm bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-[10px] font-bold text-slate-500 dark:text-slate-400">
+                        {v.vehicleType === 'motorbike' ? `🏍️ ${t.landingPage.categories?.motorbikes || 'Motorbike'}` : `🚗 ${t.landingPage.categories?.cars || 'Car'}`}
                       </span>
                     </div>
-                    <h3 className="font-bold text-[#0B1221] text-base leading-tight mb-2 truncate group-hover:text-[#D4AF37] transition-colors">{v.name}</h3>
-                    <p className="text-xs text-slate-550 mb-4 flex items-center gap-1.5 font-medium">
+                    <h3 className="font-bold text-[#0B1221] dark:text-white text-base leading-tight mb-2 truncate group-hover:text-[#D4AF37] transition-colors">{v.name}</h3>
+                    <p className="text-xs text-slate-550 dark:text-slate-400 mb-4 flex items-center gap-1.5 font-medium">
                       <MapPin className="w-3.5 h-3.5 text-slate-400" /> {v.city}
                     </p>
-                    <div className="flex items-center justify-between pt-3.5 border-t border-slate-100">
+                    <div className="flex items-center justify-between pt-3.5 border-t border-slate-100 dark:border-slate-800">
                       <div className="flex items-center gap-1">
                         <Star className="w-4 h-4 fill-[#D4AF37] text-[#D4AF37]" />
-                        <span className="text-sm font-bold text-slate-700">{Number(v.rating).toFixed(1)}</span>
+                        <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{Number(v.rating).toFixed(1)}</span>
                         <span className="text-xs text-slate-400">({v.totalReviews})</span>
                       </div>
-                      <div className="flex items-center gap-1.5 text-slate-500 text-xs font-semibold">
+                      <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-xs font-semibold">
                         <TrendingUp className="w-3.5 h-3.5 text-[#D4AF37]" />
                         <span>{v.totalBookings} {t.landingPage.trending.bookings}</span>
                       </div>
@@ -716,7 +742,7 @@ const LatestSection: React.FC<{ vehicles: TrendingVehicle[]; loading: boolean }>
               ))
             ) : (
               <div className="w-full text-center py-8 text-slate-400 font-medium font-sans">
-                {language === 'vi' ? 'Không có xe mới nào.' : 'No new vehicles found.'}
+                {t.landingPage.latest?.empty || (language === 'vi' ? 'Không có xe mới nào.' : 'No new vehicles found.')}
               </div>
             ))
           }
@@ -835,12 +861,12 @@ const CategoriesSection: React.FC<{ data: CategoryData | null }> = ({ data }) =>
   const t = useT();
 
   return (
-    <section className="py-16 bg-slate-50">
+    <section className="py-16 bg-slate-50 dark:bg-slate-900/60">
       <div className="max-w-7xl mx-auto px-6">
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="mb-10">
           <span className="text-xs font-bold tracking-widest uppercase text-[#D4AF37] mb-2 block">{t.landingPage.categories.fleet}</span>
-          <h2 className="font-medium text-3xl md:text-4xl text-[#0B1221] display-font">{t.landingPage.categories.title}</h2>
-          <p className="text-slate-550 mt-1 text-sm font-sans">{t.landingPage.categories.desc}</p>
+          <h2 className="font-medium text-3xl md:text-4xl text-[#0B1221] dark:text-white display-font">{t.landingPage.categories.title}</h2>
+          <p className="text-slate-550 dark:text-slate-400 mt-1 text-sm font-sans">{t.landingPage.categories.desc}</p>
         </motion.div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
           <CategoryGrid title="Cars" categories={CAR_CATEGORIES} counts={data?.cars ?? {}} />
@@ -899,14 +925,14 @@ const DestinationsSection: React.FC<{ destinations: Destination[]; loading: bool
   const t = useT();
 
   return (
-    <section className="py-16 bg-white">
+    <section className="py-16 bg-white dark:bg-slate-950">
       <div className="max-w-7xl mx-auto px-6">
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="flex justify-between items-end mb-8">
           <div>
             <span className="text-xs font-bold tracking-widest uppercase text-[#D4AF37] mb-2 block">{t.landingPage.destinations.top}</span>
-            <h2 className="font-medium text-3xl md:text-4xl text-[#0B1221] display-font">{t.landingPage.destinations.title}</h2>
+            <h2 className="font-medium text-3xl md:text-4xl text-[#0B1221] dark:text-white display-font">{t.landingPage.destinations.title}</h2>
           </div>
-          <Link to="/marketplace" className="text-sm font-bold text-slate-500 hover:text-[#0B1221] flex items-center gap-1 transition-colors uppercase tracking-wider">
+          <Link to="/marketplace" className="text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-[#0B1221] dark:hover:text-white flex items-center gap-1 transition-colors uppercase tracking-wider">
             {t.landingPage.destinations.viewAll} <ArrowRight className="w-4 h-4" />
           </Link>
         </motion.div>
@@ -1015,12 +1041,12 @@ const HowItWorksSection: React.FC = () => {
   ];
 
   return (
-    <section className="py-20 bg-slate-50">
+    <section className="py-20 bg-slate-50 dark:bg-slate-900/60">
       <div className="max-w-7xl mx-auto px-6">
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-14">
           <span className="text-xs font-bold tracking-widest uppercase text-[#D4AF37] mb-3 block">{t.landingPage.howItWorks.seamless}</span>
-          <h2 className="font-medium text-3xl md:text-5xl text-[#0B1221] mb-4 display-font">{t.landingPage.howItWorks.title}</h2>
-          <p className="text-slate-500 max-w-lg mx-auto text-sm font-sans">{t.landingPage.howItWorks.desc}</p>
+          <h2 className="font-medium text-3xl md:text-5xl text-[#0B1221] dark:text-white mb-4 display-font">{t.landingPage.howItWorks.title}</h2>
+          <p className="text-slate-500 dark:text-slate-400 max-w-lg mx-auto text-sm font-sans">{t.landingPage.howItWorks.desc}</p>
         </motion.div>
         <motion.div
           variants={staggerContainer}
@@ -1035,18 +1061,18 @@ const HowItWorksSection: React.FC = () => {
               variants={staggerItem}
               whileHover={{ y: -3 }}
               transition={{ duration: 0.2 }}
-              className="relative bg-white rounded-md p-7 shadow-sm border border-slate-100 text-center group hover:border-[#D4AF37]/35 transition-colors duration-300"
+              className="relative bg-white dark:bg-[#131F35] rounded-md p-7 shadow-sm border border-slate-100 dark:border-slate-800 text-center group hover:border-[#D4AF37]/35 transition-colors duration-300"
             >
               <div className="absolute -top-5 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-[#0B1221] text-[#D4AF37] border border-[#D4AF37]/30 text-xs font-bold flex items-center justify-center shadow-sm">
                 {step.num}
               </div>
-              <div className={`w-14 h-14 ${step.bg} rounded-md flex items-center justify-center mx-auto mb-5 transition-transform`}>
-                <step.icon className={`w-6 h-6 ${step.iconColor}`} />
+              <div className={`w-14 h-14 ${step.bg} dark:bg-slate-900 rounded-md flex items-center justify-center mx-auto mb-5 transition-transform`}>
+                <step.icon className={`w-6 h-6 ${step.iconColor} dark:text-[#D4AF37]`} />
               </div>
-              <h3 className="font-bold text-[#0B1221] text-base mb-2">{step.title}</h3>
-              <p className="text-slate-500 text-xs leading-relaxed">{step.desc}</p>
+              <h3 className="font-bold text-[#0B1221] dark:text-white text-base mb-2">{step.title}</h3>
+              <p className="text-slate-500 dark:text-slate-400 text-xs leading-relaxed">{step.desc}</p>
               {i < steps.length - 1 && (
-                <div className="hidden lg:block absolute top-1/2 -right-3 w-6 h-0.5 bg-slate-200" />
+                <div className="hidden lg:block absolute top-1/2 -right-3 w-6 h-0.5 bg-slate-200 dark:bg-slate-800" />
               )}
             </motion.div>
           ))}
@@ -1069,10 +1095,10 @@ const InsuranceSection: React.FC = () => {
   const t = useT();
 
   const items = [
-    { icon: Shield, title: `${t.landingPage.insurance.stat1Label} (${t.landingPage.insurance.stat1Val})`, desc: t.landingPage.insurance.desc, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { icon: BadgeCheck, title: t.landingPage.insurance.kyc, desc: t.landingPage.insurance.kycDesc, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { icon: AlertTriangle, title: t.landingPage.insurance.fraud, desc: t.landingPage.insurance.fraudDesc, color: 'text-amber-600', bg: 'bg-amber-50' },
-    { icon: Headphones, title: t.landingPage.insurance.hotline, desc: t.landingPage.insurance.hotlineDesc, color: 'text-rose-600', bg: 'bg-rose-50' },
+    { icon: Shield, title: `${t.landingPage.insurance.stat1Label} (${t.landingPage.insurance.stat1Val})`, desc: t.landingPage.insurance.desc, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-950/30' },
+    { icon: BadgeCheck, title: t.landingPage.insurance.kyc, desc: t.landingPage.insurance.kycDesc, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-950/30' },
+    { icon: AlertTriangle, title: t.landingPage.insurance.fraud, desc: t.landingPage.insurance.fraudDesc, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-950/30' },
+    { icon: Headphones, title: t.landingPage.insurance.hotline, desc: t.landingPage.insurance.hotlineDesc, color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-50 dark:bg-rose-950/30' },
   ];
 
   const stats = [
@@ -1083,7 +1109,7 @@ const InsuranceSection: React.FC = () => {
   ];
 
   return (
-    <section className="py-20 bg-white">
+    <section className="py-20 bg-white dark:bg-slate-950">
       <div className="max-w-7xl mx-auto px-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
           {/* Left content */}
@@ -1091,10 +1117,10 @@ const InsuranceSection: React.FC = () => {
             <motion.span variants={staggerItem} className="text-xs font-bold tracking-widest uppercase text-[#D4AF37] mb-3 block">
               {t.landingPage.insurance.safety}
             </motion.span>
-            <motion.h2 variants={staggerItem} className="font-medium text-3xl md:text-4xl text-[#0B1221] mb-4 display-font">
+            <motion.h2 variants={staggerItem} className="font-medium text-3xl md:text-4xl text-[#0B1221] dark:text-white mb-4 display-font">
               {t.landingPage.insurance.title}
             </motion.h2>
-            <motion.p variants={staggerItem} className="text-slate-550 mb-8 leading-relaxed text-sm font-sans">
+            <motion.p variants={staggerItem} className="text-slate-550 dark:text-slate-400 mb-8 leading-relaxed text-sm font-sans">
               {t.landingPage.insurance.desc}
             </motion.p>
             <motion.div variants={staggerContainer} className="space-y-4 font-sans">
@@ -1104,8 +1130,8 @@ const InsuranceSection: React.FC = () => {
                     <Icon className={`w-5 h-5 ${color}`} />
                   </div>
                   <div>
-                    <p className="font-bold text-[#0B1221] text-base">{title}</p>
-                    <p className="text-slate-500 text-xs leading-relaxed">{desc}</p>
+                    <p className="font-bold text-[#0B1221] dark:text-white text-base">{title}</p>
+                    <p className="text-slate-500 dark:text-slate-400 text-xs leading-relaxed">{desc}</p>
                   </div>
                 </motion.div>
               ))}
@@ -1124,11 +1150,11 @@ const InsuranceSection: React.FC = () => {
               <motion.div
                 key={label}
                 variants={staggerItem}
-                className="p-6 bg-slate-50 rounded-md border border-slate-100 hover:border-[#D4AF37]/35 transition-colors"
+                className="p-6 bg-slate-50 dark:bg-[#131F35] rounded-md border border-slate-100 dark:border-slate-800 hover:border-[#D4AF37]/35 transition-colors"
               >
-                <p className="font-bold text-2xl text-[#0B1221] mb-1">{value}</p>
-                <p className="font-semibold text-slate-700 text-sm">{label}</p>
-                <p className="text-slate-500 text-xs font-medium">{sub}</p>
+                <p className="font-bold text-2xl text-[#0B1221] dark:text-white mb-1">{value}</p>
+                <p className="font-semibold text-slate-700 dark:text-slate-300 text-sm">{label}</p>
+                <p className="text-slate-500 dark:text-slate-400 text-xs font-medium">{sub}</p>
               </motion.div>
             ))}
           </motion.div>
@@ -1265,7 +1291,7 @@ const BecomeOwnerSection: React.FC<{ ownerStats: OwnerStats | null }> = ({ owner
   ];
 
   return (
-    <section className="py-20 bg-white">
+    <section className="py-20 bg-white dark:bg-slate-950">
       <div className="max-w-7xl mx-auto px-6">
         <div className="rounded-md overflow-hidden bg-[#0B1221] flex flex-col lg:flex-row shadow-lg">
           {/* Left */}
@@ -1350,59 +1376,119 @@ const FAQSection: React.FC<{ faqs: FAQ[]; loading: boolean }> = ({ faqs, loading
   const DEFAULT_FAQS: FAQ[] = [
     {
       id: 1,
-      q: language === 'vi' ? 'LuxeWay xác minh danh tính chủ xe như thế nào?' : 'How does LuxeWay verify vehicle owners?',
-      a: language === 'vi' ? 'Tất cả chủ xe phải hoàn thành quy trình xác thực KYC nghiêm ngặt: cung cấp căn cước công dân/hộ chiếu, số điện thoại, tài khoản ngân hàng và giấy tờ xe trước khi tin đăng được duyệt.' : 'All owners complete a rigorous KYC process: government ID, phone verification, bank account check, and vehicle document review before any listing goes live.'
+      q: language === 'vi' ? 'LuxeWay xác minh danh tính chủ xe như thế nào?'
+        : language === 'ko' ? 'LuxeWay는 파트너(차주)의 신원을 어떻게 검증하나요?'
+        : language === 'ja' ? 'LuxeWayはどのようにオーナーの本人確認を行いますか？'
+        : language === 'zh' ? 'LuxeWay 如何验证车主身份？'
+        : language === 'fr' ? 'Comment LuxeWay vérifie-t-il les propriétaires de véhicules ?'
+        : 'How does LuxeWay verify vehicle owners?',
+      a: language === 'vi' ? 'Tất cả chủ xe phải hoàn thành quy trình xác thực KYC nghiêm ngặt: cung cấp căn cước công dân/hộ chiếu, số điện thoại, tài khoản ngân hàng và giấy tờ xe trước khi tin đăng được duyệt.'
+        : language === 'ko' ? '모든 차주는 등록 전 정부 발행 신분증, 전화번호 인증, 계좌 확인 및 차량 서류 검토를 포함한 엄격한 KYC 절차를 완료해야 합니다.'
+        : language === 'ja' ? 'すべてのオーナーは、掲載前に身分証明書、電話番号認証、銀行口座確認、車両書類審査を含む厳格なKYCプロセスを完了しています。'
+        : language === 'zh' ? '所有车主在发布车辆前，均须完成严格的KYC实名认证：提供身份证/护照、手机号验证、银行账户及车辆证件审核。'
+        : language === 'fr' ? 'Tous les propriétaires suivent un processus KYC rigoureux : pièce d\'identité, vérification du téléphone, compte bancaire et documents du véhicule.'
+        : 'All owners complete a rigorous KYC process: government ID, phone verification, bank account check, and vehicle document review before any listing goes live.'
     },
     {
       id: 2,
-      q: language === 'vi' ? 'Mỗi chuyến thuê xe bao gồm những gói bảo hiểm nào?' : 'What insurance is included in every rental?',
-      a: language === 'vi' ? 'Mỗi chuyến xe thuê trên LuxeWay đều được tích hợp sẵn gói bảo hiểm bảo vệ chuyến đi lên tới 500 triệu VND từ các đối tác bảo hiểm của chúng tôi. Bạn cũng có thể chọn mua gói nâng cấp khi đặt xe.' : 'All rentals include baseline coverage up to ₫500M per trip via our partner insurers. Additional premium coverage is available at booking.'
+      q: language === 'vi' ? 'Mỗi chuyến thuê xe bao gồm những gói bảo hiểm nào?'
+        : language === 'ko' ? '모든 대여에는 어떤 보험이 포함되어 있나요?'
+        : language === 'ja' ? '各レンタルにはどのような保険が含まれていますか？'
+        : language === 'zh' ? '每笔租车订单包含哪些保险保障？'
+        : language === 'fr' ? 'Quelle assurance est incluse dans chaque location ?'
+        : 'What insurance is included in every rental?',
+      a: language === 'vi' ? 'Mỗi chuyến xe thuê trên LuxeWay đều được tích hợp sẵn gói bảo hiểm bảo vệ chuyến đi lên tới 500 triệu VND từ các đối tác bảo hiểm của chúng tôi. Bạn cũng có thể chọn mua gói nâng cấp khi đặt xe.'
+        : language === 'ko' ? 'LuxeWay의 모든 대여에는 제휴 보험사를 통한 최대 5억₫ 보장의 기본 여행 보호 보험이 포함되어 있습니다. 예약 시 추가 옵션을 선택할 수 있습니다.'
+        : language === 'ja' ? 'LuxeWayでのすべての予約には、提携保険会社による最大5億₫の基本補償が含まれています。予約時にアップグレードオプションも選択可能です。'
+        : language === 'zh' ? 'LuxeWay 上的每笔订单均包含由合作保险公司提供的最高 5 亿₫ 基础行程保险。您在预订时亦可选择升级保障方案。'
+        : language === 'fr' ? 'Toutes les locations incluent une couverture de base jusqu\'à 500M₫ via nos assureurs partenaires. Une couverture supplémentaire est disponible.'
+        : 'All rentals include baseline coverage up to ₫500M per trip via our partner insurers. Additional premium coverage is available at booking.'
     },
     {
       id: 3,
-      q: language === 'vi' ? 'Tôi có thể hủy đơn đặt xe của mình không?' : 'Can I cancel my booking?',
-      a: language === 'vi' ? 'Có. Bạn có thể hủy chuyến đi miễn phí tối đa 48 giờ trước khi nhận xe. Việc hủy chuyến trong vòng 48 giờ trước giờ nhận xe có thể phải chịu một khoản phí nhỏ theo chính sách của từng xe.' : 'Free cancellation is available up to 48 hours before pickup. Cancellations within 48 hours may be subject to a partial fee per the vehicle\'s policy.'
+      q: language === 'vi' ? 'Tôi có thể hủy đơn đặt xe của mình không?'
+        : language === 'ko' ? '예약을 취소할 수 있나요?'
+        : language === 'ja' ? '予約をキャンセルすることはできますか？'
+        : language === 'zh' ? '我可以取消我的预订吗？'
+        : language === 'fr' ? 'Puis-je annuler ma réservation ?'
+        : 'Can I cancel my booking?',
+      a: language === 'vi' ? 'Có. Bạn có thể hủy chuyến đi miễn phí tối đa 48 giờ trước khi nhận xe. Việc hủy chuyến trong vòng 48 giờ trước giờ nhận xe có thể phải chịu một khoản phí nhỏ theo chính sách của từng xe.'
+        : language === 'ko' ? '네. 픽업 48시간 전까지는 무료 취소가 가능합니다. 픽업 전 48시간 이내 취소 시 차량 정책에 따라 소정의 수수료가 부과될 수 있습니다.'
+        : language === 'ja' ? 'はい。受取の48時間前までは無料でキャンセル可能です。48時間以内のキャンセルには、車両規定に応じた手数料が発生する場合があります。'
+        : language === 'zh' ? '可以。取车前48小时以上可免费取消预订。取车前48小时以内取消，将根据具体车辆的取消政策收取少量费用。'
+        : language === 'fr' ? 'Oui. L\'annulation gratuite est disponible jusqu\'à 48 heures avant la prise en charge. Des frais réduits s\'appliquent ensuite.'
+        : 'Free cancellation is available up to 48 hours before pickup. Cancellations within 48 hours may be subject to a partial fee per the vehicle\'s policy.'
     },
     {
       id: 4,
-      q: language === 'vi' ? 'Dịch vụ giao xe tận nơi hoạt động thế nào?' : 'How does door-to-door delivery work?',
-      a: language === 'vi' ? 'Các chủ xe có bật tính năng giao xe sẽ mang xe đến tận địa chỉ của bạn. Phí giao xe được hiển thị minh bạch tại trang thanh toán và được tính dựa trên khoảng cách di chuyển.' : 'Owners who have enabled delivery will bring the vehicle to your address. Delivery fees are shown transparently at checkout and vary by distance.'
+      q: language === 'vi' ? 'Dịch vụ giao xe tận nơi hoạt động thế nào?'
+        : language === 'ko' ? '도어투도어 배송 서비스는 어떻게 작동하나요?'
+        : language === 'ja' ? 'ドアツードアの配達サービスはどのように利用できますか？'
+        : language === 'zh' ? '送车上门服务是如何运作的？'
+        : language === 'fr' ? 'Comment fonctionne la livraison à domicile ?'
+        : 'How does door-to-door delivery work?',
+      a: language === 'vi' ? 'Các chủ xe có bật tính năng giao xe sẽ mang xe đến tận địa chỉ của bạn. Phí giao xe được hiển thị minh bạch tại trang thanh toán và được tính dựa trên khoảng cách di chuyển.'
+        : language === 'ko' ? '배송 옵션을 활성화한 차주가 요청하신 주소로 차량을 직접 전달해 드립니다. 배송비는 거리에 따라 결제 페이지에 투명하게 표시됩니다.'
+        : language === 'ja' ? '配達機能を有効にしているオーナーが、ご指定の住所まで車両をお届けします。配達料は距離に応じて決済画面に明確に表示されます。'
+        : language === 'zh' ? '支持送车上门的车主会将车辆直接送到您的指定地址。送车费用在结算页面根据距离透明展示。'
+        : language === 'fr' ? 'Les propriétaires proposant la livraison vous amèneront le véhicule à votre adresse. Les frais sont calculés selon la distance.'
+        : 'Owners who have enabled delivery will bring the vehicle to your address. Delivery fees are shown transparently at checkout and vary by distance.'
     },
     {
       id: 5,
-      q: language === 'vi' ? 'Thanh toán có an toàn không và được xử lý như thế nào?' : 'How are payments processed and is it secure?',
-      a: language === 'vi' ? 'LuxeWay tích hợp cổng thanh toán VNPay được mã hóa bảo mật cấp ngân hàng. Số tiền thanh toán sẽ được giữ bảo đảm và chỉ chuyển cho chủ xe sau khi bạn nhận xe thành công.' : 'We use VNPay with bank-grade encryption. Payments are held in escrow and only released to owners after successful pickup confirmation.'
+      q: language === 'vi' ? 'Thanh toán có an toàn không và được xử lý như thế nào?'
+        : language === 'ko' ? '결제는 안전하게 처리되나요?'
+        : language === 'ja' ? '決済は安全に処理されますか？'
+        : language === 'zh' ? '支付过程是否安全，如何处理？'
+        : language === 'fr' ? 'Les paiements sont-ils sécurisés et comment sont-ils traités ?'
+        : 'How are payments processed and is it secure?',
+      a: language === 'vi' ? 'LuxeWay tích hợp cổng thanh toán VNPay được mã hóa bảo mật cấp ngân hàng. Số tiền thanh toán sẽ được giữ bảo đảm và chỉ chuyển cho chủ xe sau khi bạn nhận xe thành công.'
+        : language === 'ko' ? '은행 수준의 보안이 적용된 VNPay 결제 게이트웨이를 사용합니다. 결제 대금은 차량 수령이 정상 완료된 후 차주에게 정산됩니다.'
+        : language === 'ja' ? '銀行レベルの暗号化を備えたVNPay決済ゲートウェイを使用しています。代金は車両の受け取りが完了するまで安全に保護されます。'
+        : language === 'zh' ? '我们采用具有银行级加密的安全 VNPay 支付网关。款项将进行托管，仅在您成功取车后才会结算给车主。'
+        : language === 'fr' ? 'Nous utilisons VNPay avec cryptage de niveau bancaire. Les paiements sont conservés jusqu\'à la prise en charge réussie.'
+        : 'We use VNPay with bank-grade encryption. Payments are held in escrow and only released to owners after successful pickup confirmation.'
     },
     {
       id: 6,
-      q: language === 'vi' ? 'Nếu xảy ra tranh chấp thì xử lý thế nào?' : 'What happens if there is a dispute?',
-      a: language === 'vi' ? 'Đội ngũ hòa giải tranh chấp chuyên biệt của LuxeWay sẽ xem xét kỹ lưỡng hình ảnh bàn giao xe và lịch sử đặt xe. Hầu hết các tranh chấp đều được phân xử công bằng và dứt điểm trong vòng 24 giờ.' : 'Our dedicated dispute resolution team reviews photo evidence and trip records. Most disputes are resolved within 24 hours with full fairness to both parties.'
+      q: language === 'vi' ? 'Nếu xảy ra tranh chấp thì xử lý thế nào?'
+        : language === 'ko' ? '분쟁이 발생하면 어떻게 처리되나요?'
+        : language === 'ja' ? '万が一トラブルが発生した場合はどうなりますか？'
+        : language === 'zh' ? '如果发生纠纷如何处理？'
+        : language === 'fr' ? 'Que se passe-t-il en cas de litige ?'
+        : 'What happens if there is a dispute?',
+      a: language === 'vi' ? 'Đội ngũ hòa giải tranh chấp chuyên biệt của LuxeWay sẽ xem xét kỹ lưỡng hình ảnh bàn giao xe và lịch sử đặt xe. Hầu hết các tranh chấp đều được phân xử công bằng và dứt điểm trong vòng 24 giờ.'
+        : language === 'ko' ? 'LuxeWay의 전담 분쟁 해결팀이 차량 인수인계 사진과 예약 기록을 종합적으로 검토합니다. 대부분의 분쟁은 24시간 이내에 공정하게 처리됩니다.'
+        : language === 'ja' ? 'LuxeWayの専任紛争解決チームが、引き渡し時の写真と予約記録を慎重に調査します。ほとんどのトラブルは24時間以内に公平に解決されます。'
+        : language === 'zh' ? 'LuxeWay 专属纠纷解决团队将仔细核查车辆交接照片及订单记录。绝大多数争议都会在 24 小时内得到公正妥善的处理。'
+        : language === 'fr' ? 'Notre équipe dédiée révise les preuves photos et l\'historique du trajet. La plupart des litiges sont réglés sous 24 heures.'
+        : 'Our dedicated dispute resolution team reviews photo evidence and trip records. Most disputes are resolved within 24 hours with full fairness to both parties.'
     },
   ];
 
   const displayFaqs = faqs.length > 0 ? faqs : DEFAULT_FAQS;
 
   return (
-    <section className="py-20 bg-slate-50">
+    <section className="py-20 bg-slate-50 dark:bg-slate-900/60">
       <div className="max-w-3xl mx-auto px-6">
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-12">
           <span className="text-xs font-bold tracking-wider uppercase text-[#D4AF37] mb-3 block">{t.landingPage.faq.label}</span>
-          <h2 className="font-medium text-3xl md:text-4xl text-[#0B1221] display-font">{t.landingPage.faq.title}</h2>
+          <h2 className="font-medium text-3xl md:text-4xl text-[#0B1221] dark:text-white display-font">{t.landingPage.faq.title}</h2>
         </motion.div>
         <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true }} className="space-y-3 font-sans">
           {(loading ? Array(5).fill(null) : displayFaqs).map((faq, i) => (
             <motion.div key={faq?.id ?? i} variants={staggerItem}>
               {faq ? (
-                <div className={`bg-white rounded-md border transition-colors ${open === i ? 'border-[#D4AF37]/45' : 'border-slate-100 hover:border-[#D4AF37]/25'}`}>
+                <div className={`bg-white dark:bg-[#131F35] rounded-md border transition-colors ${open === i ? 'border-[#D4AF37]/45' : 'border-slate-100 dark:border-slate-800 hover:border-[#D4AF37]/25'}`}>
                   <button
                     onClick={() => setOpen(open === i ? null : i)}
                     className="w-full flex items-center justify-between p-5 text-left"
                     aria-expanded={open === i}
                   >
-                    <span className="font-bold text-[#0B1221] text-base pr-4">{faq.q}</span>
+                    <span className="font-bold text-[#0B1221] dark:text-white text-base pr-4">{faq.q}</span>
                     <motion.div animate={{ rotate: open === i ? 180 : 0 }} transition={{ duration: 0.2 }}
-                      className="w-7 h-7 rounded-md bg-slate-100 flex items-center justify-center flex-shrink-0">
-                      <ChevronDown className="w-4 h-4 text-slate-550" />
+                      className="w-7 h-7 rounded-md bg-slate-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0">
+                      <ChevronDown className="w-4 h-4 text-slate-550 dark:text-slate-400" />
                     </motion.div>
                   </button>
                   <AnimatePresence>
@@ -1414,12 +1500,12 @@ const FAQSection: React.FC<{ faqs: FAQ[]; loading: boolean }> = ({ faqs, loading
                         transition={{ duration: 0.25 }}
                         className="overflow-hidden"
                       >
-                        <p className="px-5 pb-5 text-slate-500 text-sm leading-relaxed">{faq.a}</p>
+                        <p className="px-5 pb-5 text-slate-500 dark:text-slate-400 text-sm leading-relaxed">{faq.a}</p>
                       </motion.div>
                     )}
                   </AnimatePresence>
                 </div>
-              ) : <Skeleton className="h-14 rounded-md" />}
+              ) : <Skeleton className="h-14 rounded-md dark:bg-slate-800" />}
             </motion.div>
           ))}
         </motion.div>
@@ -1444,7 +1530,7 @@ const Footer: React.FC = () => {
     [t.landingPage.footer.owners || 'Owners']: [
       { label: t.landingPage.footer.listVehicle || 'List Your Vehicle', href: '/owner' },
       { label: t.landingPage.footer.ownerDashboard || 'Owner Dashboard', href: '/owner/dashboard' },
-      { label: t.landingPage.owner.calculator || 'Earnings Calculator', href: '/#become-owner' },
+      { label: t.landingPage.calculator?.label || 'Earnings Calculator', href: '/#become-owner' },
     ],
     [t.landingPage.footer.support || 'Support']: [
       { label: t.landingPage.footer.helpCenter || 'Help Center', href: '/help' },
@@ -1587,26 +1673,26 @@ const VehicleTypeShowcase: React.FC = () => {
   const list = activeTab === 'cars' ? FEATURED_CARS : FEATURED_MOTORBIKES;
 
   return (
-    <section className="py-20 bg-white">
+    <section className="py-20 bg-white dark:bg-slate-950">
       <div className="max-w-7xl mx-auto px-6">
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-10">
           <span className="text-xs font-bold tracking-widest uppercase text-[#D4AF37] mb-2 block">{t.landingPage.showcase.label}</span>
-          <h2 className="font-medium text-3xl md:text-4xl text-[#0B1221] mb-3 display-font">{t.landingPage.showcase.title}</h2>
-          <p className="text-slate-550 max-w-xl mx-auto text-sm font-sans">{t.landingPage.showcase.desc}</p>
+          <h2 className="font-medium text-3xl md:text-4xl text-[#0B1221] dark:text-white mb-3 display-font">{t.landingPage.showcase.title}</h2>
+          <p className="text-slate-550 dark:text-slate-400 max-w-xl mx-auto text-sm font-sans">{t.landingPage.showcase.desc}</p>
         </motion.div>
 
         {/* Type Tabs */}
         <div className="flex justify-center mb-8 font-sans">
-          <div className="inline-flex bg-slate-100 p-1 gap-1 rounded-md">
+          <div className="inline-flex bg-slate-100 dark:bg-slate-800 p-1 gap-1 rounded-md">
             <button
               onClick={() => setActiveTab('cars')}
-              className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-xs font-bold transition-all ${activeTab === 'cars' ? 'bg-[#0B1221] shadow text-white' : 'text-slate-500 hover:text-[#0B1221]'}`}
+              className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-xs font-bold transition-all ${activeTab === 'cars' ? 'bg-[#0B1221] dark:bg-[#D4AF37] shadow text-white dark:text-[#0B1221]' : 'text-slate-500 dark:text-slate-400 hover:text-[#0B1221] dark:hover:text-white'}`}
             >
               <Car className="w-4 h-4" /> {t.landingPage.showcase.cars}
             </button>
             <button
               onClick={() => setActiveTab('motorbikes')}
-              className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-xs font-bold transition-all ${activeTab === 'motorbikes' ? 'bg-[#D4AF37] shadow text-[#0B1221]' : 'text-slate-500 hover:text-[#0B1221]'}`}
+              className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-xs font-bold transition-all ${activeTab === 'motorbikes' ? 'bg-[#D4AF37] shadow text-[#0B1221]' : 'text-slate-500 dark:text-slate-400 hover:text-[#0B1221] dark:hover:text-white'}`}
             >
               <Bike className="w-4 h-4" /> {t.landingPage.showcase.motorbikes}
             </button>
@@ -1629,24 +1715,26 @@ const VehicleTypeShowcase: React.FC = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.07 }}
                 whileHover={{ y: -3 }}
-                className="bg-white rounded-md overflow-hidden shadow-sm hover:border-[#D4AF37]/35 transition-all duration-300 cursor-pointer border border-slate-100 group"
+                className="bg-white dark:bg-[#131F35] rounded-md overflow-hidden shadow-sm hover:border-[#D4AF37]/35 transition-all duration-300 cursor-pointer border border-slate-100 dark:border-slate-800 group"
                 onClick={() => navigate(`/marketplace?type=${activeTab === 'cars' ? 'car' : 'motorbike'}&q=${encodeURIComponent(v.model)}`)}
               >
-                <div className="relative h-40 overflow-hidden bg-slate-50">
+                <div className="relative h-40 overflow-hidden bg-slate-50 dark:bg-slate-900">
                   <img src={v.img} alt={v.model} loading="lazy" className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                  <span className={`absolute top-2.5 left-2.5 text-[9px] font-bold px-2 py-0.5 rounded-sm ${activeTab === 'cars' ? 'bg-[#0B1221] text-white' : 'bg-[#D4AF37] text-[#0B1221]'}`}>{v.badge}</span>
+                  <span className={`absolute top-2.5 left-2.5 text-[9px] font-bold px-2 py-0.5 rounded-sm ${activeTab === 'cars' ? 'bg-[#0B1221] text-white' : 'bg-[#D4AF37] text-[#0B1221]'}`}>
+                    {t.categories?.[v.badge.toLowerCase() as keyof typeof t.categories] || v.badge}
+                  </span>
                   <div className="absolute bottom-2 right-2.5 bg-black/70 rounded-md px-2 py-1">
-                    <p className="text-white text-xs font-bold">{formatCurrency(v.price)}<span className="text-white/60 font-normal">{language === 'vi' ? '/ngày' : '/day'}</span></p>
+                    <p className="text-white text-xs font-bold">{formatCurrency(v.price)}<span className="text-white/60 font-normal">/{t.landingPage.destinations.perDay}</span></p>
                   </div>
                 </div>
                 <div className="p-4">
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">{v.brand}</p>
-                  <h3 className="font-bold text-slate-800 text-sm mb-2 truncate group-hover:text-[#D4AF37] transition-colors">{v.model}</h3>
+                  <h3 className="font-bold text-slate-800 dark:text-white text-sm mb-2 truncate group-hover:text-[#D4AF37] transition-colors">{v.model}</h3>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1">
                       <Star className="w-3.5 h-3.5 fill-[#D4AF37] text-[#D4AF37]" />
-                      <span className="text-xs font-bold text-slate-700">{v.rating}</span>
+                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{v.rating}</span>
                     </div>
                     <span className="text-xs text-slate-400 flex items-center gap-1"><MapPin className="w-3 h-3" />{getCityName(v.city, language)}</span>
                   </div>
@@ -1659,7 +1747,7 @@ const VehicleTypeShowcase: React.FC = () => {
         <div className="text-center mt-8">
           <button
             onClick={() => navigate(`/marketplace?type=${activeTab === 'cars' ? 'car' : 'motorbike'}`)}
-            className={`inline-flex items-center gap-2 px-8 py-3.5 rounded-md font-bold text-xs uppercase tracking-wider text-white transition-all hover:scale-[1.01] active:scale-[0.99] ${activeTab === 'cars' ? 'bg-[#0B1221] hover:bg-slate-800' : 'bg-[#D4AF37] hover:bg-[#E5C158] text-[#0B1221]'}`}
+            className={`inline-flex items-center gap-2 px-8 py-3.5 rounded-md font-bold text-xs uppercase tracking-wider text-white transition-all hover:scale-[1.01] active:scale-[0.99] ${activeTab === 'cars' ? 'bg-[#0B1221] dark:bg-[#D4AF37] dark:text-[#0B1221] hover:bg-slate-800 dark:hover:bg-[#e5c258]' : 'bg-[#D4AF37] hover:bg-[#E5C158] text-[#0B1221]'}`}
           >
             {activeTab === 'cars' ? t.landingPage.showcase.viewAllCars : t.landingPage.showcase.viewAllMotorbikes} <ArrowRight className="w-4 h-4" />
           </button>
@@ -1703,7 +1791,8 @@ const RevenueCalculator: React.FC = () => {
   const netRevenue = grossRevenue - platformFee;
   const annualRevenue = netRevenue * 12;
 
-  const perDayLabel = language === 'vi' ? '/ngày' : '/day';
+  const perDayLabel = `/${t.landingPage.destinations?.perDay || 'day'}`;
+  const monthUnit = language === 'vi' ? 'tháng' : language === 'ko' ? '월' : language === 'ja' ? '月' : language === 'zh' ? '月' : 'month';
 
   return (
     <section className="py-20 bg-[#0B1221] overflow-hidden relative">
@@ -1812,7 +1901,7 @@ const RevenueCalculator: React.FC = () => {
               </div>
               <div className="flex justify-between items-center py-2 border-b border-white/10">
                 <span className="text-white/60 text-sm">{t.landingPage.calculator.daysMonth.split(' / ')[0]}</span>
-                <span className="text-white font-bold text-sm">{daysPerMonth} {t.landingPage.calculator.daysUnit}/{language === 'vi' ? 'tháng' : 'month'}</span>
+                <span className="text-white font-bold text-sm">{daysPerMonth} {t.landingPage.calculator.daysUnit}/{monthUnit}</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-white/10">
                 <span className="text-white/60 text-sm">{t.landingPage.calculator.feeLabel}</span>
@@ -1845,30 +1934,24 @@ const LiveActivitySection: React.FC = () => {
   const [pointer, setPointer] = useState(0);
 
   const eventsList = React.useMemo(() => {
-    if (language === 'vi') {
-      return [
-        { icon: '🚗', text: 'Toyota Camry vừa được đặt tại TP.HCM', time: '2 phút trước', type: 'booking' },
-        { icon: '🏍️', text: 'Honda SH350i nhận đánh giá 5⭐ tại Hà Nội', time: '5 phút trước', type: 'review' },
-        { icon: '🚙', text: 'Mazda CX5 mới được đăng ký tại Đà Nẵng', time: '8 phút trước', type: 'listing' },
-        { icon: '⚡', text: 'VinFast VF8 vừa được đặt online tức thì', time: '12 phút trước', type: 'instant' },
-        { icon: '🛵', text: 'Yamaha Exciter 155 bắt đầu chuyến đi tại Nha Trang', time: '15 phút trước', type: 'active' },
-        { icon: '💰', text: 'Chủ xe ở TP.HCM vừa nhận 3.600.000₫ doanh thu hôm nay', time: '18 phút trước', type: 'revenue' },
-        { icon: '✅', text: 'Honda CR-V hoàn thành chuyến đi 5 ngày tại Đà Lạt', time: '22 phút trước', type: 'completed' },
-        { icon: '🏆', text: 'Hyundai Santa Fe được xếp hạng #1 tuần này tại Hà Nội', time: '30 phút trước', type: 'ranking' },
-      ];
-    } else {
-      return [
-        { icon: '🚗', text: 'Toyota Camry has just been booked in Ho Chi Minh City', time: '2 mins ago', type: 'booking' },
-        { icon: '🏍️', text: 'Honda SH350i received a 5⭐ review in Hanoi', time: '5 mins ago', type: 'review' },
-        { icon: '🚙', text: 'Mazda CX5 newly listed in Da Nang', time: '8 mins ago', type: 'listing' },
-        { icon: '⚡', text: 'VinFast VF8 just booked instantly online', time: '12 mins ago', type: 'instant' },
-        { icon: '🛵', text: 'Yamaha Exciter 155 started a trip in Nha Trang', time: '15 mins ago', type: 'active' },
-        { icon: '💰', text: 'A host in Ho Chi Minh City just earned 3,600,000₫ today', time: '18 mins ago', type: 'revenue' },
-        { icon: '✅', text: 'Honda CR-V completed a 5-day trip in Da Lat', time: '22 mins ago', type: 'completed' },
-        { icon: '🏆', text: 'Hyundai Santa Fe ranked #1 this week in Hanoi', time: '30 mins ago', type: 'ranking' },
-      ];
-    }
-  }, [language]);
+    const rawEvents = t.landingPage.liveActivity?.events || [];
+    const times = [2, 5, 8, 12, 15, 18, 22, 30];
+    const types = ['booking', 'review', 'listing', 'instant', 'active', 'revenue', 'completed', 'ranking'];
+    const icons = ['🚗', '🏍️', '🚙', '⚡', '🛵', '💰', '✅', '🏆'];
+    
+    if (!rawEvents.length) return [];
+
+    return rawEvents.map((text: string, i: number) => {
+      const timeAgoTemplate = t.landingPage.liveActivity?.timeAgo || '{time} ago';
+      const timeStr = timeAgoTemplate.replace('{time}', `${times[i % 8]}m`);
+      return {
+        icon: icons[i % 8],
+        text,
+        time: timeStr,
+        type: types[i % 8]
+      };
+    });
+  }, [language, t]);
 
   useEffect(() => {
     const interval = setInterval(() => {

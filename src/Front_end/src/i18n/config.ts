@@ -35,6 +35,9 @@ const getStoredLanguage = (): LangCode => {
   return 'en';
 };
 
+const initialLang = getStoredLanguage();
+try { document.documentElement.lang = initialLang; } catch {}
+
 i18n
   .use(initReactI18next)
   .init({
@@ -48,7 +51,7 @@ i18n
       de: { translation: de },
       es: { translation: es },
     },
-    lng: getStoredLanguage(),
+    lng: initialLang,
     fallbackLng: 'en',
     supportedLngs: ['en', 'vi', 'ja', 'ko', 'zh', 'fr', 'de', 'es'],
     interpolation: {
@@ -60,6 +63,7 @@ i18n
 export const changeLanguage = (lang: LangCode) => {
   i18n.changeLanguage(lang);
   try {
+    document.documentElement.lang = lang;
     localStorage.setItem(LANGUAGE_KEY, lang);
   } catch { }
 };
