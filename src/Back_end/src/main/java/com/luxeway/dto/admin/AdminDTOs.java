@@ -28,6 +28,10 @@ public class AdminDTOs {
         private long completedBookings;
         private long cancelledBookings;
 
+        // Pending Counters
+        private long pendingKycReviews;
+        private long pendingOwnerApplications;
+
         // Revenue
         private BigDecimal totalRevenue;
     }

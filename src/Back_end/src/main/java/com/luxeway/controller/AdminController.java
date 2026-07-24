@@ -222,6 +222,44 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.success("KYC rejected", user));
     }
 
+    // ====== Owner Applications ======
+
+    @GetMapping("/owner-applications")
+    @Operation(summary = "List all owner applications with optional status filter")
+    public ResponseEntity<ApiResponse<Page<com.luxeway.dto.ownerapplication.OwnerApplicationDTOs.OwnerApplicationResponse>>> listOwnerApplications(
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Page<com.luxeway.dto.ownerapplication.OwnerApplicationDTOs.OwnerApplicationResponse> apps = adminService.listOwnerApplications(status, page, size);
+        return ResponseEntity.ok(ApiResponse.<Page<com.luxeway.dto.ownerapplication.OwnerApplicationDTOs.OwnerApplicationResponse>>builder()
+                .success(true).data(apps)
+                .meta(ApiResponse.PageMeta.builder()
+                        .page(apps.getNumber()).pageSize(apps.getSize())
+                        .totalElements(apps.getTotalElements()).totalPages(apps.getTotalPages())
+                        .build())
+                .build());
+    }
+
+    @PutMapping("/owner-applications/{id}/approve")
+    @Operation(summary = "Approve an owner application and elevate user role to OWNER")
+    public ResponseEntity<ApiResponse<com.luxeway.dto.ownerapplication.OwnerApplicationDTOs.OwnerApplicationResponse>> approveOwnerApplication(
+            @PathVariable String id,
+            @AuthenticationPrincipal User admin) {
+        com.luxeway.dto.ownerapplication.OwnerApplicationDTOs.OwnerApplicationResponse app = adminService.approveApplication(id, admin);
+        return ResponseEntity.ok(ApiResponse.success("Owner application approved and user promoted to OWNER", app));
+    }
+
+    @PutMapping("/owner-applications/{id}/reject")
+    @Operation(summary = "Reject an owner application")
+    public ResponseEntity<ApiResponse<com.luxeway.dto.ownerapplication.OwnerApplicationDTOs.OwnerApplicationResponse>> rejectOwnerApplication(
+            @PathVariable String id,
+            @RequestBody(required = false) java.util.Map<String, String> payload,
+            @AuthenticationPrincipal User admin) {
+        String reason = payload != null && payload.containsKey("reason") ? payload.get("reason") : "Application rejected by administrator";
+        com.luxeway.dto.ownerapplication.OwnerApplicationDTOs.OwnerApplicationResponse app = adminService.rejectApplication(id, reason, admin);
+        return ResponseEntity.ok(ApiResponse.success("Owner application rejected", app));
+    }
+
     @GetMapping("/settings")
     @Operation(summary = "List all dynamic platform system configurations")
     public ResponseEntity<ApiResponse<java.util.List<com.luxeway.entity.SystemSetting>>> listSettings() {

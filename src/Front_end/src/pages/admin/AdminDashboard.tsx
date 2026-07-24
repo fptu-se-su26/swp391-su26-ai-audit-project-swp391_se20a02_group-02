@@ -425,7 +425,8 @@ const AdminDashboard: React.FC = () => {
     try {
       setLoadingOwnerApps(true);
       const res = await apiClient.get<any>(`/admin/owner-applications?status=${ownerAppsStatusFilter}`);
-      setOwnerApps(res?.data?.data?.content || res?.data?.content || res?.content || []);
+      const list = res?.content || res?.data?.content || res?.data?.data?.content || (Array.isArray(res) ? res : []);
+      setOwnerApps(Array.isArray(list) ? list : []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -783,16 +784,14 @@ const AdminDashboard: React.FC = () => {
   };
 
   // Derived calculations
-  const totalGBV = bookings.reduce((sum, b) => sum + (b.pricing?.total || 0), 0);
-  const platformRevenue = bookings.filter(b => b.status === 'completed' || b.status === 'confirmed').reduce((sum, b) => sum + (b.pricing?.platformFee || (b.pricing?.total * 0.12) || 0), 0);
+  const totalGBV = (stats?.totalRevenue != null && Number(stats.totalRevenue) > 0) 
+    ? Number(stats.totalRevenue) 
+    : bookings.reduce((sum, b) => sum + (b.totalAmount || b.pricing?.total || 0), 0);
+  const platformRevenue = totalGBV * 0.12;
   const ownerPayouts = totalGBV - platformRevenue;
-  const activeListingsCount = vehicles.filter(v => normalizeStatus(v.status) === 'AVAILABLE').length;
-  const pendingApprovalsCount = vehicles.filter(isPendingVehicleApproval).length;
-  const pendingKycCount = kycUsers.filter(u => {
-    const kycStatus = String(u.kycStatus || '').toUpperCase();
-    const driverLicenseStatus = String(u.driverLicenseStatus || '').toUpperCase();
-    return ['PENDING', 'PENDING_APPROVAL'].includes(kycStatus) || ['PENDING', 'PENDING_APPROVAL'].includes(driverLicenseStatus);
-  }).length;
+  const activeListingsCount = stats?.availableVehicles ?? vehicles.filter(v => normalizeStatus(v.status) === 'AVAILABLE').length;
+  const pendingApprovalsCount = stats?.pendingApprovalVehicles ?? vehicles.filter(isPendingVehicleApproval).length;
+  const pendingKycCount = (stats as any)?.pendingKycReviews ?? kycUsers.length;
   const openDisputesCount = disputes.filter(d => d.status === 'PENDING').length;
   const failedPaymentsCount = payments.filter(p => p.status === 'failed').length;
   const activeFraudAlertsCount = fraudAlerts.filter(f => f.status === 'pending').length;

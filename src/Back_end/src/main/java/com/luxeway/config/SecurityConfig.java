@@ -177,10 +177,10 @@ public class SecurityConfig {
                     "/api/v1/reviews/**"
                 ).permitAll()
                 // ======== Admin only (ADMIN and SUPER_ADMIN both get access) ========
-                .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                .requestMatchers("/api/v1/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                .requestMatchers("/test/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                .requestMatchers(HttpMethod.GET, "/users", "/api/v1/users").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                .requestMatchers("/admin/**").hasAnyAuthority("ADMIN", "SUPER_ADMIN", "ROLE_ADMIN", "ROLE_SUPER_ADMIN")
+                .requestMatchers("/api/v1/admin/**").hasAnyAuthority("ADMIN", "SUPER_ADMIN", "ROLE_ADMIN", "ROLE_SUPER_ADMIN")
+                .requestMatchers("/test/**").hasAnyAuthority("ADMIN", "SUPER_ADMIN", "ROLE_ADMIN", "ROLE_SUPER_ADMIN")
+                .requestMatchers(HttpMethod.GET, "/users", "/api/v1/users").hasAnyAuthority("ADMIN", "SUPER_ADMIN", "ROLE_ADMIN", "ROLE_SUPER_ADMIN")
                 // ======== Owner or Admin ========
                 .requestMatchers(HttpMethod.POST,
                     "/vehicles", "/api/v1/vehicles",

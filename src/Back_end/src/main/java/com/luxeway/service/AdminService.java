@@ -70,6 +70,15 @@ public class AdminService {
         stats.setCompletedBookings(bookingRepository.countByStatus(BookingStatus.COMPLETED));
         stats.setCancelledBookings(bookingRepository.countByStatus(BookingStatus.CANCELLED));
 
+        // Pending Counters
+        long pendingKycCount = userDocumentRepository.findAll().stream()
+                .filter(doc -> doc.getUser() != null && !"APPROVED".equalsIgnoreCase(doc.getUser().getKycStatus()))
+                .map(doc -> doc.getUser().getId())
+                .distinct()
+                .count();
+        stats.setPendingKycReviews(pendingKycCount);
+        stats.setPendingOwnerApplications(ownerApplicationRepository.countByStatus(com.luxeway.enums.OwnerApplicationStatus.SUBMITTED));
+
         // Revenue
         BigDecimal revenue = bookingRepository.sumTotalRevenue();
         stats.setTotalRevenue(revenue != null ? revenue : BigDecimal.ZERO);
@@ -387,6 +396,14 @@ public class AdminService {
         java.util.List<User> list2 = userRepository.findByKycStatus("PENDING");
         java.util.Set<User> combined = new java.util.LinkedHashSet<>(list1);
         combined.addAll(list2);
+
+        // Include users with uploaded documents who are not APPROVED yet
+        userDocumentRepository.findAll().forEach(doc -> {
+            if (doc.getUser() != null && !"APPROVED".equalsIgnoreCase(doc.getUser().getKycStatus())) {
+                combined.add(doc.getUser());
+            }
+        });
+
         return combined.stream()
                 .map(userService::toProfileResponse)
                 .collect(java.util.stream.Collectors.toList());
