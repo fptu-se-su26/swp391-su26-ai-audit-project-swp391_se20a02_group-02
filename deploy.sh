@@ -81,7 +81,50 @@ grep -q "^PAYOS_CANCEL_URL=" .env || echo "PAYOS_CANCEL_URL=$DOMAIN/payment/payo
 
 echo "=== [5/5] Starting Docker Compose (This will take a few minutes) ==="
 docker compose down --remove-orphans || true
-docker compose up -d --build
+
+echo "Building Docker images with no cache..."
+docker compose build --no-cache
+
+echo "Starting containers..."
+docker compose up -d
+
+echo "Waiting 25 seconds for containers to initialize..."
+sleep 25
+
+echo ""
+echo "=========================================="
+echo "  CONTAINER STATUS CHECK"
+echo "=========================================="
+docker compose ps
+
+echo ""
+echo "=========================================="
+echo "  CHECKING BACKEND LOGS (last 50 lines)"
+echo "=========================================="
+docker compose logs spring-backend --tail=50
+
+echo ""
+echo "=========================================="
+echo "  CHECKING FRONTEND/NGINX LOGS (last 30 lines)"
+echo "=========================================="
+docker compose logs frontend --tail=30
+
+echo ""
+echo "=========================================="
+echo "  PORT STATUS CHECK"
+echo "=========================================="
+ss -tulpn | grep -E ':80|:443|:8080|:3000' || echo "No services listening on expected ports"
+
+echo ""
+echo "=========================================="
+echo "  HEALTH CHECK"
+echo "=========================================="
+echo "Testing backend on localhost:8080..."
+curl -I http://localhost:8080/actuator/health 2>/dev/null || curl -I http://localhost:8080 2>/dev/null || echo "❌ Backend not responding"
+
+echo ""
+echo "Testing frontend/nginx on localhost:80..."
+curl -I http://localhost:80 2>/dev/null || echo "❌ Frontend not responding"
 
 echo ""
 echo "=========================================================="
@@ -89,4 +132,13 @@ echo "  DEPLOYMENT COMPLETED!"
 echo "  Frontend: http://$IP_ADDR (and port 5173)"
 echo "  Backend API: http://$IP_ADDR:8080/api/v1"
 echo "  Swagger UI: http://$IP_ADDR:8080/swagger-ui/index.html"
+echo "  Domain: $DOMAIN"
+echo "=========================================================="
+echo ""
+echo "If you see any FAILED containers above, check logs with:"
+echo "  docker compose logs <service-name> --tail=200"
+echo "Examples:"
+echo "  docker compose logs spring-backend --tail=200"
+echo "  docker compose logs frontend --tail=200"
+echo "  docker compose logs sqlserver --tail=200"
 echo "=========================================================="
