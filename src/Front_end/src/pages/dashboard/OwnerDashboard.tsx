@@ -9,7 +9,7 @@ import {
   LayoutDashboard, Car, Bike, Calendar, TrendingUp, Users, Settings,
   Plus, Edit, Trash2, Eye, CheckCircle, Clock, DollarSign,
   BarChart2, Shield, AlertTriangle, LogOut, Globe, Menu,
-  MapPin, Star, Activity, ArrowUpRight, Play, FileText, ChevronLeft, ChevronRight
+  MapPin, Star, Activity, ArrowUpRight, Play, FileText, ChevronLeft, ChevronRight, Wrench
 } from 'lucide-react';
 
 import { useAuthStore, useUIStore } from '@/store';
@@ -467,6 +467,7 @@ export const VehicleManagePage: React.FC = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [maintenanceId, setMaintenanceId] = useState<string | null>(null);
   const toast = useToast();
   const t = useT();
   const isVi = t.common.loading.includes('Đang');
@@ -493,6 +494,26 @@ export const VehicleManagePage: React.FC = () => {
     }
   };
 
+  const handleMaintenance = async (vehicle: Vehicle) => {
+    const enteringMaintenance = String(vehicle.status || '').toLowerCase() !== 'maintenance';
+    const question = enteringMaintenance
+      ? (isVi ? `Đưa ${vehicle.name} vào bảo trì? Xe sẽ bị ẩn khỏi Marketplace và không thể nhận booking mới.` : `Put ${vehicle.name} into maintenance? It will be hidden from Marketplace and cannot receive new bookings.`)
+      : (isVi ? `Kết thúc bảo trì cho ${vehicle.name}? Xe sẽ xuất hiện lại trên Marketplace.` : `Finish maintenance for ${vehicle.name}? It will return to Marketplace.`);
+    if (!window.confirm(question)) return;
+
+    setMaintenanceId(vehicle.id);
+    const updated = await vehicleService.setMaintenance(vehicle.id, enteringMaintenance);
+    setMaintenanceId(null);
+    if (!updated) {
+      toast.error(isVi ? 'Không thể cập nhật bảo trì' : 'Maintenance update failed', isVi ? 'Chỉ xe đã duyệt và không đang được thuê mới có thể chuyển trạng thái.' : 'Only approved vehicles that are not currently rented can change maintenance status.');
+      return;
+    }
+    setVehicles(prev => prev.map(item => item.id === vehicle.id ? updated : item));
+    toast.success(
+      enteringMaintenance ? (isVi ? 'Đã đưa xe vào bảo trì' : 'Maintenance started') : (isVi ? 'Đã kết thúc bảo trì' : 'Maintenance completed'),
+      enteringMaintenance ? (isVi ? 'Xe đã được ẩn khỏi Marketplace.' : 'The vehicle is now hidden from Marketplace.') : (isVi ? 'Xe đã xuất hiện lại trên Marketplace.' : 'The vehicle is available on Marketplace again.')
+    );
+  };
   const breadcrumbItems = [
     { label: t.marketplace.home, href: '/' },
     { label: 'Host Portal', href: '/owner' },
@@ -540,8 +561,11 @@ export const VehicleManagePage: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-slate-200/50 dark:divide-white/5 text-sm">
               {vehicles.map(vehicle => {
-                const statusLower = (vehicle.approvalStatus || vehicle.status || '').toLowerCase();
+                const rawStatus = String(vehicle.status || '').toLowerCase();
+                const approvalStatus = String(vehicle.approvalStatus || '').toLowerCase();
+                const statusLower = rawStatus === 'maintenance' ? rawStatus : (approvalStatus || rawStatus);
                 const displayStatus = statusLower === 'approved' ? 'AVAILABLE' : statusLower.toUpperCase();
+                const isMaintenance = rawStatus === 'maintenance';
                 return (
                   <tr key={vehicle.id} className="group hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
                     <td className="p-4 pl-6">
@@ -563,6 +587,7 @@ export const VehicleManagePage: React.FC = () => {
                     <td className="p-4">
                       <span className={`px-2.5 py-1 text-[10px] font-black rounded-lg border uppercase tracking-wider ${
                         displayStatus === 'AVAILABLE' || displayStatus === 'APPROVED' ? 'bg-green-50 text-green-700 border-green-200' :
+                        displayStatus === 'MAINTENANCE' ? 'bg-orange-50 text-orange-700 border-orange-200' :
                         displayStatus === 'PENDING_APPROVAL' ? 'bg-amber-50 text-amber-700 border-amber-200' :
                         displayStatus === 'REJECTED' ? 'bg-rose-50 text-rose-700 border-rose-200' :
                         'bg-slate-50 text-slate-700 border-slate-200'
@@ -582,6 +607,17 @@ export const VehicleManagePage: React.FC = () => {
                         <Link to={`/vehicles/${vehicle.id}`} title={isVi ? 'Xem Tin Đăng' : 'View Listing'} className="p-2 border border-slate-200 dark:border-white/10 hover:border-gold hover:text-gold text-slate-500 rounded-lg transition-colors">
                           <Eye className="w-4 h-4" />
                         </Link>
+                        {(displayStatus === 'AVAILABLE' || displayStatus === 'MAINTENANCE') && (
+                          <button
+                            type="button"
+                            onClick={() => handleMaintenance(vehicle)}
+                            disabled={maintenanceId === vehicle.id}
+                            title={isMaintenance ? (isVi ? 'Kết thúc bảo trì' : 'Finish Maintenance') : (isVi ? 'Đưa vào bảo trì' : 'Start Maintenance')}
+                            className={`p-2 border rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${isMaintenance ? 'border-green-500/30 text-green-600 hover:border-green-500' : 'border-orange-500/30 text-orange-600 hover:border-orange-500'}`}
+                          >
+                            <Wrench className="w-4 h-4" />
+                          </button>
+                        )}
                         <Link to={`/owner/vehicles/${vehicle.id}/edit`} title={t.common.edit} className="p-2 border border-slate-200 dark:border-white/10 hover:border-blue-500 hover:text-blue-500 text-slate-500 rounded-lg transition-colors">
                           <Edit className="w-4 h-4" />
                         </Link>
@@ -849,7 +885,7 @@ export const VehicleFormPage: React.FC = () => {
       year: Number(form.year),
       pricePerDay: Math.round(convertCurrency(Number(form.pricePerDay), currency, 'VND')),
       description: form.description,
-      status: 'available',
+      status: 'pending_approval',
       rating: 5.0,
       thumbnailUrl: currentThumbnail,
       images: validImages,
@@ -904,7 +940,9 @@ export const VehicleFormPage: React.FC = () => {
         await vehicleService.create(user?.id || '', vehicleData);
         toast.success(
           isVi ? 'Đăng Ký Xe Thành Công!' : 'Vehicle Listed Successfully!',
-          isVi ? 'Xe của bạn hiện đã hiển thị trên marketplace.' : 'Your vehicle is now live on the marketplace.'
+          isVi
+            ? 'Xe đã được gửi cho Admin xét duyệt và chỉ hiển thị trên Marketplace sau khi được phê duyệt.'
+            : 'Your vehicle was submitted for Admin review and will appear on the Marketplace after approval.'
         );
       }
       navigate('/owner/vehicles');

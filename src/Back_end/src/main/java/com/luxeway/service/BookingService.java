@@ -89,7 +89,8 @@ public class BookingService {
             throw new RuntimeException("Thời gian thuê tối đa cho xe này là " + vehicle.getMaxRentalDays() + " ngày.");
         }
 
-        if (vehicle.getStatus() != VehicleStatus.AVAILABLE) {
+        if (vehicle.getStatus() != VehicleStatus.AVAILABLE
+                || vehicle.getApprovalStatus() != VehicleStatus.APPROVED) {
             throw new RuntimeException("This vehicle is currently unavailable");
         }
 

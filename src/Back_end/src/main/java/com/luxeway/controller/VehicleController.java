@@ -64,11 +64,17 @@ public class VehicleController {
             @RequestParam(required = false) Boolean hasChauffeur,
             @RequestParam(required = false) Boolean airportDelivery,
             @RequestParam(required = false) Boolean weddingRental,
-            @RequestParam(required = false) Boolean businessRental) {
+            @RequestParam(required = false) Boolean businessRental,
+            @AuthenticationPrincipal com.luxeway.entity.User currentUser) {
         
         try {
             // Keep compatibility with specific non-AVAILABLE status queries (like Admin or list status queries)
             if (status != null && !status.isEmpty() && !status.equalsIgnoreCase("AVAILABLE")) {
+                boolean isAdmin = currentUser != null && currentUser.getAuthorities().stream()
+                        .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+                if (!isAdmin) {
+                    return ResponseEntity.status(403).body(Map.of("error", "Admin access required for non-public vehicle statuses"));
+                }
                 Pageable pageable = PageRequest.of(page, size);
                 VehicleStatus vehicleStatus = VehicleStatus.valueOf(status.toUpperCase());
                 Page<Vehicle> vehicles = vehicleRepository.findByStatus(vehicleStatus, pageable);
@@ -186,7 +192,8 @@ public class VehicleController {
             @RequestParam(required = false) Boolean hasChauffeur,
             @RequestParam(required = false) Boolean airportDelivery,
             @RequestParam(required = false) Boolean weddingRental,
-            @RequestParam(required = false) Boolean businessRental) {
+            @RequestParam(required = false) Boolean businessRental,
+            @AuthenticationPrincipal com.luxeway.entity.User currentUser) {
         
         try {
             com.luxeway.dto.vehicle.VehicleDTOs.VehicleFilterRequest filter = new com.luxeway.dto.vehicle.VehicleDTOs.VehicleFilterRequest();
@@ -475,6 +482,25 @@ public class VehicleController {
             errorResponse.put("error", "Failed to update vehicle");
             errorResponse.put("message", e.getMessage());
             return ResponseEntity.status(500).body(errorResponse);
+        }
+    }
+
+    @PutMapping("/{id}/maintenance")
+    public ResponseEntity<Map<String, Object>> setMaintenance(
+            @PathVariable String id,
+            @AuthenticationPrincipal com.luxeway.entity.User user,
+            @RequestBody Map<String, Boolean> body) {
+        if (user == null) {
+            return ResponseEntity.status(401).body(Map.of("error", "Authentication required"));
+        }
+        try {
+            boolean enabled = Boolean.TRUE.equals(body.get("enabled"));
+            VehicleDTOs.VehicleResponse vehicle = vehicleService.setMaintenance(id, user.getId(), enabled);
+            return ResponseEntity.ok(Map.of("vehicle", vehicle));
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            return ResponseEntity.status(403).body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 

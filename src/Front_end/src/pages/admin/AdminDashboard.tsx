@@ -126,6 +126,7 @@ const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'marketplace' | 'vehicles' | 'kyc' | 'bookings' | 'payments' | 'disputes' | 'users' | 'fraud' | 'analytics' | 'notifications' | 'logs' | 'health' | 'settings'>(
     queryTab && validTabs.includes(queryTab) ? (queryTab as any) : 'overview'
   );
+  const activeTabRef = useRef(activeTab);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -284,10 +285,21 @@ const AdminDashboard: React.FC = () => {
 
   // Trigger fetch vehicles when filters change
   useEffect(() => {
+    activeTabRef.current = activeTab;
     if (activeTab === 'vehicles') {
       fetchVehicles(vehicleStatusFilter, debouncedVehicleSearch);
     }
   }, [vehicleStatusFilter, debouncedVehicleSearch, activeTab]);
+
+  // Keep the approval queue fresh while an admin is reviewing submissions.
+  useEffect(() => {
+    if (activeTab !== 'vehicles') return;
+    const interval = window.setInterval(
+      () => fetchVehicles(vehicleStatusFilter, debouncedVehicleSearch),
+      15000
+    );
+    return () => window.clearInterval(interval);
+  }, [activeTab, vehicleStatusFilter, debouncedVehicleSearch]);
 
   // Operations review side panel states
   const [selectedVehicle, setSelectedVehicle] = useState<any | null>(null);
@@ -434,7 +446,10 @@ const AdminDashboard: React.FC = () => {
         setUsers(userContent);
         setKycUsers(userContent.filter((u: any) => u.role === 'customer'));
       }
-      if (vehList) setVehicles(vehList.content || []);
+      // Avoid overwriting a newer filtered approval request with the slower initial load.
+      if (vehList && activeTabRef.current !== 'vehicles') {
+        setVehicles(vehList.content || []);
+      }
       if (bookList) setBookings(bookList.content || []);
       if (disputeList) setDisputes(disputeList || []);
       if (payList) setPayments(payList.content || []);
@@ -470,7 +485,9 @@ const AdminDashboard: React.FC = () => {
     try {
       await adminService.approveVehicle(id);
       toast.success('Listing Approved', 'The premium vehicle is now live on the marketplace.');
-      setVehicles(prev => prev.map(v => v.id === id ? { ...v, status: 'available', approvalStatus: 'approved' } : v));
+      setVehicles(prev => vehicleStatusFilter === 'PENDING_APPROVAL'
+        ? prev.filter(v => v.id !== id)
+        : prev.map(v => v.id === id ? { ...v, status: 'available', approvalStatus: 'approved' } : v));
       setSelectedVehicle(null);
       setLogs(prev => [
         { id: String(prev.length + 1), action: 'VEHICLE_APPROVE', admin: user?.displayName || 'Admin', target: `Vehicle ID ${id.substring(0,8)}`, status: 'SUCCESS', time: new Date().toISOString(), ip: '127.0.0.1', type: 'VEHICLE' },
@@ -490,7 +507,9 @@ const AdminDashboard: React.FC = () => {
     try {
       await adminService.rejectVehicle(id, rejectionReason);
       toast.success('Listing Rejected', 'Listing request was declined and owner was notified.');
-      setVehicles(prev => prev.map(v => v.id === id ? { ...v, status: 'rejected', approvalStatus: 'rejected', approvalNote: rejectionReason } : v));
+      setVehicles(prev => vehicleStatusFilter === 'PENDING_APPROVAL'
+        ? prev.filter(v => v.id !== id)
+        : prev.map(v => v.id === id ? { ...v, status: 'rejected', approvalStatus: 'rejected', approvalNote: rejectionReason } : v));
       setSelectedVehicle(null);
       setRejectionReason('');
       setLogs(prev => [
@@ -1281,6 +1300,17 @@ const AdminDashboard: React.FC = () => {
                       <p className="text-[11px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-widest">Verify dynamic vehicle spec requirements and accept registrations</p>
                     </div>
                     <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => fetchVehicles(vehicleStatusFilter, debouncedVehicleSearch)}
+                        className={cn(
+                          "p-3 border rounded-xl transition-all",
+                          isDark ? "bg-slate-900 border-slate-800 text-slate-300 hover:border-indigo-500" : "bg-white border-slate-200 text-slate-600 hover:border-indigo-500"
+                        )}
+                        title="Refresh pending vehicles"
+                      >
+                        <RefreshCw className="w-4 h-4" />
+                      </button>
                       <select
                         value={vehicleStatusFilter}
                         onChange={e => setVehicleStatusFilter(e.target.value)}

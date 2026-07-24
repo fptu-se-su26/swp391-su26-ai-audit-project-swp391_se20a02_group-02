@@ -109,9 +109,10 @@ public class SeedingService {
      */
     @Transactional
     public void seedVehicles(User owner) {
-        // Ensure all existing vehicles are approved and available so they are visible on the UI
+        // Repair safe numeric defaults without changing workflow state. Owner submissions must
+        // remain PENDING_APPROVAL across application restarts.
         try {
-            log.info("Ensuring all existing vehicles are approved and available...");
+            log.info("Repairing invalid vehicle numeric defaults without changing approval state...");
             List<Vehicle> allVehicles = vehicleRepository.findAll();
             boolean updated = false;
             for (Vehicle v : allVehicles) {
@@ -129,20 +130,14 @@ public class SeedingService {
                     needsSave = true;
                 }
                 
-                // Fix status and approval
-                if (v.getStatus() != VehicleStatus.AVAILABLE || v.getApprovalStatus() != VehicleStatus.APPROVED) {
-                    v.setStatus(VehicleStatus.AVAILABLE);
-                    v.setApprovalStatus(VehicleStatus.APPROVED);
-                    needsSave = true;
-                }
-                
+
                 if (needsSave) {
                     vehicleRepository.save(v);
                     updated = true;
                 }
             }
             if (updated) {
-                log.info("Successfully approved and activated all existing vehicles.");
+                log.info("Successfully repaired invalid vehicle numeric defaults.");
             }
         } catch (Exception e) {
             log.error("Failed to update existing vehicles status: {}", e.getMessage());
