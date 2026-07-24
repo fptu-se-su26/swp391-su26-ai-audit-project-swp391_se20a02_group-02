@@ -493,6 +493,11 @@ const AdminDashboard: React.FC = () => {
 
   useEffect(() => {
     loadDashboardData();
+    // Real-time synchronization across Customer, Owner, and Admin roles
+    const syncInterval = setInterval(() => {
+      loadDashboardData();
+    }, 15000);
+    return () => clearInterval(syncInterval);
   }, []);
 
   // Action: Approve Vehicle

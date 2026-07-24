@@ -63,7 +63,7 @@ export const OwnerOverview: React.FC = () => {
   const t = useT();
   const isVi = t.common.loading.includes('Đang');
 
-  useEffect(() => {
+  const loadOwnerData = () => {
     if (!user) return;
     Promise.all([
       vehicleService.getByOwner(user.id),
@@ -73,6 +73,12 @@ export const OwnerOverview: React.FC = () => {
       setBookings(b);
       setLoading(false);
     });
+  };
+
+  useEffect(() => {
+    loadOwnerData();
+    const syncInterval = setInterval(loadOwnerData, 15000);
+    return () => clearInterval(syncInterval);
   }, [user?.id]);
 
   const stats = {
@@ -1392,7 +1398,7 @@ export const OwnerBookingsPage: React.FC = () => {
   const toast = useToast();
   const t = useT();
 
-  React.useEffect(() => {
+  const loadBookingsAndVehicles = () => {
     if (!user) return;
     Promise.all([
       bookingService.getByOwner(user.id),
@@ -1402,6 +1408,12 @@ export const OwnerBookingsPage: React.FC = () => {
       setVehicles(v);
       setLoading(false);
     });
+  };
+
+  React.useEffect(() => {
+    loadBookingsAndVehicles();
+    const syncInterval = setInterval(loadBookingsAndVehicles, 15000);
+    return () => clearInterval(syncInterval);
   }, [user?.id]);
 
   const vehicleTitle = (booking: Booking) => {

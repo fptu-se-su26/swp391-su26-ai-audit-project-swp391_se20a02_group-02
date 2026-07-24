@@ -266,7 +266,7 @@ export const CustomerOverview: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const t = useT();
 
-  useEffect(() => {
+  const loadCustomerData = () => {
     if (!user) return;
     Promise.all([
       bookingService.getByUser(user.id),
@@ -276,6 +276,12 @@ export const CustomerOverview: React.FC = () => {
       setNotifications(n.slice(0, 5));
       setLoading(false);
     });
+  };
+
+  useEffect(() => {
+    loadCustomerData();
+    const syncInterval = setInterval(loadCustomerData, 15000);
+    return () => clearInterval(syncInterval);
   }, [user?.id]);
 
   const stats = {
