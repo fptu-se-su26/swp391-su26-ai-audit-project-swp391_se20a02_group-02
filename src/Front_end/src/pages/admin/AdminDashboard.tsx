@@ -471,17 +471,20 @@ const AdminDashboard: React.FC = () => {
         loadOwnerApplications()
       ]);
 
-      if (statsRes) setStats(statsRes);
+      if (statsRes) setStats(statsRes.data || statsRes);
       if (userList) {
-        const userContent = userList.content || [];
+        const userContent = Array.isArray(userList) ? userList : (userList.content || userList.data?.content || userList.data || []);
         setUsers(userContent);
-        setKycUsers(userContent.filter((u: any) => u.role === 'customer'));
+        setKycUsers(userContent.filter((u: any) => String(u.role).toLowerCase() === 'customer'));
       }
-      // Avoid overwriting a newer filtered approval request with the slower initial load.
       if (vehList && activeTabRef.current !== 'vehicles') {
-        setVehicles(vehList.content || []);
+        const vContent = Array.isArray(vehList) ? vehList : (vehList.content || vehList.data?.content || vehList.data || []);
+        setVehicles(vContent);
       }
-      if (bookList) setBookings(bookList.content || []);
+      if (bookList) {
+        const bContent = Array.isArray(bookList) ? bookList : (bookList.content || bookList.data?.content || bookList.data || []);
+        setBookings(bContent);
+      }
       if (disputeList) setDisputes(disputeList || []);
       if (payList) setPayments(payList.content || []);
       if (settingList) setSettings(settingList || []);
@@ -811,12 +814,18 @@ const AdminDashboard: React.FC = () => {
   // Derived calculations
   const totalGBV = (stats?.totalRevenue != null && Number(stats.totalRevenue) > 0) 
     ? Number(stats.totalRevenue) 
-    : bookings.reduce((sum, b) => sum + (b.totalAmount || b.pricing?.total || 0), 0);
+    : bookings.reduce((sum, b) => sum + Number(b.totalPrice || b.totalAmount || b.pricing?.total || 0), 0);
   const platformRevenue = totalGBV * 0.12;
   const ownerPayouts = totalGBV - platformRevenue;
-  const activeListingsCount = stats?.availableVehicles ?? vehicles.filter(v => normalizeStatus(v.status) === 'AVAILABLE').length;
-  const pendingApprovalsCount = stats?.pendingApprovalVehicles ?? vehicles.filter(isPendingVehicleApproval).length;
-  const pendingKycCount = (stats as any)?.pendingKycReviews ?? kycUsers.length;
+  const activeListingsCount = (stats?.availableVehicles != null && Number(stats.availableVehicles) > 0)
+    ? Number(stats.availableVehicles)
+    : vehicles.filter(v => normalizeStatus(v.status) === 'AVAILABLE').length;
+  const pendingApprovalsCount = (stats?.pendingApprovalVehicles != null && Number(stats.pendingApprovalVehicles) > 0)
+    ? Number(stats.pendingApprovalVehicles)
+    : vehicles.filter(isPendingVehicleApproval).length;
+  const pendingKycCount = (stats as any)?.pendingKycReviews != null
+    ? Number((stats as any).pendingKycReviews)
+    : kycUsers.filter(u => u.kycStatus === 'PENDING' || u.kycStatus === 'UNDER_REVIEW').length;
   const openDisputesCount = disputes.filter(d => d.status === 'PENDING').length;
   const failedPaymentsCount = payments.filter(p => p.status === 'failed').length;
   const activeFraudAlertsCount = fraudAlerts.filter(f => f.status === 'pending').length;
