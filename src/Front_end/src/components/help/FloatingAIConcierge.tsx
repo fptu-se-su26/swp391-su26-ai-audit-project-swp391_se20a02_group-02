@@ -87,7 +87,6 @@ export const FloatingAIConcierge: React.FC = () => {
 
   const quickActions = useMemo(
     () => [
-      { label: 'Track delivery', text: 'Where is my car? Show me the delivery tracking simulator.', icon: MapPin },
       { label: 'Roadside help', text: 'I have a flat tire and roadside breakdown emergency.', icon: AlertTriangle },
       { label: 'Refund request', text: 'How do I cancel my trip and request a refund?', icon: ShieldCheck },
       { label: 'Host earnings', text: 'Tell me about LuxeWay Host commission and payouts.', icon: Calendar },
@@ -580,7 +579,6 @@ export const FloatingAIConcierge: React.FC = () => {
                       </p>
                       {[
                         { text: "Find an SUV in Da Nang for 3 days", icon: Car },
-                        { text: "Where is my car? Track my delivery status", icon: MapPin },
                         { text: "I have a breakdown emergency roadside help", icon: AlertTriangle },
                         { text: "How do I cancel my trip and request a refund?", icon: ShieldCheck },
                         { text: "Tell me about LuxeWay Host commission", icon: Calendar },

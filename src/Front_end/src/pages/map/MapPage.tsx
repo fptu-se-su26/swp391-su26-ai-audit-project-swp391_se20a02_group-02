@@ -440,9 +440,7 @@ export const MapPage: React.FC = () => {
       const res = await vehicleService.getAll(filters, 1, 500);
       const data = res.data;
       setVehicles(data as any);
-      if (data && data.length > 0 && !selectedVehicle) {
-        setSelectedVehicle(data[0] as any);
-      }
+      // Keep selectedVehicle null on initial load so map does not auto-zoom/pan without user click
     } catch (e: any) {
       if (e?.name !== 'AbortError') console.error('Map fetch error:', e);
     } finally {

@@ -142,7 +142,7 @@ business:
     platform-commission: 0.15
 
 gemini:
-  api-key: ${GEMINI_API_KEY:mock_key}
+  api-key: ${GEMINI_API_KEY:}
   model: ${GEMINI_MODEL:gemini-2.5-flash}
 
 goong:
