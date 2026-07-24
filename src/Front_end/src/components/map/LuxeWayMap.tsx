@@ -202,11 +202,10 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
   };
 
   const applyClusterStyle = (markerEl: HTMLDivElement, count: number, isHovered: boolean = false) => {
-    const el = getOrMakeInner(markerEl);
+    const visual = getMarkerVisual(markerEl);
     const label = count >= 100 ? '99+' : `${count} xe`;
-    const visual = getMarkerVisual(el);
-    el.style.cursor = 'pointer';
-    el.style.userSelect = 'none';
+    markerEl.style.cursor = 'pointer';
+    markerEl.style.userSelect = 'none';
     visual.style.cssText = `
       display:flex; align-items:center; justify-content:center;
       min-width:58px; height:40px; padding:0 16px;
