@@ -150,7 +150,7 @@ const AdminDashboard: React.FC = () => {
 
   const [userRoleFilter, setUserRoleFilter] = useState('ALL');
   const [userKycStatusFilter, setUserKycStatusFilter] = useState('ALL');
-  const [vehicleStatusFilter, setVehicleStatusFilter] = useState('PENDING_APPROVAL');
+  const [vehicleStatusFilter, setVehicleStatusFilter] = useState('ALL');
   
   // KYC specific states
   const [kycUsers, setKycUsers] = useState<any[]>([]);

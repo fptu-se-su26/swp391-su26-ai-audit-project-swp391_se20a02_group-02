@@ -435,9 +435,23 @@ export const vehicleService = {
     }
   },
 
-  async getByOwner(ownerId: string): Promise<Vehicle[]> {
+  async getByOwner(ownerId?: string): Promise<Vehicle[]> {
     try {
-      const response = await apiClient.get<any>(`/vehicles/owner/${ownerId}?page=0&size=50`);
+      let response: any;
+      try {
+        response = await apiClient.get<any>('/owner/vehicles?page=0&size=100');
+        const list = Array.isArray(response) 
+          ? response 
+          : (response.vehicles || response.data?.vehicles || response.content || response.data?.content || response.data || []);
+        if (list && list.length > 0) {
+          return list.map(mapVehicle);
+        }
+      } catch {
+        // Fallback below
+      }
+
+      const target = ownerId || 'me';
+      response = await apiClient.get<any>(`/vehicles/owner/${target}?page=0&size=100`);
       const list = Array.isArray(response) 
         ? response 
         : (response.vehicles || response.data?.vehicles || response.content || response.data?.content || response.data || []);
