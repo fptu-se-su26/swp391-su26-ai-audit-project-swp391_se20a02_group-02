@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FileText, Shield, CreditCard, Camera, Check, AlertCircle, 
-  Trash2, Upload, Loader2, ArrowRight, CheckCircle2 
+  Trash2, Upload, Loader2, ArrowRight, CheckCircle2, RotateCcw
 } from 'lucide-react';
 import { useAuthStore } from '@/store';
 import apiClient from '@/services/api';
@@ -135,7 +135,13 @@ export const MyDocuments: React.FC = () => {
       }
     } catch (err: any) {
       console.error(err);
-      toast.error('Upload Failed', err.response?.data?.error || err.response?.data?.message || err.message || 'Verification scan failed.');
+      const isRateLimited = err.response?.data?.code === 'EKYC_RATE_LIMITED' || String(err.response?.data?.message || err.message || '').toLowerCase().includes('rate limit');
+      toast.error(
+        isRateLimited ? 'FPT.AI Rate Limit Reached' : 'FPT.AI Verification Failed',
+        isRateLimited
+          ? 'FPT.AI has reached its request limit. Please try again later.'
+          : (err.response?.data?.error || err.response?.data?.message || err.message || 'Verification scan failed.')
+      );
       await initAuth();
       await fetchDocuments();
     } finally {
@@ -199,7 +205,13 @@ export const MyDocuments: React.FC = () => {
       await fetchDocuments();
     } catch (err: any) {
       console.error(err);
-      toast.error('Upload Failed', err.response?.data?.error || err.response?.data?.message || err.message || 'Verification scan failed.');
+      const isRateLimited = err.response?.data?.code === 'EKYC_RATE_LIMITED' || String(err.response?.data?.message || err.message || '').toLowerCase().includes('rate limit');
+      toast.error(
+        isRateLimited ? 'FPT.AI Rate Limit Reached' : 'FPT.AI Verification Failed',
+        isRateLimited
+          ? 'FPT.AI has reached its request limit. Please try again later.'
+          : (err.response?.data?.error || err.response?.data?.message || err.message || 'Verification scan failed.')
+      );
       await initAuth();
       await fetchDocuments();
     } finally {
@@ -242,6 +254,35 @@ export const MyDocuments: React.FC = () => {
     }
   };
 
+  const handleReverifyEkyc = async () => {
+    const confirmed = window.confirm(
+      isVi
+        ? 'Xác minh lại CCCD sẽ xóa ngay CCCD mặt trước, CCCD mặt sau và ảnh khuôn mặt của lần xác minh trước. GPLX vẫn được giữ nguyên. Bạn có muốn tiếp tục?'
+        : 'Re-verifying your ID card immediately removes the previous front, back and selfie. Your driver license is preserved. Continue?'
+    );
+    if (!confirmed) return;
+
+    try {
+      setLoading(true);
+      await apiClient.post('/users/kyc/reverify', {});
+      toast.success(
+        isVi ? 'Đã xóa xác minh CCCD cũ' : 'Previous ID Verification Removed',
+        isVi ? 'Vui lòng tải lại hai mặt CCCD và thực hiện xác minh khuôn mặt.' : 'Please upload both sides of your ID card and complete face verification.'
+      );
+      await initAuth();
+      await fetchDocuments();
+      setActiveStep(1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err: any) {
+      toast.error(
+        isVi ? 'Không thể xác minh lại' : 'Re-verification Failed',
+        err.response?.data?.message || err.message || 'Could not restart eKYC verification.'
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleResetKyc = async () => {
     try {
       setLoading(true);
@@ -266,6 +307,71 @@ export const MyDocuments: React.FC = () => {
   const cccdCompleted = cccdFront && cccdFront.status !== 'FAILED' && cccdBack && cccdBack.status !== 'FAILED';
   const dlCompleted = dlFront && dlFront.status !== 'FAILED' && dlBack && dlBack.status !== 'FAILED';
   const selfieCompleted = selfie && selfie.status !== 'FAILED';
+
+  const parseOcrData = (doc: any): Record<string, any> => {
+    const raw = doc?.ekycRawData || doc?.ocrData;
+    if (!raw) return {};
+    try {
+      const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      const data = Array.isArray(parsed?.data) ? parsed.data[0] : (parsed?.data || parsed);
+      return data && typeof data === 'object' ? data : {};
+    } catch {
+      return {};
+    }
+  };
+
+  const frontOcr = parseOcrData(cccdFront);
+  const backOcr = parseOcrData(cccdBack);
+
+  const normalizeOcrValue = (value: any): string => {
+    if (value === undefined || value === null) return '';
+    if (Array.isArray(value)) return value.map(normalizeOcrValue).filter(Boolean).join(', ');
+    if (typeof value === 'object') {
+      for (const nestedKey of ['value', 'text', 'content', 'raw_text', 'rawText']) {
+        const nested = normalizeOcrValue(value[nestedKey]);
+        if (nested) return nested;
+      }
+      return '';
+    }
+    const text = String(value).trim();
+    return text.toLowerCase() === 'null' || text.toLowerCase() === 'n/a' ? '' : text;
+  };
+
+  const readOcrValue = (...keys: string[]) => {
+    // Front-side identity fields take priority. Empty back-side fields must never overwrite them.
+    for (const source of [frontOcr, backOcr]) {
+      for (const key of keys) {
+        const value = normalizeOcrValue(source[key]);
+        if (value) return value;
+      }
+    }
+    return '';
+  };
+
+  const readBackOcrValue = (...keys: string[]) => {
+    for (const source of [backOcr, frontOcr]) {
+      for (const key of keys) {
+        const value = normalizeOcrValue(source[key]);
+        if (value) return value;
+      }
+    }
+    return '';
+  };
+
+  const cccdInformation = [
+    { label: isVi ? 'Số CCCD' : 'ID Number', value: readOcrValue('id', 'citizen_id', 'id_number') || cccdFront?.ekycIdNumber },
+    { label: isVi ? 'Họ và tên' : 'Full Name', value: readOcrValue('name', 'full_name', 'fullname') || cccdFront?.ekycFullName },
+    { label: isVi ? 'Ngày sinh' : 'Date of Birth', value: readOcrValue('dob', 'date_of_birth', 'birth_date') || cccdFront?.ekycDob },
+    { label: isVi ? 'Giới tính' : 'Gender', value: readOcrValue('sex', 'gender') },
+    { label: isVi ? 'Quốc tịch' : 'Nationality', value: readOcrValue('nationality', 'nation') },
+    { label: isVi ? 'Quê quán' : 'Place of Origin', value: readOcrValue('home', 'place_of_origin', 'origin_location') },
+    { label: isVi ? 'Nơi thường trú' : 'Place of Residence', value: readOcrValue('address', 'recent_location', 'permanent_address', 'place_of_residence') },
+    { label: isVi ? 'Có giá trị đến' : 'Expiry Date', value: readOcrValue('doe', 'expiry_date', 'valid_date') },
+    { label: isVi ? 'Ngày cấp' : 'Issue Date', value: readBackOcrValue('issue_date', 'issueDate', 'doi') },
+    { label: isVi ? 'Nơi cấp' : 'Issued By', value: readBackOcrValue('issue_loc', 'issue_location', 'issued_by') },
+    { label: isVi ? 'Đặc điểm nhận dạng' : 'Personal Identification', value: readBackOcrValue('features', 'personal_identification', 'identification_sign') },
+    { label: isVi ? 'Loại giấy tờ' : 'Document Type', value: readOcrValue('type', 'card_type', 'document_type') }
+  ].filter(item => item.value);
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-10 min-h-screen bg-[#FAFAFA] text-slate-900 rounded-[2.5rem] shadow-sm border border-slate-100">
@@ -310,9 +416,20 @@ export const MyDocuments: React.FC = () => {
           </div>
         </div>
         
-        {user?.kycStatus === 'VERIFIED' && user?.driverLicenseStatus === 'VERIFIED' ? (
-          <div className="flex items-center gap-2 text-green-600 font-bold text-sm bg-green-50/50 px-4 py-2 rounded-xl border border-green-100">
-            <CheckCircle2 className="w-5 h-5" /> Account fully verified. Safe travels!
+        {(cccdFront || cccdBack || user?.kycStatus === 'VERIFIED') ? (
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="flex items-center gap-2 text-green-600 font-bold text-sm bg-green-50/50 px-4 py-2 rounded-xl border border-green-100">
+              <CheckCircle2 className="w-5 h-5" /> CCCD has been recorded. You can remove it and verify again.
+            </div>
+            <button
+              type="button"
+              onClick={handleReverifyEkyc}
+              disabled={loading}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 text-xs font-bold transition-colors disabled:opacity-50"
+            >
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
+              {isVi ? 'Xác minh lại CCCD' : 'Re-verify ID Card'}
+            </button>
           </div>
         ) : isKycPending ? (
           <div className="text-sm text-slate-500 flex items-center gap-2">
@@ -409,7 +526,7 @@ export const MyDocuments: React.FC = () => {
                         {uploadingDoc === 'CCCD_FRONT' ? <Loader2 className="w-6 h-6 animate-spin" /> : <Upload className="w-6 h-6" />}
                       </div>
                       <h4 className="font-bold text-sm">CCCD Front Side</h4>
-                      <p className="text-xs text-slate-400 mt-1 max-w-xs">Scan front side portrait details with FPT AI OCR checking.</p>
+                      <p className="text-xs text-slate-400 mt-1 max-w-xs">Scan front side and extract identity details with FPT.AI OCR.</p>
                       <button 
                         disabled={isKycPending || uploadingDoc === 'CCCD_FRONT'}
                         onClick={() => triggerUpload('CCCD_FRONT')}
@@ -461,6 +578,28 @@ export const MyDocuments: React.FC = () => {
                   )}
                 </div>
               </div>
+
+              {cccdInformation.length > 0 && (
+                <div className="rounded-2xl border border-indigo-100 bg-indigo-50/40 p-5 md:p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <CheckCircle2 className="w-5 h-5 text-green-600" />
+                    <h4 className="font-bold text-slate-900">
+                      {isVi ? 'Thông tin CCCD đã đọc' : 'Extracted Citizen ID Information'}
+                    </h4>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
+                    {cccdInformation.map(item => (
+                      <div key={item.label} className="border-b border-indigo-100/80 pb-2">
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{item.label}</div>
+                        <div className="mt-1 text-sm font-semibold text-slate-800 break-words">{item.value}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="mt-4 text-[11px] text-slate-400">
+                    {isVi ? 'Thông tin được trích xuất tự động từ cả hai mặt CCCD bằng FPT.AI OCR.' : 'Information is automatically extracted from both sides of the ID card using FPT.AI OCR.'}
+                  </p>
+                </div>
+              )}
 
               {cccdCompleted && (
                 <div className="flex justify-end pt-4">
@@ -768,11 +907,17 @@ export const MyDocuments: React.FC = () => {
                     Your account is fully verified. Thank you for completing the verification process!
                   </p>
                   <button
-                    onClick={handleResetKyc}
-                    className="mt-6 py-2.5 px-6 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-colors"
+                    type="button"
+                    onClick={handleReverifyEkyc}
+                    disabled={loading}
+                    className="mt-6 inline-flex items-center justify-center gap-2 py-2.5 px-6 bg-indigo-650 hover:bg-indigo-750 text-white font-bold rounded-xl text-xs transition-colors disabled:opacity-50"
                   >
-                    Reset & Test KYC Upload Again
+                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
+                    {isVi ? 'Xác minh lại CCCD' : 'Re-verify ID Card'}
                   </button>
+                  <p className="text-[11px] text-slate-400 mt-3">
+                    {isVi ? 'CCCD và ảnh khuôn mặt sẽ được làm mới; GPLX đã xác minh vẫn được giữ nguyên.' : 'Your ID card and selfie will be refreshed; your verified driver license remains unchanged.'}
+                  </p>
                 </>
               ) : user?.kycStatus === 'REJECTED' && (!cccdCompleted || !dlCompleted || !selfieCompleted) ? (
                 <>

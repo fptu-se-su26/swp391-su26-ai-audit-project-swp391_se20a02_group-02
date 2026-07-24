@@ -125,6 +125,7 @@ public class UserDTOs {
         private String ekycIdNumber;
         private String ekycFullName;
         private String ekycDob;
+        private String ekycRawData;
     }
 
     @Data

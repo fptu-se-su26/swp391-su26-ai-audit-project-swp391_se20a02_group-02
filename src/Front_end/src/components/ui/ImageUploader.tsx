@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, X, Image as ImageIcon, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { useUIStore } from '@/store';
-import { SERVER_BASE } from '@/utils';
+import { API_BASE } from '@/utils';
 
 interface ImageUploaderProps {
   value?: string; // Current image URL
@@ -69,10 +69,10 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
       }, 200);
 
       const token = localStorage.getItem('luxeway_access_token');
-      const response = await fetch(`${SERVER_BASE}/upload/vehicle-image`, {
+      const response = await fetch(`${API_BASE}/upload/vehicle-image`, {
         method: 'POST',
         headers: {
-          ...(SERVER_BASE.includes('ngrok') ? { 'ngrok-skip-browser-warning': 'true' } : {}),
+          ...(API_BASE.includes('ngrok') ? { 'ngrok-skip-browser-warning': 'true' } : {}),
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: formData,
@@ -82,7 +82,8 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
       setUploadProgress(100);
 
       if (!response.ok) {
-        throw new Error(`Upload failed: ${response.statusText}`);
+        const errorBody = await response.json().catch(() => ({}));
+        throw new Error(errorBody.error || errorBody.message || `Upload failed (${response.status})`);
       }
 
       const data = await response.json();

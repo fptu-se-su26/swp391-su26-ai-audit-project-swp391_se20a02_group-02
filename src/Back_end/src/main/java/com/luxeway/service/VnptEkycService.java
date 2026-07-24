@@ -132,9 +132,9 @@ public class VnptEkycService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         List<UserDocument> ekycDocs = userDocumentRepository
-                .findByUserIdAndDocumentTypeOrderByUploadedAtDesc(userId, "EKYC_CCCD_FRONT");
+                .findByUserIdAndDocumentTypeOrderByUploadedAtDesc(userId, "CCCD_FRONT");
         List<UserDocument> ekycBackDocs = userDocumentRepository
-                .findByUserIdAndDocumentTypeOrderByUploadedAtDesc(userId, "EKYC_CCCD_BACK");
+                .findByUserIdAndDocumentTypeOrderByUploadedAtDesc(userId, "CCCD_BACK");
 
         EkycDTOs.EkycStatusResponse.EkycStatusResponseBuilder builder = EkycDTOs.EkycStatusResponse.builder()
                 .kycVerified(user.getKycVerified());
@@ -167,48 +167,17 @@ public class VnptEkycService {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            // 1. Save the uploaded image locally
+            // Call VNPT first. Never save or verify a document when OCR fails.
+            String ocrUrl = ekycConfig.getBaseUrl() + apiPath;
+            JsonNode responseData = callVnptEkycApi(ocrUrl, imageFile, side);
+            if (responseData == null || !(responseData.has("object") || responseData.has("data") || responseData.has("id"))) {
+                throw new RuntimeException("VNPT eKYC did not return valid OCR data");
+            }
+            EkycDTOs.IdCardData cardData = parseOcrResponse(responseData, side);
             String imageUrl = saveUploadedImage(imageFile);
 
-            // 2. Call VNPT eKYC API (2-step: upload → OCR)
-            String ocrUrl = API_BASE + apiPath;
-            JsonNode responseData = null;
-            try {
-                responseData = callVnptEkycApi(ocrUrl, imageFile, side);
-            } catch (Exception apiEx) {
-                log.warn("eKYC: Live API call failed, falling back to mock OCR: {}", apiEx.getMessage());
-            }
-
-            // 3. Parse OCR result with fallback to mock data
-            EkycDTOs.IdCardData cardData;
-            if (responseData != null && (responseData.has("object") || responseData.has("data") || responseData.has("id"))) {
-                cardData = parseOcrResponse(responseData, side);
-            } else {
-                log.info("eKYC: Generating mock OCR data for side {}", side);
-                if ("FRONT".equals(side)) {
-                    cardData = EkycDTOs.IdCardData.builder()
-                            .side("FRONT")
-                            .idNumber("079095012345")
-                            .fullName("NGUYỄN VĂN A")
-                            .dateOfBirth("15/08/1998")
-                            .gender("Nam")
-                            .nationality("Việt Nam")
-                            .placeOfOrigin("Bến Tre")
-                            .placeOfResidence("123 Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh")
-                            .expiryDate("15/08/2038")
-                            .documentType("CCCD")
-                            .build();
-                } else {
-                    cardData = EkycDTOs.IdCardData.builder()
-                            .side("BACK")
-                            .issueDate("15/08/2023")
-                            .personalIdentification("Nốt ruồi cách 1cm sau đuôi mắt trái")
-                            .build();
-                }
-            }
-
-            // 4. Save document record
-            String documentType = "FRONT".equals(side) ? "EKYC_CCCD_FRONT" : "EKYC_CCCD_BACK";
+            // Save document record
+            String documentType = "FRONT".equals(side) ? "CCCD_FRONT" : "CCCD_BACK";
             UserDocument doc = UserDocument.builder()
                     .user(user)
                     .documentType(documentType)
@@ -340,7 +309,7 @@ public class VnptEkycService {
             RestTemplate restTemplate = new RestTemplate(factory);
 
             // ---- Step 1: Upload image to file-service ----
-            String uploadUrl = API_BASE + UPLOAD_PATH;
+            String uploadUrl = ekycConfig.getBaseUrl() + UPLOAD_PATH;
             log.info("eKYC: Step 1 - Uploading image to {}", uploadUrl);
 
             HttpHeaders uploadHeaders = new HttpHeaders();

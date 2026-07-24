@@ -363,6 +363,7 @@ interface VehicleStore {
   isWishlisted: (vehicleId: string) => boolean;
   addToCompare: (vehicleId: string) => void;
   removeFromCompare: (vehicleId: string) => void;
+  setCompareList: (vehicleIds: string[]) => void;
   clearCompare: () => void;
   addRecentlyViewed: (vehicleId: string) => void;
 }
@@ -393,6 +394,9 @@ export const useVehicleStore = create<VehicleStore>()(
 
       removeFromCompare: (vehicleId) => {
         set(state => ({ compareList: state.compareList.filter(id => id !== vehicleId) }));
+      },
+      setCompareList: (vehicleIds) => {
+        set({ compareList: [...new Set(vehicleIds.filter(Boolean))].slice(0, 3) });
       },
 
       clearCompare: () => set({ compareList: [] }),

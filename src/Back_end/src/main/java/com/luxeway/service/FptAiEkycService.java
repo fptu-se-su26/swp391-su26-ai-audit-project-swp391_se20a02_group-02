@@ -23,7 +23,7 @@ public class FptAiEkycService {
 
 
 
-    @Value("${fptai.api-key:BKfUiImFD4DI3RI2OEjoCahBTQOgVtPf}")
+    @Value("${fptai.api-key:}")
     private String apiKey;
 
     @Value("${ekyc.provider:FPTAI}")
@@ -175,8 +175,8 @@ public class FptAiEkycService {
                 int errorCode = root.path("errorCode").asInt(-1);
                 if (errorCode == 0) {
                     JsonNode dataNode = root.path("data");
-                    if (dataNode.isArray() && dataNode.size() > 0) {
-                        JsonNode item = dataNode.get(0);
+                    if ((dataNode.isArray() && dataNode.size() > 0) || dataNode.isObject()) {
+                        JsonNode item = dataNode.isArray() ? dataNode.get(0) : dataNode;
                         result.setCitizenId(cleanText(item, "id", "citizen_id", "id_number"));
                         result.setFullName(cleanText(item, "name", "full_name", "fullname"));
                         result.setDateOfBirth(cleanText(item, "dob", "date_of_birth", "birth_date"));
@@ -253,8 +253,8 @@ public class FptAiEkycService {
                 int errorCode = root.path("errorCode").asInt(-1);
                 if (errorCode == 0) {
                     JsonNode dataNode = root.path("data");
-                    if (dataNode.isArray() && dataNode.size() > 0) {
-                        JsonNode item = dataNode.get(0);
+                    if ((dataNode.isArray() && dataNode.size() > 0) || dataNode.isObject()) {
+                        JsonNode item = dataNode.isArray() ? dataNode.get(0) : dataNode;
                         result.setLicenseNumber(cleanText(item, "id", "license_number", "number"));
                         result.setLicenseClass(cleanText(item, "class", "license_class", "type"));
                         result.setFullName(cleanText(item, "name", "full_name", "fullname"));
@@ -339,8 +339,9 @@ public class FptAiEkycService {
                 result.setRawResponse(responseBody);
                 JsonNode root = objectMapper.readTree(responseBody);
                 
-                result.setSimilarity(root.path("similarity").asDouble(0.0));
-                result.setMatch(root.path("isMatch").asBoolean(false));
+                JsonNode dataNode = root.has("data") ? root.get("data") : root;
+                result.setSimilarity(dataNode.path("similarity").asDouble(0.0));
+                result.setMatch(dataNode.path("isMatch").asBoolean(false));
                 result.setLivenessResult("Passed");
                 result.setLivenessScore(98.5);
                 return result;
@@ -384,12 +385,26 @@ public class FptAiEkycService {
     }
 
     private String cleanText(JsonNode node, String... fieldNames) {
-        for (String f : fieldNames) {
-            if (node.has(f) && !node.get(f).isNull()) {
-                String val = node.get(f).asText().trim();
-                if (!val.isEmpty() && !"null".equalsIgnoreCase(val) && !"N/A".equalsIgnoreCase(val)) {
-                    return val;
+        for (String fieldName : fieldNames) {
+            JsonNode field = node.path(fieldName);
+            if (field.isMissingNode() || field.isNull()) continue;
+
+            if (field.isObject()) {
+                for (String nestedKey : new String[]{"value", "text", "content", "raw_text", "rawText"}) {
+                    JsonNode nested = field.path(nestedKey);
+                    if (!nested.isMissingNode() && !nested.isNull()) {
+                        String value = nested.asText("").trim();
+                        if (!value.isEmpty() && !"null".equalsIgnoreCase(value) && !"N/A".equalsIgnoreCase(value)) {
+                            return value;
+                        }
+                    }
                 }
+                continue;
+            }
+
+            String value = field.asText("").trim();
+            if (!value.isEmpty() && !"null".equalsIgnoreCase(value) && !"N/A".equalsIgnoreCase(value)) {
+                return value;
             }
         }
         return null;

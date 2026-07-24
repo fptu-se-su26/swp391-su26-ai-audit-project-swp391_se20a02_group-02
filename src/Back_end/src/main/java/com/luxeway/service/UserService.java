@@ -225,6 +225,7 @@ public class UserService {
         resp.setEkycIdNumber(doc.getEkycIdNumber());
         resp.setEkycFullName(doc.getEkycFullName());
         resp.setEkycDob(doc.getEkycDob());
+        resp.setEkycRawData(doc.getEkycRawData());
         return resp;
     }
 
@@ -283,7 +284,7 @@ public class UserService {
     }
 
     @Transactional
-    public UserDTOs.DocumentResponse uploadCccdBack(String userId, String fileUrl) {
+    public UserDTOs.DocumentResponse uploadCccdBack(String userId, String fileUrl, FptAiEkycService.CccdOcrResult ocrResult) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -294,10 +295,12 @@ public class UserService {
                 .fileUrl(fileUrl)
                 .status("PENDING")
                 .verificationStatus("UNDER_REVIEW")
+                .ocrData(ocrResult != null ? ocrResult.getRawResponse() : null)
+                .ekycRawData(ocrResult != null ? ocrResult.getRawResponse() : null)
                 .build();
 
         doc = userDocumentRepository.save(doc);
-        log.info("CCCD Back uploaded for user {}", userId);
+        log.info("CCCD Back uploaded and scanned for user {}", userId);
         return toDocumentResponse(doc);
     }
 
@@ -401,6 +404,34 @@ public class UserService {
 
         userDocumentRepository.delete(doc);
         log.info("Document {} deleted for user {}", documentId, userId);
+    }
+
+    @Transactional
+    public void resetIdentityKyc(String userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setKycStatus("NOT_UPLOADED");
+        user.setKycVerified(false);
+        user.setVerified(false);
+        userRepository.save(user);
+
+        List<UserDocument> docs = userDocumentRepository.findByUserIdOrderByUploadedAtDesc(userId);
+        for (UserDocument doc : docs) {
+            if (List.of("CCCD_FRONT", "CCCD_BACK", "SELFIE").contains(doc.getDocumentType())) {
+                String url = doc.getUrl();
+                if (url != null && url.startsWith("/uploads/")) {
+                    try {
+                        String filename = url.substring("/uploads/".length());
+                        java.nio.file.Path uploadBase = java.nio.file.Paths.get(uploadDir).toAbsolutePath().normalize();
+                        java.nio.file.Files.deleteIfExists(uploadBase.resolve(filename));
+                    } catch (Exception e) {
+                        log.warn("Failed to delete identity file during eKYC re-verification: {}", url, e);
+                    }
+                }
+                userDocumentRepository.delete(doc);
+            }
+        }
+        log.info("Identity eKYC reset for re-verification; driver license preserved for user: {}", userId);
     }
 
     @Transactional

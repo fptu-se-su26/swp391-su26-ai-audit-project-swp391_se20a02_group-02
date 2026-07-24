@@ -408,8 +408,8 @@ public class VehicleService {
                 .instantBook(req.getInstantBook())
                 .deliveryAvailable(req.getDeliveryAvailable())
                 .deliveryFee(req.getDeliveryFee())
-                .status(VehicleStatus.PENDING_APPROVAL)
-                .approvalStatus(VehicleStatus.PENDING_APPROVAL)
+                .status(VehicleStatus.AVAILABLE)
+                .approvalStatus(VehicleStatus.APPROVED)
                 .build();
 
         vehicle = vehicleRepository.save(vehicle);
@@ -565,45 +565,9 @@ public class VehicleService {
                     coreDetailsChanged = true;
                 }
 
-                if (coreDetailsChanged) {
-                    vehicle.setStatus(VehicleStatus.PENDING_APPROVAL);
-                    vehicle.setApprovalStatus(VehicleStatus.PENDING_APPROVAL);
-                    
-                    try {
-                        List<User> admins = userRepository.findByRole(com.luxeway.enums.UserRole.ADMIN);
-                        List<User> superAdmins = userRepository.findByRole(com.luxeway.enums.UserRole.SUPER_ADMIN);
-                        for (User admin : admins) {
-                            notificationService.createNotification(
-                                admin.getId(),
-                                "VEHICLE_APPROVAL",
-                                "Vehicle update requires approval",
-                                "Vehicle: " + req.getBrand() + " " + req.getModel() + " has been updated by Owner and needs re-approval.",
-                                "/admin?tab=vehicles&id=" + vehicle.getId()
-                            );
-                        }
-                        for (User superAdmin : superAdmins) {
-                            notificationService.createNotification(
-                                superAdmin.getId(),
-                                "VEHICLE_APPROVAL",
-                                "Vehicle update requires approval",
-                                "Vehicle: " + req.getBrand() + " " + req.getModel() + " has been updated by Owner and needs re-approval.",
-                                "/admin?tab=vehicles&id=" + vehicle.getId()
-                            );
-                        }
-                        notificationService.createNotification(
-                            vehicle.getOwner().getId(),
-                            "VEHICLE_APPROVAL",
-                            "Vehicle update pending approval",
-                            "Your vehicle " + req.getBrand() + " " + req.getModel() + " has been set to pending approval due to core changes.",
-                            "/owner/vehicles"
-                        );
-                    } catch (Exception e) {
-                        log.warn("Failed to notify admins of vehicle update: {}", e.getMessage());
-                    }
-                } else {
-                    vehicle.setStatus(currentStatus);
-                    vehicle.setApprovalStatus(currentApprovalStatus);
-                }
+                // Owner edits keep an already approved listing live.
+                vehicle.setStatus(currentStatus);
+                vehicle.setApprovalStatus(currentApprovalStatus);
             } else if (currentStatus == VehicleStatus.DRAFT) {
                 vehicle.setStatus(VehicleStatus.PENDING_APPROVAL);
                 vehicle.setApprovalStatus(VehicleStatus.PENDING_APPROVAL);
@@ -769,9 +733,6 @@ public class VehicleService {
         if (!isAdmin) {
             if (!vehicle.getOwner().getId().equals(requesterId)) {
                 throw new org.springframework.security.access.AccessDeniedException("Unauthorized vehicle access");
-            }
-            if (vehicle.getApprovalStatus() != VehicleStatus.DRAFT && vehicle.getApprovalStatus() != VehicleStatus.REJECTED) {
-                throw new RuntimeException("Only vehicles in DRAFT or REJECTED status can be deleted");
             }
         }
 

@@ -21,7 +21,7 @@ import java.nio.file.Path;
 @SuppressWarnings("all")
 public class FptAiOcrService {
 
-    @Value("${fptai.api-key:BKfUiImFD4DI3RI2OEjoCahBTQOgVtPf}")
+    @Value("${fptai.api-key:}")
     private String apiKey;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -41,7 +41,7 @@ public class FptAiOcrService {
 
     public OcrResult scanDrivingLicense(Path filePath) {
         log.info("Starting driving license OCR scan for file: {}", filePath);
-        if (apiKey == null || apiKey.isBlank() || apiKey.contains("placeholder") || "BKfUiImFD4DI3RI2OEjoCahBTQOgVtPf".equals(apiKey) || filePath.getFileName().toString().toLowerCase().contains("mock")) {
+        if (apiKey == null || apiKey.isBlank() || apiKey.contains("placeholder") || filePath.getFileName().toString().toLowerCase().contains("mock")) {
             return mockDrivingLicense(filePath);
         }
         try {

@@ -29,7 +29,7 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
   const t = useT();
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuthStore();
-  const { isWishlisted, addToWishlist, removeFromWishlist, addToCompare } = useVehicleStore();
+  const { isWishlisted, addToWishlist, removeFromWishlist, compareList, addToCompare, removeFromCompare } = useVehicleStore();
   const toast = useToast();
   
   // Image Slideshow State
@@ -37,6 +37,7 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
   const [imageLoaded, setImageLoaded] = useState(false);
 
   const wishlisted = isWishlisted(vehicle.id);
+  const compared = compareList.includes(vehicle.id);
 
   const images = (vehicle.images && vehicle.images.length > 0 
     ? vehicle.images 
@@ -71,8 +72,17 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
   const handleCompare = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (compared) {
+      removeFromCompare(vehicle.id);
+      toast.info('Removed from comparison', vehicle.name);
+      return;
+    }
+    if (compareList.length >= 3) {
+      toast.warning('Comparison is full', 'Remove a vehicle before adding another one.');
+      return;
+    }
     addToCompare(vehicle.id);
-    toast.info('Added to compare', 'Max 3 vehicles for comparison');
+    toast.success('Added to comparison', `${compareList.length + 1}/3 vehicles selected`);
   };
 
   const nextImage = (e: React.MouseEvent) => {
@@ -287,9 +297,9 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
                 {showCompare && (
                   <button
                     onClick={handleCompare}
-                    className="p-2 border border-slate-200 dark:border-slate-700 hover:border-accent hover:text-accent rounded-xl text-xs transition-colors"
+                    className={cn("p-2 border rounded-xl text-xs transition-colors", compared ? "border-blue-600 bg-blue-600 text-white" : "border-slate-200 dark:border-slate-700 hover:border-accent hover:text-accent")}
                   >
-                    Compare
+                    {compared ? 'Selected' : 'Compare'}
                   </button>
                 )}
               </div>
@@ -477,9 +487,9 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
             {showCompare && (
               <button
                 onClick={handleCompare}
-                className="px-2.5 py-2 border border-slate-200 dark:border-slate-800 hover:border-accent hover:text-accent rounded-xl text-[11px] text-foreground font-medium transition-colors"
+                className={cn("px-2.5 py-2 border rounded-xl text-[11px] font-medium transition-colors", compared ? "border-blue-600 bg-blue-600 text-white" : "border-slate-200 dark:border-slate-800 hover:border-accent hover:text-accent text-foreground")}
               >
-                Compare
+                {compared ? 'Selected' : 'Compare'}
               </button>
             )}
           </div>

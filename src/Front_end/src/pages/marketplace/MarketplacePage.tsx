@@ -7,13 +7,14 @@ import {
   MapPin, Sparkles, ArrowUpDown, Shield, Car, Bike,
   Map, ZoomIn, ZoomOut, Compass, Zap, Star, Check,
   Smartphone, CloudRain, Package, UserCircle,
-  Plane, Heart, Briefcase, RotateCw
+  Plane, Heart, Briefcase, RotateCw, Scale
 } from 'lucide-react';
 import { vehicleService } from '@/services/vehicleService';
 import { VehicleCard } from '@/components/vehicle/VehicleCard';
+import { CompareTray } from '@/components/vehicle/CompareTray';
 import { VehicleCardSkeleton } from '@/components/ui/Skeleton';
 import { LuxeWayMap } from '@/components/map/LuxeWayMap';
-import { useUIStore } from '@/store';
+import { useUIStore, useVehicleStore } from '@/store';
 import type { Vehicle, VehicleFilters, VehicleCategory, VehicleType, VehicleLocationResponse } from '@/types';
 import { formatCurrency, debounce, cn, sanitizeLocation } from '@/utils';
 import { fadeUp, staggerContainer, staggerItem } from '@/animations/variants';
@@ -76,15 +77,18 @@ interface CompactSidebarCardProps {
   isSelected: boolean;
   hovered: boolean;
   locationText: string;
+  onBook: (vehicle: Vehicle) => void;
 }
 
 const CompactSidebarCard: React.FC<CompactSidebarCardProps> = ({
   vehicle,
   isSelected,
   hovered,
-  locationText
+  locationText,
+  onBook
 }) => {
   const { language } = useUIStore();
+  const { compareList } = useVehicleStore();
   const isVi = language === 'vi';
   const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=800';
   const thumbnailSrc = vehicle.images?.[0] || vehicle.thumbnailUrl || FALLBACK_IMAGE;
@@ -136,7 +140,13 @@ const CompactSidebarCard: React.FC<CompactSidebarCardProps> = ({
         {/* Distance & Price */}
         <div className="flex items-center justify-between mt-2 border-t border-slate-100 dark:border-slate-800/80 pt-1.5">
           <span className="text-[10px] font-bold text-slate-450 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg">{distanceText}</span>
-          <span className="text-xs sm:text-sm font-black text-emerald-500 dark:text-emerald-400">{finalPriceText}/{isVi ? 'ngày' : 'day'}</span>
+          <button
+            type="button"
+            onClick={(event) => { event.stopPropagation(); onBook(vehicle); }}
+            className="rounded-lg bg-blue-600 px-2.5 py-1.5 text-[10px] font-black text-white hover:bg-blue-700"
+          >
+            {isVi ? 'Đặt xe' : 'Book now'} · {finalPriceText}
+          </button>
         </div>
       </div>
     </div>
@@ -509,6 +519,7 @@ const MarketplacePage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { language } = useUIStore();
+  const { compareList } = useVehicleStore();
   const isVi = language === 'vi';
 
   // Derive map view mode from URL path or query param
@@ -611,6 +622,13 @@ const MarketplacePage: React.FC = () => {
     };
   });
 
+  const bookFromMap = useCallback((vehicle: { id: string }) => {
+    const params = new URLSearchParams();
+    if (filters.startDate) params.set('start', filters.startDate);
+    if (filters.endDate) params.set('end', filters.endDate);
+    const query = params.toString();
+    navigate(`/booking/${vehicle.id}${query ? `?${query}` : ''}`);
+  }, [filters.startDate, filters.endDate, navigate]);
   const hasUrlDrivenFilters = useMemo(() => {
     const filterKeys = [
       'type', 'location', 'sort', 'startDate', 'endDate', 'q',
@@ -632,7 +650,7 @@ const MarketplacePage: React.FC = () => {
           if (parsed.filters && !hasUrlDrivenFilters) {
             setFilters(prev => ({ ...prev, ...parsed.filters }));
           }
-          if (parsed.selectedVehicleId) {
+          if (!hasUrlDrivenFilters && parsed.selectedVehicleId) {
             setSelectedVehicleId(parsed.selectedVehicleId);
           }
           if (parsed.showCarousel !== undefined) {
@@ -805,6 +823,10 @@ const MarketplacePage: React.FC = () => {
   // Clear map selection when filters change or map is closed
   useEffect(() => {
     setMapSelectedVehicles([]);
+    setSelectedVehicleId(undefined);
+    setHoveredVehicleId(null);
+    setHoveredMapVehicleId(null);
+    setShowCarousel(false);
     // Fit bounds on filter changes, not user pan
     setShouldFitBounds(true);
     setShowSearchArea(false);
@@ -812,6 +834,11 @@ const MarketplacePage: React.FC = () => {
   }, [filters, mapOpen]);
 
   const handleTypeSwitch = (type: VehicleType | 'all') => {
+    setSelectedVehicleId(undefined);
+    setMapSelectedVehicles([]);
+    setHoveredVehicleId(null);
+    setHoveredMapVehicleId(null);
+    setShowCarousel(false);
     setActiveType(type);
     setPage(1);
     setFilters(prev => ({
@@ -986,6 +1013,15 @@ const MarketplacePage: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
+            <button
+              type="button"
+              onClick={() => navigate(`/compare${compareList.length ? `?ids=${compareList.join(',')}` : ''}`)}
+              className="relative flex items-center gap-2 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-xs font-extrabold text-blue-700 transition-all hover:border-blue-500 hover:bg-blue-600 hover:text-white dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-300"
+            >
+              <Scale className="h-4 w-4" />
+              <span>{isVi ? 'So sánh giá' : 'Compare prices'}</span>
+              {compareList.length > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1 text-[10px] text-white">{compareList.length}</span>}
+            </button>
             <div className="relative">
               <select
                 value={filters.sortBy || 'popular'}
@@ -1166,6 +1202,7 @@ const MarketplacePage: React.FC = () => {
                           isSelected={selectedVehicleId === vehicle.id}
                           hovered={hoveredVehicleId === vehicle.id}
                           locationText={filters.location || 'Phường 14, Quận Bình Thạnh'}
+                          onBook={bookFromMap}
                         />
                       ) : (
                         <VehicleCard vehicle={vehicle} variant={viewMode} />
@@ -1237,16 +1274,7 @@ const MarketplacePage: React.FC = () => {
                       setShowSearchArea(true);
                       setShouldFitBounds(false); // Disable auto-fit once user interacts
                     }}
-                    onVehicleClick={v => {
-                      setSelectedVehicleId(v.id);
-                      setShowCarousel(true);
-                      setTimeout(() => {
-                        const carouselCard = document.getElementById(`map-carousel-card-${v.id}`);
-                        if (carouselCard) {
-                          carouselCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-                        }
-                      }, 100);
-                    }}
+                    onVehicleClick={v => bookFromMap(v)}
                     onUserLocationChange={(lat, lng) => {
                       handleFilterChange({
                         ...filters,
@@ -1460,7 +1488,16 @@ const MarketplacePage: React.FC = () => {
                                     <span className="text-xs sm:text-sm font-black text-emerald-500 dark:text-emerald-450">{finalPriceText}</span>
                                     <span className="text-[9px] text-slate-450 font-bold">/{isVi ? 'ngày' : 'day'}</span>
                                   </div>
-                                  <ChevronRight className="w-4 h-4 text-slate-400" />
+                                  <button
+                                    type="button"
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      bookFromMap(v);
+                                    }}
+                                    className="rounded-lg bg-blue-600 px-2.5 py-1.5 text-[10px] font-black text-white hover:bg-blue-700"
+                                  >
+                                    {isVi ? 'Đặt xe' : 'Book now'}
+                                  </button>
                                 </div>
                               </div>
                             </div>
@@ -1639,6 +1676,7 @@ const MarketplacePage: React.FC = () => {
           </>
         )}
       </AnimatePresence>
+      <CompareTray />
     </div>
   );
 };

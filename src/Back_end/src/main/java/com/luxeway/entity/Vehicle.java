@@ -112,15 +112,15 @@ public class Vehicle {
     @Column(name = "thumbnail_url", length = 500)
     private String thumbnailUrl;
     
-    @Column(name = "price_per_day", nullable = false, precision = 10, scale = 2)
+    @Column(name = "price_per_day", nullable = false, precision = 18, scale = 2)
     @NotNull(message = "Price per day is required")
     @Positive(message = "Price must be positive")
     private BigDecimal pricePerDay;
     
-    @Column(name = "price_per_week", precision = 10, scale = 2)
+    @Column(name = "price_per_week", precision = 18, scale = 2)
     private BigDecimal pricePerWeek;
     
-    @Column(nullable = false, precision = 10, scale = 2)
+    @Column(nullable = false, precision = 18, scale = 2)
     @NotNull(message = "Deposit is required")
     @Positive(message = "Deposit must be positive")
     private BigDecimal deposit;
