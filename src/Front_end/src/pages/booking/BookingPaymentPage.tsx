@@ -54,10 +54,26 @@ const BookingPaymentPage: React.FC = () => {
 
           setBooking(bookingData);
 
-          // Calculate initial countdown based on booking's createdAt time
-          const createdTime = new Date(bookingData.createdAt || Date.now()).getTime();
-          const endTime = createdTime + 15 * 60 * 1000;
-          const remainingSeconds = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
+          // Calculate initial countdown based on booking's createdAt time safely
+          let remainingSeconds = 900;
+          const statusLower = String(bookingData.status || '').toLowerCase();
+          if (['payment_expired', 'cancelled', 'expired'].includes(statusLower)) {
+            remainingSeconds = 0;
+          } else if (bookingData.createdAt) {
+            let dateStr = String(bookingData.createdAt).trim().replace(' ', 'T');
+            if (!dateStr.includes('Z') && !dateStr.includes('+')) {
+              dateStr += 'Z';
+            }
+            const createdTime = new Date(dateStr).getTime();
+            if (!isNaN(createdTime)) {
+              const elapsedSeconds = Math.floor((Date.now() - createdTime) / 1000);
+              if (elapsedSeconds >= 0 && elapsedSeconds < 900) {
+                remainingSeconds = 900 - elapsedSeconds;
+              } else if (['waiting_payment', 'pending'].includes(statusLower)) {
+                remainingSeconds = 900;
+              }
+            }
+          }
           setCountdown(remainingSeconds);
         } else {
           toast.error(isVi ? 'Không tìm thấy đặt xe' : 'Booking Not Found');
