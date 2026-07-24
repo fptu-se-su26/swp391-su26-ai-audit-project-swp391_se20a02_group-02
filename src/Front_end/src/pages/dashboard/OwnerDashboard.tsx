@@ -1715,7 +1715,7 @@ export const FleetManagementPage: React.FC = () => {
     total: vehicles.length,
     available: vehicles.filter(v => v.status === 'available').length,
     rented: vehicles.filter(v => v.status === 'rented').length,
-    maintenance: vehicles.filter(v => v.status === 'maintenance').length,
+    maintenance: vehicles.filter(v => (v.status as string) === 'maintenance').length,
   };
 
   const utilizationRate = stats.total > 0 ? Math.round((stats.rented / stats.total) * 100) : 0;

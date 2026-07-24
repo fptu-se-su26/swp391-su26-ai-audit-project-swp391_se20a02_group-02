@@ -440,6 +440,58 @@ export const FloatingAIConcierge: React.FC = () => {
       );
     }
 
+    if (msg.actionCard.action === 'REFUND_REQUEST') {
+      return (
+        <ActionPanel tone="rose">
+          <ActionHeader icon={ShieldCheck} label="Refund request registered" tone="rose" />
+          <p className="text-xs leading-5 text-slate-300">{msg.actionCard.message}</p>
+        </ActionPanel>
+      );
+    }
+
+    if (msg.actionCard.action === 'CUSTOMER_BOOKINGS') {
+      return (
+        <ActionPanel tone="amber">
+          <ActionHeader icon={Calendar} label="Active Booking Status" tone="amber" />
+          <p className="text-xs leading-5 text-slate-300">{msg.actionCard.message}</p>
+          <button
+            type="button"
+            onClick={() => navigate('/my-bookings')}
+            className="inline-flex h-8 items-center justify-center gap-2 rounded-md bg-[#D4AF37] px-3 text-xs font-semibold text-[#0B1221] transition duration-200 hover:bg-[#E5C158]"
+          >
+            <Calendar className="h-3.5 w-3.5" />
+            View My Bookings
+          </button>
+        </ActionPanel>
+      );
+    }
+
+    if (msg.actionCard.action === 'OWNER_VEHICLES') {
+      return (
+        <ActionPanel tone="amber">
+          <ActionHeader icon={Car} label="Host Vehicle Status" tone="amber" />
+          <p className="text-xs leading-5 text-slate-300 whitespace-pre-line">{msg.actionCard.message}</p>
+        </ActionPanel>
+      );
+    }
+
+    if (msg.actionCard.action === 'ADMIN_PENDING_APPLICATIONS') {
+      return (
+        <ActionPanel tone="amber">
+          <ActionHeader icon={ShieldCheck} label="Admin Overview" tone="amber" />
+          <p className="text-xs leading-5 text-slate-300 whitespace-pre-line">{msg.actionCard.message}</p>
+          <button
+            type="button"
+            onClick={() => navigate('/admin')}
+            className="inline-flex h-8 items-center justify-center gap-2 rounded-md bg-[#D4AF37] px-3 text-xs font-semibold text-[#0B1221] transition duration-200 hover:bg-[#E5C158]"
+          >
+            <Compass className="h-3.5 w-3.5" />
+            Open Admin Dashboard
+          </button>
+        </ActionPanel>
+      );
+    }
+
     if (msg.actionCard?.action === 'NAVIGATE_ACTION') {
       return (
         <ActionPanel tone="amber">
@@ -781,12 +833,12 @@ const ActionPanel: React.FC<{ tone: 'amber' | 'emerald' | 'rose'; children: Reac
 const ActionHeader: React.FC<{
   icon: React.ComponentType<{ className?: string }>;
   label: string;
-  tone: 'emerald' | 'rose';
+  tone: 'amber' | 'emerald' | 'rose';
 }> = ({ icon: Icon, label, tone }) => (
   <div
     className={cn(
       'flex items-center gap-2 text-xs font-semibold',
-      tone === 'emerald' ? 'text-emerald-200' : 'text-rose-200'
+      tone === 'emerald' ? 'text-emerald-200' : tone === 'amber' ? 'text-amber-200' : 'text-rose-200'
     )}
   >
     <Icon className="h-4 w-4" />
