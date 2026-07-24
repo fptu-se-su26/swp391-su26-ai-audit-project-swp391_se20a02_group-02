@@ -433,14 +433,12 @@ export const MapPage: React.FC = () => {
     setShowSearchAreaButton(false);
   };
 
-  // Fetch vehicles
+  // Fetch vehicles using dedicated map endpoint (returns real lat/lng + finalPrice + thumbnail)
   const fetchVehicles = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
     try {
-      const res = await vehicleService.getAll(filters, 1, 500);
-      const data = res.data;
-      setVehicles(data as any);
-      // Keep selectedVehicle null on initial load so map does not auto-zoom/pan without user click
+      const data = await vehicleService.getForMap(filters);
+      setVehicles(data);
     } catch (e: any) {
       if (e?.name !== 'AbortError') console.error('Map fetch error:', e);
     } finally {

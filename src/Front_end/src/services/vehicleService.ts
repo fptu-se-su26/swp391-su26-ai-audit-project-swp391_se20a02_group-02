@@ -217,6 +217,70 @@ const transformToBackendPayload = (data: Partial<Vehicle>): any => {
 };
 
 export const vehicleService = {
+  // ====== Map-specific endpoint — returns VehicleLocationResponse with real lat/lng and thumbnail ======
+  async getForMap(filters?: VehicleFilters): Promise<VehicleLocationResponse[]> {
+    const queryParams = new URLSearchParams();
+    try {
+      if (filters) {
+        if (filters.location) queryParams.append('location', filters.location);
+        if (filters.vehicleType) queryParams.append('vehicleType', filters.vehicleType.toUpperCase());
+        if (filters.category?.length) filters.category.forEach(c => queryParams.append('category', c.toUpperCase()));
+        if (filters.brands?.length) filters.brands.forEach(b => queryParams.append('brand', b.toLowerCase()));
+        if (filters.minPrice !== undefined && filters.minPrice > 0) queryParams.append('minPrice', filters.minPrice.toString());
+        if (filters.maxPrice !== undefined) queryParams.append('maxPrice', filters.maxPrice.toString());
+        if (filters.minSeats !== undefined) queryParams.append('minSeats', filters.minSeats.toString());
+        if (filters.transmission?.length) queryParams.append('transmission', filters.transmission[0]);
+        if (filters.fuelType?.length) queryParams.append('fuelType', filters.fuelType[0]);
+        if (filters.minRating !== undefined) queryParams.append('minRating', filters.minRating.toString());
+        if (filters.instantBook) queryParams.append('instantBook', 'true');
+        if (filters.deliveryAvailable) queryParams.append('deliveryAvailable', 'true');
+        if (filters.sortBy) queryParams.append('sortBy', filters.sortBy);
+        if (filters.keyword) queryParams.append('keyword', filters.keyword);
+        if (filters.startDate) queryParams.append('startDate', filters.startDate);
+        if (filters.endDate) queryParams.append('endDate', filters.endDate);
+        if (filters.userLat !== undefined) queryParams.append('userLat', filters.userLat.toString());
+        if (filters.userLng !== undefined) queryParams.append('userLng', filters.userLng.toString());
+        if (filters.minLat !== undefined) queryParams.append('minLatitude', filters.minLat.toString());
+        if (filters.maxLat !== undefined) queryParams.append('maxLatitude', filters.maxLat.toString());
+        if (filters.minLng !== undefined) queryParams.append('minLongitude', filters.minLng.toString());
+        if (filters.maxLng !== undefined) queryParams.append('maxLongitude', filters.maxLng.toString());
+        if (filters.hasChauffeur) queryParams.append('hasChauffeur', 'true');
+        if (filters.airportDelivery) queryParams.append('airportDelivery', 'true');
+        if (filters.hasHelmet) queryParams.append('hasHelmet', 'true');
+        if (filters.hasRaincoat) queryParams.append('hasRaincoat', 'true');
+      }
+      const response = await apiClient.get<any>(`/vehicles/map?${queryParams.toString()}`);
+      // Backend returns a plain list of VehicleLocationResponse
+      const list: any[] = Array.isArray(response) ? response : (response.vehicles || response.data || []);
+      return list.map((v: any): VehicleLocationResponse => ({
+        id: v.id,
+        name: v.name,
+        brand: v.brand,
+        type: v.type || 'CAR',
+        thumbnail: resolveImageUrl(v.thumbnail || v.thumbnailUrl || ''),
+        pricePerDay: Number(v.pricePerDay) || 0,
+        discount: Number(v.discount) || 0,
+        finalPrice: Number(v.finalPrice) || Number(v.pricePerDay) || 0,
+        rating: Number(v.rating) || 0,
+        totalTrips: Number(v.totalTrips) || 0,
+        address: v.address || '',
+        city: v.city || '',
+        latitude: Number(v.latitude) || 0,
+        longitude: Number(v.longitude) || 0,
+        available: v.available !== false,
+        ownerName: v.ownerName || '',
+        distanceKm: v.distanceKm,
+        transmission: v.transmission,
+        seats: v.seats,
+        instantBook: v.instantBook,
+        deliveryAvailable: v.deliveryAvailable,
+      }));
+    } catch (error) {
+      console.error('Failed to get vehicles for map', error);
+      return [];
+    }
+  },
+
   async getAll(filters?: VehicleFilters, page = 1, pageSize = 12): Promise<ApiResponse<Vehicle[]>> {
     const queryParams = new URLSearchParams({
       page: (page - 1).toString(), // Spring Data JPA is 0-indexed

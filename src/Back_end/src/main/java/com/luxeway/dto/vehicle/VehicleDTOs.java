@@ -237,5 +237,11 @@ public class VehicleDTOs {
         private Boolean available;
         private String ownerName;
         private Double distanceKm;
+        // Extra fields for map carousel
+        private String transmission;
+        private Integer seats;
+        private Boolean instantBook;
+        private Boolean deliveryAvailable;
     }
 }
+

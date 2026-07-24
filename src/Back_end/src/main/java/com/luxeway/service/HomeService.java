@@ -29,6 +29,21 @@ public class HomeService {
     private final DestinationAnalyticsRepository destinationAnalyticsRepository;
     private final FAQRepository faqRepository;
 
+    // ====== Helper: resolve correct thumbnail URL (same logic as VehicleService.toResponse) ======
+    private String resolveThumbnail(Vehicle v) {
+        if (v.getImages() != null && !v.getImages().isEmpty()) {
+            // Try to find primary image first
+            Optional<VehicleImage> primary = v.getImages().stream()
+                    .filter(img -> Boolean.TRUE.equals(img.getIsPrimary()))
+                    .findFirst();
+            if (primary.isPresent()) return primary.get().getUrl();
+            // Fall back to any first image
+            String firstImgUrl = v.getImages().iterator().next().getUrl();
+            if (firstImgUrl != null && !firstImgUrl.isBlank()) return firstImgUrl;
+        }
+        return v.getThumbnailUrl();
+    }
+
     public boolean checkDatabaseConnection() {
         try {
             userRepository.count();
@@ -125,7 +140,7 @@ public class HomeService {
                 m.put("year", v.getYear());
                 m.put("category", v.getCategory() != null ? v.getCategory().name().toLowerCase() : "economy");
                 m.put("vehicleType", v.getVehicleType() != null ? v.getVehicleType().name().toLowerCase() : "car");
-                m.put("thumbnailUrl", v.getThumbnailUrl());
+                m.put("thumbnailUrl", resolveThumbnail(v));
                 m.put("pricePerDay", v.getPricePerDay());
                 m.put("rating", v.getRating());
                 m.put("totalReviews", v.getTotalReviews());
@@ -475,7 +490,7 @@ public class HomeService {
                 m.put("year", v.getYear());
                 m.put("category", v.getCategory() != null ? v.getCategory().name().toLowerCase() : "economy");
                 m.put("vehicleType", v.getVehicleType() != null ? v.getVehicleType().name().toLowerCase() : "car");
-                m.put("thumbnailUrl", v.getThumbnailUrl());
+                m.put("thumbnailUrl", resolveThumbnail(v));
                 m.put("pricePerDay", v.getPricePerDay());
                 m.put("rating", v.getRating());
                 m.put("totalReviews", v.getTotalReviews());
@@ -499,7 +514,7 @@ public class HomeService {
                 m.put("year", v.getYear());
                 m.put("category", v.getCategory() != null ? v.getCategory().name().toLowerCase() : "economy");
                 m.put("vehicleType", v.getVehicleType() != null ? v.getVehicleType().name().toLowerCase() : "car");
-                m.put("thumbnailUrl", v.getThumbnailUrl());
+                m.put("thumbnailUrl", resolveThumbnail(v));
                 m.put("pricePerDay", v.getPricePerDay());
                 m.put("rating", v.getRating());
                 m.put("totalReviews", v.getTotalReviews());

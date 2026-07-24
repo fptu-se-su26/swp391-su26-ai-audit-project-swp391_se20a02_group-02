@@ -1157,6 +1157,11 @@ public class VehicleService {
         r.setLongitude(coords[1]);
         r.setAvailable(v.getStatus() == com.luxeway.enums.VehicleStatus.AVAILABLE);
         r.setOwnerName(v.getOwner() != null ? v.getOwner().getDisplayName() : null);
+        // Extra fields for map carousel
+        r.setTransmission(v.getTransmission() != null ? v.getTransmission().name().toLowerCase() : null);
+        r.setSeats(v.getSeats());
+        r.setInstantBook(v.getInstantBook());
+        r.setDeliveryAvailable(v.getDeliveryAvailable());
         
         return r;
     }
