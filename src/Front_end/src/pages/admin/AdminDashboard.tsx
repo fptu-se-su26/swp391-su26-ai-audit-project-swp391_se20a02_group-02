@@ -488,15 +488,27 @@ const AdminDashboard: React.FC = () => {
       if (analyticsHistoryRes) setAnalyticsHistory(analyticsHistoryRes);
       if (paymentSettingsRes && paymentSettingsRes.data) setAdminPaymentSettings(paymentSettingsRes.data);
 
-      // Generate simulated mock audit logs for premium tracking
-      setLogs([
-        { id: '1', action: 'VEHICLE_APPROVE', admin: 'Alex Admin', target: 'Ferrari F8 Tributo', status: 'SUCCESS', time: '2026-06-02T10:12:00Z', ip: '192.168.1.10', type: 'VEHICLE' },
-        { id: '2', action: 'USER_KYC_VERIFY', admin: 'Jane Admin', target: 'John Doe', status: 'SUCCESS', time: '2026-06-02T09:44:00Z', ip: '192.168.1.12', type: 'KYC' },
-        { id: '3', action: 'PAYMENT_REFUND', admin: 'Alex Admin', target: 'Booking #LW-930492', status: 'SUCCESS', time: '2026-06-02T08:15:00Z', ip: '192.168.1.10', type: 'PAYMENT' },
-        { id: '4', action: 'SETTING_UPDATE', admin: 'System Operator', target: 'platform_fee_percentage', status: 'SUCCESS', time: '2026-06-02T07:00:00Z', ip: '127.0.0.1', type: 'SETTING' },
-        { id: '5', action: 'DISPUTE_RESOLVE', admin: 'Jane Admin', target: 'Dispute #3', status: 'SUCCESS', time: '2026-06-01T23:19:00Z', ip: '192.168.1.12', type: 'DISPUTE' },
-        { id: '6', action: 'USER_SUSPEND', admin: 'Jane Admin', target: 'Spammer Account #928', status: 'SUCCESS', time: '2026-06-01T15:20:00Z', ip: '192.168.1.12', type: 'USER' }
-      ]);
+      // Load real audit logs from backend /admin/audit/logs
+      try {
+        const auditRes = await apiClient.get<any>('/admin/audit/logs');
+        const auditList = auditRes?.data || (Array.isArray(auditRes) ? auditRes : []);
+        const mappedLogs = (Array.isArray(auditList) ? auditList : []).slice(0, 20).map((log: any, idx: number) => ({
+          id: log.id || String(idx + 1),
+          action: log.action || 'ACTION',
+          admin: log.performedBy || log.userId || 'Admin',
+          target: log.targetId || log.details || '-',
+          status: log.status || 'SUCCESS',
+          time: log.timestamp || log.createdAt || new Date().toISOString(),
+          ip: log.ipAddress || '—',
+          type: log.targetType || 'SYSTEM',
+        }));
+        if (mappedLogs.length > 0) {
+          setLogs(mappedLogs);
+        }
+      } catch {
+        // No audit logs yet — leave empty, do not show fake data
+        setLogs([]);
+      }
 
     } catch (err: any) {
       setError('Failed to load operational marketplace parameters. Please try again.');

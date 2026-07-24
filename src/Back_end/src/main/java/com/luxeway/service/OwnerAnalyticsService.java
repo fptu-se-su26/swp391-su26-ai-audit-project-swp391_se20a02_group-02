@@ -39,10 +39,9 @@ public class OwnerAnalyticsService {
     public Map<String, Object> getOwnerDashboardStats(String ownerId) {
         log.info("Compiling owner analytics for ownerId: {}", ownerId);
 
-        // Fetch all bookings for this owner
-        List<Booking> generalBookings = bookingRepository.findAll().stream()
-                .filter(b -> b.getOwner() != null && ownerId.equals(b.getOwner().getId()))
-                .collect(Collectors.toList());
+        // Fetch all bookings for this owner (scoped query — no full table scan)
+        List<Booking> generalBookings = bookingRepository.findByOwnerIdOrderByCreatedAtDesc(
+                ownerId, org.springframework.data.domain.Pageable.unpaged()).getContent();
 
         List<CarBooking> carBookings = carBookingRepository.findByOwnerId(ownerId);
         List<MotorbikeBooking> bikeBookings = motorbikeBookingRepository.findByOwnerId(ownerId);
@@ -95,11 +94,8 @@ public class OwnerAnalyticsService {
         long vehicleCount = vehicleRepository.findByOwnerId(ownerId).size();
         long totalFleet = carCount + bikeCount + vehicleCount;
 
-        // Utilization rate
+        // Utilization rate (real calculation only)
         double utilization = totalFleet == 0 ? 0.0 : (double) activeBookings / totalFleet * 100.0;
-        if (utilization == 0 && totalFleet > 0) {
-            utilization = 65.5; // realistic fallback
-        }
 
         // Monthly Breakdown
         Map<String, BigDecimal> monthlyRevenue = new TreeMap<>();

@@ -59,6 +59,7 @@ export const OwnerOverview: React.FC = () => {
   const { currency } = useUIStore();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [analyticsStats, setAnalyticsStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const t = useT();
   const isVi = t.common.loading.includes('Đang');
@@ -68,9 +69,13 @@ export const OwnerOverview: React.FC = () => {
     Promise.all([
       vehicleService.getByOwner(user.id),
       bookingService.getByOwner(user.id),
-    ]).then(([v, b]) => {
+      apiClient.get<any>('/owner/analytics/dashboard').catch(() => null),
+    ]).then(([v, b, analytics]) => {
       setVehicles(v);
       setBookings(b);
+      if (analytics) {
+        setAnalyticsStats(analytics.data || analytics);
+      }
       setLoading(false);
     });
   };
@@ -85,7 +90,7 @@ export const OwnerOverview: React.FC = () => {
     totalVehicles: vehicles.length,
     activeVehicles: vehicles.filter(v => v.status === 'available').length,
     totalBookings: bookings.length,
-    revenue: bookings.filter(b => b.status === 'completed').reduce((sum, b) => sum + b.pricing.total, 0),
+    revenue: analyticsStats?.revenue ?? bookings.filter(b => b.status === 'completed').reduce((sum, b) => sum + b.pricing.total, 0),
     pending: bookings.filter(b => b.status === 'pending').length,
     rating: user?.rating || 0,
   };
@@ -93,32 +98,49 @@ export const OwnerOverview: React.FC = () => {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
 
-  const revenueData = [
-    { month: 'Jan', revenue: Math.max(stats.revenue * 0.08, 1000000) },
-    { month: 'Feb', revenue: Math.max(stats.revenue * 0.14, 1500000) },
-    { month: 'Mar', revenue: Math.max(stats.revenue * 0.22, 2000000) },
-    { month: 'Apr', revenue: Math.max(stats.revenue * 0.30, 2800000) },
-    { month: 'May', revenue: Math.max(stats.revenue * 0.45, 3500000) },
-    { month: 'Jun', revenue: Math.max(stats.revenue * 0.60, 4200000) },
-    { month: 'Jul', revenue: Math.max(stats.revenue * 0.78, 5000000) },
-    { month: 'Aug', revenue: Math.max(stats.revenue * 0.90, 6000000) },
-    { month: 'Sep', revenue: Math.max(stats.revenue, 7000000) },
-  ];
+  // Build revenue chart from real completed bookings grouped by month
+  const revenueData = React.useMemo(() => {
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const now = new Date();
+    const months: { month: string; revenue: number; bookings: number }[] = [];
+    for (let i = 8; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push({ month: monthNames[d.getMonth()], revenue: 0, bookings: 0 });
+    }
+    bookings
+      .filter(b => b.status === 'completed' && b.createdAt)
+      .forEach(b => {
+        const bDate = new Date(b.createdAt);
+        const monthIdx = months.findIndex((_, idx) => {
+          const d = new Date(now.getFullYear(), now.getMonth() - (8 - idx), 1);
+          return bDate.getFullYear() === d.getFullYear() && bDate.getMonth() === d.getMonth();
+        });
+        if (monthIdx !== -1) {
+          months[monthIdx].revenue += (b.pricing?.total || 0);
+          months[monthIdx].bookings += 1;
+        }
+      });
+    return months;
+  }, [bookings]);
+
+  // Real utilization: active bookings / total fleet * 100
+  const goalPct = stats.totalVehicles > 0
+    ? Math.min(100, Math.round((stats.activeVehicles / stats.totalVehicles) * 100))
+    : 0;
 
   const statCards = [
-    { label: 'Total Revenue', value: formatCurrency(stats.revenue), icon: DollarSign, color: '#10B981', glow: 'rgba(16,185,129,0.3)', sub: '+18% this month', isStr: true },
+    { label: 'Total Revenue', value: formatCurrency(stats.revenue), icon: DollarSign, color: '#10B981', glow: 'rgba(16,185,129,0.3)', sub: analyticsStats ? `${analyticsStats.completedBookings || 0} completed bookings` : 'From completed rentals', isStr: true },
     { label: 'Active Vehicles', value: `${stats.activeVehicles}/${stats.totalVehicles}`, icon: Car, color: '#F59E0B', glow: 'rgba(245,158,11,0.3)', sub: 'Fleet status' },
     { label: 'Total Bookings', value: stats.totalBookings, icon: Calendar, color: '#6366F1', glow: 'rgba(99,102,241,0.3)', sub: `${stats.pending} pending` },
-    { label: 'My Rating', value: `${stats.rating || '5.0'}/5`, icon: CheckCircle, color: '#EC4899', glow: 'rgba(236,72,153,0.3)', sub: `${user?.totalReviews || 0} reviews` },
+    { label: 'My Rating', value: stats.rating > 0 ? `${stats.rating.toFixed(1)}/5` : 'N/A', icon: CheckCircle, color: '#EC4899', glow: 'rgba(236,72,153,0.3)', sub: `${user?.totalReviews || 0} reviews` },
   ];
 
-  const goalPct = 72;
   const featuredVehicle = vehicles[0];
   const pendingBookings = bookings.filter(b => b.status === 'pending');
 
   const tasks = [
-    { label: 'Approve pending booking requests', done: false, count: stats.pending, color: '#F59E0B', href: '/owner/bookings' },
-    { label: 'Add photos to your listings', done: false, count: 2, color: '#6366F1', href: '/owner/vehicles' },
+    { label: 'Approve pending booking requests', done: stats.pending === 0, count: stats.pending, color: '#F59E0B', href: '/owner/bookings' },
+    { label: 'Add photos to your listings', done: vehicles.every(v => (v.images?.length || 0) > 0), count: vehicles.filter(v => !(v.images?.length)).length, color: '#6366F1', href: '/owner/vehicles' },
     { label: 'Update vehicle availability calendar', done: false, count: 0, color: '#EC4899', href: '/owner/calendar' },
     { label: 'Respond to customer reviews', done: true, count: 0, color: '#10B981', href: '/owner/revenue' },
     { label: 'Complete earnings dashboard', done: true, count: 0, color: '#10B981', href: '/owner/revenue' },
