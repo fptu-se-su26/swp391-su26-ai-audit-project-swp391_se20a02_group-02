@@ -168,10 +168,20 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
   };
 
   // ====== MARKER STYLING ======
-  const applyMarkerStyle = (el: HTMLElement, vehicle: any, isSelected: boolean, isHovered: boolean) => {
+  const getOrMakeInner = (markerEl: HTMLDivElement): HTMLDivElement => {
+    let inner = markerEl.querySelector('.luxeway-marker-inner') as HTMLDivElement;
+    if (!inner) {
+      inner = document.createElement('div');
+      inner.className = 'luxeway-marker-inner';
+      markerEl.appendChild(inner);
+    }
+    return inner;
+  };
+
+  const applyMarkerStyle = (markerEl: HTMLDivElement, vehicle: any, isSelected: boolean, isHovered: boolean) => {
+    const el = getOrMakeInner(markerEl);
     const thumbnailSrc = vehicle.thumbnailUrl || vehicle.thumbnail || vehicle.image || FALLBACK_IMAGE;
     const displayPrice = formatPrice(vehicle.pricePerDay || vehicle.finalPrice || 0);
-    const active = isSelected || isHovered;
 
     el.style.cssText = `
       display:flex; align-items:center; gap:7px;
@@ -199,7 +209,8 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
     `;
   };
 
-  const applyClusterStyle = (el: HTMLElement, count: number, isHovered: boolean = false) => {
+  const applyClusterStyle = (markerEl: HTMLDivElement, count: number, isHovered: boolean = false) => {
+    const el = getOrMakeInner(markerEl);
     const label = count >= 100 ? '99+' : `${count} xe`;
     el.style.cssText = `
       display:flex; align-items:center; justify-content:center;
@@ -216,11 +227,12 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
   };
 
   // ====== MARKER CLICK ANIMATION ======
-  const animateMarkerClick = (el: HTMLElement) => {
+  const animateMarkerClick = (markerEl: HTMLDivElement) => {
+    const el = getOrMakeInner(markerEl);
     el.style.transition = `transform ${MARKER_CLICK_SCALE_DURATION}ms cubic-bezier(0.34, 1.56, 0.64, 1)`;
     el.style.transform = 'scale(1.15)';
     setTimeout(() => {
-      const isStillSelected = selectedVehicleIdRef.current === el.dataset.vehicleId;
+      const isStillSelected = selectedVehicleIdRef.current === markerEl.dataset.vehicleId;
       el.style.transform = isStillSelected ? 'scale(1.08)' : 'scale(1)';
     }, MARKER_CLICK_SCALE_DURATION);
   };
