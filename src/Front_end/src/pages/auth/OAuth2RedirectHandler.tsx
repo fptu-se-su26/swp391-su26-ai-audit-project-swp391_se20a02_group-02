@@ -18,7 +18,7 @@ const getRoleBasedDashboard = (user: User | null): string => {
   if (role === 'owner') {
     return '/owner';
   }
-  return '/';
+  return '/dashboard';
 };
 
 export const OAuth2RedirectHandler: React.FC = () => {

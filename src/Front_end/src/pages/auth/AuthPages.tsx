@@ -145,7 +145,21 @@ export const LoginPage: React.FC = () => {
       const from = (location.state as any)?.from?.pathname;
       const search = (location.state as any)?.from?.search || '';
       toast.success(t.auth.welcomeBack, t.auth.signInSuccess);
-      navigate(from ? `${from}${search}` : getRoleBasedDashboard(user), { replace: true });
+
+      let targetPath = getRoleBasedDashboard(user);
+      if (from && from !== '/403' && from !== '/auth/login' && !from.startsWith('/auth')) {
+        const role = user?.role?.toLowerCase();
+        const isFromAdmin = from.startsWith('/admin');
+        const isFromOwner = from.startsWith('/owner');
+        if (role === 'customer' && (isFromAdmin || isFromOwner)) {
+          targetPath = '/dashboard';
+        } else if (role === 'owner' && isFromAdmin) {
+          targetPath = '/owner';
+        } else {
+          targetPath = `${from}${search}`;
+        }
+      }
+      navigate(targetPath, { replace: true });
     } else {
       toast.error(t.auth.invalidCredentials, t.auth.invalidCredentialsDesc);
       setErrors({ password: t.auth.invalidCredentialsDesc });
