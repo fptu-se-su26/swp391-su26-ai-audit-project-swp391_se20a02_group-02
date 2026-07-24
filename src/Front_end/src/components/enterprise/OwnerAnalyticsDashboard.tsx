@@ -10,7 +10,7 @@ import {
 import { ownerAnalyticsService } from '@/services/enterpriseService';
 import { withdrawalService } from '@/services/withdrawalService';
 import apiClient from '@/services/api';
-import { useAuthStore } from '@/store';
+import { useAuthStore, useUIStore } from '@/store';
 import { useToast } from '@/components/ui/Toast';
 
 const formatVND = (val: number) => {
@@ -44,12 +44,202 @@ const CustomAnalyticsTooltip = ({ active, payload, label }: any) => {
 
 export const OwnerAnalyticsDashboard: React.FC = () => {
   const { user } = useAuthStore();
+  const { language } = useUIStore();
   const toast = useToast();
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [exportingPdf, setExportingPdf] = useState<boolean>(false);
   const [exportingExcel, setExportingExcel] = useState<boolean>(false);
   const [walletBalance, setWalletBalance] = useState<number>(0);
+  const lang = (language || 'en').toLowerCase();
+
+  const rvt = React.useMemo(() => {
+    const dicts: Record<string, Record<string, string>> = {
+      vi: {
+        fleetEarningsTitle: 'Trung tâm thu nhập & Doanh thu đội xe',
+        fleetEarningsSub: 'Theo dõi tỷ lệ khai thác xe và báo cáo hiệu quả tài chính',
+        withdrawFunds: 'Rút tiền',
+        exportPdf: 'Xuất báo cáo PDF',
+        exportCsv: 'Xuất bảng kê CSV',
+        availableBalance: 'Số dư khả dụng',
+        readyForWithdrawal: 'Sẵn sàng rút',
+        grossEarnings: 'Tổng thu nhập',
+        projected: 'Dự kiến',
+        utilizationRate: 'Tỷ lệ khai thác đội xe',
+        optimalRange: 'Mức tối ưu (60-80%)',
+        totalBookingRequests: 'Tổng yêu cầu đặt xe',
+        completed: 'hoàn thành',
+        active: 'đang thuê',
+        totalManagedFleet: 'Tổng đội xe quản lý',
+        vehicles: 'Xe',
+        cars: 'Ô tô',
+        motorbikes: 'Xe máy',
+        grossBookedValue: 'Tổng giá trị đặt xe',
+        pendingPaymentApproval: 'Chờ thanh toán / duyệt',
+        revenueRuleTitle: 'Quy tắc doanh thu',
+        revenueRuleDesc: 'Doanh thu chỉ tính cho các chuyến thuê đã hoàn tất; các chuyến chưa hoàn tất được theo dõi riêng.',
+        monthlyLedgerTitle: 'Bảng kê doanh thu & chuyến thuê hàng tháng',
+        monthlyLedgerSub: 'So sánh tổng chi trả và số chuyến thuê hoàn thành',
+        breakdownHistory: 'LỊCH SỬ CHI TIẾT',
+        bookingCountSuffix: 'chuyến',
+        withdrawModalTitle: 'Rút tiền về tài khoản',
+        amountVnd: 'Số tiền (VNĐ)',
+        bankName: 'Tên ngân hàng',
+        accountName: 'Tên chủ tài khoản',
+        accountNumber: 'Số tài khoản',
+        cancel: 'Hủy',
+        submitRequest: 'Gửi yêu cầu',
+        processing: 'Đang xử lý...'
+      },
+      ja: {
+        fleetEarningsTitle: 'フリート収益・売上センター',
+        fleetEarningsSub: '車両稼働率と財務実績を追跡',
+        withdrawFunds: '資金を引き出す',
+        exportPdf: 'PDF明細を出力',
+        exportCsv: 'CSV台帳を出力',
+        availableBalance: '利用可能残高',
+        readyForWithdrawal: '出金可能',
+        grossEarnings: '総収益',
+        projected: '見込み',
+        utilizationRate: 'フリート稼働率',
+        optimalRange: '最適範囲 (60-80%)',
+        totalBookingRequests: '総予約リクエスト',
+        completed: '完了',
+        active: '稼働中',
+        totalManagedFleet: '管理フリート総数',
+        vehicles: '台',
+        cars: '乗用車',
+        motorbikes: 'バイク',
+        grossBookedValue: '総予約額',
+        pendingPaymentApproval: '支払い/承認待ち',
+        revenueRuleTitle: '収益ルール',
+        revenueRuleDesc: '完了したレンタルのみが売上としてカウントされます。保留中の予約は separate に追跡されます。',
+        monthlyLedgerTitle: '月次売上・予約台帳',
+        monthlyLedgerSub: '総支払額と完了した予約数の比較',
+        breakdownHistory: '内訳履歴',
+        bookingCountSuffix: '件',
+        withdrawModalTitle: '出金リクエスト',
+        amountVnd: '金額 (VND)',
+        bankName: '銀行名',
+        accountName: '口座名義',
+        accountNumber: '口座番号',
+        cancel: 'キャンセル',
+        submitRequest: 'リクエストを送信',
+        processing: '処理中...'
+      },
+      ko: {
+        fleetEarningsTitle: '차량 수익 Center',
+        fleetEarningsSub: '차량 가동률 및 재무 실적 추적',
+        withdrawFunds: '출금하기',
+        exportPdf: 'PDF 내역서 내보내기',
+        exportCsv: 'CSV 장부 내보내기',
+        availableBalance: '출금 가능 잔액',
+        readyForWithdrawal: '출금 가능',
+        grossEarnings: '총 수익',
+        projected: '예상',
+        utilizationRate: '차량 가동률',
+        optimalRange: '최적 범위 (60-80%)',
+        totalBookingRequests: '총 예약 요청',
+        completed: '완료',
+        active: '진행 중',
+        totalManagedFleet: '총 관리 차량',
+        vehicles: '대',
+        cars: '승용차',
+        motorbikes: '오토바이',
+        grossBookedValue: '총 예약 금액',
+        pendingPaymentApproval: '결제/승인 대기',
+        revenueRuleTitle: '수익 규칙',
+        revenueRuleDesc: '완료된 대여건만 매출로 집계되며 대기 중인 예약은 별도로 관리됩니다.',
+        monthlyLedgerTitle: '월간 수익 및 예약 장부',
+        monthlyLedgerSub: '총 지불액 vs 완료된 예약 건수 비교',
+        breakdownHistory: '내역 이력',
+        bookingCountSuffix: '건',
+        withdrawModalTitle: '출금 신청',
+        amountVnd: '금액 (VND)',
+        bankName: '은행명',
+        accountName: '예금주명',
+        accountNumber: '계좌번호',
+        cancel: '취소',
+        submitRequest: '신청하기',
+        processing: '처리 중...'
+      },
+      zh: {
+        fleetEarningsTitle: '车队收益与收入中心',
+        fleetEarningsSub: '追踪车辆利用率和财务业绩',
+        withdrawFunds: '提现',
+        exportPdf: '导出 PDF 账单',
+        exportCsv: '导出 CSV 账单',
+        availableBalance: '可用余额',
+        readyForWithdrawal: '可提现',
+        grossEarnings: '总收益',
+        projected: '预计',
+        utilizationRate: '车队利用率',
+        optimalRange: '最佳范围 (60-80%)',
+        totalBookingRequests: '总预订请求',
+        completed: '已完成',
+        active: '进行中',
+        totalManagedFleet: '总管理车队',
+        vehicles: '辆',
+        cars: '轿车',
+        motorbikes: '摩托车',
+        grossBookedValue: '总预订金额',
+        pendingPaymentApproval: '待付款/待审核',
+        revenueRuleTitle: '收入规则',
+        revenueRuleDesc: '已完成的租赁才计入收入；待处理的预订单独追踪。',
+        monthlyLedgerTitle: '月度收入与预订明细',
+        monthlyLedgerSub: '对比总支出与已完成预订数量',
+        breakdownHistory: '明细历史',
+        bookingCountSuffix: '次',
+        withdrawModalTitle: '申请提现',
+        amountVnd: '金额 (VND)',
+        bankName: '银行名称',
+        accountName: '开户人姓名',
+        accountNumber: '银行账号',
+        cancel: '取消',
+        submitRequest: '提交申请',
+        processing: '处理中...'
+      }
+    };
+
+    const fallback = {
+      fleetEarningsTitle: 'Fleet Earnings & Revenue Center',
+      fleetEarningsSub: 'Track dynamic utilization rates and financial performance statements',
+      withdrawFunds: 'Withdraw Funds',
+      exportPdf: 'Export PDF Statement',
+      exportCsv: 'Export CSV Ledger',
+      availableBalance: 'Available Balance',
+      readyForWithdrawal: 'Ready for withdrawal',
+      grossEarnings: 'Gross Earnings',
+      projected: 'Projected',
+      utilizationRate: 'Fleet Utilization Rate',
+      optimalRange: 'Optimal range (60-80%)',
+      totalBookingRequests: 'Total Booking Requests',
+      completed: 'completed',
+      active: 'active',
+      totalManagedFleet: 'Total Managed Fleet',
+      vehicles: 'Vehicles',
+      cars: 'Cars',
+      motorbikes: 'Motorbikes',
+      grossBookedValue: 'Gross booked value',
+      pendingPaymentApproval: 'Pending payment / approval',
+      revenueRuleTitle: 'Revenue rule',
+      revenueRuleDesc: 'Completed revenue counts only completed rentals; pending bookings are tracked separately.',
+      monthlyLedgerTitle: 'Monthly Revenue and Booking Ledger',
+      monthlyLedgerSub: 'Comparing gross payouts vs completed bookings count',
+      breakdownHistory: 'BREAKDOWN HISTORY',
+      bookingCountSuffix: 'booking(s)',
+      withdrawModalTitle: 'Withdraw Funds',
+      amountVnd: 'Amount (VND)',
+      bankName: 'Bank Name',
+      accountName: 'Account Name',
+      accountNumber: 'Account Number',
+      cancel: 'Cancel',
+      submitRequest: 'Submit Request',
+      processing: 'Processing...'
+    };
+
+    return dicts[lang] || fallback;
+  }, [lang]);
 
   // Withdraw Modal States
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
@@ -194,8 +384,8 @@ export const OwnerAnalyticsDashboard: React.FC = () => {
       {/* Header and Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-black text-[var(--lw-text-primary)] tracking-tight">Fleet Earnings & Revenue Center</h2>
-          <p className="text-xs text-[var(--lw-text-secondary)] font-semibold mt-0.5">Track dynamic utilization rates and financial performance statements</p>
+          <h2 className="text-2xl font-black text-[var(--lw-text-primary)] tracking-tight">{rvt.fleetEarningsTitle}</h2>
+          <p className="text-xs text-[var(--lw-text-secondary)] font-semibold mt-0.5">{rvt.fleetEarningsSub}</p>
         </div>
         <div className="flex flex-wrap gap-3">
           <button
@@ -203,7 +393,7 @@ export const OwnerAnalyticsDashboard: React.FC = () => {
             className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-widest px-4 py-3 rounded-xl transition-all shadow-lg shadow-emerald-500/20"
           >
             <DollarSign className="w-4 h-4" />
-            Withdraw Funds
+            {rvt.withdrawFunds}
           </button>
           <button
             onClick={handleExportPdf}
@@ -215,7 +405,7 @@ export const OwnerAnalyticsDashboard: React.FC = () => {
             ) : (
               <FileText className="w-4 h-4" />
             )}
-            Export PDF Statement
+            {rvt.exportPdf}
           </button>
           <button
             onClick={handleExportExcel}
@@ -227,7 +417,7 @@ export const OwnerAnalyticsDashboard: React.FC = () => {
             ) : (
               <Download className="w-4 h-4" />
             )}
-            Export CSV Ledger
+            {rvt.exportCsv}
           </button>
         </div>
       </div>
@@ -241,10 +431,10 @@ export const OwnerAnalyticsDashboard: React.FC = () => {
             <DollarSign className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
           </div>
           <p className="text-2xl font-black text-[var(--lw-text-primary)]">{formatVND(walletBalance)}</p>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--lw-text-muted)] mt-1">Available Balance</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--lw-text-muted)] mt-1">{rvt.availableBalance}</p>
           <div className="flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold mt-2">
             <TrendingUp className="w-3 h-3" />
-            Ready for withdrawal
+            {rvt.readyForWithdrawal}
           </div>
         </div>
 
@@ -255,10 +445,10 @@ export const OwnerAnalyticsDashboard: React.FC = () => {
             <Activity className="w-5 h-5 text-blue-600 dark:text-blue-400" />
           </div>
           <p className="text-2xl font-black text-[var(--lw-text-primary)]">{formatVND(stats.totalRevenue)}</p>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--lw-text-muted)] mt-1">Gross Earnings</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--lw-text-muted)] mt-1">{rvt.grossEarnings}</p>
           <div className="flex items-center gap-1 text-[10px] text-blue-600 dark:text-blue-400 font-bold mt-2">
             <TrendingUp className="w-3 h-3" />
-            Projected: {formatVND(stats.projectedRevenue || stats.totalRevenue)}
+            {rvt.projected}: {formatVND(stats.projectedRevenue || stats.totalRevenue)}
           </div>
         </div>
 
@@ -269,10 +459,10 @@ export const OwnerAnalyticsDashboard: React.FC = () => {
             <Percent className="w-5 h-5 text-[var(--lw-accent)]" />
           </div>
           <p className="text-2xl font-black text-[var(--lw-text-primary)]">{stats.utilizationRate}%</p>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--lw-text-muted)] mt-1">Fleet Utilization Rate</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--lw-text-muted)] mt-1">{rvt.utilizationRate}</p>
           <div className="flex items-center gap-1 text-[10px] text-[var(--lw-accent)] font-bold mt-2">
             <Activity className="w-3 h-3 animate-pulse" />
-            Optimal range (60-80%)
+            {rvt.optimalRange}
           </div>
         </div>
 
@@ -283,9 +473,9 @@ export const OwnerAnalyticsDashboard: React.FC = () => {
             <Calendar className="w-5 h-5 text-amber-600 dark:text-amber-400" />
           </div>
           <p className="text-2xl font-black text-[var(--lw-text-primary)]">{stats.totalBookings}</p>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--lw-text-muted)] mt-1">Total Booking Requests</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--lw-text-muted)] mt-1">{rvt.totalBookingRequests}</p>
           <div className="flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 font-bold mt-2">
-            <span>{stats.completedBookings} completed, {stats.activeBookings} active</span>
+            <span>{stats.completedBookings} {rvt.completed}, {stats.activeBookings} {rvt.active}</span>
           </div>
         </div>
 
@@ -295,28 +485,28 @@ export const OwnerAnalyticsDashboard: React.FC = () => {
           <div className="w-9 h-9 rounded-xl bg-pink-500/10 border border-pink-500/20 flex items-center justify-center mb-3">
             <Car className="w-5 h-5 text-pink-600 dark:text-pink-400" />
           </div>
-          <p className="text-2xl font-black text-[var(--lw-text-primary)]">{stats.fleetSize} Vehicles</p>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--lw-text-muted)] mt-1">Total Managed Fleet</p>
+          <p className="text-2xl font-black text-[var(--lw-text-primary)]">{stats.fleetSize} {rvt.vehicles}</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--lw-text-muted)] mt-1">{rvt.totalManagedFleet}</p>
           <div className="flex items-center gap-2 text-[10px] text-[var(--lw-text-secondary)] font-semibold mt-2">
-            <span>{stats.carCount} Cars</span>
+            <span>{stats.carCount} {rvt.cars}</span>
             <span>·</span>
-            <span>{stats.motorbikeCount} Motorbikes</span>
+            <span>{stats.motorbikeCount} {rvt.motorbikes}</span>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-[var(--lw-bg-card)] border border-[var(--lw-border)] rounded-2xl p-4">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--lw-text-muted)]">Gross booked value</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--lw-text-muted)]">{rvt.grossBookedValue}</p>
           <p className="text-lg font-black text-[var(--lw-text-primary)] mt-1">{formatVND(stats.grossBookedRevenue || stats.totalRevenue || 0)}</p>
         </div>
         <div className="bg-[var(--lw-bg-card)] border border-[var(--lw-border)] rounded-2xl p-4">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--lw-text-muted)]">Pending payment / approval</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--lw-text-muted)]">{rvt.pendingPaymentApproval}</p>
           <p className="text-lg font-black text-orange-600 mt-1">{formatVND(stats.pendingRevenue || 0)}</p>
         </div>
         <div className="bg-[var(--lw-bg-card)] border border-[var(--lw-border)] rounded-2xl p-4">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--lw-text-muted)]">Revenue rule</p>
-          <p className="text-xs font-semibold text-[var(--lw-text-secondary)] mt-1">Completed revenue counts only completed rentals; pending bookings are tracked separately.</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--lw-text-muted)]">{rvt.revenueRuleTitle}</p>
+          <p className="text-xs font-semibold text-[var(--lw-text-secondary)] mt-1">{rvt.revenueRuleDesc}</p>
         </div>
       </div>
 
@@ -324,8 +514,8 @@ export const OwnerAnalyticsDashboard: React.FC = () => {
       <div className="bg-[var(--lw-bg-card)] border border-[var(--lw-border)] p-6 rounded-3xl relative overflow-hidden shadow-md">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h3 className="text-base font-bold text-[var(--lw-text-primary)]">Monthly Revenue and Booking Ledger</h3>
-            <p className="text-xs text-[var(--lw-text-secondary)]">Comparing gross payouts vs completed bookings count</p>
+            <h3 className="text-base font-bold text-[var(--lw-text-primary)]">{rvt.monthlyLedgerTitle}</h3>
+            <p className="text-xs text-[var(--lw-text-secondary)]">{rvt.monthlyLedgerSub}</p>
           </div>
         </div>
 
@@ -349,13 +539,13 @@ export const OwnerAnalyticsDashboard: React.FC = () => {
           </div>
 
           <div className="bg-[var(--lw-bg-secondary)]/60 border border-[var(--lw-border)] rounded-2xl p-5 space-y-4">
-            <h4 className="text-xs font-bold text-[var(--lw-text-primary)] uppercase tracking-wider">Breakdown History</h4>
+            <h4 className="text-xs font-bold text-[var(--lw-text-primary)] uppercase tracking-wider">{rvt.breakdownHistory}</h4>
             <div className="space-y-3 max-h-56 overflow-y-auto pr-1">
               {chartData.map((d: any, idx: number) => (
                 <div key={idx} className="flex justify-between items-center text-xs">
                   <div>
                     <p className="font-bold text-[var(--lw-text-primary)]">{d.month}</p>
-                    <p className="text-[10px] text-[var(--lw-text-muted)]">{d.bookings} booking(s)</p>
+                    <p className="text-[10px] text-[var(--lw-text-muted)]">{d.bookings} {rvt.bookingCountSuffix}</p>
                   </div>
                   <span className="font-extrabold text-[var(--lw-accent)]">{formatVND(d.revenue)}</span>
                 </div>
@@ -370,13 +560,13 @@ export const OwnerAnalyticsDashboard: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800 animate-fade-up">
             <div className="p-6 border-b border-slate-100 dark:border-slate-800">
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white">Withdraw Funds</h3>
-              <p className="text-sm text-slate-500 mt-1">Available balance: {formatVND(walletBalance)}</p>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white">{rvt.withdrawModalTitle}</h3>
+              <p className="text-sm text-slate-500 mt-1">{rvt.availableBalance}: {formatVND(walletBalance)}</p>
             </div>
             
             <form onSubmit={handleWithdraw} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Amount (VND)</label>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">{rvt.amountVnd}</label>
                 <input 
                   type="number" 
                   required
@@ -390,7 +580,7 @@ export const OwnerAnalyticsDashboard: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Bank Name</label>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">{rvt.bankName}</label>
                 <input 
                   type="text" 
                   required
@@ -402,7 +592,7 @@ export const OwnerAnalyticsDashboard: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Account Name</label>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">{rvt.accountName}</label>
                 <input 
                   type="text" 
                   required
@@ -414,7 +604,7 @@ export const OwnerAnalyticsDashboard: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Account Number</label>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">{rvt.accountNumber}</label>
                 <input 
                   type="text" 
                   required
@@ -431,14 +621,14 @@ export const OwnerAnalyticsDashboard: React.FC = () => {
                   onClick={() => setIsWithdrawModalOpen(false)}
                   className="flex-1 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold transition-colors"
                 >
-                  Cancel
+                  {rvt.cancel}
                 </button>
                 <button
                   type="submit"
                   disabled={withdrawing}
                   className="flex-1 px-4 py-3 rounded-xl text-white bg-emerald-600 hover:bg-emerald-700 font-bold transition-colors disabled:opacity-50"
                 >
-                  {withdrawing ? 'Processing...' : 'Submit Request'}
+                  {withdrawing ? rvt.processing : rvt.submitRequest}
                 </button>
               </div>
             </form>

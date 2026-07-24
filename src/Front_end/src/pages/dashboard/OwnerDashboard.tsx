@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, Outlet, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import ImageUploader from '@/components/ui/ImageUploader';
@@ -55,12 +55,195 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 // ====== OWNER OVERVIEW ======
 export const OwnerOverview: React.FC = () => {
   const { user } = useAuthStore();
-  const { currency } = useUIStore();
+  const { currency, language } = useUIStore();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const t = useT();
-  const isVi = t.common.loading.includes('Đang');
+  const lang = (language || 'en').toLowerCase();
+
+  const ovt = React.useMemo(() => {
+    const dicts: Record<string, Record<string, string>> = {
+      vi: {
+        topVehicle: '🏆 Xe Nổi Bật Nhất',
+        live: 'Hoạt động',
+        perDay: '/ngày',
+        addVehicle: 'Thêm xe',
+        totalRevenue: 'Tổng doanh thu',
+        revenueSub: '+18% tháng này',
+        activeVehicles: 'Xe đang hoạt động',
+        fleetStatus: 'Trạng thái đội xe',
+        totalBookings: 'Tổng chuyến thuê',
+        pendingSub: 'chờ duyệt',
+        myRating: 'Đánh giá của tôi',
+        reviewsSub: 'đánh giá',
+        monthlyGoal: 'Mục tiêu tháng',
+        revenueTarget: 'Chỉ tiêu doanh thu',
+        recentVehicles: 'Xe gần đây',
+        viewAll: 'Xem tất cả →',
+        forRent: 'Sẵn sàng',
+        rented: 'Đang thuê',
+        revenueChartTitle: 'Doanh thu 14 ngày qua',
+        yourEarningsThisYear: 'Thu nhập của bạn năm nay',
+        liveAnalytics: 'Phân tích thời gian thực',
+        pendingRequests: 'Yêu cầu chờ duyệt',
+        noPendingRequests: 'Không có yêu cầu nào chờ duyệt',
+        approveBtn: 'Duyệt ngay',
+        tasksTitle: 'Nhiệm vụ',
+        task1: 'Duyệt các yêu cầu đặt xe đang chờ',
+        task2: 'Thêm hình ảnh cho danh sách xe',
+        task3: 'Cập nhật lịch sẵn sàng của xe',
+        task4: 'Phản hồi đánh giá của khách hàng',
+        task5: 'Hoàn thiện bảng theo dõi thu nhập',
+        completedOf: 'Đã hoàn thành',
+        jan: 'Thg 1', feb: 'Thg 2', mar: 'Thg 3', apr: 'Thg 4',
+        may: 'Thg 5', jun: 'Thg 6', jul: 'Thg 7', aug: 'Thg 8', sep: 'Thg 9'
+      },
+      ja: {
+        topVehicle: '🏆 トップ人気車両',
+        live: '公開中',
+        perDay: '/日',
+        addVehicle: '車両を追加',
+        totalRevenue: '売上合計',
+        revenueSub: '今月 +18%',
+        activeVehicles: '稼働中車両',
+        fleetStatus: 'フリートステータス',
+        totalBookings: '予約総数',
+        pendingSub: '件保留中',
+        myRating: 'マイ評価',
+        reviewsSub: '件のレビュー',
+        monthlyGoal: '今月の目標',
+        revenueTarget: '売上ターゲット',
+        recentVehicles: '最近の車両',
+        viewAll: 'すべて見る →',
+        forRent: '貸出可',
+        rented: '貸出中',
+        revenueChartTitle: '収益（過去14日間）',
+        yourEarningsThisYear: '今年の獲得収益',
+        liveAnalytics: 'ライブ分析',
+        pendingRequests: '保留中のリクエスト',
+        noPendingRequests: '保留中のリクエストはありません',
+        approveBtn: '承認',
+        tasksTitle: 'タスク',
+        task1: '保留中の予約リクエストを承認',
+        task2: '掲載車両の写真を追加',
+        task3: '車両の予約カレンダーを更新',
+        task4: 'カスタマーレビューに返信',
+        task5: '収益ダッシュボードを完了',
+        completedOf: '完了',
+        jan: '1月', feb: '2月', mar: '3月', apr: '4月',
+        may: '5月', jun: '6月', jul: '7月', aug: '8月', sep: '9月'
+      },
+      ko: {
+        topVehicle: '🏆 인기 대표 차량',
+        live: '운행 중',
+        perDay: '/일',
+        addVehicle: '차량 추가',
+        totalRevenue: '총 수익',
+        revenueSub: '이번 달 +18%',
+        activeVehicles: '운행 중인 차량',
+        fleetStatus: '차량 상태',
+        totalBookings: '총 예약 수',
+        pendingSub: '건 대기 중',
+        myRating: '내 평점',
+        reviewsSub: '개 후기',
+        monthlyGoal: '월간 목표',
+        revenueTarget: '목표 수익',
+        recentVehicles: '최근 등록 차량',
+        viewAll: '전체 보기 →',
+        forRent: '대여 가능',
+        rented: '대여 중',
+        revenueChartTitle: '최근 14일 수익',
+        yourEarningsThisYear: '올해 총 수익',
+        liveAnalytics: '실시간 분석',
+        pendingRequests: '대기 중인 요청',
+        noPendingRequests: '대기 중인 요청이 없습니다',
+        approveBtn: '승인',
+        tasksTitle: '작업',
+        task1: '대기 중인 예약 요청 승인',
+        task2: '차량 등록 사진 추가',
+        task3: '차량 대여 가능 달력 업데이트',
+        task4: '고객 후기에 답글 작성',
+        task5: '수익 대시보드 완료',
+        completedOf: '완료',
+        jan: '1월', feb: '2월', mar: '3월', apr: '4월',
+        may: '5월', jun: '6월', jul: '7월', aug: '8월', sep: '9월'
+      },
+      zh: {
+        topVehicle: '🏆 热门精选车辆',
+        live: '上线中',
+        perDay: '/天',
+        addVehicle: '添加车辆',
+        totalRevenue: '总收入',
+        revenueSub: '本月 +18%',
+        activeVehicles: '运营中车辆',
+        fleetStatus: '车队状态',
+        totalBookings: '总预订数',
+        pendingSub: '个待处理',
+        myRating: '我的评分',
+        reviewsSub: '条评价',
+        monthlyGoal: '月度目标',
+        revenueTarget: '收入目标',
+        recentVehicles: '最近车辆',
+        viewAll: '查看全部 →',
+        forRent: '可出租',
+        rented: '已出租',
+        revenueChartTitle: '近 14 天收入',
+        yourEarningsThisYear: '您今年的收益',
+        liveAnalytics: '实时分析',
+        pendingRequests: '待处理请求',
+        noPendingRequests: '暂无待处理请求',
+        approveBtn: '批准',
+        tasksTitle: '任务',
+        task1: '批准待处理的预订请求',
+        task2: '为发布的车辆添加照片',
+        task3: '更新车辆可用日历',
+        task4: '回复客户评价',
+        task5: '完成收益仪表板',
+        completedOf: '已完成',
+        jan: '1月', feb: '2月', mar: '3月', apr: '4月',
+        may: '5月', jun: '6月', jul: '7月', aug: '8月', sep: '9月'
+      }
+    };
+
+    const fallback = {
+      topVehicle: '🏆 Your Top Vehicle',
+      live: 'Live',
+      perDay: '/day',
+      addVehicle: 'Add Vehicle',
+      totalRevenue: 'Total Revenue',
+      revenueSub: '+18% this month',
+      activeVehicles: 'Active Vehicles',
+      fleetStatus: 'Fleet status',
+      totalBookings: 'Total Bookings',
+      pendingSub: 'pending',
+      myRating: 'My Rating',
+      reviewsSub: 'reviews',
+      monthlyGoal: 'Monthly Goal',
+      revenueTarget: 'Revenue Target',
+      recentVehicles: 'Recent Vehicles',
+      viewAll: 'View all →',
+      forRent: 'For Rent',
+      rented: 'Rented',
+      revenueChartTitle: 'Revenue (Last 14 Days)',
+      yourEarningsThisYear: 'Your earnings this year',
+      liveAnalytics: 'Live Analytics',
+      pendingRequests: 'Pending Requests',
+      noPendingRequests: 'No pending requests',
+      approveBtn: 'Approve',
+      tasksTitle: 'Tasks',
+      task1: 'Approve pending booking requests',
+      task2: 'Add photos to your listings',
+      task3: 'Update vehicle availability calendar',
+      task4: 'Respond to customer reviews',
+      task5: 'Complete earnings dashboard',
+      completedOf: 'completed',
+      jan: 'Jan', feb: 'Feb', mar: 'Mar', apr: 'Apr',
+      may: 'May', jun: 'Jun', jul: 'Jul', aug: 'Aug', sep: 'Sep'
+    };
+
+    return dicts[lang] || fallback;
+  }, [lang]);
 
   useEffect(() => {
     if (!user) return;
@@ -83,38 +266,34 @@ export const OwnerOverview: React.FC = () => {
     rating: user?.rating || 0,
   };
 
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-
   const revenueData = [
-    { month: 'Jan', revenue: Math.max(stats.revenue * 0.08, 1000000) },
-    { month: 'Feb', revenue: Math.max(stats.revenue * 0.14, 1500000) },
-    { month: 'Mar', revenue: Math.max(stats.revenue * 0.22, 2000000) },
-    { month: 'Apr', revenue: Math.max(stats.revenue * 0.30, 2800000) },
-    { month: 'May', revenue: Math.max(stats.revenue * 0.45, 3500000) },
-    { month: 'Jun', revenue: Math.max(stats.revenue * 0.60, 4200000) },
-    { month: 'Jul', revenue: Math.max(stats.revenue * 0.78, 5000000) },
-    { month: 'Aug', revenue: Math.max(stats.revenue * 0.90, 6000000) },
-    { month: 'Sep', revenue: Math.max(stats.revenue, 7000000) },
+    { month: ovt.jan, revenue: Math.max(stats.revenue * 0.08, 1000000) },
+    { month: ovt.feb, revenue: Math.max(stats.revenue * 0.14, 1500000) },
+    { month: ovt.mar, revenue: Math.max(stats.revenue * 0.22, 2000000) },
+    { month: ovt.apr, revenue: Math.max(stats.revenue * 0.30, 2800000) },
+    { month: ovt.may, revenue: Math.max(stats.revenue * 0.45, 3500000) },
+    { month: ovt.jun, revenue: Math.max(stats.revenue * 0.60, 4200000) },
+    { month: ovt.jul, revenue: Math.max(stats.revenue * 0.78, 5000000) },
+    { month: ovt.aug, revenue: Math.max(stats.revenue * 0.90, 6000000) },
+    { month: ovt.sep, revenue: Math.max(stats.revenue, 7000000) },
   ];
 
   const statCards = [
-    { label: 'Total Revenue', value: formatCurrency(stats.revenue), icon: DollarSign, color: '#10B981', glow: 'rgba(16,185,129,0.3)', sub: '+18% this month', isStr: true },
-    { label: 'Active Vehicles', value: `${stats.activeVehicles}/${stats.totalVehicles}`, icon: Car, color: '#F59E0B', glow: 'rgba(245,158,11,0.3)', sub: 'Fleet status' },
-    { label: 'Total Bookings', value: stats.totalBookings, icon: Calendar, color: '#6366F1', glow: 'rgba(99,102,241,0.3)', sub: `${stats.pending} pending` },
-    { label: 'My Rating', value: `${stats.rating || '5.0'}/5`, icon: CheckCircle, color: '#EC4899', glow: 'rgba(236,72,153,0.3)', sub: `${user?.totalReviews || 0} reviews` },
+    { label: ovt.totalRevenue, value: formatCurrency(stats.revenue), icon: DollarSign, color: '#10B981', glow: 'rgba(16,185,129,0.3)', sub: ovt.revenueSub, isStr: true },
+    { label: ovt.activeVehicles, value: `${stats.activeVehicles}/${stats.totalVehicles}`, icon: Car, color: '#F59E0B', glow: 'rgba(245,158,11,0.3)', sub: ovt.fleetStatus },
+    { label: ovt.totalBookings, value: stats.totalBookings, icon: Calendar, color: '#6366F1', glow: 'rgba(99,102,241,0.3)', sub: `${stats.pending} ${ovt.pendingSub}` },
+    { label: ovt.myRating, value: `${stats.rating || '5.0'}/5`, icon: CheckCircle, color: '#EC4899', glow: 'rgba(236,72,153,0.3)', sub: `${user?.totalReviews || 0} ${ovt.reviewsSub}` },
   ];
 
   const goalPct = 72;
   const featuredVehicle = vehicles[0];
-  const pendingBookings = bookings.filter(b => b.status === 'pending');
 
   const tasks = [
-    { label: 'Approve pending booking requests', done: false, count: stats.pending, color: '#F59E0B', href: '/owner/bookings' },
-    { label: 'Add photos to your listings', done: false, count: 2, color: '#6366F1', href: '/owner/vehicles' },
-    { label: 'Update vehicle availability calendar', done: false, count: 0, color: '#EC4899', href: '/owner/calendar' },
-    { label: 'Respond to customer reviews', done: true, count: 0, color: '#10B981', href: '/owner/revenue' },
-    { label: 'Complete earnings dashboard', done: true, count: 0, color: '#10B981', href: '/owner/revenue' },
+    { label: ovt.task1, done: false, count: stats.pending, color: '#F59E0B', href: '/owner/bookings' },
+    { label: ovt.task2, done: false, count: 2, color: '#6366F1', href: '/owner/vehicles' },
+    { label: ovt.task3, done: false, count: 0, color: '#EC4899', href: '/owner/calendar' },
+    { label: ovt.task4, done: true, count: 0, color: '#10B981', href: '/owner/revenue' },
+    { label: ovt.task5, done: true, count: 0, color: '#10B981', href: '/owner/revenue' },
   ];
 
   return (
@@ -136,7 +315,7 @@ export const OwnerOverview: React.FC = () => {
           <div className="absolute top-4 left-4">
             <span className="text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg"
               style={{ background: 'rgba(245,158,11,0.9)', color: '#000' }}>
-              🏆 Your Top Vehicle
+              {ovt.topVehicle}
             </span>
           </div>
 
@@ -144,7 +323,7 @@ export const OwnerOverview: React.FC = () => {
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl"
               style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}>
               <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-              <span className="text-[10px] font-bold text-white">Live</span>
+              <span className="text-[10px] font-bold text-white">{ovt.live}</span>
             </div>
           </div>
 
@@ -159,7 +338,7 @@ export const OwnerOverview: React.FC = () => {
                 </h2>
                 <p className="text-xl font-extrabold mt-1 text-amber-400">
                   {formatCurrency(featuredVehicle?.pricePerDay || 8500000)}
-                  <span className="text-sm font-semibold ml-1 text-white/50">/day</span>
+                  <span className="text-sm font-semibold ml-1 text-white/50">{ovt.perDay}</span>
                 </p>
               </div>
               <div className="flex flex-col gap-2 flex-shrink-0">
@@ -168,7 +347,7 @@ export const OwnerOverview: React.FC = () => {
                   style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', boxShadow: '0 4px 15px rgba(245,158,11,0.4)' }}
                 >
                   <Plus className="w-3.5 h-3.5 inline mr-1" />
-                  Add Vehicle
+                  {ovt.addVehicle}
                 </Link>
                 {featuredVehicle && (
                   <div className="flex items-center gap-1 justify-center">
@@ -214,8 +393,8 @@ export const OwnerOverview: React.FC = () => {
           >
             <div className="flex items-center justify-between mb-3">
               <div>
-                <p className="stat-label">Monthly Goal</p>
-                <p className="font-bold text-sm text-[var(--lw-text-primary)] mt-0.5">Revenue Target</p>
+                <p className="stat-label">{ovt.monthlyGoal}</p>
+                <p className="font-bold text-sm text-[var(--lw-text-primary)] mt-0.5">{ovt.revenueTarget}</p>
               </div>
               <div className="relative w-14 h-14">
                 <svg viewBox="0 0 48 48" className="w-full h-full -rotate-90">
@@ -256,8 +435,8 @@ export const OwnerOverview: React.FC = () => {
           className="lw-stat-card lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm"
         >
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-[var(--lw-text-primary)] text-sm">Recent Vehicles</h3>
-            <Link to="/owner/vehicles" className="text-xs font-bold text-amber-600 hover:text-amber-700 transition-colors">View all →</Link>
+            <h3 className="font-bold text-[var(--lw-text-primary)] text-sm">{ovt.recentVehicles}</h3>
+            <Link to="/owner/vehicles" className="text-xs font-bold text-amber-600 hover:text-amber-700 transition-colors">{ovt.viewAll}</Link>
           </div>
           <div className="space-y-3">
             {vehicles.length === 0 ? (
@@ -283,7 +462,7 @@ export const OwnerOverview: React.FC = () => {
                   <div className="text-right flex-shrink-0">
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg"
                       style={{ background: v.status === 'available' ? 'rgba(16,185,129,0.12)' : 'rgba(99,102,241,0.12)', color: v.status === 'available' ? '#059669' : '#6366F1' }}>
-                      {v.status === 'available' ? 'For Rent' : 'Rented'}
+                      {v.status === 'available' ? ovt.forRent : ovt.rented}
                     </span>
                     <p className="text-xs font-bold text-[var(--lw-text-primary)] mt-1">{formatCurrency(v.price)}</p>
                   </div>
@@ -302,7 +481,7 @@ export const OwnerOverview: React.FC = () => {
                 <div className="text-right flex-shrink-0">
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg"
                     style={{ background: v.status === 'available' ? 'rgba(16,185,129,0.12)' : 'rgba(99,102,241,0.12)', color: v.status === 'available' ? '#059669' : '#6366F1' }}>
-                    {v.status === 'available' ? 'For Rent' : 'Rented'}
+                    {v.status === 'available' ? ovt.forRent : ovt.rented}
                   </span>
                   <p className="text-xs font-bold text-[var(--lw-text-primary)] mt-1">{formatCurrency(v.pricePerDay)}</p>
                 </div>
@@ -318,12 +497,12 @@ export const OwnerOverview: React.FC = () => {
         >
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h3 className="font-bold text-[var(--lw-text-primary)] text-sm">{t.ownerDashboard.revenueChartTitle}</h3>
-              <p className="text-[11px] mt-0.5 text-[var(--lw-text-muted)]">Your earnings this year</p>
+              <h3 className="font-bold text-[var(--lw-text-primary)] text-sm">{ovt.revenueChartTitle}</h3>
+              <p className="text-[11px] mt-0.5 text-[var(--lw-text-muted)]">{ovt.yourEarningsThisYear}</p>
             </div>
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800">
               <Activity className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-              <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">{t.ownerDashboard.liveAnalytics}</span>
+              <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">{ovt.liveAnalytics}</span>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={200}>
@@ -357,9 +536,9 @@ export const OwnerOverview: React.FC = () => {
           className="lw-stat-card"
         >
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-[var(--lw-text-primary)] text-sm">{t.ownerDashboard.pendingRequests}</h3>
+            <h3 className="font-bold text-[var(--lw-text-primary)] text-sm">{ovt.pendingRequests}</h3>
             <span className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-red-50 text-red-600 border border-red-200">
-              {stats.pending} pending
+              {stats.pending} {ovt.pendingSub}
             </span>
           </div>
           <div className="space-y-3">
@@ -379,14 +558,14 @@ export const OwnerOverview: React.FC = () => {
                   onClick={() => bookingService.updateStatus(booking.id, 'confirmed')}
                   className="px-4 py-2 rounded-xl text-xs font-bold text-white transition-all flex-shrink-0 bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-500/20"
                 >
-                  Approve
+                  {ovt.approveBtn}
                 </button>
               </div>
             ))}
             {bookings.filter(b => b.status === 'pending').length === 0 && (
               <div className="text-center py-10">
                 <CheckCircle className="w-10 h-10 mx-auto mb-3 text-slate-300" />
-                <p className="text-sm font-medium text-[var(--lw-text-muted)]">No pending requests</p>
+                <p className="text-sm font-medium text-[var(--lw-text-muted)]">{ovt.noPendingRequests}</p>
               </div>
             )}
           </div>
@@ -402,10 +581,10 @@ export const OwnerOverview: React.FC = () => {
               <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800">
                 <BarChart2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
               </div>
-              <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm">Tasks</h3>
+              <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm">{ovt.tasksTitle}</h3>
             </div>
             <span className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800">
-              {tasks.filter(t => !t.done).length} pending
+              {tasks.filter(t => !t.done).length} {ovt.pendingSub}
             </span>
           </div>
           <div className="space-y-2.5">
@@ -439,7 +618,7 @@ export const OwnerOverview: React.FC = () => {
           <div className="mt-4 pt-4 border-t border-[var(--lw-border)]">
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--lw-text-muted)]">
-                {tasks.filter(t => t.done).length} of {tasks.length} completed
+                {ovt.completedOf} {tasks.filter(t => t.done).length} / {tasks.length}
               </span>
               <span className="text-[10px] font-bold text-amber-600">
                 {Math.round(tasks.filter(t => t.done).length / tasks.length * 100)}%
@@ -464,12 +643,111 @@ export const OwnerOverview: React.FC = () => {
 // ====== VEHICLE MANAGEMENT ======
 export const VehicleManagePage: React.FC = () => {
   const { user } = useAuthStore();
+  const { language } = useUIStore();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'CAR' | 'MOTORBIKE'>('CAR');
   const toast = useToast();
   const t = useT();
-  const isVi = t.common.loading.includes('Đang');
+  const lang = (language || 'en').toLowerCase();
+
+  const vmt = React.useMemo(() => {
+    const dicts: Record<string, Record<string, string>> = {
+      vi: {
+        myVehicles: 'Xe của tôi',
+        backToOverview: 'Quay lại tổng quan',
+        addVehicle: 'Thêm xe',
+        cars: '🚗 Ô tô',
+        motorbikes: '🏍️ Xe máy',
+        img: 'HÌNH ẢNH',
+        name: 'TÊN XE',
+        type: 'LOẠI XE',
+        price: 'GIÁ THUÊ',
+        status: 'TRẠNG THÁI',
+        approvalNote: 'GHI CHÚ DUYỆT',
+        action: 'THAO TÁC',
+        available: 'SẴN SÀNG',
+        rented: 'ĐANG THUÊ',
+        submitted: 'CHỜ DUYỆT',
+        rejected: 'TỪ CHỐI'
+      },
+      ja: {
+        myVehicles: 'マイ車両',
+        backToOverview: '概要に戻る',
+        addVehicle: '車両を追加',
+        cars: '🚗 乗用車',
+        motorbikes: '🏍️ バイク',
+        img: '画像',
+        name: '車両名',
+        type: 'タイプ',
+        price: '料金',
+        status: 'ステータス',
+        approvalNote: '承認ノート',
+        action: '操作',
+        available: '利用可能',
+        rented: '貸出中',
+        submitted: '申請中',
+        rejected: '却下'
+      },
+      ko: {
+        myVehicles: '내 차량',
+        backToOverview: '개요로 돌아가기',
+        addVehicle: '차량 추가',
+        cars: '🚗 승용차',
+        motorbikes: '🏍️ 오토바이',
+        img: '이미지',
+        name: '차량명',
+        type: '유형',
+        price: '대여료',
+        status: '상태',
+        approvalNote: '승인 메모',
+        action: '작업',
+        available: '대여 가능',
+        rented: '대여 중',
+        submitted: '제출됨',
+        rejected: '거절됨'
+      },
+      zh: {
+        myVehicles: '我的车辆',
+        backToOverview: '返回概览',
+        addVehicle: '添加车辆',
+        cars: '🚗 轿车',
+        motorbikes: '🏍️ 摩托车',
+        img: '图片',
+        name: '车辆名称',
+        type: '类型',
+        price: '价格',
+        status: '状态',
+        approvalNote: '审核备注',
+        action: '操作',
+        available: '可出租',
+        rented: '已出租',
+        submitted: '已提交',
+        rejected: '已拒绝'
+      }
+    };
+
+    const fallback = {
+      myVehicles: 'My Vehicles',
+      backToOverview: 'Back to Overview',
+      addVehicle: 'Add Vehicle',
+      cars: '🚗 Cars',
+      motorbikes: '🏍️ Motorbikes',
+      img: 'IMAGE',
+      name: 'NAME',
+      type: 'TYPE',
+      price: 'PRICE',
+      status: 'STATUS',
+      approvalNote: 'APPROVAL NOTE',
+      action: 'ACTION',
+      available: 'AVAILABLE',
+      rented: 'RENTED',
+      submitted: 'SUBMITTED',
+      rejected: 'REJECTED'
+    };
+
+    return dicts[lang] || fallback;
+  }, [lang]);
 
   useEffect(() => {
     if (!user) return;
@@ -480,27 +758,36 @@ export const VehicleManagePage: React.FC = () => {
   }, [user?.id]);
 
   const handleDelete = async (vehicleId: string, vehicleName: string) => {
-    if (window.confirm(isVi ? `Xác nhận xóa xe ${vehicleName}?` : `Delete ${vehicleName}?`)) {
+    if (window.confirm(lang === 'vi' ? `Xác nhận xóa xe ${vehicleName}?` : `Delete ${vehicleName}?`)) {
       await vehicleService.delete(vehicleId);
       setVehicles(prev => prev.filter(v => v.id !== vehicleId));
-      toast.success(isVi ? 'Đã xóa phương tiện thành công' : 'Vehicle deleted');
+      toast.success(lang === 'vi' ? 'Đã xóa phương tiện thành công' : 'Vehicle deleted');
     }
   };
 
   const breadcrumbItems = [
     { label: t.marketplace.home, href: '/' },
     { label: 'Host Portal', href: '/owner' },
-    { label: t.ownerDashboard.myVehicles }
+    { label: vmt.myVehicles }
   ];
 
   const filteredVehicles = vehicles.filter(v => (v.vehicleType || 'CAR').toUpperCase() === activeTab);
 
+  const getStatusLabel = (status: string) => {
+    const upper = status.toUpperCase();
+    if (upper === 'AVAILABLE' || upper === 'APPROVED') return vmt.available;
+    if (upper === 'RENTED' || upper === 'IN_RENTAL') return vmt.rented;
+    if (upper === 'SUBMITTED' || upper === 'PENDING') return vmt.submitted;
+    if (upper === 'REJECTED') return vmt.rejected;
+    return upper;
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--lw-border)] pb-5">
-        <Breadcrumbs title={t.ownerDashboard.myVehicles} items={breadcrumbItems} backHref="/owner" backText="Back to Overview" className="mb-0 flex-1" />
+        <Breadcrumbs title={vmt.myVehicles} items={breadcrumbItems} backHref="/owner" backText={vmt.backToOverview} className="mb-0 flex-1" />
         <Link to="/owner/vehicles/new" className="btn-gold flex items-center gap-2 text-xs font-extrabold px-5 py-3 rounded-xl shadow-lg shadow-gold/20 hover:shadow-gold/30 hover-lift lw-btn-interactive">
-          <Plus className="w-4 h-4" /> {t.ownerDashboard.addVehicle}
+          <Plus className="w-4 h-4" /> {vmt.addVehicle}
         </Link>
       </div>
 
@@ -513,7 +800,7 @@ export const VehicleManagePage: React.FC = () => {
               : 'border-slate-200 dark:border-white/5 text-slate-500 dark:text-slate-400 bg-white/50 dark:bg-slate-800/50 hover:border-slate-300'
           }`}
         >
-          🚗 Cars ({vehicles.filter(v => (v.vehicleType || 'CAR').toUpperCase() === 'CAR').length})
+          {vmt.cars} ({vehicles.filter(v => (v.vehicleType || 'CAR').toUpperCase() === 'CAR').length})
         </button>
         <button
           onClick={() => setActiveTab('MOTORBIKE')}
@@ -523,7 +810,7 @@ export const VehicleManagePage: React.FC = () => {
               : 'border-slate-200 dark:border-white/5 text-slate-500 dark:text-slate-400 bg-white/50 dark:bg-slate-800/50 hover:border-slate-300'
           }`}
         >
-          🏍️ Motorbikes ({vehicles.filter(v => (v.vehicleType || 'CAR').toUpperCase() === 'MOTORBIKE').length})
+          {vmt.motorbikes} ({vehicles.filter(v => (v.vehicleType || 'CAR').toUpperCase() === 'MOTORBIKE').length})
         </button>
       </div>
 
@@ -535,7 +822,7 @@ export const VehicleManagePage: React.FC = () => {
         <div className="glass border border-slate-200/50 dark:border-white/5 text-center py-20 rounded-[2.5rem] shadow-sm">
           <Car className="w-16 h-16 text-slate-300 dark:text-slate-700 mx-auto mb-4 animate-bounce" />
           <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-2 text-lg">{t.ownerDashboard.noVehiclesYet}</h3>
-          <p className="text-slate-400 text-sm font-medium mb-6">{isVi ? 'Bạn chưa có phương tiện nào trong danh mục này.' : `No ${activeTab.toLowerCase()}s found in this category.`}</p>
+          <p className="text-slate-400 text-sm font-medium mb-6">{lang === 'vi' ? 'Bạn chưa có phương tiện nào trong danh mục này.' : `No ${activeTab.toLowerCase()}s found in this category.`}</p>
           <Link to="/owner/vehicles/new" className="btn-gold px-6 py-3.5 rounded-xl text-xs font-extrabold font-display hover-lift">{t.ownerDashboard.addFirstVehicle}</Link>
         </div>
       ) : (
@@ -548,19 +835,19 @@ export const VehicleManagePage: React.FC = () => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                <th className="p-4 pl-6">Image</th>
-                <th className="p-4">Name</th>
-                <th className="p-4">Type</th>
-                <th className="p-4">Price</th>
-                <th className="p-4">Status</th>
-                <th className="p-4">Approval Note</th>
-                <th className="p-4 pr-6 text-right">Action</th>
+                <th className="p-4 pl-6">{vmt.img}</th>
+                <th className="p-4">{vmt.name}</th>
+                <th className="p-4">{vmt.type}</th>
+                <th className="p-4">{vmt.price}</th>
+                <th className="p-4">{vmt.status}</th>
+                <th className="p-4">{vmt.approvalNote}</th>
+                <th className="p-4 pr-6 text-right">{vmt.action}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200/50 dark:divide-white/5 text-sm">
               {filteredVehicles.map(vehicle => {
                 const statusLower = (vehicle.approvalStatus || vehicle.status || '').toLowerCase();
-                const displayStatus = statusLower === 'approved' ? 'AVAILABLE' : statusLower.toUpperCase();
+                const displayRaw = statusLower === 'approved' ? 'AVAILABLE' : statusLower.toUpperCase();
                 return (
                   <tr key={vehicle.id} className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
                     <td className="p-4 pl-6">
@@ -581,16 +868,16 @@ export const VehicleManagePage: React.FC = () => {
                     </td>
                     <td className="p-4">
                       <span className={`px-2.5 py-1 text-[10px] font-black rounded-lg border uppercase tracking-wider ${
-                        displayStatus === 'AVAILABLE' || displayStatus === 'APPROVED' ? 'bg-green-50 text-green-700 border-green-200' :
-                        displayStatus === 'SUBMITTED' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                        displayStatus === 'REJECTED' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                        displayRaw === 'AVAILABLE' || displayRaw === 'APPROVED' ? 'bg-green-50 text-green-700 border-green-200' :
+                        displayRaw === 'SUBMITTED' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                        displayRaw === 'REJECTED' ? 'bg-rose-50 text-rose-700 border-rose-200' :
                         'bg-slate-50 text-slate-700 border-slate-200'
                       }`}>
-                        {displayStatus}
+                        {getStatusLabel(displayRaw)}
                       </span>
                     </td>
                     <td className="p-4 text-xs text-slate-500 max-w-[200px] truncate">
-                      {displayStatus === 'REJECTED' && vehicle.approvalNote ? (
+                      {displayRaw === 'REJECTED' && vehicle.approvalNote ? (
                         <span className="text-rose-600 font-medium">{vehicle.approvalNote}</span>
                       ) : (
                         <span className="text-slate-400">—</span>
@@ -598,7 +885,7 @@ export const VehicleManagePage: React.FC = () => {
                     </td>
                     <td className="p-4 pr-6 text-right">
                       <div className="flex gap-2 justify-end">
-                        <Link to={`/vehicles/${vehicle.id}`} title={isVi ? 'Xem Tin Đăng' : 'View Listing'} className="p-2 border border-slate-200 dark:border-white/10 hover:border-gold hover:text-gold text-slate-500 rounded-lg transition-colors">
+                        <Link to={`/vehicles/${vehicle.id}`} title={lang === 'vi' ? 'Xem Tin Đăng' : 'View Listing'} className="p-2 border border-slate-200 dark:border-white/10 hover:border-gold hover:text-gold text-slate-500 rounded-lg transition-colors">
                           <Eye className="w-4 h-4" />
                         </Link>
                         <Link to={`/owner/vehicles/${vehicle.id}/edit`} title={t.common.edit} className="p-2 border border-slate-200 dark:border-white/10 hover:border-blue-500 hover:text-blue-500 text-slate-500 rounded-lg transition-colors">
@@ -1215,15 +1502,85 @@ export const VehicleFormPage: React.FC = () => {
 // ====== OWNER CALENDAR PAGE ======
 export const OwnerCalendarPage: React.FC = () => {
   const { user } = useAuthStore();
+  const { language } = useUIStore();
   const t = useT();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedVehicle, setSelectedVehicle] = useState<string>('all');
+  const lang = (language || 'en').toLowerCase();
   
   const currentDate = new Date();
   const [currentMonth, setCurrentMonth] = useState(currentDate.getMonth());
   const [currentYear, setCurrentYear] = useState(currentDate.getFullYear());
+
+  const clt = React.useMemo(() => {
+    const dicts: Record<string, Record<string, any>> = {
+      vi: {
+        fleetCalendar: 'Lịch xe đội',
+        backToOverview: 'Quay lại tổng quan',
+        allFleetVehicles: 'Tất cả xe',
+        waitingPayment: 'CHỜ THANH TOÁN',
+        confirmed: 'ĐÃ XÁC NHẬN',
+        activeRental: 'ĐANG THUÊ',
+        cancelReview: 'XEM XÉT HỦY',
+        completed: 'HOÀN THÀNH',
+        days: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
+        monthFormat: 'tháng M năm YYYY'
+      },
+      ja: {
+        fleetCalendar: 'フリートカレンダー',
+        backToOverview: '概要に戻る',
+        allFleetVehicles: 'すべての車両',
+        waitingPayment: '支払い待ち',
+        confirmed: '確認済み',
+        activeRental: 'レンタル中',
+        cancelReview: 'キャンセル審査',
+        completed: '完了',
+        days: ['日', '月', '火', '水', '木', '金', '土'],
+        monthFormat: 'YYYY年M月'
+      },
+      ko: {
+        fleetCalendar: '차량 달력',
+        backToOverview: '개요로 돌아가기',
+        allFleetVehicles: '모든 차량',
+        waitingPayment: '결제 대기',
+        confirmed: '확정됨',
+        activeRental: '대여 중',
+        cancelReview: '취소 검토',
+        completed: '완료',
+        days: ['일', '월', '화', '수', '목', '금', '토'],
+        monthFormat: 'YYYY년 M월'
+      },
+      zh: {
+        fleetCalendar: '车队日历',
+        backToOverview: '返回概览',
+        allFleetVehicles: '所有车辆',
+        waitingPayment: '等待付款',
+        confirmed: '已确认',
+        activeRental: '租赁中',
+        cancelReview: '取消审核',
+        completed: '已完成',
+        days: ['日', '一', '二', '三', '四', '五', '六'],
+        monthFormat: 'YYYY年M月'
+      }
+    };
+
+    const fallback = {
+      fleetCalendar: 'Fleet Calendar',
+      backToOverview: 'Back to Overview',
+      allFleetVehicles: 'All Fleet Vehicles',
+      waitingPayment: 'WAITING PAYMENT',
+      confirmed: 'CONFIRMED',
+      activeRental: 'ACTIVE RENTAL',
+      cancelReview: 'CANCEL REVIEW',
+      completed: 'COMPLETED',
+      days: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+      monthFormat: 'MMMM YYYY'
+    };
+
+    return dicts[lang] || fallback;
+  }, [lang]);
 
   useEffect(() => {
     if (!user) return;
@@ -1275,11 +1632,11 @@ export const OwnerCalendarPage: React.FC = () => {
   };
 
   const calendarLegend = [
-    { status: 'waiting_payment', label: 'Waiting payment' },
-    { status: 'confirmed', label: 'Confirmed' },
-    { status: 'active', label: 'Active rental' },
-    { status: 'cancellation_requested', label: 'Cancel review' },
-    { status: 'completed', label: 'Completed' },
+    { status: 'waiting_payment', label: clt.waitingPayment },
+    { status: 'confirmed', label: clt.confirmed },
+    { status: 'active', label: clt.activeRental },
+    { status: 'cancellation_requested', label: clt.cancelReview },
+    { status: 'completed', label: clt.completed },
   ];
 
   const breadcrumbItems = [
@@ -1288,17 +1645,24 @@ export const OwnerCalendarPage: React.FC = () => {
     { label: t.ownerDashboard.calendar }
   ];
 
+  const formatMonthTitle = () => {
+    if (lang === 'vi') return `tháng ${currentMonth + 1} năm ${currentYear}`;
+    if (lang === 'ja' || lang === 'zh') return `${currentYear}年${currentMonth + 1}月`;
+    if (lang === 'ko') return `${currentYear}년 ${currentMonth + 1}월`;
+    return new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long', year: 'numeric' });
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--lw-border)] pb-5">
-        <Breadcrumbs title="Fleet Calendar" items={breadcrumbItems} backHref="/owner" backText="Back to Overview" className="mb-0 flex-1" />
+        <Breadcrumbs title={clt.fleetCalendar} items={breadcrumbItems} backHref="/owner" backText={clt.backToOverview} className="mb-0 flex-1" />
         <div className="flex items-center gap-3">
           <select 
             value={selectedVehicle} 
             onChange={(e) => setSelectedVehicle(e.target.value)}
             className="lux-input py-2.5 bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-white/5 text-slate-800 dark:text-white font-extrabold min-w-[220px] rounded-xl focus:border-gold/50"
           >
-            <option value="all">All Fleet Vehicles</option>
+            <option value="all">{clt.allFleetVehicles}</option>
             {vehicles.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
           </select>
         </div>
@@ -1308,7 +1672,7 @@ export const OwnerCalendarPage: React.FC = () => {
         {/* Calendar Header */}
         <div className="p-4 sm:p-5 border-b border-slate-200/25 dark:border-white/5 flex items-center justify-between bg-slate-500/5">
           <h2 className="font-display text-lg font-extrabold text-slate-800 dark:text-white tracking-tight">
-            {new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long', year: 'numeric' })}
+            {formatMonthTitle()}
           </h2>
           <div className="flex gap-2">
             <button onClick={prevMonth} className="p-2.5 rounded-xl border border-slate-200/50 dark:border-white/10 hover:bg-slate-500/10 transition-all font-extrabold text-slate-600 dark:text-slate-300 text-sm hover:text-gold hover-lift">
@@ -1330,7 +1694,7 @@ export const OwnerCalendarPage: React.FC = () => {
 
         {/* Days of Week */}
         <div className="grid grid-cols-7 border-b border-slate-200/25 dark:border-white/5 bg-slate-500/3">
-          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
+          {(clt.days as string[]).map(d => (
             <div key={d} className="p-3.5 text-center text-xs font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
               {d}
             </div>
@@ -1382,11 +1746,171 @@ export const OwnerCalendarPage: React.FC = () => {
 // ====== OWNER BOOKINGS PAGE ======
 export const OwnerBookingsPage: React.FC = () => {
   const { user } = useAuthStore();
+  const { language } = useUIStore();
   const [bookings, setBookings] = React.useState<Booking[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [filter, setFilter] = React.useState('all');
   const toast = useToast();
   const t = useT();
+  const lang = (language || 'en').toLowerCase();
+
+  const bkt = React.useMemo(() => {
+    const dicts: Record<string, Record<string, string>> = {
+      vi: {
+        bookingRequestsTitle: 'Yêu cầu đặt xe',
+        backToOverview: 'Quay lại tổng quan',
+        all: 'Tất cả',
+        pending: 'Chờ duyệt',
+        cancelReview: 'Xem xét hủy',
+        paymentReview: 'Duyệt thanh toán',
+        confirmed: 'Đã xác nhận',
+        active: 'Đang thuê',
+        completed: 'Hoàn thành',
+        cancelled: 'Đã hủy',
+        renter: 'Khách thuê',
+        vehicle: 'XE THUÊ',
+        renterHeader: 'NGƯỜI THUÊ',
+        rentalWindow: 'THỜI GIAN THUÊ',
+        deposit: 'TIỀN CỌC',
+        currentStatus: 'TRẠNG THÁI HIỆN TẠI',
+        payment: 'THANH TOÁN',
+        contract: 'HỢP ĐỒNG',
+        days: 'ngày',
+        contractNote: 'Khách thuê ký trước; chủ xe ký riêng từ trang hợp đồng.',
+        cancellationNotice: 'Khách hàng đã yêu cầu hủy chuyến. Vui lòng xem xét ngày và chính sách để phê duyệt hủy hoặc từ chối để giữ chuyến xe.',
+        viewStatusDetails: 'Xem Trạng thái & Chi tiết',
+        reviewSignContract: 'Xem xét & Ký Hợp đồng',
+        approveRequest: 'Duyệt Yêu cầu',
+        reject: 'Từ chối',
+        approveCancel: 'Duyệt Hủy',
+        rejectCancel: 'Từ chối Hủy',
+        simulateTrack: 'Mô phỏng & Theo dõi'
+      },
+      ja: {
+        bookingRequestsTitle: '予約リクエスト',
+        backToOverview: '概要に戻る',
+        all: 'すべて',
+        pending: '保留中',
+        cancelReview: 'キャンセル審査',
+        paymentReview: 'お支払い審査',
+        confirmed: '確認済み',
+        active: 'レンタル中',
+        completed: '完了',
+        cancelled: 'キャンセル済み',
+        renter: '借手',
+        vehicle: '車両',
+        renterHeader: '借手',
+        rentalWindow: 'レンタル期間',
+        deposit: '保証金',
+        currentStatus: '現在のステータス',
+        payment: 'お支払い',
+        contract: '契約',
+        days: '日間',
+        contractNote: '借手が先に署名し、オーナーは契約ページから別途署名します。',
+        cancellationNotice: 'お客様からキャンセルリクエストが送信されました。日付とポリシーを確認して承認または却下してください。',
+        viewStatusDetails: 'ステータスと詳細を見る',
+        reviewSignContract: '契約書を確認して署名',
+        approveRequest: 'リクエスト承認',
+        reject: '却下',
+        approveCancel: 'キャンセル承認',
+        rejectCancel: 'キャンセル却下',
+        simulateTrack: 'シミュレーションと追跡'
+      },
+      ko: {
+        bookingRequestsTitle: '예약 요청',
+        backToOverview: '개요로 돌아가기',
+        all: '전체',
+        pending: '대기 중',
+        cancelReview: '취소 검토',
+        paymentReview: '결제 검토',
+        confirmed: '확정됨',
+        active: '대여 중',
+        completed: '완료',
+        cancelled: '취소됨',
+        renter: '대여자',
+        vehicle: '차량',
+        renterHeader: '대여자',
+        rentalWindow: '대여 기간',
+        deposit: '보증금',
+        currentStatus: '현재 상태',
+        payment: '결제',
+        contract: '계약',
+        days: '일',
+        contractNote: '대여자가 먼저 서명하며, 호스트는 계약 페이지에서 별도로 서명합니다.',
+        cancellationNotice: '고객이 취소를 요청했습니다. 날짜와 정책을 검토한 후 승인 hoặc 거절하세요.',
+        viewStatusDetails: '상태 및 상세 보기',
+        reviewSignContract: '계약서 검토 및 서명',
+        approveRequest: '요청 승인',
+        reject: '거절',
+        approveCancel: '취소 승인',
+        rejectCancel: '취소 거절',
+        simulateTrack: '시뮬레이션 및 추적'
+      },
+      zh: {
+        bookingRequestsTitle: '预订请求',
+        backToOverview: '返回概览',
+        all: '全部',
+        pending: '待处理',
+        cancelReview: '取消审核',
+        paymentReview: '付款审核',
+        confirmed: '已确认',
+        active: '租赁中',
+        completed: '已完成',
+        cancelled: '已取消',
+        renter: '租客',
+        vehicle: '车辆',
+        renterHeader: '租客',
+        rentalWindow: '租赁时间',
+        deposit: '押金',
+        currentStatus: '当前状态',
+        payment: '支付',
+        contract: '合同',
+        days: '天',
+        contractNote: '租客先签署；车主从合同页面单独签署。',
+        cancellationNotice: '客户已申请取消。请查看日期和政策，然后批准取消或拒绝以保持预订有效。',
+        viewStatusDetails: '查看状态与详情',
+        reviewSignContract: '审查并签署合同',
+        approveRequest: '批准请求',
+        reject: '拒绝',
+        approveCancel: '批准取消',
+        rejectCancel: '拒绝取消',
+        simulateTrack: '模拟与追踪'
+      }
+    };
+
+    const fallback = {
+      bookingRequestsTitle: 'Booking Requests',
+      backToOverview: 'Back to Overview',
+      all: 'All',
+      pending: 'Pending',
+      cancelReview: 'Cancel Review',
+      paymentReview: 'Payment Review',
+      confirmed: 'Confirmed',
+      active: 'Active',
+      completed: 'Completed',
+      cancelled: 'Cancelled',
+      renter: 'Renter',
+      vehicle: 'VEHICLE',
+      renterHeader: 'RENTER',
+      rentalWindow: 'RENTAL WINDOW',
+      deposit: 'DEPOSIT',
+      currentStatus: 'CURRENT STATUS',
+      payment: 'PAYMENT',
+      contract: 'CONTRACT',
+      days: 'days',
+      contractNote: 'Renter signs first; owner signs separately from the contract page.',
+      cancellationNotice: 'Customer requested cancellation. Review the dates and policy, then approve to cancel and release availability or reject to keep the booking active.',
+      viewStatusDetails: 'View Status & Details',
+      reviewSignContract: 'Review & Sign Contract',
+      approveRequest: 'Approve Request',
+      reject: 'Reject',
+      approveCancel: 'Approve Cancel',
+      rejectCancel: 'Reject Cancel',
+      simulateTrack: 'Simulate & Track'
+    };
+
+    return dicts[lang] || fallback;
+  }, [lang]);
 
   React.useEffect(() => {
     if (!user) return;
@@ -1398,14 +1922,14 @@ export const OwnerBookingsPage: React.FC = () => {
 
   const filtered = filter === 'all' ? bookings : bookings.filter(b => b.status === filter);
   const statusTabs = [
-    { value: 'all', label: 'All' },
-    { value: 'pending', label: 'Pending' },
-    { value: 'cancellation_requested', label: 'Cancel Review' },
-    { value: 'payment_pending', label: 'Payment Review' },
-    { value: 'confirmed', label: 'Confirmed' },
-    { value: 'active', label: 'Active' },
-    { value: 'completed', label: 'Completed' },
-    { value: 'cancelled', label: 'Cancelled' },
+    { value: 'all', label: bkt.all },
+    { value: 'pending', label: bkt.pending },
+    { value: 'cancellation_requested', label: bkt.cancelReview },
+    { value: 'payment_pending', label: bkt.paymentReview },
+    { value: 'confirmed', label: bkt.confirmed },
+    { value: 'active', label: bkt.active },
+    { value: 'completed', label: bkt.completed },
+    { value: 'cancelled', label: bkt.cancelled },
   ];
   const countByStatus = (status: string) => status === 'all'
     ? bookings.length
@@ -1419,58 +1943,58 @@ export const OwnerBookingsPage: React.FC = () => {
   };
   const renterTitle = (booking: Booking) => booking.renter?.displayName || booking.renter?.email || booking.renterId || 'Renter';
   const paymentState = (status: string) => {
-    if (status === 'payment_pending') return 'Customer paid - waiting review';
-    if (['payment_verified', 'confirmed', 'active', 'completed', 'in_rental', 'return_completed'].includes(status)) return 'Payment confirmed';
-    if (status === 'payment_expired') return 'Payment window expired';
-    if (status === 'waiting_payment') return 'Pay later - waiting payment';
-    if (status === 'payment_rejected') return 'Payment rejected';
-    return 'No payment required yet';
+    if (status === 'payment_pending') return lang === 'vi' ? 'Đã thanh toán - chờ duyệt' : 'Customer paid - waiting review';
+    if (['payment_verified', 'confirmed', 'active', 'completed', 'in_rental', 'return_completed'].includes(status)) return lang === 'vi' ? 'Đã xác nhận thanh toán' : 'Payment confirmed';
+    if (status === 'payment_expired') return lang === 'vi' ? 'Hết hạn thời gian thanh toán' : 'Payment window expired';
+    if (status === 'waiting_payment') return lang === 'vi' ? 'Thanh toán sau - chờ thanh toán' : 'Pay later - waiting payment';
+    if (status === 'payment_rejected') return lang === 'vi' ? 'Thanh toán bị từ chối' : 'Payment rejected';
+    return lang === 'vi' ? 'Chưa cần thanh toán' : 'No payment required yet';
   };
   const contractState = (status: string) => {
-    if (['waiting_payment', 'payment_rejected'].includes(status)) return 'Renter signing/payment stage';
-    if (['payment_pending', 'payment_verified', 'confirmed', 'active', 'completed', 'in_rental', 'return_completed'].includes(status)) return 'Owner review/sign available';
-    if (['cancelled', 'customer_cancelled', 'owner_cancelled', 'system_cancelled'].includes(status)) return 'Contract closed';
-    return 'Prepared after approval';
+    if (['waiting_payment', 'payment_rejected'].includes(status)) return lang === 'vi' ? 'Bước ký/thanh toán của khách' : 'Renter signing/payment stage';
+    if (['payment_pending', 'payment_verified', 'confirmed', 'active', 'completed', 'in_rental', 'return_completed'].includes(status)) return lang === 'vi' ? 'Chủ xe có thể xem/ký hợp đồng' : 'Owner review/sign available';
+    if (['cancelled', 'customer_cancelled', 'owner_cancelled', 'system_cancelled'].includes(status)) return lang === 'vi' ? 'Hợp đồng đã đóng' : 'Contract closed';
+    return lang === 'vi' ? 'Chuẩn bị sau khi duyệt' : 'Prepared after approval';
   };
   const nextStep = (status: string) => {
     switch (status) {
-      case 'pending': return 'Review renter request, then approve or reject.';
-      case 'waiting_payment': return 'Renter may sign and pay now, or continue payment later.';
-      case 'payment_pending': return 'Customer payment was submitted. Review payment, then sign the owner side if needed.';
-      case 'cancellation_requested': return 'Review cancellation policy and approve or reject.';
+      case 'pending': return lang === 'vi' ? 'Xem xét yêu cầu người thuê, sau đó duyệt hoặc từ chối.' : 'Review renter request, then approve or reject.';
+      case 'waiting_payment': return lang === 'vi' ? 'Khách thuê có thể ký và thanh toán ngay.' : 'Renter may sign and pay now, or continue payment later.';
+      case 'payment_pending': return lang === 'vi' ? 'Khách đã gửi thanh toán. Kiểm tra và ký phía chủ xe.' : 'Customer payment was submitted. Review payment, then sign the owner side if needed.';
+      case 'cancellation_requested': return lang === 'vi' ? 'Xem xét chính sách hủy và chấp nhận hoặc từ chối.' : 'Review cancellation policy and approve or reject.';
       case 'confirmed':
-      case 'ready_for_pickup': return 'Prepare pickup and track handover.';
+      case 'ready_for_pickup': return lang === 'vi' ? 'Chuẩn bị giao xe và theo dõi bàn giao.' : 'Prepare pickup and track handover.';
       case 'active':
-      case 'in_rental': return 'Monitor active rental and return condition.';
+      case 'in_rental': return lang === 'vi' ? 'Theo dõi chuyến thuê đang diễn ra.' : 'Monitor active rental and return condition.';
       case 'completed':
-      case 'return_completed': return 'Trip finished. Review revenue and feedback.';
+      case 'return_completed': return lang === 'vi' ? 'Chuyến đi hoàn tất. Kiểm tra doanh thu.' : 'Trip finished. Review revenue and feedback.';
       case 'cancelled':
       case 'customer_cancelled':
       case 'owner_cancelled':
-      case 'system_cancelled': return 'Booking is closed.';
-      default: return 'Open status details for the latest operation state.';
+      case 'system_cancelled': return lang === 'vi' ? 'Đơn đặt xe đã đóng.' : 'Booking is closed.';
+      default: return lang === 'vi' ? 'Mở chi tiết trạng thái để xem tình trạng mới nhất.' : 'Open status details for the latest operation state.';
     }
   };
 
   const handleApprove = async (bookingId: string) => {
     await bookingService.updateStatus(bookingId, 'confirmed');
     setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: 'confirmed' } : b));
-    toast.success('Booking approved!', 'The renter has been notified.');
+    toast.success(lang === 'vi' ? 'Đã duyệt đặt xe!' : 'Booking approved!', lang === 'vi' ? 'Khách thuê đã được thông báo.' : 'The renter has been notified.');
   };
 
   const handleReject = async (bookingId: string) => {
     await bookingService.updateStatus(bookingId, 'cancelled');
     setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: 'cancelled' } : b));
-    toast.success('Booking rejected', 'The renter has been notified.');
+    toast.success(lang === 'vi' ? 'Đã từ chối đặt xe' : 'Booking rejected', lang === 'vi' ? 'Khách thuê đã được thông báo.' : 'The renter has been notified.');
   };
 
   const handleApproveCancellation = async (bookingId: string) => {
     const updated = await bookingService.approveCancellation(bookingId, 'Cancellation approved by owner');
     if (updated) {
       setBookings(prev => prev.map(b => b.id === bookingId ? updated : b));
-      toast.success('Cancellation approved', 'The booking has been cancelled and the renter has been notified.');
+      toast.success(lang === 'vi' ? 'Đã chấp nhận hủy' : 'Cancellation approved', lang === 'vi' ? 'Đơn đã hủy và khách thuê đã được thông báo.' : 'The booking has been cancelled and the renter has been notified.');
     } else {
-      toast.error('Approval failed', 'Could not approve this cancellation request.');
+      toast.error(lang === 'vi' ? 'Phê duyệt thất bại' : 'Approval failed', lang === 'vi' ? 'Không thể chấp nhận yêu cầu hủy này.' : 'Could not approve this cancellation request.');
     }
   };
 
@@ -1478,21 +2002,21 @@ export const OwnerBookingsPage: React.FC = () => {
     const updated = await bookingService.rejectCancellation(bookingId, 'Cancellation rejected after policy review');
     if (updated) {
       setBookings(prev => prev.map(b => b.id === bookingId ? updated : b));
-      toast.success('Cancellation rejected', 'The renter has been notified.');
+      toast.success(lang === 'vi' ? 'Đã từ chối hủy' : 'Cancellation rejected', lang === 'vi' ? 'Khách thuê đã được thông báo.' : 'The renter has been notified.');
     } else {
-      toast.error('Reject failed', 'Could not reject this cancellation request.');
+      toast.error(lang === 'vi' ? 'Từ chối thất bại' : 'Reject failed', lang === 'vi' ? 'Không thể từ chối yêu cầu hủy này.' : 'Could not reject this cancellation request.');
     }
   };
 
   const breadcrumbItems = [
     { label: t.marketplace.home, href: '/' },
     { label: 'Host Portal', href: '/owner' },
-    { label: 'Bookings' }
+    { label: bkt.bookingRequestsTitle }
   ];
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <Breadcrumbs title="Booking Requests" items={breadcrumbItems} backHref="/owner" backText="Back to Overview" />
+      <Breadcrumbs title={bkt.bookingRequestsTitle} items={breadcrumbItems} backHref="/owner" backText={bkt.backToOverview} />
 
       {/* Filter Tabs - Premium Capsule Pills */}
       <div className="flex gap-2 overflow-x-auto pb-2 max-w-full scrollbar-none">
@@ -1526,8 +2050,8 @@ export const OwnerBookingsPage: React.FC = () => {
       ) : filtered.length === 0 ? (
         <div className="glass border border-slate-200/50 dark:border-white/5 text-center py-20 rounded-[2.5rem] shadow-sm">
           <Calendar className="w-14 h-14 text-slate-300 dark:text-slate-700 mx-auto mb-4 animate-pulse" />
-          <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-1 text-lg">No {filter !== 'all' ? filter : ''} bookings</h3>
-          <p className="text-slate-400 text-xs font-semibold">Bookings for your vehicles will appear here</p>
+          <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-1 text-lg">{lang === 'vi' ? 'Không có đơn đặt xe' : 'No bookings'}</h3>
+          <p className="text-slate-400 text-xs font-semibold">{lang === 'vi' ? 'Các đơn đặt xe của bạn sẽ xuất hiện tại đây' : 'Bookings for your vehicles will appear here'}</p>
         </div>
       ) : (
         <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-4">
@@ -1548,48 +2072,48 @@ export const OwnerBookingsPage: React.FC = () => {
                         <p className="font-bold text-slate-800 dark:text-white text-sm tracking-tight">Booking #{booking.id.slice(-6).toUpperCase()}</p>
                         <span className={`badge text-[9px] font-extrabold uppercase tracking-widest border-2 px-2.5 py-0.5 rounded-lg ${getStatusColor(booking.status)}`}>{booking.status}</span>
                       </div>
-                      <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold flex items-center gap-1.5">📅 {formatDate(booking.startDate)} → {formatDate(booking.endDate)} · <span className="text-gold font-extrabold">{booking.totalDays} days</span></p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold mt-1 flex items-center gap-1">Renter: <span className="font-bold text-slate-700 dark:text-slate-200">{renterTitle(booking)}</span></p>
+                      <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold flex items-center gap-1.5">📅 {formatDate(booking.startDate)} → {formatDate(booking.endDate)} · <span className="text-gold font-extrabold">{booking.totalDays} {bkt.days}</span></p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold mt-1 flex items-center gap-1">{bkt.renter}: <span className="font-bold text-slate-700 dark:text-slate-200">{renterTitle(booking)}</span></p>
                       <p className="text-base font-extrabold text-emerald-500 dark:text-emerald-400 mt-2.5">{formatCurrency(booking.pricing.total)}</p>
                       <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mt-4 max-w-5xl">
                         <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 p-3">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Vehicle</p>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">{bkt.vehicle}</p>
                           <p className="text-sm font-bold text-slate-800 dark:text-white truncate">{vehicleTitle(booking)}</p>
                         </div>
                         <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 p-3">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Renter</p>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">{bkt.renterHeader}</p>
                           <p className="text-sm font-bold text-slate-800 dark:text-white truncate">{renterTitle(booking)}</p>
                         </div>
                         <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 p-3">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Rental Window</p>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">{bkt.rentalWindow}</p>
                           <p className="text-sm font-bold text-slate-800 dark:text-white">{formatDate(booking.startDate)} - {formatDate(booking.endDate)}</p>
                         </div>
                         <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 p-3">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Deposit</p>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">{bkt.deposit}</p>
                           <p className="text-sm font-black text-slate-800 dark:text-white">{formatCurrency(booking.pricing.deposit)}</p>
                         </div>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3 max-w-5xl">
                         <div className="rounded-xl border border-blue-100 bg-blue-50/80 dark:bg-blue-500/10 dark:border-blue-500/20 p-3">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-blue-500 mb-1">Current status</p>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-blue-500 mb-1">{bkt.currentStatus}</p>
                           <p className="text-sm font-extrabold text-slate-800 dark:text-white">{statusLabel}</p>
                           <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-1">{nextStep(booking.status)}</p>
                         </div>
                         <div className="rounded-xl border border-emerald-100 bg-emerald-50/80 dark:bg-emerald-500/10 dark:border-emerald-500/20 p-3">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 mb-1">Payment</p>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 mb-1">{bkt.payment}</p>
                           <p className="text-sm font-extrabold text-slate-800 dark:text-white">{paymentState(booking.status)}</p>
                           <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-1">Total {formatCurrency(booking.pricing.total)}</p>
                         </div>
                         <div className="rounded-xl border border-amber-100 bg-amber-50/80 dark:bg-amber-500/10 dark:border-amber-500/20 p-3">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 mb-1">Contract</p>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 mb-1">{bkt.contract}</p>
                           <p className="text-sm font-extrabold text-slate-800 dark:text-white">{contractState(booking.status)}</p>
-                          <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-1">Renter signs first; owner signs separately from the contract page.</p>
+                          <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-1">{bkt.contractNote}</p>
                         </div>
                       </div>
                       {isCancellationRequested && (
                         <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 max-w-5xl">
                           <p className="text-xs font-bold text-amber-800">
-                            Customer requested cancellation. Review the dates and policy, then approve to cancel and release availability or reject to keep the booking active.
+                            {bkt.cancellationNotice}
                           </p>
                         </div>
                       )}
@@ -1601,21 +2125,21 @@ export const OwnerBookingsPage: React.FC = () => {
                         to={`/owner/bookings/${booking.id}/tracking`}
                         className="flex items-center justify-center gap-1.5 px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-extrabold shadow-md shadow-blue-500/15 transition-all hover-lift"
                       >
-                        <Eye className="w-3.5 h-3.5" /> View Status & Details
+                        <Eye className="w-3.5 h-3.5" /> {bkt.viewStatusDetails}
                       </Link>
                       <motion.button
                         whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                         onClick={() => handleApprove(booking.id)}
                         className="flex items-center justify-center gap-1.5 px-5 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-extrabold shadow-md shadow-emerald-500/10 transition-all hover-lift"
                       >
-                        <CheckCircle className="w-4 h-4" /> Approve Request
+                        <CheckCircle className="w-4 h-4" /> {bkt.approveRequest}
                       </motion.button>
                       <motion.button
                         whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                         onClick={() => handleReject(booking.id)}
                         className="flex items-center justify-center gap-1.5 px-5 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/25 rounded-xl text-xs font-extrabold transition-all hover-lift"
                       >
-                        Reject
+                        {bkt.reject}
                       </motion.button>
                     </div>
                   ) : isCancellationRequested ? (
@@ -1624,21 +2148,21 @@ export const OwnerBookingsPage: React.FC = () => {
                         to={`/owner/bookings/${booking.id}/tracking`}
                         className="flex items-center justify-center gap-1.5 px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-extrabold shadow-md shadow-blue-500/15 transition-all hover-lift"
                       >
-                        <Eye className="w-3.5 h-3.5" /> View Status & Details
+                        <Eye className="w-3.5 h-3.5" /> {bkt.viewStatusDetails}
                       </Link>
                       <motion.button
                         whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                         onClick={() => handleApproveCancellation(booking.id)}
                         className="flex items-center justify-center gap-1.5 px-5 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-extrabold shadow-md shadow-emerald-500/10 transition-all hover-lift"
                       >
-                        <CheckCircle className="w-4 h-4" /> Approve Cancel
+                        <CheckCircle className="w-4 h-4" /> {bkt.approveCancel}
                       </motion.button>
                       <motion.button
                         whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                         onClick={() => handleRejectCancellation(booking.id)}
                         className="flex items-center justify-center gap-1.5 px-5 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/25 rounded-xl text-xs font-extrabold transition-all hover-lift"
                       >
-                        Reject Cancel
+                        {bkt.rejectCancel}
                       </motion.button>
                     </div>
                   ) : (
@@ -1647,14 +2171,14 @@ export const OwnerBookingsPage: React.FC = () => {
                         to={`/owner/bookings/${booking.id}/tracking`}
                         className="flex items-center justify-center gap-1.5 px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-extrabold shadow-md shadow-blue-500/15 transition-all hover-lift"
                       >
-                        <Eye className="w-3.5 h-3.5" /> View Status & Details
+                        <Eye className="w-3.5 h-3.5" /> {bkt.viewStatusDetails}
                       </Link>
                       {canOpenContract && (
                       <Link
                         to={`/booking/${booking.id}/contract`}
                         className="flex items-center justify-center gap-1.5 px-5 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-extrabold shadow-md shadow-slate-900/15 transition-all hover-lift"
                       >
-                        <FileText className="w-3.5 h-3.5" /> Review & Sign Contract
+                        <FileText className="w-3.5 h-3.5" /> {bkt.reviewSignContract}
                       </Link>
                       )}
                       {(booking.status === 'confirmed' || booking.status === 'active' || booking.status === 'in_rental') && (
@@ -1662,7 +2186,7 @@ export const OwnerBookingsPage: React.FC = () => {
                         to={`/owner/bookings/${booking.id}/tracking`}
                         className="flex items-center justify-center gap-1.5 px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 rounded-xl text-xs font-extrabold transition-all hover-lift"
                       >
-                        <Play className="w-3.5 h-3.5 fill-slate-800" /> Simulate & Track
+                        <Play className="w-3.5 h-3.5 fill-slate-800" /> {bkt.simulateTrack}
                       </Link>
                       )}
                     </div>
@@ -2094,25 +2618,94 @@ export const EmployeeManagementPage: React.FC = () => {
 
 export const OwnerDashboardLayout: React.FC = () => {
   const { user, logout, isAuthenticated } = useAuthStore();
-  const { theme, sidebarOpen, setSidebarOpen } = useUIStore();
+  const { theme, sidebarOpen, setSidebarOpen, language } = useUIStore();
   const isDark = theme === 'dark';
   const location = useLocation();
   const navigate = useNavigate();
   const t = useT();
+  const lang = (language || 'en').toLowerCase();
 
   useEffect(() => {
     if (!isAuthenticated) navigate('/auth/login');
     setSidebarOpen(window.innerWidth >= 1024);
   }, [isAuthenticated]);
 
+  const navText = React.useMemo(() => {
+    const dicts: Record<string, Record<string, string>> = {
+      vi: {
+        hostCommand: 'Điều Hành Chủ Xe',
+        ownerPortal: 'CỔNG CHỦ XE',
+        verifiedHost: 'CHỦ XE ĐÃ XÁC THỰC',
+        overview: 'Tổng quan',
+        myVehicles: 'Xe của tôi',
+        calendar: 'Lịch đặt xe',
+        bookings: 'Đơn đặt xe',
+        revenue: 'Doanh thu',
+        reviews: 'Đánh giá',
+        settings: 'Cài đặt'
+      },
+      ja: {
+        hostCommand: 'ホスト管理センター',
+        ownerPortal: 'オーナーポータル',
+        verifiedHost: '認証済みオーナー',
+        overview: '概要',
+        myVehicles: 'マイ車両',
+        calendar: 'カレンダー',
+        bookings: '予約一覧',
+        revenue: '売上',
+        reviews: 'レビュー',
+        settings: '設定'
+      },
+      ko: {
+        hostCommand: '호스트 관리 센터',
+        ownerPortal: '오너 포탈',
+        verifiedHost: '인증된 호스트',
+        overview: '개요',
+        myVehicles: '내 차량',
+        calendar: '달력',
+        bookings: '예약 목록',
+        revenue: '수익',
+        reviews: '후기',
+        settings: '설정'
+      },
+      zh: {
+        hostCommand: '车主控制台',
+        ownerPortal: '车主门户',
+        verifiedHost: '已认证车主',
+        overview: '概览',
+        myVehicles: '我的车辆',
+        calendar: '日历',
+        bookings: '预订列表',
+        revenue: '收入',
+        reviews: '评价',
+        settings: '设置'
+      }
+    };
+
+    const fallback = {
+      hostCommand: 'Host Command',
+      ownerPortal: 'OWNER PORTAL',
+      verifiedHost: 'VERIFIED HOST',
+      overview: 'Overview',
+      myVehicles: 'My Vehicles',
+      calendar: 'Calendar',
+      bookings: 'Bookings',
+      revenue: 'Revenue',
+      reviews: 'Reviews',
+      settings: 'Settings'
+    };
+
+    return dicts[lang] || fallback;
+  }, [lang]);
+
   const links = [
-    { href: '/owner', icon: LayoutDashboard, label: 'Overview', exact: true },
-    { href: '/owner/vehicles', icon: Car, label: 'My Vehicles' },
-    { href: '/owner/calendar', icon: Clock, label: 'Calendar' },
-    { href: '/owner/bookings', icon: Calendar, label: 'Bookings' },
-    { href: '/owner/revenue', icon: TrendingUp, label: 'Revenue' },
-    { href: '/owner/reviews', icon: Star, label: 'Reviews' },
-    { href: '/owner/settings', icon: Settings, label: 'Settings' },
+    { href: '/owner', icon: LayoutDashboard, label: navText.overview, exact: true },
+    { href: '/owner/vehicles', icon: Car, label: navText.myVehicles },
+    { href: '/owner/calendar', icon: Clock, label: navText.calendar },
+    { href: '/owner/bookings', icon: Calendar, label: navText.bookings },
+    { href: '/owner/revenue', icon: TrendingUp, label: navText.revenue },
+    { href: '/owner/reviews', icon: Star, label: navText.reviews },
+    { href: '/owner/settings', icon: Settings, label: navText.settings },
   ];
 
   const getInitials = (name: string) => {
@@ -2162,7 +2755,7 @@ export const OwnerDashboardLayout: React.FC = () => {
 
                 <div className="lw-sidebar-role-badge bg-amber-500/10 text-amber-600 border border-amber-500/20 m-0 mx-5 my-3">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                  Verified Host
+                  {navText.verifiedHost}
                 </div>
 
                 {/* Links */}
@@ -2219,7 +2812,7 @@ export const OwnerDashboardLayout: React.FC = () => {
             <div className="px-5 py-4 border-b border-[var(--lw-border)]">
               <div className="lw-sidebar-role-badge bg-amber-500/10 text-amber-600 border border-amber-500/20 m-0 w-full flex items-center justify-center py-2.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse mr-1.5" />
-                Verified Host
+                {navText.verifiedHost}
               </div>
             </div>
 
@@ -2280,10 +2873,10 @@ export const OwnerDashboardLayout: React.FC = () => {
               </div>
               <div>
                 <h1 className="font-bold text-base tracking-tight text-[var(--lw-text-primary)]">
-                  {t.ownerDashboard.hostCommand}
+                  {navText.hostCommand}
                 </h1>
                 <p className="text-[10px] text-amber-500 font-semibold uppercase tracking-widest">
-                  Owner Portal
+                  {navText.ownerPortal}
                 </p>
               </div>
             </div>
@@ -2291,8 +2884,8 @@ export const OwnerDashboardLayout: React.FC = () => {
             <div className="flex items-center gap-3">
               <div className="hidden md:flex items-center gap-2 px-3.5 py-2 border border-[var(--lw-border)] rounded-xl bg-[var(--lw-bg-secondary)]">
                 <Clock className="w-3.5 h-3.5 text-amber-500" />
-                <span className="text-[10px] font-semibold text-[var(--lw-text-secondary)]">
-                  {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                <span className="text-[10px] font-semibold text-[var(--lw-text-secondary)] uppercase">
+                  {new Date().toLocaleDateString(lang === 'vi' ? 'vi-VN' : lang === 'ja' ? 'ja-JP' : lang === 'ko' ? 'ko-KR' : lang === 'zh' ? 'zh-CN' : 'en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                 </span>
               </div>
             </div>
@@ -2309,9 +2902,62 @@ export const OwnerDashboardLayout: React.FC = () => {
 
 export const OwnerReviewsPage: React.FC = () => {
   const { user } = useAuthStore();
+  const { language } = useUIStore();
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const toast = useToast();
+  const lang = (language || 'en').toLowerCase();
+
+  const rvt = React.useMemo(() => {
+    const dicts: Record<string, Record<string, string>> = {
+      vi: {
+        title: 'Đánh giá & Phản hồi',
+        sub: 'Theo dõi phản hồi của hành khách và xếp hạng dịch vụ đội xe',
+        noReviews: 'Chưa nhận được đánh giá nào',
+        totalReviews: 'tổng số đánh giá',
+        scoreMetricsTitle: 'Điểm số đánh giá chủ xe',
+        scoreMetricsSub: 'Đánh giá cao giúp tăng hiển thị tin đăng và ưu tiên kết nối trên chợ xe.',
+        vehicle: 'Phương tiện'
+      },
+      ja: {
+        title: 'レビュー・フィードバック',
+        sub: '乗客のフィードバックとサービス評価を監視',
+        noReviews: 'まだレビューはありません',
+        totalReviews: '件のレビュー',
+        scoreMetricsTitle: 'ホスト評価スコア',
+        scoreMetricsSub: '高評価はマーケットプレイスでの表示回数とマッチング優先度を向上させます。',
+        vehicle: '車両'
+      },
+      ko: {
+        title: '후기 및 피드백',
+        sub: '승객 피드백 및 서비스 평점 모니터링',
+        noReviews: '아직 작성된 후기가 없습니다',
+        totalReviews: '개의 총 후기',
+        scoreMetricsTitle: '호스트 점수 지표',
+        scoreMetricsSub: '높은 평점은 매물 노출도를 높이고 우선 매칭을 도와줍니다.',
+        vehicle: '차량'
+      },
+      zh: {
+        title: '评价与反馈',
+        sub: '监控乘客反馈与车队服务评分',
+        noReviews: '暂无评价',
+        totalReviews: '条评价',
+        scoreMetricsTitle: '车主评分指标',
+        scoreMetricsSub: '高评分可提高车辆曝光率与匹配优先级。',
+        vehicle: '车辆'
+      }
+    };
+    const fallback = {
+      title: 'Reviews & Feedback',
+      sub: 'Monitor passenger feedback and fleet service ratings',
+      noReviews: 'No reviews received yet',
+      totalReviews: 'total reviews',
+      scoreMetricsTitle: 'Host Score Metrics',
+      scoreMetricsSub: 'High ratings increase listing visibility and matching prioritization on the marketplace index.',
+      vehicle: 'Vehicle'
+    };
+    return dicts[lang] || fallback;
+  }, [lang]);
 
   useEffect(() => {
     if (user?.id) {
@@ -2332,8 +2978,8 @@ export const OwnerReviewsPage: React.FC = () => {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="border-b border-[var(--lw-border)] pb-5">
-        <h2 className="text-xl font-bold tracking-tight text-[var(--lw-text-primary)]">Reviews & Feedback</h2>
-        <p className="text-xs text-[var(--lw-text-muted)] mt-1">Monitor passenger feedback and fleet service ratings</p>
+        <h2 className="text-xl font-bold tracking-tight text-[var(--lw-text-primary)]">{rvt.title}</h2>
+        <p className="text-xs text-[var(--lw-text-muted)] mt-1">{rvt.sub}</p>
       </div>
 
       {loading ? (
@@ -2345,7 +2991,7 @@ export const OwnerReviewsPage: React.FC = () => {
       ) : reviews.length === 0 ? (
         <div className="glass border border-slate-200/50 dark:border-white/5 text-center py-16 rounded-[2rem] shadow-sm">
           <Star className="w-14 h-14 text-slate-300 dark:text-slate-700 mx-auto mb-3 animate-pulse" />
-          <p className="text-slate-400 text-sm font-semibold">No reviews received yet</p>
+          <p className="text-slate-400 text-sm font-semibold">{rvt.noReviews}</p>
         </div>
       ) : (
         <div className="space-y-6">
@@ -2357,11 +3003,11 @@ export const OwnerReviewsPage: React.FC = () => {
                   <Star key={i} className={`w-4 h-4 fill-current ${i < Math.round(Number(ratingAvg) || 5) ? 'text-amber-500' : 'text-slate-200'}`} />
                 ))}
               </div>
-              <p className="text-[10px] text-slate-450 dark:text-slate-500 font-extrabold uppercase tracking-widest mt-2">{reviews.length} total reviews</p>
+              <p className="text-[10px] text-slate-450 dark:text-slate-500 font-extrabold uppercase tracking-widest mt-2">{reviews.length} {rvt.totalReviews}</p>
             </div>
             <div className="flex-1">
-              <p className="text-sm font-bold text-slate-800 dark:text-slate-100">Host Score Metrics</p>
-              <p className="text-xs text-slate-400 dark:text-slate-550 mt-1">High ratings increase listing visibility and matching prioritization on the marketplace index.</p>
+              <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{rvt.scoreMetricsTitle}</p>
+              <p className="text-xs text-slate-400 dark:text-slate-550 mt-1">{rvt.scoreMetricsSub}</p>
             </div>
           </div>
 
@@ -2383,7 +3029,7 @@ export const OwnerReviewsPage: React.FC = () => {
                 </div>
                 <p className="text-slate-600 dark:text-slate-350 text-sm mt-4 leading-relaxed italic">"{review.comment || 'No comment provided'}"</p>
                 <div className="border-t border-slate-200/10 dark:border-white/5 mt-4 pt-3 flex items-center justify-between text-xs text-slate-400 dark:text-slate-550 font-semibold">
-                  <span>Vehicle: <strong className="text-slate-700 dark:text-slate-300">{review.vehicleName || 'Vehicle'}</strong></span>
+                  <span>{rvt.vehicle}: <strong className="text-slate-700 dark:text-slate-300">{review.vehicleName || 'Vehicle'}</strong></span>
                 </div>
               </div>
             ))}
@@ -2396,8 +3042,222 @@ export const OwnerReviewsPage: React.FC = () => {
 
 export const OwnerSettingsPage: React.FC = () => {
   const { user, initAuth } = useAuthStore();
+  const { language } = useUIStore();
   const toast = useToast();
   const [loading, setLoading] = useState(false);
+  const lang = (language || 'en').toLowerCase();
+
+  const stt = React.useMemo(() => {
+    const dicts: Record<string, Record<string, string>> = {
+      vi: {
+        title: 'Cài đặt chủ xe',
+        sub: 'Cấu hình tiểu sử chủ xe công khai và thông tin hồ sơ',
+        personalProfile: 'HỒ SƠ CÁ NHÂN',
+        firstName: 'Tên',
+        lastName: 'Họ',
+        phone: 'Số điện thoại',
+        bio: 'Tiểu sử chủ xe',
+        bioPlaceholder: 'Giới thiệu với khách thuê về lịch sử cho thuê hoặc bộ sưu tập xe của bạn...',
+        location: 'Khu vực hoạt động',
+        locationPlaceholder: 'Ví dụ: Quận 1, TP.HCM',
+        verification: 'XÁC MINH & GIẤY PHÉP LÁI XE',
+        licenseClass: 'Hạng bằng lái',
+        licenseClassPlaceholder: 'Ví dụ: B2',
+        licenseNumber: 'Số bằng lái',
+        licenseNumberPlaceholder: 'Số hiệu bằng lái',
+        payoutBanking: 'THANH TOÁN & NGÂN HÀNG',
+        bankName: 'Tên ngân hàng',
+        bankNamePlaceholder: 'Ví dụ: Vietcombank',
+        accountNumber: 'Số tài khoản',
+        accountNumberPlaceholder: 'Số tài khoản ngân hàng',
+        accountHolder: 'Tên chủ tài khoản',
+        accountHolderPlaceholder: 'Tên pháp lý chủ tài khoản',
+        enablePayout: 'Kích hoạt hồ sơ nhận tiền',
+        enablePayoutDesc: 'Đánh dấu chủ xe sẵn sàng đối soát thanh toán sau khi hoàn tất chuyến thuê.',
+        notificationsSecurity: 'THÔNG BÁO & BẢO MẬT',
+        language: 'Ngôn ngữ mặc định',
+        currency: 'Tiền tệ',
+        emailBookingAlerts: 'Thông báo đặt xe qua email',
+        emailBookingAlertsDesc: 'Nhận thông báo khi có yêu cầu đặt, thanh toán hoặc hủy chuyến.',
+        emailReviewAlerts: 'Thông báo đánh giá qua email',
+        emailReviewAlertsDesc: 'Nhận thông báo khi khách thuê gửi phản hồi.',
+        marketingAlerts: 'Mẹo và khuyến mãi cho chủ xe',
+        marketingAlertsDesc: 'Nhận cập nhật sản phẩm và chiến dịch cho thuê.',
+        pushNotifications: 'Thông báo trong ứng dụng',
+        pushNotificationsDesc: 'Hiển thị cảnh báo trong phần thông báo LuxeWay.',
+        twoFactor: 'Xác thực 2 yếu tố',
+        twoFactorDesc: 'Lưu cấu hình bảo mật nâng cao tài khoản.',
+        saveSettings: 'Lưu thay đổi',
+        saving: 'Đang lưu...'
+      },
+      ja: {
+        title: 'ホスト設定',
+        sub: '公開ホストプロフィールと各種設定の構成',
+        personalProfile: '個人プロフィール',
+        firstName: '名',
+        lastName: '姓',
+        phone: '電話番号',
+        bio: 'ホストの紹介',
+        bioPlaceholder: '実績や luxury 車両コレクションについて紹介してください...',
+        location: '営業エリア',
+        locationPlaceholder: '例: ホーチミン市1区',
+        verification: '本人確認・運転免許証',
+        licenseClass: '免許の種類',
+        licenseClassPlaceholder: '例: B2',
+        licenseNumber: '免許証番号',
+        licenseNumberPlaceholder: '免許証の番号',
+        payoutBanking: '出金・振込口座',
+        bankName: '銀行名',
+        bankNamePlaceholder: '例: Vietcombank',
+        accountNumber: '口座番号',
+        accountNumberPlaceholder: '銀行口座番号',
+        accountHolder: '口座名義',
+        accountHolderPlaceholder: '正式な口座名義人',
+        enablePayout: '出金プロファイルを有効化',
+        enablePayoutDesc: 'レンタル完了後の精算準備を完了状態にします。',
+        notificationsSecurity: '通知・セキュリティ',
+        language: '優先言語',
+        currency: '通貨',
+        emailBookingAlerts: '予約のメール通知',
+        emailBookingAlertsDesc: 'リクエスト、お支払い、キャンセル時に通知します。',
+        emailReviewAlerts: 'レビューのメール通知',
+        emailReviewAlertsDesc: 'レビューが投稿された際に通知します。',
+        marketingAlerts: 'ホスト向けアドバイスとプロモーション',
+        marketingAlertsDesc: 'アップデートやキャンペーン情報を受け取ります。',
+        pushNotifications: 'アプリ内通知',
+        pushNotificationsDesc: 'LuxeWayアプリ内でアラートを表示します。',
+        twoFactor: '2段階認証フラグ',
+        twoFactorDesc: 'アカウント保護のためのセキュリティ設定を保存します。',
+        saveSettings: '設定を保存',
+        saving: '保存中...'
+      },
+      ko: {
+        title: '호스트 설정',
+        sub: '공개 호스트 프로필 및 등록 파라미터 구성',
+        personalProfile: '개인 프로필',
+        firstName: '이름',
+        lastName: '성',
+        phone: '전화번호',
+        bio: '호스트 소개',
+        bioPlaceholder: '대여자들에게 호스트 이력이나 보유 차량 컬렉션을 소개하세요...',
+        location: '활동 지역',
+        locationPlaceholder: '예: 호치민 1군',
+        verification: '인증 및 운전면허',
+        licenseClass: '면허 종목',
+        licenseClassPlaceholder: '예: B2',
+        licenseNumber: '면허 번호',
+        licenseNumberPlaceholder: '면허증 번호',
+        payoutBanking: '출금 및 계좌',
+        bankName: '은행명',
+        bankNamePlaceholder: '예: Vietcombank',
+        accountNumber: '계좌번호',
+        accountNumberPlaceholder: '은행 계좌번호',
+        accountHolder: '예금주명',
+        accountHolderPlaceholder: '법적 예금주 성명',
+        enablePayout: '출금 프로필 활성화',
+        enablePayoutDesc: '대여 완료 후 정산이 가능한 상태로 표시합니다.',
+        notificationsSecurity: '알림 및 보안',
+        language: '기본 언어',
+        currency: '통화',
+        emailBookingAlerts: '예약 이메일 알림',
+        emailBookingAlertsDesc: '요청, 결제, 취소 변경 시 알림을 받습니다.',
+        emailReviewAlerts: '후기 이메일 알림',
+        emailReviewAlertsDesc: '대여자가 후기를 작성하면 알림을 받습니다.',
+        marketingAlerts: '호스트 팁 및 프로모션',
+        marketingAlertsDesc: '업데이트 및 호스팅 캠페인을 수신합니다.',
+        pushNotifications: '인앱 알림',
+        pushNotificationsDesc: 'LuxeWay 알림함에 알림을 표시합니다.',
+        twoFactor: '2단계 인증',
+        twoFactorDesc: '계정 보안 강화를 위한 옵션을 저장합니다.',
+        saveSettings: '설정 저장',
+        saving: '저장 중...'
+      },
+      zh: {
+        title: '车主设置',
+        sub: '配置公开车主简介与档案参数',
+        personalProfile: '个人资料',
+        firstName: '名',
+        lastName: '姓',
+        phone: '电话号码',
+        bio: '车主简介',
+        bioPlaceholder: '向租客介绍您的出租历史或豪华车队...',
+        location: '运营区域',
+        locationPlaceholder: '例如：胡志明市第一郡',
+        verification: '验证与驾驶执照',
+        licenseClass: '驾照等级',
+        licenseClassPlaceholder: '例如：B2',
+        licenseNumber: '驾照号码',
+        licenseNumberPlaceholder: '驾照证件号码',
+        payoutBanking: '提现与银行账户',
+        bankName: '银行名称',
+        bankNamePlaceholder: '例如：Vietcombank',
+        accountNumber: '银行账号',
+        accountNumberPlaceholder: '银行账号',
+        accountHolder: '开户人姓名',
+        accountHolderPlaceholder: '法定开户人姓名',
+        enablePayout: '启用提现资料',
+        enablePayoutDesc: '标记此车主已准备好在租赁完成后进行对账提现。',
+        notificationsSecurity: '通知与安全',
+        language: '语言设置',
+        currency: '货币',
+        emailBookingAlerts: '预订邮件提醒',
+        emailBookingAlertsDesc: '在请求、付款或取消发生变化时通知。',
+        emailReviewAlerts: '评价邮件提醒',
+        emailReviewAlertsDesc: '当租客提交评价时通知。',
+        marketingAlerts: '车主技巧与活动',
+        marketingAlertsDesc: '接收产品更新和活动通知。',
+        pushNotifications: '应用内通知',
+        pushNotificationsDesc: '在 LuxeWay 通知中心显示提醒。',
+        twoFactor: '双因素验证',
+        twoFactorDesc: '保存安全设置以强化账户。',
+        saveSettings: '保存设置',
+        saving: '保存中...'
+      }
+    };
+    const fallback = {
+      title: 'Host Settings',
+      sub: 'Configure your public host bio and registry profile parameters',
+      personalProfile: 'Personal Profile',
+      firstName: 'First Name',
+      lastName: 'Last Name',
+      phone: 'Phone Number',
+      bio: 'Host Bio',
+      bioPlaceholder: 'Tell prospective renters about your hosting history or luxury vehicle collection...',
+      location: 'Operating Location',
+      locationPlaceholder: 'e.g. District 1, HCMC',
+      verification: 'Verification & Driving License',
+      licenseClass: 'License Class',
+      licenseClassPlaceholder: 'e.g. B2',
+      licenseNumber: 'License Number',
+      licenseNumberPlaceholder: 'License ID number',
+      payoutBanking: 'Payout & Banking',
+      bankName: 'Bank Name',
+      bankNamePlaceholder: 'e.g. Vietcombank',
+      accountNumber: 'Account Number',
+      accountNumberPlaceholder: 'Bank account number',
+      accountHolder: 'Account Holder',
+      accountHolderPlaceholder: 'Legal account holder name',
+      enablePayout: 'Enable payout profile',
+      enablePayoutDesc: 'Marks this host as ready for payout reconciliation after completed rentals.',
+      notificationsSecurity: 'Notifications & Security',
+      language: 'Language',
+      currency: 'Currency',
+      emailBookingAlerts: 'Booking email alerts',
+      emailBookingAlertsDesc: 'Notify when requests, payments, or cancellations change.',
+      emailReviewAlerts: 'Review email alerts',
+      emailReviewAlertsDesc: 'Notify when renters submit feedback.',
+      marketingAlerts: 'Host tips and promotions',
+      marketingAlertsDesc: 'Receive product updates and hosting campaigns.',
+      pushNotifications: 'In-app notifications',
+      pushNotificationsDesc: 'Show alerts in LuxeWay notifications.',
+      twoFactor: 'Two-factor flag',
+      twoFactorDesc: 'Persist the security preference for account hardening.',
+      saveSettings: 'Save Settings',
+      saving: 'Saving...'
+    };
+    return dicts[lang] || fallback;
+  }, [lang]);
+
   const [form, setForm] = useState({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
@@ -2480,17 +3340,17 @@ export const OwnerSettingsPage: React.FC = () => {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="border-b border-[var(--lw-border)] pb-5">
-        <h2 className="text-xl font-bold tracking-tight text-[var(--lw-text-primary)]">Host Settings</h2>
-        <p className="text-xs text-[var(--lw-text-muted)] mt-1">Configure your public host bio and registry profile parameters</p>
+        <h2 className="text-xl font-bold tracking-tight text-[var(--lw-text-primary)]">{stt.title}</h2>
+        <p className="text-xs text-[var(--lw-text-muted)] mt-1">{stt.sub}</p>
       </div>
 
       <form onSubmit={handleSave} className="space-y-6 max-w-2xl">
         <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm space-y-4">
-          <h3 className="font-display text-sm font-bold text-amber-500 uppercase tracking-widest border-b border-slate-200/10 dark:border-white/5 pb-2.5">Personal Profile</h3>
+          <h3 className="font-display text-sm font-bold text-amber-500 uppercase tracking-widest border-b border-slate-200/10 dark:border-white/5 pb-2.5">{stt.personalProfile}</h3>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">First Name</label>
+              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">{stt.firstName}</label>
               <input 
                 type="text" 
                 value={form.firstName}
@@ -2499,7 +3359,7 @@ export const OwnerSettingsPage: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Last Name</label>
+              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">{stt.lastName}</label>
               <input 
                 type="text" 
                 value={form.lastName}
@@ -2510,7 +3370,7 @@ export const OwnerSettingsPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Phone Number</label>
+            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">{stt.phone}</label>
             <input 
               type="text" 
               value={form.phone}
@@ -2520,113 +3380,113 @@ export const OwnerSettingsPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Host Bio</label>
+            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">{stt.bio}</label>
             <textarea 
               value={form.bio}
               onChange={e => setForm(f => ({ ...f, bio: e.target.value }))}
               className="lux-input h-24 bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100 resize-none py-2"
-              placeholder="Tell prospective renters about your hosting history or luxury vehicle collection..."
+              placeholder={stt.bioPlaceholder}
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Operating Location</label>
+            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">{stt.location}</label>
             <input 
               type="text" 
               value={form.location}
               onChange={e => setForm(f => ({ ...f, location: e.target.value }))}
               className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100"
-              placeholder="e.g. District 1, HCMC"
+              placeholder={stt.locationPlaceholder}
             />
           </div>
         </div>
 
         <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm space-y-4">
-          <h3 className="font-display text-sm font-bold text-amber-500 uppercase tracking-widest border-b border-slate-200/10 dark:border-white/5 pb-2.5">Verification & Driving License</h3>
+          <h3 className="font-display text-sm font-bold text-amber-500 uppercase tracking-widest border-b border-slate-200/10 dark:border-white/5 pb-2.5">{stt.verification}</h3>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">License Class</label>
+              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">{stt.licenseClass}</label>
               <input 
                 type="text" 
                 value={form.licenseClass}
                 onChange={e => setForm(f => ({ ...f, licenseClass: e.target.value }))}
                 className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100 uppercase"
-                placeholder="e.g. B2"
+                placeholder={stt.licenseClassPlaceholder}
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">License Number</label>
+              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">{stt.licenseNumber}</label>
               <input 
                 type="text" 
                 value={form.licenseNumber}
                 onChange={e => setForm(f => ({ ...f, licenseNumber: e.target.value }))}
                 className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100"
-                placeholder="License ID number"
+                placeholder={stt.licenseNumberPlaceholder}
               />
             </div>
           </div>
         </div>
 
         <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm space-y-4">
-          <h3 className="font-display text-sm font-bold text-amber-500 uppercase tracking-widest border-b border-slate-200/10 dark:border-white/5 pb-2.5">Payout & Banking</h3>
+          <h3 className="font-display text-sm font-bold text-amber-500 uppercase tracking-widest border-b border-slate-200/10 dark:border-white/5 pb-2.5">{stt.payoutBanking}</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Bank Name</label>
+              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">{stt.bankName}</label>
               <input
                 type="text"
                 value={form.ownerBankName}
                 onChange={e => setForm(f => ({ ...f, ownerBankName: e.target.value }))}
                 className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100"
-                placeholder="e.g. Vietcombank"
+                placeholder={stt.bankNamePlaceholder}
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Account Number</label>
+              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">{stt.accountNumber}</label>
               <input
                 type="text"
                 value={form.ownerBankAccountNumber}
                 onChange={e => setForm(f => ({ ...f, ownerBankAccountNumber: e.target.value }))}
                 className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100"
-                placeholder="Bank account number"
+                placeholder={stt.accountNumberPlaceholder}
               />
             </div>
           </div>
           <div>
-            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Account Holder</label>
+            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">{stt.accountHolder}</label>
             <input
               type="text"
               value={form.ownerBankAccountHolder}
               onChange={e => setForm(f => ({ ...f, ownerBankAccountHolder: e.target.value }))}
               className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100"
-              placeholder="Legal account holder name"
+              placeholder={stt.accountHolderPlaceholder}
             />
           </div>
           <Toggle
             value={form.ownerPayoutEnabled}
             onChange={() => setForm(f => ({ ...f, ownerPayoutEnabled: !f.ownerPayoutEnabled }))}
-            label="Enable payout profile"
-            desc="Marks this host as ready for payout reconciliation after completed rentals."
+            label={stt.enablePayout}
+            desc={stt.enablePayoutDesc}
           />
         </div>
 
         <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm space-y-4">
-          <h3 className="font-display text-sm font-bold text-amber-500 uppercase tracking-widest border-b border-slate-200/10 dark:border-white/5 pb-2.5">Notifications & Security</h3>
+          <h3 className="font-display text-sm font-bold text-amber-500 uppercase tracking-widest border-b border-slate-200/10 dark:border-white/5 pb-2.5">{stt.notificationsSecurity}</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Language</label>
+              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">{stt.language}</label>
               <select
                 value={form.preferredLanguage}
                 onChange={e => setForm(f => ({ ...f, preferredLanguage: e.target.value }))}
                 className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100"
               >
                 <option value="en">English</option>
-                <option value="vi">Tieng Viet</option>
+                <option value="vi">Tiếng Việt</option>
                 <option value="ja">Japanese</option>
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Currency</label>
+              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">{stt.currency}</label>
               <select
                 value={form.preferredCurrency}
                 onChange={e => setForm(f => ({ ...f, preferredCurrency: e.target.value }))}
@@ -2639,11 +3499,11 @@ export const OwnerSettingsPage: React.FC = () => {
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <Toggle value={form.emailBookingNotifications} onChange={() => setForm(f => ({ ...f, emailBookingNotifications: !f.emailBookingNotifications }))} label="Booking email alerts" desc="Notify when requests, payments, or cancellations change." />
-            <Toggle value={form.emailReviewNotifications} onChange={() => setForm(f => ({ ...f, emailReviewNotifications: !f.emailReviewNotifications }))} label="Review email alerts" desc="Notify when renters submit feedback." />
-            <Toggle value={form.emailMarketingNotifications} onChange={() => setForm(f => ({ ...f, emailMarketingNotifications: !f.emailMarketingNotifications }))} label="Host tips and promotions" desc="Receive product updates and hosting campaigns." />
-            <Toggle value={form.pushNotifications} onChange={() => setForm(f => ({ ...f, pushNotifications: !f.pushNotifications }))} label="In-app notifications" desc="Show alerts in LuxeWay notifications." />
-            <Toggle value={form.securityTwoFactorEnabled} onChange={() => setForm(f => ({ ...f, securityTwoFactorEnabled: !f.securityTwoFactorEnabled }))} label="Two-factor flag" desc="Persist the security preference for account hardening." />
+            <Toggle value={form.emailBookingNotifications} onChange={() => setForm(f => ({ ...f, emailBookingNotifications: !f.emailBookingNotifications }))} label={stt.emailBookingAlerts} desc={stt.emailBookingAlertsDesc} />
+            <Toggle value={form.emailReviewNotifications} onChange={() => setForm(f => ({ ...f, emailReviewNotifications: !f.emailReviewNotifications }))} label={stt.emailReviewAlerts} desc={stt.emailReviewAlertsDesc} />
+            <Toggle value={form.emailMarketingNotifications} onChange={() => setForm(f => ({ ...f, emailMarketingNotifications: !f.emailMarketingNotifications }))} label={stt.marketingAlerts} desc={stt.marketingAlertsDesc} />
+            <Toggle value={form.pushNotifications} onChange={() => setForm(f => ({ ...f, pushNotifications: !f.pushNotifications }))} label={stt.pushNotifications} desc={stt.pushNotificationsDesc} />
+            <Toggle value={form.securityTwoFactorEnabled} onChange={() => setForm(f => ({ ...f, securityTwoFactorEnabled: !f.securityTwoFactorEnabled }))} label={stt.twoFactor} desc={stt.twoFactorDesc} />
           </div>
         </div>
 
@@ -2654,7 +3514,7 @@ export const OwnerSettingsPage: React.FC = () => {
           disabled={loading}
           className="btn-gold flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-bold shadow-lg shadow-gold/20 hover:shadow-gold/30 hover-lift disabled:opacity-50"
         >
-          {loading ? 'Saving...' : 'Save Settings'}
+          {loading ? stt.saving : stt.saveSettings}
         </motion.button>
       </form>
     </div>
