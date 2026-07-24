@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description"
+    content="LuxeWay — Trusted luxury vehicle rental marketplace. Access the world's most exclusive fleet of supercars, luxury SUVs, and classic masterpieces." />
+  <meta name="keywords" content="luxury car rental, supercar rental, vehicle marketplace, premium rentals" />
+  <meta property="og:title" content="LuxeWay — Drive the Unattainable" />
+  <meta property="og:description"
+    content="Access the world's most exclusive fleet of supercars, luxury SUVs, and classic masterpieces with white-glove delivery." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <title>LuxeWay — Drive the Unattainable</title>
+  <script>
+    // Polyfill cho sockjs-client và các thư viện Node.js chạy trong browser
+    // Phải đặt TRƯỚC mọi script khác
+    if (typeof window !== 'undefined' && typeof window.global === 'undefined') {
+      window.global = window;
+    }
+    if (typeof global === 'undefined') {
+      var global = globalThis;
+    }
+    if (typeof process === 'undefined') {
+      var process = { env: {}, version: 'v18.0.0', platform: 'browser', browser: true };
+    }
+  </script>
+  <script>
+
+    try {
+      var prefs = localStorage.getItem('luxeway_ui_prefs');
+      if (prefs) {
+        var theme = JSON.parse(prefs).state.theme;
+        if (theme === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      }
+    } catch (e) { }
+  </script>
+  <script type="module" crossorigin src="/assets/index-CMR4qpr-.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/vendor-react-D_rNWpTf.js">
+  <link rel="modulepreload" crossorigin href="/assets/vendor-motion-twVh39XY.js">
+  <link rel="modulepreload" crossorigin href="/assets/vendor-state-B0SYOEDI.js">
+  <link rel="modulepreload" crossorigin href="/assets/vendor-ui-BBVK1kMH.js">
+  <link rel="modulepreload" crossorigin href="/assets/vendor-i18n-BAObAu0i.js">
+  <link rel="modulepreload" crossorigin href="/assets/vendor-charts-CqXHkOzn.js">
+  <link rel="stylesheet" crossorigin href="/assets/index-DaDl2MXg.css">
+</head>
+
+<body>
+  <div id="root"></div>
+</body>
+
+</html>
