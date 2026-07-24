@@ -52,98 +52,86 @@ public class VehicleService {
     public Page<VehicleDTOs.VehicleResponse> getVehicles(VehicleDTOs.VehicleFilterRequest filter) {
         Pageable pageable = buildPageable(filter.getSortBy(), filter.getPage(), filter.getSize());
 
-        // Normalize location: supports both Vietnamese ("Hà Nội") and plain ASCII ("Ha
-        // Noi")
+        // Normalize location: supports both Vietnamese ("Hà Nội") and plain ASCII ("Ha Noi")
         String resolvedLocation = resolveLocation(filter.getLocation());
 
         // Parse categories (multi-select)
         List<VehicleCategory> categoryList = null;
         if (filter.getCategories() != null && !filter.getCategories().isEmpty()) {
             categoryList = filter.getCategories().stream()
-                    .map(c -> {
-                        try {
-                            return VehicleCategory.valueOf(c.toUpperCase());
-                        } catch (IllegalArgumentException e) {
-                            return null;
-                        }
-                    })
-                    .filter(c -> c != null)
-                    .collect(Collectors.toList());
+                .map(c -> {
+                    try { return VehicleCategory.valueOf(c.toUpperCase()); }
+                    catch (IllegalArgumentException e) { return null; }
+                })
+                .filter(c -> c != null)
+                .collect(Collectors.toList());
         } else if (filter.getCategory() != null && !filter.getCategory().isBlank()) {
             // Legacy single category fallback
             try {
                 categoryList = List.of(VehicleCategory.valueOf(filter.getCategory().toUpperCase()));
-            } catch (IllegalArgumentException ignored) {
-            }
+            } catch (IllegalArgumentException ignored) {}
         }
 
         // Brands (lowercase for case-insensitive IN query)
         List<String> brandList = (filter.getBrands() != null && !filter.getBrands().isEmpty())
-                ? filter.getBrands().stream().map(String::toLowerCase).collect(Collectors.toList())
-                : null;
+            ? filter.getBrands().stream().map(String::toLowerCase).collect(Collectors.toList())
+            : null;
 
         TransmissionType transmission = null;
         if (filter.getTransmission() != null && !filter.getTransmission().isBlank()) {
-            try {
-                transmission = TransmissionType.valueOf(filter.getTransmission().toUpperCase());
-            } catch (IllegalArgumentException ignored) {
-            }
+            try { transmission = TransmissionType.valueOf(filter.getTransmission().toUpperCase()); }
+            catch (IllegalArgumentException ignored) {}
         }
 
         FuelType fuelType = null;
         if (filter.getFuelType() != null && !filter.getFuelType().isBlank()) {
-            try {
-                fuelType = FuelType.valueOf(filter.getFuelType().toUpperCase());
-            } catch (IllegalArgumentException ignored) {
-            }
+            try { fuelType = FuelType.valueOf(filter.getFuelType().toUpperCase()); }
+            catch (IllegalArgumentException ignored) {}
         }
 
         com.luxeway.enums.VehicleType vehicleType = null;
         if (filter.getVehicleType() != null && !filter.getVehicleType().isBlank()) {
-            try {
-                vehicleType = com.luxeway.enums.VehicleType.valueOf(filter.getVehicleType().toUpperCase());
-            } catch (IllegalArgumentException ignored) {
-            }
+            try { vehicleType = com.luxeway.enums.VehicleType.valueOf(filter.getVehicleType().toUpperCase()); }
+            catch (IllegalArgumentException ignored) {}
         }
 
-        boolean isNearestSort = "nearest".equalsIgnoreCase(filter.getSortBy()) && filter.getUserLat() != null
-                && filter.getUserLng() != null;
-        boolean needsManualProcessing = isNearestSort
-                || (filter.getKeyword() != null && !filter.getKeyword().isBlank());
+        boolean isNearestSort = "nearest".equalsIgnoreCase(filter.getSortBy()) && filter.getUserLat() != null && filter.getUserLng() != null;
+        boolean needsManualProcessing = isNearestSort || (filter.getKeyword() != null && !filter.getKeyword().isBlank());
         Pageable queryPageable = needsManualProcessing ? PageRequest.of(0, 10000) : pageable;
 
         Page<Vehicle> page = vehicleRepository.filterVehiclesMulti(
-                filter.getKeyword(),
-                resolvedLocation,
-                categoryList,
-                brandList,
-                filter.getMinPrice(),
-                filter.getMaxPrice(),
-                filter.getMinSeats(),
-                transmission,
-                fuelType,
-                filter.getMinRating(),
-                filter.isFeatured(),
-                filter.isInstantBook(),
-                filter.isDeliveryAvailable(),
-                vehicleType,
-                filter.getMinEngineCc(),
-                filter.getMaxEngineCc(),
-                filter.getHasHelmet() != null ? filter.getHasHelmet() : false,
-                filter.getHasPhoneHolder() != null ? filter.getHasPhoneHolder() : false,
-                filter.getHasRaincoat() != null ? filter.getHasRaincoat() : false,
-                filter.getHasTouringPackage() != null ? filter.getHasTouringPackage() : false,
-                filter.getHasChauffeur() != null ? filter.getHasChauffeur() : false,
-                filter.getAirportDelivery() != null ? filter.getAirportDelivery() : false,
-                filter.getWeddingRental() != null ? filter.getWeddingRental() : false,
-                filter.getBusinessRental() != null ? filter.getBusinessRental() : false,
-                filter.getMinLatitude(),
-                filter.getMaxLatitude(),
-                filter.getMinLongitude(),
-                filter.getMaxLongitude(),
-                filter.getStartDate(),
-                filter.getEndDate(),
-                queryPageable);
+            filter.getKeyword(),
+            resolvedLocation,
+            categoryList,
+            brandList,
+            filter.getMinPrice(),
+            filter.getMaxPrice(),
+            filter.getMinSeats(),
+            transmission,
+            fuelType,
+            filter.getMinRating(),
+            filter.isFeatured(),
+            filter.isInstantBook(),
+            filter.isDeliveryAvailable(),
+            vehicleType,
+            filter.getMinEngineCc(),
+            filter.getMaxEngineCc(),
+            filter.getHasHelmet() != null ? filter.getHasHelmet() : false,
+            filter.getHasPhoneHolder() != null ? filter.getHasPhoneHolder() : false,
+            filter.getHasRaincoat() != null ? filter.getHasRaincoat() : false,
+            filter.getHasTouringPackage() != null ? filter.getHasTouringPackage() : false,
+            filter.getHasChauffeur() != null ? filter.getHasChauffeur() : false,
+            filter.getAirportDelivery() != null ? filter.getAirportDelivery() : false,
+            filter.getWeddingRental() != null ? filter.getWeddingRental() : false,
+            filter.getBusinessRental() != null ? filter.getBusinessRental() : false,
+            filter.getMinLatitude(),
+            filter.getMaxLatitude(),
+            filter.getMinLongitude(),
+            filter.getMaxLongitude(),
+            filter.getStartDate(),
+            filter.getEndDate(),
+            queryPageable
+        );
 
         List<Vehicle> list = page.getContent();
 
@@ -151,19 +139,17 @@ public class VehicleService {
         if (filter.getKeyword() != null && !filter.getKeyword().isBlank()) {
             String kw = filter.getKeyword().toLowerCase().trim();
             list = list.stream()
-                    .filter(v -> (v.getName() != null && v.getName().toLowerCase().contains(kw)) ||
-                            (v.getBrand() != null && v.getBrand().toLowerCase().contains(kw)) ||
-                            (v.getModel() != null && v.getModel().toLowerCase().contains(kw)))
-                    .collect(Collectors.toList());
+                .filter(v -> (v.getName() != null && v.getName().toLowerCase().contains(kw)) ||
+                             (v.getBrand() != null && v.getBrand().toLowerCase().contains(kw)) ||
+                             (v.getModel() != null && v.getModel().toLowerCase().contains(kw)))
+                .collect(Collectors.toList());
         }
 
         // 2. Map and calculate distance
         List<VehicleDTOs.VehicleResponse> responses = list.stream().map(v -> {
             VehicleDTOs.VehicleResponse r = toResponse(v);
-            if (filter.getUserLat() != null && filter.getUserLng() != null && v.getLatitude() != null
-                    && v.getLongitude() != null) {
-                r.setDistanceKm(calculateHaversineDistance(filter.getUserLat(), filter.getUserLng(),
-                        v.getLatitude().doubleValue(), v.getLongitude().doubleValue()));
+            if (filter.getUserLat() != null && filter.getUserLng() != null && v.getLatitude() != null && v.getLongitude() != null) {
+                r.setDistanceKm(calculateHaversineDistance(filter.getUserLat(), filter.getUserLng(), v.getLatitude().doubleValue(), v.getLongitude().doubleValue()));
             }
             return r;
         }).collect(Collectors.toList());
@@ -173,12 +159,9 @@ public class VehicleService {
             responses.sort((r1, r2) -> {
                 Double d1 = r1.getDistanceKm();
                 Double d2 = r2.getDistanceKm();
-                if (d1 == null && d2 == null)
-                    return 0;
-                if (d1 == null)
-                    return 1;
-                if (d2 == null)
-                    return -1;
+                if (d1 == null && d2 == null) return 0;
+                if (d1 == null) return 1;
+                if (d2 == null) return -1;
                 return d1.compareTo(d2);
             });
         }
@@ -188,8 +171,8 @@ public class VehicleService {
             int start = filter.getPage() * filter.getSize();
             int end = Math.min(start + filter.getSize(), responses.size());
             List<VehicleDTOs.VehicleResponse> pagedList = (start < responses.size())
-                    ? responses.subList(start, end)
-                    : List.of();
+                ? responses.subList(start, end)
+                : List.of();
             return new PageImpl<>(pagedList, pageable, responses.size());
         }
 
@@ -198,64 +181,59 @@ public class VehicleService {
 
     /**
      * Resolves location string to the Vietnamese form stored in the database.
-     * Handles both diacritic form ("Hà Nội") and plain ASCII form ("Ha Noi", "ha
-     * noi").
-     * If no mapping is found, returns the original string (allows partial matching
-     * via LIKE).
+     * Handles both diacritic form ("Hà Nội") and plain ASCII form ("Ha Noi", "ha noi").
+     * If no mapping is found, returns the original string (allows partial matching via LIKE).
      */
     private String resolveLocation(String location) {
-        if (location == null || location.isBlank())
-            return null;
+        if (location == null || location.isBlank()) return null;
         String resolved = resolveKnownLocation(location);
-        if (resolved != null)
-            return resolved;
+        if (resolved != null) return resolved;
 
-        // Mapping table: lowercase form (both with and without diacritics) → English
-        // form in DB
+        // Mapping table: lowercase form (both with and without diacritics) → English form in DB
         java.util.Map<String, String> cityMap = new java.util.HashMap<>();
         // Ho Chi Minh
-        cityMap.put("ho chi minh", "Ho Chi Minh");
-        cityMap.put("hồ chí minh", "Ho Chi Minh");
-        cityMap.put("hổ chí minh", "Ho Chi Minh");
-        cityMap.put("hcm", "Ho Chi Minh");
-        cityMap.put("tp hcm", "Ho Chi Minh");
-        cityMap.put("tp. hồ chí minh", "Ho Chi Minh");
-        cityMap.put("sai gon", "Ho Chi Minh");
-        cityMap.put("saigon", "Ho Chi Minh");
+        cityMap.put("ho chi minh",   "Ho Chi Minh");
+        cityMap.put("hồ chí minh",   "Ho Chi Minh");
+        cityMap.put("hổ chí minh",   "Ho Chi Minh");
+        cityMap.put("hcm",           "Ho Chi Minh");
+        cityMap.put("tp hcm",        "Ho Chi Minh");
+        cityMap.put("tp. hồ chí minh","Ho Chi Minh");
+        cityMap.put("sai gon",       "Ho Chi Minh");
+        cityMap.put("saigon",        "Ho Chi Minh");
         // Ha Noi
-        cityMap.put("ha noi", "Ha Noi");
-        cityMap.put("hà nội", "Ha Noi");
-        cityMap.put("hanoi", "Ha Noi");
+        cityMap.put("ha noi",        "Ha Noi");
+        cityMap.put("hà nội",        "Ha Noi");
+        cityMap.put("hanoi",         "Ha Noi");
         // Da Nang
-        cityMap.put("da nang", "Da Nang");
-        cityMap.put("đà nẵng", "Da Nang");
-        cityMap.put("danang", "Da Nang");
+        cityMap.put("da nang",       "Da Nang");
+        cityMap.put("đà nẵng",       "Da Nang");
+        cityMap.put("danang",        "Da Nang");
         // Nha Trang
-        cityMap.put("nha trang", "Nha Trang");
-        cityMap.put("nhatrang", "Nha Trang");
+        cityMap.put("nha trang",     "Nha Trang");
+        cityMap.put("nhatrang",      "Nha Trang");
         // Da Lat
-        cityMap.put("da lat", "Da Lat");
-        cityMap.put("đà lạt", "Da Lat");
-        cityMap.put("dalat", "Da Lat");
+        cityMap.put("da lat",        "Da Lat");
+        cityMap.put("đà lạt",        "Da Lat");
+        cityMap.put("dalat",         "Da Lat");
         // Hai Phong
-        cityMap.put("hai phong", "Hai Phong");
-        cityMap.put("hải phòng", "Hai Phong");
-        cityMap.put("haiphong", "Hai Phong");
+        cityMap.put("hai phong",     "Hai Phong");
+        cityMap.put("hải phòng",     "Hai Phong");
+        cityMap.put("haiphong",      "Hai Phong");
         // Hue
-        cityMap.put("hue", "Hue");
-        cityMap.put("huế", "Hue");
+        cityMap.put("hue",           "Hue");
+        cityMap.put("huế",           "Hue");
         // Can Tho
-        cityMap.put("can tho", "Can Tho");
-        cityMap.put("cần thơ", "Can Tho");
-        cityMap.put("cantho", "Can Tho");
+        cityMap.put("can tho",       "Can Tho");
+        cityMap.put("cần thơ",       "Can Tho");
+        cityMap.put("cantho",        "Can Tho");
         // Vung Tau
-        cityMap.put("vung tau", "Vung Tau");
-        cityMap.put("vũng tàu", "Vung Tau");
-        cityMap.put("vungtau", "Vung Tau");
+        cityMap.put("vung tau",      "Vung Tau");
+        cityMap.put("vũng tàu",      "Vung Tau");
+        cityMap.put("vungtau",       "Vung Tau");
         // Phu Quoc
-        cityMap.put("phu quoc", "Phu Quoc");
-        cityMap.put("phú quốc", "Phu Quoc");
-        cityMap.put("phuquoc", "Phu Quoc");
+        cityMap.put("phu quoc",      "Phu Quoc");
+        cityMap.put("phú quốc",      "Phu Quoc");
+        cityMap.put("phuquoc",       "Phu Quoc");
 
         String key = location.toLowerCase().trim();
         return cityMap.getOrDefault(key, location); // fallback: use as-is
@@ -345,6 +323,8 @@ public class VehicleService {
         User owner = userRepository.findById(ownerId)
                 .orElseThrow(() -> new RuntimeException("Owner not found"));
 
+
+
         if (req.getBrand() == null || req.getBrand().isBlank()) {
             throw new IllegalArgumentException("Brand is required");
         }
@@ -364,8 +344,7 @@ public class VehicleService {
         if (vehicleRepository.existsByLicensePlate(req.getLicensePlate())) {
             throw new IllegalArgumentException("License plate already exists");
         }
-        if (req.getImageUrls() == null || req.getImageUrls().size() < 3
-                || req.getImageUrls().stream().anyMatch(String::isBlank)) {
+        if (req.getImageUrls() == null || req.getImageUrls().size() < 3 || req.getImageUrls().stream().anyMatch(String::isBlank)) {
             throw new IllegalArgumentException("At least three vehicle images are required");
         }
         if (req.getVehicleType() == null || req.getVehicleType().isBlank()) {
@@ -386,13 +365,9 @@ public class VehicleService {
         if (!isOwnerAdmin) {
             String statusStr = req.getStatus();
             String approvalStatusStr = req.getApprovalStatus();
-            if ((statusStr != null && (statusStr.equalsIgnoreCase("APPROVED") || statusStr.equalsIgnoreCase("AVAILABLE")
-                    || statusStr.equalsIgnoreCase("BLOCKED"))) ||
-                    (approvalStatusStr != null && (approvalStatusStr.equalsIgnoreCase("APPROVED")
-                            || approvalStatusStr.equalsIgnoreCase("AVAILABLE")
-                            || approvalStatusStr.equalsIgnoreCase("BLOCKED")))) {
-                throw new org.springframework.security.access.AccessDeniedException(
-                        "Not authorized to set status to APPROVED, AVAILABLE, or BLOCKED");
+            if ((statusStr != null && (statusStr.equalsIgnoreCase("APPROVED") || statusStr.equalsIgnoreCase("AVAILABLE") || statusStr.equalsIgnoreCase("BLOCKED"))) ||
+                (approvalStatusStr != null && (approvalStatusStr.equalsIgnoreCase("APPROVED") || approvalStatusStr.equalsIgnoreCase("AVAILABLE") || approvalStatusStr.equalsIgnoreCase("BLOCKED")))) {
+                throw new org.springframework.security.access.AccessDeniedException("Not authorized to set status to APPROVED, AVAILABLE, or BLOCKED");
             }
         }
 
@@ -438,7 +413,7 @@ public class VehicleService {
                 .instantBook(req.getInstantBook())
                 .deliveryAvailable(req.getDeliveryAvailable())
                 .deliveryFee(req.getDeliveryFee())
-                .status(VehicleStatus.UNAVAILABLE)
+                .status(VehicleStatus.INACTIVE)
                 .approvalStatus(ApprovalStatus.SUBMITTED)
                 .build();
 
@@ -477,9 +452,9 @@ public class VehicleService {
         log.info("Vehicle created: {} by owner {}", vehicle.getId(), ownerId);
         try {
             emailService.sendAdminNotification(
-                    "New Vehicle Listing Pending Approval",
-                    "Vehicle: " + vehicle.getBrand() + " " + vehicle.getModel() + " (" + vehicle.getLicensePlate()
-                            + ") has been submitted by Owner ID: " + ownerId);
+                "New Vehicle Listing Pending Approval",
+                "Vehicle: " + vehicle.getBrand() + " " + vehicle.getModel() + " (" + vehicle.getLicensePlate() + ") has been submitted by Owner ID: " + ownerId
+            );
         } catch (Exception e) {
             log.warn("Failed to send admin notification email for new vehicle creation: {}", e.getMessage());
         }
@@ -489,12 +464,12 @@ public class VehicleService {
             List<User> admins = userRepository.findByRole(com.luxeway.enums.UserRole.ADMIN);
             for (User admin : admins) {
                 notificationService.createNotification(
-                        admin.getId(),
-                        "VEHICLE_APPROVAL",
-                        "New Vehicle Listing Pending Approval",
-                        "Vehicle: " + vehicle.getBrand() + " " + vehicle.getModel() + " (" + vehicle.getLicensePlate()
-                                + ") has been submitted by Owner: " + owner.getDisplayName(),
-                        "/admin?tab=vehicles&id=" + vehicle.getId());
+                    admin.getId(),
+                    "VEHICLE_APPROVAL",
+                    "New Vehicle Listing Pending Approval",
+                    "Vehicle: " + vehicle.getBrand() + " " + vehicle.getModel() + " (" + vehicle.getLicensePlate() + ") has been submitted by Owner: " + owner.getDisplayName(),
+                    "/admin?tab=vehicles&id=" + vehicle.getId()
+                );
             }
         } catch (Exception e) {
             log.warn("Failed to create notifications for admin: {}", e.getMessage());
@@ -507,7 +482,7 @@ public class VehicleService {
 
     @Transactional
     public VehicleDTOs.VehicleResponse update(String vehicleId, String ownerId,
-            VehicleDTOs.CreateVehicleRequest req, boolean isAdmin) {
+                                              VehicleDTOs.CreateVehicleRequest req, boolean isAdmin) {
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
                 .orElseThrow(() -> new RuntimeException("Vehicle not found"));
 
@@ -535,8 +510,7 @@ public class VehicleService {
         if (vehicleRepository.existsByLicensePlateAndIdNot(req.getLicensePlate(), vehicleId)) {
             throw new IllegalArgumentException("License plate already exists");
         }
-        if (req.getImageUrls() == null || req.getImageUrls().isEmpty()
-                || req.getImageUrls().stream().allMatch(String::isBlank)) {
+        if (req.getImageUrls() == null || req.getImageUrls().isEmpty() || req.getImageUrls().stream().allMatch(String::isBlank)) {
             throw new IllegalArgumentException("At least one vehicle image is required");
         }
         if (req.getVehicleType() == null || req.getVehicleType().isBlank()) {
@@ -552,13 +526,9 @@ public class VehicleService {
         if (!isAdmin) {
             String statusStr = req.getStatus();
             String approvalStatusStr = req.getApprovalStatus();
-            if ((statusStr != null && (statusStr.equalsIgnoreCase("APPROVED") || statusStr.equalsIgnoreCase("AVAILABLE")
-                    || statusStr.equalsIgnoreCase("BLOCKED"))) ||
-                    (approvalStatusStr != null && (approvalStatusStr.equalsIgnoreCase("APPROVED")
-                            || approvalStatusStr.equalsIgnoreCase("AVAILABLE")
-                            || approvalStatusStr.equalsIgnoreCase("BLOCKED")))) {
-                throw new org.springframework.security.access.AccessDeniedException(
-                        "Not authorized to set status to APPROVED, AVAILABLE, or BLOCKED");
+            if ((statusStr != null && (statusStr.equalsIgnoreCase("APPROVED") || statusStr.equalsIgnoreCase("AVAILABLE") || statusStr.equalsIgnoreCase("BLOCKED"))) ||
+                (approvalStatusStr != null && (approvalStatusStr.equalsIgnoreCase("APPROVED") || approvalStatusStr.equalsIgnoreCase("AVAILABLE") || approvalStatusStr.equalsIgnoreCase("BLOCKED")))) {
+                throw new org.springframework.security.access.AccessDeniedException("Not authorized to set status to APPROVED, AVAILABLE, or BLOCKED");
             }
 
             VehicleStatus currentStatus = vehicle.getStatus();
@@ -566,7 +536,7 @@ public class VehicleService {
 
             if (currentStatus == VehicleStatus.AVAILABLE || currentApprovalStatus == ApprovalStatus.APPROVED) {
                 boolean coreDetailsChanged = false;
-
+                
                 if (req.getPricePerDay() != null && vehicle.getPricePerDay().compareTo(req.getPricePerDay()) != 0) {
                     coreDetailsChanged = true;
                 }
@@ -579,32 +549,31 @@ public class VehicleService {
                     coreDetailsChanged = true;
                 }
                 if (vehicle.getTransmission() != req.getTransmission() ||
-                        vehicle.getFuelType() != req.getFuelType() ||
-                        (req.getVehicleType() != null
-                                && !vehicle.getVehicleType().name().equalsIgnoreCase(req.getVehicleType()))
-                        ||
-                        !java.util.Objects.equals(vehicle.getSeats(), req.getSeats()) ||
-                        !java.util.Objects.equals(vehicle.getDoors(), req.getDoors()) ||
-                        !java.util.Objects.equals(vehicle.getHorsepower(), req.getHorsepower()) ||
-                        !java.util.Objects.equals(vehicle.getTopSpeed(), req.getTopSpeed()) ||
-                        !java.util.Objects.equals(vehicle.getEngineCc(), req.getEngineCc()) ||
-                        !java.util.Objects.equals(vehicle.getYear(), req.getYear()) ||
-                        !java.util.Objects.equals(vehicle.getBrand(), req.getBrand()) ||
-                        !java.util.Objects.equals(vehicle.getModel(), req.getModel()) ||
-                        !java.util.Objects.equals(vehicle.getHasHelmet(), req.getHasHelmet()) ||
-                        !java.util.Objects.equals(vehicle.getHasPhoneHolder(), req.getHasPhoneHolder()) ||
-                        !java.util.Objects.equals(vehicle.getHasRaincoat(), req.getHasRaincoat()) ||
-                        !java.util.Objects.equals(vehicle.getHasTouringPackage(), req.getHasTouringPackage()) ||
-                        !java.util.Objects.equals(vehicle.getHasChauffeur(), req.getHasChauffeur()) ||
-                        !java.util.Objects.equals(vehicle.getAirportDelivery(), req.getAirportDelivery()) ||
-                        !java.util.Objects.equals(vehicle.getWeddingRental(), req.getWeddingRental()) ||
-                        !java.util.Objects.equals(vehicle.getBusinessRental(), req.getBusinessRental())) {
+                    vehicle.getFuelType() != req.getFuelType() ||
+                    (req.getVehicleType() != null && !vehicle.getVehicleType().name().equalsIgnoreCase(req.getVehicleType())) ||
+                    !java.util.Objects.equals(vehicle.getSeats(), req.getSeats()) ||
+                    !java.util.Objects.equals(vehicle.getDoors(), req.getDoors()) ||
+                    !java.util.Objects.equals(vehicle.getHorsepower(), req.getHorsepower()) ||
+                    !java.util.Objects.equals(vehicle.getTopSpeed(), req.getTopSpeed()) ||
+                    !java.util.Objects.equals(vehicle.getEngineCc(), req.getEngineCc()) ||
+                    !java.util.Objects.equals(vehicle.getYear(), req.getYear()) ||
+                    !java.util.Objects.equals(vehicle.getBrand(), req.getBrand()) ||
+                    !java.util.Objects.equals(vehicle.getModel(), req.getModel()) ||
+                    !java.util.Objects.equals(vehicle.getHasHelmet(), req.getHasHelmet()) ||
+                    !java.util.Objects.equals(vehicle.getHasPhoneHolder(), req.getHasPhoneHolder()) ||
+                    !java.util.Objects.equals(vehicle.getHasRaincoat(), req.getHasRaincoat()) ||
+                    !java.util.Objects.equals(vehicle.getHasTouringPackage(), req.getHasTouringPackage()) ||
+                    !java.util.Objects.equals(vehicle.getHasChauffeur(), req.getHasChauffeur()) ||
+                    !java.util.Objects.equals(vehicle.getAirportDelivery(), req.getAirportDelivery()) ||
+                    !java.util.Objects.equals(vehicle.getWeddingRental(), req.getWeddingRental()) ||
+                    !java.util.Objects.equals(vehicle.getBusinessRental(), req.getBusinessRental())) {
                     coreDetailsChanged = true;
                 }
 
                 if (coreDetailsChanged) {
                     vehicle.setStatus(VehicleStatus.UNAVAILABLE);
                     vehicle.setApprovalStatus(ApprovalStatus.SUBMITTED);
+                    
                     try {
                         List<User> admins = userRepository.findByRole(com.luxeway.enums.UserRole.ADMIN);
                         for (User admin : admins) {
@@ -616,12 +585,55 @@ public class VehicleService {
                                 "/admin?tab=vehicles&id=" + vehicle.getId()
                             );
                         }
+                        notificationService.createNotification(
+                            vehicle.getOwner().getId(),
+                            "VEHICLE_APPROVAL",
+                            "Vehicle update pending approval",
+                            "Your vehicle " + req.getBrand() + " " + req.getModel() + " has been set to pending approval due to changes.",
+                            "/owner/vehicles"
+                        );
                     } catch (Exception e) {
                         log.warn("Failed to notify admins of vehicle update: {}", e.getMessage());
                     }
                 } else {
                     vehicle.setStatus(currentStatus);
                     vehicle.setApprovalStatus(currentApprovalStatus);
+                }
+            } else if (currentApprovalStatus == ApprovalStatus.DRAFT) {
+                vehicle.setStatus(VehicleStatus.UNAVAILABLE);
+                vehicle.setApprovalStatus(ApprovalStatus.SUBMITTED);
+                
+                try {
+                    List<User> admins = userRepository.findByRole(com.luxeway.enums.UserRole.ADMIN);
+                    for (User admin : admins) {
+                        notificationService.createNotification(
+                            admin.getId(),
+                            "VEHICLE_APPROVAL",
+                            "New vehicle waiting for approval",
+                            "Vehicle: " + req.getBrand() + " " + req.getModel() + " has been resubmitted from Draft.",
+                            "/admin?tab=vehicles&id=" + vehicle.getId()
+                        );
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to notify admins of vehicle update: {}", e.getMessage());
+                }
+            } else if (currentApprovalStatus == ApprovalStatus.REJECTED) {
+                vehicle.setStatus(VehicleStatus.UNAVAILABLE);
+                vehicle.setApprovalStatus(ApprovalStatus.SUBMITTED);
+                
+                try {
+                    List<User> admins = userRepository.findByRole(com.luxeway.enums.UserRole.ADMIN);
+                    for (User admin : admins) {
+                        notificationService.createNotification(
+                            admin.getId(),
+                            "VEHICLE_APPROVAL",
+                            "New vehicle waiting for approval",
+                            "Vehicle: " + req.getBrand() + " " + req.getModel() + " has been edited by Owner and resubmitted.",
+                            "/admin?tab=vehicles&id=" + vehicle.getId()
+                        );
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to notify admins of vehicle update: {}", e.getMessage());
                 }
             } else {
                 vehicle.setStatus(currentStatus);
@@ -630,40 +642,29 @@ public class VehicleService {
         }
 
         vehicle.setName(req.getName());
-            
-        v
-
+        vehicle.setBrand(req.getBrand());
+        vehicle.setModel(req.getModel());
         vehicle.setYear(req.getYear());
-        vehicle.setCategory(req.getCate
-            ory());
+        vehicle.setCategory(req.getCategory());
         
-            
-        if (req.getVehicleType() != null)
-            {
+        if (req.getVehicleType() != null) {
             try {
-            
-                vehicle.setVehicleType(com
-            luxeway.enums.VehicleType.valueOf(req.getVehicleType().toUpperCase()));
-            } catch (IllegalArgumentException
-            ignored) {}
+                vehicle.setVehicleType(com.luxeway.enums.VehicleType.valueOf(req.getVehicleType().toUpperCase()));
+            } catch (IllegalArgumentException ignored) {}
         }
-            
         
-            
-
+        vehicle.setEngineCc(req.getEngineCc());
         if (req.getHasHelmet() != null) vehicle.setHasHelmet(req.getHasHelmet());
         if (req.getHasPhoneHolder() != null) vehicle.setHasPhoneHolder(req.getHasPhoneHolder());
         if (req.getHasRaincoat() != null) vehicle.setHasRaincoat(req.getHasRaincoat());
         if (req.getHasTouringPackage() != null) vehicle.setHasTouringPackage(req.getHasTouringPackage());
         if (req.getHasChauffeur() != null) vehicle.setHasChauffeur(req.getHasChauffeur());
         if (req.getAirportDelivery() != null) vehicle.setAirportDelivery(req.getAirportDelivery());
-        if (req.getWeddingRental() != null) v
-
+        if (req.getWeddingRental() != null) vehicle.setWeddingRental(req.getWeddingRental());
+        if (req.getBusinessRental() != null) vehicle.setBusinessRental(req.getBusinessRental());
         
-            
-        vehicle.setDescription(req.getD
-            scription());
-
+        vehicle.setDescription(req.getDescription());
+        vehicle.setPricePerDay(req.getPricePerDay());
         vehicle.setPricePerWeek(req.getPricePerWeek());
         vehicle.setDeposit(req.getDeposit());
         vehicle.setCity(req.getCity());
@@ -674,8 +675,8 @@ public class VehicleService {
         if (req.getLongitude() != null) vehicle.setLongitude(BigDecimal.valueOf(req.getLongitude()));
         
         vehicle.setSeats(req.getSeats());
-        vehicle.setDoors(req.getDoors
-
+        vehicle.setDoors(req.getDoors());
+        vehicle.setHorsepower(req.getHorsepower());
         vehicle.setTopSpeed(req.getTopSpeed());
         vehicle.setTransmission(req.getTransmission());
         vehicle.setFuelType(req.getFuelType());
@@ -732,33 +733,6 @@ public class VehicleService {
 
         return toResponse(vehicleRepository.save(vehicle));
     }
-                    
-
-    // ====== Owner maintenance ======
-
-    @Transactional
-    public VehicleDTOs.VehicleResponse setMaintenance(String vehicleId, String ownerId, boolean maintenance) {
-        Vehicle vehicle = vehicleRepository.findById(vehicleId)
-                .orElseThrow(() -> new RuntimeException("Vehicle not found"));
-        if (vehicle.getOwner() == null || !vehicle.getOwner().getId().equals(ownerId)) {
-            throw new org.springframework.security.access.AccessDeniedException("Only the vehicle owner can change maintenance status");
-        }
-        if (vehicle.getApprovalStatus() != VehicleStatus.APPROVED) {
-            throw new IllegalStateException("Only an approved vehicle can change maintenance status");
-        }
-        if (maintenance) {
-            if (vehicle.getStatus() == VehicleStatus.RENTED) {
-                throw new IllegalStateException("A currently rented vehicle cannot enter maintenance");
-            }
-            vehicle.setStatus(VehicleStatus.MAINTENANCE);
-        } else {
-            if (vehicle.getStatus() != VehicleStatus.MAINTENANCE) {
-                throw new IllegalStateException("Vehicle is not under maintenance");
-            }
-            vehicle.setStatus(VehicleStatus.AVAILABLE);
-        }
-        return toResponse(vehicleRepository.save(vehicle));
-    }
 
     // ====== Delete ======
 
@@ -773,7 +747,6 @@ public class VehicleService {
             }
         }
 
-                    
         if (vehicle.getStatus() == VehicleStatus.RENTED) {
             throw new RuntimeException("Cannot delete currently rented vehicle");
         }
@@ -786,22 +759,18 @@ public class VehicleService {
             throw new RuntimeException("Cannot delete vehicle with active bookings");
         }
 
-                
         vehicleRepository.delete(vehicle);
         log.info("Vehicle deleted: {}", vehicleId);
     }
 
     @Transactional(readOnly = true)
-                
     public VehicleDTOs.VehicleResponse getVehicleDetail(String id) {
         Vehicle vehicle = vehicleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Vehicle not found: " + id));
 
         // Constraint: Only return AVAILABLE and APPROVED vehicles
-                
         if (vehicle.getStatus() != VehicleStatus.AVAILABLE || vehicle.getApprovalStatus() != ApprovalStatus.APPROVED) {
-            throw new org.springframework.security.access.AccessDeniedException("This vehicle is currently unavailable 
-                r unapproved");
+            throw new org.springframework.security.access.AccessDeniedException("This vehicle is currently unavailable or unapproved");
         }
 
         return toResponse(vehicle);
@@ -845,8 +814,8 @@ public class VehicleService {
         r.setRating(v.getRating() != null ? v.getRating().doubleValue() : 0.0);
         r.setTotalReviews(v.getTotalReviews());
         r.setTotalBookings(v.getTotalBookings());
-                .getRangeKm());
-                d(v.getIsVerified());
+        r.setRangeKm(v.getRangeKm());
+        r.setIsVerified(v.getIsVerified());
         r.setIsFeatured(v.getIsFeatured());
         r.setInstantBook(v.getInstantBook());
         r.setDeliveryAvailable(v.getDeliveryAvailable());
@@ -866,7 +835,6 @@ public class VehicleService {
         r.setWeddingRental(v.getWeddingRental());
         r.setBusinessRental(v.getBusinessRental());
 
-                            
         // seatNumber & location
         r.setSeatNumber(v.getSeats());
         r.setLocation(v.getAddress() != null && !v.getAddress().isBlank() 
@@ -898,24 +866,17 @@ public class VehicleService {
                     .collect(Collectors.toList());
             r.setPrimaryImage(imgUrls.get(0));
             if (imgUrls.size() > 1) {
-                r.setGalleryImag
-                    es(imgUrls.subList(1, imgUrls.size()));
+                r.setGalleryImages(imgUrls.subList(1, imgUrls.size()));
             } else {
-                    
-                r.setGalleryImages(n
-                    ew ArrayList<>());
+                r.setGalleryImages(new ArrayList<>());
             }
-                    
-            r.setVehicleImage
-                    s(imgUrls);
+            r.setVehicleImages(imgUrls);
             r.setThumbnailUrl(imgUrls.get(0));
         } else {
             // Fallback only if empty
             if (v.getThumbnailUrl() != null && !v.getThumbnailUrl().isBlank()) {
-                r.setPrimaryImage(v.
-                    getThumbnailUrl());
+                r.setPrimaryImage(v.getThumbnailUrl());
                 r.setGalleryImages(new ArrayList<>());
-                    
                 r.setVehicleImages(List.of(v.getThumbnailUrl()));
                 r.setThumbnailUrl(v.getThumbnailUrl());
             } else {
@@ -969,12 +930,12 @@ public class VehicleService {
             ownerInfo.setApprovalBadge(o.getVerified());
 
             long totalTrips = bookingRepository.countByOwnerId(o.getId());
-            ownerInfo.setTot Trips((int) totalTrips);
+            ownerInfo.setTotalTrips((int) totalTrips);
 
-            double respon e = 100.0;
-            int responseT  15;
-            if (o.getOwner ile() != null && o.getOwnerProfile().getRating() != null) {
-                com tity.OwnerRating ownerRating = o.getOwnerProfile().getRating();
+            double responseRate = 100.0;
+            int responseTime = 15;
+            if (o.getOwnerProfile() != null && o.getOwnerProfile().getRating() != null) {
+                com.luxeway.entity.OwnerRating ownerRating = o.getOwnerProfile().getRating();
                 if (ownerRating.getResponseRate() != null) {
                     responseRate = ownerRating.getResponseRate().doubleValue();
                 }
@@ -982,30 +943,29 @@ public class VehicleService {
                     responseTime = ownerRating.getAvgResponseTimeMinutes();
                 }
             }
-                
-
+            ownerInfo.setResponseRate(responseRate);
             ownerInfo.setResponseTime(responseTime);
 
-
+            r.setOwner(ownerInfo);
         }
 
         return r;
     }
 
-        ate Pageable buildPageable(String sortBy, int page, int size) {
-                 sort = switch (sortBy == null ? "" : sortBy) {    case "price_asc"  -> Sort.by("pricePerDay").ascending();
+    private Pageable buildPageable(String sortBy, int page, int size) {
+        Sort sort = switch (sortBy == null ? "" : sortBy) {
+            case "price_asc"  -> Sort.by("pricePerDay").ascending();
             case "price_desc" -> Sort.by("pricePerDay").descending();
             case "rating"     -> Sort.by("rating").descending();
             case "newest"     -> Sort.by("createdAt").descending();
-         
-
+            case "popular"    -> Sort.by("totalBookings").descending();
+            default           -> Sort.by("isFeatured").descending().and(Sort.by("rating").descending());
         };
         return PageRequest.of(page, size, sort);
     }
 
-                    
-
-            oolean lockAvailability(String vehicleId, String userId, LocalDate start, LocalDate end) {
+    @Transactional
+    public boolean lockAvailability(String vehicleId, String userId, LocalDate start, LocalDate end) {
         log.info("Attempting to lock availability for vehicle: {}, user: {}, from {} to {}", vehicleId, userId, start, end);
         
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
@@ -1021,8 +981,8 @@ public class VehicleService {
         );
         if (!conflictingLocks.isEmpty()) {
             log.warn("Conflicting locks exist for vehicle: {} between {} and {}", vehicleId, start, end);
-         
-
+            return false;
+        }
         
         LocalDateTime lockExpiry = LocalDateTime.now().plusMinutes(10);
         for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
@@ -1030,11 +990,10 @@ public class VehicleService {
             List<VehicleAvailability> existing = vehicleAvailabilityRepository.findByVehicleIdAndDateBetween(vehicleId, currentDate, currentDate);
             
             VehicleAvailability slot;
-
+            if (!existing.isEmpty()) {
                 slot = existing.get(0);
-                
                 slot.setIsAvailable(false);
-
+                slot.setLockedUntil(lockExpiry);
                 slot.setLockedBy(userId);
             } else {
                 slot = VehicleAvailability.builder()
@@ -1051,25 +1010,24 @@ public class VehicleService {
         return true;
     }
 
-        nsactional(readOnly = true)
+    @Transactional(readOnly = true)
     public List<Map<String, Object>> getAvailabilityList(String vehicleId) {
-        LocalDate start = LocalDate.now(
-
-            
+        LocalDate start = LocalDate.now();
+        LocalDate end = start.plusYears(1);
+        
         List<VehicleAvailability> slots = vehicleAvailabilityRepository.findByVehicleIdAndDateBetween(vehicleId, start, end);
         List<Map<String, Object>> result = new ArrayList<>();
         
         Map<LocalDate, VehicleAvailability> slotMap = new HashMap<>();
         for (VehicleAvailability slot : slots) {
-                            .getDate(),
-                            slot);
+            slotMap.put(slot.getDate(), slot);
         }
 
         // Batch-load bookings to avoid N+1 query overhead inside the loop
         List<String> bookingIds = slots.stream()
                 .map(VehicleAvailability::getBookingId)
-             
-
+                .filter(id -> id != null)
+                .distinct()
                 .collect(Collectors.toList());
         Map<String, com.luxeway.entity.Booking> bookingMap = new HashMap<>();
         if (!bookingIds.isEmpty()) {
@@ -1084,9 +1042,9 @@ public class VehicleService {
             if (slot != null && !slot.getIsAvailable()) {
                 boolean isLocked = slot.getLockedUntil() != null && slot.getLockedUntil().isAfter(LocalDateTime.now());
                 if (slot.getBookingId() != null) {
-                    com.luxeway.entity.Booking booking = boo
-                 status = (booking != null && booking.getStatus() == com.luxeway.
-                                 ? "PENDING" : "BOOKED";
+                    com.luxeway.entity.Booking booking = bookingMap.get(slot.getBookingId());
+                    status = (booking != null && booking.getStatus() == com.luxeway.enums.BookingStatus.PENDING) 
+                            ? "PENDING" : "BOOKED";
                 } else if (isLocked) {
                     status = "PENDING";
                 } else {
@@ -1094,14 +1052,13 @@ public class VehicleService {
                 }
             }
             
-            if (!"AVAILABLE
-
+            if (!"AVAILABLE".equals(status)) {
+                Map<String, Object> entry = new HashMap<>();
                 entry.put("date", dateStr);
-                
                 entry.put("status", status);
                 result.add(entry);
             }
-
+        }
         return result;
     }
 
@@ -1116,14 +1073,14 @@ public class VehicleService {
         return R * c;
     }
 
-        ic VehicleDTOs.VehicleLocationRespons
-
+    public VehicleDTOs.VehicleLocationResponse toLocationResponse(Vehicle v) {
+        String lang = "vi";
         VehicleDTOs.VehicleLocationResponse r = new VehicleDTOs.VehicleLocationResponse();
         r.setId(v.getId());
         
         String name = translationService.translateVehicle(v.getId(), lang, v.getName(), v.getDescription(), v.getCity(), v.getAddress(), "name");
         r.setName(name);
-
+        r.setBrand(v.getBrand());
         r.setType(v.getVehicleType() != null ? v.getVehicleType().name() : null);
         
         // Thumbnail url mapping priority
@@ -1131,15 +1088,13 @@ public class VehicleService {
             Optional<VehicleImage> primary = v.getImages().stream()
                     .filter(img -> Boolean.TRUE.equals(img.getIsPrimary()))
                     .findFirst();
-
+            if (primary.isPresent()) {
                 r.setThumbnail(primary.get().getUrl());
             } else {
-
+                r.setThumbnail(v.getImages().iterator().next().getUrl());
             }
-                
         } else {
-                
-
+            r.setThumbnail(v.getThumbnailUrl());
         }
         
         r.setPricePerDay(v.getPricePerDay());
@@ -1150,7 +1105,7 @@ public class VehicleService {
         }
         r.setDiscount(discount);
         
-
+        BigDecimal price = v.getPricePerDay();
         BigDecimal finalPrice = price;
         if (discount.compareTo(BigDecimal.ZERO) > 0) {
             BigDecimal discountAmt = price.multiply(discount).divide(BigDecimal.valueOf(100));
@@ -1211,102 +1166,91 @@ public class VehicleService {
             base = new double[] { 10.8501, 106.7712 };
         } else if (key.contains("quan 7") || key.contains("district 7")) {
             base = new double[] { 10.7323, 106.7176 };
-                    f (key.cont
-                        ew do
-                            ble[] { 10.2186, 103.9607 };
-                         ey.contains("vung tau")) {
-                            
-                        
-                     =
-                    
-                    
+        } else if (key.contains("phu quoc")) {
+            base = new double[] { 10.2186, 103.9607 };
+        } else if (key.contains("vung tau")) {
+            base = new double[] { 10.3458, 107.0843 };
+        }
+
         int hash = Math.abs(Optional.ofNullable(v.getId()).orElse(v.getName()).hashCode());
         double angle = Math.toRadians(hash % 360);
         double radius = 0.006 + (hash % 9) * 0.0018;
         double lat = base[0] + Math.sin(angle) * radius;
-            
         double lng = base[1] + Math.cos(angle) * radius;
         return new double[] { lat, lng };
     }
-                
-                tional(readOnly = true)
+
+    @Transactional(readOnly = true)
     public List<VehicleDTOs.VehicleLocationResponse> getVehiclesForMap(VehicleDTOs.VehicleFilterRequest filter) {
         // Query maximum 10000 vehicles
         Pageable pageable = PageRequest.of(0, 10000);
 
-                
-             ng resolvedLocation = resolveLocation(filt
-            er.getLocation());
+        String resolvedLocation = resolveLocation(filter.getLocation());
 
         List<VehicleCategory> categoryList = null;
         if (filter.getCategories() != null && !filter.getCategories().isEmpty()) {
             categoryList = filter.getCategories().stream()
-                .
-                ap(c -> {
-                     try { return VehicleCategory.value
-            Of(c.toUpperCase()); }
+                .map(c -> {
+                    try { return VehicleCategory.valueOf(c.toUpperCase()); }
                     catch (IllegalArgumentException e) { return null; }
                 })
                 .filter(c -> c != null)
                 .collect(Collectors.toList());
-        } else if
-                (filter.getCategory() != null && !filter.getCategory().isBlank()) {
-             try {
-            
+        } else if (filter.getCategory() != null && !filter.getCategory().isBlank()) {
+            try {
                 categoryList = List.of(VehicleCategory.valueOf(filter.getCategory().toUpperCase()));
             } catch (IllegalArgumentException ignored) {}
         }
-                
-                <String> brandLis
-                ? filter.getB
-                : null;
-                
-                smissionType transmis
-                filter.getTransmissio
-                try { transmi
-                catch (Il
-                
-                
-                Type fuelType = null;
-                filter.getFuelType() != null 
-                try { fuelTy
-                catch (IllegalArgumentEx
-                
-                
-                luxeway.enums.VehicleType vehicleType = null;
-                filter.getVehicleType() != null && !filter.getVehicleType().isBlan
-                try { vehicleType = com.luxeway.enums.VehicleType.valueOf(filter.getVehicleTyp
-                catch (IllegalArgumentException ignored) {}
-                
-                
-                <Vehicle> page = vehicleRepository.filterVehiclesMulti(
-                filter.getKeyword(),
-                resolvedLocation,
-                categoryList,
-                brandList,
-                filter.getMinPrice(),
-                filter.getMaxPrice()
-                filter.g    transmission,
+
+        List<String> brandList = (filter.getBrands() != null && !filter.getBrands().isEmpty())
+            ? filter.getBrands().stream().map(String::toLowerCase).collect(Collectors.toList())
+            : null;
+
+        TransmissionType transmission = null;
+        if (filter.getTransmission() != null && !filter.getTransmission().isBlank()) {
+            try { transmission = TransmissionType.valueOf(filter.getTransmission().toUpperCase()); }
+            catch (IllegalArgumentException ignored) {}
+        }
+
+        FuelType fuelType = null;
+        if (filter.getFuelType() != null && !filter.getFuelType().isBlank()) {
+            try { fuelType = FuelType.valueOf(filter.getFuelType().toUpperCase()); }
+            catch (IllegalArgumentException ignored) {}
+        }
+
+        com.luxeway.enums.VehicleType vehicleType = null;
+        if (filter.getVehicleType() != null && !filter.getVehicleType().isBlank()) {
+            try { vehicleType = com.luxeway.enums.VehicleType.valueOf(filter.getVehicleType().toUpperCase()); }
+            catch (IllegalArgumentException ignored) {}
+        }
+
+        Page<Vehicle> page = vehicleRepository.filterVehiclesMulti(
+            filter.getKeyword(),
+            resolvedLocation,
+            categoryList,
+            brandList,
+            filter.getMinPrice(),
+            filter.getMaxPrice(),
+            filter.getMinSeats(),
+            transmission,
             fuelType,
             filter.getMinRating(),
             filter.isFeatured(),
             filter.isInstantBook(),
             filter.isDeliveryAvailable(),
             vehicleType,
-            filter.getMinEngineC
-                    er.getMaxEngineCc(),
-                            et() != null ? filter.getHasHelmet() : false,
-                            eHolder() != null ? filter.getHasPhoneHolder() : false,
-                    er.getHasRaincoat() != null ? filter.getHasRaincoat() : false,
+            filter.getMinEngineCc(),
+            filter.getMaxEngineCc(),
+            filter.getHasHelmet() != null ? filter.getHasHelmet() : false,
+            filter.getHasPhoneHolder() != null ? filter.getHasPhoneHolder() : false,
+            filter.getHasRaincoat() != null ? filter.getHasRaincoat() : false,
             filter.getHasTouringPackage() != null ? filter.getHasTouringPackage() : false,
             filter.getHasChauffeur() != null ? filter.getHasChauffeur() : false,
             filter.getAirportDelivery() != null ? filter.getAirportDelivery() : false,
             filter.getWeddingRental() != null ? filter.getWeddingRental() : false,
             filter.getBusinessRental() != null ? filter.getBusinessRental() : false,
             filter.getMinLatitude(),
-                    
             filter.getMaxLatitude(),
-                        
             filter.getMinLongitude(),
             filter.getMaxLongitude(),
             filter.getStartDate(),
