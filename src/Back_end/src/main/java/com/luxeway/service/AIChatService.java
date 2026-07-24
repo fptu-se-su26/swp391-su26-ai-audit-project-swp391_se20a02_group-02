@@ -48,6 +48,7 @@ public class AIChatService {
     private final AuditService auditService;
     private final NotificationService notificationService;
     private final VehicleService vehicleService;
+    private final AdminService adminService;
 
     @Value("${gemini.api-key:mock_key}")
     private String apiKey;
@@ -382,7 +383,7 @@ public class AIChatService {
         result.put("targetId", targetId);
 
         if ("APPROVE_VEHICLE".equalsIgnoreCase(actionType) && user.getRole() == UserRole.ADMIN) {
-            vehicleService.approve(targetId);
+            adminService.approveVehicle(targetId, user.getId());
             result.put("message", "Vehicle ID " + targetId + " has been approved successfully.");
             return ApiResponse.success("Action executed successfully", result);
         }

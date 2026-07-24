@@ -190,8 +190,6 @@ public interface VehicleRepository extends JpaRepository<Vehicle, String> {
     
     long countByStatus(VehicleStatus status);
     
-    long countByApprovalStatus(ApprovalStatus approvalStatus);
-    
     long countByOwnerId(String ownerId);
     
     @Query("SELECT COUNT(v) FROM Vehicle v WHERE v.owner.id = :ownerId AND v.status = :status")

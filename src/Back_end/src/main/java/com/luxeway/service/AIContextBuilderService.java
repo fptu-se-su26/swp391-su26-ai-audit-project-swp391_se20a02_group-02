@@ -47,9 +47,9 @@ public class AIContextBuilderService {
                              b.getStatus() == BookingStatus.WAITING_PAYMENT)
                 .collect(Collectors.toList());
 
-        List<Payment> payments = paymentRepository.findByRenterIdOrderByCreatedAtDesc(userId, PageRequest.of(0, 10)).getContent();
+        List<Payment> payments = paymentRepository.findByUserIdOrderByCreatedAtDesc(userId, PageRequest.of(0, 10)).getContent();
         List<Notification> notifications = notificationRepository.findByUserIdOrderByCreatedAtDesc(userId, PageRequest.of(0, 5)).getContent();
-        List<UserDocument> documents = userDocumentRepository.findByUserId(userId);
+        List<UserDocument> documents = userDocumentRepository.findByUserIdOrderByUploadedAtDesc(userId);
 
         BigDecimal totalSpent = bookings.stream()
                 .filter(b -> b.getStatus() == BookingStatus.COMPLETED || b.getStatus() == BookingStatus.ACTIVE || b.getStatus() == BookingStatus.IN_RENTAL)
@@ -72,7 +72,7 @@ public class AIContextBuilderService {
                 .recentBookings(recentBookings.stream().map(this::mapToBookingSummary).collect(Collectors.toList()))
                 .activeBookings(activeBookings.stream().map(this::mapToBookingSummary).collect(Collectors.toList()))
                 .recentPayments(payments.stream().map(this::mapToPaymentSummary).collect(Collectors.toList()))
-                .unreadNotificationsCount((int) notifications.stream().filter(n -> !Boolean.TRUE.equals(n.getRead())).count())
+                .unreadNotificationsCount((int) notifications.stream().filter(n -> !Boolean.TRUE.equals(n.getIsRead())).count())
                 .documentCount(documents.size())
                 .build();
     }
@@ -132,7 +132,7 @@ public class AIContextBuilderService {
 
         long totalUsersCount = userRepository.count();
         long pendingKycCount = userRepository.findByKycStatus("PENDING_APPROVAL").size();
-        long pendingOwnerAppsCount = ownerApplicationRepository.countByStatus(OwnerApplicationStatus.PENDING);
+        long pendingOwnerAppsCount = ownerApplicationRepository.countByStatus(OwnerApplicationStatus.SUBMITTED);
         long pendingVehicleApprovalsCount = vehicleRepository.countByApprovalStatus(ApprovalStatus.SUBMITTED);
         long totalVehiclesCount = vehicleRepository.count();
         long totalBookingsCount = bookingRepository.count();
