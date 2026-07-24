@@ -387,7 +387,7 @@ export const MapPage: React.FC = () => {
   // Filters
   const [filters, setFilters] = useState<VehicleFilters>(() => {
     const f: VehicleFilters = {};
-    const loc = searchParams.get('location');
+    const loc = searchParams.get('location') || searchParams.get('city');
     if (loc) f.location = loc;
     const type = searchParams.get('type') as any;
     if (type) f.vehicleType = type;

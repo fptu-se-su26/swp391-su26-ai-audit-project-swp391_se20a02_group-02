@@ -586,7 +586,7 @@ const MarketplacePage: React.FC = () => {
     const maxEngineCc = searchParams.get('maxEngineCc');
     return {
       vehicleType: type || undefined,
-      location: searchParams.get('location') || undefined,
+      location: searchParams.get('location') || searchParams.get('city') || undefined,
       sortBy: (searchParams.get('sort') as VehicleFilters['sortBy']) || 'popular',
       startDate: searchParams.get('startDate') || undefined,
       endDate: searchParams.get('endDate') || undefined,
