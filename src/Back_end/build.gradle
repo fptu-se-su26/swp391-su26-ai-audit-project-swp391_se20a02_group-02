@@ -11,6 +11,10 @@ java {
     sourceCompatibility = '17'
 }
 
+jar {
+    enabled = false
+}
+
 if (project.hasProperty('mySecretBuild')) {
     layout.buildDirectory = layout.projectDirectory.dir('build_run')
 }

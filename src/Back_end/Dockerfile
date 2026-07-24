@@ -13,7 +13,7 @@ FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
 # Copy the built jar from the builder stage
-COPY --from=build /app/build/libs/*.jar app.jar
+COPY --from=build /app/build/libs/Back_end-1.0.0.jar app.jar
 
 # Expose backend port
 EXPOSE 8080
