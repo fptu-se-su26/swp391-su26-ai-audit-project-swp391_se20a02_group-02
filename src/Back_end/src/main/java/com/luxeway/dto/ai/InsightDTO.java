@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 
 /**
  * An AI-generated insight card surfaced on the admin dashboard.
- * Title ≤ 100 chars, description ≤ 500 chars.
+ * Contains both summary info and unified PredictionDashboardDTO payload.
  */
 @Data
 @Builder
@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class InsightDTO {
 
-    /** Unique category key (REVENUE_FORECAST, DEMAND_PEAK, CHURN_ALERT, ANOMALY, UTILIZATION). */
+    /** Unique category key (REVENUE_FORECAST, DEMAND_PEAK, CHURN_ALERT, ANOMALY, UTILIZATION, PLATFORM_STATUS). */
     private String type;
 
     /** Short title, max 100 chars. */
@@ -32,4 +32,7 @@ public class InsightDTO {
 
     /** CTA button label shown on the insight card (optional). */
     private String actionLabel;
+
+    /** Unified PredictionDashboardDTO payload read directly by all PredictionModal components. */
+    private PredictionDashboardDTO detail;
 }

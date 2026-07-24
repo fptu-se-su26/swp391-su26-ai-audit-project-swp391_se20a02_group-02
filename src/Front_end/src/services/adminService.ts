@@ -17,7 +17,113 @@ export interface AdminStats {
   totalRevenue: number;
 }
 
-// ─── AI Predictive Analytics DTOs ─────────────────────────────────────────
+// ─── Unified PredictionDashboardDTO matching Backend ───────────────────────
+
+export interface SummaryPayload {
+  title?: string;
+  summaryText?: string;
+  urgency?: 'IMMEDIATE' | 'SEASONAL' | 'ROUTINE';
+  keyTakeaways?: string[];
+}
+
+export interface BusinessImpactPayload {
+  revenueOpportunity?: number;
+  occupancyRate?: number;
+  bookingsDelta?: number;
+  roiPercentage?: number;
+  trendDirection?: 'UP' | 'DOWN' | 'STABLE';
+  impactText?: string;
+}
+
+export interface ForecastPointPayload {
+  date: string;
+  actual?: number | null;
+  predicted?: number | null;
+  lowerBound?: number | null;
+  upperBound?: number | null;
+}
+
+export interface ConfidencePayload {
+  score: number;
+  rating: 'HIGH' | 'MEDIUM' | 'LOW';
+}
+
+export interface TelemetryPayload {
+  inferenceTimeMs?: number;
+  trainingWindowDays?: number;
+  mape?: number;
+  r2Score?: number;
+}
+
+export interface FeatureImportancePayload {
+  key: string;
+  label: string;
+  importancePercentage: number;
+  impactDirection: 'POSITIVE' | 'NEGATIVE';
+  description: string;
+}
+
+export interface RecommendationPayload {
+  id: string;
+  title: string;
+  priority: 'HIGH' | 'MEDIUM' | 'LOW';
+  reason?: string;
+  description?: string;
+  impact?: string;
+  expectedImpact?: string;
+  action?: string;
+  actionLabel?: string;
+  actionType?: 'PRICING' | 'MARKETING' | 'FLEET' | 'SYSTEM';
+  source?: string;
+}
+
+export interface ModelInformationPayload {
+  modelName: string;
+  version?: string;
+  algorithm?: string;
+  processing?: string;
+  input?: string;
+  output?: string;
+  confidence?: number;
+  trainingWindow?: number;
+}
+
+export interface HistoricalDataPayload {
+  date: string;
+  value: number;
+}
+
+export interface ConfidenceIntervalPayload {
+  lowerBound: number;
+  upperBound: number;
+  confidenceLevel: number;
+}
+
+export interface PredictionDashboardDTO {
+  summary?: SummaryPayload;
+  businessImpact?: BusinessImpactPayload;
+  forecast?: ForecastPointPayload[];
+  forecastChart?: ForecastPointPayload[];
+  confidence?: ConfidencePayload;
+  telemetry?: TelemetryPayload;
+  featureImportance?: FeatureImportancePayload[];
+  recommendations?: RecommendationPayload[];
+  modelInformation?: ModelInformationPayload;
+  modelInfo?: ModelInformationPayload;
+  historicalData?: HistoricalDataPayload[];
+  confidenceInterval?: ConfidenceIntervalPayload;
+}
+
+export interface InsightDTO {
+  type?: string;
+  title: string;
+  description: string;
+  severity: string;
+  confidence?: number;
+  actionLabel?: string;
+  detail?: PredictionDashboardDTO;
+}
+
 export interface RevenueForecastDTO {
   trend_direction?: string;
   r2_score: number;
@@ -54,13 +160,6 @@ export interface AnomalyDTO {
   severity: string;
 }
 
-export interface InsightDTO {
-  title: string;
-  description: string;
-  severity: string;
-  actionLabel?: string;
-}
-
 export interface AIPredictiveDashboardDTO {
   sidecarWarning?: boolean;
   revenueForecast?: RevenueForecastDTO;
@@ -72,9 +171,6 @@ export interface AIPredictiveDashboardDTO {
 }
 
 export const adminService = {
-  /**
-   * Fetch platform-wide dashboard statistics
-   */
   async getDashboardStats(): Promise<AdminStats | null> {
     try {
       const response = await apiClient.get<any>('/admin/dashboard');
@@ -85,9 +181,6 @@ export const adminService = {
     }
   },
 
-  /**
-   * List all platform users (paginated)
-   */
   async listUsers(role?: string, kycStatus?: string, keyword?: string, page = 0, size = 50): Promise<any> {
     try {
       const params = new URLSearchParams({
@@ -102,138 +195,88 @@ export const adminService = {
       return response.data || response;
     } catch (error) {
       console.error('Failed to list users:', error);
-      return { content: [], totalElements: 0, totalPages: 0 };
+      return null;
     }
   },
 
-  /**
-   * Fetch pending KYC users list
-   */
-  async getPendingKyc(): Promise<any[]> {
+  async getAIPredictiveDashboard(): Promise<AIPredictiveDashboardDTO | null> {
     try {
-      const response = await apiClient.get<any>('/admin/kyc');
-      return response.data || response || [];
-    } catch (error) {
-      console.error('Failed to fetch pending KYC users:', error);
-      return [];
-    }
-  },
-
-  /**
-   * Fetch a specific user's uploaded documents (for Admin review)
-   */
-  async getUserDocuments(userId: string): Promise<any[]> {
-    try {
-      const response = await apiClient.get<any>(`/admin/users/${userId}/documents`);
+      const response = await apiClient.get<any>('/admin/ai/dashboard');
       return response.data || response;
     } catch (error) {
-      console.error('Failed to fetch user documents:', error);
-      return [];
+      console.error('Failed to get AI Predictive Dashboard:', error);
+      return null;
     }
   },
 
-  /**
-   * Update account status of a user (activation/verification)
-   */
-  async updateUserStatus(id: string, payload: { active: boolean; verified: boolean; kycVerified: boolean }): Promise<any> {
+  async refreshRevenueForecast(horizon = 14): Promise<RevenueForecastDTO | null> {
     try {
-      const response = await apiClient.put<any>(`/admin/users/${id}/status`, payload);
+      const response = await apiClient.get<any>(`/admin/ai/revenue/forecast?horizon=${horizon}`);
       return response.data || response;
     } catch (error) {
-      console.error('Failed to update user status:', error);
-      throw error;
+      console.error('Failed to refresh revenue forecast:', error);
+      return null;
     }
   },
 
-  /**
-   * Approve a user's KYC submission
-   */
-  async approveUserKyc(userId: string): Promise<any> {
+  async refreshBookingDemand(horizon = 14): Promise<BookingDemandDTO | null> {
     try {
-      const response = await apiClient.put<any>(`/admin/kyc/${userId}/approve`, {});
+      const response = await apiClient.get<any>(`/admin/ai/bookings/demand?horizon=${horizon}`);
       return response.data || response;
     } catch (error) {
-      console.error('Failed to approve user KYC:', error);
-      throw error;
+      console.error('Failed to refresh booking demand:', error);
+      return null;
     }
   },
 
-  /**
-   * Reject a user's KYC submission with a reason
-   */
-  async rejectUserKyc(userId: string, reason: string): Promise<any> {
+  async getVehicleUtilization(forecastDays = 7): Promise<VehicleUtilizationDTO | null> {
     try {
-      const response = await apiClient.put<any>(`/admin/kyc/${userId}/reject`, { reason });
+      const response = await apiClient.post<any>('/admin/ai/vehicles/utilization', { forecastDays });
       return response.data || response;
     } catch (error) {
-      console.error('Failed to reject user KYC:', error);
-      throw error;
+      console.error('Failed to get vehicle utilization:', error);
+      return null;
     }
   },
 
-  /**
-   * List all platform vehicles (paginated)
-   */
-  async listAllVehicles(status?: string, keyword?: string, page = 0, size = 50): Promise<any> {
+  async getChurnRisks(): Promise<ChurnRiskDTO[] | null> {
+    try {
+      const response = await apiClient.get<any>('/admin/ai/users/churn');
+      return response.data || response;
+    } catch (error) {
+      console.error('Failed to get churn risks:', error);
+      return null;
+    }
+  },
+
+  async getAnomalies(): Promise<AnomalyDTO[] | null> {
+    try {
+      const response = await apiClient.get<any>('/admin/ai/anomalies');
+      return response.data || response;
+    } catch (error) {
+      console.error('Failed to get anomalies:', error);
+      return null;
+    }
+  },
+
+  async listAllVehicles(status?: string, type?: string, page = 0, size = 100): Promise<any> {
     try {
       const params = new URLSearchParams({
         page: page.toString(),
         size: size.toString(),
       });
       if (status) params.append('status', status);
-      if (keyword) params.append('keyword', keyword);
+      if (type) params.append('type', type);
 
       const response = await apiClient.get<any>(`/admin/vehicles?${params.toString()}`);
       return response.data || response;
     } catch (error) {
       console.error('Failed to list vehicles:', error);
-      return { content: [], totalElements: 0, totalPages: 0 };
+      return { content: [] };
     }
   },
 
-  /**
-   * List pending vehicles for approval
-   */
-  async listPendingVehicles(page = 0, size = 50): Promise<any> {
-    try {
-      const response = await apiClient.get<any>(`/admin/vehicles/pending?page=${page}&size=${size}`);
-      return response.data || response;
-    } catch (error) {
-      console.error('Failed to list pending vehicles:', error);
-      return { content: [], totalElements: 0, totalPages: 0 };
-    }
-  },
-
-  /**
-   * Approve a vehicle listing
-   */
-  async approveVehicle(id: string): Promise<any> {
-    try {
-      const response = await apiClient.post<any>(`/admin/vehicles/${id}/approve`, {});
-      return response.data || response;
-    } catch (error) {
-      console.error('Failed to approve vehicle:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Reject a vehicle listing with a reason
-   */
-  async rejectVehicle(id: string, reason: string): Promise<any> {
-    try {
-      const response = await apiClient.post<any>(`/admin/vehicles/${id}/reject`, { reason });
-      return response.data || response;
-    } catch (error) {
-      console.error('Failed to reject vehicle:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * List all bookings (paginated)
-   */
-  async listAllBookings(status?: string, page = 0, size = 50): Promise<any> {
+  async listAllBookings(status?: string, page = 0, size = 100): Promise<any> {
     try {
       const params = new URLSearchParams({
         page: page.toString(),
@@ -245,130 +288,45 @@ export const adminService = {
       return response.data || response;
     } catch (error) {
       console.error('Failed to list bookings:', error);
-      return { content: [], totalElements: 0, totalPages: 0 };
+      return { content: [] };
     }
   },
 
-  /**
-   * List all payments (paginated)
-   */
-  async listAllPayments(page = 0, size = 50): Promise<any> {
-    try {
-      const response = await apiClient.get<any>(`/admin/payments?page=${page}&size=${size}`);
-      return response.data || response;
-    } catch (error) {
-      console.error('Failed to list payments:', error);
-      return { content: [], totalElements: 0, totalPages: 0 };
-    }
-  },
-
-  /**
-   * List all platform disputes
-   */
   async listAllDisputes(): Promise<any[]> {
     try {
       const response = await apiClient.get<any>('/admin/disputes');
-      return response.data || response;
+      return response.data?.content || response.content || response.data || response || [];
     } catch (error) {
       console.error('Failed to list disputes:', error);
       return [];
     }
   },
 
-  /**
-   * Update dispute status & decision
-   */
-  async updateDisputeStatus(id: number | string, status: string, adminDecision?: string): Promise<any> {
+  async listAllPayments(page = 0, size = 100): Promise<any> {
     try {
-      const response = await apiClient.put<any>(`/disputes/${id}/status`, { status, adminDecision });
+      const params = new URLSearchParams({
+        page: page.toString(),
+        size: size.toString(),
+      });
+
+      const response = await apiClient.get<any>(`/admin/payments?${params.toString()}`);
       return response.data || response;
     } catch (error) {
-      console.error('Failed to update dispute status:', error);
-      throw error;
+      console.error('Failed to list payments:', error);
+      return { content: [] };
     }
   },
 
-  /**
-   * Fetch all system settings
-   */
   async listSettings(): Promise<any[]> {
     try {
       const response = await apiClient.get<any>('/admin/settings');
-      return response.data || response;
+      return response.data || response || [];
     } catch (error) {
-      console.error('Failed to list system settings:', error);
+      console.error('Failed to list settings:', error);
       return [];
     }
   },
 
-  /**
-   * Update a system setting key/value pair
-   */
-  async updateSetting(settingKey: string, settingValue: string): Promise<any> {
-    try {
-      const response = await apiClient.put<any>('/admin/settings', { settingKey, settingValue });
-      return response.data || response;
-    } catch (error) {
-      console.error('Failed to update system setting:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * List all platform FAQs (both active and inactive)
-   */
-  async listAllFAQs(): Promise<any[]> {
-    try {
-      const response = await apiClient.get<any>('/admin/faqs');
-      return response.data || response;
-    } catch (error) {
-      console.error('Failed to list FAQs:', error);
-      return [];
-    }
-  },
-
-  /**
-   * Create a new FAQ resource
-   */
-  async createFAQ(faq: { question: String; answer: String; displayOrder: number; isActive: boolean }): Promise<any> {
-    try {
-      const response = await apiClient.post<any>('/admin/faqs', faq);
-      return response.data || response;
-    } catch (error) {
-      console.error('Failed to create FAQ:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Update an existing FAQ entry
-   */
-  async updateFAQ(id: number, faq: { question: String; answer: String; displayOrder: number; isActive: boolean }): Promise<any> {
-    try {
-      const response = await apiClient.put<any>(`/admin/faqs/${id}`, faq);
-      return response.data || response;
-    } catch (error) {
-      console.error('Failed to update FAQ:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Delete an FAQ entry
-   */
-  async deleteFAQ(id: number): Promise<any> {
-    try {
-      const response = await apiClient.delete<any>(`/admin/faqs/${id}`);
-      return response.data || response;
-    } catch (error) {
-      console.error('Failed to delete FAQ:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Fetch platform-wide cumulative summary analytics
-   */
   async getAnalyticsOverview(): Promise<any> {
     try {
       const response = await apiClient.get<any>('/admin/analytics/overview');
@@ -379,102 +337,13 @@ export const adminService = {
     }
   },
 
-  /**
-   * Fetch historical daily statistics records
-   */
-  async getHistoricalAnalytics(days = 30): Promise<any[]> {
+  async getHistoricalAnalytics(days = 30): Promise<any> {
     try {
       const response = await apiClient.get<any>(`/admin/analytics/historical?days=${days}`);
       return response.data || response;
     } catch (error) {
-      console.error('Failed to fetch historical analytics:', error);
-      return [];
-    }
-  },
-
-  /**
-   * Manually trigger daily metrics aggregation for a specific date
-   */
-  async triggerAnalyticsAggregation(date: string): Promise<any> {
-    try {
-      const response = await apiClient.post<any>(`/admin/analytics/trigger?date=${date}`, {});
-      return response.data || response;
-    } catch (error) {
-      console.error('Failed to trigger aggregation:', error);
-      throw error;
-    }
-  },
-
-  // ─── AI Predictive Analytics API ─────────────────────────────────────────
-
-  async getAIPredictiveDashboard(): Promise<AIPredictiveDashboardDTO | null> {
-    try {
-      const response = await apiClient.get<any>('/admin/ai/dashboard');
-      return response.data || response;
-    } catch (error) {
-      console.error('Failed to get AI predictive dashboard:', error);
+      console.error('Failed to get historical analytics:', error);
       return null;
-    }
-  },
-
-  async refreshRevenueForecast(days = 14): Promise<RevenueForecastDTO | null> {
-    try {
-      const response = await apiClient.post<any>(`/admin/ai/revenue-forecast?days=${days}`, {});
-      return response.data || response;
-    } catch (error) {
-      console.error('Failed to refresh revenue forecast:', error);
-      return null;
-    }
-  },
-
-  async refreshBookingDemand(days = 14): Promise<BookingDemandDTO | null> {
-    try {
-      const response = await apiClient.post<any>(`/admin/ai/booking-demand?days=${days}`, {});
-      return response.data || response;
-    } catch (error) {
-      console.error('Failed to refresh booking demand:', error);
-      return null;
-    }
-  },
-
-  async getVehicleUtilization(days = 7): Promise<VehicleUtilizationDTO | null> {
-    try {
-      const response = await apiClient.get<any>(`/admin/ai/vehicle-utilization?days=${days}`);
-      return response.data || response;
-    } catch (error) {
-      console.error('Failed to get vehicle utilization:', error);
-      return null;
-    }
-  },
-
-  async getChurnRisks(): Promise<ChurnRiskDTO[]> {
-    try {
-      const response = await apiClient.get<any>('/admin/ai/churn-risks');
-      return response.data || response || [];
-    } catch (error) {
-      console.error('Failed to get churn risks:', error);
-      return [];
-    }
-  },
-
-  async getAnomalies(): Promise<AnomalyDTO[]> {
-    try {
-      const response = await apiClient.get<any>('/admin/ai/anomalies');
-      return response.data || response || [];
-    } catch (error) {
-      console.error('Failed to get anomalies:', error);
-      return [];
-    }
-  },
-
-  async getAIInsights(): Promise<InsightDTO[]> {
-    try {
-      const response = await apiClient.get<any>('/admin/ai/insights');
-      return response.data || response || [];
-    } catch (error) {
-      console.error('Failed to get AI insights:', error);
-      return [];
     }
   },
 };
-

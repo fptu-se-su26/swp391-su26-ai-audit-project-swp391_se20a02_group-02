@@ -32,4 +32,10 @@ public class BookingDemandDTO {
 
     @JsonProperty("warning_flag")
     private boolean warningFlag;
+
+    @JsonProperty("weather_forecast")
+    private String weatherForecast;
+
+    @JsonProperty("weather_impact")
+    private String weatherImpact;
 }

@@ -22,6 +22,7 @@ import { useUIStore, useAuthStore } from '@/store';
 import { useT } from '@/i18n/translations';
 import { AuditTrailDashboard } from '@/components/enterprise/AuditTrailDashboard';
 import { AdminPayoutsTab } from '@/components/admin/AdminPayoutsTab';
+import { AnalyticsAIAgent } from '@/components/admin/AnalyticsAIAgent';
 import Avatar from '@/components/ui/Avatar';
 import StatusBadge from '@/components/ui/StatusBadge';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
@@ -2216,6 +2217,10 @@ const AdminDashboard: React.FC = () => {
                     title="BI Analytics Dashboard" 
                     items={[{ label: "LuxeWay", href: "/" }, { label: "Admin" }, { label: "Analytics" }]} 
                   />
+                  
+                  {/* AI Predictive Agent Layer */}
+                  <AnalyticsAIAgent />
+
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-[11px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-widest">Deep-dive performance graphs, revenue streams, and customer metrics</p>
