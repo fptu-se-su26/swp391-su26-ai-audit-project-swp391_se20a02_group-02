@@ -61,7 +61,14 @@ export const imageService = {
     if (onProgress) {
       return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
-        const apiBase = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8080/api/v1';
+        const apiBase = (() => {
+          const envUrl = (import.meta as any).env?.VITE_API_URL;
+          if (envUrl && envUrl.trim() !== '') return envUrl;
+          if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+            return '/api/v1';
+          }
+          return 'http://localhost:8080/api/v1';
+        })();
         xhr.open('POST', `${apiBase}/upload`);
 
         // Set auth header if token exists

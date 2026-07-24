@@ -1,5 +1,13 @@
 // API Configuration for LuxeWay Backend
-const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8080/api/v1';
+const getApiBaseUrl = (): string => {
+  const envUrl = (import.meta as any).env?.VITE_API_URL;
+  if (envUrl && envUrl.trim() !== '') return envUrl;
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    return '/api/v1';
+  }
+  return 'http://localhost:8080/api/v1';
+};
+const API_BASE_URL = getApiBaseUrl();
 const NGROK_HEADERS: Record<string, string> = API_BASE_URL.includes('ngrok') ? { 'ngrok-skip-browser-warning': 'true' } : {};
 const REQUEST_TIMEOUT_MS = 60000; // 60s for file uploads and eKYC OCR
 const RETRYABLE_METHODS = new Set(['GET']);
