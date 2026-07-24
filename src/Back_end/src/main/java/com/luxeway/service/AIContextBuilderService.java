@@ -86,7 +86,7 @@ public class AIContextBuilderService {
         List<Booking> ownerBookings = bookingRepository.findByOwnerIdOrderByCreatedAtDesc(userId, PageRequest.of(0, 50)).getContent();
 
         long pendingApprovalVehicles = vehicles.stream()
-                .filter(v -> v.getApprovalStatus() == ApprovalStatus.SUBMITTED || v.getApprovalStatus() == ApprovalStatus.PENDING)
+                .filter(v -> v.getApprovalStatus() == ApprovalStatus.SUBMITTED || v.getApprovalStatus() == ApprovalStatus.UNDER_REVIEW)
                 .count();
 
         long availableVehicles = vehicles.stream()
@@ -131,8 +131,8 @@ public class AIContextBuilderService {
         if (user == null) return null;
 
         long totalUsersCount = userRepository.count();
-        long pendingKycCount = userRepository.countByKycStatus("PENDING_APPROVAL");
-        long pendingOwnerAppsCount = ownerApplicationRepository.countByStatus("PENDING");
+        long pendingKycCount = userRepository.findByKycStatus("PENDING_APPROVAL").size();
+        long pendingOwnerAppsCount = ownerApplicationRepository.countByStatus(OwnerApplicationStatus.PENDING);
         long pendingVehicleApprovalsCount = vehicleRepository.countByApprovalStatus(ApprovalStatus.SUBMITTED);
         long totalVehiclesCount = vehicleRepository.count();
         long totalBookingsCount = bookingRepository.count();
@@ -194,7 +194,7 @@ public class AIContextBuilderService {
                 .bookingId(p.getBooking() != null ? p.getBooking().getId() : "")
                 .amount(p.getAmount())
                 .status(p.getStatus() != null ? p.getStatus().name() : "PENDING")
-                .paymentMethod(p.getPaymentMethod() != null ? p.getPaymentMethod().name() : "PAYOS")
+                .paymentMethod(p.getMethod() != null ? p.getMethod() : "PAYOS")
                 .createdAt(p.getCreatedAt() != null ? p.getCreatedAt().toString() : "")
                 .build();
     }

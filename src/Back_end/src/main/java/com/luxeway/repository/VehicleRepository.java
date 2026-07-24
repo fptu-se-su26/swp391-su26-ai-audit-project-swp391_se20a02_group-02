@@ -40,6 +40,10 @@ public interface VehicleRepository extends JpaRepository<Vehicle, String> {
     
     Page<Vehicle> findByApprovalStatusOrderByCreatedAtDesc(ApprovalStatus approvalStatus, Pageable pageable);
     
+    long countByApprovalStatus(ApprovalStatus approvalStatus);
+    
+    List<Vehicle> findByApprovalStatus(ApprovalStatus approvalStatus);
+    
     @Query("SELECT v FROM Vehicle v WHERE v.status = :status AND v.approvalStatus = :approvalStatus")
     Page<Vehicle> findByStatusAndApprovalStatus(@Param("status") VehicleStatus status, @Param("approvalStatus") ApprovalStatus approvalStatus, Pageable pageable);
     

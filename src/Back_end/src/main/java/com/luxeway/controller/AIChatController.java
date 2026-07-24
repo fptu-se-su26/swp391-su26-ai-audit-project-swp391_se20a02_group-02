@@ -137,7 +137,7 @@ public class AIChatController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Retrieve dashboard performance charts statistics (Admin only)")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getAnalytics() {
-        Map<String, Object> stats = conversationService.getAnalytics();
+        Map<String, Object> stats = conversationService.getAdminAIAnalytics();
         return ResponseEntity.ok(ApiResponse.success("AI Analytics retrieved", stats));
     }
 }
