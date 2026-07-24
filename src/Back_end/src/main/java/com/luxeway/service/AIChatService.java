@@ -121,11 +121,19 @@ public class AIChatService {
         String rawResponse = "";
 
         if (actionCard != null && (boolean) actionCard.getOrDefault("success", false)) {
-            // An action was successfully executed, inject action message
+            // An action was successfully executed, inject action message and full actionCard payload
             aiResponse = (String) actionCard.get("message");
-            rawResponse = "{\"actionExecuted\": true, \"action\": \"" + actionCard.get("action") + "\"}";
+            try {
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                Map<String, Object> wrapper = new HashMap<>();
+                wrapper.put("actionCard", actionCard);
+                rawResponse = mapper.writeValueAsString(wrapper);
+            } catch (Exception e) {
+                log.error("Error serializing actionCard: {}", e.getMessage());
+                rawResponse = "{\"actionCard\": " + actionCard.toString() + "}";
+            }
         } else if (!hasConfiguredGeminiKey()) {
-            // Fallback to mock responses only when the API key is missing or still a placeholder.
+            // Fallback to intelligent mock responses when API key is missing or placeholder
             aiResponse = generateMockResponse(userMessage, user, recentBookings, contextBooking, contextVehicle, currentPage);
             rawResponse = "{\"mock\": true, \"reason\": \"API key is not configured or is still a placeholder\"}";
         } else {
@@ -148,7 +156,8 @@ public class AIChatService {
                     rawResponse = "Error status: " + response.getStatusCode();
                 }
             } catch (Exception e) {
-                log.error("Exception calling Gemini: {}", e.getMessage(), e);
+                log.error("Exception calling Gemini API: {}", e.getMessage(), e);
+                // Fallback to intelligent response so user is never blocked by API errors
                 aiResponse = generateMockResponse(userMessage, user, recentBookings, contextBooking, contextVehicle, currentPage);
                 rawResponse = "Exception: " + e.getMessage();
             }
