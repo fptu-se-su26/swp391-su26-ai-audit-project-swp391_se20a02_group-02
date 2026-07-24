@@ -438,7 +438,10 @@ export const vehicleService = {
   async getByOwner(ownerId: string): Promise<Vehicle[]> {
     try {
       const response = await apiClient.get<any>(`/vehicles/owner/${ownerId}?page=0&size=50`);
-      return (response.vehicles || []).map(mapVehicle);
+      const list = Array.isArray(response) 
+        ? response 
+        : (response.vehicles || response.data?.vehicles || response.content || response.data?.content || response.data || []);
+      return list.map(mapVehicle);
     } catch (error) {
       return [];
     }

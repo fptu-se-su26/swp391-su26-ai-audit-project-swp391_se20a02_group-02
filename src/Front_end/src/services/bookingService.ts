@@ -85,9 +85,9 @@ export const bookingService = {
         apiClient.get<any>('/bookings/owner').catch(() => ({ data: { content: [] } }))
       ]);
       
-      const carList = carRes.bookings || carRes.content || [];
-      const motoList = motoRes.bookings || motoRes.content || [];
-      const genList = genRes.bookings || genRes.content || genRes.data?.content || [];
+      const carList = Array.isArray(carRes) ? carRes : (carRes.bookings || carRes.content || carRes.data?.content || carRes.data || []);
+      const motoList = Array.isArray(motoRes) ? motoRes : (motoRes.bookings || motoRes.content || motoRes.data?.content || motoRes.data || []);
+      const genList = Array.isArray(genRes) ? genRes : (genRes.bookings || genRes.content || genRes.data?.content || genRes.data || []);
       
       const combined = [...carList, ...motoList, ...genList];
       combined.sort((a: any, b: any) => {
