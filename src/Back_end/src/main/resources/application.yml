@@ -119,12 +119,12 @@ payment:
     ipn-url: ${MOMO_IPN_URL:http://localhost:5101/api/payment/momo-ipn}
     request-type: ${MOMO_REQUEST_TYPE:payWithMethod}
   payos:
-    client-id: ${PAYOS_CLIENT_ID:}
-    api-key: ${PAYOS_API_KEY:}
-    checksum-key: ${PAYOS_CHECKSUM_KEY:}
+    client-id: ${PAYOS_CLIENT_ID:df05a25a-08ed-4ca8-b98a-8d41530faba0}
+    api-key: ${PAYOS_API_KEY:df869361-323d-4db6-89d8-8f3b04e9bc91}
+    checksum-key: ${PAYOS_CHECKSUM_KEY:5863a512571ebfbde1321dbce7d57d1f9bd1e80f680d2c2172aef87d919fe1fa}
     endpoint: ${PAYOS_ENDPOINT:https://api-merchant.payos.vn/v2/payment-requests}
-    return-url: ${PAYOS_RETURN_URL:http://localhost:5173/payment/payos/return}
-    cancel-url: ${PAYOS_CANCEL_URL:http://localhost:5173/payment/payos/return}
+    return-url: ${PAYOS_RETURN_URL:https://luxeway.io.vn/payment/payos/return}
+    cancel-url: ${PAYOS_CANCEL_URL:https://luxeway.io.vn/payment/payos/return}
   stripe:
     public-key: ${STRIPE_PUBLIC_KEY:pk_test_mock}
     secret-key: ${STRIPE_SECRET_KEY:sk_test_mock}

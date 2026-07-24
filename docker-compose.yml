@@ -105,6 +105,9 @@ services:
       - VNPAY_ALLOWED_IPS=${VNPAY_ALLOWED_IPS:-203.171.19.146,203.171.19.147}
       - STRIPE_PUBLIC_KEY=${STRIPE_PUBLIC_KEY:-pk_test_dev_luxeway_placeholder}
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-sk_test_dev_luxeway_placeholder}
+      - PAYOS_CLIENT_ID=${PAYOS_CLIENT_ID:-df05a25a-08ed-4ca8-b98a-8d41530faba0}
+      - PAYOS_API_KEY=${PAYOS_API_KEY:-df869361-323d-4db6-89d8-8f3b04e9bc91}
+      - PAYOS_CHECKSUM_KEY=${PAYOS_CHECKSUM_KEY:-5863a512571ebfbde1321dbce7d57d1f9bd1e80f680d2c2172aef87d919fe1fa}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-your-gemini-api-key}
       - GOONG_API_KEY=${GOONG_API_KEY:-your-goong-api-key}
       - FPTAI_API_KEY=${FPTAI_API_KEY:-your-fptai-api-key}

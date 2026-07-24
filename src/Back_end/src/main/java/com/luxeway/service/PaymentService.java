@@ -61,13 +61,13 @@ public class PaymentService {
     private String momoRequestType;
 
     // ====== PayOS Configuration ======
-    @Value("${payment.payos.client-id:}")
+    @Value("${payment.payos.client-id:df05a25a-08ed-4ca8-b98a-8d41530faba0}")
     private String payosClientId;
 
-    @Value("${payment.payos.api-key:}")
+    @Value("${payment.payos.api-key:df869361-323d-4db6-89d8-8f3b04e9bc91}")
     private String payosApiKey;
 
-    @Value("${payment.payos.checksum-key:}")
+    @Value("${payment.payos.checksum-key:5863a512571ebfbde1321dbce7d57d1f9bd1e80f680d2c2172aef87d919fe1fa}")
     private String payosChecksumKey;
 
     @Value("${payment.payos.endpoint:https://api-merchant.payos.vn/v2/payment-requests}")
