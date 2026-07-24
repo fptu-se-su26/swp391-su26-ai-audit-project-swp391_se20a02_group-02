@@ -139,7 +139,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; requiredRole?: 'cust
 const ForbiddenPage: React.FC = () => {
   const { theme } = useUIStore();
   const isDark = theme === 'dark';
-  const { user } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const navigate = useNavigate();
 
   const getBackRoute = () => {
@@ -150,22 +150,53 @@ const ForbiddenPage: React.FC = () => {
     return '/dashboard';
   };
 
+  const handleSwitchAccount = () => {
+    logout();
+    navigate('/auth/login', { replace: true });
+  };
+
   return (
     <div className={`min-h-screen flex items-center justify-center px-4 ${isDark ? 'bg-slate-950 text-white' : 'bg-[#F8FAFC] text-[#0F172A]'}`}>
-      <div className="text-center max-w-md p-8 rounded-[2rem] glass dark:glass-dark border border-red-500/20 shadow-2xl relative overflow-hidden">
+      <div className="text-center max-w-md p-8 rounded-[2rem] glass dark:glass-dark border border-red-500/20 shadow-2xl relative overflow-hidden space-y-6">
         <div className="absolute -top-12 -right-12 w-32 h-32 bg-red-500/10 rounded-full blur-2xl pointer-events-none" />
 
-        <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-red-500/20 shadow-lg">
+        <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-2xl flex items-center justify-center mx-auto border border-red-500/20 shadow-lg">
           <span className="text-2xl">🛡️</span>
         </div>
-        <h1 className="text-display text-4xl font-extrabold mb-2 text-red-500 tracking-tight">403</h1>
-        <h2 className="text-xl font-bold mb-3 tracking-tight">Access Denied</h2>
-        <p className="text-slate-400 text-sm mb-8 leading-relaxed">
-          Your credentials do not grant access to this secure node. Please check your privileges or contact the platform administrator.
-        </p>
-        <button onClick={() => navigate(getBackRoute())} className="btn-primary w-full py-3.5 bg-gradient-to-r from-red-650 to-rose-650 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-red-500/15 hover-lift">
-          Return to Portal
-        </button>
+        
+        <div>
+          <h1 className="text-display text-4xl font-extrabold text-red-500 tracking-tight">403</h1>
+          <h2 className="text-xl font-bold mt-1 tracking-tight">Access Denied</h2>
+          <p className="text-slate-400 text-xs mt-2 leading-relaxed">
+            Tài khoản hiện tại không có quyền truy cập vào trang này. Vui lòng quay về trang quản lý của bạn hoặc đăng nhập bằng tài khoản phù hợp.
+          </p>
+        </div>
+
+        {user && (
+          <div className="p-3.5 bg-slate-500/10 dark:bg-white/5 rounded-2xl border border-slate-200/50 dark:border-white/10 text-left text-xs space-y-1">
+            <p className="text-slate-400 text-[10px] uppercase tracking-wider font-bold">Đang đăng nhập với:</p>
+            <p className="font-bold text-foreground truncate">{user.email}</p>
+            <span className="inline-block text-[10px] font-black uppercase tracking-widest px-2 py-0.5 bg-amber-500/10 text-amber-500 rounded-md">
+              Role: {user.role || 'CUSTOMER'}
+            </span>
+          </div>
+        )}
+
+        <div className="space-y-3">
+          <button
+            onClick={() => navigate(getBackRoute())}
+            className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-500/20 hover-lift transition-all"
+          >
+            Về trang quản lý của tôi ({user?.role?.toUpperCase() || 'DASHBOARD'})
+          </button>
+          
+          <button
+            onClick={handleSwitchAccount}
+            className="w-full py-3 bg-transparent border border-slate-300 dark:border-slate-700 hover:bg-slate-500/10 text-slate-500 dark:text-slate-400 rounded-2xl text-xs font-bold uppercase tracking-wider transition-colors"
+          >
+            Đổi tài khoản / Đăng nhập lại
+          </button>
+        </div>
       </div>
     </div>
   );
