@@ -1,16 +1,17 @@
 #!/bin/bash
 set -e
 
-echo "=== [1/5] System Update and Dependencies ==="
-apt-get update -y || true
-apt-get install -y git curl || true
+echo "=== [1/5] Checking System Dependencies ==="
+if ! command -v git &> /dev/null || ! command -v curl &> /dev/null; then
+    apt-get update -y && apt-get install -y git curl
+fi
 
-echo "=== [2/5] Installing Docker ==="
+echo "=== [2/5] Installing/Checking Docker ==="
 if ! command -v docker &> /dev/null; then
     curl -fsSL https://get.docker.com -o get-docker.sh
     sh get-docker.sh
+    apt-get install -y docker-compose-plugin || true
 fi
-apt-get install -y docker-compose-plugin || true
 
 echo "=== [3/5] Cloning / Updating Repository ==="
 cd /opt
@@ -79,11 +80,11 @@ grep -q "^PAYOS_RETURN_URL=" .env || echo "PAYOS_RETURN_URL=$DOMAIN/payment/payo
 sed -i "s|^PAYOS_CANCEL_URL=.*|PAYOS_CANCEL_URL=$DOMAIN/payment/payos/return|g" .env
 grep -q "^PAYOS_CANCEL_URL=" .env || echo "PAYOS_CANCEL_URL=$DOMAIN/payment/payos/return" >> .env
 
-echo "=== [5/5] Starting Docker Compose (This will take a few minutes) ==="
+echo "=== [5/5] Starting Docker Compose ==="
 docker compose down --remove-orphans || true
 
-echo "Building Docker images with no cache..."
-docker compose build --no-cache
+echo "Building Docker images with layer cache..."
+docker compose build
 
 echo "Starting containers..."
 docker compose up -d
