@@ -7,8 +7,16 @@ import type { Vehicle } from '@/types';
 import { formatCurrency } from '@/utils';
 import { fadeUp, staggerContainer, staggerItem } from '@/animations/variants';
 import { useT } from '@/i18n/translations';
+import { useVehicleStore } from '@/store';
 
 const MAX_COMPARE = 3;
+
+const getEngineDescription = (vehicle: Vehicle) => {
+  if (vehicle.engineCc) return `${vehicle.engineCc} cc`;
+  if (vehicle.specs?.engineSize) return vehicle.specs.engineSize;
+  if (vehicle.specs?.horsepower) return `${vehicle.specs.horsepower} HP`;
+  return vehicle.specs?.fuelType || undefined;
+};
 
 const SpecRow: React.FC<{ label: string; values: (string | number | boolean | undefined)[] }> = ({ label, values }) => {
   const format = (v: string | number | boolean | undefined) => {
@@ -35,6 +43,26 @@ const SpecRow: React.FC<{ label: string; values: (string | number | boolean | un
   );
 };
 
+const PriceComparisonRow: React.FC<{ label: string; vehicles: Vehicle[] }> = ({ label, vehicles }) => {
+  const lowest = Math.min(...vehicles.map(vehicle => Number(vehicle.pricePerDay)));
+  return (
+    <tr className="border-b border-blue-100 bg-blue-50/60 dark:border-blue-900/40 dark:bg-blue-950/20">
+      <td className="py-4 pr-4 text-sm font-bold text-blue-700 dark:text-blue-300">{label}</td>
+      {vehicles.map(vehicle => {
+        const isBest = Number(vehicle.pricePerDay) === lowest;
+        return (
+          <td key={vehicle.id} className="px-4 py-4 text-center">
+            <div className={isBest ? 'rounded-xl bg-emerald-100 px-3 py-2 text-emerald-800 ring-1 ring-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300' : ''}>
+              <div className="font-black">{formatCurrency(vehicle.pricePerDay)}</div>
+              {isBest && <div className="mt-1 text-[10px] font-bold uppercase">Best price</div>}
+            </div>
+          </td>
+        );
+      })}
+      {Array.from({ length: MAX_COMPARE - vehicles.length }).map((_, index) => <td key={index} />)}
+    </tr>
+  );
+};
 const VehicleSlot: React.FC<{
   vehicle: Vehicle | null;
   index: number;
@@ -189,36 +217,52 @@ const VehiclePicker: React.FC<{
 
 const ComparePage: React.FC = () => {
   const t = useT();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { compareList, setCompareList } = useVehicleStore();
   const [vehicles, setVehicles] = useState<(Vehicle | null)[]>([null, null, null]);
   const [pickerIndex, setPickerIndex] = useState<number | null>(null);
+  const [initialized, setInitialized] = useState(false);
 
-  // Pre-load from URL params (e.g. /compare?ids=1,2,3)
+  // URL initializes the selection once; afterwards the store is the single source of truth.
   useEffect(() => {
-    const ids = searchParams.get('ids')?.split(',').slice(0, MAX_COMPARE) || [];
-    if (ids.length > 0) {
-      Promise.all(ids.map(id => vehicleService.getById(id))).then(loaded => {
-        const filled: (Vehicle | null)[] = [...loaded];
-        while (filled.length < MAX_COMPARE) filled.push(null);
-        setVehicles(filled);
-      });
-    }
+    const urlIds = searchParams.get('ids')?.split(',').filter(Boolean).slice(0, MAX_COMPARE) || [];
+    if (urlIds.length > 0) setCompareList(urlIds);
+    setInitialized(true);
   }, []);
 
-  const addVehicle = (index: number, vehicle: Vehicle) => {
-    setVehicles(prev => {
-      const next = [...prev];
-      next[index] = vehicle;
-      return next;
+  useEffect(() => {
+    if (!initialized) return;
+    const ids = compareList.slice(0, MAX_COMPARE);
+    setSearchParams(ids.length ? { ids: ids.join(',') } : {}, { replace: true });
+
+    if (ids.length === 0) {
+      setVehicles([null, null, null]);
+      return;
+    }
+
+    let active = true;
+    Promise.all(ids.map(id => vehicleService.getById(id))).then(loaded => {
+      if (!active) return;
+      const valid = loaded.filter(Boolean) as Vehicle[];
+      const validIds = valid.map(vehicle => vehicle.id);
+      if (validIds.length !== ids.length) setCompareList(validIds);
+      const slots: (Vehicle | null)[] = [...valid];
+      while (slots.length < MAX_COMPARE) slots.push(null);
+      setVehicles(slots);
     });
+    return () => { active = false; };
+  }, [compareList, initialized, setCompareList, setSearchParams]);
+
+  const addVehicle = (index: number, vehicle: Vehicle) => {
+    const next = [...compareList];
+    next[index] = vehicle.id;
+    setCompareList(next);
   };
 
   const removeVehicle = (index: number) => {
-    setVehicles(prev => {
-      const next = [...prev];
-      next[index] = null;
-      return next;
-    });
+    const id = vehicles[index]?.id;
+    if (!id) return;
+    setCompareList(compareList.filter(vehicleId => vehicleId !== id));
   };
 
   const filled = vehicles.filter(Boolean) as Vehicle[];
@@ -280,11 +324,13 @@ const ComparePage: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                <SpecRow label={t.compare.priceDay} values={filled.map(v => formatCurrency(v.pricePerDay))} />
+                <PriceComparisonRow label={t.compare.priceDay} vehicles={filled} />
+                <SpecRow label="Deposit" values={filled.map(v => formatCurrency(v.deposit || 0))} />
                 <SpecRow label={t.compare.category} values={filled.map(v => v.category)} />
                 <SpecRow label={t.compare.brand} values={filled.map(v => v.brand)} />
                 <SpecRow label={t.compare.seats} values={filled.map(v => v.specs?.seats)} />
                 <SpecRow label={t.compare.transmission} values={filled.map(v => v.specs?.transmission)} />
+                <SpecRow label={t.compare.engine} values={filled.map(getEngineDescription)} />
                 <SpecRow label={t.compare.fuelType} values={filled.map(v => v.specs?.fuelType)} />
                 <SpecRow label={t.compare.rating} values={filled.map(v => v.rating?.toFixed(1))} />
                 <SpecRow label={t.compare.reviews} values={filled.map(v => v.totalReviews)} />

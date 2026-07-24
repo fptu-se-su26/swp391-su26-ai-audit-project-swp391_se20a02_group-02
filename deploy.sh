@@ -80,7 +80,7 @@ sed -i "s|^PAYOS_CANCEL_URL=.*|PAYOS_CANCEL_URL=$DOMAIN/payment/payos/return|g" 
 grep -q "^PAYOS_CANCEL_URL=" .env || echo "PAYOS_CANCEL_URL=$DOMAIN/payment/payos/return" >> .env
 
 echo "=== [5/5] Starting Docker Compose (This will take a few minutes) ==="
-docker compose down || true
+docker compose down --remove-orphans || true
 docker compose up -d --build
 
 echo ""

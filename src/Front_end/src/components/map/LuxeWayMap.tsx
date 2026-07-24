@@ -9,11 +9,6 @@ import { getMapStyleUrl, installMapStyleFallback } from './mapStyle';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=800';
 
-// ====== SPIDERFY CONFIG ======
-const SPIDERFY_ZOOM_THRESHOLD = 16;
-const SPIDERFY_RADIUS = 0.00028; // ~30m offset at city level
-const SPIDERFY_LEG_COLOR = '#d1d5db';
-
 // ====== ANIMATION CONFIG ======
 const FLY_DURATION = 1200;
 const MARKER_CLICK_SCALE_DURATION = 220;
@@ -96,7 +91,6 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
   const activeMarkersRef = useRef<Map<string, maplibregl.Marker>>(new Map());
   const activePopupRef = useRef<maplibregl.Popup | null>(null);
   const routeMarkersRef = useRef<maplibregl.Marker[]>([]);
-  const spiderLegsRef = useRef<maplibregl.Marker[]>([]);
   const isMapLoadedRef = useRef(false);
   const isUserDraggingRef = useRef(false);
   const moveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -162,29 +156,26 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
     return `${pricePerDay}`;
   };
 
-  // ====== SPIDERFY: Spread overlapping markers at max zoom ======
-  const clearSpiderLegs = () => {
-    spiderLegsRef.current.forEach(m => m.remove());
-    spiderLegsRef.current = [];
-  };
-
   // ====== MARKER STYLING ======
-  const getOrMakeInner = (markerEl: HTMLDivElement): HTMLDivElement => {
-    let inner = markerEl.querySelector('.luxeway-marker-inner') as HTMLDivElement;
-    if (!inner) {
-      inner = document.createElement('div');
-      inner.className = 'luxeway-marker-inner';
-      markerEl.appendChild(inner);
+  const getMarkerVisual = (el: HTMLElement): HTMLDivElement => {
+    let visual = el.querySelector<HTMLDivElement>('[data-marker-visual]');
+    if (!visual) {
+      visual = document.createElement('div');
+      visual.dataset.markerVisual = 'true';
+      el.replaceChildren(visual);
     }
-    return inner;
+    return visual;
   };
-
-  const applyMarkerStyle = (markerEl: HTMLDivElement, vehicle: any, isSelected: boolean, isHovered: boolean) => {
-    const el = getOrMakeInner(markerEl);
+  const applyMarkerStyle = (el: HTMLElement, vehicle: any, isSelected: boolean, isHovered: boolean) => {
     const thumbnailSrc = vehicle.thumbnailUrl || vehicle.thumbnail || vehicle.image || FALLBACK_IMAGE;
     const displayPrice = formatPrice(vehicle.pricePerDay || vehicle.finalPrice || 0);
+    const visual = getMarkerVisual(el);
 
-    el.style.cssText = `
+    // MapLibre owns the root transform used to position this marker.
+    // Scale only the inner visual so zooming cannot overwrite its position.
+    el.style.cursor = 'pointer';
+    el.style.userSelect = 'none';
+    visual.style.cssText = `
       display:flex; align-items:center; gap:7px;
       padding:4px 12px 4px 4px; background:#ffffff;
       border:${isSelected ? '2.5px' : '2px'} solid ${isSelected ? '#D4AF37' : isHovered ? '#D4AF37' : '#0F172A'};
@@ -195,15 +186,15 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
           ? '0 0 0 3px rgba(212,175,55,0.22), 0 10px 22px rgba(15,23,42,0.2)'
           : '0 8px 18px rgba(15,23,42,0.18)'};
       font-size:13px; font-weight:900; color:#0f172a;
-      cursor:pointer; user-select:none;
       transform:scale(${isSelected ? '1.08' : '1'});
-      transition:all 250ms cubic-bezier(0.4,0,0.2,1);
+      transform-origin:50% 100%;
+      transition:transform 250ms cubic-bezier(0.4,0,0.2,1), box-shadow 250ms ease, border-color 250ms ease;
       z-index:${isSelected ? '999' : isHovered ? '45' : '30'};
       white-space:nowrap;
       position:relative;
     `;
 
-    el.innerHTML = `
+    visual.innerHTML = `
       <img src="${thumbnailSrc}" alt="" style="width:34px;height:34px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid #f8fafc;background:#e2e8f0;" onerror="this.style.display='none'" />
       <span>${displayPrice}</span>
       <span style="position:absolute;left:50%;bottom:-8px;width:12px;height:12px;background:#D4AF37;border-right:2px solid #0F172A;border-bottom:2px solid #0F172A;transform:translateX(-50%) rotate(45deg);border-radius:0 0 3px 0;"></span>
@@ -213,28 +204,31 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
   const applyClusterStyle = (markerEl: HTMLDivElement, count: number, isHovered: boolean = false) => {
     const el = getOrMakeInner(markerEl);
     const label = count >= 100 ? '99+' : `${count} xe`;
-    el.style.cssText = `
+    const visual = getMarkerVisual(el);
+    el.style.cursor = 'pointer';
+    el.style.userSelect = 'none';
+    visual.style.cssText = `
       display:flex; align-items:center; justify-content:center;
       min-width:58px; height:40px; padding:0 16px;
       background:#0f172a; border:2px solid #D4AF37;
       border-radius:999px;
       box-shadow:${isHovered ? '0 14px 30px rgba(15,23,42,0.28)' : '0 10px 22px rgba(15,23,42,0.22)'};
       font-size:13px; font-weight:900; color:#ffffff;
-      cursor:pointer; user-select:none;
       transform:scale(${isHovered ? '1.05' : '1'});
-      transition:all 200ms ease-out;
+      transform-origin:50% 100%;
+      transition:transform 200ms ease-out, box-shadow 200ms ease-out;
     `;
-    el.textContent = label;
+    visual.textContent = label;
   };
 
   // ====== MARKER CLICK ANIMATION ======
-  const animateMarkerClick = (markerEl: HTMLDivElement) => {
-    const el = getOrMakeInner(markerEl);
-    el.style.transition = `transform ${MARKER_CLICK_SCALE_DURATION}ms cubic-bezier(0.34, 1.56, 0.64, 1)`;
-    el.style.transform = 'scale(1.15)';
+  const animateMarkerClick = (el: HTMLElement) => {
+    const visual = getMarkerVisual(el);
+    visual.style.transition = `transform ${MARKER_CLICK_SCALE_DURATION}ms cubic-bezier(0.34, 1.56, 0.64, 1)`;
+    visual.style.transform = 'scale(1.15)';
     setTimeout(() => {
-      const isStillSelected = selectedVehicleIdRef.current === markerEl.dataset.vehicleId;
-      el.style.transform = isStillSelected ? 'scale(1.08)' : 'scale(1)';
+      const isStillSelected = selectedVehicleIdRef.current === el.dataset.vehicleId;
+      visual.style.transform = isStillSelected ? 'scale(1.08)' : 'scale(1)';
     }, MARKER_CLICK_SCALE_DURATION);
   };
 
@@ -248,7 +242,6 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
       // Clear all markers when no vehicles
       activeMarkersRef.current.forEach(m => m.remove());
       activeMarkersRef.current.clear();
-      clearSpiderLegs();
       return;
     }
 
@@ -306,47 +299,10 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
       });
     }
 
-    // ====== SPIDERFY: At max zoom, spread overlapping clusters ======
-    clearSpiderLegs();
-    const spiderfiedClusters: MapCluster[] = [];
-
-    clusters.forEach(c => {
-      if (c.count > 1 && currentZoom >= SPIDERFY_ZOOM_THRESHOLD) {
-        // Spiderfy: distribute into individual markers in a circle
-        const angleStep = (2 * Math.PI) / c.count;
-        c.vehicles.forEach((v, i) => {
-          const angle = i * angleStep;
-          const offsetLat = c.lat + SPIDERFY_RADIUS * Math.cos(angle);
-          const offsetLng = c.lng + SPIDERFY_RADIUS * Math.sin(angle);
-          spiderfiedClusters.push({
-            id: v.id,
-            lat: offsetLat,
-            lng: offsetLng,
-            count: 1,
-            vehicles: [v],
-          });
-
-          // Draw spider leg (line from center to offset)
-          const legEl = document.createElement('div');
-          legEl.style.cssText = `
-            position:absolute; width:1px; height:1px;
-            pointer-events:none; z-index:1;
-          `;
-          // Simple visual: a thin dotted line marker at center
-          const legMarker = new maplibregl.Marker({ element: legEl })
-            .setLngLat([c.lng, c.lat])
-            .addTo(map);
-          spiderLegsRef.current.push(legMarker);
-        });
-      } else {
-        spiderfiedClusters.push(c);
-      }
-    });
-
     // ====== RENDER MARKERS ======
     const visibleIds = new Set<string>();
 
-    spiderfiedClusters.forEach(c => {
+    clusters.forEach(c => {
       const isCluster = c.count > 1;
       const id = isCluster ? c.id : c.vehicles[0].id;
       visibleIds.add(id);
@@ -356,7 +312,7 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
 
       if (!marker) {
         markerEl = document.createElement('div');
-        marker = new maplibregl.Marker({ element: markerEl })
+        marker = new maplibregl.Marker({ element: markerEl, anchor: 'bottom' })
           .setLngLat([c.lng, c.lat])
           .addTo(map);
         activeMarkersRef.current.set(id, marker);
@@ -574,11 +530,6 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
       };
 
       map.on('moveend', handleMoveEnd);
-      map.on('zoomend', () => {
-        updateMarkers();
-        emitBounds();
-      });
-
       // Click on empty map → deselect
       map.on('click', (e) => {
         // Check if click was on a marker
@@ -626,7 +577,6 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
     return () => {
       activeMarkersRef.current.forEach(m => m.remove());
       activeMarkersRef.current.clear();
-      clearSpiderLegs();
       routeMarkersRef.current.forEach(m => m.remove());
       routeMarkersRef.current = [];
       map.remove();

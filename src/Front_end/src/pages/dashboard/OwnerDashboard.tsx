@@ -6,11 +6,11 @@ import { OwnerAnalyticsDashboard } from '@/components/enterprise/OwnerAnalyticsD
 import { LocationPickerMap } from '@/components/map/LocationPickerMap';
 
 import {
-  LayoutDashboard, Car, Calendar, TrendingUp, Users, Settings,
+  LayoutDashboard, Car, Bike, Calendar, TrendingUp, Users, Settings,
   Plus, Edit, Trash2, Eye, CheckCircle, Clock, DollarSign,
   BarChart2, Shield, AlertTriangle, LogOut, Globe, Menu,
   MapPin, Star, Activity, ArrowUpRight, Play, FileText,
-  Search, Filter, SlidersHorizontal, RefreshCw
+  Search, Filter, SlidersHorizontal, RefreshCw, ChevronLeft, ChevronRight, Wrench
 } from 'lucide-react';
 
 import { useAuthStore, useUIStore } from '@/store';
@@ -280,12 +280,12 @@ export const OwnerOverview: React.FC = () => {
               }] as any[]).map((v, i) => (
                 <motion.div key={i} whileHover={{ x: 3 }}
                   className="flex items-center gap-3 p-3.5 rounded-2xl transition-all duration-200 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-700/50">
-                <img src={v.thumbnailUrl || v.img} alt={v.name} className="w-16 h-12 rounded-xl object-cover flex-shrink-0 shadow-sm" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">{v.name}</p>
-                  <p className="text-[11px] font-medium flex items-center gap-1 mt-1 text-slate-500 dark:text-slate-400">
-                    <MapPin className="w-3 h-3" />{v.location?.city || v.city}
-                  </p>
+                  <img src={v.thumbnailUrl || v.img} alt={v.name} className="w-16 h-12 rounded-xl object-cover flex-shrink-0 shadow-sm" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">{v.name}</p>
+                    <p className="text-[11px] font-medium flex items-center gap-1 mt-1 text-slate-500 dark:text-slate-400">
+                      <MapPin className="w-3 h-3" />{v.location?.city || v.city}
+                    </p>
                   </div>
                   <div className="text-right flex-shrink-0">
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg"
@@ -474,6 +474,8 @@ export const VehicleManagePage: React.FC = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'CAR' | 'MOTORBIKE'>('CAR');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [maintenanceId, setMaintenanceId] = useState<string | null>(null);
   const toast = useToast();
   const t = useT();
   const isVi = t.common.loading.includes('Đang');
@@ -488,12 +490,38 @@ export const VehicleManagePage: React.FC = () => {
 
   const handleDelete = async (vehicleId: string, vehicleName: string) => {
     if (window.confirm(isVi ? `Xác nhận xóa xe ${vehicleName}?` : `Delete ${vehicleName}?`)) {
-      await vehicleService.delete(vehicleId);
+      setDeletingId(vehicleId);
+      const deleted = await vehicleService.delete(vehicleId);
+      setDeletingId(null);
+      if (!deleted) {
+        toast.error(isVi ? 'Không thể xóa xe đang có chuyến đặt hoạt động' : 'Cannot delete a vehicle with an active booking');
+        return;
+      }
       setVehicles(prev => prev.filter(v => v.id !== vehicleId));
       toast.success(isVi ? 'Đã xóa phương tiện thành công' : 'Vehicle deleted');
     }
   };
 
+  const handleMaintenance = async (vehicle: Vehicle) => {
+    const enteringMaintenance = String(vehicle.status || '').toLowerCase() !== 'maintenance';
+    const question = enteringMaintenance
+      ? (isVi ? `Đưa ${vehicle.name} vào bảo trì? Xe sẽ bị ẩn khỏi Marketplace và không thể nhận booking mới.` : `Put ${vehicle.name} into maintenance? It will be hidden from Marketplace and cannot receive new bookings.`)
+      : (isVi ? `Kết thúc bảo trì cho ${vehicle.name}? Xe sẽ xuất hiện lại trên Marketplace.` : `Finish maintenance for ${vehicle.name}? It will return to Marketplace.`);
+    if (!window.confirm(question)) return;
+
+    setMaintenanceId(vehicle.id);
+    const updated = await vehicleService.setMaintenance(vehicle.id, enteringMaintenance);
+    setMaintenanceId(null);
+    if (!updated) {
+      toast.error(isVi ? 'Không thể cập nhật bảo trì' : 'Maintenance update failed', isVi ? 'Chỉ xe đã duyệt và không đang được thuê mới có thể chuyển trạng thái.' : 'Only approved vehicles that are not currently rented can change maintenance status.');
+      return;
+    }
+    setVehicles(prev => prev.map(item => item.id === vehicle.id ? updated : item));
+    toast.success(
+      enteringMaintenance ? (isVi ? 'Đã đưa xe vào bảo trì' : 'Maintenance started') : (isVi ? 'Đã kết thúc bảo trì' : 'Maintenance completed'),
+      enteringMaintenance ? (isVi ? 'Xe đã được ẩn khỏi Marketplace.' : 'The vehicle is now hidden from Marketplace.') : (isVi ? 'Xe đã xuất hiện lại trên Marketplace.' : 'The vehicle is available on Marketplace again.')
+    );
+  };
   const breadcrumbItems = [
     { label: t.marketplace.home, href: '/' },
     { label: 'Host Portal', href: '/owner' },
@@ -514,21 +542,19 @@ export const VehicleManagePage: React.FC = () => {
       <div className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-none">
         <button
           onClick={() => setActiveTab('CAR')}
-          className={`px-6 py-2.5 rounded-xl text-xs font-extrabold whitespace-nowrap border transition-all duration-300 hover-lift ${
-            activeTab === 'CAR'
+          className={`px-6 py-2.5 rounded-xl text-xs font-extrabold whitespace-nowrap border transition-all duration-300 hover-lift ${activeTab === 'CAR'
               ? 'border-gold bg-amber-500/10 text-gold shadow-sm shadow-gold/20'
               : 'border-slate-200 dark:border-white/5 text-slate-500 dark:text-slate-400 bg-white/50 dark:bg-slate-800/50 hover:border-slate-300'
-          }`}
+            }`}
         >
           🚗 Cars ({vehicles.filter(v => (v.vehicleType || 'CAR').toUpperCase() === 'CAR').length})
         </button>
         <button
           onClick={() => setActiveTab('MOTORBIKE')}
-          className={`px-6 py-2.5 rounded-xl text-xs font-extrabold whitespace-nowrap border transition-all duration-300 hover-lift ${
-            activeTab === 'MOTORBIKE'
+          className={`px-6 py-2.5 rounded-xl text-xs font-extrabold whitespace-nowrap border transition-all duration-300 hover-lift ${activeTab === 'MOTORBIKE'
               ? 'border-gold bg-amber-500/10 text-gold shadow-sm shadow-gold/20'
               : 'border-slate-200 dark:border-white/5 text-slate-500 dark:text-slate-400 bg-white/50 dark:bg-slate-800/50 hover:border-slate-300'
-          }`}
+            }`}
         >
           🏍️ Motorbikes ({vehicles.filter(v => (v.vehicleType || 'CAR').toUpperCase() === 'MOTORBIKE').length})
         </button>
@@ -561,15 +587,18 @@ export const VehicleManagePage: React.FC = () => {
                 <th className="p-4">Price</th>
                 <th className="p-4">Status</th>
                 <th className="p-4">Approval Note</th>
-                <th className="p-4 pr-6 text-right">Action</th>
+                <th className="p-4 pr-6 text-right sticky right-0 z-10 bg-slate-50 dark:bg-slate-900 min-w-[148px]">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200/50 dark:divide-white/5 text-sm">
               {filteredVehicles.map(vehicle => {
-                const statusLower = (vehicle.approvalStatus || vehicle.status || '').toLowerCase();
+                const rawStatus = String(vehicle.status || '').toLowerCase();
+                const approvalStatus = String(vehicle.approvalStatus || '').toLowerCase();
+                const statusLower = rawStatus === 'maintenance' ? rawStatus : (approvalStatus || rawStatus);
                 const displayStatus = statusLower === 'approved' ? 'AVAILABLE' : statusLower.toUpperCase();
+                const isMaintenance = rawStatus === 'maintenance';
                 return (
-                  <tr key={vehicle.id} className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
+                  <tr key={vehicle.id} className="group hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
                     <td className="p-4 pl-6">
                       <img 
                         src={vehicle.thumbnailUrl || 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=120&q=80'} 
@@ -589,7 +618,8 @@ export const VehicleManagePage: React.FC = () => {
                     <td className="p-4">
                       <span className={`px-2.5 py-1 text-[10px] font-black rounded-lg border uppercase tracking-wider ${
                         displayStatus === 'AVAILABLE' || displayStatus === 'APPROVED' ? 'bg-green-50 text-green-700 border-green-200' :
-                        displayStatus === 'SUBMITTED' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                        displayStatus === 'MAINTENANCE' ? 'bg-orange-50 text-orange-700 border-orange-200' :
+                        displayStatus === 'SUBMITTED' || displayStatus === 'PENDING_APPROVAL' ? 'bg-amber-50 text-amber-700 border-amber-200' :
                         displayStatus === 'REJECTED' ? 'bg-rose-50 text-rose-700 border-rose-200' :
                         'bg-slate-50 text-slate-700 border-slate-200'
                       }`}>
@@ -603,33 +633,43 @@ export const VehicleManagePage: React.FC = () => {
                         <span className="text-slate-400">—</span>
                       )}
                     </td>
-                    <td className="p-4 pr-6 text-right">
+                    <td className="p-4 pr-6 text-right sticky right-0 z-10 bg-white group-hover:bg-slate-50 dark:bg-slate-900 dark:group-hover:bg-slate-800 transition-colors">
                       <div className="flex gap-2 justify-end">
                         <Link to={`/vehicles/${vehicle.id}`} title={isVi ? 'Xem Tin Đăng' : 'View Listing'} className="p-2 border border-slate-200 dark:border-white/10 hover:border-gold hover:text-gold text-slate-500 rounded-lg transition-colors">
                           <Eye className="w-4 h-4" />
                         </Link>
+                        {(displayStatus === 'AVAILABLE' || displayStatus === 'MAINTENANCE') && (
+                          <button
+                            type="button"
+                            onClick={() => handleMaintenance(vehicle)}
+                            disabled={maintenanceId === vehicle.id}
+                            title={isMaintenance ? (isVi ? 'Kết thúc bảo trì' : 'Finish Maintenance') : (isVi ? 'Đưa vào bảo trì' : 'Start Maintenance')}
+                            className={`p-2 border rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${isMaintenance ? 'border-green-500/30 text-green-600 hover:border-green-500' : 'border-orange-500/30 text-orange-600 hover:border-orange-500'}`}
+                          >
+                            <Wrench className="w-4 h-4" />
+                          </button>
+                        )}
                         <Link to={`/owner/vehicles/${vehicle.id}/edit`} title={t.common.edit} className="p-2 border border-slate-200 dark:border-white/10 hover:border-blue-500 hover:text-blue-500 text-slate-500 rounded-lg transition-colors">
                           <Edit className="w-4 h-4" />
                         </Link>
-                        {(!vehicle.approvalStatus || vehicle.approvalStatus === 'draft' || vehicle.approvalStatus === 'rejected' || vehicle.approvalStatus === 'submitted') && (
-                          <button
-                            onClick={() => handleDelete(vehicle.id, vehicle.name)}
-                            title={t.common.delete}
-                            className="p-2 border border-red-500/20 hover:border-red-500 hover:text-red-500 text-red-500 rounded-lg transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        )}
+                        <button
+                          onClick={() => handleDelete(vehicle.id, vehicle.name)}
+                          disabled={deletingId === vehicle.id}
+                          title={t.common.delete}
+                          className="p-2 border border-red-500/20 hover:border-red-500 hover:text-red-500 text-red-500 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </td>
                   </tr>
                 );
               })}
-            </tbody>
-          </table>
-        </motion.div>
+            </tbody >
+          </table >
+        </motion.div >
       )}
-    </div>
+    </div >
   );
 };
 
@@ -650,9 +690,10 @@ export const VehicleFormPage: React.FC = () => {
   const [images, setImages] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [vinLoading, setVinLoading] = useState(false);
+  const [listingType, setListingType] = useState<'CAR' | 'MOTORBIKE' | null>(id ? 'CAR' : null);
 
   const [form, setForm] = useState({
-    name: '', brand: '', category: 'supercar', year: new Date().getFullYear(),
+    name: '', brand: '', category: 'sports', year: new Date().getFullYear(),
     pricePerDay: Math.round(convertCurrency(5000000, 'VND', currency)), description: '', seats: 2, doors: 2,
     transmission: 'Automatic', fuelType: 'Gasoline',
     features: 'Bluetooth, Navigation, Backup Camera',
@@ -660,7 +701,7 @@ export const VehicleFormPage: React.FC = () => {
     thumbnailUrl: 'https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=800&q=80',
     lat: 10.762,
     lng: 106.660,
-    vin: '',
+    vin: '', licensePlate: '',
   });
 
   const handleVinFill = async () => {
@@ -673,10 +714,10 @@ export const VehicleFormPage: React.FC = () => {
     try {
       const response = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/decodevinvaluesextended/${form.vin}?format=json`);
       const data = await response.json();
-      
+
       if (data && data.Results && data.Results[0]) {
         const res = data.Results[0];
-        
+
         if (!res.Make && !res.Model) {
           toast.error(isVi ? 'Không tìm thấy thông tin xe với số VIN này.' : 'No vehicle information found for this VIN.');
           setVinLoading(false);
@@ -689,7 +730,7 @@ export const VehicleFormPage: React.FC = () => {
         const year = res.ModelYear ? parseInt(res.ModelYear) : new Date().getFullYear();
         const seats = res.Seats || res.NumberofSeats ? parseInt(res.Seats || res.NumberofSeats) : 5;
         const doors = res.Doors ? parseInt(res.Doors) : 4;
-        
+
         let fuelType = 'Gasoline';
         const rawFuel = (res.FuelTypePrimary || '').toLowerCase();
         if (rawFuel.includes('electric') || rawFuel.includes('battery')) {
@@ -711,13 +752,13 @@ export const VehicleFormPage: React.FC = () => {
         if (bodyClass.includes('sport utility') || bodyClass.includes('suv')) {
           category = 'suv';
         } else if (bodyClass.includes('convertible') || bodyClass.includes('cabriolet')) {
-          category = 'convertible';
+          category = 'luxury';
         } else if (bodyClass.includes('sedan')) {
           category = 'sedan';
         } else if (fuelType === 'Electric') {
-          category = 'electric';
+          category = 'electric_car';
         } else if (bodyClass.includes('coupe') || bodyClass.includes('supercar') || bodyClass.includes('exotic')) {
-          category = 'supercar';
+          category = 'sports';
         }
 
         const horsepower = res.EngineHP ? `${res.EngineHP} HP` : '';
@@ -740,7 +781,7 @@ export const VehicleFormPage: React.FC = () => {
 
         toast.success(
           isVi ? 'Đọc thông tin VIN thành công!' : 'VIN decoded successfully!',
-          isVi 
+          isVi
             ? `Đã nhận diện: ${brand} ${model} (${year}).`
             : `Identified: ${brand} ${model} (${year}).`
         );
@@ -774,10 +815,11 @@ export const VehicleFormPage: React.FC = () => {
     setFetching(true);
     vehicleService.getById(id).then(vehicle => {
       if (vehicle) {
+        setListingType(((vehicle as any).vehicleType || '').toUpperCase().includes('MOTOR') ? 'MOTORBIKE' : 'CAR');
         setForm({
           name: vehicle.name || '',
           brand: vehicle.brand || '',
-          category: vehicle.category || 'supercar',
+          category: vehicle.category || 'sports',
           year: vehicle.year || new Date().getFullYear(),
           pricePerDay: Math.round(convertCurrency(vehicle.pricePerDay || 5000000, 'VND', currency)),
           description: vehicle.description || '',
@@ -795,6 +837,7 @@ export const VehicleFormPage: React.FC = () => {
           lat: vehicle.location?.lat !== undefined ? vehicle.location.lat : ((vehicle as any).latitude || 10.762),
           lng: vehicle.location?.lng !== undefined ? vehicle.location.lng : ((vehicle as any).longitude || 106.660),
           vin: vehicle.vin || '',
+          licensePlate: vehicle.specs?.licensePlate || (vehicle as any).licensePlate || '',
         });
         setImages(vehicle.images || (vehicle.thumbnailUrl ? [vehicle.thumbnailUrl] : []));
       } else {
@@ -829,6 +872,7 @@ export const VehicleFormPage: React.FC = () => {
       else if (form.year < 1950 || form.year > new Date().getFullYear() + 1) {
         newErrors.year = isVi ? 'Năm sản xuất không hợp lệ' : 'Invalid manufacturing year';
       }
+      if (!form.licensePlate.trim()) newErrors.licensePlate = isVi ? 'Biển số xe không được để trống' : 'License plate is required';
       if (!form.description.trim()) newErrors.description = isVi ? 'Mô tả không được để trống' : 'Description is required';
     } else if (currentStep === 2) {
       if (images.length === 0 && !form.thumbnailUrl) {
@@ -860,7 +904,8 @@ export const VehicleFormPage: React.FC = () => {
     }
 
     setLoading(true);
-    const currentThumbnail = images.length > 0 ? images[0] : form.thumbnailUrl;
+    const validImages = images.filter(Boolean);
+    const currentThumbnail = validImages.length > 0 ? validImages[0] : form.thumbnailUrl;
 
     const vehicleData: Omit<Vehicle, 'id'> = {
       ownerId: user?.id || '',
@@ -871,15 +916,15 @@ export const VehicleFormPage: React.FC = () => {
       year: Number(form.year),
       pricePerDay: Math.round(convertCurrency(Number(form.pricePerDay), currency, 'VND')),
       description: form.description,
-      status: 'available',
+      status: 'pending_approval',
       rating: 5.0,
       thumbnailUrl: currentThumbnail,
-      images: images.length > 0 ? images : [currentThumbnail],
+      images: validImages,
       rules: ['No smoking', 'No pets'],
       insurance: { included: true, provider: 'LuxeWay Shield', coverage: 'Premium' },
       availability: { blockedDates: [], minRentalDays: 1, maxRentalDays: 30, advanceBookingDays: 1 },
       specs: {
-        seats: Number(form.seats),
+        seats: listingType === 'MOTORBIKE' ? 2 : Number(form.seats),
         doors: Number(form.doors),
         transmission: form.transmission as any,
         fuelType: form.fuelType as any,
@@ -887,7 +932,7 @@ export const VehicleFormPage: React.FC = () => {
         topSpeed: 320,
         acceleration: 3.5,
         color: 'Black',
-        licensePlate: 'LUXEWAY'
+        licensePlate: form.licensePlate
       },
       features: form.features.split(',').map(s => s.trim()).filter(Boolean),
       location: {
@@ -898,7 +943,7 @@ export const VehicleFormPage: React.FC = () => {
         lng: Number(form.lng) || 106.660,
         timezone: 'Asia/Ho_Chi_Minh'
       },
-      model: 'Custom',
+      model: form.name,
       deposit: parseFloat(form.pricePerDay.toString()) * 0.1 || 500000,
       totalReviews: 0,
       totalBookings: 0,
@@ -908,6 +953,7 @@ export const VehicleFormPage: React.FC = () => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       addons: [],
+      vehicleType: listingType === 'MOTORBIKE' ? 'motorbike' : 'car',
       instantBook: false,
       deliveryAvailable: false,
       deliveryFee: 0
@@ -915,7 +961,8 @@ export const VehicleFormPage: React.FC = () => {
 
     try {
       if (id) {
-        await vehicleService.update(id, vehicleData);
+        const updatedVehicle = await vehicleService.update(id, vehicleData);
+        if (!updatedVehicle) throw new Error('Vehicle update failed');
         toast.success(
           isVi ? 'Cập Nhật Xe Thành Công!' : 'Vehicle Updated Successfully!',
           isVi ? 'Thông tin xe của bạn đã được lưu lại.' : 'Your vehicle details have been saved.'
@@ -924,7 +971,9 @@ export const VehicleFormPage: React.FC = () => {
         await vehicleService.create(user?.id || '', vehicleData);
         toast.success(
           isVi ? 'Đăng Ký Xe Thành Công!' : 'Vehicle Listed Successfully!',
-          isVi ? 'Xe của bạn hiện đã hiển thị trên marketplace.' : 'Your vehicle is now live on the marketplace.'
+          isVi
+            ? 'Xe đã được gửi cho Admin xét duyệt và chỉ hiển thị trên Marketplace sau khi được phê duyệt.'
+            : 'Your vehicle was submitted for Admin review and will appear on the Marketplace after approval.'
         );
       }
       navigate('/owner/vehicles');
@@ -948,6 +997,52 @@ export const VehicleFormPage: React.FC = () => {
     );
   }
 
+  if (!id && !listingType) {
+    return (
+      <div className="max-w-4xl mx-auto animate-fade-in">
+        <Breadcrumbs
+          title={isVi ? 'Chọn Loại Xe Cho Thuê' : 'Choose a Vehicle Type'}
+          items={[
+            { label: t.marketplace.home, href: '/' },
+            { label: 'Host Portal', href: '/owner' },
+            { label: t.ownerDashboard.myVehicles, href: '/owner/vehicles' },
+            { label: isVi ? 'Thêm mới' : 'Add New' }
+          ]}
+          backHref="/owner/vehicles"
+          backText={isVi ? 'Quay lại danh sách' : 'Back to list'}
+        />
+
+        <div className="glass border border-slate-200/60 dark:border-white/5 p-6 md:p-9 rounded-[2rem] shadow-md">
+          <div className="text-center max-w-2xl mx-auto mb-8">
+            <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-gold mb-3">{isVi ? 'Bước đầu tiên' : 'First step'}</p>
+            <h2 className="font-display text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">
+              {isVi ? 'Bạn muốn cho thuê loại xe nào?' : 'What would you like to rent out?'}
+            </h2>
+            <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
+              {isVi ? 'Chọn đúng loại xe để LuxeWay hiển thị biểu mẫu và thông tin phù hợp.' : 'Choose a type so LuxeWay can show the right listing form and specifications.'}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <button type="button" onClick={() => { setListingType('MOTORBIKE'); setForm(f => ({ ...f, category: 'scooter', seats: 2, doors: 0, transmission: 'Automatic', fuelType: 'Gasoline', features: '2 helmets, phone holder, USB charger, raincoat', thumbnailUrl: 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=800&q=80', pricePerDay: Math.round(convertCurrency(200000, 'VND', currency)) })); }} className="group text-left rounded-3xl border-2 border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.03] p-6 md:p-8 hover:border-gold hover:shadow-xl hover:shadow-gold/10 transition-all duration-200">
+              <div className="w-14 h-14 rounded-2xl bg-amber-50 dark:bg-gold/10 text-gold flex items-center justify-center mb-6 group-hover:scale-105 transition-transform"><Bike className="w-7 h-7" /></div>
+              <h3 className="font-display text-xl font-bold text-slate-900 dark:text-white">{isVi ? 'Cho Thuê Xe Máy' : 'Rent Out a Motorbike'}</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">{isVi ? 'Xe số, xe tay ga, xe côn tay và xe máy điện.' : 'Scooters, manual bikes, sport bikes, and electric motorbikes.'}</p>
+              <span className="inline-flex mt-6 text-xs font-extrabold uppercase tracking-wider text-gold">{isVi ? 'Chọn xe máy →' : 'Choose motorbike →'}</span>
+            </button>
+
+            <button type="button" onClick={() => { setListingType('CAR'); setForm(f => ({ ...f, category: 'sedan', seats: 5, doors: 4, pricePerDay: Math.round(convertCurrency(1000000, 'VND', currency)) })); }} className="group text-left rounded-3xl border-2 border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.03] p-6 md:p-8 hover:border-gold hover:shadow-xl hover:shadow-gold/10 transition-all duration-200">
+              <div className="w-14 h-14 rounded-2xl bg-amber-50 dark:bg-gold/10 text-gold flex items-center justify-center mb-6 group-hover:scale-105 transition-transform"><Car className="w-7 h-7" /></div>
+              <h3 className="font-display text-xl font-bold text-slate-900 dark:text-white">{isVi ? 'Cho Thuê Xe Ô Tô' : 'Rent Out a Car'}</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">{isVi ? 'Sedan, SUV, xe điện, xe sang và xe thể thao.' : 'Sedans, SUVs, electric cars, luxury cars, and sports cars.'}</p>
+              <span className="inline-flex mt-6 text-xs font-extrabold uppercase tracking-wider text-gold">{isVi ? 'Chọn ô tô →' : 'Choose car →'}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const stepsInfo = [
     { num: 1, label: isVi ? 'Hồ Sơ Xe' : isJa ? '車両プロフィール' : 'Vehicle Profile' },
     { num: 2, label: isVi ? 'Thông Số & Tải Lên' : isJa ? 'スペック・アップロード' : 'Specs & Upload' },
@@ -963,11 +1058,11 @@ export const VehicleFormPage: React.FC = () => {
 
   return (
     <div className="max-w-3xl mx-auto animate-fade-in">
-      <Breadcrumbs 
-        title={id ? (isVi ? 'Chỉnh Sửa Phương Tiện' : 'Edit Your Vehicle') : (isVi ? 'Đăng Xe Cao Cấp Mới' : 'List a Luxury Vehicle')} 
-        items={breadcrumbItems} 
-        backHref="/owner/vehicles" 
-        backText={isVi ? 'Quay lại danh sách' : 'Back to list'} 
+      <Breadcrumbs
+        title={id ? (isVi ? 'Chỉnh Sửa Phương Tiện' : 'Edit Your Vehicle') : (isVi ? 'Đăng Xe Cao Cấp Mới' : 'List a Luxury Vehicle')}
+        items={breadcrumbItems}
+        backHref="/owner/vehicles"
+        backText={isVi ? 'Quay lại danh sách' : 'Back to list'}
       />
 
       {/* Modern Capsule Step Indicators with labels */}
@@ -987,69 +1082,106 @@ export const VehicleFormPage: React.FC = () => {
       <form onSubmit={handleSubmit} className="glass border border-slate-200/50 dark:border-white/5 p-6 md:p-8 rounded-[2rem] shadow-md">
         {step === 1 && (
           <motion.div variants={fadeUp} initial="hidden" animate="visible" className="space-y-6">
-            <h3 className="font-display text-xl font-bold text-slate-800 dark:text-white border-b border-slate-200/10 dark:border-white/5 pb-3">{isVi ? 'Thông Tin Cơ Bản' : isJa ? '基本情報' : 'Basic Information'}</h3>
-            
-            <div className="md:col-span-2 bg-slate-50 dark:bg-white/5 p-5 rounded-2xl border border-slate-100 dark:border-white/5 space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-end gap-3">
-                <div className="flex-1 lw-form-group mb-0">
-                  <label className="lw-form-label flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                    <span>🔑</span>
-                    {isVi ? 'Nhập Số VIN (Tra cứu thông số)' : 'Enter VIN (Decode specs)'}
-                  </label>
-                  <input
-                    value={form.vin}
-                    onChange={e => update('vin', e.target.value.toUpperCase())}
-                    placeholder="e.g. 1FA6P8CF0H5XXXXXX"
-                    className="lw-input-interactive"
-                    maxLength={17}
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={handleVinFill}
-                  disabled={vinLoading || !form.vin || form.vin.trim().length < 17}
-                  className="px-5 py-3.5 bg-slate-900 hover:bg-slate-800 dark:bg-gold dark:hover:bg-[#CA9E26] text-white dark:text-slate-950 text-xs font-extrabold rounded-xl transition-all duration-150 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 whitespace-nowrap lw-btn-interactive border border-transparent dark:border-none"
-                >
-                  {vinLoading ? (
-                    <>
-                      <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                      {isVi ? 'Đang đọc...' : 'Decoding...'}
-                    </>
-                  ) : (
-                    <>
-                      <span>⚡</span>
-                      {isVi ? 'Tự Động Điền' : 'Auto-fill Specs'}
-                    </>
-                  )}
-                </button>
-              </div>
-              <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
-                {isVi 
-                  ? 'Nhập 17 ký tự số VIN của xe và nhấn "Tự Động Điền" để tải thông tin chính thức từ cơ sở dữ liệu NHTSA.' 
-                  : 'Enter the 17-character Vehicle Identification Number and click "Auto-fill Specs" to fetch details from the NHTSA database.'}
-              </p>
+            <div className="grid grid-cols-2 gap-2 rounded-2xl bg-slate-100 dark:bg-white/5 p-2 border border-slate-200/70 dark:border-white/5">
+              <button
+                type="button"
+                onClick={() => {
+                  setListingType('CAR');
+                  setForm(f => ({ ...f, category: 'sedan', seats: 5, doors: 4, transmission: 'Automatic', fuelType: 'Gasoline', features: 'Bluetooth, Navigation, Backup Camera' }));
+                }}
+                className={cn('flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold transition-all', listingType === 'CAR' ? 'bg-white dark:bg-slate-900 text-amber-600 shadow-md ring-1 ring-amber-400' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white')}
+              >
+                <Car className="h-4 w-4" /> Ô tô
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setListingType('MOTORBIKE');
+                  setForm(f => ({ ...f, vin: '', category: 'scooter', seats: 2, doors: 0, transmission: 'Automatic', fuelType: 'Gasoline', features: '2 helmets, phone holder, USB charger, raincoat' }));
+                }}
+                className={cn('flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold transition-all', listingType === 'MOTORBIKE' ? 'bg-white dark:bg-slate-900 text-amber-600 shadow-md ring-1 ring-amber-400' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white')}
+              >
+                <Bike className="h-4 w-4" /> Xe máy
+              </button>
             </div>
+            <h3 className="font-display text-xl font-bold text-slate-800 dark:text-white border-b border-slate-200/10 dark:border-white/5 pb-3">{isVi ? 'Thông Tin Cơ Bản' : isJa ? '基本情報' : 'Basic Information'}</h3>
+
+            {listingType === 'CAR' && (
+              <div className="md:col-span-2 bg-slate-50 dark:bg-white/5 p-5 rounded-2xl border border-slate-100 dark:border-white/5 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+                  <div className="flex-1 lw-form-group mb-0">
+                    <label className="lw-form-label flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                      <span>🔑</span>
+                      {isVi ? 'Nhập Số VIN (Tra cứu thông số)' : 'Enter VIN (Decode specs)'}
+                    </label>
+                    <input
+                      value={form.vin}
+                      onChange={e => update('vin', e.target.value.toUpperCase())}
+                      placeholder="e.g. 1FA6P8CF0H5XXXXXX"
+                      className="lw-input-interactive"
+                      maxLength={17}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleVinFill}
+                    disabled={vinLoading || !form.vin || form.vin.trim().length < 17}
+                    className="px-5 py-3.5 bg-slate-900 hover:bg-slate-800 dark:bg-gold dark:hover:bg-[#CA9E26] text-white dark:text-slate-950 text-xs font-extrabold rounded-xl transition-all duration-150 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 whitespace-nowrap lw-btn-interactive border border-transparent dark:border-none"
+                  >
+                    {vinLoading ? (
+                      <>
+                        <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        {isVi ? 'Đang đọc...' : 'Decoding...'}
+                      </>
+                    ) : (
+                      <>
+                        <span>⚡</span>
+                        {isVi ? 'Tự Động Điền' : 'Auto-fill Specs'}
+                      </>
+                    )}
+                  </button>
+                </div>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
+                  {isVi
+                    ? 'Nhập 17 ký tự số VIN của xe và nhấn "Tự Động Điền" để tải thông tin chính thức từ cơ sở dữ liệu NHTSA.'
+                    : 'Enter the 17-character Vehicle Identification Number and click "Auto-fill Specs" to fetch details from the NHTSA database.'}
+                </p>
+              </div>
+
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="lw-form-group">
                 <label className="lw-form-label">{isVi ? 'Tên Xe *' : isJa ? '車両名 *' : 'Vehicle Name *'}</label>
-                <input value={form.name} onChange={e => update('name', e.target.value)} required placeholder="e.g. Ferrari F8 Tributo" className={`lw-input-interactive ${errors.name ? 'error' : ''}`} />
+                <input value={form.name} onChange={e => update('name', e.target.value)} required placeholder={listingType === 'MOTORBIKE' ? 'e.g. Honda Air Blade 160' : 'e.g. Ferrari F8 Tributo'} className={`lw-input-interactive ${errors.name ? 'error' : ''}`} />
                 {errors.name && <p className="lw-form-error-text">{errors.name}</p>}
               </div>
               <div className="lw-form-group">
                 <label className="lw-form-label">{isVi ? 'Thương Hiệu *' : isJa ? 'ブランド *' : 'Brand *'}</label>
-                <input value={form.brand} onChange={e => update('brand', e.target.value)} required placeholder="e.g. Ferrari" className={`lw-input-interactive ${errors.brand ? 'error' : ''}`} />
+                <input value={form.brand} onChange={e => update('brand', e.target.value)} required placeholder={listingType === 'MOTORBIKE' ? 'e.g. Honda, Yamaha, VinFast' : 'e.g. Ferrari'} className={`lw-input-interactive ${errors.brand ? 'error' : ''}`} />
                 {errors.brand && <p className="lw-form-error-text">{errors.brand}</p>}
               </div>
               <div className="lw-form-group">
                 <label className="lw-form-label">{isVi ? 'Phân Khúc *' : isJa ? 'カテゴリー *' : 'Category *'}</label>
                 <select value={form.category} onChange={e => update('category', e.target.value)} className="lw-input-interactive text-slate-800 dark:text-slate-100">
-                  <option value="supercar">Supercar</option>
-                  <option value="suv">Luxury SUV</option>
-                  <option value="convertible">Convertible</option>
-                  <option value="sedan">Executive Sedan</option>
-                  <option value="electric">Electric</option>
-                  <option value="classic">Classic</option>
+                  {listingType === 'MOTORBIKE' ? (
+                    <>
+                      <option value="scooter">Scooter / Xe tay ga</option>
+                      <option value="manual_motorcycle">Manual Bike / Xe số</option>
+                      <option value="sport_bike">Sport Bike / Xe côn tay</option>
+                      <option value="electric_bike">Electric Motorbike / Xe máy điện</option>
+                      <option value="touring_bike">Touring Bike / Xe phân khối lớn</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="sports">Sports / Supercar</option>
+                      <option value="suv">Luxury SUV</option>
+                      <option value="luxury">Luxury / Convertible</option>
+                      <option value="sedan">Executive Sedan</option>
+                      <option value="electric_car">Electric Car</option>
+                      <option value="economy">Economy</option>
+                    </>
+                  )}
                 </select>
               </div>
               <div className="lw-form-group">
@@ -1057,31 +1189,44 @@ export const VehicleFormPage: React.FC = () => {
                 <input type="number" value={form.year} onChange={e => update('year', e.target.value)} required min="1950" max={new Date().getFullYear() + 1} className={`lw-input-interactive ${errors.year ? 'error' : ''}`} />
                 {errors.year && <p className="lw-form-error-text">{errors.year}</p>}
               </div>
+              <div className="lw-form-group">
+                <label className="lw-form-label">{isVi ? 'Biển Số Xe *' : 'License Plate *'}</label>
+                <input value={form.licensePlate} onChange={e => update('licensePlate', e.target.value.toUpperCase())} required placeholder={listingType === 'MOTORBIKE' ? 'e.g. 59X1-12345' : 'e.g. 51K-12345'} className={`lw-input-interactive ${errors.licensePlate ? 'error' : ''}`} />
+                {errors.licensePlate && <p className="lw-form-error-text">{errors.licensePlate}</p>}
+              </div>
               <div className="md:col-span-2 lw-form-group">
                 <label className="lw-form-label">{isVi ? 'Mô Tả Chi Tiết *' : isJa ? '詳細説明 *' : 'Description *'}</label>
-                <textarea value={form.description} onChange={e => update('description', e.target.value)} required rows={4} className={`lw-input-interactive resize-none ${errors.description ? 'error' : ''}`} placeholder={isVi ? 'Mô tả chi tiết về tình trạng xe, cảm giác lái và các trang bị độc đáo...' : 'Describe your vehicle\'s condition, drive feeling, and unique amenities...'} />
+                <textarea value={form.description} onChange={e => update('description', e.target.value)} required rows={4} className={`lw-input-interactive resize-none ${errors.description ? 'error' : ''}`} placeholder={listingType === 'MOTORBIKE' ? (isVi ? 'Mô tả tình trạng xe, dung tích động cơ, mức tiêu hao nhiên liệu, giấy tờ và phụ kiện đi kèm...' : 'Describe the bike condition, engine capacity, fuel economy, documents, and included accessories...') : (isVi ? 'Mô tả chi tiết về tình trạng xe, cảm giác lái và các trang bị độc đáo...' : 'Describe your vehicle condition, driving experience, and unique amenities...')} />
                 {errors.description && <p className="lw-form-error-text">{errors.description}</p>}
               </div>
             </div>
           </motion.div>
         )}
- 
+
         {step === 2 && (
           <motion.div variants={fadeUp} initial="hidden" animate="visible" className="space-y-6">
             <h3 className="font-display text-xl font-bold text-slate-800 dark:text-white border-b border-slate-200/10 dark:border-white/5 pb-3">{isVi ? 'Thông Số & Tiện Nghi' : isJa ? 'スペック・装備' : 'Specs & Features'}</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="lw-form-group">
-                <label className="lw-form-label">{isVi ? 'Số Chỗ' : isJa ? '座席数' : 'Seats'}</label>
-                <input type="number" value={form.seats} onChange={e => update('seats', e.target.value)} min="1" className="lw-input-interactive" />
-              </div>
-              <div className="lw-form-group">
-                <label className="lw-form-label">{isVi ? 'Số Cửa' : isJa ? 'ドア数' : 'Doors'}</label>
-                <input type="number" value={form.doors} onChange={e => update('doors', e.target.value)} min="2" className="lw-input-interactive" />
-              </div>
+              {listingType === 'CAR' && (
+                <div className="lw-form-group">
+                  <label className="lw-form-label">{isVi ? 'Số Chỗ' : isJa ? '座席数' : 'Seats'}</label>
+                  <input type="number" value={form.seats} onChange={e => update('seats', e.target.value)} min="1" className="lw-input-interactive" />
+                </div>
+              )}
+              {listingType === 'CAR' && (
+                <div className="lw-form-group">
+                  <label className="lw-form-label">{isVi ? 'Số Cửa' : isJa ? 'ドア数' : 'Doors'}</label>
+                  <input type="number" value={form.doors} onChange={e => update('doors', e.target.value)} min="2" className="lw-input-interactive" />
+                </div>
+              )}
               <div className="lw-form-group">
                 <label className="lw-form-label">{isVi ? 'Hộp Số' : isJa ? 'ギア' : 'Transmission'}</label>
                 <select value={form.transmission} onChange={e => update('transmission', e.target.value)} className="lw-input-interactive text-slate-800 dark:text-slate-100">
-                  <option>Automatic</option><option>Manual</option><option>Dual-Clutch</option>
+                  {listingType === 'MOTORBIKE' ? (
+                    <><option value="Automatic">Automatic / Scooter</option><option value="Manual">Manual / Semi-Automatic</option></>
+                  ) : (
+                    <><option>Automatic</option><option>Manual</option><option>Dual-Clutch</option></>
+                  )}
                 </select>
               </div>
               <div className="lw-form-group">
@@ -1093,62 +1238,39 @@ export const VehicleFormPage: React.FC = () => {
             </div>
             <div className="lw-form-group">
               <label className="lw-form-label">{isVi ? 'Tiện Nghi (Ngăn Cách Bởi Dấu Phẩy)' : isJa ? '装備（カンマ区切り）' : 'Features (comma separated)'}</label>
-              <input value={form.features} onChange={e => update('features', e.target.value)} className="lw-input-interactive" placeholder="Bluetooth, Apple CarPlay, Heated Seats..." />
+              <input value={form.features} onChange={e => update('features', e.target.value)} className="lw-input-interactive" placeholder={listingType === 'MOTORBIKE' ? '2 helmets, phone holder, USB charger, raincoat, rear box...' : 'Bluetooth, Apple CarPlay, Heated Seats...'} />
             </div>
             <div className="mt-4">
-              <label className="lw-form-label mb-3">{isVi ? 'Hình Ảnh Xe' : isJa ? '車両画像' : 'Vehicle Image'}</label>
-              <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-gold rounded-3xl p-7 text-center transition-colors cursor-pointer relative bg-slate-500/5 hover:bg-slate-500/10 group animate-fade-in">
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    const formData = new FormData();
-                    formData.append('file', file);
-                    try {
-                      const token = localStorage.getItem('luxeway_access_token');
-                      const res = await fetch(`${SERVER_BASE}/upload/vehicle-image`, {
-                        method: 'POST',
-                        headers: {
-                          ...(SERVER_BASE.includes('ngrok') ? { 'ngrok-skip-browser-warning': 'true' } : {}),
-                          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                        },
-                        body: formData,
-                      });
-                      const data = await res.json();
-                      const url = data.imageUrl || data.url;
-                      if (url) {
-                        setImages([url]);
-                        update('thumbnailUrl', url);
-                      }
-                    } catch (err) {
-                      console.error('Upload failed:', err);
-                    }
-                    e.target.value = '';
-                  }}
-                />
-                {images.length > 0 ? (
-                  <div className="relative rounded-2xl overflow-hidden shadow-md">
-                    <img src={images[0]} alt="Preview" className="w-full h-56 object-cover rounded-2xl mb-2.5" />
-                    <p className="text-xs text-emerald-500 font-extrabold flex items-center justify-center gap-1.5">✓ {isVi ? 'Tải ảnh lên thành công' : 'Image Loaded Successfully'}</p>
+              <label className="lw-form-label mb-1">{isVi ? 'Hình Ảnh Xe *' : isJa ? '車両画像 *' : 'Vehicle Images *'}</label>
+              <p className="text-xs text-slate-400 mb-4">{isVi ? 'Tải đủ ảnh mặt trước, bên hông và mặt sau của xe.' : 'Upload the front, side, and rear views of the vehicle.'}</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[
+                  { label: isVi ? 'Ảnh mặt trước' : 'Front view', index: 0 },
+                  { label: isVi ? 'Ảnh bên hông' : 'Side view', index: 1 },
+                  { label: isVi ? 'Ảnh mặt sau' : 'Rear view', index: 2 },
+                ].map(slot => (
+                  <div key={slot.index}>
+                    <p className="text-xs font-bold text-slate-600 dark:text-slate-300 mb-2">{slot.label}</p>
+                    <ImageUploader
+                      value={images[slot.index] || ''}
+                      className="[&_img]:h-40 [&_.rounded-\[2\.5rem\]]:p-5"
+                      onChange={(url) => {
+                        setImages(current => {
+                          const next = [...current];
+                          next[slot.index] = url;
+                          return next;
+                        });
+                        if (slot.index === 0) update('thumbnailUrl', url);
+                      }}
+                      onError={(message) => toast.error(isVi ? 'Không thể cập nhật ảnh xe' : 'Unable to update vehicle image', message)}
+                    />
                   </div>
-                ) : (
-                  <div>
-                    <div className="w-14 h-14 bg-slate-100 dark:bg-slate-800/80 rounded-2.5xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300 shadow-sm border border-slate-200/10">
-                      <span className="text-2xl">📷</span>
-                    </div>
-                    <p className="text-sm font-bold text-slate-800 dark:text-white mb-1.5">{isVi ? 'Nhấp hoặc kéo thả để tải lên ảnh xe' : 'Click or drag to upload vehicle image'}</p>
-                    <p className="text-xs text-slate-400 dark:text-slate-500 font-semibold">JPG, PNG, WEBP · Max 5MB</p>
-                  </div>
-                )}
+                ))}
               </div>
-              {errors.images && <p className="lw-form-error-text mt-2">{errors.images}</p>}
-            </div>
-          </motion.div>
+              {errors.images && <p className="lw-form-error-text mt-3">{errors.images}</p>}
+            </div>          </motion.div>
         )}
- 
+
         {step === 3 && (
           <motion.div variants={fadeUp} initial="hidden" animate="visible" className="space-y-6">
             <h3 className="font-display text-xl font-bold text-slate-800 dark:text-white border-b border-slate-200/10 dark:border-white/5 pb-3">{isVi ? 'Giá Cả & Địa Điểm' : isJa ? '料金・所在地' : 'Pricing & Location'}</h3>
@@ -1176,7 +1298,7 @@ export const VehicleFormPage: React.FC = () => {
                 <input value={form.state} onChange={e => update('state', e.target.value)} required className={`lw-input-interactive ${errors.state ? 'error' : ''}`} />
                 {errors.state && <p className="lw-form-error-text">{errors.state}</p>}
               </div>
-              
+
               <div className="md:col-span-2 grid grid-cols-2 gap-4">
                 <div className="lw-form-group">
                   <label className="lw-form-label">Latitude *</label>
@@ -1189,7 +1311,7 @@ export const VehicleFormPage: React.FC = () => {
                   {errors.lng && <p className="lw-form-error-text">{errors.lng}</p>}
                 </div>
               </div>
- 
+
               <div className="md:col-span-2 space-y-2.5">
                 <label className="lw-form-label">
                   {isVi ? 'Vị Trí Trên Bản Đồ (Click để chọn tọa độ mới)' : 'Location on Map (Click to select new coordinates)'}
@@ -1227,7 +1349,7 @@ export const OwnerCalendarPage: React.FC = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedVehicle, setSelectedVehicle] = useState<string>('all');
-  
+
   const currentDate = new Date();
   const [currentMonth, setCurrentMonth] = useState(currentDate.getMonth());
   const [currentYear, setCurrentYear] = useState(currentDate.getFullYear());
@@ -1300,8 +1422,8 @@ export const OwnerCalendarPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--lw-border)] pb-5">
         <Breadcrumbs title="Fleet Calendar" items={breadcrumbItems} backHref="/owner" backText="Back to Overview" className="mb-0 flex-1" />
         <div className="flex items-center gap-3">
-          <select 
-            value={selectedVehicle} 
+          <select
+            value={selectedVehicle}
             onChange={(e) => setSelectedVehicle(e.target.value)}
             className="lux-input py-2.5 bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-white/5 text-slate-800 dark:text-white font-extrabold min-w-[220px] rounded-xl focus:border-gold/50"
           >
@@ -1348,22 +1470,21 @@ export const OwnerCalendarPage: React.FC = () => {
         <div className="p-4 sm:p-6">
           <div className="grid grid-cols-7 gap-2 sm:gap-3">
             {paddingDays.map(i => <div key={`pad-${i}`} className="h-24 rounded-2xl bg-slate-500/3 border border-slate-200/5 dark:border-white/3 opacity-30" />)}
-            
+
             {days.map(day => {
               const dayBookings = getBookingsForDay(day);
               const isToday = day === currentDate.getDate() && currentMonth === currentDate.getMonth() && currentYear === currentDate.getFullYear();
-              
+
               return (
-                <div 
-                  key={day} 
-                  className={`h-24 rounded-2xl border p-2 flex flex-col transition-all duration-300 relative group ${
-                    isToday 
-                      ? 'border-[#EAB308] bg-yellow-500/10 ring-2 ring-[#EAB308]/20 shadow-md shadow-[#EAB308]/15' 
+                <div
+                  key={day}
+                  className={`h-24 rounded-2xl border p-2 flex flex-col transition-all duration-300 relative group ${isToday
+                      ? 'border-[#EAB308] bg-yellow-500/10 ring-2 ring-[#EAB308]/20 shadow-md shadow-[#EAB308]/15'
                       : 'border-slate-200/30 dark:border-white/5 hover:border-gold/30 bg-slate-500/5 hover:bg-slate-500/8'
-                  }`}
+                    }`}
                 >
                   <span className={`text-xs font-extrabold ${isToday ? 'text-gold' : 'text-slate-600 dark:text-slate-300'}`}>{day}</span>
-                  
+
                   <div className="mt-1 flex-1 overflow-y-auto space-y-1.5 scrollbar-thin">
                     {dayBookings.map((b, i) => (
                       <Link
@@ -1573,24 +1694,22 @@ export const OwnerBookingsPage: React.FC = () => {
         {statusTabs.map(tab => {
           const count = countByStatus(tab.value);
           return (
-          <button
-            key={tab.value}
-            onClick={() => setFilter(tab.value)}
-            className={`px-4.5 py-2.5 rounded-xl text-xs font-extrabold whitespace-nowrap border transition-all duration-300 hover-lift ${
-              filter === tab.value 
-                ? 'border-gold bg-yellow-500/10 text-gold shadow-sm shadow-gold/20' 
-                : 'border-slate-200/50 dark:border-white/5 text-slate-500 dark:text-slate-400 bg-slate-500/5 hover:border-slate-300 dark:hover:border-white/10'
-            }`}
-          >
-            {tab.label}
-            <span className={`ml-2 min-w-5 h-5 px-1.5 rounded-full inline-flex items-center justify-center text-[9px] font-extrabold ${
-              count > 0 && ['pending', 'cancellation_requested', 'payment_pending'].includes(tab.value)
-                ? 'bg-amber-500 text-white animate-pulse'
-                : 'bg-slate-200/70 dark:bg-white/10 text-slate-500 dark:text-slate-300'
-            }`}>
-              {count}
-            </span>
-          </button>
+            <button
+              key={tab.value}
+              onClick={() => setFilter(tab.value)}
+              className={`px-4.5 py-2.5 rounded-xl text-xs font-extrabold whitespace-nowrap border transition-all duration-300 hover-lift ${filter === tab.value
+                  ? 'border-gold bg-yellow-500/10 text-gold shadow-sm shadow-gold/20'
+                  : 'border-slate-200/50 dark:border-white/5 text-slate-500 dark:text-slate-400 bg-slate-500/5 hover:border-slate-300 dark:hover:border-white/10'
+                }`}
+            >
+              {tab.label}
+              <span className={`ml-2 min-w-5 h-5 px-1.5 rounded-full inline-flex items-center justify-center text-[9px] font-extrabold ${count > 0 && ['pending', 'cancellation_requested', 'payment_pending'].includes(tab.value)
+                  ? 'bg-amber-500 text-white animate-pulse'
+                  : 'bg-slate-200/70 dark:bg-white/10 text-slate-500 dark:text-slate-300'
+                }`}>
+                {count}
+              </span>
+            </button>
           );
         })}
       </div>
@@ -1724,20 +1843,20 @@ export const OwnerBookingsPage: React.FC = () => {
                         <Eye className="w-3.5 h-3.5" /> View Status & Details
                       </Link>
                       {canOpenContract && (
-                      <Link
-                        to={`/booking/${booking.id}/contract`}
-                        className="flex items-center justify-center gap-1.5 px-5 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-extrabold shadow-md shadow-slate-900/15 transition-all hover-lift"
-                      >
-                        <FileText className="w-3.5 h-3.5" /> Review & Sign Contract
-                      </Link>
+                        <Link
+                          to={`/booking/${booking.id}/contract`}
+                          className="flex items-center justify-center gap-1.5 px-5 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-extrabold shadow-md shadow-slate-900/15 transition-all hover-lift"
+                        >
+                          <FileText className="w-3.5 h-3.5" /> Review & Sign Contract
+                        </Link>
                       )}
                       {(booking.status === 'confirmed' || booking.status === 'active' || booking.status === 'in_rental') && (
-                      <Link
-                        to={`/owner/bookings/${booking.id}/tracking`}
-                        className="flex items-center justify-center gap-1.5 px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 rounded-xl text-xs font-extrabold transition-all hover-lift"
-                      >
-                        <Play className="w-3.5 h-3.5 fill-slate-800" /> Simulate & Track
-                      </Link>
+                        <Link
+                          to={`/owner/bookings/${booking.id}/tracking`}
+                          className="flex items-center justify-center gap-1.5 px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 rounded-xl text-xs font-extrabold transition-all hover-lift"
+                        >
+                          <Play className="w-3.5 h-3.5 fill-slate-800" /> Simulate & Track
+                        </Link>
                       )}
                     </div>
                   )}
@@ -1943,11 +2062,10 @@ export const FleetManagementPage: React.FC = () => {
           <button
             key={s}
             onClick={() => setSelectedStatus(s)}
-            className={`px-4.5 py-2.5 rounded-xl text-xs font-extrabold whitespace-nowrap border transition-all duration-300 hover-lift ${
-              selectedStatus === s 
-                ? 'border-gold bg-yellow-500/10 text-gold shadow-sm shadow-gold/20' 
+            className={`px-4.5 py-2.5 rounded-xl text-xs font-extrabold whitespace-nowrap border transition-all duration-300 hover-lift ${selectedStatus === s
+                ? 'border-gold bg-yellow-500/10 text-gold shadow-sm shadow-gold/20'
                 : 'border-slate-200/50 dark:border-white/5 text-slate-500 dark:text-slate-400 bg-slate-500/5 hover:border-slate-300 dark:hover:border-white/10'
-            }`}
+              }`}
           >
             {s.charAt(0).toUpperCase() + s.slice(1).replace('_', ' ')}
             {s === 'all' && ` (${vehicles.length})`}
@@ -2231,11 +2349,10 @@ export const EmployeeManagementPage: React.FC = () => {
                       {formatDate(emp.createdAt || new Date().toISOString(), 'short')}
                     </td>
                     <td className="py-4 px-4">
-                      <span className={`badge text-[9px] font-extrabold uppercase tracking-widest border-2 px-2.5 py-0.5 rounded-lg ${
-                        emp.status.toUpperCase() === 'ACTIVE' 
-                          ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' 
+                      <span className={`badge text-[9px] font-extrabold uppercase tracking-widest border-2 px-2.5 py-0.5 rounded-lg ${emp.status.toUpperCase() === 'ACTIVE'
+                          ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
                           : 'bg-slate-500/5 text-slate-450 border-slate-200/20'
-                      }`}>
+                        }`}>
                         {emp.status}
                       </span>
                     </td>
@@ -2265,6 +2382,13 @@ export const OwnerDashboardLayout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const t = useT();
+  const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = useState(
+    () => localStorage.getItem('owner-sidebar-collapsed') === 'true'
+  );
+
+  useEffect(() => {
+    localStorage.setItem('owner-sidebar-collapsed', String(desktopSidebarCollapsed));
+  }, [desktopSidebarCollapsed]);
 
   useEffect(() => {
     if (!isAuthenticated) navigate('/auth/login');
@@ -2361,7 +2485,7 @@ export const OwnerDashboardLayout: React.FC = () => {
                     <p className="text-xs font-semibold truncate text-[var(--lw-text-primary)]">{user.displayName}</p>
                     <p className="text-[9px] font-bold uppercase tracking-wider text-amber-500 mt-0.5">{t.ownerDashboard.vehicleHost}</p>
                   </div>
-                  <button 
+                  <button
                     onClick={() => { logout(); setSidebarOpen(false); navigate('/auth/login'); }}
                     className="p-2 text-[var(--lw-text-muted)] hover:text-red-500 transition-colors"
                     title={t.nav.logout}
@@ -2377,9 +2501,12 @@ export const OwnerDashboardLayout: React.FC = () => {
 
       {/* Main dashboard flex layout */}
       <div className="lw-flex-layout pt-16">
-        
+
         {/* ============ SIDEBAR ============ */}
-        <aside className="lw-sidebar hidden lg:flex border-r border-[var(--lw-border)] bg-[var(--lw-sidebar-bg)]">
+        <aside
+          className="lw-sidebar hidden lg:flex border-r border-[var(--lw-border)] bg-[var(--lw-sidebar-bg)] transition-transform duration-300 ease-in-out"
+          style={{ transform: desktopSidebarCollapsed ? 'translateX(-100%)' : 'translateX(0)' }}
+        >
           <div className="relative z-10 flex flex-col flex-1 min-h-0">
             {/* Role Badge only, no double logo on desktop */}
             <div className="px-5 py-4 border-b border-[var(--lw-border)]">
@@ -2398,7 +2525,7 @@ export const OwnerDashboardLayout: React.FC = () => {
                     key={link.href}
                     to={link.href}
                     className={cn(
-                       "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative lw-sidebar-nav-item",
+                      "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative lw-sidebar-nav-item",
                       active && "active"
                     )}
                   >
@@ -2418,7 +2545,7 @@ export const OwnerDashboardLayout: React.FC = () => {
                 <p className="text-xs font-semibold truncate text-[var(--lw-text-primary)]">{user.displayName}</p>
                 <p className="text-[9px] font-bold uppercase tracking-wider text-amber-500 mt-0.5">{t.ownerDashboard.vehicleHost}</p>
               </div>
-              <button 
+              <button
                 onClick={() => { logout(); navigate('/auth/login'); }}
                 className="p-2 text-[var(--lw-text-muted)] hover:text-red-500 transition-colors"
                 title={t.nav.logout}
@@ -2429,8 +2556,24 @@ export const OwnerDashboardLayout: React.FC = () => {
           </div>
         </aside>
 
+        <button
+          type="button"
+          onClick={() => setDesktopSidebarCollapsed(value => !value)}
+          className="hidden lg:flex fixed top-1/2 -translate-y-1/2 z-[45] h-16 w-7 items-center justify-center rounded-r-xl border border-l-0 border-[var(--lw-border)] bg-[var(--lw-bg-card)] text-[var(--lw-text-secondary)] shadow-lg hover:w-9 hover:text-amber-600 transition-all duration-300"
+          style={{ left: desktopSidebarCollapsed ? 0 : 'var(--lw-sidebar-width, 260px)' }}
+          title={desktopSidebarCollapsed ? 'Mở thanh điều hướng' : 'Ẩn thanh điều hướng'}
+          aria-label={desktopSidebarCollapsed ? 'Mở thanh điều hướng' : 'Ẩn thanh điều hướng'}
+        >
+          {desktopSidebarCollapsed
+            ? <ChevronRight className="h-5 w-5" />
+            : <ChevronLeft className="h-5 w-5" />}
+        </button>
+
         {/* ============ MAIN CONTENT ============ */}
-        <div className="lw-flex-main gap-0">
+        <div
+          className="lw-flex-main gap-0 transition-[margin] duration-300 ease-in-out"
+          style={{ marginLeft: desktopSidebarCollapsed ? 0 : 'var(--lw-sidebar-width, 260px)' }}
+        >
           {/* Dashboard Header Bar */}
           <header className="p-5 border-b border-[var(--lw-border)] flex items-center justify-between gap-4 bg-[var(--lw-bg-card)] mb-6 -mx-6 -mt-6 px-6">
             <div className="flex items-center gap-3">
@@ -2515,7 +2658,7 @@ export const OwnerReviewsPage: React.FC = () => {
     return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
   });
 
-  const ratingAvg = reviews.length > 0 
+  const ratingAvg = reviews.length > 0
     ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
     : 'N/A';
 
@@ -2679,7 +2822,7 @@ export const OwnerSettingsPage: React.FC = () => {
         licenseClass: form.licenseClass,
         licenseNumber: form.licenseNumber
       });
-      
+
       const stored = JSON.parse(localStorage.getItem('luxeway_user') || '{}');
       const updatedUser = {
         ...stored,
@@ -2719,12 +2862,12 @@ export const OwnerSettingsPage: React.FC = () => {
       <form onSubmit={handleSave} className="space-y-6 max-w-2xl">
         <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm space-y-4">
           <h3 className="font-display text-sm font-bold text-amber-500 uppercase tracking-widest border-b border-slate-200/10 dark:border-white/5 pb-2.5">Personal Profile</h3>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">First Name</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={form.firstName}
                 onChange={e => setForm(f => ({ ...f, firstName: e.target.value }))}
                 className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100"
@@ -2732,8 +2875,8 @@ export const OwnerSettingsPage: React.FC = () => {
             </div>
             <div>
               <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Last Name</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={form.lastName}
                 onChange={e => setForm(f => ({ ...f, lastName: e.target.value }))}
                 className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100"
@@ -2743,8 +2886,8 @@ export const OwnerSettingsPage: React.FC = () => {
 
           <div>
             <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Phone Number</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={form.phone}
               onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
               className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100"
@@ -2753,7 +2896,7 @@ export const OwnerSettingsPage: React.FC = () => {
 
           <div>
             <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Host Bio</label>
-            <textarea 
+            <textarea
               value={form.bio}
               onChange={e => setForm(f => ({ ...f, bio: e.target.value }))}
               className="lux-input h-24 bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100 resize-none py-2"
@@ -2763,8 +2906,8 @@ export const OwnerSettingsPage: React.FC = () => {
 
           <div>
             <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Operating Location</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={form.location}
               onChange={e => setForm(f => ({ ...f, location: e.target.value }))}
               className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100"
@@ -2775,12 +2918,12 @@ export const OwnerSettingsPage: React.FC = () => {
 
         <div className="glass border border-slate-200/50 dark:border-white/5 p-6 rounded-[2rem] shadow-sm space-y-4">
           <h3 className="font-display text-sm font-bold text-amber-500 uppercase tracking-widest border-b border-slate-200/10 dark:border-white/5 pb-2.5">Verification & Driving License</h3>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">License Class</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={form.licenseClass}
                 onChange={e => setForm(f => ({ ...f, licenseClass: e.target.value }))}
                 className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100 uppercase"
@@ -2789,8 +2932,8 @@ export const OwnerSettingsPage: React.FC = () => {
             </div>
             <div>
               <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">License Number</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={form.licenseNumber}
                 onChange={e => setForm(f => ({ ...f, licenseNumber: e.target.value }))}
                 className="lux-input bg-white dark:bg-slate-900 border border-slate-200/30 dark:border-white/5 text-slate-800 dark:text-slate-100"
@@ -2879,10 +3022,10 @@ export const OwnerSettingsPage: React.FC = () => {
           </div>
         </div>
 
-        <motion.button 
-          whileHover={{ scale: 1.01 }} 
-          whileTap={{ scale: 0.99 }} 
-          type="submit" 
+        <motion.button
+          whileHover={{ scale: 1.01 }}
+          whileTap={{ scale: 0.99 }}
+          type="submit"
           disabled={loading}
           className="btn-gold flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-bold shadow-lg shadow-gold/20 hover:shadow-gold/30 hover-lift disabled:opacity-50"
         >

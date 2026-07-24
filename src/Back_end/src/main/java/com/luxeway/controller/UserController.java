@@ -208,7 +208,8 @@ public class UserController {
                 com.luxeway.service.FptAiEkycService.CccdOcrResult ocrResult = fptAiEkycService.scanCccd(filePath.toAbsolutePath());
                 docResp = userService.uploadCccdFront(user.getId(), fileUrl, ocrResult);
             } else if ("CCCD_BACK".equalsIgnoreCase(documentType)) {
-                docResp = userService.uploadCccdBack(user.getId(), fileUrl);
+                com.luxeway.service.FptAiEkycService.CccdOcrResult ocrResult = fptAiEkycService.verifyCCCD(filePath.toAbsolutePath());
+                docResp = userService.uploadCccdBack(user.getId(), fileUrl, ocrResult);
             } else if ("DRIVER_LICENSE_FRONT".equalsIgnoreCase(documentType)) {
                 com.luxeway.service.FptAiEkycService.DlOcrResult ocrResult = fptAiEkycService.scanDriverLicense(filePath.toAbsolutePath());
                 docResp = userService.uploadDriverLicenseFront(user.getId(), fileUrl, ocrResult);
@@ -326,8 +327,17 @@ public class UserController {
                         throw new RuntimeException("Could not extract ID or Full Name from the CCCD image. Please upload a clearer, glare-free image.");
                     }
                 } catch (Exception ex) {
-                    userService.uploadCccdFront(user.getId(), fileUrl, new com.luxeway.service.FptAiEkycService.CccdOcrResult());
-                    
+                    boolean rateLimited = ex.getMessage() != null
+                            && ex.getMessage().toLowerCase().contains("rate limit");
+                    user.setKycStatus(rateLimited ? "NOT_UPLOADED" : "FAILED");
+                    userRepository.save(user);
+
+                    try {
+                        java.nio.file.Files.deleteIfExists(filePath);
+                    } catch (Exception cleanupEx) {
+                        log.warn("Failed to remove rejected CCCD upload {}: {}", filePath, cleanupEx.getMessage());
+                    }
+
                     try {
                         notificationService.createNotification(
                             user.getId(),
@@ -341,19 +351,32 @@ public class UserController {
                     }
 
                     Map<String, String> errorResponse = new HashMap<>();
-                    errorResponse.put("error", "CCCD verification failed. Please upload again.");
+                    errorResponse.put("error", rateLimited
+                            ? "FPT.AI is temporarily rate limited. Please wait and try again."
+                            : "CCCD verification failed. Please upload again.");
+                    errorResponse.put("code", rateLimited ? "EKYC_RATE_LIMITED" : "EKYC_SCAN_FAILED");
                     errorResponse.put("message", ex.getMessage());
-                    return ResponseEntity.badRequest().body(errorResponse);
+                    return ResponseEntity.status(rateLimited ? 429 : 400).body(errorResponse);
                 }
                 docResp = userService.uploadCccdFront(user.getId(), fileUrl, ocrResult);
                 
             } else if ("CCCD_BACK".equalsIgnoreCase(documentType)) {
-                docResp = userService.uploadCccdBack(user.getId(), fileUrl);
+                com.luxeway.service.FptAiEkycService.CccdOcrResult ocrResult = fptAiEkycService.verifyCCCD(filePath.toAbsolutePath());
+                docResp = userService.uploadCccdBack(user.getId(), fileUrl, ocrResult);
                 
             } else if ("DRIVER_LICENSE_FRONT".equalsIgnoreCase(documentType)) {
                 com.luxeway.service.FptAiEkycService.DlOcrResult ocrResult;
                 try {
                     ocrResult = fptAiEkycService.verifyDriverLicense(filePath.toAbsolutePath());
+                    if (ocrResult == null || ocrResult.getLicenseNumber() == null) {
+                        throw new RuntimeException("Could not extract License Number from the image. Please upload a clearer image.");
+                    }
+                    
+                    String clazz = ocrResult.getLicenseClass() != null ? ocrResult.getLicenseClass().trim().toUpperCase() : "B";
+                    boolean isValidClass = clazz.matches("^(A[1-4]?|B[12]?|C1?|D|E|F.*)$");
+                    if (!isValidClass) {
+                        throw new RuntimeException("Invalid license class: " + clazz);
+                    }
                 } catch (Exception ex) {
                     log.warn("OCR scan error for Car license: {}", ex.getMessage());
                     ocrResult = null;
@@ -582,6 +605,20 @@ public class UserController {
             log.warn("Failed to dispatch admin KYC notifications: {}", ex.getMessage());
         }
 
+        return ResponseEntity.ok(resp);
+    }
+
+    @PostMapping("/kyc/reverify")
+    public ResponseEntity<?> reverifyIdentityKyc(
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.luxeway.entity.User authUser) {
+        if (authUser == null) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Unauthorized");
+            return ResponseEntity.status(401).body(errorResponse);
+        }
+
+        userService.resetIdentityKyc(authUser.getId());
+        com.luxeway.dto.user.UserDTOs.UserProfileResponse resp = userService.getProfile(authUser.getId());
         return ResponseEntity.ok(resp);
     }
 

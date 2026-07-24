@@ -7,13 +7,14 @@ import {
   MapPin, Sparkles, ArrowUpDown, Shield, Car, Bike,
   Map, ZoomIn, ZoomOut, Compass, Zap, Star, Check,
   Smartphone, CloudRain, Package, UserCircle,
-  Plane, Heart, Briefcase, RotateCw
+  Plane, Heart, Briefcase, RotateCw, Scale
 } from 'lucide-react';
 import { vehicleService } from '@/services/vehicleService';
 import { VehicleCard } from '@/components/vehicle/VehicleCard';
+import { CompareTray } from '@/components/vehicle/CompareTray';
 import { VehicleCardSkeleton } from '@/components/ui/Skeleton';
 import { LuxeWayMap } from '@/components/map/LuxeWayMap';
-import { useUIStore } from '@/store';
+import { useUIStore, useVehicleStore } from '@/store';
 import type { Vehicle, VehicleFilters, VehicleCategory, VehicleType, VehicleLocationResponse } from '@/types';
 import { formatCurrency, debounce, cn, sanitizeLocation } from '@/utils';
 import { fadeUp, staggerContainer, staggerItem } from '@/animations/variants';
@@ -76,15 +77,18 @@ interface CompactSidebarCardProps {
   isSelected: boolean;
   hovered: boolean;
   locationText: string;
+  onBook: (vehicle: Vehicle) => void;
 }
 
 const CompactSidebarCard: React.FC<CompactSidebarCardProps> = ({
   vehicle,
   isSelected,
   hovered,
-  locationText
+  locationText,
+  onBook
 }) => {
   const { language } = useUIStore();
+  const { compareList } = useVehicleStore();
   const isVi = language === 'vi';
   const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=800';
   const thumbnailSrc = vehicle.images?.[0] || vehicle.thumbnailUrl || FALLBACK_IMAGE;
@@ -136,7 +140,13 @@ const CompactSidebarCard: React.FC<CompactSidebarCardProps> = ({
         {/* Distance & Price */}
         <div className="flex items-center justify-between mt-2 border-t border-slate-100 dark:border-slate-800/80 pt-1.5">
           <span className="text-[10px] font-bold text-slate-450 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg">{distanceText}</span>
-          <span className="text-xs sm:text-sm font-black text-emerald-500 dark:text-emerald-400">{finalPriceText}/{isVi ? 'ngày' : 'day'}</span>
+          <button
+            type="button"
+            onClick={(event) => { event.stopPropagation(); onBook(vehicle); }}
+            className="rounded-lg bg-blue-600 px-2.5 py-1.5 text-[10px] font-black text-white hover:bg-blue-700"
+          >
+            {isVi ? 'Đặt xe' : 'Book now'} · {finalPriceText}
+          </button>
         </div>
       </div>
     </div>
@@ -509,6 +519,7 @@ const MarketplacePage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { language } = useUIStore();
+  const { compareList } = useVehicleStore();
   const isVi = language === 'vi';
 
   // Derive map view mode from URL path or query param
@@ -608,6 +619,13 @@ const MarketplacePage: React.FC = () => {
     };
   });
 
+  const bookFromMap = useCallback((vehicle: { id: string }) => {
+    const params = new URLSearchParams();
+    if (filters.startDate) params.set('start', filters.startDate);
+    if (filters.endDate) params.set('end', filters.endDate);
+    const query = params.toString();
+    navigate(`/booking/${vehicle.id}${query ? `?${query}` : ''}`);
+  }, [filters.startDate, filters.endDate, navigate]);
   const hasUrlDrivenFilters = useMemo(() => {
     const filterKeys = [
       'type', 'location', 'sort', 'startDate', 'endDate', 'q',
@@ -629,7 +647,7 @@ const MarketplacePage: React.FC = () => {
           if (parsed.filters && !hasUrlDrivenFilters) {
             setFilters(prev => ({ ...prev, ...parsed.filters }));
           }
-          if (parsed.selectedVehicleId) {
+          if (!hasUrlDrivenFilters && parsed.selectedVehicleId) {
             setSelectedVehicleId(parsed.selectedVehicleId);
           }
           if (parsed.showCarousel !== undefined) {
@@ -772,13 +790,21 @@ const MarketplacePage: React.FC = () => {
   // Clear map selection when filters change or map is closed
   useEffect(() => {
     setMapSelectedVehicles([]);
-    // Fit bounds only if a specific location is filtered, to avoid zooming out to the whole country
+    setSelectedVehicleId(undefined);
+    setHoveredVehicleId(null);
+    setHoveredMapVehicleId(null);
+    setShowCarousel(false);
     setShouldFitBounds(!!filters.location);
     setShowSearchArea(false);
     setPendingMapBounds(null);
   }, [filters, mapOpen]);
 
   const handleTypeSwitch = (type: VehicleType | 'all') => {
+    setSelectedVehicleId(undefined);
+    setMapSelectedVehicles([]);
+    setHoveredVehicleId(null);
+    setHoveredMapVehicleId(null);
+    setShowCarousel(false);
     setActiveType(type);
     setPage(1);
     setFilters(prev => ({
@@ -901,98 +927,107 @@ const MarketplacePage: React.FC = () => {
           activeType === 'motorbike' ? "border-l-4 border-l-orange-500/40" : activeType === 'car' ? "border-l-4 border-l-blue-500/40" : ""
         )}>
           <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3 w-full md:w-auto flex-1 max-w-xl">
-            <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder={activeType === 'motorbike' ? '🏍️ Find motorbikes... Vision, Exciter, SH...' : activeType === 'car' ? '🚗 Find cars... Vios, Camry, CX5...' : '🔍 Find vehicles... Honda, Toyota, VinFast...'}
-                className="w-full pl-10 pr-10 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm outline-none text-foreground focus:border-accent focus:bg-white dark:focus:bg-slate-950 transition-all font-semibold"
-              />
-              {searchQuery && (
-                <button onClick={() => setSearchQuery('')} className="absolute right-3.5 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400">
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
+            <div className="flex items-center gap-3 w-full md:w-auto flex-1 max-w-xl">
+              <div className="relative flex-1">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  placeholder={activeType === 'motorbike' ? '🏍️ Find motorbikes... Vision, Exciter, SH...' : activeType === 'car' ? '🚗 Find cars... Vios, Camry, CX5...' : '🔍 Find vehicles... Honda, Toyota, VinFast...'}
+                  className="w-full pl-10 pr-10 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm outline-none text-foreground focus:border-accent focus:bg-white dark:focus:bg-slate-950 transition-all font-semibold"
+                />
+                {searchQuery && (
+                  <button onClick={() => setSearchQuery('')} className="absolute right-3.5 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
 
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className={cn(
-                "flex items-center gap-2 px-4 py-2.5 rounded-2xl border text-sm font-bold transition-all duration-200",
-                showFilters
-                  ? activeType === 'motorbike' ? "border-orange-500 bg-orange-500/10 text-orange-600" : "border-blue-500 bg-blue-500/10 text-blue-600"
-                  : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-350"
-              )}
-            >
-              <SlidersHorizontal className="w-4 h-4" />
-              <span className="hidden sm:inline">Filters</span>
-              {activeFilterCount > 0 && (
-                <span className={cn("w-5 h-5 text-white text-[10px] font-extrabold rounded-full flex items-center justify-center",
-                  activeType === 'motorbike' ? "bg-orange-500" : "bg-blue-500")}>
-                  {activeFilterCount}
-                </span>
-              )}
-            </button>
-          </div>
-
-          <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
-            <div className="relative">
-              <select
-                value={filters.sortBy || 'popular'}
-                onChange={e => handleSortChange(e.target.value)}
-                className="appearance-none pl-4 pr-10 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-bold outline-none text-slate-600 dark:text-slate-300 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-850 transition-colors"
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2.5 rounded-2xl border text-sm font-bold transition-all duration-200",
+                  showFilters
+                    ? activeType === 'motorbike' ? "border-orange-500 bg-orange-500/10 text-orange-600" : "border-blue-500 bg-blue-500/10 text-blue-600"
+                    : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-350"
+                )}
               >
-                {SORT_OPTIONS.map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                <SlidersHorizontal className="w-4 h-4" />
+                <span className="hidden sm:inline">Filters</span>
+                {activeFilterCount > 0 && (
+                  <span className={cn("w-5 h-5 text-white text-[10px] font-extrabold rounded-full flex items-center justify-center",
+                    activeType === 'motorbike' ? "bg-orange-500" : "bg-blue-500")}>
+                    {activeFilterCount}
+                  </span>
+                )}
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
+              <button
+                type="button"
+                onClick={() => navigate(`/compare${compareList.length ? `?ids=${compareList.join(',')}` : ''}`)}
+                className="relative flex items-center gap-2 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-xs font-extrabold text-blue-700 transition-all hover:border-blue-500 hover:bg-blue-600 hover:text-white dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-300"
+              >
+                <Scale className="h-4 w-4" />
+                <span>{isVi ? 'So sánh giá' : 'Compare prices'}</span>
+                {compareList.length > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1 text-[10px] text-white">{compareList.length}</span>}
+              </button>
+              <div className="relative">
+                <select
+                  value={filters.sortBy || 'popular'}
+                  onChange={e => handleSortChange(e.target.value)}
+                  className="appearance-none pl-4 pr-10 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-bold outline-none text-slate-600 dark:text-slate-300 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-850 transition-colors"
+                >
+                  {SORT_OPTIONS.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+                <ArrowUpDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+              </div>
+
+              <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 rounded-2xl p-1 border border-slate-200/40 dark:border-slate-800/40">
+                {(['grid', 'list'] as const).map(mode => (
+                  <button key={mode} onClick={() => setViewMode(mode)}
+                    className={cn("p-2 rounded-xl transition-all", viewMode === mode ? "bg-white dark:bg-slate-800 shadow-sm text-foreground font-bold" : "text-slate-450 hover:text-foreground")}>
+                    {mode === 'grid' ? <Grid3X3 className="w-4 h-4" /> : <List className="w-4 h-4" />}
+                  </button>
                 ))}
-              </select>
-              <ArrowUpDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
-            </div>
+              </div>
 
-            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 rounded-2xl p-1 border border-slate-200/40 dark:border-slate-800/40">
-              {(['grid', 'list'] as const).map(mode => (
-                <button key={mode} onClick={() => setViewMode(mode)}
-                  className={cn("p-2 rounded-xl transition-all", viewMode === mode ? "bg-white dark:bg-slate-800 shadow-sm text-foreground font-bold" : "text-slate-450 hover:text-foreground")}>
-                  {mode === 'grid' ? <Grid3X3 className="w-4 h-4" /> : <List className="w-4 h-4" />}
-                </button>
-              ))}
+              <button
+                onClick={() => {
+                  const params = new URLSearchParams(searchParams);
+                  params.delete('view');
+                  const qs = params.toString();
+                  if (isMapView) {
+                    navigate(`/vehicles${qs ? `?${qs}` : ''}`);
+                  } else {
+                    navigate(`/map${qs ? `?${qs}` : ''}`);
+                  }
+                }}
+                className={cn(
+                  "hidden lg:flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-extrabold transition-all duration-200 shadow-sm border",
+                  isMapView
+                    ? "bg-[#D4AF37] border-[#D4AF37] text-[#0B1221] shadow-md"
+                    : "bg-[#0B1221] dark:bg-slate-900 border-[#1E2D45] text-white hover:bg-[#D4AF37]/10 hover:border-[#D4AF37] hover:text-[#D4AF37]"
+                )}>
+                {isMapView ? (
+                  <>
+                    <List className="w-4 h-4" />
+                    <span>{isVi ? 'Danh sách' : 'List'}</span>
+                  </>
+                ) : (
+                  <>
+                    <Map className="w-4 h-4" />
+                    <span>{isVi ? 'Bản đồ' : 'Map'}</span>
+                  </>
+                )}
+              </button>
             </div>
-
-            <button
-              onClick={() => {
-                const params = new URLSearchParams(searchParams);
-                params.delete('view');
-                const qs = params.toString();
-                if (isMapView) {
-                  navigate(`/vehicles${qs ? `?${qs}` : ''}`);
-                } else {
-                  navigate(`/map${qs ? `?${qs}` : ''}`);
-                }
-              }}
-              className={cn(
-                "hidden lg:flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-extrabold transition-all duration-200 shadow-sm border",
-                isMapView
-                  ? "bg-[#D4AF37] border-[#D4AF37] text-[#0B1221] shadow-md"
-                  : "bg-[#0B1221] dark:bg-slate-900 border-[#1E2D45] text-white hover:bg-[#D4AF37]/10 hover:border-[#D4AF37] hover:text-[#D4AF37]"
-              )}>
-              {isMapView ? (
-                <>
-                  <List className="w-4 h-4" />
-                  <span>{isVi ? 'Danh sách' : 'List'}</span>
-                </>
-              ) : (
-                <>
-                  <Map className="w-4 h-4" />
-                  <span>{isVi ? 'Bản đồ' : 'Map'}</span>
-                </>
-              )}
-            </button>
           </div>
         </div>
-      </div>
       </div>
 
       <div className={cn("mx-auto flex-1 overflow-hidden w-full flex flex-col", isMapView ? "px-0 py-0" : "max-w-[1600px] px-4 sm:px-6 lg:px-8 py-4")}>
@@ -1121,6 +1156,7 @@ const MarketplacePage: React.FC = () => {
                           isSelected={selectedVehicleId === vehicle.id}
                           hovered={hoveredVehicleId === vehicle.id}
                           locationText={filters.location || 'Phường 14, Quận Bình Thạnh'}
+                          onBook={bookFromMap}
                         />
                       ) : (
                         <VehicleCard vehicle={vehicle} variant={viewMode} />
@@ -1192,16 +1228,7 @@ const MarketplacePage: React.FC = () => {
                       setShowSearchArea(true);
                       setShouldFitBounds(false); // Disable auto-fit once user interacts
                     }}
-                    onVehicleClick={v => {
-                      setSelectedVehicleId(v.id);
-                      setShowCarousel(true);
-                      setTimeout(() => {
-                        const carouselCard = document.getElementById(`map-carousel-card-${v.id}`);
-                        if (carouselCard) {
-                          carouselCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-                        }
-                      }, 100);
-                    }}
+                    onVehicleClick={v => bookFromMap(v)}
                     onUserLocationChange={(lat, lng) => {
                       handleFilterChange({
                         ...filters,
@@ -1219,8 +1246,8 @@ const MarketplacePage: React.FC = () => {
                               return [parsed.filters.userLng, parsed.filters.userLat];
                             }
                           }
-                        } catch (e) {}
-                        
+                        } catch (e) { }
+
                         const loc = (filters.location || '').toLowerCase().trim();
                         if (!loc) return [106.660, 10.762]; // Default: HCM
                         const match = Object.entries(GEOCODE_DATABASE).find(([k]) => loc.includes(k) || k.includes(loc));
@@ -1273,7 +1300,7 @@ const MarketplacePage: React.FC = () => {
                           navigator.geolocation.getCurrentPosition((pos) => {
                             const lat = pos.coords.latitude;
                             const lng = pos.coords.longitude;
-                            
+
                             // Fly to user GPS coords
                             (window as any).luxewayMapInstance?.flyTo({
                               center: [lng, lat],
@@ -1400,7 +1427,16 @@ const MarketplacePage: React.FC = () => {
                                     <span className="text-xs sm:text-sm font-black text-emerald-500 dark:text-emerald-450">{finalPriceText}</span>
                                     <span className="text-[9px] text-slate-450 font-bold">/{isVi ? 'ngày' : 'day'}</span>
                                   </div>
-                                  <ChevronRight className="w-4 h-4 text-slate-400" />
+                                  <button
+                                    type="button"
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      bookFromMap(v);
+                                    }}
+                                    className="rounded-lg bg-blue-600 px-2.5 py-1.5 text-[10px] font-black text-white hover:bg-blue-700"
+                                  >
+                                    {isVi ? 'Đặt xe' : 'Book now'}
+                                  </button>
                                 </div>
                               </div>
                             </div>
@@ -1579,6 +1615,7 @@ const MarketplacePage: React.FC = () => {
           </>
         )}
       </AnimatePresence>
+      <CompareTray />
     </div>
   );
 };

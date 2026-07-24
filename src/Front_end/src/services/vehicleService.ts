@@ -497,6 +497,15 @@ export const vehicleService = {
     }
   },
 
+  async setMaintenance(id: string, enabled: boolean): Promise<Vehicle | null> {
+    try {
+      const response = await apiClient.put<any>(`/vehicles/${id}/maintenance`, { enabled });
+      return response.vehicle ? mapVehicle(response.vehicle) : null;
+    } catch (error) {
+      return null;
+    }
+  },
+
   async toggleWishlist(vehicleId: string, userId: string): Promise<boolean> {
     const key = `${WISHLIST_KEY}_${userId}`;
     try {
