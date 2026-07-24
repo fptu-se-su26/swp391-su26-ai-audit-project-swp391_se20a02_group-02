@@ -78,26 +78,18 @@ export const bookingService = {
     }
   },
 
-  async getByOwner(ownerId: string): Promise<Booking[]> {
+  async getByOwner(ownerId?: string): Promise<Booking[]> {
     try {
-      const [carRes, motoRes, genRes] = await Promise.all([
-        apiClient.get<any>('/cars/bookings/owner').catch(() => []),
-        apiClient.get<any>('/motorbikes/bookings/owner').catch(() => []),
-        apiClient.get<any>('/bookings/owner').catch(() => [])
-      ]);
-      
-      const carList = extractArray(carRes);
-      const motoList = extractArray(motoRes);
-      const genList = extractArray(genRes);
-      
-      const combined = [...carList, ...motoList, ...genList];
-      combined.sort((a: any, b: any) => {
+      const target = (ownerId && ownerId !== 'me' && ownerId !== 'my') ? ownerId : '';
+      const endpoint = target ? `/bookings/owner/${target}` : '/bookings/owner';
+      const response = await apiClient.get<any>(endpoint);
+      const list = extractArray(response);
+      list.sort((a: any, b: any) => {
         const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
         const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
         return dateB - dateA;
       });
-      
-      return combined.map(mapBooking);
+      return list.map(mapBooking);
     } catch (error) {
       console.error('Failed to fetch owner bookings', error);
       return [];

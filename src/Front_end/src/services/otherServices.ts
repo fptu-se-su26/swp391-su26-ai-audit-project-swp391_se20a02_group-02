@@ -1,5 +1,6 @@
 import apiClient from './api';
 import type { Review, Notification, Message, Conversation } from '@/types';
+import { extractArray } from '@/utils';
 
 // Helper function to map backend review DTO to frontend Review interface
 const mapReview = (r: any): Review => {
@@ -17,8 +18,7 @@ const mapReview = (r: any): Review => {
 };
 
 const unwrapPageContent = (response: any): any[] => {
-  const data = response?.data?.data ?? response?.data ?? response;
-  return Array.isArray(data) ? data : (data?.content || []);
+  return extractArray(response);
 };
 
 // ====== REVIEW SERVICE ======
