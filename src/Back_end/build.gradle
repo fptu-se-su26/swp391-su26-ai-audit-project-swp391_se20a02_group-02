@@ -15,6 +15,10 @@ jar {
     enabled = false
 }
 
+bootJar {
+    archiveFileName = 'app.jar'
+}
+
 if (project.hasProperty('mySecretBuild')) {
     layout.buildDirectory = layout.projectDirectory.dir('build_run')
 }
