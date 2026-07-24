@@ -515,20 +515,20 @@ export const FloatingAIConcierge: React.FC = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 12, scale: 0.98 }}
             transition={{ duration: 0.24, ease: easeOutExpo }}
-            className="absolute bottom-16 right-0 flex h-[min(680px,calc(100vh-7rem))] w-[min(440px,calc(100vw-2rem))] flex-col overflow-hidden rounded-lg border border-slate-800 bg-[#0B1221] text-white shadow-[0_26px_80px_rgba(2,6,23,0.42)]"
+            className="absolute bottom-16 right-0 flex h-[min(680px,calc(100vh-7rem))] w-[min(440px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-[0_26px_80px_rgba(15,23,42,0.18)]"
             aria-label="LuxeWay AI Concierge chat"
           >
-            <header className="border-b border-slate-800 bg-[#101A2D] px-4 py-3">
+            <header className="border-b border-amber-500/20 bg-slate-900 px-4 py-3.5 text-white shadow-sm">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-[#D4AF37]/25 bg-[#D4AF37]/10">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#D4AF37]/30 bg-[#D4AF37]/15">
                     <MessageSquare className="h-5 w-5 text-[#D4AF37]" />
                   </div>
                   <div className="min-w-0">
-                    <h3 className="truncate text-sm font-semibold tracking-normal text-white">LuxeWay AI Concierge</h3>
-                    <div className="mt-1 flex items-center gap-2">
+                    <h3 className="truncate text-sm font-bold tracking-normal text-white">LuxeWay AI Concierge</h3>
+                    <div className="mt-0.5 flex items-center gap-2">
                       <span className={cn('h-1.5 w-1.5 rounded-full', status.dot)} />
-                      <span className={cn('truncate text-[11px] font-medium', status.tone)}>{status.label}</span>
+                      <span className={cn('truncate text-[11px] font-medium text-slate-300')}>{status.label}</span>
                     </div>
                   </div>
                 </div>
@@ -539,10 +539,10 @@ export const FloatingAIConcierge: React.FC = () => {
                     onClick={handleVoiceToggle}
                     title={isVoiceEnabled ? 'Mute spoken responses' : 'Read responses aloud'}
                     className={cn(
-                      'flex h-9 w-9 items-center justify-center rounded-md border transition duration-200 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/40',
+                      'flex h-8 w-8 items-center justify-center rounded-lg border transition duration-200 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/40',
                       isVoiceEnabled
-                        ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-                        : 'border-slate-700 bg-slate-900 text-slate-400 hover:text-white'
+                        ? 'border-[#D4AF37]/50 bg-[#D4AF37]/20 text-[#D4AF37]'
+                        : 'border-slate-700 bg-slate-800 text-slate-300 hover:text-white'
                     )}
                   >
                     {isVoiceEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
@@ -550,7 +550,7 @@ export const FloatingAIConcierge: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setIsOpen(false)}
-                    className="flex h-9 w-9 items-center justify-center rounded-md border border-slate-700 bg-slate-900 text-slate-400 transition duration-200 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/40"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-700 bg-slate-800 text-slate-300 transition duration-200 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/40"
                     aria-label="Close concierge"
                   >
                     <X className="h-4 w-4" />
@@ -559,22 +559,22 @@ export const FloatingAIConcierge: React.FC = () => {
               </div>
             </header>
 
-            <div className="flex-1 overflow-y-auto bg-[#0B1221] px-4 py-4 flex flex-col">
+            <div className="flex-1 overflow-y-auto bg-gradient-to-b from-slate-50 via-white to-amber-50/20 px-4 py-4 flex flex-col">
               <div className="flex flex-col gap-4 my-auto">
                 {messages.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-6 px-2 text-center">
-                    <div className="relative mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-[#D4AF37]/30 bg-gradient-to-b from-[#D4AF37]/20 to-transparent shadow-[0_0_30px_rgba(212,175,55,0.25)]">
+                    <div className="relative mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-[#D4AF37]/40 bg-gradient-to-b from-[#D4AF37]/20 to-amber-100/50 shadow-[0_0_30px_rgba(212,175,55,0.2)]">
                       <Sparkles className="h-8 w-8 text-[#D4AF37]" />
-                      <span className="absolute inset-0 rounded-full border border-[#D4AF37]/20 animate-ping opacity-30" />
+                      <span className="absolute inset-0 rounded-full border border-[#D4AF37]/30 animate-ping opacity-25" />
                     </div>
 
-                    <h3 className="text-base font-bold text-white tracking-wide">LuxeWay AI Concierge</h3>
-                    <p className="mt-1 text-xs text-slate-400 max-w-[260px]">
-                      "Your intelligent travel assistant"
+                    <h3 className="text-base font-extrabold text-slate-900 tracking-wide">LuxeWay AI Concierge</h3>
+                    <p className="mt-1 text-xs font-medium text-slate-500 max-w-[260px]">
+                      "Your intelligent luxury travel assistant"
                     </p>
 
                     <div className="mt-6 w-full space-y-2">
-                      <p className="text-[11px] font-semibold text-[#D4AF37] tracking-wider uppercase text-left px-1">
+                      <p className="text-[11px] font-bold text-[#D4AF37] tracking-wider uppercase text-left px-1">
                         Suggested Conversations:
                       </p>
                       {[
@@ -592,11 +592,11 @@ export const FloatingAIConcierge: React.FC = () => {
                               setInput(chip.text);
                               handleSend(chip.text);
                             }}
-                            className="group flex w-full items-center gap-3 rounded-lg border border-slate-800 bg-[#111B2E]/90 px-3 py-2.5 text-left text-xs text-slate-300 transition duration-200 hover:border-[#D4AF37]/50 hover:bg-[#16243D] hover:text-white"
+                            className="group flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white shadow-sm px-3.5 py-2.5 text-left text-xs font-medium text-slate-800 transition duration-200 hover:border-[#D4AF37] hover:bg-amber-50/60 hover:text-slate-950"
                           >
-                            <Icon className="h-3.5 w-3.5 shrink-0 text-[#D4AF37] group-hover:scale-110 transition-transform" />
+                            <Icon className="h-4 w-4 shrink-0 text-[#D4AF37] group-hover:scale-110 transition-transform" />
                             <span className="flex-1 truncate">{chip.text}</span>
-                            <ChevronRight className="h-3.5 w-3.5 text-slate-500 group-hover:text-[#D4AF37]" />
+                            <ChevronRight className="h-3.5 w-3.5 text-slate-400 group-hover:text-[#D4AF37]" />
                           </button>
                         );
                       })}
@@ -616,16 +616,16 @@ export const FloatingAIConcierge: React.FC = () => {
                     >
                       <div
                         className={cn(
-                          'max-w-[88%] rounded-lg border px-3.5 py-3 text-sm leading-6 shadow-sm',
+                          'max-w-[88%] rounded-2xl border px-4 py-3 text-sm leading-6 shadow-sm',
                           isUser
-                            ? 'border-[#D4AF37]/25 bg-[#D4AF37] text-[#0B1221]'
-                            : 'border-slate-800 bg-[#111B2E] text-slate-100'
+                            ? 'border-amber-400 bg-gradient-to-r from-[#D4AF37] to-[#E5C158] text-slate-950 font-bold'
+                            : 'border-slate-200/90 bg-white text-slate-800'
                         )}
                       >
                         <p className="whitespace-pre-wrap break-words">{msg.content}</p>
 
                         {!isUser && msg.id && (
-                          <div className="mt-3 flex items-center justify-between gap-3 border-t border-slate-800 pt-2 text-[11px] text-slate-400">
+                          <div className="mt-3 flex items-center justify-between gap-3 border-t border-slate-100 pt-2 text-[11px] text-slate-400">
                             <span>Helpful?</span>
                             <div className="flex items-center gap-1">
                               <button
@@ -633,7 +633,7 @@ export const FloatingAIConcierge: React.FC = () => {
                                 onClick={() => handleFeedback(idx, true)}
                                 disabled={!!msg.feedbackGiven}
                                 className={cn(
-                                  'rounded-md p-1.5 transition duration-150 hover:bg-slate-800 disabled:cursor-default disabled:opacity-70',
+                                  'rounded-md p-1.5 transition duration-150 hover:bg-slate-100 disabled:cursor-default disabled:opacity-70',
                                   msg.feedbackGiven === 'UP' ? 'text-[#D4AF37]' : 'text-slate-400'
                                 )}
                                 aria-label="Mark response helpful"
@@ -645,8 +645,8 @@ export const FloatingAIConcierge: React.FC = () => {
                                 onClick={() => handleFeedback(idx, false)}
                                 disabled={!!msg.feedbackGiven}
                                 className={cn(
-                                  'rounded-md p-1.5 transition duration-150 hover:bg-slate-800 disabled:cursor-default disabled:opacity-70',
-                                  msg.feedbackGiven === 'DOWN' ? 'text-rose-300' : 'text-slate-400'
+                                  'rounded-md p-1.5 transition duration-150 hover:bg-slate-100 disabled:cursor-default disabled:opacity-70',
+                                  msg.feedbackGiven === 'DOWN' ? 'text-rose-500' : 'text-slate-400'
                                 )}
                                 aria-label="Mark response not helpful"
                               >
@@ -660,7 +660,7 @@ export const FloatingAIConcierge: React.FC = () => {
                       {!isUser && renderActionCard(msg)}
 
                       {!isUser && msg.content.includes('GPS') && activeBookingId && (
-                        <div className="w-full overflow-hidden rounded-lg border border-slate-800">
+                        <div className="w-full overflow-hidden rounded-xl border border-slate-200 shadow-sm">
                           <DeliveryTrackerMap bookingId={activeBookingId} />
                         </div>
                       )}
@@ -675,7 +675,7 @@ export const FloatingAIConcierge: React.FC = () => {
                     animate={{ opacity: 1, y: 0 }}
                     className="flex justify-start"
                   >
-                    <div className="flex items-center gap-2 rounded-lg border border-slate-800 bg-[#111B2E] px-3.5 py-3 text-xs text-slate-400">
+                    <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white shadow-sm px-3.5 py-2.5 text-xs font-medium text-slate-600">
                       <Sparkles className="h-3.5 w-3.5 text-[#D4AF37]" />
                       <span>Concierge is composing</span>
                       <span className="flex items-center gap-1" aria-hidden="true">
@@ -695,8 +695,8 @@ export const FloatingAIConcierge: React.FC = () => {
               </div>
             </div>
 
-            <div className="border-t border-slate-800 bg-[#101A2D] px-4 py-3">
-              <div className="-mx-1 mb-3 flex gap-2 overflow-x-auto px-1 pb-1">
+            <div className="border-t border-slate-200 bg-white px-4 py-3">
+              <div className="-mx-1 mb-3 flex gap-2 overflow-x-auto px-1 pb-1 scrollbar-none">
                 {quickActions.map(action => {
                   const Icon = action.icon;
 
@@ -706,7 +706,7 @@ export const FloatingAIConcierge: React.FC = () => {
                       type="button"
                       onClick={() => handleSend(action.text)}
                       disabled={loading}
-                      className="inline-flex h-8 shrink-0 items-center gap-2 rounded-md border border-slate-700 bg-slate-900 px-3 text-xs font-medium text-slate-300 transition duration-200 hover:border-[#D4AF37]/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs font-semibold text-slate-700 transition duration-200 hover:border-[#D4AF37] hover:bg-amber-50/60 hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-50 shadow-2xs"
                     >
                       <Icon className="h-3.5 w-3.5 text-[#D4AF37]" />
                       {action.label}
@@ -727,10 +727,10 @@ export const FloatingAIConcierge: React.FC = () => {
                   onClick={startVoiceListening}
                   title="Dictate message"
                   className={cn(
-                    'flex h-11 w-11 shrink-0 items-center justify-center rounded-md border transition duration-200 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/40',
+                    'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition duration-200 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/40',
                     isListening
-                      ? 'border-rose-400/50 bg-rose-400/10 text-rose-200'
-                      : 'border-slate-700 bg-slate-900 text-slate-400 hover:text-white'
+                      ? 'border-rose-400/50 bg-rose-50 text-rose-600'
+                      : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                   )}
                 >
                   <Mic className="h-4 w-4" />
@@ -741,17 +741,17 @@ export const FloatingAIConcierge: React.FC = () => {
                     type="text"
                     value={input}
                     onChange={e => setInput(e.target.value)}
-                    placeholder="Ask about bookings, delivery, refunds..."
+                    placeholder="Ask about bookings, refunds, support..."
                     disabled={loading}
-                    className="h-11 w-full rounded-md border border-slate-700 bg-slate-900 px-3 pr-9 text-sm text-white outline-none transition duration-200 placeholder:text-slate-500 focus:border-[#D4AF37]/60 focus:ring-2 focus:ring-[#D4AF37]/15 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 pr-9 text-sm text-slate-900 outline-none transition duration-200 placeholder:text-slate-400 focus:bg-white focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/20 disabled:cursor-not-allowed disabled:opacity-60"
                   />
-                  <ChevronRight className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600" />
+                  <ChevronRight className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 </div>
 
                 <button
                   type="submit"
                   disabled={!input.trim() || loading}
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-[#D4AF37]/40 bg-[#D4AF37] text-[#0B1221] transition duration-200 hover:bg-[#E5C158] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 disabled:border-slate-700 disabled:bg-slate-900 disabled:text-slate-600"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#D4AF37] text-slate-950 transition duration-200 hover:bg-[#E5C158] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 disabled:cursor-not-allowed disabled:opacity-40 shadow-sm"
                   aria-label="Send message"
                 >
                   <Send className="h-4 w-4" />
