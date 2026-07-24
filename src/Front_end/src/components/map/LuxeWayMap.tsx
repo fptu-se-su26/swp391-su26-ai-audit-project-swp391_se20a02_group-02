@@ -94,6 +94,7 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const activeMarkersRef = useRef<Map<string, maplibregl.Marker>>(new Map());
+  const activePopupRef = useRef<maplibregl.Popup | null>(null);
   const routeMarkersRef = useRef<maplibregl.Marker[]>([]);
   const spiderLegsRef = useRef<maplibregl.Marker[]>([]);
   const isMapLoadedRef = useRef(false);
@@ -386,7 +387,70 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
             e.stopPropagation();
             animateMarkerClick(markerEl);
             if (onSelectionChange) onSelectionChange([singleVehicle]);
-            if (onVehicleClick) onVehicleClick(singleVehicle);
+
+            // Remove previous popup if any
+            if (activePopupRef.current) {
+              activePopupRef.current.remove();
+              activePopupRef.current = null;
+            }
+
+            // Create interactive MapLibre Popup over marker
+            const popupContent = document.createElement('div');
+            popupContent.style.cssText = 'padding:10px; width:240px; font-family:sans-serif; background:#ffffff; border-radius:16px; border:2px solid #D4AF37; box-shadow:0 16px 36px rgba(15,23,42,0.25); color:#0f172a;';
+
+            const thumb = singleVehicle.thumbnailUrl || singleVehicle.thumbnail || singleVehicle.image || FALLBACK_IMAGE;
+            const priceStr = formatCurrency(singleVehicle.pricePerDay || singleVehicle.finalPrice || 0);
+
+            popupContent.innerHTML = `
+              <div style="position:relative; width:100%; height:120px; border-radius:12px; overflow:hidden; margin-bottom:8px; background:#f1f5f9;">
+                <img src="${thumb}" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='${FALLBACK_IMAGE}'" />
+                ${singleVehicle.instantBook ? '<span style="position:absolute; top:6px; left:6px; background:#fbbf24; color:#0f172a; font-size:10px; font-weight:900; padding:2px 6px; border-radius:6px; text-transform:uppercase;">⚡ Đặt ngay</span>' : ''}
+              </div>
+              <h4 style="font-size:12px; font-weight:900; margin:0 0 4px 0; text-transform:uppercase; color:#0f172a; line-height:1.3; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden;">
+                ${singleVehicle.name}
+              </h4>
+              <div style="display:flex; align-items:center; gap:6px; font-size:11px; color:#64748b; margin-bottom:8px;">
+                <span style="color:#f59e0b; font-weight:bold;">⭐ ${Number(singleVehicle.rating || 5.0).toFixed(1)}</span>
+                <span>·</span>
+                <span style="font-weight:600;">${singleVehicle.totalTrips || 0} chuyến</span>
+              </div>
+              <div style="font-size:10px; color:#94a3b8; margin-bottom:10px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                📍 ${singleVehicle.address || singleVehicle.city || 'Việt Nam'}
+              </div>
+              <div style="display:flex; align-items:center; justify-content:space-between; padding-top:8px; border-top:1px solid #f1f5f9;">
+                <div>
+                  <span style="font-size:14px; font-weight:900; color:#D4AF37;">${priceStr}</span>
+                  <span style="font-size:10px; color:#64748b; font-weight:600;">/ngày</span>
+                </div>
+                <button id="popup-book-btn-${singleVehicle.id}" style="background:#D4AF37; color:#0f172a; border:none; padding:7px 12px; border-radius:10px; font-size:11px; font-weight:900; cursor:pointer; transition:transform 150ms; white-space:nowrap;">
+                  ĐẶT XE NGAY →
+                </button>
+              </div>
+            `;
+
+            const popup = new maplibregl.Popup({
+              offset: 24,
+              closeButton: true,
+              closeOnClick: false,
+              anchor: 'bottom',
+              maxWidth: '280px',
+            })
+              .setLngLat([c.lng, c.lat])
+              .setDOMContent(popupContent)
+              .addTo(map);
+
+            activePopupRef.current = popup;
+
+            setTimeout(() => {
+              const bookBtn = popupContent.querySelector(`#popup-book-btn-${singleVehicle.id}`);
+              if (bookBtn) {
+                bookBtn.addEventListener('click', (ev) => {
+                  ev.stopPropagation();
+                  ev.preventDefault();
+                  if (onVehicleClick) onVehicleClick(singleVehicle);
+                });
+              }
+            }, 50);
           });
 
           markerEl.addEventListener('mouseenter', () => {

@@ -482,6 +482,13 @@ export const MapPage: React.FC = () => {
     }
   };
 
+  const handleVehicleNavigate = (v: any) => {
+    setSelectedVehicle(v);
+    if (v && v.id) {
+      navigate(`/vehicles/${v.id}`);
+    }
+  };
+
   const flyTo = (loc: string) => {
     const key = Object.keys(CITY_COORDS).find(k => loc.toLowerCase().includes(k));
     if (!key) return;
@@ -633,7 +640,7 @@ export const MapPage: React.FC = () => {
           vehicles={vehicles}
           selectedVehicleId={selectedVehicle?.id}
           hoveredVehicleId={hoveredId}
-          onVehicleClick={handleMarkerClick}
+          onVehicleClick={handleVehicleNavigate}
           onMarkerHover={(id) => setHoveredId(id ?? undefined)}
           onBoundsChange={handleBoundsChange}
           height="100%"
