@@ -466,6 +466,7 @@ export const VehicleManagePage: React.FC = () => {
   const { user } = useAuthStore();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'CAR' | 'MOTORBIKE'>('CAR');
   const toast = useToast();
   const t = useT();
   const isVi = t.common.loading.includes('Đang');
@@ -492,6 +493,8 @@ export const VehicleManagePage: React.FC = () => {
     { label: t.ownerDashboard.myVehicles }
   ];
 
+  const filteredVehicles = vehicles.filter(v => (v.vehicleType || 'CAR').toUpperCase() === activeTab);
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--lw-border)] pb-5">
@@ -501,15 +504,38 @@ export const VehicleManagePage: React.FC = () => {
         </Link>
       </div>
 
+      <div className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-none">
+        <button
+          onClick={() => setActiveTab('CAR')}
+          className={`px-6 py-2.5 rounded-xl text-xs font-extrabold whitespace-nowrap border transition-all duration-300 hover-lift ${
+            activeTab === 'CAR'
+              ? 'border-gold bg-amber-500/10 text-gold shadow-sm shadow-gold/20'
+              : 'border-slate-200 dark:border-white/5 text-slate-500 dark:text-slate-400 bg-white/50 dark:bg-slate-800/50 hover:border-slate-300'
+          }`}
+        >
+          🚗 Cars ({vehicles.filter(v => (v.vehicleType || 'CAR').toUpperCase() === 'CAR').length})
+        </button>
+        <button
+          onClick={() => setActiveTab('MOTORBIKE')}
+          className={`px-6 py-2.5 rounded-xl text-xs font-extrabold whitespace-nowrap border transition-all duration-300 hover-lift ${
+            activeTab === 'MOTORBIKE'
+              ? 'border-gold bg-amber-500/10 text-gold shadow-sm shadow-gold/20'
+              : 'border-slate-200 dark:border-white/5 text-slate-500 dark:text-slate-400 bg-white/50 dark:bg-slate-800/50 hover:border-slate-300'
+          }`}
+        >
+          🏍️ Motorbikes ({vehicles.filter(v => (v.vehicleType || 'CAR').toUpperCase() === 'MOTORBIKE').length})
+        </button>
+      </div>
+
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {[...Array(4)].map((_, i) => <div key={i} className="skeleton h-56 rounded-3xl animate-pulse" />)}
         </div>
-      ) : vehicles.length === 0 ? (
+      ) : filteredVehicles.length === 0 ? (
         <div className="glass border border-slate-200/50 dark:border-white/5 text-center py-20 rounded-[2.5rem] shadow-sm">
           <Car className="w-16 h-16 text-slate-300 dark:text-slate-700 mx-auto mb-4 animate-bounce" />
           <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-2 text-lg">{t.ownerDashboard.noVehiclesYet}</h3>
-          <p className="text-slate-400 text-sm font-medium mb-6">{isVi ? 'Bắt đầu kiếm thu nhập bằng cách đăng ký chiếc xe cao cấp đầu tiên của bạn ngay.' : 'Start earning by listing your first luxury vehicle today.'}</p>
+          <p className="text-slate-400 text-sm font-medium mb-6">{isVi ? 'Bạn chưa có phương tiện nào trong danh mục này.' : `No ${activeTab.toLowerCase()}s found in this category.`}</p>
           <Link to="/owner/vehicles/new" className="btn-gold px-6 py-3.5 rounded-xl text-xs font-extrabold font-display hover-lift">{t.ownerDashboard.addFirstVehicle}</Link>
         </div>
       ) : (
@@ -532,7 +558,7 @@ export const VehicleManagePage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200/50 dark:divide-white/5 text-sm">
-              {vehicles.map(vehicle => {
+              {filteredVehicles.map(vehicle => {
                 const statusLower = (vehicle.approvalStatus || vehicle.status || '').toLowerCase();
                 const displayStatus = statusLower === 'approved' ? 'AVAILABLE' : statusLower.toUpperCase();
                 return (
@@ -556,7 +582,7 @@ export const VehicleManagePage: React.FC = () => {
                     <td className="p-4">
                       <span className={`px-2.5 py-1 text-[10px] font-black rounded-lg border uppercase tracking-wider ${
                         displayStatus === 'AVAILABLE' || displayStatus === 'APPROVED' ? 'bg-green-50 text-green-700 border-green-200' :
-                        displayStatus === 'PENDING_APPROVAL' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                        displayStatus === 'SUBMITTED' ? 'bg-amber-50 text-amber-700 border-amber-200' :
                         displayStatus === 'REJECTED' ? 'bg-rose-50 text-rose-700 border-rose-200' :
                         'bg-slate-50 text-slate-700 border-slate-200'
                       }`}>
@@ -578,7 +604,7 @@ export const VehicleManagePage: React.FC = () => {
                         <Link to={`/owner/vehicles/${vehicle.id}/edit`} title={t.common.edit} className="p-2 border border-slate-200 dark:border-white/10 hover:border-blue-500 hover:text-blue-500 text-slate-500 rounded-lg transition-colors">
                           <Edit className="w-4 h-4" />
                         </Link>
-                        {(!vehicle.approvalStatus || vehicle.approvalStatus === 'draft' || vehicle.approvalStatus === 'rejected' || vehicle.approvalStatus === 'pending_approval') && (
+                        {(!vehicle.approvalStatus || vehicle.approvalStatus === 'draft' || vehicle.approvalStatus === 'rejected' || vehicle.approvalStatus === 'submitted') && (
                           <button
                             onClick={() => handleDelete(vehicle.id, vehicle.name)}
                             title={t.common.delete}

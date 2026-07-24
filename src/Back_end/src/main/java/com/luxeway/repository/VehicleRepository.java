@@ -3,6 +3,7 @@ package com.luxeway.repository;
 import com.luxeway.entity.Vehicle;
 import com.luxeway.enums.VehicleCategory;
 import com.luxeway.enums.VehicleStatus;
+import com.luxeway.enums.ApprovalStatus;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -37,10 +38,10 @@ public interface VehicleRepository extends JpaRepository<Vehicle, String> {
     
     Page<Vehicle> findByStatusOrderByCreatedAtDesc(VehicleStatus status, Pageable pageable);
     
-    Page<Vehicle> findByApprovalStatusOrderByCreatedAtDesc(VehicleStatus approvalStatus, Pageable pageable);
+    Page<Vehicle> findByApprovalStatusOrderByCreatedAtDesc(ApprovalStatus approvalStatus, Pageable pageable);
     
     @Query("SELECT v FROM Vehicle v WHERE v.status = :status AND v.approvalStatus = :approvalStatus")
-    Page<Vehicle> findByStatusAndApprovalStatus(@Param("status") VehicleStatus status, @Param("approvalStatus") VehicleStatus approvalStatus, Pageable pageable);
+    Page<Vehicle> findByStatusAndApprovalStatus(@Param("status") VehicleStatus status, @Param("approvalStatus") ApprovalStatus approvalStatus, Pageable pageable);
     
     @Query("SELECT v FROM Vehicle v WHERE v.isFeatured = true AND v.status = :status AND v.approvalStatus = 'APPROVED' ORDER BY v.rating DESC")
     List<Vehicle> findFeaturedApproved(@Param("status") VehicleStatus status);
@@ -185,14 +186,16 @@ public interface VehicleRepository extends JpaRepository<Vehicle, String> {
     
     long countByStatus(VehicleStatus status);
     
+    long countByApprovalStatus(ApprovalStatus approvalStatus);
+    
     long countByOwnerId(String ownerId);
     
     @Query("SELECT COUNT(v) FROM Vehicle v WHERE v.owner.id = :ownerId AND v.status = :status")
     long countByOwnerIdAndStatus(@Param("ownerId") String ownerId, @Param("status") VehicleStatus status);
 
-    long countByCategoryAndStatusAndApprovalStatus(VehicleCategory category, VehicleStatus status, VehicleStatus approvalStatus);
+    long countByCategoryAndStatusAndApprovalStatus(VehicleCategory category, VehicleStatus status, ApprovalStatus approvalStatus);
     
-    long countByStatusAndApprovalStatus(VehicleStatus status, VehicleStatus approvalStatus);
+    long countByStatusAndApprovalStatus(VehicleStatus status, ApprovalStatus approvalStatus);
 
     @Query("SELECT COUNT(DISTINCT v.city) FROM Vehicle v WHERE v.status = 'AVAILABLE' AND v.approvalStatus = 'APPROVED'")
     long countDistinctCity();

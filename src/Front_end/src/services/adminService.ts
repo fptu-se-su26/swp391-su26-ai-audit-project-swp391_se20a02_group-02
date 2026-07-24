@@ -209,7 +209,7 @@ export const adminService = {
    */
   async approveVehicle(id: string): Promise<any> {
     try {
-      const response = await apiClient.put<any>(`/admin/vehicles/${id}/approve`, {});
+      const response = await apiClient.post<any>(`/admin/vehicles/${id}/approve`, {});
       return response.data || response;
     } catch (error) {
       console.error('Failed to approve vehicle:', error);
@@ -222,7 +222,7 @@ export const adminService = {
    */
   async rejectVehicle(id: string, reason: string): Promise<any> {
     try {
-      const response = await apiClient.put<any>(`/admin/vehicles/${id}/reject`, { reason, approved: false });
+      const response = await apiClient.post<any>(`/admin/vehicles/${id}/reject`, { reason });
       return response.data || response;
     } catch (error) {
       console.error('Failed to reject vehicle:', error);

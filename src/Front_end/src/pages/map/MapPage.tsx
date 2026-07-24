@@ -691,7 +691,10 @@ export const MapPage: React.FC = () => {
                   return (
                     <div
                       key={v.id}
-                      onClick={() => handleMarkerClick(v)}
+                      onClick={() => {
+                        handleMarkerClick(v);
+                        navigate(`/vehicles/${v.id}`);
+                      }}
                       onMouseEnter={() => setHoveredId(v.id)}
                       onMouseLeave={() => setHoveredId(undefined)}
                       className={cn(

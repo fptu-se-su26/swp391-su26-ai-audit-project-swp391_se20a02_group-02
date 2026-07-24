@@ -529,7 +529,7 @@ const MarketplacePage: React.FC = () => {
   const [showCarousel, setShowCarousel] = useState<boolean>(false);
   const [showSearchArea, setShowSearchArea] = useState<boolean>(false);
   const [pendingMapBounds, setPendingMapBounds] = useState<{ minLat: number; maxLat: number; minLng: number; maxLng: number } | null>(null);
-  const [shouldFitBounds, setShouldFitBounds] = useState<boolean>(true);
+  const [shouldFitBounds, setShouldFitBounds] = useState<boolean>(false);
   const [hoveredMapVehicleId, setHoveredMapVehicleId] = useState<string | null>(null);
 
   // Carousel scroll ref for map view bottom carousel
@@ -772,8 +772,8 @@ const MarketplacePage: React.FC = () => {
   // Clear map selection when filters change or map is closed
   useEffect(() => {
     setMapSelectedVehicles([]);
-    // Fit bounds on filter changes, not user pan
-    setShouldFitBounds(true);
+    // Fit bounds only if a specific location is filtered, to avoid zooming out to the whole country
+    setShouldFitBounds(!!filters.location);
     setShowSearchArea(false);
     setPendingMapBounds(null);
   }, [filters, mapOpen]);
@@ -1337,23 +1337,6 @@ const MarketplacePage: React.FC = () => {
                               key={v.id}
                               id={`map-carousel-card-${v.id}`}
                               onClick={() => {
-                                setSelectedVehicleId(v.id);
-                                if (isMapView) {
-                                  // Highlight marker + center map
-                                  const mapLoc = vehicles.find(mv => mv.id === v.id);
-                                  if (mapLoc && (window as any).luxewayMapInstance) {
-                                    const lng = mapLoc.location?.lng || (mapLoc as any).longitude || 106.660;
-                                    const lat = mapLoc.location?.lat || (mapLoc as any).latitude || 10.762;
-                                    (window as any).luxewayMapInstance.flyTo({
-                                      center: [lng, lat],
-                                      zoom: 15,
-                                      duration: 1200
-                                    });
-                                  }
-                                }
-                              }}
-                              onDoubleClick={() => {
-                                // Navigate to vehicle detail view on double-click
                                 const startDate = searchParams.get('startDate') || '';
                                 const endDate = searchParams.get('endDate') || '';
                                 const dateParams = (startDate && endDate) ? `?startDate=${startDate}&endDate=${endDate}` : '';

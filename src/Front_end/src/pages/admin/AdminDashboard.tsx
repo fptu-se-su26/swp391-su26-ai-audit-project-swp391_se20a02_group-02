@@ -121,7 +121,7 @@ const AdminDashboard: React.FC = () => {
   const isPendingVehicleApproval = (vehicle: any) => {
     const status = normalizeStatus(vehicle?.status);
     const approvalStatus = normalizeStatus(vehicle?.approvalStatus);
-    return status === 'PENDING_APPROVAL' || approvalStatus === 'PENDING_APPROVAL';
+    return approvalStatus === 'SUBMITTED';
   };
   
   // Dashboard states
@@ -148,7 +148,7 @@ const AdminDashboard: React.FC = () => {
 
   const [userRoleFilter, setUserRoleFilter] = useState('ALL');
   const [userKycStatusFilter, setUserKycStatusFilter] = useState('ALL');
-  const [vehicleStatusFilter, setVehicleStatusFilter] = useState('PENDING_APPROVAL');
+  const [vehicleStatusFilter, setVehicleStatusFilter] = useState('SUBMITTED');
   
   // KYC specific states
   const [kycUsers, setKycUsers] = useState<any[]>([]);
@@ -243,7 +243,7 @@ const AdminDashboard: React.FC = () => {
   const fetchVehicles = async (status?: string, keyword?: string) => {
     try {
       const requestedStatus = normalizeStatus(status);
-      const res = requestedStatus === 'PENDING_APPROVAL' && !keyword
+      const res = requestedStatus === 'SUBMITTED' && !keyword
         ? await adminService.listPendingVehicles(0, 100)
         : await adminService.listAllVehicles(
             requestedStatus === 'ALL' ? undefined : requestedStatus,
@@ -253,11 +253,11 @@ const AdminDashboard: React.FC = () => {
           );
       const content = Array.isArray(res) ? res : (res?.content || []);
       setVehicles(
-        requestedStatus === 'PENDING_APPROVAL'
+        requestedStatus === 'SUBMITTED'
           ? content.filter(isPendingVehicleApproval)
           : content
       );
-      if (requestedStatus === 'PENDING_APPROVAL' && keyword) {
+      if (requestedStatus === 'SUBMITTED' && keyword) {
         const pendingRes = await adminService.listPendingVehicles(0, 100);
         const kw = keyword.toLowerCase();
         const pendingContent = (Array.isArray(pendingRes) ? pendingRes : (pendingRes?.content || []))
@@ -1321,7 +1321,7 @@ const AdminDashboard: React.FC = () => {
                         )}
                       >
                         <option value="ALL">All Statuses</option>
-                        <option value="PENDING_APPROVAL">Pending Approval</option>
+                        <option value="SUBMITTED">Pending Approval</option>
                         <option value="AVAILABLE">Available</option>
                         <option value="REJECTED">Rejected</option>
                       </select>
@@ -2729,7 +2729,7 @@ const AdminDashboard: React.FC = () => {
               <p className="text-xs font-semibold text-slate-350"><span className="text-slate-400">License Plate Identifier:</span> {selectedVehicle.specs?.licensePlate || 'N/A'}</p>
             </div>
 
-            {selectedVehicle.status === 'pending_approval' && (
+            {selectedVehicle.approvalStatus === 'submitted' && (
               <div className="space-y-3 pt-2 border-t dark:border-slate-850">
                 <textarea
                   placeholder="Provide rejection/revision details reason..."

@@ -640,20 +640,6 @@ export const LuxeWayMap: React.FC<LuxeWayMapProps> = ({
             maxZoom: initialCenter ? 13.5 : 11.5,
             duration: FLY_DURATION,
           });
-          if (!initialZoom) {
-            window.setTimeout(() => {
-              if (!mapRef.current) return;
-              const minOverviewZoom = window.innerWidth < 768 ? 4.8 : 5.35;
-              if (mapRef.current.getZoom() < minOverviewZoom) {
-                mapRef.current.easeTo({
-                  center: [106.9, 16.1],
-                  zoom: minOverviewZoom,
-                  duration: 650,
-                  essential: true,
-                });
-              }
-            }, FLY_DURATION + 80);
-          }
         }
       } catch (e) {
         console.error('fitBounds error:', e);

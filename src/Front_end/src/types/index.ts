@@ -18,7 +18,8 @@ export type VehicleCategory = CarCategory | MotorbikeCategory;
 
 export type BookingStatus = 'pending' | 'confirmed' | 'active' | 'completed' | 'cancelled' | 'disputed' | 'picking_up' | 'in_progress' | 'waiting_payment' | 'payment_pending' | 'payment_verified' | 'payment_rejected' | 'payment_expired' | 'owner_approved' | 'ready_for_pickup' | 'checked_out' | 'in_rental' | 'return_pending' | 'return_completed' | 'cancellation_requested' | 'customer_cancelled' | 'owner_cancelled' | 'system_cancelled';
 export type PaymentStatus = 'pending' | 'processing' | 'succeeded' | 'failed' | 'refunded';
-export type VehicleStatus = 'available' | 'rented' | 'maintenance' | 'pending_approval' | 'draft' | 'approved' | 'rejected' | 'blocked';
+export type VehicleStatus = 'available' | 'unavailable' | 'booked' | 'rented' | 'inactive';
+export type ApprovalStatus = 'draft' | 'submitted' | 'under_review' | 'approved' | 'rejected';
 export type TransmissionType = 'automatic' | 'manual';
 export type FuelType = 'gasoline' | 'petrol' | 'diesel' | 'electric' | 'hybrid';
 export type MessageType = 'text' | 'image' | 'booking_request' | 'system';
@@ -149,7 +150,14 @@ export interface Vehicle {
     advanceBookingDays: number;
   };
   status: VehicleStatus;
-  approvalStatus?: VehicleStatus;
+  approvalStatus?: ApprovalStatus;
+  rejectionReason?: string;
+  registrationDocUrl?: string;
+  ownershipDocUrl?: string;
+  insuranceDocUrl?: string;
+  submittedAt?: string;
+  rejectedAt?: string;
+  rejectedBy?: string;
   approvalNote?: string;
   approvedBy?: string;
   approvedAt?: string;

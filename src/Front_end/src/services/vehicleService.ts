@@ -392,14 +392,14 @@ export const vehicleService = {
   async create(ownerId: string, data: Partial<Vehicle>): Promise<Vehicle> {
     const transformed = transformToBackendPayload(data);
     const payload = { ...transformed, ownerId };
-    const response = await apiClient.post<any>('/vehicles', payload);
+    const response = await apiClient.post<any>('/owner/vehicles', payload);
     return response.vehicle ? mapVehicle(response.vehicle) : (payload as Vehicle); 
   },
 
   async update(id: string, updates: Partial<Vehicle>): Promise<Vehicle | null> {
     try {
       const transformed = transformToBackendPayload(updates);
-      const response = await apiClient.put<any>(`/vehicles/${id}`, transformed);
+      const response = await apiClient.put<any>(`/owner/vehicles/${id}`, transformed);
       return response.vehicle ? mapVehicle(response.vehicle) : null;
     } catch (error) {
       return null;
@@ -426,7 +426,7 @@ export const vehicleService = {
 
   async delete(id: string): Promise<boolean> {
     try {
-      await apiClient.delete<any>(`/vehicles/${id}`);
+      await apiClient.delete<any>(`/owner/vehicles/${id}`);
       return true;
     } catch (error) {
       return false;

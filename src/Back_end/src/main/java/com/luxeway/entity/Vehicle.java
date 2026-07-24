@@ -3,6 +3,7 @@ package com.luxeway.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.luxeway.enums.VehicleCategory;
 import com.luxeway.enums.VehicleStatus;
+import com.luxeway.enums.ApprovalStatus;
 import com.luxeway.enums.VehicleType;
 import com.luxeway.enums.TransmissionType;
 import com.luxeway.enums.FuelType;
@@ -214,15 +215,33 @@ public class Vehicle {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
-    private VehicleStatus status = VehicleStatus.PENDING_APPROVAL;
+    private VehicleStatus status = VehicleStatus.INACTIVE;
     
     @Enumerated(EnumType.STRING)
     @Column(name = "approval_status", nullable = false)
     @Builder.Default
-    private VehicleStatus approvalStatus = VehicleStatus.PENDING_APPROVAL;
+    private ApprovalStatus approvalStatus = ApprovalStatus.DRAFT;
 
-    @Column(name = "approval_note", length = 500)
-    private String approvalNote;
+    @Column(name = "rejection_reason", columnDefinition = "TEXT")
+    private String rejectionReason;
+
+    @Column(name = "registration_doc_url", length = 500)
+    private String registrationDocUrl;
+
+    @Column(name = "ownership_doc_url", length = 500)
+    private String ownershipDocUrl;
+
+    @Column(name = "insurance_doc_url", length = 500)
+    private String insuranceDocUrl;
+
+    @Column(name = "submitted_at")
+    private LocalDateTime submittedAt;
+
+    @Column(name = "rejected_at")
+    private LocalDateTime rejectedAt;
+
+    @Column(name = "rejected_by", length = 36)
+    private String rejectedBy;
 
     @Column(name = "approved_by", length = 36)
     private String approvedBy;

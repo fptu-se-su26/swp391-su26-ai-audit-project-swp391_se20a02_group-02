@@ -156,7 +156,7 @@ public class User implements UserDetails {
     @Builder.Default
     private Boolean ownerPayoutEnabled = false;
 
-    @Column(name = "security_two_factor_enabled", nullable = false)
+    @Column(name = "security_two_factor_enabled", nullable = false, columnDefinition = "bit default 0")
     @Builder.Default
     private Boolean securityTwoFactorEnabled = false;
 

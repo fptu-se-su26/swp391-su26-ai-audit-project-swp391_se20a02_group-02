@@ -4,6 +4,7 @@ import com.luxeway.entity.*;
 import com.luxeway.enums.BookingStatus;
 import com.luxeway.enums.VehicleCategory;
 import com.luxeway.enums.VehicleStatus;
+import com.luxeway.enums.ApprovalStatus;
 import com.luxeway.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,7 +43,7 @@ public class HomeService {
     public Map<String, Object> getStats() {
         Map<String, Object> stats = new HashMap<>();
         try {
-            long dbVehicles = vehicleRepository.countByStatusAndApprovalStatus(VehicleStatus.AVAILABLE, VehicleStatus.APPROVED);
+            long dbVehicles = vehicleRepository.countByStatusAndApprovalStatus(VehicleStatus.AVAILABLE, ApprovalStatus.APPROVED);
             long dbCustomers = userRepository.count();
             long dbBookings = bookingRepository.count();
             long dbProvinces = vehicleRepository.countDistinctCity();
@@ -66,7 +67,7 @@ public class HomeService {
             Map<String, Long> categoryCounts = new HashMap<>();
             for (VehicleCategory cat : VehicleCategory.values()) {
                 categoryCounts.put(cat.name().toLowerCase(),
-                    vehicleRepository.countByCategoryAndStatusAndApprovalStatus(cat, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED));
+                    vehicleRepository.countByCategoryAndStatusAndApprovalStatus(cat, VehicleStatus.AVAILABLE, ApprovalStatus.APPROVED));
             }
             stats.put("categoryCounts", categoryCounts);
         } catch (Exception e) {
@@ -114,7 +115,7 @@ public class HomeService {
                 Sort.Order.desc("totalBookings"),
                 Sort.Order.desc("rating")
             ));
-            var vehicles = vehicleRepository.findByStatusAndApprovalStatus(VehicleStatus.AVAILABLE, VehicleStatus.APPROVED, pageable);
+            var vehicles = vehicleRepository.findByStatusAndApprovalStatus(VehicleStatus.AVAILABLE, ApprovalStatus.APPROVED, pageable);
             return vehicles.getContent().stream().map(v -> {
                 Map<String, Object> m = new HashMap<>();
                 m.put("id", v.getId());
@@ -147,55 +148,55 @@ public class HomeService {
         try {
             Map<String, Object> cars = new LinkedHashMap<>();
             // Economy: ECONOMY + SEDAN
-            long economy = vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.ECONOMY, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED)
-                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.SEDAN, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED);
+            long economy = vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.ECONOMY, VehicleStatus.AVAILABLE, ApprovalStatus.APPROVED)
+                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.SEDAN, VehicleStatus.AVAILABLE, ApprovalStatus.APPROVED);
             cars.put("economy", economy);
 
             // Family: FAMILY + MPV + TOURISM (since Kia Carnival is TOURISM but is a family MPV)
-            long family = vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.FAMILY, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED)
-                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.MPV, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED)
-                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.TOURISM, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED);
+            long family = vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.FAMILY, VehicleStatus.AVAILABLE, ApprovalStatus.APPROVED)
+                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.MPV, VehicleStatus.AVAILABLE, ApprovalStatus.APPROVED)
+                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.TOURISM, VehicleStatus.AVAILABLE, ApprovalStatus.APPROVED);
             cars.put("family", family);
 
             // SUV: SUV + PICKUP
-            long suv = vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.SUV, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED)
-                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.PICKUP, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED);
+            long suv = vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.SUV, VehicleStatus.AVAILABLE, ApprovalStatus.APPROVED)
+                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.PICKUP, VehicleStatus.AVAILABLE, ApprovalStatus.APPROVED);
             cars.put("suv", suv);
 
             // Business: BUSINESS + LUXURY + SPORTS
-            long business = vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.BUSINESS, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED)
-                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.LUXURY, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED)
-                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.SPORTS, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED);
+            long business = vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.BUSINESS, VehicleStatus.AVAILABLE, ApprovalStatus.APPROVED)
+                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.LUXURY, VehicleStatus.AVAILABLE, ApprovalStatus.APPROVED)
+                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.SPORTS, VehicleStatus.AVAILABLE, ApprovalStatus.APPROVED);
             cars.put("business", business);
 
             // Electric: ELECTRIC + ELECTRIC_CAR
-            long electric = vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.ELECTRIC, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED)
-                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.ELECTRIC_CAR, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED);
+            long electric = vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.ELECTRIC, VehicleStatus.AVAILABLE, ApprovalStatus.APPROVED)
+                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.ELECTRIC_CAR, VehicleStatus.AVAILABLE, ApprovalStatus.APPROVED);
             cars.put("electric", electric);
 
             Map<String, Object> motorbikes = new LinkedHashMap<>();
             // Motorbike (Scooter): MOTORBIKE + SCOOTER + AUTOMATIC_SCOOTER + ELECTRIC_BIKE
-            long scooter = vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.MOTORBIKE, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED)
-                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.SCOOTER, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED)
-                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.AUTOMATIC_SCOOTER, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED)
-                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.ELECTRIC_BIKE, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED);
+            long scooter = vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.MOTORBIKE, VehicleStatus.AVAILABLE, ApprovalStatus.APPROVED)
+                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.SCOOTER, VehicleStatus.AVAILABLE, ApprovalStatus.APPROVED)
+                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.AUTOMATIC_SCOOTER, VehicleStatus.AVAILABLE, ApprovalStatus.APPROVED)
+                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.ELECTRIC_BIKE, VehicleStatus.AVAILABLE, ApprovalStatus.APPROVED);
             motorbikes.put("motorbike", scooter);
 
             // City Bike: CITY_CAR + MANUAL_MOTORCYCLE + CLASSIC_BIKE
-            long cityBike = vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.CITY_CAR, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED)
-                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.MANUAL_MOTORCYCLE, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED)
-                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.CLASSIC_BIKE, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED);
+            long cityBike = vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.CITY_CAR, VehicleStatus.AVAILABLE, ApprovalStatus.APPROVED)
+                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.MANUAL_MOTORCYCLE, VehicleStatus.AVAILABLE, ApprovalStatus.APPROVED)
+                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.CLASSIC_BIKE, VehicleStatus.AVAILABLE, ApprovalStatus.APPROVED);
             motorbikes.put("city_car", cityBike);
 
             // Touring: TOURING_BIKE + ADVENTURE_BIKE + SPORT_BIKE
-            long touring = vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.TOURING_BIKE, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED)
-                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.ADVENTURE_BIKE, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED)
-                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.SPORT_BIKE, VehicleStatus.AVAILABLE, VehicleStatus.APPROVED);
+            long touring = vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.TOURING_BIKE, VehicleStatus.AVAILABLE, ApprovalStatus.APPROVED)
+                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.ADVENTURE_BIKE, VehicleStatus.AVAILABLE, ApprovalStatus.APPROVED)
+                    + vehicleRepository.countByCategoryAndStatusAndApprovalStatus(VehicleCategory.SPORT_BIKE, VehicleStatus.AVAILABLE, ApprovalStatus.APPROVED);
             motorbikes.put("tourism", touring);
 
             result.put("cars", cars);
             result.put("motorbikes", motorbikes);
-            result.put("total", vehicleRepository.countByStatusAndApprovalStatus(VehicleStatus.AVAILABLE, VehicleStatus.APPROVED));
+            result.put("total", vehicleRepository.countByStatusAndApprovalStatus(VehicleStatus.AVAILABLE, ApprovalStatus.APPROVED));
         } catch (Exception e) {
             log.error("Error fetching categories: {}", e.getMessage());
             result.put("cars", new HashMap<>());
@@ -253,7 +254,7 @@ public class HomeService {
                 try {
                     String normCity = normalizeCityName(d.getCity());
                     long liveCount = vehicleRepository.findByCityContainingIgnoreCase(normCity)
-                        .stream().filter(v -> v.getStatus() == VehicleStatus.AVAILABLE && v.getApprovalStatus() == VehicleStatus.APPROVED).count();
+                        .stream().filter(v -> v.getStatus() == VehicleStatus.AVAILABLE && v.getApprovalStatus() == ApprovalStatus.APPROVED).count();
                     m.put("vehicleCount", liveCount);
                 } catch (Exception ex) {
                     m.put("vehicleCount", 0L);
@@ -320,7 +321,7 @@ public class HomeService {
                 avgMonthlyRevenue = totalRevenue.longValue() / Math.max(totalOwners, 1) / 12;
             }
 
-            long totalVehicles = vehicleRepository.countByStatusAndApprovalStatus(VehicleStatus.AVAILABLE, VehicleStatus.APPROVED);
+            long totalVehicles = vehicleRepository.countByStatusAndApprovalStatus(VehicleStatus.AVAILABLE, ApprovalStatus.APPROVED);
             long bookedVehicles = bookingRepository.countDistinctBookedVehicles();
             double vehicleUtilization = 0.0;
             if (totalVehicles > 0) {
@@ -428,7 +429,7 @@ public class HomeService {
                 
                 // Match with accents
                 for (Vehicle v : vehicleRepository.findByCityContainingIgnoreCase(d[0])) {
-                    if (v.getStatus() == VehicleStatus.AVAILABLE && v.getApprovalStatus() == VehicleStatus.APPROVED) {
+                    if (v.getStatus() == VehicleStatus.AVAILABLE && v.getApprovalStatus() == ApprovalStatus.APPROVED) {
                         if (vehicleIds.add(v.getId())) count++;
                     }
                 }
@@ -436,7 +437,7 @@ public class HomeService {
                 // Match without accents (if different)
                 if (!d[0].equalsIgnoreCase(d[1])) {
                     for (Vehicle v : vehicleRepository.findByCityContainingIgnoreCase(d[1])) {
-                        if (v.getStatus() == VehicleStatus.AVAILABLE && v.getApprovalStatus() == VehicleStatus.APPROVED) {
+                        if (v.getStatus() == VehicleStatus.AVAILABLE && v.getApprovalStatus() == ApprovalStatus.APPROVED) {
                             if (vehicleIds.add(v.getId())) count++;
                         }
                     }
@@ -464,7 +465,7 @@ public class HomeService {
                 Sort.Order.desc("totalBookings"),
                 Sort.Order.desc("rating")
             ));
-            var popularVehicles = vehicleRepository.findByStatusAndApprovalStatus(VehicleStatus.AVAILABLE, VehicleStatus.APPROVED, pageablePopular);
+            var popularVehicles = vehicleRepository.findByStatusAndApprovalStatus(VehicleStatus.AVAILABLE, ApprovalStatus.APPROVED, pageablePopular);
             List<Map<String, Object>> popular = popularVehicles.getContent().stream().map(v -> {
                 Map<String, Object> m = new HashMap<>();
                 m.put("id", v.getId());
@@ -488,7 +489,7 @@ public class HomeService {
 
             // Latest approved vehicles (sorted by createdAt desc)
             var pageableLatest = PageRequest.of(0, 8, Sort.by(Sort.Order.desc("createdAt")));
-            var latestVehicles = vehicleRepository.findByStatusAndApprovalStatus(VehicleStatus.AVAILABLE, VehicleStatus.APPROVED, pageableLatest);
+            var latestVehicles = vehicleRepository.findByStatusAndApprovalStatus(VehicleStatus.AVAILABLE, ApprovalStatus.APPROVED, pageableLatest);
             List<Map<String, Object>> latest = latestVehicles.getContent().stream().map(v -> {
                 Map<String, Object> m = new HashMap<>();
                 m.put("id", v.getId());

@@ -11,6 +11,7 @@ import com.luxeway.entity.Vehicle;
 import com.luxeway.enums.BookingStatus;
 import com.luxeway.enums.UserRole;
 import com.luxeway.enums.VehicleStatus;
+import com.luxeway.enums.ApprovalStatus;
 import com.luxeway.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -60,7 +61,7 @@ public class AdminService {
         // Vehicles
         stats.setTotalVehicles(vehicleRepository.count());
         stats.setAvailableVehicles(vehicleRepository.countByStatus(VehicleStatus.AVAILABLE));
-        stats.setPendingApprovalVehicles(vehicleRepository.countByStatus(VehicleStatus.PENDING_APPROVAL));
+        stats.setPendingApprovalVehicles(vehicleRepository.countByApprovalStatus(ApprovalStatus.SUBMITTED));
 
         // Bookings
         stats.setTotalBookings(bookingRepository.count());
@@ -238,7 +239,7 @@ public class AdminService {
     public Page<VehicleDTOs.VehicleResponse> listPendingVehicles(int page, int size) {
         // Do NOT add Sort here - 'OrderByCreatedAtDesc' in method name already handles ordering
         Pageable pageable = PageRequest.of(page, size);
-        return vehicleRepository.findByApprovalStatusOrderByCreatedAtDesc(VehicleStatus.PENDING_APPROVAL, pageable)
+        return vehicleRepository.findByApprovalStatusOrderByCreatedAtDesc(ApprovalStatus.SUBMITTED, pageable)
                 .map(vehicleService::toResponse);
     }
 
@@ -270,12 +271,12 @@ public class AdminService {
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
                 .orElseThrow(() -> new RuntimeException("Vehicle not found"));
 
-        if (vehicle.getApprovalStatus() != VehicleStatus.PENDING_APPROVAL) {
+        if (vehicle.getApprovalStatus() != ApprovalStatus.SUBMITTED) {
             throw new IllegalStateException("Vehicle is not pending approval");
         }
 
         vehicle.setStatus(VehicleStatus.AVAILABLE);
-        vehicle.setApprovalStatus(VehicleStatus.APPROVED);
+        vehicle.setApprovalStatus(ApprovalStatus.APPROVED);
         vehicle.setApprovedBy(adminId);
         vehicle.setApprovedAt(java.time.LocalDateTime.now());
         vehicle.setIsVerified(true);
@@ -308,13 +309,15 @@ public class AdminService {
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
                 .orElseThrow(() -> new RuntimeException("Vehicle not found"));
 
-        if (vehicle.getApprovalStatus() != VehicleStatus.PENDING_APPROVAL) {
+        if (vehicle.getApprovalStatus() != ApprovalStatus.SUBMITTED) {
             throw new IllegalStateException("Vehicle is not pending approval");
         }
 
-        vehicle.setStatus(VehicleStatus.REJECTED);
-        vehicle.setApprovalStatus(VehicleStatus.REJECTED);
-        vehicle.setApprovalNote(reason);
+        vehicle.setStatus(VehicleStatus.INACTIVE);
+        vehicle.setApprovalStatus(ApprovalStatus.REJECTED);
+        vehicle.setRejectionReason(reason);
+        vehicle.setRejectedAt(java.time.LocalDateTime.now());
+        vehicle.setRejectedBy(adminId);
         vehicle = vehicleRepository.save(vehicle);
 
         log.info("Vehicle {} rejected by admin {}: {}", vehicleId, adminId, reason);

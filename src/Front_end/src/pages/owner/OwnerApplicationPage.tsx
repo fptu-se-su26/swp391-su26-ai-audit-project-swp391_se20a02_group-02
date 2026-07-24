@@ -80,8 +80,8 @@ export const OwnerApplicationPage: React.FC = () => {
         setCurrentStep(1);
         setPersonalInfo(prev => ({
           ...prev,
-          fullName: newApp.fullName || '',
-          phone: newApp.phone || ''
+          fullName: newApp.fullName || (user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : ''),
+          phone: newApp.phone || user?.phone || ''
         }));
       }
     } catch (err: any) {

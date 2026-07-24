@@ -9,6 +9,7 @@ import com.luxeway.enums.FuelType;
 import com.luxeway.enums.TransmissionType;
 import com.luxeway.enums.VehicleCategory;
 import com.luxeway.enums.VehicleStatus;
+import com.luxeway.enums.ApprovalStatus;
 import com.luxeway.repository.UserRepository;
 import com.luxeway.repository.VehicleRepository;
 import com.luxeway.repository.BookingRepository;
@@ -412,8 +413,8 @@ public class VehicleService {
                 .instantBook(req.getInstantBook())
                 .deliveryAvailable(req.getDeliveryAvailable())
                 .deliveryFee(req.getDeliveryFee())
-                .status(VehicleStatus.PENDING_APPROVAL)
-                .approvalStatus(VehicleStatus.PENDING_APPROVAL)
+                .status(VehicleStatus.INACTIVE)
+                .approvalStatus(ApprovalStatus.SUBMITTED)
                 .build();
 
         vehicle = vehicleRepository.save(vehicle);
@@ -531,9 +532,9 @@ public class VehicleService {
             }
 
             VehicleStatus currentStatus = vehicle.getStatus();
-            VehicleStatus currentApprovalStatus = vehicle.getApprovalStatus();
+            ApprovalStatus currentApprovalStatus = vehicle.getApprovalStatus();
 
-            if (currentStatus == VehicleStatus.AVAILABLE || currentApprovalStatus == VehicleStatus.APPROVED) {
+            if (currentStatus == VehicleStatus.AVAILABLE || currentApprovalStatus == ApprovalStatus.APPROVED) {
                 boolean coreDetailsChanged = false;
                 
                 if (req.getPricePerDay() != null && vehicle.getPricePerDay().compareTo(req.getPricePerDay()) != 0) {
@@ -570,8 +571,8 @@ public class VehicleService {
                 }
 
                 if (coreDetailsChanged) {
-                    vehicle.setStatus(VehicleStatus.PENDING_APPROVAL);
-                    vehicle.setApprovalStatus(VehicleStatus.PENDING_APPROVAL);
+                    vehicle.setStatus(VehicleStatus.INACTIVE);
+                    vehicle.setApprovalStatus(ApprovalStatus.SUBMITTED);
                     
                     try {
                         List<User> admins = userRepository.findByRole(com.luxeway.enums.UserRole.ADMIN);
@@ -608,9 +609,9 @@ public class VehicleService {
                     vehicle.setStatus(currentStatus);
                     vehicle.setApprovalStatus(currentApprovalStatus);
                 }
-            } else if (currentStatus == VehicleStatus.DRAFT) {
-                vehicle.setStatus(VehicleStatus.PENDING_APPROVAL);
-                vehicle.setApprovalStatus(VehicleStatus.PENDING_APPROVAL);
+            } else if (currentApprovalStatus == ApprovalStatus.DRAFT) {
+                vehicle.setStatus(VehicleStatus.INACTIVE);
+                vehicle.setApprovalStatus(ApprovalStatus.SUBMITTED);
                 
                 try {
                     List<User> admins = userRepository.findByRole(com.luxeway.enums.UserRole.ADMIN);
@@ -636,9 +637,9 @@ public class VehicleService {
                 } catch (Exception e) {
                     log.warn("Failed to notify admins of vehicle update: {}", e.getMessage());
                 }
-            } else if (currentStatus == VehicleStatus.REJECTED || currentApprovalStatus == VehicleStatus.REJECTED) {
-                vehicle.setStatus(VehicleStatus.PENDING_APPROVAL);
-                vehicle.setApprovalStatus(VehicleStatus.PENDING_APPROVAL);
+            } else if (currentApprovalStatus == ApprovalStatus.REJECTED) {
+                vehicle.setStatus(VehicleStatus.INACTIVE);
+                vehicle.setApprovalStatus(ApprovalStatus.SUBMITTED);
                 
                 try {
                     List<User> admins = userRepository.findByRole(com.luxeway.enums.UserRole.ADMIN);
@@ -774,7 +775,7 @@ public class VehicleService {
             if (!vehicle.getOwner().getId().equals(requesterId)) {
                 throw new org.springframework.security.access.AccessDeniedException("Unauthorized vehicle access");
             }
-            if (vehicle.getApprovalStatus() != VehicleStatus.DRAFT && vehicle.getApprovalStatus() != VehicleStatus.REJECTED) {
+            if (vehicle.getApprovalStatus() != ApprovalStatus.DRAFT && vehicle.getApprovalStatus() != ApprovalStatus.REJECTED) {
                 throw new RuntimeException("Only vehicles in DRAFT or REJECTED status can be deleted");
             }
         }
@@ -801,7 +802,7 @@ public class VehicleService {
                 .orElseThrow(() -> new RuntimeException("Vehicle not found: " + id));
 
         // Constraint: Only return AVAILABLE and APPROVED vehicles
-        if (vehicle.getStatus() != VehicleStatus.AVAILABLE || vehicle.getApprovalStatus() != VehicleStatus.APPROVED) {
+        if (vehicle.getStatus() != VehicleStatus.AVAILABLE || vehicle.getApprovalStatus() != ApprovalStatus.APPROVED) {
             throw new org.springframework.security.access.AccessDeniedException("This vehicle is currently unavailable or unapproved");
         }
 
@@ -840,7 +841,7 @@ public class VehicleService {
         r.setIsLocked(v.getIsLocked() != null ? v.getIsLocked() : true);
         r.setStatus(v.getStatus().name().toLowerCase());
         r.setApprovalStatus(v.getApprovalStatus() != null ? v.getApprovalStatus().name().toLowerCase() : null);
-        r.setApprovalNote(v.getApprovalNote());
+        r.setApprovalNote(v.getRejectionReason());
         r.setApprovedBy(v.getApprovedBy());
         r.setApprovedAt(v.getApprovedAt() != null ? v.getApprovedAt().toString() : null);
         r.setRating(v.getRating() != null ? v.getRating().doubleValue() : 0.0);

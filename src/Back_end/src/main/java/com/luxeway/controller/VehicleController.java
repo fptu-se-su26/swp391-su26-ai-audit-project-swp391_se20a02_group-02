@@ -3,6 +3,7 @@ package com.luxeway.controller;
 import com.luxeway.dto.vehicle.VehicleDTOs;
 import com.luxeway.entity.Vehicle;
 import com.luxeway.enums.VehicleStatus;
+import com.luxeway.enums.ApprovalStatus;
 import com.luxeway.repository.VehicleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -346,7 +347,7 @@ public class VehicleController {
             if (!resolvedKeyword.isEmpty()) {
                 vehicles = vehicleRepository.searchVehicles(resolvedKeyword, VehicleStatus.AVAILABLE, pageable);
             } else {
-                vehicles = vehicleRepository.findByStatusAndApprovalStatus(VehicleStatus.AVAILABLE, VehicleStatus.APPROVED, pageable);
+                vehicles = vehicleRepository.findByStatusAndApprovalStatus(VehicleStatus.AVAILABLE, ApprovalStatus.APPROVED, pageable);
             }
             
             Map<String, Object> response = new HashMap<>();

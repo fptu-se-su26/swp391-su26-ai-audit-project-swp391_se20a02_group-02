@@ -128,9 +128,9 @@ public class SeedingService {
                 }
                 
                 // Fix status and approval
-                if (v.getStatus() != VehicleStatus.AVAILABLE || v.getApprovalStatus() != VehicleStatus.APPROVED) {
+                if (v.getStatus() != VehicleStatus.AVAILABLE || v.getApprovalStatus() != ApprovalStatus.APPROVED) {
                     v.setStatus(VehicleStatus.AVAILABLE);
-                    v.setApprovalStatus(VehicleStatus.APPROVED);
+                    v.setApprovalStatus(ApprovalStatus.APPROVED);
                     needsSave = true;
                 }
                 
@@ -246,7 +246,7 @@ public class SeedingService {
                     .licensePlate(plate)
                     .thumbnailUrl(thumbnail)
                     .status(VehicleStatus.AVAILABLE)
-                    .approvalStatus(VehicleStatus.APPROVED)
+                    .approvalStatus(ApprovalStatus.APPROVED)
                     .isVerified(true)
                     .isFeatured(idx % 8 == 0)
                     .instantBook(idx % 3 == 0)
@@ -311,7 +311,7 @@ public class SeedingService {
                     .licensePlate(plate)
                     .thumbnailUrl(getMotoRealImage(brandName, modelName))
                     .status(VehicleStatus.AVAILABLE)
-                    .approvalStatus(VehicleStatus.APPROVED)
+                    .approvalStatus(ApprovalStatus.APPROVED)
                     .isVerified(true)
                     .isFeatured(idx % 8 == 0)
                     .instantBook(idx % 4 == 0)
@@ -363,7 +363,7 @@ public class SeedingService {
                 .licensePlate("51K-999.99")
                 .thumbnailUrl("/images/cars/caramy_2.5Q.avif")
                 .status(VehicleStatus.AVAILABLE)
-                .approvalStatus(VehicleStatus.APPROVED)
+                .approvalStatus(ApprovalStatus.APPROVED)
                 .isVerified(true)
                 .isFeatured(true)
                 .instantBook(true)
@@ -407,7 +407,7 @@ public class SeedingService {
                 .licensePlate("30K-888.88")
                 .thumbnailUrl("/images/cars/santa-fe2024.jpg")
                 .status(VehicleStatus.AVAILABLE)
-                .approvalStatus(VehicleStatus.APPROVED)
+                .approvalStatus(ApprovalStatus.APPROVED)
                 .isVerified(true)
                 .isFeatured(true)
                 .instantBook(true)
@@ -451,7 +451,7 @@ public class SeedingService {
                 .licensePlate("43A-777.77")
                 .thumbnailUrl("/images/cars/vf8_plus.jpg")
                 .status(VehicleStatus.AVAILABLE)
-                .approvalStatus(VehicleStatus.APPROVED)
+                .approvalStatus(ApprovalStatus.APPROVED)
                 .isVerified(true)
                 .isFeatured(true)
                 .instantBook(true)
@@ -494,7 +494,7 @@ public class SeedingService {
                 .licensePlate("79A-666.66")
                 .thumbnailUrl("/images/cars/2025-Mazda-CX-5_premium.avif")
                 .status(VehicleStatus.AVAILABLE)
-                .approvalStatus(VehicleStatus.APPROVED)
+                .approvalStatus(ApprovalStatus.APPROVED)
                 .isVerified(true)
                 .isFeatured(true)
                 .instantBook(true)
@@ -537,7 +537,7 @@ public class SeedingService {
                 .licensePlate("59-T1 999.99")
                 .thumbnailUrl("/images/motorbikes/Sh350_i.webp")
                 .status(VehicleStatus.AVAILABLE)
-                .approvalStatus(VehicleStatus.APPROVED)
+                .approvalStatus(ApprovalStatus.APPROVED)
                 .isVerified(true)
                 .isFeatured(true)
                 .instantBook(true)
@@ -582,7 +582,7 @@ public class SeedingService {
                 .licensePlate("29-H1 888.88")
                 .thumbnailUrl("/images/motorbikes/exciter_155.jpg")
                 .status(VehicleStatus.AVAILABLE)
-                .approvalStatus(VehicleStatus.APPROVED)
+                .approvalStatus(ApprovalStatus.APPROVED)
                 .isVerified(true)
                 .isFeatured(true)
                 .instantBook(true)
@@ -627,7 +627,7 @@ public class SeedingService {
                 .licensePlate("43-D1 777.77")
                 .thumbnailUrl("/images/motorbikes/winner_x.jpg")
                 .status(VehicleStatus.AVAILABLE)
-                .approvalStatus(VehicleStatus.APPROVED)
+                .approvalStatus(ApprovalStatus.APPROVED)
                 .isVerified(true)
                 .isFeatured(true)
                 .instantBook(true)
@@ -672,7 +672,7 @@ public class SeedingService {
                 .licensePlate("49-MD1 666.66")
                 .thumbnailUrl("/images/motorbikes/kalara_s.jpg")
                 .status(VehicleStatus.AVAILABLE)
-                .approvalStatus(VehicleStatus.APPROVED)
+                .approvalStatus(ApprovalStatus.APPROVED)
                 .isVerified(true)
                 .isFeatured(true)
                 .instantBook(true)
@@ -993,7 +993,7 @@ public class SeedingService {
                 .color("Black")
                 .licensePlate("DEMO-REVIEW-01")
                 .status(VehicleStatus.AVAILABLE)
-                .approvalStatus(VehicleStatus.APPROVED)
+                .approvalStatus(ApprovalStatus.APPROVED)
                 .isVerified(true)
                 .isFeatured(true)
                 .instantBook(true)
@@ -1002,7 +1002,7 @@ public class SeedingService {
                 .totalReviews(1)
                 .build()));
         vehicle.setStatus(VehicleStatus.AVAILABLE);
-        vehicle.setApprovalStatus(VehicleStatus.APPROVED);
+        vehicle.setApprovalStatus(ApprovalStatus.APPROVED);
         vehicle.setIsVerified(true);
         return vehicleRepository.save(vehicle);
     }
@@ -1033,8 +1033,8 @@ public class SeedingService {
                 .fuelType(FuelType.GASOLINE)
                 .color("White")
                 .licensePlate("DEMO-PENDING-01")
-                .status(VehicleStatus.PENDING_APPROVAL)
-                .approvalStatus(VehicleStatus.PENDING_APPROVAL)
+                .status(VehicleStatus.INACTIVE)
+                .approvalStatus(ApprovalStatus.SUBMITTED)
                 .isVerified(false)
                 .instantBook(false)
                 .build()));
