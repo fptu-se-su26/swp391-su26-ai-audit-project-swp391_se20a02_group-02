@@ -145,6 +145,8 @@ public class SecurityConfig {
                     "/api/v1/admin/seed/**",
                     "/payment-settings",
                     "/api/v1/payment-settings",
+                    "/payments/payos/**",
+                    "/api/v1/payments/payos/**",
                     "/error"
                 ).permitAll()
                 // Support ticket endpoints — must be authenticated
