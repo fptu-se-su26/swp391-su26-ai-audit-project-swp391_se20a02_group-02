@@ -1,5 +1,6 @@
 import apiClient from './api';
 import type { Booking, BookingStatus, BookingWizardState } from '@/types';
+import { extractArray } from '@/utils';
 
 // Helper to map backend booking structure to frontend Booking model
 const mapBooking = (b: any): Booking => {
@@ -54,14 +55,14 @@ export const bookingService = {
   async getByUser(userId: string): Promise<Booking[]> {
     try {
       const [carRes, motoRes, genRes] = await Promise.all([
-        apiClient.get<any>('/cars/bookings').catch(() => ({ bookings: [] })),
-        apiClient.get<any>('/motorbikes/bookings').catch(() => ({ bookings: [] })),
-        apiClient.get<any>('/bookings').catch(() => ({ data: { content: [] } }))
+        apiClient.get<any>('/cars/bookings').catch(() => []),
+        apiClient.get<any>('/motorbikes/bookings').catch(() => []),
+        apiClient.get<any>('/bookings').catch(() => [])
       ]);
       
-      const carList = carRes.bookings || carRes.content || [];
-      const motoList = motoRes.bookings || motoRes.content || [];
-      const genList = genRes.bookings || genRes.content || genRes.data?.content || [];
+      const carList = extractArray(carRes);
+      const motoList = extractArray(motoRes);
+      const genList = extractArray(genRes);
       
       const combined = [...carList, ...motoList, ...genList];
       combined.sort((a: any, b: any) => {
@@ -80,14 +81,14 @@ export const bookingService = {
   async getByOwner(ownerId: string): Promise<Booking[]> {
     try {
       const [carRes, motoRes, genRes] = await Promise.all([
-        apiClient.get<any>('/cars/bookings/owner').catch(() => ({ bookings: [] })),
-        apiClient.get<any>('/motorbikes/bookings/owner').catch(() => ({ bookings: [] })),
-        apiClient.get<any>('/bookings/owner').catch(() => ({ data: { content: [] } }))
+        apiClient.get<any>('/cars/bookings/owner').catch(() => []),
+        apiClient.get<any>('/motorbikes/bookings/owner').catch(() => []),
+        apiClient.get<any>('/bookings/owner').catch(() => [])
       ]);
       
-      const carList = Array.isArray(carRes) ? carRes : (carRes.bookings || carRes.content || carRes.data?.content || carRes.data || []);
-      const motoList = Array.isArray(motoRes) ? motoRes : (motoRes.bookings || motoRes.content || motoRes.data?.content || motoRes.data || []);
-      const genList = Array.isArray(genRes) ? genRes : (genRes.bookings || genRes.content || genRes.data?.content || genRes.data || []);
+      const carList = extractArray(carRes);
+      const motoList = extractArray(motoRes);
+      const genList = extractArray(genRes);
       
       const combined = [...carList, ...motoList, ...genList];
       combined.sort((a: any, b: any) => {
@@ -305,7 +306,7 @@ export const bookingService = {
   async getAll(): Promise<Booking[]> {
     try {
       const response = await apiClient.get<any>('/admin/bookings?page=0&size=100');
-      const list = response.data?.content || response.content || [];
+      const list = extractArray(response);
       return list.map(mapBooking);
     } catch (error) {
       return [];

@@ -8,7 +8,7 @@ import {
   ArrowUpRight, ArrowDownRight, Scale, Ban, RefreshCw, Download, FileText, Check, Lock,
   Cpu, HardDrive, Bell, ShieldAlert, Wifi, Terminal, Mail, Send, Share2, FileSpreadsheet, PanelLeftClose, PanelLeftOpen, Building, Wallet
 } from 'lucide-react';
-import { formatCurrency, formatDate, cn, convertCurrency } from '@/utils';
+import { formatCurrency, formatDate, cn, convertCurrency, extractArray } from '@/utils';
 import { staggerContainer, staggerItem, fadeUp } from '@/animations/variants';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -195,15 +195,13 @@ const AdminDashboard: React.FC = () => {
   const fetchUsers = async (role?: string, kycStatus?: string, keyword?: string) => {
     try {
       const res = await adminService.listUsers(
-        role === 'ALL' ? undefined : role,
-        kycStatus === 'ALL' ? undefined : kycStatus,
+        userRoleFilter === 'ALL' ? undefined : userRoleFilter,
+        userKycStatusFilter === 'ALL' ? undefined : userKycStatusFilter,
         keyword || undefined,
         0,
         100
       );
-      if (res && res.content) {
-        setUsers(res.content);
-      }
+      setUsers(extractArray(res));
     } catch (err) {
       console.error('Failed to fetch users:', err);
     }
@@ -213,7 +211,7 @@ const AdminDashboard: React.FC = () => {
     try {
       let usersList: any[] = [];
       if (kycStatus === 'PENDING') {
-        usersList = await adminService.getPendingKyc();
+        usersList = extractArray(await adminService.getPendingKyc());
       } else {
         const res = await adminService.listUsers(
           'customer',
@@ -222,9 +220,7 @@ const AdminDashboard: React.FC = () => {
           0,
           100
         );
-        if (res && res.content) {
-          usersList = res.content;
-        }
+        usersList = extractArray(res);
       }
 
       if (keyword) {
@@ -253,7 +249,7 @@ const AdminDashboard: React.FC = () => {
             0,
             100
           );
-      const content = Array.isArray(res) ? res : (res?.content || []);
+      const content = extractArray(res);
       setVehicles(
         requestedStatus === 'PENDING_APPROVAL'
           ? content.filter(isPendingVehicleApproval)
@@ -262,7 +258,7 @@ const AdminDashboard: React.FC = () => {
       if (requestedStatus === 'PENDING_APPROVAL' && keyword) {
         const pendingRes = await adminService.listPendingVehicles(0, 100);
         const kw = keyword.toLowerCase();
-        const pendingContent = (Array.isArray(pendingRes) ? pendingRes : (pendingRes?.content || []))
+        const pendingContent = extractArray(pendingRes)
           .filter(isPendingVehicleApproval)
           .filter((v: any) =>
             String(v.name || '').toLowerCase().includes(kw) ||
@@ -473,21 +469,21 @@ const AdminDashboard: React.FC = () => {
 
       if (statsRes) setStats(statsRes.data || statsRes);
       if (userList) {
-        const userContent = Array.isArray(userList) ? userList : (userList.content || userList.data?.content || userList.data || []);
+        const userContent = extractArray(userList);
         setUsers(userContent);
-        setKycUsers(userContent.filter((u: any) => String(u.role).toLowerCase() === 'customer'));
+        setKycUsers(userContent.filter((u: any) => String(u.role || '').toLowerCase() === 'customer'));
       }
       if (vehList && activeTabRef.current !== 'vehicles') {
-        const vContent = Array.isArray(vehList) ? vehList : (vehList.content || vehList.data?.content || vehList.data || []);
+        const vContent = extractArray(vehList);
         setVehicles(vContent);
       }
       if (bookList) {
-        const bContent = Array.isArray(bookList) ? bookList : (bookList.content || bookList.data?.content || bookList.data || []);
+        const bContent = extractArray(bookList);
         setBookings(bContent);
       }
-      if (disputeList) setDisputes(disputeList || []);
-      if (payList) setPayments(payList.content || []);
-      if (settingList) setSettings(settingList || []);
+      if (disputeList) setDisputes(extractArray(disputeList));
+      if (payList) setPayments(extractArray(payList));
+      if (settingList) setSettings(extractArray(settingList));
       if (analyticsOverviewRes) setAnalyticsOverview(analyticsOverviewRes);
       if (analyticsHistoryRes) setAnalyticsHistory(analyticsHistoryRes);
       if (paymentSettingsRes && paymentSettingsRes.data) setAdminPaymentSettings(paymentSettingsRes.data);

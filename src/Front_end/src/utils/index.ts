@@ -420,4 +420,20 @@ export function sanitizeLocation(text: string | null | undefined): string {
   return clean;
 }
 
+export function extractArray<T = any>(res: any): T[] {
+  if (!res) return [];
+  if (Array.isArray(res)) return res;
+  if (Array.isArray(res.data)) return res.data;
+  if (Array.isArray(res.vehicles)) return res.vehicles;
+  if (Array.isArray(res.bookings)) return res.bookings;
+  if (Array.isArray(res.content)) return res.content;
+  if (Array.isArray(res.data?.vehicles)) return res.data.vehicles;
+  if (Array.isArray(res.data?.bookings)) return res.data.bookings;
+  if (Array.isArray(res.data?.content)) return res.data.content;
+  if (Array.isArray(res.data?.items)) return res.data.items;
+  if (Array.isArray(res.items)) return res.items;
+  return [];
+}
+
+
 

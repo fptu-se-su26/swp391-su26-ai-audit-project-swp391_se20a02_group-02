@@ -2,7 +2,7 @@ import apiClient from './api';
 import type { Vehicle, VehicleFilters, ApiResponse, VehicleLocationResponse } from '@/types';
 import { carService } from './carService';
 import { motorbikeService } from './motorbikeService';
-import { resolveImageUrl } from '@/utils';
+import { resolveImageUrl, extractArray } from '@/utils';
 
 // Storage key for wishlist fallback since backend may not have a dedicated endpoint yet
 const WISHLIST_KEY = 'luxeway_wishlist';
@@ -440,9 +440,7 @@ export const vehicleService = {
       let response: any;
       try {
         response = await apiClient.get<any>('/owner/vehicles?page=0&size=100');
-        const list = Array.isArray(response) 
-          ? response 
-          : (response.vehicles || response.data?.vehicles || response.content || response.data?.content || response.data || []);
+        const list = extractArray(response);
         if (list && list.length > 0) {
           return list.map(mapVehicle);
         }
@@ -452,9 +450,7 @@ export const vehicleService = {
 
       const target = ownerId || 'me';
       response = await apiClient.get<any>(`/vehicles/owner/${target}?page=0&size=100`);
-      const list = Array.isArray(response) 
-        ? response 
-        : (response.vehicles || response.data?.vehicles || response.content || response.data?.content || response.data || []);
+      const list = extractArray(response);
       return list.map(mapVehicle);
     } catch (error) {
       return [];
