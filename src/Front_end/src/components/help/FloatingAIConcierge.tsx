@@ -441,6 +441,22 @@ export const FloatingAIConcierge: React.FC = () => {
       );
     }
 
+    if (msg.actionCard?.action === 'NAVIGATE_ACTION') {
+      return (
+        <ActionPanel tone="amber">
+          <p className="text-xs leading-5 text-slate-300">{msg.actionCard.message}</p>
+          <button
+            type="button"
+            onClick={() => navigate(msg.actionCard.targetUrl || '/marketplace')}
+            className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-[#D4AF37] px-3 text-xs font-semibold text-[#0B1221] transition duration-200 hover:bg-[#E5C158]"
+          >
+            <Compass className="h-3.5 w-3.5" />
+            {msg.actionCard.buttonLabel || 'View Marketplace'}
+          </button>
+        </ActionPanel>
+      );
+    }
+
     return null;
   };
 
