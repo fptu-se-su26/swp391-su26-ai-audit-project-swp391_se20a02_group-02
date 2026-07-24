@@ -257,61 +257,108 @@ public class AIChatService {
         String msgLower = userMessage.toLowerCase(Locale.ROOT);
 
         if (user == null) {
-            return "VI".equals(lang) ? "Vui lòng đăng nhập để tra cứu thông tin cá nhân và đơn đặt xe của bạn." : "Please log in to query your personal account and booking details.";
+            return "VI".equals(lang) ? "Vui lòng đăng nhập để tra cứu thông tin cá nhân và đơn đặt xe của bạn trên LuxeWay." : "Please log in to query your account details and bookings on LuxeWay.";
         }
 
         UserRole role = user.getRole();
 
+        // 👮 ADMIN ROLE
         if (role == UserRole.ADMIN && adminCtx != null) {
-            if (msgLower.contains("kyc") || msgLower.contains("pending kyc")) {
-                return String.format("📋 Platform Pending KYC Applications: %d pending users. Pending users: %s", adminCtx.getPendingKycCount(), adminCtx.getPendingKycUsers());
+            if (msgLower.contains("kyc") || msgLower.contains("bản đồ kyc") || msgLower.contains("xác thực")) {
+                return String.format("📋 Hệ thống hiện có %d hồ sơ KYC đang chờ duyệt.\nDanh sách: %s",
+                        adminCtx.getPendingKycCount(), adminCtx.getPendingKycUsers() != null ? adminCtx.getPendingKycUsers() : "Không có");
             }
-            if (msgLower.contains("approval") || msgLower.contains("vehicle") || msgLower.contains("pending")) {
-                return String.format("🚗 Pending Vehicle Approvals: %d vehicles waiting for review.", adminCtx.getPendingVehicleApprovalsCount());
+            if (msgLower.contains("xe chờ") || msgLower.contains("duyệt xe") || msgLower.contains("vehicle") || msgLower.contains("pending vehicle")) {
+                return String.format("🚗 Hệ thống hiện có %d xe đang chờ Admin phê duyệt.\nChi tiết xe chờ duyệt: %s",
+                        adminCtx.getPendingVehicleApprovalsCount(), adminCtx.getPendingVehicleApprovals() != null ? adminCtx.getPendingVehicleApprovals() : "Không có");
             }
-            return String.format("📊 LuxeWay Admin Real-time Metrics:\n- Total Users: %d\n- Total Vehicles: %d\n- Total Bookings: %d\n- Pending KYC: %d\n- Pending Vehicle Approvals: %d\n- Unresolved Disputes: %d",
-                    adminCtx.getTotalUsers(), adminCtx.getTotalVehicles(), adminCtx.getTotalBookings(), adminCtx.getPendingKycCount(), adminCtx.getPendingVehicleApprovalsCount(), adminCtx.getUnresolvedDisputesCount());
+            if (msgLower.contains("owner") || msgLower.contains("chủ xe") || msgLower.contains("đơn đăng ký chủ xe")) {
+                return String.format("📝 Hệ thống hiện có %d đơn đăng ký làm Chủ xe (Owner Application) đang chờ duyệt.\nDanh sách: %s",
+                        adminCtx.getPendingOwnerAppsCount(), adminCtx.getPendingOwnerApplications() != null ? adminCtx.getPendingOwnerApplications() : "Không có");
+            }
+            if (msgLower.contains("hôm nay") || msgLower.contains("today")) {
+                return String.format("📅 Hôm nay có %d booking mới được tạo trên hệ thống.", adminCtx.getTodayBookingsCount());
+            }
+            return String.format("📊 Thống kê tổng quan hệ thống LuxeWay:\n- Tổng số người dùng: %d\n- Tổng số phương tiện: %d\n- Tổng số booking: %d (Hôm nay: %d)\n- KYC đang chờ: %d\n- Đơn đăng ký Owner đang chờ: %d\n- Xe đang chờ duyệt: %d\n- Tranh chấp chưa giải quyết: %d",
+                    adminCtx.getTotalUsers(), adminCtx.getTotalVehicles(), adminCtx.getTotalBookings(), adminCtx.getTodayBookingsCount(),
+                    adminCtx.getPendingKycCount(), adminCtx.getPendingOwnerAppsCount(), adminCtx.getPendingVehicleApprovalsCount(), adminCtx.getUnresolvedDisputesCount());
         }
 
+        // 🚗 OWNER ROLE
         if (role == UserRole.OWNER && ownerCtx != null) {
-            if (msgLower.contains("revenue") || msgLower.contains("earning") || msgLower.contains("doanh thu")) {
-                return String.format("💰 Total Revenue Earned: %,.0f VND from %d total bookings.", ownerCtx.getTotalRevenue(), ownerCtx.getTotalBookings());
-            }
-            if (msgLower.contains("vehicle") || msgLower.contains("fleet") || msgLower.contains("xe")) {
-                return String.format("🚘 Fleet Overview:\n- Total Vehicles: %d\n- Available for Rent: %d\n- Pending Approval: %d\n- Average Rating: %.1f/5 (%d reviews)",
-                        ownerCtx.getTotalVehicles(), ownerCtx.getAvailableVehicles(), ownerCtx.getPendingApprovalVehicles(), ownerCtx.getRating(), ownerCtx.getTotalReviews());
-            }
-            if (msgLower.contains("booking") || msgLower.contains("request") || msgLower.contains("đơn")) {
-                return String.format("📋 Booking Overview: %d total bookings received, %d pending customer approval requests.", ownerCtx.getTotalBookings(), ownerCtx.getPendingRequestsCount());
-            }
-            return String.format("👋 Welcome Host %s!\n- Fleet Size: %d vehicles (%d active)\n- Total Revenue: %,.0f VND\n- Rating: %.1f/5 ⭐",
-                    ownerCtx.getDisplayName(), ownerCtx.getTotalVehicles(), ownerCtx.getAvailableVehicles(), ownerCtx.getTotalRevenue(), ownerCtx.getRating());
-        }
-
-        // Customer Role
-        if (customerCtx != null) {
-            if (msgLower.contains("booking") || msgLower.contains("latest") || msgLower.contains("chuyến")) {
-                if (customerCtx.getRecentBookings() != null && !customerCtx.getRecentBookings().isEmpty()) {
-                    BookingSummaryDTO b = customerCtx.getRecentBookings().get(0);
-                    return String.format("🚗 Your Latest Booking:\n- Booking Code: %s\n- Vehicle: %s\n- Dates: %s to %s\n- Status: %s\n- Total: %,.0f VND",
-                            b.getBookingCode(), b.getVehicleName(), b.getStartDate(), b.getEndDate(), b.getStatus(), b.getTotal());
+            if (msgLower.contains("duyệt") || msgLower.contains("từ chối") || msgLower.contains("hiển thị") || msgLower.contains("lý do")) {
+                if (ownerCtx.getVehicles() != null && !ownerCtx.getVehicles().isEmpty()) {
+                    StringBuilder sb = new StringBuilder("🚗 Trạng thái duyệt danh sách xe của bạn:\n");
+                    for (VehicleSummaryDTO v : ownerCtx.getVehicles()) {
+                        sb.append(String.format("- %s (%s): Trạng thái duyệt = %s, Trạng thái xe = %s",
+                                v.getName(), v.getLicensePlate() != null ? v.getLicensePlate() : "Chưa có biển số", v.getApprovalStatus(), v.getStatus()));
+                        if ("REJECTED".equalsIgnoreCase(v.getApprovalStatus()) && v.getRejectionReason() != null) {
+                            sb.append(String.format(" (Lý do từ chối: %s)", v.getRejectionReason()));
+                        }
+                        sb.append("\n");
+                    }
+                    return sb.toString();
                 } else {
-                    return "I couldn't find any matching booking data in the LuxeWay system.";
+                    return "Bạn chưa có xe nào đăng ký trên hệ thống LuxeWay.";
                 }
             }
-            if (msgLower.contains("kyc") || msgLower.contains("identity") || msgLower.contains("license")) {
-                return String.format("🪪 KYC & License Status:\n- KYC Status: %s (Verified: %b)\n- License Status: %s",
-                        customerCtx.getKycStatus(), customerCtx.isKycVerified(), customerCtx.getLicenseStatus());
+            if (msgLower.contains("doanh thu") || msgLower.contains("revenue") || msgLower.contains("thu nhập")) {
+                return String.format("💰 Tổng doanh thu từ các chuyến xe hoàn tất của bạn là: %,.0f VND (từ tổng số %d đơn đặt xe).",
+                        ownerCtx.getTotalRevenue(), ownerCtx.getTotalBookings());
             }
-            if (msgLower.contains("spent") || msgLower.contains("payment") || msgLower.contains("tiền")) {
-                return String.format("💳 Account Spending Overview:\n- Total Spent: %,.0f VND\n- Wallet Balance: %,.0f VND\n- Active Bookings: %d",
-                        customerCtx.getTotalSpent(), customerCtx.getWalletBalance(), customerCtx.getActiveBookingsCount());
+            if (msgLower.contains("booking") || msgLower.contains("đặt xe") || msgLower.contains("chuyến")) {
+                if (ownerCtx.getPendingRequests() != null && !ownerCtx.getPendingRequests().isEmpty()) {
+                    return String.format("📋 Xe của bạn đang nhận %d yêu cầu đặt xe đang chờ xử lý:\nDanh sách: %s",
+                            ownerCtx.getPendingRequestsCount(), ownerCtx.getPendingRequests());
+                } else {
+                    return String.format("📋 Tổng số booking đã nhận: %d (Hiện tại không có yêu cầu nào đang chờ duyệt).", ownerCtx.getTotalBookings());
+                }
             }
-            return String.format("👋 Hello %s!\n- Active Rentals: %d\n- KYC Status: %s\n- Total Spent: %,.0f VND",
+            return String.format("👋 Xin chào Chủ xe %s!\n- Tổng số xe: %d (%d xe đang hoạt động, %d xe chờ duyệt)\n- Tổng doanh thu: %,.0f VND\n- Đánh giá trung bình: %.1f/5 ⭐ (%d lượt đánh giá)",
+                    ownerCtx.getDisplayName(), ownerCtx.getTotalVehicles(), ownerCtx.getAvailableVehicles(), ownerCtx.getPendingApprovalVehicles(), ownerCtx.getTotalRevenue(), ownerCtx.getRating(), ownerCtx.getTotalReviews());
+        }
+
+        // 🧑 CUSTOMER ROLE
+        if (customerCtx != null) {
+            if (msgLower.contains("thanh toán") || msgLower.contains("payment") || msgLower.contains("tiền")) {
+                if (customerCtx.getRecentBookings() != null && !customerCtx.getRecentBookings().isEmpty()) {
+                    BookingSummaryDTO b = customerCtx.getRecentBookings().get(0);
+                    return String.format("💳 Thông tin thanh toán chuyến xe gần nhất của bạn:\n- Mã chuyến: %s\n- Xe: %s\n- Trạng thái chuyến: %s\n- Tổng tiền: %,.0f VND\n- Số dư ví hiện tại: %,.0f VND",
+                            b.getBookingCode(), b.getVehicleName(), b.getStatus(), b.getTotal(), customerCtx.getWalletBalance());
+                } else {
+                    return String.format("💳 Bạn chưa có giao dịch đặt xe nào. Số dư ví hiện tại: %,.0f VND.", customerCtx.getWalletBalance());
+                }
+            }
+            if (msgLower.contains("booking") || msgLower.contains("chuyến") || msgLower.contains("đơn đặt")) {
+                if (customerCtx.getRecentBookings() != null && !customerCtx.getRecentBookings().isEmpty()) {
+                    BookingSummaryDTO b = customerCtx.getRecentBookings().get(0);
+                    return String.format("🚗 Thông tin đơn đặt xe gần nhất:\n- Mã booking: %s\n- Tên xe: %s\n- Ngày: %s đến %s\n- Trạng thái: %s\n- Giá tiền: %,.0f VND",
+                            b.getBookingCode(), b.getVehicleName(), b.getStartDate(), b.getEndDate(), b.getStatus(), b.getTotal());
+                } else {
+                    return "Bạn chưa có lịch sử đặt xe nào trên hệ thống LuxeWay.";
+                }
+            }
+            if (msgLower.contains("tìm xe") || msgLower.contains("giá xe") || msgLower.contains("thuê xe") || msgLower.contains("danh sách xe")) {
+                if (customerCtx.getAvailableVehiclesForRent() != null && !customerCtx.getAvailableVehiclesForRent().isEmpty()) {
+                    StringBuilder sb = new StringBuilder("🚗 Danh sách các xe đang sẵn sàng cho thuê trên LuxeWay:\n");
+                    for (VehicleSummaryDTO v : customerCtx.getAvailableVehiclesForRent()) {
+                        sb.append(String.format("- %s (%s %s) tại %s: %,.0f VND/ngày\n",
+                                v.getName(), v.getBrand(), v.getModel(), v.getCity() != null ? v.getCity() : "TP.HCM", v.getPricePerDay()));
+                    }
+                    return sb.toString();
+                } else {
+                    return "Hiện tại hệ thống chưa có xe nào khả dụng cho thuê.";
+                }
+            }
+            if (msgLower.contains("kyc") || msgLower.contains("giao diện") || msgLower.contains("bằng lái") || msgLower.contains("tài khoản")) {
+                return String.format("🪪 Trạng thái tài khoản & KYC của bạn:\n- Trạng thái KYC: %s (Đã xác minh: %b)\n- Bằng lái xe: %s\n- Tổng số chuyến đã đặt: %d",
+                        customerCtx.getKycStatus(), customerCtx.isKycVerified(), customerCtx.getLicenseStatus(), customerCtx.getTotalBookings());
+            }
+            return String.format("👋 Xin chào Khách hàng %s!\n- Số chuyến đang thuê: %d\n- Trạng thái KYC: %s\n- Tổng chi tiêu: %,.0f VND",
                     customerCtx.getDisplayName(), customerCtx.getActiveBookingsCount(), customerCtx.getKycStatus(), customerCtx.getTotalSpent());
         }
 
-        return "I couldn't find any matching data in the LuxeWay system.";
+        return "Tôi không tìm thấy thông tin phù hợp trong hệ thống LuxeWay.";
     }
 
     private Map<String, Object> constructGeminiPayload(String systemPrompt, List<AIChatMessage> chatHistory, String userMessage) {

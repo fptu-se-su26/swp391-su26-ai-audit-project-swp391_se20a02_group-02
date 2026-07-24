@@ -57,6 +57,10 @@ public class AIContextBuilderService {
                 .filter(Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        // Available vehicles for rent (browsing / price checking for Customer)
+        List<Vehicle> availableVehicles = vehicleRepository.findByStatusAndApprovalStatus(
+                VehicleStatus.AVAILABLE, ApprovalStatus.APPROVED, PageRequest.of(0, 10)).getContent();
+
         return CustomerContextDTO.builder()
                 .userId(userId)
                 .displayName(user.getDisplayName() != null ? user.getDisplayName() : user.getEmail())
@@ -72,6 +76,7 @@ public class AIContextBuilderService {
                 .recentBookings(recentBookings.stream().map(this::mapToBookingSummary).collect(Collectors.toList()))
                 .activeBookings(activeBookings.stream().map(this::mapToBookingSummary).collect(Collectors.toList()))
                 .recentPayments(payments.stream().map(this::mapToPaymentSummary).collect(Collectors.toList()))
+                .availableVehiclesForRent(availableVehicles.stream().map(this::mapToVehicleSummary).collect(Collectors.toList()))
                 .unreadNotificationsCount((int) notifications.stream().filter(n -> !Boolean.TRUE.equals(n.getIsRead())).count())
                 .documentCount(documents.size())
                 .build();
@@ -138,8 +143,15 @@ public class AIContextBuilderService {
         long totalBookingsCount = bookingRepository.count();
         long totalDisputesCount = disputeRepository != null ? disputeRepository.count() : 0;
 
+        // Today's bookings count
+        java.time.LocalDateTime startOfToday = java.time.LocalDate.now().atStartOfDay();
+        long todayBookingsCount = bookingRepository.findAll().stream()
+                .filter(b -> b.getCreatedAt() != null && b.getCreatedAt().isAfter(startOfToday))
+                .count();
+
         List<Vehicle> pendingVehicles = vehicleRepository.findByApprovalStatus(ApprovalStatus.SUBMITTED);
         List<User> pendingKycUsers = userRepository.findByKycStatus("PENDING_APPROVAL");
+        List<OwnerApplication> pendingApps = ownerApplicationRepository.findByStatus(OwnerApplicationStatus.SUBMITTED);
 
         return AdminContextDTO.builder()
                 .adminId(user.getId())
@@ -147,12 +159,14 @@ public class AIContextBuilderService {
                 .totalUsers(totalUsersCount)
                 .totalVehicles(totalVehiclesCount)
                 .totalBookings(totalBookingsCount)
+                .todayBookingsCount(todayBookingsCount)
                 .pendingKycCount(pendingKycCount)
                 .pendingOwnerAppsCount(pendingOwnerAppsCount)
                 .pendingVehicleApprovalsCount(pendingVehicleApprovalsCount)
                 .unresolvedDisputesCount(totalDisputesCount)
-                .pendingVehicleApprovals(pendingVehicles.stream().limit(5).map(this::mapToVehicleSummary).collect(Collectors.toList()))
-                .pendingKycUsers(pendingKycUsers.stream().limit(5).map(u -> u.getEmail() + " (" + u.getDisplayName() + ")").collect(Collectors.toList()))
+                .pendingVehicleApprovals(pendingVehicles.stream().limit(10).map(this::mapToVehicleSummary).collect(Collectors.toList()))
+                .pendingKycUsers(pendingKycUsers.stream().limit(10).map(u -> u.getEmail() + " (" + u.getDisplayName() + ")").collect(Collectors.toList()))
+                .pendingOwnerApplications(pendingApps.stream().limit(10).map(a -> "App #" + a.getId() + " by " + (a.getUser() != null ? a.getUser().getEmail() : "User")).collect(Collectors.toList()))
                 .build();
     }
 
@@ -181,6 +195,7 @@ public class AIContextBuilderService {
                 .vehicleType(v.getVehicleType() != null ? v.getVehicleType().name() : "CAR")
                 .status(v.getStatus() != null ? v.getStatus().name() : "AVAILABLE")
                 .approvalStatus(v.getApprovalStatus() != null ? v.getApprovalStatus().name() : "APPROVED")
+                .rejectionReason(v.getRejectionReason())
                 .pricePerDay(v.getPricePerDay())
                 .licensePlate(v.getLicensePlate())
                 .city(v.getCity())

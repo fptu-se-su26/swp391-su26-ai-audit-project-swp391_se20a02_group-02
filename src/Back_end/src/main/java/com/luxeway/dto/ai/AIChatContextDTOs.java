@@ -38,6 +38,7 @@ public class AIChatContextDTOs {
         private String vehicleType;
         private String status;
         private String approvalStatus;
+        private String rejectionReason;
         private BigDecimal pricePerDay;
         private String licensePlate;
         private String city;
@@ -87,6 +88,7 @@ public class AIChatContextDTOs {
         private List<BookingSummaryDTO> recentBookings;
         private List<BookingSummaryDTO> activeBookings;
         private List<PaymentSummaryDTO> recentPayments;
+        private List<VehicleSummaryDTO> availableVehiclesForRent;
         private int unreadNotificationsCount;
         private int documentCount;
     }
@@ -125,11 +127,13 @@ public class AIChatContextDTOs {
         private long totalUsers;
         private long totalVehicles;
         private long totalBookings;
+        private long todayBookingsCount;
         private long pendingKycCount;
         private long pendingOwnerAppsCount;
         private long pendingVehicleApprovalsCount;
         private long unresolvedDisputesCount;
         private List<VehicleSummaryDTO> pendingVehicleApprovals;
         private List<String> pendingKycUsers;
+        private List<String> pendingOwnerApplications;
     }
 }

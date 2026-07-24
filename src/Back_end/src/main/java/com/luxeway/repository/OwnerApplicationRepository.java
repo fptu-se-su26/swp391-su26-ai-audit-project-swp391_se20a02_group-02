@@ -21,6 +21,8 @@ public interface OwnerApplicationRepository extends JpaRepository<OwnerApplicati
 
     long countByStatus(OwnerApplicationStatus status);
 
+    List<OwnerApplication> findByStatus(OwnerApplicationStatus status);
+
     @Query("SELECT o FROM OwnerApplication o WHERE " +
            "(:status IS NULL OR o.status = :status) " +
            "ORDER BY o.createdAt DESC")
