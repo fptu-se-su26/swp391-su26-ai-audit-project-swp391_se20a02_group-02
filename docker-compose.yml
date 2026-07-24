@@ -122,11 +122,11 @@ services:
       sqlserver-init:
         condition: service_completed_successfully
     healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://localhost:8080/swagger-ui/index.html || exit 1"]
+      test: ["CMD-SHELL", "nc -z localhost 8080 || exit 1"]
       interval: 5s
       timeout: 3s
       retries: 36
-      start_period: 30s
+      start_period: 15s
     networks:
       - luxeway-network
 
