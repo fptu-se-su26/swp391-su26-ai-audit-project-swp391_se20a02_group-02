@@ -115,8 +115,9 @@ public class AIChatService {
         // 5. Look for Direct Action Triggers
         Map<String, Object> actionCard = checkForDirectActions(userMessage, contextBooking, user);
 
-        // 6. Build Prompt & History
-        String systemPrompt = promptBuilderService.buildSystemPrompt(user, recentBookings, contextBooking, contextVehicle, currentPage);
+        // 6. Build Prompt & History with Real DB Available Fleet Snapshot
+        List<Vehicle> realDbVehicles = vehicleRepository.findByStatus(com.luxeway.enums.VehicleStatus.AVAILABLE);
+        String systemPrompt = promptBuilderService.buildSystemPrompt(user, recentBookings, contextBooking, contextVehicle, currentPage, realDbVehicles);
         List<AIChatMessage> chatHistory = messageRepository.findBySessionIdOrderByCreatedAtAsc(sessionId);
 
         String aiResponse = "";
@@ -135,9 +136,9 @@ public class AIChatService {
                 rawResponse = "{\"actionCard\": " + actionCard.toString() + "}";
             }
         } else if (!hasConfiguredGeminiKey()) {
-            // Fallback to intelligent mock responses when API key is missing or placeholder
-            aiResponse = generateMockResponse(userMessage, user, recentBookings, contextBooking, contextVehicle, currentPage);
-            rawResponse = "{\"mock\": true, \"reason\": \"API key is not configured or is still a placeholder\"}";
+            // Fallback to Real DB Dynamic Engine when Gemini key is missing or placeholder
+            aiResponse = generateRealDBResponse(userMessage, user, recentBookings, contextBooking, contextVehicle, currentPage);
+            rawResponse = "{\"real_db_engine\": true, \"reason\": \"API key is placeholder, used Real SQL Server DB engine\"}";
         } else {
             try {
                 String url = String.format("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s", modelName, apiKey);
@@ -154,13 +155,13 @@ public class AIChatService {
                     rawResponse = response.getBody().toString();
                     aiResponse = extractTextFromGeminiResponse(response.getBody());
                 } else {
-                    aiResponse = generateMockResponse(userMessage, user, recentBookings, contextBooking, contextVehicle, currentPage);
+                    aiResponse = generateRealDBResponse(userMessage, user, recentBookings, contextBooking, contextVehicle, currentPage);
                     rawResponse = "Error status: " + response.getStatusCode();
                 }
             } catch (Exception e) {
                 log.error("Exception calling Gemini API: {}", e.getMessage(), e);
-                // Fallback to intelligent response so user is never blocked by API errors
-                aiResponse = generateMockResponse(userMessage, user, recentBookings, contextBooking, contextVehicle, currentPage);
+                // Fallback to Real DB Dynamic Engine so user gets real database answers
+                aiResponse = generateRealDBResponse(userMessage, user, recentBookings, contextBooking, contextVehicle, currentPage);
                 rawResponse = "Exception: " + e.getMessage();
             }
         }
@@ -644,71 +645,130 @@ public class AIChatService {
         return "I apologize, I was unable to compile the response from our core intelligence systems. Please try again.";
     }
 
-    private String generateMockResponse(String userMessage, User user, List<Booking> recentBookings, Booking contextBooking, Vehicle contextVehicle, String currentPage) {
-        String userName = "Guest";
+    private String generateRealDBResponse(String userMessage, User user, List<Booking> recentBookings, Booking contextBooking, Vehicle contextVehicle, String currentPage) {
+        String userName = "Quý khách";
         if (user != null) {
             userName = user.getDisplayName() != null ? user.getDisplayName() : (user.getFirstName() + " " + user.getLastName());
         }
 
-        String msgLower = userMessage.toLowerCase();
+        String lang = detectLanguage(userMessage);
+        String msgLower = userMessage.toLowerCase(Locale.ROOT);
 
-        // 1. Separation Ecosystem Routing Responses
-        boolean isMotorbikePath = currentPage != null && currentPage.contains("motorbike");
+        // Fetch real available vehicles directly from SQL Server DB
+        List<Vehicle> realVehicles = vehicleRepository.findByStatus(com.luxeway.enums.VehicleStatus.AVAILABLE);
 
-        if (msgLower.contains("recommend") || msgLower.contains("suggest") || msgLower.contains("compare")) {
-            if (isMotorbikePath) {
-                return String.format("Hello %s. Based on your current session looking at motorbikes, I highly recommend exploring our top-tier **[Premium Motorbikes Marketplace](/motorbikes)**.\n\n" +
-                        "We offer absolute legends like the BMW R1250 GS and Ducati Panigale V4. If you have a specific engine capacity preference (e.g. 1000cc+), tell me so I can locate it for you.", userName);
-            } else {
-                return String.format("Hello %s. Since you are currently on our luxury car segment, I recommend browsing the **[Premium Car Fleet](/cars)**.\n\n" +
-                        "Our highlights include the Mercedes-Benz S-Class, BMW X7, and Porsche 911 Carrera. Shall I help compare specifications or assist with initiating a booking?", userName);
+        // 1. Vehicle Search & Recommendations with Real DB Entities
+        if (msgLower.contains("tư vấn") || msgLower.contains("gợi ý") || msgLower.contains("recommend") || msgLower.contains("thuê xe") || msgLower.contains("loại xe") || msgLower.contains("xe gì")) {
+            if (!realVehicles.isEmpty()) {
+                StringBuilder sb = new StringBuilder();
+                if ("VN".equals(lang)) {
+                    sb.append(String.format("Xin chào **%s**! Dưới đây là các xe thật đang khả dụng 100%% trong Cơ sở dữ liệu LuxeWay phù hợp nhất với bạn:\n\n", userName));
+                    for (int i = 0; i < Math.min(4, realVehicles.size()); i++) {
+                        Vehicle v = realVehicles.get(i);
+                        sb.append(String.format("• 🚗 **%s %s** (%s) — Giá niêm yết thật: **%,.0f VNĐ/ngày** (Đánh giá: ⭐ %s) tại **%s**\n",
+                                v.getBrand() != null ? v.getBrand() : "",
+                                v.getName(),
+                                v.getCategory() != null ? v.getCategory() : "LuxeWay",
+                                v.getPricePerDay() != null ? v.getPricePerDay() : BigDecimal.ZERO,
+                                v.getRating() != null ? String.format("%.1f", v.getRating()) : "5.0",
+                                v.getCity() != null ? v.getCity() : "Việt Nam"));
+                    }
+                    sb.append("\nBạn có thể bấm trực tiếp vào thẻ xe hoặc truy cập **[Thị trường LuxeWay](/marketplace)** để đặt ngay.");
+                } else {
+                    sb.append(String.format("Hello **%s**! Here are live available vehicles retrieved directly from LuxeWay SQL Server database:\n\n", userName));
+                    for (int i = 0; i < Math.min(4, realVehicles.size()); i++) {
+                        Vehicle v = realVehicles.get(i);
+                        sb.append(String.format("• 🚗 **%s %s** (%s) — Real Price: **$%,.2f/day** (Rating: ⭐ %s) in **%s**\n",
+                                v.getBrand() != null ? v.getBrand() : "",
+                                v.getName(),
+                                v.getCategory() != null ? v.getCategory() : "Vehicle",
+                                v.getPricePerDay() != null ? v.getPricePerDay() : BigDecimal.ZERO,
+                                v.getRating() != null ? String.format("%.1f", v.getRating()) : "5.0",
+                                v.getCity() != null ? v.getCity() : "Vietnam"));
+                    }
+                    sb.append("\nBrowse all listings at the **[LuxeWay Marketplace](/marketplace)**.");
+                }
+                return sb.toString();
             }
         }
 
-        // 2. Cancellation and Self-Service Responses
-        if (msgLower.contains("cancel") || msgLower.contains("refund") || msgLower.contains("dispute")) {
-            if (contextBooking != null) {
-                return String.format("Hello %s. I have resolved your active booking reference **%s** for the **%s**.\n\n" +
-                        "To initiate a cancellation or request a refund, please say **'Please confirm cancel'** or use the interactive options in the **[Self-Service Hub](/help)**. Rentals cancelled at least 24 hours prior to the trip start are eligible for a 100%% refund.",
-                        userName, contextBooking.getId().substring(0,8).toUpperCase(), contextBooking.getVehicle().getName());
+        // 2. Customer Booking Status Query
+        if (msgLower.contains("booking") || msgLower.contains("chuyến") || msgLower.contains("đơn hàng") || msgLower.contains("trạng thái")) {
+            if (user != null) {
+                List<Booking> userBookings = bookingRepository.findByRenterIdOrderByCreatedAtDesc(user.getId(), PageRequest.of(0, 3)).getContent();
+                if (!userBookings.isEmpty()) {
+                    Booking b = userBookings.get(0);
+                    if ("VN".equals(lang)) {
+                        return String.format("Xin chào **%s**, thông tin booking gần nhất của bạn được tra cứu trực tiếp từ DB LuxeWay:\n\n" +
+                                "• Mã Booking: **#LX%s**\n" +
+                                "• Tên xe: **%s**\n" +
+                                "• Trạng thái: **%s**\n" +
+                                "• Thời gian thuê: **%s** đến **%s**\n" +
+                                "• Tổng chi phí: **%,.0f VNĐ**\n\n" +
+                                "Xem lịch trình chi tiết tại **[Trang Đơn Hàng Cá Nhân](/dashboard/bookings)**.",
+                                userName,
+                                b.getId().substring(0, Math.min(8, b.getId().length())).toUpperCase(),
+                                b.getVehicle() != null ? b.getVehicle().getName() : "Xe LuxeWay",
+                                b.getStatus(),
+                                b.getStartDate() != null ? b.getStartDate().toString() : "N/A",
+                                b.getEndDate() != null ? b.getEndDate().toString() : "N/A",
+                                b.getTotal() != null ? b.getTotal() : BigDecimal.ZERO);
+                    } else {
+                        return String.format("Hello **%s**, here is your latest verified booking record retrieved from DB:\n\n" +
+                                "• Booking Ref: **#LX%s**\n" +
+                                "• Vehicle: **%s**\n" +
+                                "• Status: **%s**\n" +
+                                "• Rental Period: **%s** to **%s**\n" +
+                                "• Total Paid: **$%,.2f**\n\n" +
+                                "Inspect full itinerary details in your **[Customer Dashboard](/dashboard/bookings)**.",
+                                userName,
+                                b.getId().substring(0, Math.min(8, b.getId().length())).toUpperCase(),
+                                b.getVehicle() != null ? b.getVehicle().getName() : "Vehicle",
+                                b.getStatus(),
+                                b.getStartDate() != null ? b.getStartDate().toString() : "N/A",
+                                b.getEndDate() != null ? b.getEndDate().toString() : "N/A",
+                                b.getTotal() != null ? b.getTotal() : BigDecimal.ZERO);
+                    }
+                }
             }
-            return String.format("Hello %s. To cancel, dispute, or check refund policies for any vehicle rental, please navigate to the **[LuxeWay Self-Service Center](/help)**.", userName);
         }
 
-        // 3. Emergency Incident Dispatch
-        if (msgLower.contains("emergency") || msgLower.contains("accident") || msgLower.contains("breakdown") || msgLower.contains("lost key")) {
-            return String.format("🚨 **LUXEWAY PRIORITY ROAD_RESPONSE ACTIVATED** 🚨\n\n" +
-                    "Dear %s, if there are injuries, please dial **113/115** immediately.\n\n" +
-                    "For roadside support or collision reports, submit a **[Priority Emergency Dispatch Ticket](/help/emergency)** immediately. Our system automatically captures your GPS coordinates and dispatches local partners directly to your coordinates.", userName);
-        }
-
-        // 4. Host/Owner Inquiries
-        if (msgLower.contains("owner") || msgLower.contains("host") || msgLower.contains("list my") || msgLower.contains("commission") || msgLower.contains("payout")) {
-            return String.format("Hello %s. Welcome to Host Relations. LuxeWay offers a standard **15%% platform commission rate** with a robust package of hosting assets:\n\n" +
-                    "- **Stripe Connect:** Configure payouts to your bank account.\n" +
-                    "- **LuxePartnership Allianz Policy:** Up to $1M coverage for vehicles.\n" +
-                    "- **Automatic Billing:** Tax invoices generated monthly.\n\n" +
-                    "Configure all settings at the **[Owner Success Hub](/help/owner-success)**.", userName);
-        }
-
-        // 5. Delivery Tracking
-        if (msgLower.contains("delivery") || msgLower.contains("track") || msgLower.contains("where is")) {
-            if (contextBooking != null) {
-                return String.format("Hello %s. I resolved booking **%s**.\n\n" +
-                        "You can check real-time GPS coordinates of your vehicle delivery on the **[Goong Live Tracker](/help?tab=delivery)**. Alternatively, you can type **'invoice'** to check payment data.",
-                        userName, contextBooking.getId().substring(0,8).toUpperCase());
+        // 3. Owner & Host Fleet / Earnings Inquiry
+        if (msgLower.contains("owner") || msgLower.contains("host") || msgLower.contains("xe của tôi") || msgLower.contains("doanh thu")) {
+            if (user != null) {
+                List<Vehicle> ownerVehicles = vehicleRepository.findByOwnerId(user.getId());
+                BigDecimal totalRevenue = bookingRepository.sumRevenueByOwnerId(user.getId());
+                if ("VN".equals(lang)) {
+                    return String.format("Xin chào **%s**, báo cáo thực tế từ DB LuxeWay cho tài khoản Chủ xe của bạn:\n\n" +
+                            "• Số xe đã đăng ký: **%d xe**\n" +
+                            "• Tổng thu nhập tích lũy: **%,.0f VNĐ**\n\n" +
+                            "Quản lý fleet của bạn tại **[Host Portal](/owner)**.",
+                            userName, ownerVehicles.size(), totalRevenue != null ? totalRevenue : BigDecimal.ZERO);
+                } else {
+                    return String.format("Hello **%s**, live database stats for your host profile:\n\n" +
+                            "• Registered Fleet Size: **%d vehicles**\n" +
+                            "• Cumulative Earned Revenue: **$%,.2f**\n\n" +
+                            "Access full fleet operations in the **[Host Portal](/owner)**.",
+                            userName, ownerVehicles.size(), totalRevenue != null ? totalRevenue : BigDecimal.ZERO);
+                }
             }
-            return String.format("Hello %s. To track vehicle deliveries, please go to the **[Live Map Tracker](/help?tab=delivery)**.", userName);
         }
 
-        // 6. Generic Luxury Greeting
-        return String.format("Greetings %s. Welcome to LuxeWay's VIP AI Concierge.\n\n" +
-                "I am fully integrated with your session to assist with:\n" +
-                "- 🗺️ **[Live Vehicle Delivery Mapping](/help?tab=delivery)**\n" +
-                "- 💸 **[Self-Service Cancellation & Disputes](/help)**\n" +
-                "- 🚨 **[Priority Roadside Emergency Support](/help/emergency)**\n" +
-                "- 📈 **[Host & Owner Success Suite](/help/owner-success)**\n" +
-                "- 🟢 **[LuxeWay Platform Service Status](/help/status)**\n\n" +
-                "How may I serve you today?", userName);
+        // 4. Default Live DB Assistance Summary
+        if ("VN".equals(lang)) {
+            return String.format("Xin chào **%s**! Tôi là Trợ lý AI LuxeWay kết nối trực tiếp với Cơ sở dữ liệu thực tế.\n\n" +
+                    "Hệ thống hiện có **%d xe thật đang hoạt động** tại Hồ Chí Minh, Hà Nội, Đà Nẵng, Nha Trang, Đà Lạt...\n\n" +
+                    "Tôi có thể hỗ trợ bạn:\n" +
+                    "1. 🔍 **Tìm xe & đề xuất xe thật theo DB**\n" +
+                    "2. 📦 **Tra cứu đơn hàng / booking của bạn**\n" +
+                    "3. 🚨 **Gửi yêu cầu cứu hộ khẩn cấp** hoặc hoàn tiền\n" +
+                    "4. 📊 **Tra cứu xe & thu nhập của Chủ xe**",
+                    userName, realVehicles.size());
+        } else {
+            return String.format("Greetings **%s**! I am LuxeWay's VIP AI Concierge connected directly to live SQL Server database.\n\n" +
+                    "We currently have **%d real active vehicles** listed across Ho Chi Minh, Da Nang, Ha Noi, Nha Trang, Da Lat...\n\n" +
+                    "How may I assist you with your LuxeWay experience today?",
+                    userName, realVehicles.size());
+        }
     }
 }

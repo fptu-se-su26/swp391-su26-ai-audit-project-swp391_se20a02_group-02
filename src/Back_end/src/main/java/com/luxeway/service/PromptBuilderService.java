@@ -15,6 +15,10 @@ import java.util.List;
 public class PromptBuilderService {
 
     public String buildSystemPrompt(User user, List<Booking> recentBookings, Booking contextBooking, Vehicle contextVehicle, String currentPage) {
+        return buildSystemPrompt(user, recentBookings, contextBooking, contextVehicle, currentPage, null);
+    }
+
+    public String buildSystemPrompt(User user, List<Booking> recentBookings, Booking contextBooking, Vehicle contextVehicle, String currentPage, List<Vehicle> realDbVehicles) {
         StringBuilder sb = new StringBuilder();
         
         // 1. Luxury Persona & Tone Guidance
@@ -55,9 +59,24 @@ public class PromptBuilderService {
             sb.append("- Brand/Model: ").append(contextVehicle.getBrand()).append(" ").append(contextVehicle.getModel()).append("\n");
             sb.append("- Category: ").append(contextVehicle.getCategory().toString()).append("\n");
             sb.append("- Type: ").append(contextVehicle.getVehicleType().toString()).append("\n");
-            sb.append("- Cost: $").append(contextVehicle.getPricePerDay()).append(" per day\n");
+            sb.append("- Cost: ").append(contextVehicle.getPricePerDay()).append(" VND per day\n");
             if (contextVehicle.getDescription() != null) {
                 sb.append("- Overview: ").append(contextVehicle.getDescription()).append("\n");
+            }
+            sb.append("\n");
+        }
+
+        // Real DB Inventory Injection
+        if (realDbVehicles != null && !realDbVehicles.isEmpty()) {
+            sb.append("LuxeWay Real Available Database Inventory Snapshot:\n");
+            for (Vehicle v : realDbVehicles) {
+                sb.append("- [ID: ").append(v.getId()).append("] ")
+                        .append(v.getBrand() != null ? v.getBrand() : "").append(" ").append(v.getName())
+                        .append(" | Category: ").append(v.getCategory())
+                        .append(" | City: ").append(v.getCity() != null ? v.getCity() : "Việt Nam")
+                        .append(" | Price: ").append(v.getPricePerDay()).append(" VND/day")
+                        .append(" | Rating: ").append(v.getRating() != null ? v.getRating() : 5.0)
+                        .append("\n");
             }
             sb.append("\n");
         }
@@ -71,7 +90,7 @@ public class PromptBuilderService {
             }
             sb.append("- Status: ").append(contextBooking.getStatus().toString()).append("\n");
             sb.append("- Rental Period: ").append(contextBooking.getStartDate()).append(" to ").append(contextBooking.getEndDate()).append("\n");
-            sb.append("- Renter Total Cost: $").append(contextBooking.getTotal()).append("\n\n");
+            sb.append("- Renter Total Cost: ").append(contextBooking.getTotal()).append(" VND\n\n");
         }
 
         // 7. Historical Bookings
