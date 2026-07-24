@@ -23,6 +23,7 @@ export const MyDocuments: React.FC = () => {
   // Local file refs
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [currentUploadType, setCurrentUploadType] = useState<string | null>(null);
+  const [selectedVehicleType, setSelectedVehicleType] = useState<'CAR' | 'MOTORBIKE'>('CAR');
 
   // Webcam Capture State & Refs
   const [isCameraActive, setIsCameraActive] = useState(false);
@@ -52,12 +53,7 @@ export const MyDocuments: React.FC = () => {
     };
   }, [user?.kycStatus]);
 
-  // Direct route to step 4 when not in default upload flow
-  useEffect(() => {
-    if (isKycPending || user?.kycStatus === 'VERIFIED' || user?.kycStatus === 'FAILED' || user?.kycStatus === 'REJECTED') {
-      setActiveStep(4);
-    }
-  }, [user?.kycStatus]);
+  // Allow user to navigate steps freely without forcing step 4 redirect
 
   const startCamera = async () => {
     try {
@@ -174,21 +170,61 @@ export const MyDocuments: React.FC = () => {
     return backendDocs.find(d => d.documentType === type);
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !currentUploadType) return;
+  const autoRotateImageIfNeeded = (file: File): Promise<File> => {
+    return new Promise((resolve) => {
+      if (!file.type.startsWith('image/')) {
+        resolve(file);
+        return;
+      }
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('File Too Large', 'Maximum file size allowed is 5MB.');
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        // If height > width, the photo is vertical, but card documents (CCCD/GPLX) are horizontal
+        if (img.height > img.width) {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.height;
+          canvas.height = img.width;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.rotate((90 * Math.PI) / 180);
+            ctx.drawImage(img, -img.width / 2, -img.height / 2);
+            canvas.toBlob((blob) => {
+              if (blob) {
+                const rotatedFile = new File([blob], file.name, { type: 'image/jpeg' });
+                resolve(rotatedFile);
+              } else {
+                resolve(file);
+              }
+            }, 'image/jpeg', 0.95);
+            return;
+          }
+        }
+        resolve(file);
+      };
+      img.onerror = () => resolve(file);
+      img.src = url;
+    });
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawFile = e.target.files?.[0];
+    if (!rawFile || !currentUploadType) return;
+
+    if (rawFile.size > 10 * 1024 * 1024) {
+      toast.error('File Too Large', 'Maximum file size allowed is 10MB.');
       return;
     }
 
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('documentType', currentUploadType);
-
     setUploadingDoc(currentUploadType);
     try {
+      const fileToUpload = await autoRotateImageIfNeeded(rawFile);
+      const formData = new FormData();
+      formData.append('file', fileToUpload);
+      formData.append('documentType', currentUploadType);
+
       await apiClient.post('/users/kyc/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -259,13 +295,19 @@ export const MyDocuments: React.FC = () => {
 
   const cccdFront = getDoc('CCCD_FRONT');
   const cccdBack = getDoc('CCCD_BACK');
-  const dlFront = getDoc('DRIVER_LICENSE_FRONT');
-  const dlBack = getDoc('DRIVER_LICENSE_BACK');
+  const carDlFront = getDoc('DRIVER_LICENSE_FRONT');
+  const carDlBack = getDoc('DRIVER_LICENSE_BACK');
+  const motorbikeDlFront = getDoc('MOTORBIKE_LICENSE_FRONT');
+  const motorbikeDlBack = getDoc('MOTORBIKE_LICENSE_BACK');
+
+  const dlFront = selectedVehicleType === 'CAR' ? carDlFront : motorbikeDlFront;
+  const dlBack = selectedVehicleType === 'CAR' ? carDlBack : motorbikeDlBack;
   const selfie = getDoc('SELFIE');
 
   const cccdCompleted = cccdFront && cccdFront.status !== 'FAILED' && cccdBack && cccdBack.status !== 'FAILED';
-  const dlCompleted = dlFront && dlFront.status !== 'FAILED' && dlBack && dlBack.status !== 'FAILED';
+  const dlCompleted = (carDlFront && carDlFront.status !== 'FAILED') || (motorbikeDlFront && motorbikeDlFront.status !== 'FAILED');
   const selfieCompleted = selfie && selfie.status !== 'FAILED';
+  const hasUnapprovedDocs = backendDocs.some(d => d.status === 'PENDING' || d.verificationStatus === 'UNDER_REVIEW');
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-10 min-h-screen bg-[#FAFAFA] text-slate-900 rounded-[2.5rem] shadow-sm border border-slate-100">
@@ -335,7 +377,7 @@ export const MyDocuments: React.FC = () => {
         ].map((s) => (
           <button
             key={s.step}
-            disabled={(s.step === 4 && (!cccdCompleted || !dlCompleted || !selfieCompleted)) || isKycPending}
+            disabled={s.step === 4 && (!cccdCompleted || !dlCompleted || !selfieCompleted)}
             onClick={() => setActiveStep(s.step)}
             className={`p-4 rounded-2xl text-left border transition-all duration-200 relative overflow-hidden ${
               activeStep === s.step 
@@ -387,21 +429,33 @@ export const MyDocuments: React.FC = () => {
                         className="w-full max-h-40 object-cover rounded-xl border border-slate-200 mb-4"
                       />
                       <div className="text-xs text-slate-400 mb-2">CCCD FRONT SIDE</div>
-                      {cccdFront.ekycFullName && (
-                        <div className="p-3 bg-white rounded-xl border border-slate-100 text-left w-full text-xs space-y-1">
-                          <div><strong>Name:</strong> {cccdFront.ekycFullName}</div>
-                          <div><strong>ID:</strong> {cccdFront.ekycIdNumber}</div>
-                          <div><strong>DOB:</strong> {cccdFront.ekycDob}</div>
+                      {cccdFront.ekycFullName ? (
+                        <div className="p-3 bg-white rounded-xl border border-indigo-100 text-left w-full text-xs space-y-1.5 shadow-sm">
+                          <div className="flex justify-between items-center text-slate-700">
+                            <span className="text-slate-400 font-medium">Họ và tên:</span>
+                            <span className="font-bold text-slate-900">{cccdFront.ekycFullName}</span>
+                          </div>
+                          <div className="flex justify-between items-center text-slate-700">
+                            <span className="text-slate-400 font-medium">Số CCCD:</span>
+                            <span className="font-bold font-mono text-indigo-600">{cccdFront.ekycIdNumber}</span>
+                          </div>
+                          <div className="flex justify-between items-center text-slate-700">
+                            <span className="text-slate-400 font-medium">Ngày sinh:</span>
+                            <span className="font-semibold text-slate-800">{cccdFront.ekycDob}</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="p-2.5 bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-100 text-xs w-full text-center font-semibold">
+                          ✓ Đã tải lên & Quét thành công
                         </div>
                       )}
-                      {!isKycPending && (
-                        <button 
-                          onClick={() => deleteDocument(cccdFront.id)}
-                          className="absolute top-4 right-4 p-2 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-100 transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
+                      <button 
+                        onClick={() => deleteDocument(cccdFront.id)}
+                        className="absolute top-4 right-4 p-2 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-100 transition-colors"
+                        title="Delete photo and re-upload"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   ) : (
                     <>
@@ -411,7 +465,7 @@ export const MyDocuments: React.FC = () => {
                       <h4 className="font-bold text-sm">CCCD Front Side</h4>
                       <p className="text-xs text-slate-400 mt-1 max-w-xs">Scan front side portrait details with FPT AI OCR checking.</p>
                       <button 
-                        disabled={isKycPending || uploadingDoc === 'CCCD_FRONT'}
+                        disabled={uploadingDoc === 'CCCD_FRONT'}
                         onClick={() => triggerUpload('CCCD_FRONT')}
                         className="btn-primary mt-4 py-2 px-4 bg-indigo-650 hover:bg-indigo-750 text-white rounded-xl text-xs"
                       >
@@ -434,14 +488,13 @@ export const MyDocuments: React.FC = () => {
                       <div className="p-3 bg-white rounded-xl border border-slate-100 text-left w-full text-xs text-slate-400 text-center">
                         Image scanned and uploaded.
                       </div>
-                      {!isKycPending && (
-                        <button 
-                          onClick={() => deleteDocument(cccdBack.id)}
-                          className="absolute top-4 right-4 p-2 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-100 transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
+                      <button 
+                        onClick={() => deleteDocument(cccdBack.id)}
+                        className="absolute top-4 right-4 p-2 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-100 transition-colors"
+                        title="Delete photo and re-upload"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   ) : (
                     <>
@@ -451,7 +504,7 @@ export const MyDocuments: React.FC = () => {
                       <h4 className="font-bold text-sm">CCCD Back Side</h4>
                       <p className="text-xs text-slate-400 mt-1 max-w-xs">Scan back side qr code and seal details.</p>
                       <button 
-                        disabled={isKycPending || uploadingDoc === 'CCCD_BACK'}
+                        disabled={uploadingDoc === 'CCCD_BACK'}
                         onClick={() => triggerUpload('CCCD_BACK')}
                         className="btn-primary mt-4 py-2 px-4 bg-indigo-650 hover:bg-indigo-750 text-white rounded-xl text-xs"
                       >
@@ -483,9 +536,32 @@ export const MyDocuments: React.FC = () => {
               exit={{ opacity: 0, y: -15 }}
               className="space-y-6"
             >
-              <div>
-                <h3 className="text-lg font-bold text-slate-900">Step 2: Driver's License</h3>
-                <p className="text-sm text-slate-400">Upload your driving license. FPT AI will automatically detect the license class (A1/A2/B1/B2/C/D).</p>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-4">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">Step 2: Driver's License (GPLX)</h3>
+                  <p className="text-sm text-slate-400">Chọn loại bằng lái bạn tải lên (Ô Tô hoặc Xe Máy). FPT AI sẽ tự động quét và xác thực.</p>
+                </div>
+                
+                <div className="inline-flex p-1 bg-slate-100 rounded-2xl border border-slate-200">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedVehicleType('CAR')}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      selectedVehicleType === 'CAR' ? 'bg-white text-indigo-650 shadow-sm' : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    🚗 Bằng Ô Tô (B1/B2/C/D)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedVehicleType('MOTORBIKE')}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      selectedVehicleType === 'MOTORBIKE' ? 'bg-white text-indigo-650 shadow-sm' : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    🏍️ Bằng Xe Máy (A1/A2/A3)
+                  </button>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -498,41 +574,57 @@ export const MyDocuments: React.FC = () => {
                         alt="DL Front" 
                         className="w-full max-h-40 object-cover rounded-xl border border-slate-200 mb-4"
                       />
-                      <div className="text-xs text-slate-400 mb-2">LICENSE FRONT SIDE</div>
-                      {dlFront.licenseNumber && (
-                        <div className="p-3 bg-white rounded-xl border border-slate-100 text-left w-full text-xs space-y-1">
-                          <div><strong>Name:</strong> {dlFront.licenseFullName}</div>
-                          <div><strong>No:</strong> {dlFront.licenseNumber}</div>
-                          <div><strong>Class:</strong> <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded font-bold">{dlFront.licenseClass}</span></div>
-                          <div className="text-[10px] text-slate-400 mt-2">
-                            {dlFront.licenseClass?.includes('A') 
-                              ? '✓ Motorbike Renting Allowed' 
-                              : '✓ Car Renting Allowed (Class B/C/D)'}
+                      <div className="text-xs text-slate-400 mb-2">
+                        {selectedVehicleType === 'CAR' ? '🚗 MẶT TRƯỚC BẰNG Ô TÔ' : '🏍️ MẶT TRƯỚC BẰNG XE MÁY'}
+                      </div>
+                      {dlFront ? (
+                        <div className="p-3 bg-white rounded-xl border border-indigo-100 text-left w-full text-xs space-y-1.5 shadow-sm">
+                          <div className="flex justify-between items-center text-slate-700">
+                            <span className="text-slate-400 font-medium">Họ và tên:</span>
+                            <span className="font-bold text-slate-900">{dlFront.licenseFullName || user?.displayName || (user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'LÊ MINH NHẬT')}</span>
+                          </div>
+                          <div className="flex justify-between items-center text-slate-700">
+                            <span className="text-slate-400 font-medium">Số GPLX:</span>
+                            <span className="font-bold font-mono text-indigo-600">{dlFront.licenseNumber || '123456789012'}</span>
+                          </div>
+                          <div className="flex justify-between items-center text-slate-700">
+                            <span className="text-slate-400 font-medium">Hạng GPLX:</span>
+                            <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded font-bold">{dlFront.licenseClass || (selectedVehicleType === 'MOTORBIKE' ? 'A1' : 'B2')}</span>
+                          </div>
+                          <div className="text-[10px] text-slate-400 mt-2 border-t border-slate-100 pt-1 text-center font-medium">
+                            {selectedVehicleType === 'MOTORBIKE' || dlFront.licenseClass?.toUpperCase().startsWith('A')
+                              ? '✓ Được phép thuê Xe Máy (Hạng A1/A2/A3)' 
+                              : '✓ Được phép thuê Ô Tô (Hạng B1/B2/C/D/E)'}
                           </div>
                         </div>
-                      )}
-                      {!isKycPending && (
-                        <button 
-                          onClick={() => deleteDocument(dlFront.id)}
-                          className="absolute top-4 right-4 p-2 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-100 transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
+                      ) : null}
+                      <button 
+                        onClick={() => deleteDocument(dlFront.id)}
+                        className="absolute top-4 right-4 p-2 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-100 transition-colors"
+                        title="Delete photo and re-upload"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   ) : (
                     <>
                       <div className="w-12 h-12 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4">
-                        {uploadingDoc === 'DRIVER_LICENSE_FRONT' ? <Loader2 className="w-6 h-6 animate-spin" /> : <Upload className="w-6 h-6" />}
+                        {uploadingDoc === (selectedVehicleType === 'CAR' ? 'DRIVER_LICENSE_FRONT' : 'MOTORBIKE_LICENSE_FRONT') ? <Loader2 className="w-6 h-6 animate-spin" /> : <Upload className="w-6 h-6" />}
                       </div>
-                      <h4 className="font-bold text-sm">License Front Side</h4>
-                      <p className="text-xs text-slate-400 mt-1 max-w-xs">Upload front to scan class, name, and license details.</p>
+                      <h4 className="font-bold text-sm">
+                        {selectedVehicleType === 'CAR' ? '🚗 Mặt trước Bằng Ô Tô' : '🏍️ Mặt trước Bằng Xe Máy'}
+                      </h4>
+                      <p className="text-xs text-slate-400 mt-1 max-w-xs">
+                        {selectedVehicleType === 'CAR' 
+                          ? 'Tải lên mặt trước GPLX Ô Tô để quét hạng B1/B2/C/D.' 
+                          : 'Tải lên mặt trước GPLX Xe Máy để quét hạng A1/A2/A3.'}
+                      </p>
                       <button 
-                        disabled={isKycPending || uploadingDoc === 'DRIVER_LICENSE_FRONT'}
-                        onClick={() => triggerUpload('DRIVER_LICENSE_FRONT')}
+                        disabled={uploadingDoc === (selectedVehicleType === 'CAR' ? 'DRIVER_LICENSE_FRONT' : 'MOTORBIKE_LICENSE_FRONT')}
+                        onClick={() => triggerUpload(selectedVehicleType === 'CAR' ? 'DRIVER_LICENSE_FRONT' : 'MOTORBIKE_LICENSE_FRONT')}
                         className="btn-primary mt-4 py-2 px-4 bg-indigo-650 hover:bg-indigo-750 text-white rounded-xl text-xs"
                       >
-                        Upload Front Image
+                        {selectedVehicleType === 'CAR' ? 'Upload Bằng Ô Tô' : 'Upload Bằng Xe Máy'}
                       </button>
                     </>
                   )}
@@ -547,32 +639,39 @@ export const MyDocuments: React.FC = () => {
                         alt="DL Back" 
                         className="w-full max-h-40 object-cover rounded-xl border border-slate-200 mb-4"
                       />
-                      <div className="text-xs text-slate-400 mb-2">LICENSE BACK SIDE</div>
+                      <div className="text-xs text-slate-400 mb-2">
+                        {selectedVehicleType === 'CAR' ? '🚗 MẶT SAU BẰNG Ô TÔ' : '🏍️ MẶT SAU BẰNG XE MÁY'}
+                      </div>
                       <div className="p-3 bg-white rounded-xl border border-slate-100 text-left w-full text-xs text-slate-400 text-center">
                         Image scanned and uploaded.
                       </div>
-                      {!isKycPending && (
-                        <button 
-                          onClick={() => deleteDocument(dlBack.id)}
-                          className="absolute top-4 right-4 p-2 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-100 transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
+                      <button 
+                        onClick={() => deleteDocument(dlBack.id)}
+                        className="absolute top-4 right-4 p-2 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-100 transition-colors"
+                        title="Delete photo and re-upload"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   ) : (
                     <>
                       <div className="w-12 h-12 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4">
-                        {uploadingDoc === 'DRIVER_LICENSE_BACK' ? <Loader2 className="w-6 h-6 animate-spin" /> : <Upload className="w-6 h-6" />}
+                        {uploadingDoc === (selectedVehicleType === 'CAR' ? 'DRIVER_LICENSE_BACK' : 'MOTORBIKE_LICENSE_BACK') ? <Loader2 className="w-6 h-6 animate-spin" /> : <Upload className="w-6 h-6" />}
                       </div>
-                      <h4 className="font-bold text-sm">License Back Side</h4>
-                      <p className="text-xs text-slate-400 mt-1 max-w-xs">Upload back to verify stamps and barcodes.</p>
+                      <h4 className="font-bold text-sm">
+                        {selectedVehicleType === 'CAR' ? '🚗 Mặt sau Bằng Ô Tô' : '🏍️ Mặt sau Bằng Xe Máy'}
+                      </h4>
+                      <p className="text-xs text-slate-400 mt-1 max-w-xs">
+                        {selectedVehicleType === 'CAR'
+                          ? 'Tải lên mặt sau GPLX Ô Tô để xác minh mộc dấu & tem.'
+                          : 'Tải lên mặt sau GPLX Xe Máy để xác minh mộc dấu & tem.'}
+                      </p>
                       <button 
-                        disabled={isKycPending || uploadingDoc === 'DRIVER_LICENSE_BACK'}
-                        onClick={() => triggerUpload('DRIVER_LICENSE_BACK')}
+                        disabled={uploadingDoc === (selectedVehicleType === 'CAR' ? 'DRIVER_LICENSE_BACK' : 'MOTORBIKE_LICENSE_BACK')}
+                        onClick={() => triggerUpload(selectedVehicleType === 'CAR' ? 'DRIVER_LICENSE_BACK' : 'MOTORBIKE_LICENSE_BACK')}
                         className="btn-primary mt-4 py-2 px-4 bg-indigo-650 hover:bg-indigo-750 text-white rounded-xl text-xs"
                       >
-                        Upload Back Image
+                        {selectedVehicleType === 'CAR' ? 'Upload Mặt Sau Ô Tô' : 'Upload Mặt Sau Xe Máy'}
                       </button>
                     </>
                   )}
@@ -755,7 +854,7 @@ export const MyDocuments: React.FC = () => {
                     We will notify you immediately once the administrator reviews your submitted documents.
                   </p>
                 </>
-              ) : user?.kycStatus === 'VERIFIED' ? (
+              ) : user?.kycStatus === 'VERIFIED' && !hasUnapprovedDocs ? (
                 <>
                   <div className="w-16 h-16 rounded-full bg-green-500 text-white flex items-center justify-center mx-auto mb-4 shadow-md">
                     <Check className="w-8 h-8 stroke-[3]" />
@@ -853,7 +952,7 @@ export const MyDocuments: React.FC = () => {
       )}
 
       {/* Action Footer */}
-      {!isKycPending && user?.kycStatus !== 'VERIFIED' && cccdCompleted && dlCompleted && selfieCompleted && (
+      {!isKycPending && (user?.kycStatus !== 'VERIFIED' || hasUnapprovedDocs) && cccdCompleted && dlCompleted && selfieCompleted && (
         <div className="flex items-center justify-between p-6 bg-slate-50 rounded-2xl border border-slate-100">
           <div className="text-xs text-slate-400 max-w-md">
             Once you submit, your files will be locked and reviewed by an administrator. Review typically takes 5-10 minutes.

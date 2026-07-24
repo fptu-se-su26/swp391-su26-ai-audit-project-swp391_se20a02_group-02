@@ -138,9 +138,12 @@ public class UserService {
 
         String currentStatus = user.getKycStatus();
         if (currentStatus != null && !"NOT_UPLOADED".equalsIgnoreCase(currentStatus) 
+                && !"UNVERIFIED".equalsIgnoreCase(currentStatus)
+                && !"DRAFT".equalsIgnoreCase(currentStatus)
                 && !"VERIFYING".equalsIgnoreCase(currentStatus) 
                 && !"FAILED".equalsIgnoreCase(currentStatus) 
-                && !"REJECTED".equalsIgnoreCase(currentStatus)) {
+                && !"REJECTED".equalsIgnoreCase(currentStatus)
+                && !"VERIFIED".equalsIgnoreCase(currentStatus)) {
             throw new IllegalStateException("Invalid KYC status transition from " + currentStatus + " to PENDING_APPROVAL");
         }
 
@@ -341,6 +344,49 @@ public class UserService {
 
         doc = userDocumentRepository.save(doc);
         log.info("Driver License Back uploaded for user {}", userId);
+        return toDocumentResponse(doc);
+    }
+
+    @Transactional
+    public UserDTOs.DocumentResponse uploadMotorbikeLicenseFront(String userId, String fileUrl, FptAiEkycService.DlOcrResult ocrResult) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        UserDocument doc = UserDocument.builder()
+                .user(user)
+                .documentType("MOTORBIKE_LICENSE_FRONT")
+                .url(fileUrl)
+                .fileUrl(fileUrl)
+                .status("PENDING")
+                .verificationStatus("UNDER_REVIEW")
+                .ocrData(ocrResult.getRawResponse())
+                .licenseNumber(ocrResult.getLicenseNumber())
+                .licenseClass(ocrResult.getLicenseClass())
+                .licenseFullName(ocrResult.getFullName())
+                .licenseDateOfBirth(ocrResult.getDateOfBirth())
+                .build();
+
+        doc = userDocumentRepository.save(doc);
+        log.info("Motorbike License Front uploaded and scanned for user {}", userId);
+        return toDocumentResponse(doc);
+    }
+
+    @Transactional
+    public UserDTOs.DocumentResponse uploadMotorbikeLicenseBack(String userId, String fileUrl) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        UserDocument doc = UserDocument.builder()
+                .user(user)
+                .documentType("MOTORBIKE_LICENSE_BACK")
+                .url(fileUrl)
+                .fileUrl(fileUrl)
+                .status("PENDING")
+                .verificationStatus("UNDER_REVIEW")
+                .build();
+
+        doc = userDocumentRepository.save(doc);
+        log.info("Motorbike License Back uploaded for user {}", userId);
         return toDocumentResponse(doc);
     }
 

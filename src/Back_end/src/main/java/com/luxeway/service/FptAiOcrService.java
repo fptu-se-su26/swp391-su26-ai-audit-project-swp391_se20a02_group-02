@@ -21,7 +21,7 @@ import java.nio.file.Path;
 @SuppressWarnings("all")
 public class FptAiOcrService {
 
-    @Value("${fptai.api-key:nJG3NY4baB7oL9sF16mwVBxSnD2kPyx1}")
+    @Value("${fptai.api-key:9COktUZ1vdIup75c7KnxGoVTYSiXBOS4}")
     private String apiKey;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -55,14 +55,14 @@ public class FptAiOcrService {
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
             String url = "https://api.fpt.ai/vision/dlr/vnm";
-            ResponseEntity<String> response = restTemplate.postForEntity(url, requestEntity, String.class);
+            ResponseEntity<byte[]> response = restTemplate.postForEntity(url, requestEntity, byte[].class);
 
             if (response.getStatusCode() != HttpStatus.OK || response.getBody() == null) {
                 log.error("FPT.AI OCR request failed with status code: {}", response.getStatusCode());
                 throw new RuntimeException("FPT.AI OCR request failed with status: " + response.getStatusCode());
             }
 
-            String responseBody = response.getBody();
+            String responseBody = new String(response.getBody(), java.nio.charset.StandardCharsets.UTF_8);
             log.info("Received response from FPT.AI: {}", responseBody);
 
             JsonNode root = objectMapper.readTree(responseBody);

@@ -28,6 +28,7 @@ public class CarBookingService {
     private final UserRepository userRepository;
     private final NotificationService notificationService;
     private final CarAvailabilityRepository carAvailabilityRepository;
+    private final UserDocumentRepository userDocumentRepository;
 
     @Transactional
     public CarBookingDTOs.CarBookingResponse createBooking(String renterId, CarBookingDTOs.CreateCarBookingRequest req) {
@@ -64,6 +65,13 @@ public class CarBookingService {
                     || "VERIFIED".equalsIgnoreCase(renter.getDriverLicenseStatus());
             if (!licenseVerified) {
                 throw new RuntimeException("Please complete driving license verification first.");
+            }
+
+            boolean hasCarDoc = !userDocumentRepository.findByUserIdAndDocumentType(renter.getId(), "DRIVER_LICENSE_FRONT").isEmpty();
+            String uClass = renter.getLicenseClass();
+            boolean isCarClass = uClass != null && (uClass.startsWith("B") || uClass.startsWith("C") || uClass.startsWith("D") || uClass.startsWith("E") || uClass.startsWith("F"));
+            if (!hasCarDoc && !isCarClass) {
+                throw new RuntimeException("Bạn cần tải lên Bằng Lái Xe Ô Tô (Hạng B1/B2/C/D) trên trang Hồ sơ để đăng ký đặt thuê Ô Tô!");
             }
         }
 

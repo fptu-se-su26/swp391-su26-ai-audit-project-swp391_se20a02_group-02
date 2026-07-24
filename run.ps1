@@ -45,6 +45,15 @@ if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
 }
 Write-Host "  [OK] Node.js found" -ForegroundColor Green
 
+# Check frontend dependencies
+if (-not (Test-Path "$frontendPath\node_modules")) {
+    Write-Host "  [INFO] Frontend node_modules not found. Installing dependencies..." -ForegroundColor Yellow
+    Push-Location $frontendPath
+    npm install
+    Pop-Location
+}
+
+
 # Get variables from environment (loaded from .env) or fallback to defaults
 $dbHost = if ($env:DB_HOST) { $env:DB_HOST } else { 'localhost' }
 $dbPort = if ($env:DB_PORT) { $env:DB_PORT } else { '1433' }
@@ -74,7 +83,7 @@ $feUrl = if ($env:FRONTEND_URL) { $env:FRONTEND_URL } else { 'http://localhost:5
 $logLevel = if ($env:LOG_LEVEL) { $env:LOG_LEVEL } else { 'INFO' }
 $goongKey = if ($env:GOONG_API_KEY) { $env:GOONG_API_KEY } else { 'mock_goong_key' }
 $geminiKey = if ($env:GEMINI_API_KEY) { $env:GEMINI_API_KEY } else { 'mock_key' }
-$fptaiKey = if ($env:FPTAI_API_KEY) { $env:FPTAI_API_KEY } else { 'nJG3NY4baB7oL9sF16mwVBxSnD2kPyx1' }
+$fptaiKey = if ($env:FPTAI_API_KEY) { $env:FPTAI_API_KEY } else { '9COktUZ1vdIup75c7KnxGoVTYSiXBOS4' }
 $ekycProvider = if ($env:EKYC_PROVIDER) { $env:EKYC_PROVIDER } else { 'FPTAI' }
 $port = if ($env:PORT) { $env:PORT } else { '8080' }
 

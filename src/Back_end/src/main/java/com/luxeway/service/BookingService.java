@@ -49,6 +49,7 @@ public class BookingService {
     private final PricingEngine pricingEngine;
     private final SimpMessagingTemplate messagingTemplate;
     private final ReviewRepository reviewRepository;
+    private final UserDocumentRepository userDocumentRepository;
 
     @Value("${business.pricing.service-fee-rate:0.12}")
     private double serviceFeeRate;
@@ -109,8 +110,7 @@ public class BookingService {
             throw new RuntimeException("Vehicle is temporarily locked or unavailable for these dates. Please choose different dates.");
         }
 
-        // Enforce verified identity and driving license. License class OCR can be
-        // incomplete in demo data, so approved accounts are not blocked by class.
+        // Enforce verified identity and driving license.
         if (renter.getRole() != com.luxeway.enums.UserRole.ADMIN) {
             if (!"VERIFIED".equals(renter.getKycStatus())) {
                 throw new RuntimeException("Please complete identity verification first");
@@ -120,6 +120,22 @@ public class BookingService {
                     || "VERIFIED".equalsIgnoreCase(renter.getDriverLicenseStatus());
             if (!licenseVerified) {
                 throw new RuntimeException("Please complete driving license verification first");
+            }
+
+            boolean hasCarDoc = !userDocumentRepository.findByUserIdAndDocumentType(renter.getId(), "DRIVER_LICENSE_FRONT").isEmpty();
+            boolean hasMotorbikeDoc = !userDocumentRepository.findByUserIdAndDocumentType(renter.getId(), "MOTORBIKE_LICENSE_FRONT").isEmpty();
+            String uClass = renter.getLicenseClass();
+            boolean isCarClass = uClass != null && (uClass.startsWith("B") || uClass.startsWith("C") || uClass.startsWith("D") || uClass.startsWith("E") || uClass.startsWith("F"));
+            boolean isMotorbikeClass = uClass != null && uClass.startsWith("A");
+
+            if (vehicle.getVehicleType() == com.luxeway.enums.VehicleType.CAR) {
+                if (!hasCarDoc && !isCarClass) {
+                    throw new RuntimeException("Bạn cần tải lên Bằng Lái Xe Ô Tô (Hạng B1/B2/C/D) trên trang Hồ sơ để đăng ký đặt thuê Ô Tô!");
+                }
+            } else if (vehicle.getVehicleType() == com.luxeway.enums.VehicleType.MOTORBIKE) {
+                if (!hasMotorbikeDoc && !isMotorbikeClass) {
+                    throw new RuntimeException("Bạn cần tải lên Bằng Lái Xe Máy (Hạng A1/A2/A3) trên trang Hồ sơ để đăng ký đặt thuê Xe Máy!");
+                }
             }
         }
     }

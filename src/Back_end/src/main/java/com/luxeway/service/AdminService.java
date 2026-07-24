@@ -383,7 +383,11 @@ public class AdminService {
     }
 
     public java.util.List<UserDTOs.UserProfileResponse> getPendingKycUsers() {
-        return userRepository.findByKycStatus("PENDING_APPROVAL").stream()
+        java.util.List<User> list1 = userRepository.findByKycStatus("PENDING_APPROVAL");
+        java.util.List<User> list2 = userRepository.findByKycStatus("PENDING");
+        java.util.Set<User> combined = new java.util.LinkedHashSet<>(list1);
+        combined.addAll(list2);
+        return combined.stream()
                 .map(userService::toProfileResponse)
                 .collect(java.util.stream.Collectors.toList());
     }
@@ -450,10 +454,6 @@ public class AdminService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (!"PENDING_APPROVAL".equalsIgnoreCase(user.getKycStatus())) {
-            throw new IllegalStateException("User KYC is not in PENDING_APPROVAL status");
-        }
-
         user.setKycStatus("VERIFIED");
         user.setKycVerified(true);
         
@@ -461,7 +461,7 @@ public class AdminService {
         boolean hasDl = false;
         for (com.luxeway.entity.UserDocument doc : docs) {
             String docType = doc.getDocumentType().toUpperCase();
-            if (docType.contains("DRIVER_LICENSE") || docType.equals("DRIVING_LICENSE")) {
+            if (docType.contains("DRIVER_LICENSE") || docType.contains("MOTORBIKE_LICENSE") || docType.equals("DRIVING_LICENSE")) {
                 hasDl = true;
                 if (doc.getLicenseNumber() != null) {
                     user.setLicenseNumber(doc.getLicenseNumber());
@@ -471,7 +471,7 @@ public class AdminService {
                 }
             }
             
-            if ("PENDING".equals(doc.getStatus()) || "UNDER_REVIEW".equals(doc.getVerificationStatus())) {
+            if ("PENDING".equalsIgnoreCase(doc.getStatus()) || "UNDER_REVIEW".equalsIgnoreCase(doc.getVerificationStatus())) {
                 doc.setStatus("VERIFIED");
                 doc.setVerificationStatus("VERIFIED");
                 doc.setVerifiedByAdmin(adminId);
@@ -516,8 +516,8 @@ public class AdminService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (!"PENDING_APPROVAL".equalsIgnoreCase(user.getKycStatus())) {
-            throw new IllegalStateException("User KYC is not in PENDING_APPROVAL status");
+        if (!"PENDING_APPROVAL".equalsIgnoreCase(user.getKycStatus()) && !"PENDING".equalsIgnoreCase(user.getKycStatus())) {
+            throw new IllegalStateException("User KYC is not in PENDING status");
         }
 
         user.setKycStatus("REJECTED");
