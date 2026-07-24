@@ -138,9 +138,12 @@ public class UserService {
 
         String currentStatus = user.getKycStatus();
         if (currentStatus != null && !"NOT_UPLOADED".equalsIgnoreCase(currentStatus) 
+                && !"UNVERIFIED".equalsIgnoreCase(currentStatus)
+                && !"DRAFT".equalsIgnoreCase(currentStatus)
                 && !"VERIFYING".equalsIgnoreCase(currentStatus) 
                 && !"FAILED".equalsIgnoreCase(currentStatus) 
-                && !"REJECTED".equalsIgnoreCase(currentStatus)) {
+                && !"REJECTED".equalsIgnoreCase(currentStatus)
+                && !"VERIFIED".equalsIgnoreCase(currentStatus)) {
             throw new IllegalStateException("Invalid KYC status transition from " + currentStatus + " to PENDING_APPROVAL");
         }
 
@@ -349,10 +352,6 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        user.setKycStatus("PENDING_APPROVAL");
-        user.setDriverLicenseStatus("PENDING_APPROVAL");
-        userRepository.save(user);
-
         UserDocument doc = UserDocument.builder()
                 .user(user)
                 .documentType("MOTORBIKE_LICENSE_FRONT")
@@ -376,10 +375,6 @@ public class UserService {
     public UserDTOs.DocumentResponse uploadMotorbikeLicenseBack(String userId, String fileUrl) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-
-        user.setKycStatus("PENDING_APPROVAL");
-        user.setDriverLicenseStatus("PENDING_APPROVAL");
-        userRepository.save(user);
 
         UserDocument doc = UserDocument.builder()
                 .user(user)

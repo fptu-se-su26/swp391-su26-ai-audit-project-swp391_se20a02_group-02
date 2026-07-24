@@ -266,18 +266,11 @@ public class UserController {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         String currentStatus = user.getKycStatus();
-        if (currentStatus != null && !"NOT_UPLOADED".equalsIgnoreCase(currentStatus) 
-                && !"VERIFYING".equalsIgnoreCase(currentStatus) 
-                && !"FAILED".equalsIgnoreCase(currentStatus) 
-                && !"REJECTED".equalsIgnoreCase(currentStatus)
-                && !"VERIFIED".equalsIgnoreCase(currentStatus)) {
+        if (currentStatus != null && ("PENDING".equalsIgnoreCase(currentStatus) || "PENDING_APPROVAL".equalsIgnoreCase(currentStatus))) {
             Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Cannot upload documents when KYC status is " + currentStatus);
+            errorResponse.put("error", "Cannot upload documents while KYC review is pending admin approval.");
             return ResponseEntity.badRequest().body(errorResponse);
         }
-
-        user.setKycStatus("VERIFYING");
-        userRepository.save(user);
 
         if (file.isEmpty()) {
             Map<String, String> errorResponse = new HashMap<>();
@@ -333,9 +326,6 @@ public class UserController {
                         throw new RuntimeException("Could not extract ID or Full Name from the CCCD image. Please upload a clearer, glare-free image.");
                     }
                 } catch (Exception ex) {
-                    user.setKycStatus("FAILED");
-                    userRepository.save(user);
-                    
                     userService.uploadCccdFront(user.getId(), fileUrl, new com.luxeway.service.FptAiEkycService.CccdOcrResult());
                     
                     try {
@@ -483,9 +473,6 @@ public class UserController {
                         throw new RuntimeException("Face similarity is too low: " + faceResult.getSimilarity() + "% (minimum 60.0% required). Please capture again in a well-lit area.");
                     }
                 } catch (Exception ex) {
-                    user.setKycStatus("FAILED");
-                    userRepository.save(user);
-                    
                     com.luxeway.service.FptAiEkycService.FaceMatchResult failResult = new com.luxeway.service.FptAiEkycService.FaceMatchResult();
                     failResult.setSimilarity(0.0);
                     failResult.setMatch(false);
@@ -549,21 +536,34 @@ public class UserController {
         java.util.List<com.luxeway.entity.UserDocument> docs = userDocumentRepository.findByUserIdOrderByUploadedAtDesc(user.getId());
         boolean hasCccdFront = false;
         boolean hasCccdBack = false;
-        boolean hasDlFront = false;
-        boolean hasDlBack = false;
+        boolean hasCarDlFront = false;
+        boolean hasCarDlBack = false;
+        boolean hasMbDlFront = false;
+        boolean hasMbDlBack = false;
         boolean hasSelfie = false;
 
         for (com.luxeway.entity.UserDocument doc : docs) {
-            if ("CCCD_FRONT".equalsIgnoreCase(doc.getDocumentType()) && !"FAILED".equalsIgnoreCase(doc.getStatus())) hasCccdFront = true;
-            if ("CCCD_BACK".equalsIgnoreCase(doc.getDocumentType()) && !"FAILED".equalsIgnoreCase(doc.getStatus())) hasCccdBack = true;
-            if ("DRIVER_LICENSE_FRONT".equalsIgnoreCase(doc.getDocumentType()) && !"FAILED".equalsIgnoreCase(doc.getStatus())) hasDlFront = true;
-            if ("DRIVER_LICENSE_BACK".equalsIgnoreCase(doc.getDocumentType()) && !"FAILED".equalsIgnoreCase(doc.getStatus())) hasDlBack = true;
-            if ("SELFIE".equalsIgnoreCase(doc.getDocumentType()) && !"FAILED".equalsIgnoreCase(doc.getStatus())) hasSelfie = true;
+            String type = doc.getDocumentType();
+            String status = doc.getStatus();
+            if (!"FAILED".equalsIgnoreCase(status)) {
+                if ("CCCD_FRONT".equalsIgnoreCase(type)) hasCccdFront = true;
+                if ("CCCD_BACK".equalsIgnoreCase(type)) hasCccdBack = true;
+                if ("DRIVER_LICENSE_FRONT".equalsIgnoreCase(type)) hasCarDlFront = true;
+                if ("DRIVER_LICENSE_BACK".equalsIgnoreCase(type)) hasCarDlBack = true;
+                if ("MOTORBIKE_LICENSE_FRONT".equalsIgnoreCase(type)) hasMbDlFront = true;
+                if ("MOTORBIKE_LICENSE_BACK".equalsIgnoreCase(type)) hasMbDlBack = true;
+                if ("SELFIE".equalsIgnoreCase(type)) hasSelfie = true;
+            }
         }
 
-        if (!hasCccdFront || !hasCccdBack || !hasDlFront || !hasDlBack || !hasSelfie) {
+        boolean hasDriverLicense = (hasCarDlFront && hasCarDlBack) 
+                                || (hasMbDlFront && hasMbDlBack) 
+                                || hasCarDlFront 
+                                || hasMbDlFront;
+
+        if (!hasCccdFront || !hasCccdBack || !hasDriverLicense || !hasSelfie) {
             Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Missing required KYC documents. Please upload all 5 documents before submitting.");
+            errorResponse.put("error", "Missing required KYC documents. Please upload CCCD (Front & Back), a Driver License (Car or Motorbike), and a Selfie photo before submitting.");
             return ResponseEntity.badRequest().body(errorResponse);
         }
 

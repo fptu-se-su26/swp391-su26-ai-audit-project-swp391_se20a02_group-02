@@ -307,6 +307,7 @@ export const MyDocuments: React.FC = () => {
   const cccdCompleted = cccdFront && cccdFront.status !== 'FAILED' && cccdBack && cccdBack.status !== 'FAILED';
   const dlCompleted = (carDlFront && carDlFront.status !== 'FAILED') || (motorbikeDlFront && motorbikeDlFront.status !== 'FAILED');
   const selfieCompleted = selfie && selfie.status !== 'FAILED';
+  const hasUnapprovedDocs = backendDocs.some(d => d.status === 'PENDING' || d.verificationStatus === 'UNDER_REVIEW');
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-10 min-h-screen bg-[#FAFAFA] text-slate-900 rounded-[2.5rem] shadow-sm border border-slate-100">
@@ -853,7 +854,7 @@ export const MyDocuments: React.FC = () => {
                     We will notify you immediately once the administrator reviews your submitted documents.
                   </p>
                 </>
-              ) : user?.kycStatus === 'VERIFIED' ? (
+              ) : user?.kycStatus === 'VERIFIED' && !hasUnapprovedDocs ? (
                 <>
                   <div className="w-16 h-16 rounded-full bg-green-500 text-white flex items-center justify-center mx-auto mb-4 shadow-md">
                     <Check className="w-8 h-8 stroke-[3]" />
@@ -951,7 +952,7 @@ export const MyDocuments: React.FC = () => {
       )}
 
       {/* Action Footer */}
-      {!isKycPending && user?.kycStatus !== 'VERIFIED' && cccdCompleted && dlCompleted && selfieCompleted && (
+      {!isKycPending && (user?.kycStatus !== 'VERIFIED' || hasUnapprovedDocs) && cccdCompleted && dlCompleted && selfieCompleted && (
         <div className="flex items-center justify-between p-6 bg-slate-50 rounded-2xl border border-slate-100">
           <div className="text-xs text-slate-400 max-w-md">
             Once you submit, your files will be locked and reviewed by an administrator. Review typically takes 5-10 minutes.

@@ -380,7 +380,11 @@ public class AdminService {
     }
 
     public java.util.List<UserDTOs.UserProfileResponse> getPendingKycUsers() {
-        return userRepository.findByKycStatus("PENDING_APPROVAL").stream()
+        java.util.List<User> list1 = userRepository.findByKycStatus("PENDING_APPROVAL");
+        java.util.List<User> list2 = userRepository.findByKycStatus("PENDING");
+        java.util.Set<User> combined = new java.util.LinkedHashSet<>(list1);
+        combined.addAll(list2);
+        return combined.stream()
                 .map(userService::toProfileResponse)
                 .collect(java.util.stream.Collectors.toList());
     }
@@ -509,8 +513,8 @@ public class AdminService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (!"PENDING_APPROVAL".equalsIgnoreCase(user.getKycStatus())) {
-            throw new IllegalStateException("User KYC is not in PENDING_APPROVAL status");
+        if (!"PENDING_APPROVAL".equalsIgnoreCase(user.getKycStatus()) && !"PENDING".equalsIgnoreCase(user.getKycStatus())) {
+            throw new IllegalStateException("User KYC is not in PENDING status");
         }
 
         user.setKycStatus("REJECTED");
