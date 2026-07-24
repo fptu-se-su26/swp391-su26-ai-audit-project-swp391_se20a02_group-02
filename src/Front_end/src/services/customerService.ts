@@ -12,6 +12,7 @@ export interface CustomerDashboardOverview {
   kycVerified: boolean;
   isOwner: boolean;
   ownerApplicationStatus: string;
+  recommendedVehicle?: any;
   recentBookings: any[];
 }
 

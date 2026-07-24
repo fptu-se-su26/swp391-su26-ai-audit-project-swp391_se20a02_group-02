@@ -318,52 +318,65 @@ export const CustomerOverview: React.FC = () => {
         {/* Hero Featured Vehicle Card */}
         <motion.div
           variants={fadeUp} initial="hidden" animate="visible"
-          className="lg:col-span-3 relative rounded-3xl overflow-hidden min-h-[260px] shadow-lg"
+          className="lg:col-span-3 relative rounded-3xl overflow-hidden min-h-[260px] shadow-lg bg-slate-900 flex flex-col justify-end"
         >
-          <img
-            src="https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=900&q=80"
-            alt="Featured luxury car"
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(7,11,20,0.85) 0%, rgba(7,11,20,0.45) 55%, rgba(7,11,20,0.10) 100%)' }} />
+          {overview?.recommendedVehicle ? (
+            <>
+              <img
+                src={overview.recommendedVehicle.primaryImage || overview.recommendedVehicle.thumbnailUrl || 'https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=900&q=80'}
+                alt={overview.recommendedVehicle.name}
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+              <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(7,11,20,0.85) 0%, rgba(7,11,20,0.45) 55%, rgba(7,11,20,0.10) 100%)' }} />
 
-          <div className="absolute top-4 left-4">
-            <span className="text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg bg-[var(--lw-accent)] text-white">✨ Recommended For You</span>
-          </div>
-
-          <div className="absolute top-4 right-4 flex gap-2">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 border border-white/20 backdrop-blur-md">
-              <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-              <span className="text-[10px] font-bold text-white">Available</span>
-            </div>
-          </div>
-
-          <div className="absolute bottom-0 left-0 right-0 p-6">
-            <div className="flex items-end justify-between gap-4">
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold mb-1 flex items-center gap-1.5 text-slate-300">
-                  📍 Ho Chi Minh City, Vietnam
-                </p>
-                <h2 className="text-2xl font-extrabold text-white leading-tight tracking-tight">Ferrari F8 Tributo</h2>
-                <p className="text-xl font-extrabold mt-1 text-yellow-400">
-                  {formatCurrency(8500000)}
-                  <span className="text-sm font-semibold ml-1 text-white/55">/day</span>
-                </p>
+              <div className="absolute top-4 left-4 z-10">
+                <span className="text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg bg-[var(--lw-accent)] text-white">✨ Recommended For You</span>
               </div>
-              <div className="flex flex-col gap-2 flex-shrink-0">
-                <Link to="/marketplace"
-                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-white transition-all bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md shadow-blue-500/20"
-                >
-                  Book Now
-                </Link>
-                <div className="flex items-center gap-1 justify-center">
-                  <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-                  <span className="text-xs font-bold text-white">5.0</span>
-                  <span className="text-[10px] text-white/60">(128)</span>
+
+              <div className="absolute top-4 right-4 z-10 flex gap-2">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 border border-white/20 backdrop-blur-md">
+                  <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+                  <span className="text-[10px] font-bold text-white">Available</span>
                 </div>
               </div>
+
+              <div className="absolute bottom-0 left-0 right-0 p-6 z-10">
+                <div className="flex items-end justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold mb-1 flex items-center gap-1.5 text-slate-300">
+                      📍 {overview.recommendedVehicle.city || overview.recommendedVehicle.address || 'Vietnam'}
+                    </p>
+                    <h2 className="text-2xl font-extrabold text-white leading-tight tracking-tight truncate">{overview.recommendedVehicle.brand} {overview.recommendedVehicle.model || overview.recommendedVehicle.name}</h2>
+                    <p className="text-xl font-extrabold mt-1 text-yellow-400">
+                      {formatCurrency(overview.recommendedVehicle.pricePerDay || 0)}
+                      <span className="text-sm font-semibold ml-1 text-white/55">/day</span>
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-2 flex-shrink-0">
+                    <Link to={`/vehicles/${overview.recommendedVehicle.id}`}
+                      className="px-4 py-2.5 rounded-xl text-xs font-bold text-white transition-all bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md shadow-blue-500/20 text-center"
+                    >
+                      Book Now
+                    </Link>
+                    <div className="flex items-center gap-1 justify-center">
+                      <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                      <span className="text-xs font-bold text-white">{Number(overview.recommendedVehicle.rating || 5.0).toFixed(1)}</span>
+                      <span className="text-[10px] text-white/60">({overview.recommendedVehicle.totalReviews || 0})</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="p-8 text-center text-white space-y-3">
+              <Car className="w-12 h-12 mx-auto text-slate-400 opacity-60" />
+              <h3 className="text-lg font-bold">No recommended vehicles available right now</h3>
+              <p className="text-xs text-slate-400 max-w-sm mx-auto">Explore our marketplace to browse approved available cars and motorbikes.</p>
+              <Link to="/marketplace" className="inline-block px-5 py-2.5 bg-[#D4AF37] text-slate-950 font-extrabold text-xs rounded-xl shadow-md">
+                Browse Marketplace →
+              </Link>
             </div>
-          </div>
+          )}
         </motion.div>
 
         {/* Stat Cards */}

@@ -3723,40 +3723,73 @@ const landingPageExtraTranslations: Record<string, Record<string, any>> = {
 
 export function translateNotification(text: string): string {
   if (!text) return '';
-  if (!text.startsWith('notification.')) return text;
-
-  const parts = text.split('|');
-  const key = parts[0];
-  const params: Record<string, string> = {};
-
-  for (let i = 1; i < parts.length; i++) {
-    const [paramKey, paramVal] = parts[i].split('=');
-    if (paramKey && paramVal !== undefined) {
-      params[paramKey] = paramVal;
-    }
-  }
-
+  
   let language = 'en';
   try {
     language = useUIStore.getState().language || 'en';
   } catch {}
 
-  const dict = notificationTranslations[language] || notificationTranslations.en;
-  let template = dict[key];
-  if (!template) {
-    return key;
+  // Handle key-based notifications
+  if (text.startsWith('notification.')) {
+    const parts = text.split('|');
+    const key = parts[0];
+    const params: Record<string, string> = {};
+
+    for (let i = 1; i < parts.length; i++) {
+      const [paramKey, paramVal] = parts[i].split('=');
+      if (paramKey && paramVal !== undefined) {
+        params[paramKey] = paramVal;
+      }
+    }
+
+    const dict = notificationTranslations[language] || notificationTranslations.en;
+    let template = dict[key];
+    if (!template) {
+      return key;
+    }
+
+    let result = template;
+    Object.entries(params).forEach(([pKey, pVal]) => {
+      let displayVal = pVal;
+      if (pKey === 'status') {
+        const statusKey = `booking.status.${pVal.toLowerCase()}`;
+        const statusTrans = dict[statusKey];
+        if (statusTrans) displayVal = statusTrans;
+      }
+      result = result.replace(new RegExp(`{${pKey}}`, 'g'), displayVal);
+    });
+
+    return result;
   }
 
-  let result = template;
-  Object.entries(params).forEach(([pKey, pVal]) => {
-    let displayVal = pVal;
-    if (pKey === 'status') {
-      const statusKey = `booking.status.${pVal.toLowerCase()}`;
-      const statusTrans = dict[statusKey];
-      if (statusTrans) displayVal = statusTrans;
+  // Handle common plain text notifications for English / non-English UI
+  const mapViToEn: Record<string, Record<string, string>> = {
+    'Đơn đặt xe hết hạn thanh toán': {
+      en: 'Booking payment expired',
+      vi: 'Đơn đặt xe hết hạn thanh toán',
+      zh: '预订支付已过期',
+      ja: '予約の支払いが期限切れになりました',
+      ko: '예약 결제가 만료되었습니다'
+    },
+    'KYC Approved': {
+      en: 'KYC Approved',
+      vi: 'Xác thực KYC đã được duyệt',
+      zh: 'KYC认证已通过',
+      ja: 'KYC認証が承認されました',
+      ko: 'KYC 인증이 승인되었습니다'
+    },
+    'Application Approved': {
+      en: 'Owner Application Approved',
+      vi: 'Đơn đăng ký Chủ xe đã được duyệt',
+      zh: '车主申请已通过',
+      ja: 'オーナー申請が承認されました',
+      ko: '차주 신청이 승인되었습니다'
     }
-    result = result.replace(new RegExp(`{${pKey}}`, 'g'), displayVal);
-  });
+  };
 
-  return result;
+  if (mapViToEn[text] && mapViToEn[text][language]) {
+    return mapViToEn[text][language];
+  }
+
+  return text;
 }
