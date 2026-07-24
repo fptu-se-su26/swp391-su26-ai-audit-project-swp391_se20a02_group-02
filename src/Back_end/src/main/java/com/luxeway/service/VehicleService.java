@@ -734,6 +734,30 @@ public class VehicleService {
         return toResponse(vehicleRepository.save(vehicle));
     }
 
+    @Transactional
+    public VehicleDTOs.VehicleResponse setMaintenance(String vehicleId, String ownerId, boolean maintenance) {
+        Vehicle vehicle = vehicleRepository.findById(vehicleId)
+                .orElseThrow(() -> new RuntimeException("Vehicle not found"));
+        if (vehicle.getOwner() == null || !vehicle.getOwner().getId().equals(ownerId)) {
+            throw new org.springframework.security.access.AccessDeniedException("Only the vehicle owner can change maintenance status");
+        }
+        if (vehicle.getApprovalStatus() != ApprovalStatus.APPROVED) {
+            throw new IllegalStateException("Only an approved vehicle can change maintenance status");
+        }
+        if (maintenance) {
+            if (vehicle.getStatus() == VehicleStatus.RENTED) {
+                throw new IllegalStateException("A currently rented vehicle cannot enter maintenance");
+            }
+            vehicle.setStatus(VehicleStatus.MAINTENANCE);
+        } else {
+            if (vehicle.getStatus() != VehicleStatus.MAINTENANCE) {
+                throw new IllegalStateException("Vehicle is not under maintenance");
+            }
+            vehicle.setStatus(VehicleStatus.AVAILABLE);
+        }
+        return toResponse(vehicleRepository.save(vehicle));
+    }
+
     // ====== Delete ======
 
     @Transactional

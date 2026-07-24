@@ -5,7 +5,8 @@ public enum VehicleStatus {
     UNAVAILABLE("Unavailable"),
     BOOKED("Booked"),
     RENTED("Currently Rented"),
-    INACTIVE("Inactive");
+    INACTIVE("Inactive"),
+    MAINTENANCE("Under Maintenance");
     
     private final String displayName;
     
